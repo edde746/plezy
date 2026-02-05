@@ -49,15 +49,9 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen>
-    with
-        Refreshable,
-        FullRefreshable,
-        ItemUpdatable,
-        WatchStateAware,
-        TabVisibilityAware,
-        SingleTickerProviderStateMixin,
-        WidgetsBindingObserver {
+    with Refreshable, FullRefreshable, ItemUpdatable, WatchStateAware, TabVisibilityAware, WidgetsBindingObserver {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
+  static const Duration _indicatorUpdateInterval = Duration(milliseconds: 200);
 
   @override
   PlexClient get client {
@@ -77,7 +71,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final ScrollController _scrollController = ScrollController();
   int _currentHeroIndex = 0;
   Timer? _autoScrollTimer;
-  late AnimationController _indicatorAnimationController;
+  Timer? _indicatorTimer;
+  final ValueNotifier<double> _indicatorProgress = ValueNotifier(0.0);
   bool _isAutoScrollPaused = false;
 
   // WatchStateAware: watch on-deck items and their parent shows/seasons
@@ -197,7 +192,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _indicatorAnimationController = AnimationController(vsync: this, duration: _heroAutoScrollDuration);
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
     _watchTogetherButtonFocusNode = FocusNode(debugLabel: 'watch_together_button');
@@ -404,9 +398,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
+    _indicatorTimer?.cancel();
+    _indicatorProgress.dispose();
     _heroController.dispose();
     _scrollController.dispose();
-    _indicatorAnimationController.dispose();
     _heroFocusNode.dispose();
     _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
     _refreshButtonFocusNode.dispose();
@@ -430,7 +425,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void _startAutoScroll() {
     if (_isAutoScrollPaused) return;
 
-    _indicatorAnimationController.forward(from: 0.0);
+    _startIndicatorProgress();
     _autoScrollTimer = Timer.periodic(_heroAutoScrollDuration, (timer) {
       if (_onDeck.isEmpty || !_heroController.hasClients || _isAutoScrollPaused) {
         return;
@@ -446,10 +441,28 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Wait for page transition to complete before resetting progress
       Future.delayed(const Duration(milliseconds: 500), () {
         if (!_isAutoScrollPaused) {
-          _indicatorAnimationController.forward(from: 0.0);
+          _startIndicatorProgress();
         }
       });
     });
+  }
+
+  void _startIndicatorProgress() {
+    _indicatorTimer?.cancel();
+    _indicatorProgress.value = 0.0;
+    final totalSteps = _heroAutoScrollDuration.inMilliseconds ~/ _indicatorUpdateInterval.inMilliseconds;
+    int step = 0;
+    _indicatorTimer = Timer.periodic(_indicatorUpdateInterval, (timer) {
+      step++;
+      _indicatorProgress.value = (step / totalSteps).clamp(0.0, 1.0);
+      if (step >= totalSteps) {
+        timer.cancel();
+      }
+    });
+  }
+
+  void _stopIndicatorProgress() {
+    _indicatorTimer?.cancel();
   }
 
   void _resetAutoScrollTimer() {
@@ -462,7 +475,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _isAutoScrollPaused = true;
     });
     _autoScrollTimer?.cancel();
-    _indicatorAnimationController.stop();
+    _stopIndicatorProgress();
   }
 
   void _resumeAutoScroll() {
@@ -475,7 +488,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void onTabHidden() {
     _autoScrollTimer?.cancel();
-    _indicatorAnimationController.stop();
+    _stopIndicatorProgress();
   }
 
   @override
@@ -1284,13 +1297,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         final dotSize = _getDotSize(index, range.start, range.end);
 
                         if (isActive) {
-                          // Animated progress indicator for active page
-                          return AnimatedBuilder(
-                            animation: _indicatorAnimationController,
-                            builder: (context, child) {
-                              // Fill width animates based on dot size
+                          // Progress indicator for active page (~5fps via Timer)
+                          return ValueListenableBuilder<double>(
+                            valueListenable: _indicatorProgress,
+                            builder: (context, progress, child) {
                               final maxWidth = dotSize * 3; // 24px for normal, 15px for small
-                              final fillWidth = dotSize + ((maxWidth - dotSize) * _indicatorAnimationController.value);
+                              final fillWidth = dotSize + ((maxWidth - dotSize) * progress);
                               final onSurface = Theme.of(context).colorScheme.onSurface;
                               return Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 4),
