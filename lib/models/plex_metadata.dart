@@ -42,6 +42,7 @@ class PlexMetadata with MultiServerFields {
   final String? studio;
   final String type;
   final String title;
+  final String? titleSort;
   final String? contentRating;
   final String? summary;
   final double? rating;
@@ -116,6 +117,7 @@ class PlexMetadata with MultiServerFields {
     this.studio,
     required this.type,
     required this.title,
+    this.titleSort,
     this.contentRating,
     this.summary,
     this.rating,
@@ -162,6 +164,7 @@ class PlexMetadata with MultiServerFields {
     String? studio,
     String? type,
     String? title,
+    String? titleSort,
     String? contentRating,
     String? summary,
     double? rating,
@@ -206,6 +209,7 @@ class PlexMetadata with MultiServerFields {
       studio: studio ?? this.studio,
       type: type ?? this.type,
       title: title ?? this.title,
+      titleSort: titleSort ?? this.titleSort,
       contentRating: contentRating ?? this.contentRating,
       summary: summary ?? this.summary,
       rating: rating ?? this.rating,

@@ -6,10 +6,13 @@ import '../../../focus/dpad_navigator.dart';
 import '../../../../services/plex_client.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../models/plex_filter.dart';
+import '../../../models/plex_first_character.dart';
 import '../../../models/plex_sort.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/grid_size_calculator.dart';
+import '../../../utils/layout_constants.dart';
+import '../../../widgets/alpha_jump_bar.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
 import '../../../widgets/media_grid_delegate.dart';
@@ -73,6 +76,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   bool _isSortDescending = false;
   String _selectedGrouping = 'all'; // all, seasons, episodes, folders
 
+  // Alpha jump bar state
+  List<PlexFirstCharacter> _firstCharacters = [];
+  int _currentFirstVisibleIndex = 0;
+  int _currentColumnCount = 1;
+  double _lastCrossAxisExtent = 0;
+  final FocusNode _alphaJumpBarFocusNode = FocusNode(debugLabel: 'alpha_jump_bar');
+  // When the user taps a letter, pin that index so scroll-based recalculation
+  // doesn't immediately override it (e.g. when the letter has fewer items than a full row).
+  int? _pinnedJumpIndex;
+  // True while a jump-triggered animateTo is in progress — suppresses all
+  // scroll-based letter recalculation to prevent flashing.
+  bool _isJumpScrolling = false;
+  // Incremented on each jump so that overlapping animations don't clobber each other.
+  int _jumpScrollGeneration = 0;
+
   // Pagination state
   int _currentPage = 0;
   bool _hasMoreItems = true;
@@ -89,12 +107,20 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   final ScrollController _scrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScrollChanged);
+  }
+
+  @override
   void dispose() {
     _cancelToken?.cancel();
+    _scrollController.removeListener(_onScrollChanged);
     _scrollController.dispose();
     _groupingChipFocusNode.dispose();
     _filtersChipFocusNode.dispose();
     _sortChipFocusNode.dispose();
+    _alphaJumpBarFocusNode.dispose();
     disposeGridFocusNodes();
     super.dispose();
   }
@@ -183,6 +209,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       _selectedSort = null;
       _isSortDescending = false;
       _selectedGrouping = _getDefaultGrouping();
+      _firstCharacters = [];
+      _currentFirstVisibleIndex = 0;
     });
 
     try {
@@ -219,8 +247,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         }
       });
 
-      // Load items
-      await _loadItems();
+      // Load items and first characters in parallel
+      await Future.wait([_loadItems(), _loadFirstCharacters()]);
     } catch (e) {
       _handleLoadError(e, currentRequestId);
     }
@@ -419,6 +447,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         storage.saveLibraryGrouping(widget.library.globalKey, pendingGrouping);
       });
       _loadItems();
+      _loadFirstCharacters();
     });
   }
 
@@ -442,6 +471,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           await storage.saveLibraryFilters(filters, sectionId: widget.library.globalKey);
 
           _loadItems();
+          _loadFirstCharacters();
         },
       ),
     );
@@ -480,6 +510,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           _isSortDescending = false;
         });
         _loadItems();
+        _loadFirstCharacters();
       } else if (pendingSort != null &&
           (pendingSort!.key != _selectedSort?.key || pendingDescending != _isSortDescending)) {
         setState(() {
@@ -490,6 +521,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           storage.saveLibrarySort(widget.library.globalKey, pendingSort!.key, descending: pendingDescending);
         });
         _loadItems();
+        _loadFirstCharacters();
       }
     });
   }
@@ -517,6 +549,146 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
     MainScreenFocusScope.of(context)?.focusSidebar();
+  }
+
+  /// Navigate focus to the alpha jump bar
+  void _navigateToAlphaJumpBar() {
+    _alphaJumpBarFocusNode.requestFocus();
+  }
+
+  /// Whether the alpha jump bar should be shown.
+  /// Only shown when sorting by title (titleSort) and not in folders mode.
+  bool get _shouldShowAlphaJumpBar {
+    if (_selectedGrouping == 'folders') return false;
+    if (_firstCharacters.isEmpty) return false;
+    // Show when no sort is selected (default is titleSort) or when explicitly sorting by title
+    final sortKey = _selectedSort?.key ?? '';
+    return sortKey.isEmpty || sortKey.startsWith('titleSort');
+  }
+
+  /// Fetch first characters for the current library/filter state
+  Future<void> _loadFirstCharacters() async {
+    final client = getClientForLibrary();
+    final filterParams = Map<String, String>.from(_selectedFilters);
+    final typeId = _getGroupingTypeId();
+
+    try {
+      final chars = await client.getFirstCharacters(
+        widget.library.key,
+        type: typeId.isNotEmpty ? int.tryParse(typeId) : null,
+        filters: filterParams.isNotEmpty ? filterParams : null,
+      );
+      if (mounted) {
+        setState(() => _firstCharacters = chars);
+      }
+    } catch (_) {
+      // Non-critical — hide the bar on failure
+      if (mounted) {
+        setState(() => _firstCharacters = []);
+      }
+    }
+  }
+
+  /// Track scroll position to highlight the current letter in the jump bar
+  void _onScrollChanged() {
+    if (!_shouldShowAlphaJumpBar || _currentColumnCount < 1) return;
+
+    // During a jump animation, skip all processing to avoid flashing.
+    if (_isJumpScrolling) return;
+
+    // If pinned from a completed jump, the next scroll event must be
+    // user-initiated (touch drag, mouse wheel, etc.) — clear the pin
+    // and resume normal tracking.
+    if (_pinnedJumpIndex != null) {
+      _pinnedJumpIndex = null;
+    }
+
+    _updateVisibleIndex();
+  }
+
+  /// Recompute the first-visible-index from the current scroll offset.
+  void _updateVisibleIndex() {
+    final offset = _scrollController.offset;
+    final firstInRow = _itemIndexFromScrollOffset(offset);
+    // Use the last item in the first visible row so the highlighted letter
+    // updates as soon as items with a new letter appear in that row.
+    final lastInRow = (firstInRow + _currentColumnCount - 1).clamp(0, items.length - 1);
+    if (lastInRow != _currentFirstVisibleIndex) {
+      setState(() => _currentFirstVisibleIndex = lastInRow);
+    }
+  }
+
+  /// Compute the first visible item index from a scroll offset.
+  /// The visible area starts below the chips bar, so we offset accordingly.
+  int _itemIndexFromScrollOffset(double offset) {
+    if (_lastCrossAxisExtent <= 0 || _currentColumnCount < 1) return 0;
+
+    final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
+    final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
+    final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
+    if (rowHeight <= 0) return 0;
+
+    // The visible area starts at _chipsBarHeight from the viewport top.
+    // Grid content starts at _gridTopPadding in scroll coordinates.
+    // First visible row = (offset + chipsBarHeight - gridTopPadding) / rowHeight
+    final contentOffset = (offset + _chipsBarHeight - _gridTopPadding).clamp(0.0, double.infinity);
+    final row = (contentOffset / rowHeight).floor();
+    return (row * _currentColumnCount).clamp(0, items.length - 1);
+  }
+
+  /// Scroll to the item at [targetIndex], loading more pages if necessary.
+  /// Pins the index so scroll events during the animation don't override
+  /// the highlighted letter. The pin is cleared on the next user scroll.
+  void _jumpToIndex(int targetIndex) {
+    _jumpScrollGeneration++;
+    _isJumpScrolling = true;
+    _pinnedJumpIndex = targetIndex;
+    setState(() => _currentFirstVisibleIndex = targetIndex);
+
+    if (targetIndex < items.length) {
+      _scrollToItemIndex(targetIndex);
+    } else {
+      _loadUntilIndex(targetIndex);
+    }
+  }
+
+  /// Scroll the grid so that [index] is visible just below the chips bar
+  void _scrollToItemIndex(int index) {
+    if (_currentColumnCount < 1 || _lastCrossAxisExtent <= 0 || !_scrollController.hasClients) {
+      _isJumpScrolling = false;
+      return;
+    }
+
+    final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
+    final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
+    final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
+    final targetRow = index ~/ _currentColumnCount;
+    // Position the target row right below the chips bar
+    final offset = _gridTopPadding + targetRow * rowHeight - _chipsBarHeight;
+
+    final gen = _jumpScrollGeneration;
+    _scrollController
+        .animateTo(
+          offset.clamp(0.0, _scrollController.position.maxScrollExtent),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        )
+        .then((_) {
+          // Only clear the flag if no newer jump has started.
+          if (mounted && gen == _jumpScrollGeneration) {
+            _isJumpScrolling = false;
+          }
+        });
+  }
+
+  /// Load pages until [targetIndex] is loaded, then scroll to it
+  Future<void> _loadUntilIndex(int targetIndex) async {
+    while (items.length <= targetIndex && _hasMoreItems) {
+      await _loadItems(loadMore: true);
+    }
+    if (mounted) {
+      _scrollToItemIndex(targetIndex.clamp(0, items.length - 1));
+    }
   }
 
   @override
@@ -548,6 +720,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         Positioned.fill(child: _buildScrollableContent()),
         // Chips bar on top with solid background
         Positioned(top: 0, left: 0, right: 0, child: _buildChipsBar()),
+        // Alpha jump bar on the right edge
+        if (_shouldShowAlphaJumpBar)
+          Positioned(
+            top: _chipsBarHeight,
+            right: 0,
+            bottom: 0,
+            child: AlphaJumpBar(
+              firstCharacters: _firstCharacters,
+              onJump: _jumpToIndex,
+              currentFirstVisibleIndex: _currentFirstVisibleIndex,
+              focusNode: _alphaJumpBarFocusNode,
+              onNavigateLeft: _navigateToGrid,
+              onBack: widget.onBack,
+            ),
+          ),
       ],
     );
   }
@@ -677,14 +864,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   // Chips bar is ~48px, focus ring extends ~6px beyond item bounds
   static const double _gridTopPadding = _chipsBarHeight + 12.0;
 
+  /// Width of the alpha jump bar widget
+  static const double _alphaJumpBarWidth = 28.0;
+
   /// Builds either a sliver list or sliver grid based on the view mode
   Widget _buildItemsSliver(BuildContext context, SettingsProvider settingsProvider) {
     final itemCount = items.length + (_hasMoreItems && isLoading ? 1 : 0);
+    final rightPadding = _shouldShowAlphaJumpBar ? _alphaJumpBarWidth : 8.0;
 
     if (settingsProvider.viewMode == ViewMode.list) {
       // In list view, all items are in a single column (first column)
       return SliverPadding(
-        padding: const EdgeInsets.fromLTRB(8, _gridTopPadding, 8, 8),
+        padding: EdgeInsets.fromLTRB(8, _gridTopPadding, rightPadding, 8),
         sliver: SliverList.builder(
           itemCount: itemCount,
           itemBuilder: (context, index) => _buildMediaCardItem(
@@ -701,10 +892,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           _selectedGrouping == 'episodes' && settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
       final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
       return SliverPadding(
-        padding: const EdgeInsets.fromLTRB(8, _gridTopPadding, 8, 8),
+        padding: EdgeInsets.fromLTRB(8, _gridTopPadding, rightPadding, 8),
         sliver: SliverLayoutBuilder(
           builder: (context, constraints) {
             final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
+            // Cache grid metrics for alpha jump bar scroll calculations
+            _lastCrossAxisExtent = constraints.crossAxisExtent;
+            _currentColumnCount = columnCount;
             return SliverGrid.builder(
               gridDelegate: MediaGridDelegate.createDelegate(
                 context: context,
@@ -716,6 +910,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
                 index,
                 isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
                 isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
+                isLastColumn: (index % columnCount) == (columnCount - 1),
               ),
             );
           },
@@ -724,7 +919,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     }
   }
 
-  Widget _buildMediaCardItem(int index, {required bool isFirstRow, required bool isFirstColumn}) {
+  Widget _buildMediaCardItem(
+    int index, {
+    required bool isFirstRow,
+    required bool isFirstColumn,
+    bool isLastColumn = false,
+  }) {
     if (index >= items.length) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
@@ -744,6 +944,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       onRefresh: updateItem,
       onNavigateUp: isFirstRow ? _navigateToChips : null,
       onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
+      onNavigateRight: isLastColumn && _shouldShowAlphaJumpBar ? _navigateToAlphaJumpBar : null,
       onBack: widget.onBack,
       onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
       onListRefresh: _loadItems,
