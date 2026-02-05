@@ -316,7 +316,8 @@ void MpvPlayer::RequestRedraw() {
   if (gl_area_) {
     // Queue redraw on main thread
     GtkGLArea* area = gl_area_;
-    g_idle_add(
+    g_idle_add_full(
+        GDK_PRIORITY_REDRAW,
         [](gpointer data) -> gboolean {
           GtkGLArea* area = static_cast<GtkGLArea*>(data);
           if (GTK_IS_GL_AREA(area)) {
@@ -324,7 +325,8 @@ void MpvPlayer::RequestRedraw() {
           }
           return G_SOURCE_REMOVE;
         },
-        area);
+        area,
+        nullptr);
   }
 }
 
@@ -335,7 +337,8 @@ void MpvPlayer::OnMpvWakeup(void* ctx) {
   if (player->disposed_) return;
 
   // Schedule event processing on the main thread.
-  g_idle_add(
+  g_idle_add_full(
+      G_PRIORITY_HIGH_IDLE,
       [](gpointer data) -> gboolean {
         auto* player = static_cast<MpvPlayer*>(data);
 
@@ -347,7 +350,8 @@ void MpvPlayer::OnMpvWakeup(void* ctx) {
         }
         return G_SOURCE_REMOVE;
       },
-      player);
+      player,
+      nullptr);
 }
 
 void MpvPlayer::OnMpvRenderUpdate(void* ctx) {
