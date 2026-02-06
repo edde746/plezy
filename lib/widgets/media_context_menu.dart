@@ -20,6 +20,7 @@ import '../focus/dpad_navigator.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
+import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/focusable_bottom_sheet.dart';
@@ -1070,7 +1071,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         if (success) {
           showSuccessSnackBar(context, t.mediaMenu.mediaDeletedSuccessfully);
-          // Trigger list refresh to remove the item from the view
+          // Broadcast deletion event for cross-screen propagation
+          DeletionNotifier().notifyDeleted(metadata: metadata);
+          // Backward-compatible list refresh for screens that are not DeletionAware yet
           widget.onListRefresh?.call();
         } else {
           showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);

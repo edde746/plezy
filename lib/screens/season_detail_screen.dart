@@ -24,7 +24,9 @@ import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
 import '../mixins/item_updatable.dart';
 import '../mixins/watch_state_aware.dart';
+import '../mixins/deletion_aware.dart';
 import '../utils/watch_state_notifier.dart';
+import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
 
@@ -38,7 +40,8 @@ class SeasonDetailScreen extends StatefulWidget {
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
 }
 
-class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdatable, WatchStateAware, RouteAware {
+class _SeasonDetailScreenState extends State<SeasonDetailScreen>
+    with ItemUpdatable, WatchStateAware, DeletionAware, RouteAware {
   PlexClient? _client;
 
   @override
@@ -52,15 +55,63 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
   bool _suppressNextBackKeyUp = false;
   bool _routeSubscribed = false;
 
+  String _toGlobalKey(String ratingKey, {String? serverId}) => '${serverId ?? widget.season.serverId ?? ''}:$ratingKey';
+
   // WatchStateAware: watch all episode ratingKeys
   @override
   Set<String>? get watchedRatingKeys => _episodes.map((e) => e.ratingKey).toSet();
+
+  @override
+  String? get watchStateServerId => widget.season.serverId;
+
+  @override
+  Set<String>? get watchedGlobalKeys {
+    final serverId = widget.season.serverId;
+    if (serverId == null) return null;
+
+    return _episodes.map((e) => _toGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
+  }
 
   @override
   void onWatchStateChanged(WatchStateEvent event) {
     // Update the affected episode
     if (!widget.isOffline && _client != null) {
       updateItem(event.ratingKey);
+    }
+  }
+
+  @override
+  Set<String>? get deletionRatingKeys {
+    final keys = _episodes.map((e) => e.ratingKey).toSet();
+    keys.add(widget.season.ratingKey);
+    return keys;
+  }
+
+  @override
+  String? get deletionServerId => widget.season.serverId;
+
+  @override
+  Set<String>? get deletionGlobalKeys {
+    final serverId = widget.season.serverId;
+    if (serverId == null) return null;
+
+    final keys = _episodes.map((e) => _toGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
+    keys.add(_toGlobalKey(widget.season.ratingKey, serverId: serverId));
+    return keys;
+  }
+
+  @override
+  void onDeletionEvent(DeletionEvent event) {
+    // If we have an episode that matches the rating key exactly, then remove it from our list
+    final index = _episodes.indexWhere((e) => e.ratingKey == event.ratingKey);
+    if (index != -1) {
+      setState(() {
+        _episodes.removeAt(index);
+      });
+      // If that was the last episode, navigate back to the show view
+      if (_episodes.isEmpty && mounted) {
+        Navigator.of(context).pop();
+      }
     }
   }
 

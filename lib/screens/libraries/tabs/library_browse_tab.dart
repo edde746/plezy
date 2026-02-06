@@ -29,6 +29,8 @@ import '../../../services/storage_service.dart';
 import '../../../services/settings_service.dart' show ViewMode, EpisodePosterMode;
 import '../../../mixins/grid_focus_node_mixin.dart';
 import '../../../mixins/item_updatable.dart';
+import '../../../mixins/deletion_aware.dart';
+import '../../../utils/deletion_notifier.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../i18n/strings.g.dart';
 import '../../main_screen.dart';
@@ -53,9 +55,64 @@ class LibraryBrowseTab extends BaseLibraryTab<PlexMetadata> {
 }
 
 class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBrowseTab>
-    with ItemUpdatable, LibraryTabFocusMixin, GridFocusNodeMixin {
+    with ItemUpdatable, LibraryTabFocusMixin, GridFocusNodeMixin, DeletionAware {
   @override
   PlexClient get client => getClientForLibrary();
+
+  String _toGlobalKey(String ratingKey, {String? serverId}) =>
+      '${serverId ?? widget.library.serverId ?? ''}:$ratingKey';
+
+  @override
+  String? get deletionServerId => widget.library.serverId;
+
+  @override
+  Set<String>? get deletionRatingKeys => items.map((e) => e.ratingKey).toSet();
+
+  @override
+  Set<String>? get deletionGlobalKeys {
+    if (items.isEmpty) return <String>{};
+
+    final keys = <String>{};
+    for (final item in items) {
+      final serverId = item.serverId ?? widget.library.serverId;
+      if (serverId == null) return null;
+      keys.add(_toGlobalKey(item.ratingKey, serverId: serverId));
+    }
+    return keys;
+  }
+
+  @override
+  void onDeletionEvent(DeletionEvent event) {
+    // If we have an item that matches the rating key exactly, then remove it from our list
+    final index = items.indexWhere((e) => e.ratingKey == event.ratingKey);
+    if (index != -1) {
+      setState(() {
+        items.removeAt(index);
+      });
+      return;
+    }
+
+    // If a child item was delete, then update our list to reflect that.
+    // If all children were deleted, remove our item.
+    // Otherwise, just update the counts.
+    for (final parentKey in event.parentChain) {
+      final parentIndex = items.indexWhere((e) => e.ratingKey == parentKey);
+      if (parentIndex != -1) {
+        final item = items[parentIndex];
+        final newLeafCount = (item.leafCount ?? 1) - event.leafCount;
+        if (newLeafCount <= 0) {
+          setState(() {
+            items.removeAt(parentIndex);
+          });
+        } else {
+          setState(() {
+            items[parentIndex] = item.copyWith(leafCount: newLeafCount);
+          });
+        }
+        return;
+      }
+    }
+  }
 
   @override
   String get focusNodeDebugLabel => 'browse_first_item';

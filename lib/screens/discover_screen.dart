@@ -75,6 +75,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final ValueNotifier<double> _indicatorProgress = ValueNotifier(0.0);
   bool _isAutoScrollPaused = false;
 
+  String _toGlobalKey(String ratingKey, String serverId) => '$serverId:$ratingKey';
+
   // WatchStateAware: watch on-deck items and their parent shows/seasons
   @override
   Set<String>? get watchedRatingKeys {
@@ -86,6 +88,24 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
       if (item.grandparentRatingKey != null) {
         keys.add(item.grandparentRatingKey!);
+      }
+    }
+    return keys;
+  }
+
+  @override
+  Set<String>? get watchedGlobalKeys {
+    final keys = <String>{};
+    for (final item in _onDeck) {
+      final serverId = item.serverId;
+      if (serverId == null) return null;
+
+      keys.add(_toGlobalKey(item.ratingKey, serverId));
+      if (item.parentRatingKey != null) {
+        keys.add(_toGlobalKey(item.parentRatingKey!, serverId));
+      }
+      if (item.grandparentRatingKey != null) {
+        keys.add(_toGlobalKey(item.grandparentRatingKey!, serverId));
       }
     }
     return keys;
