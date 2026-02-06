@@ -32,7 +32,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   List<PlexFilterValue> _filterValues = [];
   bool _isLoadingValues = false;
   final Map<String, String> _tempSelectedFilters = {};
-  final Map<String, String> _filterDisplayNames = {}; // Cache for display names
+  static final Map<String, String> _filterDisplayNames = {}; // Cache for display names
   late List<PlexFilter> _sortedFilters;
   late final FocusNode _initialFocusNode;
 
