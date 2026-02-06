@@ -43,8 +43,12 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
-import io.github.peerless2012.ass.media.kt.buildWithAssSupport
+import io.github.peerless2012.ass.media.AssHandler
+import io.github.peerless2012.ass.media.extractor.AssMatroskaExtractor
+import io.github.peerless2012.ass.media.factory.AssRenderersFactory
+import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
+import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -76,6 +80,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var surfaceView: SurfaceView? = null
     private var surfaceContainer: FrameLayout? = null
     private var subtitleView: SubtitleView? = null
+    private var assHandler: AssHandler? = null
     private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
     private var exoPlayer: ExoPlayer? = null
     private var trackSelector: DefaultTrackSelector? = null
@@ -303,26 +308,53 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val dataSourceFactory = DefaultDataSource.Factory(activity)
             val extractorsFactory = DefaultExtractorsFactory()
 
-            // Use buildWithAssSupport with OVERLAY_OPEN_GL mode for proper libass rendering
+            // Inline buildWithAssSupport to retain AssHandler reference for font scale control.
             // OVERLAY_OPEN_GL uses TextureView which follows normal View hierarchy z-ordering,
-            // preventing hardware overlay promotion issues on devices like Nvidia Shield
-            Log.d(TAG, "SubtitleView childCount before buildWithAssSupport: ${subtitleView?.childCount}")
+            // preventing hardware overlay promotion issues on devices like Nvidia Shield.
+            Log.d(TAG, "SubtitleView childCount before ASS setup: ${subtitleView?.childCount}")
+
+            val renderType = AssRenderType.OVERLAY_OPEN_GL
+            val handler = AssHandler(renderType)
+            assHandler = handler
+
+            val assParserFactory = AssSubtitleParserFactory(handler)
+
+            // Wrap extractors to replace MatroskaExtractor with ASS-aware variant
+            val wrappedExtractorsFactory = androidx.media3.extractor.ExtractorsFactory {
+                extractorsFactory.createExtractors().map { extractor ->
+                    if (extractor is androidx.media3.extractor.mkv.MatroskaExtractor) {
+                        AssMatroskaExtractor(assParserFactory, handler)
+                    } else {
+                        extractor
+                    }
+                }.toTypedArray()
+            }
+
+            val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory, wrappedExtractorsFactory)
+                .setSubtitleParserFactory(assParserFactory)
+
+            val wrappedRenderersFactory = AssRenderersFactory(handler, renderersFactory)
+
             exoPlayer = ExoPlayer.Builder(activity)
                 .setTrackSelector(trackSelector!!)
                 .setAudioAttributes(audioAttributes, false) // We handle audio focus manually
-                .buildWithAssSupport(
-                    context = activity,
-                    renderType = AssRenderType.OVERLAY_OPEN_GL,  // Use OVERLAY_OPEN_GL to fix z-ordering on Nvidia Shield
-                    subtitleView = subtitleView,
-                    dataSourceFactory = dataSourceFactory,
-                    extractorsFactory = extractorsFactory,
-                    renderersFactory = renderersFactory
-                )
-                .also { player ->
-                    player.addListener(this)
-                    surfaceView?.let { player.setVideoSurfaceView(it) }
-                }
-            Log.d(TAG, "SubtitleView childCount after buildWithAssSupport: ${subtitleView?.childCount}")
+                .setMediaSourceFactory(mediaSourceFactory)
+                .setRenderersFactory(wrappedRenderersFactory)
+                .build()
+
+            // Add ASS overlay view to SubtitleView for OVERLAY modes
+            subtitleView?.let { sv ->
+                val assView = AssSubtitleView(sv.context, handler)
+                sv.addView(assView)
+            }
+
+            // Initialize handler (registers as Player.Listener, creates Handler)
+            handler.init(exoPlayer!!)
+
+            exoPlayer!!.addListener(this)
+            surfaceView?.let { exoPlayer!!.setVideoSurfaceView(it) }
+
+            Log.d(TAG, "SubtitleView childCount after ASS setup: ${subtitleView?.childCount}")
             configureSubtitleOverlaySurface()
 
             // Debug: Log SubtitleView child hierarchy
@@ -811,6 +843,53 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
     }
 
+    fun setSubtitleStyle(
+        fontSize: Float,
+        textColor: String,
+        borderSize: Float,
+        borderColor: String,
+        bgColor: String,
+        bgOpacity: Int
+    ) {
+        activity.runOnUiThread {
+            // 1. Non-ASS subtitles: CaptionStyleCompat on SubtitleView
+            val fgColor = Color.parseColor(textColor)
+            val bgAlpha = (bgOpacity * 255 / 100)
+            val bgColorInt = Color.parseColor(bgColor).let {
+                Color.argb(bgAlpha, Color.red(it), Color.green(it), Color.blue(it))
+            }
+            val edgeColor = Color.parseColor(borderColor)
+            val edgeType = if (borderSize > 0) CaptionStyleCompat.EDGE_TYPE_OUTLINE
+                           else CaptionStyleCompat.EDGE_TYPE_NONE
+
+            val style = CaptionStyleCompat(
+                fgColor,
+                bgColorInt,
+                Color.TRANSPARENT,
+                edgeType,
+                edgeColor,
+                null
+            )
+            subtitleView?.setStyle(style)
+            // Font size: MPV sub-font-size is scaled pixels at 720p height
+            // Convert to fractional size (0.0-1.0 relative to view height)
+            val fraction = fontSize / 720f
+            subtitleView?.setFractionalTextSize(fraction)
+
+            // 2. ASS subtitles: font scale via libass
+            // MPV default sub-font-size is 38
+            val defaultSize = 38f
+            val scale = fontSize / defaultSize
+            try {
+                assHandler?.render?.setFontScale(scale)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to set ASS font scale: ${e.message}")
+            }
+
+            Log.d(TAG, "setSubtitleStyle: fontSize=$fontSize, textColor=$textColor, borderSize=$borderSize, bgOpacity=$bgOpacity, assScale=$scale")
+        }
+    }
+
     fun onPipModeChanged(isInPipMode: Boolean) {
         activity.runOnUiThread {
             // Force recalculation of surface size based on new container dimensions
@@ -1118,6 +1197,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         exoPlayer?.release()
         exoPlayer = null
         trackSelector = null
+        assHandler = null
 
         surfaceView?.holder?.removeCallback(surfaceCallback)
         overlayLayoutListener?.let { listener ->

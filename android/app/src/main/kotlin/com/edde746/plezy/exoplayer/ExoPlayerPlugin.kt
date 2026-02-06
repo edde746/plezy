@@ -118,6 +118,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             )
             "getStats" -> handleGetStats(result)
             "getPlayerType" -> result.success(if (usingMpvFallback) "mpv" else "exoplayer")
+            "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
             else -> result.notImplemented()
         }
     }
@@ -408,6 +409,24 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         } else {
             playerCore?.abandonAudioFocus()
         }
+        result.success(null)
+    }
+
+    private fun handleSetSubtitleStyle(call: MethodCall, result: MethodChannel.Result) {
+        val fontSize = call.argument<Number>("fontSize")?.toFloat() ?: 55f
+        val textColor = call.argument<String>("textColor") ?: "#FFFFFF"
+        val borderSize = call.argument<Number>("borderSize")?.toFloat() ?: 3f
+        val borderColor = call.argument<String>("borderColor") ?: "#000000"
+        val bgColor = call.argument<String>("bgColor") ?: "#000000"
+        val bgOpacity = call.argument<Number>("bgOpacity")?.toInt() ?: 0
+
+        if (usingMpvFallback) {
+            // MPV fallback handles styling via setProperty, no-op here
+            result.success(null)
+            return
+        }
+
+        playerCore?.setSubtitleStyle(fontSize, textColor, borderSize, borderColor, bgColor, bgOpacity)
         result.success(null)
     }
 

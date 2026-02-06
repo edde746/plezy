@@ -262,6 +262,34 @@ class PlayerAndroid extends PlayerBase {
   }
 
   // ============================================
+  // Subtitle Styling (ExoPlayer Native)
+  // ============================================
+
+  /// Apply subtitle styling to the native ExoPlayer layer.
+  ///
+  /// For non-ASS subtitles, applies CaptionStyleCompat (color, border, background).
+  /// For ASS subtitles, applies font scale via libass setFontScale().
+  Future<void> setSubtitleStyle({
+    required double fontSize,
+    required String textColor,
+    required double borderSize,
+    required String borderColor,
+    required String bgColor,
+    required int bgOpacity,
+  }) async {
+    checkDisposed();
+    if (!initialized) return;
+    await methodChannel.invokeMethod('setSubtitleStyle', {
+      'fontSize': fontSize,
+      'textColor': textColor,
+      'borderSize': borderSize,
+      'borderColor': borderColor,
+      'bgColor': bgColor,
+      'bgOpacity': bgOpacity,
+    });
+  }
+
+  // ============================================
   // Frame Rate Matching
   // ============================================
 

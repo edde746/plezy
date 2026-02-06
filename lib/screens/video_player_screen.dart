@@ -11,6 +11,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../mpv/mpv.dart';
+import '../mpv/player/player_android.dart';
 
 import '../../services/plex_client.dart';
 import '../services/plex_api_cache.dart';
@@ -832,6 +833,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           Media(result.videoUrl!, start: resumePosition, headers: plexHeaders),
           play: !hasExternalSubs,
         );
+
+        // Apply subtitle styling to ExoPlayer native layer (CaptionStyleCompat + libass font scale)
+        // Must be called after open() since that's when ExoPlayer initializes
+        if (player is PlayerAndroid) {
+          final settingsService = await SettingsService.getInstance();
+          await (player as PlayerAndroid).setSubtitleStyle(
+            fontSize: settingsService.getSubtitleFontSize().toDouble(),
+            textColor: settingsService.getSubtitleTextColor(),
+            borderSize: settingsService.getSubtitleBorderSize().toDouble(),
+            borderColor: settingsService.getSubtitleBorderColor(),
+            bgColor: settingsService.getSubtitleBackgroundColor(),
+            bgOpacity: settingsService.getSubtitleBackgroundOpacity(),
+          );
+        }
 
         // Attach player to Watch Together session for sync (if in session)
         if (mounted && !widget.isOffline) {

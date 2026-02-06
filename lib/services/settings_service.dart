@@ -296,7 +296,7 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   int getSubtitleFontSize() {
-    return prefs.getInt(_keySubtitleFontSize) ?? 55;
+    return prefs.getInt(_keySubtitleFontSize) ?? 38;
   }
 
   // Text Color (hex format #RRGGBB, default white)
