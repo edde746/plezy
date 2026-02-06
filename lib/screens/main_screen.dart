@@ -22,6 +22,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../providers/offline_mode_provider.dart';
 import '../services/plex_auth_service.dart';
@@ -35,6 +36,7 @@ import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
 import 'video_player_screen.dart';
+import 'profile/profile_switch_screen.dart';
 import '../services/watch_next_service.dart';
 import '../watch_together/watch_together.dart';
 
@@ -134,6 +136,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
         // Set up data invalidation callback for profile switching
         userProfileProvider.setDataInvalidationCallback(_invalidateAllScreens);
+
+        // Ensure first login (or any unset profile state) requires explicit selection.
+        await _promptForInitialProfileSelection(userProfileProvider);
       }
 
       // Focus content initially (replaces autofocus which caused focus stealing issues)
@@ -144,6 +149,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       // Check for updates on startup
       _checkForUpdatesOnStartup();
     });
+  }
+
+  Future<void> _promptForInitialProfileSelection(UserProfileProvider userProfileProvider) async {
+    if (!mounted || !userProfileProvider.needsInitialProfileSelection) return;
+
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
   }
 
   Future<void> _checkForUpdatesOnStartup() async {
