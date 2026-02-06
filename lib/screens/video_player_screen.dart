@@ -46,6 +46,7 @@ import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/input_mode_tracker.dart';
+import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
@@ -1726,7 +1727,26 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       focusNode: _screenFocusNode,
       autofocus: isCurrentRoute,
       canRequestFocus: isCurrentRoute,
-      onKeyEvent: (node, event) => isCurrentRoute ? KeyEventResult.handled : KeyEventResult.ignored,
+      onKeyEvent: (node, event) {
+        if (!isCurrentRoute) return KeyEventResult.ignored;
+        // Safety net: if this screen-level node itself has primary focus
+        // (no descendant focused, e.g. after controls auto-hide), self-heal.
+        if (node.hasPrimaryFocus) {
+          // Handle BACK immediately so the user is never stuck.
+          final backResult = handleBackKeyAction(event, _handleBackButton);
+          if (backResult != KeyEventResult.ignored) return backResult;
+          // Redirect focus to the first traversable descendant (video controls)
+          // and show controls immediately so the first key press isn't swallowed.
+          if (event.isActionable) {
+            _controlsVisible.value = true;
+            final descendants = node.traversalDescendants;
+            if (descendants.isNotEmpty) {
+              descendants.first.requestFocus();
+            }
+          }
+        }
+        return KeyEventResult.handled;
+      },
       child: _isPlayerInitialized && player != null ? _buildVideoPlayer(context) : _buildLoadingSpinner(),
     );
   }

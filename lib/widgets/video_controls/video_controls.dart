@@ -260,12 +260,22 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
     // Listen for first frame to start auto-hide timer
     widget.hasFirstFrame?.addListener(_onFirstFrameReady);
+    // Listen for external requests to show controls (e.g. screen-level focus recovery)
+    widget.controlsVisible?.addListener(_onControlsVisibleExternal);
   }
 
   /// Called when hasFirstFrame changes - start auto-hide timer when first frame is ready
   void _onFirstFrameReady() {
     if (widget.hasFirstFrame?.value == true) {
       _startHideTimer();
+    }
+  }
+
+  /// Called when controlsVisible is set externally (e.g. screen-level focus recovery
+  /// after controls auto-hide ejects focus on Android TV).
+  void _onControlsVisibleExternal() {
+    if (widget.controlsVisible?.value == true && !_showControls && mounted) {
+      _showControlsWithFocus();
     }
   }
 
@@ -515,6 +525,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
+    widget.controlsVisible?.removeListener(_onControlsVisibleExternal);
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
