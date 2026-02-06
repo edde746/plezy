@@ -44,6 +44,9 @@ class DeletionEvent {
   /// Check if this event affects any item in a collection
   bool affectsAnyOf(Iterable<String> ratingKeys) => ratingKeys.any(affectsItem);
 
+  /// Check if this event affects any item in a global-key collection
+  bool affectsAnyGlobalKey(Iterable<String> globalKeys) => globalKeys.any(affectsGlobalKey);
+
   @override
   String toString() => 'DeletionEvent(deleted: $globalKey, type: $mediaType, parents: $parentChain)';
 }

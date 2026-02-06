@@ -59,8 +59,27 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   @override
   PlexClient get client => getClientForLibrary();
 
+  String _toGlobalKey(String ratingKey, {String? serverId}) =>
+      '${serverId ?? widget.library.serverId ?? ''}:$ratingKey';
+
+  @override
+  String? get deletionServerId => widget.library.serverId;
+
   @override
   Set<String>? get deletionRatingKeys => items.map((e) => e.ratingKey).toSet();
+
+  @override
+  Set<String>? get deletionGlobalKeys {
+    if (items.isEmpty) return <String>{};
+
+    final keys = <String>{};
+    for (final item in items) {
+      final serverId = item.serverId ?? widget.library.serverId;
+      if (serverId == null) return null;
+      keys.add(_toGlobalKey(item.ratingKey, serverId: serverId));
+    }
+    return keys;
+  }
 
   @override
   void onDeletionEvent(DeletionEvent event) {

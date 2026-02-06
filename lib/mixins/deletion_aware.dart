@@ -27,6 +27,17 @@ import '../utils/deletion_notifier.dart';
 mixin DeletionAware<T extends StatefulWidget> on State<T> {
   StreamSubscription<DeletionEvent>? _deletionSubscription;
 
+  /// Override to scope events to a specific server.
+  ///
+  /// Return null to receive events from all servers.
+  String? get deletionServerId => null;
+
+  /// Override to specify which global keys this screen cares about.
+  ///
+  /// Use format `serverId:ratingKey`.
+  /// Return null to fall back to [deletionRatingKeys] matching.
+  Set<String>? get deletionGlobalKeys => null;
+
   /// Override to specify which ratingKeys this screen cares about.
   ///
   /// Return null to receive ALL events (not recommended for performance).
@@ -52,10 +63,21 @@ mixin DeletionAware<T extends StatefulWidget> on State<T> {
     _deletionSubscription = DeletionNotifier().stream.listen((event) {
       if (!mounted) return;
 
-      final keys = deletionRatingKeys;
+      final serverId = deletionServerId;
+      if (serverId != null && event.serverId != serverId) return;
+
+      final globalKeys = deletionGlobalKeys;
+      if (globalKeys != null) {
+        if (event.affectsAnyGlobalKey(globalKeys)) {
+          onDeletionEvent(event);
+        }
+        return;
+      }
+
+      final ratingKeys = deletionRatingKeys;
       // If keys is null, receive all events
       // Otherwise, filter to events that affect our keys
-      if (keys == null || event.affectsAnyOf(keys)) {
+      if (ratingKeys == null || event.affectsAnyOf(ratingKeys)) {
         onDeletionEvent(event);
       }
     });

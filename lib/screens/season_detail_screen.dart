@@ -55,9 +55,22 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   bool _suppressNextBackKeyUp = false;
   bool _routeSubscribed = false;
 
+  String _toGlobalKey(String ratingKey, {String? serverId}) => '${serverId ?? widget.season.serverId ?? ''}:$ratingKey';
+
   // WatchStateAware: watch all episode ratingKeys
   @override
   Set<String>? get watchedRatingKeys => _episodes.map((e) => e.ratingKey).toSet();
+
+  @override
+  String? get watchStateServerId => widget.season.serverId;
+
+  @override
+  Set<String>? get watchedGlobalKeys {
+    final serverId = widget.season.serverId;
+    if (serverId == null) return null;
+
+    return _episodes.map((e) => _toGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
+  }
 
   @override
   void onWatchStateChanged(WatchStateEvent event) {
@@ -71,6 +84,19 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   Set<String>? get deletionRatingKeys {
     final keys = _episodes.map((e) => e.ratingKey).toSet();
     keys.add(widget.season.ratingKey);
+    return keys;
+  }
+
+  @override
+  String? get deletionServerId => widget.season.serverId;
+
+  @override
+  Set<String>? get deletionGlobalKeys {
+    final serverId = widget.season.serverId;
+    if (serverId == null) return null;
+
+    final keys = _episodes.map((e) => _toGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
+    keys.add(_toGlobalKey(widget.season.ratingKey, serverId: serverId));
     return keys;
   }
 

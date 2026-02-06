@@ -26,6 +26,17 @@ import '../utils/watch_state_notifier.dart';
 mixin WatchStateAware<T extends StatefulWidget> on State<T> {
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
 
+  /// Override to scope events to a specific server.
+  ///
+  /// Return null to receive events from all servers.
+  String? get watchStateServerId => null;
+
+  /// Override to specify which global keys this screen cares about.
+  ///
+  /// Use format `serverId:ratingKey`.
+  /// Return null to fall back to [watchedRatingKeys] matching.
+  Set<String>? get watchedGlobalKeys => null;
+
   /// Override to specify which ratingKeys this screen cares about.
   ///
   /// Return null to receive ALL events (not recommended for performance).
@@ -50,6 +61,17 @@ mixin WatchStateAware<T extends StatefulWidget> on State<T> {
   void _subscribeToWatchState() {
     _watchStateSubscription = WatchStateNotifier().stream.listen((event) {
       if (!mounted) return;
+
+      final serverId = watchStateServerId;
+      if (serverId != null && event.serverId != serverId) return;
+
+      final globalKeys = watchedGlobalKeys;
+      if (globalKeys != null) {
+        if (event.affectsAnyGlobalKey(globalKeys)) {
+          onWatchStateChanged(event);
+        }
+        return;
+      }
 
       final keys = watchedRatingKeys;
       // If keys is null, receive all events

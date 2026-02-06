@@ -1073,6 +1073,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           showSuccessSnackBar(context, t.mediaMenu.mediaDeletedSuccessfully);
           // Broadcast deletion event for cross-screen propagation
           DeletionNotifier().notifyDeleted(metadata: metadata);
+          // Backward-compatible list refresh for screens that are not DeletionAware yet
+          widget.onListRefresh?.call();
         } else {
           showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
         }

@@ -76,12 +76,30 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   // GlobalKeys for season cards to access their context menu
   final Map<int, GlobalKey<MediaCardState>> _seasonCardKeys = {};
 
+  String _toGlobalKey(String ratingKey, {String? serverId}) =>
+      '${serverId ?? widget.metadata.serverId ?? ''}:$ratingKey';
+
   // WatchStateAware: watch the show/movie and all season ratingKeys
   @override
   Set<String>? get watchedRatingKeys {
     final keys = <String>{widget.metadata.ratingKey};
     for (final season in _seasons) {
       keys.add(season.ratingKey);
+    }
+    return keys;
+  }
+
+  @override
+  String? get watchStateServerId => widget.metadata.serverId;
+
+  @override
+  Set<String>? get watchedGlobalKeys {
+    final serverId = widget.metadata.serverId;
+    if (serverId == null) return null;
+
+    final keys = <String>{_toGlobalKey(widget.metadata.ratingKey, serverId: serverId)};
+    for (final season in _seasons) {
+      keys.add(_toGlobalKey(season.ratingKey, serverId: season.serverId ?? serverId));
     }
     return keys;
   }
@@ -99,6 +117,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     final keys = <String>{widget.metadata.ratingKey};
     for (final season in _seasons) {
       keys.add(season.ratingKey);
+    }
+    return keys;
+  }
+
+  @override
+  String? get deletionServerId => widget.metadata.serverId;
+
+  @override
+  Set<String>? get deletionGlobalKeys {
+    final serverId = widget.metadata.serverId;
+    if (serverId == null) return null;
+
+    final keys = <String>{_toGlobalKey(widget.metadata.ratingKey, serverId: serverId)};
+    for (final season in _seasons) {
+      keys.add(_toGlobalKey(season.ratingKey, serverId: season.serverId ?? serverId));
     }
     return keys;
   }
