@@ -166,17 +166,43 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return keys;
   }
 
+  bool get _isHeroSectionVisible => _onDeck.isNotEmpty && context.read<SettingsProvider>().showHeroSection;
+
+  void _scrollToTop() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+  }
+
+  void _focusTopBoundary() {
+    if (_isHeroSectionVisible) {
+      _heroFocusNode.requestFocus();
+    } else {
+      _refreshButtonFocusNode.requestFocus();
+    }
+    _scrollToTop();
+  }
+
+  void _focusContentFromAppBar() {
+    if (_isHeroSectionVisible) {
+      _heroFocusNode.requestFocus();
+      return;
+    }
+
+    final keys = _allHubKeys;
+    if (keys.isNotEmpty) {
+      keys.first.currentState?.requestFocusFromMemory();
+    }
+  }
+
   /// Handle vertical navigation between hubs
   /// Returns true if the navigation was handled
   bool _handleVerticalNavigation(int hubIndex, bool isUp) {
     final keys = _allHubKeys;
     if (keys.isEmpty) return false;
 
-    // UP from first hub: Navigate to hero section
+    // UP from first hub: navigate to hero when visible, otherwise app bar
     if (isUp && hubIndex == 0) {
-      _heroFocusNode.requestFocus();
-      // Scroll to top to show hero fully
-      _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+      _focusTopBoundary();
       return true;
     }
 
@@ -307,9 +333,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     final key = event.logicalKey;
 
-    // DOWN: Return to hero
+    // DOWN: Return to hero/content
     if (key.isDownKey) {
-      _heroFocusNode.requestFocus();
+      _focusContentFromAppBar();
       return KeyEventResult.handled;
     }
 
@@ -347,9 +373,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     final key = event.logicalKey;
 
-    // DOWN: Return to hero
+    // DOWN: Return to hero/content
     if (key.isDownKey) {
-      _heroFocusNode.requestFocus();
+      _focusContentFromAppBar();
       return KeyEventResult.handled;
     }
 
@@ -387,9 +413,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     final key = event.logicalKey;
 
-    // DOWN: Return to hero
+    // DOWN: Return to hero/content
     if (key.isDownKey) {
-      _heroFocusNode.requestFocus();
+      _focusContentFromAppBar();
       return KeyEventResult.handled;
     }
 
@@ -1120,14 +1146,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onRemoveFromContinueWatching: _refreshContinueWatching,
                         isInContinueWatching: true,
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
-                        onNavigateUp: () {
-                          _heroFocusNode.requestFocus();
-                          _scrollController.animateTo(
-                            0,
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeOut,
-                          );
-                        },
+                        onNavigateUp: _focusTopBoundary,
                         onNavigateToSidebar: _navigateToSidebar,
                       ),
                     ),
@@ -1143,16 +1162,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onRefresh: updateItem,
                         // Hub index is i + 1 if continue watching exists, otherwise i
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                        onNavigateUp: (i == 0 && _onDeck.isEmpty)
-                            ? () {
-                                _heroFocusNode.requestFocus();
-                                _scrollController.animateTo(
-                                  0,
-                                  duration: const Duration(milliseconds: 200),
-                                  curve: Curves.easeOut,
-                                );
-                              }
-                            : null,
+                        onNavigateUp: (i == 0 && _onDeck.isEmpty) ? _focusTopBoundary : null,
                         onNavigateToSidebar: _navigateToSidebar,
                       ),
                     ),
