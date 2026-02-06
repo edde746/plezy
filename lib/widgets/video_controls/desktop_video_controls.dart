@@ -34,6 +34,8 @@ class DesktopVideoControls extends StatefulWidget {
   final int seekTimeSmall;
   final VoidCallback onSeekToPreviousChapter;
   final VoidCallback onSeekToNextChapter;
+  final VoidCallback? onSeekBackward;
+  final VoidCallback? onSeekForward;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<Duration> onSeekEnd;
   final IconData Function(int) getReplayIcon;
@@ -89,6 +91,8 @@ class DesktopVideoControls extends StatefulWidget {
     required this.seekTimeSmall,
     required this.onSeekToPreviousChapter,
     required this.onSeekToNextChapter,
+    this.onSeekBackward,
+    this.onSeekForward,
     required this.onSeek,
     required this.onSeekEnd,
     required this.getReplayIcon,
@@ -129,7 +133,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   // Focus nodes for playback control buttons
   late final FocusNode _prevItemFocusNode;
   late final FocusNode _prevChapterFocusNode;
+  late final FocusNode _skipBackFocusNode;
   late final FocusNode _playPauseFocusNode;
+  late final FocusNode _skipForwardFocusNode;
   late final FocusNode _nextChapterFocusNode;
   late final FocusNode _nextItemFocusNode;
   late final FocusNode _timelineFocusNode;
@@ -152,7 +158,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     super.initState();
     _prevItemFocusNode = FocusNode(debugLabel: 'PrevItem');
     _prevChapterFocusNode = FocusNode(debugLabel: 'PrevChapter');
+    _skipBackFocusNode = FocusNode(debugLabel: 'SkipBack');
     _playPauseFocusNode = FocusNode(debugLabel: 'PlayPause');
+    _skipForwardFocusNode = FocusNode(debugLabel: 'SkipForward');
     _nextChapterFocusNode = FocusNode(debugLabel: 'NextChapter');
     _nextItemFocusNode = FocusNode(debugLabel: 'NextItem');
     _timelineFocusNode = FocusNode(debugLabel: 'Timeline');
@@ -164,7 +172,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     _buttonFocusNodes = [
       _prevItemFocusNode,
       _prevChapterFocusNode,
+      _skipBackFocusNode,
       _playPauseFocusNode,
+      _skipForwardFocusNode,
       _nextChapterFocusNode,
       _nextItemFocusNode,
     ];
@@ -174,7 +184,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   void dispose() {
     _prevItemFocusNode.dispose();
     _prevChapterFocusNode.dispose();
+    _skipBackFocusNode.dispose();
     _playPauseFocusNode.dispose();
+    _skipForwardFocusNode.dispose();
     _nextChapterFocusNode.dispose();
     _nextItemFocusNode.dispose();
     _timelineFocusNode.dispose();
@@ -440,19 +452,27 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   semanticLabel: t.videoControls.previousButton,
                 ),
               ),
-              // Previous chapter (or skip backward if no chapters)
+              // Previous chapter
               Opacity(
                 opacity: widget.canControl ? 1.0 : 0.5,
                 child: _buildFocusableButton(
                   focusNode: _prevChapterFocusNode,
                   index: 1,
-                  icon: widget.chapters.isEmpty
-                      ? widget.getReplayIcon(widget.seekTimeSmall)
-                      : Symbols.fast_rewind_rounded,
-                  onPressed: widget.canControl ? widget.onSeekToPreviousChapter : null,
-                  semanticLabel: widget.chapters.isEmpty
-                      ? t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall)
-                      : t.videoControls.previousChapterButton,
+                  icon: Symbols.fast_rewind_rounded,
+                  color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
+                  onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
+                  semanticLabel: t.videoControls.previousChapterButton,
+                ),
+              ),
+              // Skip backward
+              Opacity(
+                opacity: widget.canControl ? 1.0 : 0.5,
+                child: _buildFocusableButton(
+                  focusNode: _skipBackFocusNode,
+                  index: 2,
+                  icon: widget.getReplayIcon(widget.seekTimeSmall),
+                  onPressed: widget.canControl ? widget.onSeekBackward : null,
+                  semanticLabel: t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall),
                 ),
               ),
               // Play/Pause
@@ -463,7 +483,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   builder: (context, isPlaying) {
                     return _buildFocusableButton(
                       focusNode: _playPauseFocusNode,
-                      index: 2,
+                      index: 3,
                       icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
                       iconSize: 32,
                       onPressed: widget.canControl
@@ -480,19 +500,27 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   },
                 ),
               ),
-              // Next chapter (or skip forward if no chapters)
+              // Skip forward
+              Opacity(
+                opacity: widget.canControl ? 1.0 : 0.5,
+                child: _buildFocusableButton(
+                  focusNode: _skipForwardFocusNode,
+                  index: 4,
+                  icon: widget.getForwardIcon(widget.seekTimeSmall),
+                  onPressed: widget.canControl ? widget.onSeekForward : null,
+                  semanticLabel: t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall),
+                ),
+              ),
+              // Next chapter
               Opacity(
                 opacity: widget.canControl ? 1.0 : 0.5,
                 child: _buildFocusableButton(
                   focusNode: _nextChapterFocusNode,
-                  index: 3,
-                  icon: widget.chapters.isEmpty
-                      ? widget.getForwardIcon(widget.seekTimeSmall)
-                      : Symbols.fast_forward_rounded,
-                  onPressed: widget.canControl ? widget.onSeekToNextChapter : null,
-                  semanticLabel: widget.chapters.isEmpty
-                      ? t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall)
-                      : t.videoControls.nextChapterButton,
+                  index: 5,
+                  icon: Symbols.fast_forward_rounded,
+                  color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
+                  onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
+                  semanticLabel: t.videoControls.nextChapterButton,
                 ),
               ),
               // Next item
@@ -500,7 +528,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 opacity: widget.canControl ? 1.0 : 0.5,
                 child: _buildFocusableButton(
                   focusNode: _nextItemFocusNode,
-                  index: 4,
+                  index: 6,
                   icon: Symbols.skip_next_rounded,
                   color: widget.onNext != null && widget.canControl ? Colors.white : Colors.white54,
                   onPressed: widget.canControl ? widget.onNext : null,

@@ -826,6 +826,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   void _seekToNextChapter() => _seekToChapter(forward: true);
 
+  void _seekByTime({required bool forward}) {
+    final delta = Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall);
+    final newPosition = seekWithClamping(widget.player, delta);
+    widget.onSeekCompleted?.call(newPosition);
+  }
+
   void _seekToChapter({required bool forward}) {
     if (_chapters.isEmpty) {
       // No chapters - seek by configured amount
@@ -1687,6 +1693,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             seekTimeSmall: _seekTimeSmall,
                                             onSeekToPreviousChapter: _seekToPreviousChapter,
                                             onSeekToNextChapter: _seekToNextChapter,
+                                            onSeekBackward: () => _seekByTime(forward: false),
+                                            onSeekForward: () => _seekByTime(forward: true),
                                             onSeek: _throttledSeek,
                                             onSeekEnd: _finalizeSeek,
                                             getReplayIcon: getReplayIcon,
