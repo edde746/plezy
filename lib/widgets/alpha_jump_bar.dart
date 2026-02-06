@@ -75,19 +75,15 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
     if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
       if (_highlightedIndex > 0) {
         setState(() => _highlightedIndex--);
+        _jumpToLetter(AlphaJumpHelper.allLetters[_highlightedIndex]);
       }
       return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
       if (_highlightedIndex < AlphaJumpHelper.allLetters.length - 1) {
         setState(() => _highlightedIndex++);
+        _jumpToLetter(AlphaJumpHelper.allLetters[_highlightedIndex]);
       }
-      return KeyEventResult.handled;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.select ||
-        event.logicalKey == LogicalKeyboardKey.enter ||
-        event.logicalKey == LogicalKeyboardKey.gameButtonA) {
-      _jumpToLetter(AlphaJumpHelper.allLetters[_highlightedIndex]);
       return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {

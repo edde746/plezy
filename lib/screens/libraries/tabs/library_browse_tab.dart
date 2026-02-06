@@ -612,6 +612,23 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     }
   }
 
+  /// Navigate from the alpha jump bar to the nearest visible grid item.
+  /// After a jump-scroll the previously focused item is off-screen (and its
+  /// FocusNode detached), so we target the last-column item in the first
+  /// visible row — the grid cell closest to the alpha bar.
+  void _navigateToGridNearScroll() {
+    if (items.isEmpty || _currentColumnCount < 1) return;
+
+    final row = _currentFirstVisibleIndex ~/ _currentColumnCount;
+    final targetIndex = ((row + 1) * _currentColumnCount - 1).clamp(0, items.length - 1);
+
+    if (targetIndex == 0) {
+      firstItemFocusNode.requestFocus();
+    } else {
+      getGridItemFocusNode(targetIndex, prefix: 'browse_grid_item').requestFocus();
+    }
+  }
+
   /// Navigate focus from grid up to the grouping chip
   void _navigateToChips() {
     _groupingChipFocusNode.requestFocus();
@@ -848,8 +865,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
                     onJump: _jumpToIndex,
                     currentFirstVisibleIndex: _currentFirstVisibleIndex,
                     focusNode: _alphaJumpBarFocusNode,
-                    onNavigateLeft: _navigateToGrid,
-                    onBack: widget.onBack,
+                    onNavigateLeft: _navigateToGridNearScroll,
+                    onBack: _navigateToGridNearScroll,
                   ),
           ),
       ],
