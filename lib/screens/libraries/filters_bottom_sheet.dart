@@ -14,6 +14,7 @@ class FiltersBottomSheet extends StatefulWidget {
   final Map<String, String> selectedFilters;
   final Function(Map<String, String>) onFiltersChanged;
   final String serverId;
+  final String libraryKey;
 
   const FiltersBottomSheet({
     super.key,
@@ -21,6 +22,7 @@ class FiltersBottomSheet extends StatefulWidget {
     required this.selectedFilters,
     required this.onFiltersChanged,
     required this.serverId,
+    required this.libraryKey,
   });
 
   @override
@@ -33,8 +35,11 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   bool _isLoadingValues = false;
   final Map<String, String> _tempSelectedFilters = {};
   static final Map<String, String> _filterDisplayNames = {}; // Cache for display names
+  static const int _maxCachedDisplayNames = 1000;
   late List<PlexFilter> _sortedFilters;
   late final FocusNode _initialFocusNode;
+
+  String _cacheKey(String filter, String value) => '${widget.serverId}:${widget.libraryKey}:$filter:$value';
 
   @override
   void initState() {
@@ -165,7 +170,10 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                             setState(() {
                               _tempSelectedFilters[_currentFilter!.filter] = filterValue;
                               // Cache the display name for this filter value
-                              _filterDisplayNames['${_currentFilter!.filter}:$filterValue'] = value.title;
+                              if (_filterDisplayNames.length > _maxCachedDisplayNames) {
+                                _filterDisplayNames.clear();
+                              }
+                              _filterDisplayNames[_cacheKey(_currentFilter!.filter, filterValue)] = value.title;
                             });
                             _applyFilters();
                           },
@@ -233,7 +241,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                     String? displayValue;
                     if (selectedValue != null) {
                       // Try to get the cached display name, fall back to the value itself
-                      displayValue = _filterDisplayNames['${filter.filter}:$selectedValue'] ?? selectedValue;
+                      displayValue = _filterDisplayNames[_cacheKey(filter.filter, selectedValue)] ?? selectedValue;
                     }
 
                     return FocusableListTile(

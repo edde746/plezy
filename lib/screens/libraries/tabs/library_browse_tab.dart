@@ -473,6 +473,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         filters: _filters,
         selectedFilters: _selectedFilters,
         serverId: widget.library.serverId!,
+        libraryKey: widget.library.globalKey,
         onFiltersChanged: (filters) async {
           setState(() {
             _selectedFilters.clear();
