@@ -1717,14 +1717,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   @override
   Widget build(BuildContext context) {
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
     // Screen-level Focus wraps ALL phases (loading + initialized).
     // - autofocus: grabs focus when no deeper child claims it.
     // - onKeyEvent: catch-all that consumes any event children didn't handle,
     //   preventing leaks to previous routes.
     return Focus(
       focusNode: _screenFocusNode,
-      autofocus: true,
-      onKeyEvent: (node, event) => KeyEventResult.handled,
+      autofocus: isCurrentRoute,
+      canRequestFocus: isCurrentRoute,
+      onKeyEvent: (node, event) => isCurrentRoute ? KeyEventResult.handled : KeyEventResult.ignored,
       child: _isPlayerInitialized && player != null ? _buildVideoPlayer(context) : _buildLoadingSpinner(),
     );
   }
