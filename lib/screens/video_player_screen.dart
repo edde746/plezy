@@ -1139,6 +1139,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             }
             if (!mounted) return;
             _isExiting.value = true;
+            BackKeyUpSuppressor.suppressBackUntilKeyUp();
             Navigator.of(context).pop(true);
           }
         }
@@ -1159,6 +1160,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Default behavior for hosts or non-session users
       if (!mounted) return;
       _isExiting.value = true;
+      // Suppress stray BACK KeyUp on the previous route: on Android TV the
+      // system back gesture pops the route around KeyDown, so the KeyUp arrives
+      // at the previous route and would be misinterpreted as a new BACK press.
+      // markClosedViaBackKey() (set by handleBackKeyAction for key-triggered
+      // pops) makes this a no-op, so it only activates for system-back pops.
+      BackKeyUpSuppressor.suppressBackUntilKeyUp();
       Navigator.of(context).pop(true);
     } finally {
       _isHandlingBack = false;
@@ -1731,10 +1738,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (!isCurrentRoute) return KeyEventResult.ignored;
         // Safety net: if this screen-level node itself has primary focus
         // (no descendant focused, e.g. after controls auto-hide), self-heal.
-        if (node.hasPrimaryFocus) {
-          // Handle BACK immediately so the user is never stuck.
-          final backResult = handleBackKeyAction(event, _handleBackButton);
-          if (backResult != KeyEventResult.ignored) return backResult;
+        // BACK is excluded: on Android TV the BACK button fires both a key event
+        // and a system back gesture. Handling it here would double-pop because
+        // PopScope.onPopInvokedWithResult also processes the system back gesture.
+        // PopScope handles BACK navigation exclusively.
+        if (node.hasPrimaryFocus && !event.logicalKey.isBackKey) {
           // Redirect focus to the first traversable descendant (video controls)
           // and show controls immediately so the first key press isn't swallowed.
           if (event.isActionable) {
@@ -1758,10 +1766,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return PopScope(
       canPop: false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
       onPopInvokedWithResult: (didPop, result) {
-        if (BackKeyCoordinator.consumeIfHandled()) return;
-        // Allow programmatic back navigation from UI controls
+        // Only process system-initiated back gestures (didPop: false).
+        // Programmatic Navigator.pop() triggers didPop: true — ignore it here
+        // to avoid consuming the BackKeyCoordinator flag before the system back
+        // gesture arrives (which would cause a double-pop on Android TV).
         if (!didPop) {
-          // Mark handled to prevent the same BACK press from reaching the next route.
+          if (BackKeyCoordinator.consumeIfHandled()) return;
           BackKeyCoordinator.markHandled();
           _handleBackButton();
         }
