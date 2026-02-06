@@ -38,7 +38,9 @@ import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
 import '../mixins/watch_state_aware.dart';
+import '../mixins/deletion_aware.dart';
 import '../utils/watch_state_notifier.dart';
+import '../utils/deletion_notifier.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -51,7 +53,7 @@ class MediaDetailScreen extends StatefulWidget {
   State<MediaDetailScreen> createState() => _MediaDetailScreenState();
 }
 
-class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAware {
+class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAware, DeletionAware {
   List<PlexMetadata> _seasons = [];
   bool _isLoadingSeasons = false;
   PlexMetadata? _fullMetadata;
@@ -89,6 +91,66 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     // Lightweight refresh - no loader, preserves scroll position
     if (!widget.isOffline) {
       _refreshWatchState();
+    }
+  }
+
+  @override
+  Set<String>? get deletionRatingKeys {
+    final keys = <String>{widget.metadata.ratingKey};
+    for (final season in _seasons) {
+      keys.add(season.ratingKey);
+    }
+    return keys;
+  }
+
+  @override
+  void onDeletionEvent(DeletionEvent event) {
+    if (widget.isOffline) return;
+
+    // If we have a season that matches the rating key exactly, then remove it from our list
+    final seasonIndex = _seasons.indexWhere((s) => s.ratingKey == event.ratingKey);
+    if (seasonIndex != -1) {
+      setState(() {
+        _seasons.removeAt(seasonIndex);
+      });
+
+      // If the show has no more seasons, navigate back up to the library
+      if (_seasons.isEmpty && mounted) {
+        Navigator.of(context).pop();
+        return;
+      }
+      _refreshWatchState();
+      return;
+    }
+
+    // If a child item was delete, then update our list to reflect that.
+    // If all children were deleted, remove our item.
+    // Otherwise, just update the counts.
+    for (final parentKey in event.parentChain) {
+      final idx = _seasons.indexWhere((s) => s.ratingKey == parentKey);
+      if (idx != -1) {
+        final season = _seasons[idx];
+        final newLeafCount = (season.leafCount ?? 1) - 1;
+        if (newLeafCount <= 0) {
+          // Season is now empty, remove it
+          setState(() {
+            _seasons.removeAt(idx);
+          });
+
+          // Otherwise we have no more seasons, so navigate up
+          if (_seasons.isEmpty && mounted) {
+            Navigator.of(context).pop();
+            return;
+          }
+        } else {
+          setState(() {
+            // Otherwise just update the counts
+            _seasons[idx] = season.copyWith(leafCount: newLeafCount);
+          });
+        }
+        _refreshWatchState();
+        return;
+      }
     }
   }
 
