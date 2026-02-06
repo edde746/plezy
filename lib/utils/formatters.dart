@@ -182,8 +182,9 @@ DurationLocale _getDurationLocale() {
 
 /// Formats the clock time at which media will finish playing, given the remaining duration.
 /// Returns a localized time string like "6:12 PM" or "18:12" depending on locale.
-String formatFinishTime(Duration remaining) {
-  final finishTime = DateTime.now().add(remaining);
+String formatFinishTime(Duration remaining, {double rate = 1.0}) {
+  final adjustedRemaining = remaining * (1.0 / rate);
+  final finishTime = DateTime.now().add(adjustedRemaining);
   final formatter = DateFormat.jm(LocaleSettings.currentLocale.languageCode);
   return formatter.format(finishTime);
 }

@@ -544,16 +544,23 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     stream: widget.player.streams.duration,
                     initialData: widget.player.state.duration,
                     builder: (context, durSnap) {
-                      final position = posSnap.data ?? Duration.zero;
-                      final duration = durSnap.data ?? Duration.zero;
-                      final remaining = duration - position;
-                      if (remaining.inSeconds <= 0) return const SizedBox.shrink();
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Text(
-                          t.videoControls.endsAt(time: formatFinishTime(remaining)),
-                          style: const TextStyle(color: Colors.white70, fontSize: 13),
-                        ),
+                      return StreamBuilder<double>(
+                        stream: widget.player.streams.rate,
+                        initialData: widget.player.state.rate,
+                        builder: (context, rateSnap) {
+                          final position = posSnap.data ?? Duration.zero;
+                          final duration = durSnap.data ?? Duration.zero;
+                          final remaining = duration - position;
+                          final rate = rateSnap.data ?? 1.0;
+                          if (remaining.inSeconds <= 0) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              t.videoControls.endsAt(time: formatFinishTime(remaining, rate: rate)),
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                          );
+                        },
                       );
                     },
                   );
