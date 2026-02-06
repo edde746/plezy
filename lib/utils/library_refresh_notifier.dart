@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'base_notifier.dart';
 
 /// Types of library refresh events
 enum LibraryRefreshType { collections, playlists }
@@ -7,26 +7,12 @@ enum LibraryRefreshType { collections, playlists }
 ///
 /// Singleton pattern with reinitializable state. The controller is lazily
 /// created and automatically recreated if disposed and later accessed.
-class LibraryRefreshNotifier {
+class LibraryRefreshNotifier extends BaseNotifier<LibraryRefreshType> {
   static final LibraryRefreshNotifier _instance = LibraryRefreshNotifier._internal();
 
   factory LibraryRefreshNotifier() => _instance;
 
   LibraryRefreshNotifier._internal();
-
-  /// Unified stream controller (lazily created, reinitializable)
-  StreamController<LibraryRefreshType>? _controller;
-
-  /// Ensure controller exists (creates if null or closed)
-  StreamController<LibraryRefreshType> get _ensureController {
-    if (_controller == null || _controller!.isClosed) {
-      _controller = StreamController<LibraryRefreshType>.broadcast();
-    }
-    return _controller!;
-  }
-
-  /// Unified stream of all refresh events
-  Stream<LibraryRefreshType> get stream => _ensureController.stream;
 
   /// Stream for collections tab (backward compatible)
   Stream<void> get collectionsStream => stream.where((t) => t == LibraryRefreshType.collections).map((_) {});
@@ -36,17 +22,11 @@ class LibraryRefreshNotifier {
 
   /// Notify that collections have changed
   void notifyCollectionsChanged() {
-    _ensureController.add(LibraryRefreshType.collections);
+    notify(LibraryRefreshType.collections);
   }
 
   /// Notify that playlists have changed
   void notifyPlaylistsChanged() {
-    _ensureController.add(LibraryRefreshType.playlists);
-  }
-
-  /// Dispose controller (can be reinitialized later by accessing stream)
-  void dispose() {
-    _controller?.close();
-    _controller = null;
+    notify(LibraryRefreshType.playlists);
   }
 }

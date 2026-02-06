@@ -177,6 +177,19 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
   }
 
+  /// Get the afterPlaylistItemId for reordering at the given index.
+  /// Returns null if validation fails, showing an error if [showError] is true.
+  int? _getAfterPlaylistItemId(int newIndex, {bool showError = true}) {
+    if (newIndex == 0) return 0;
+    final afterItem = items[newIndex - 1];
+    if (afterItem.playlistItemID == null) {
+      appLogger.e('Cannot reorder: after item missing playlistItemID');
+      if (showError && mounted) showErrorSnackBar(context, t.playlists.errorReordering);
+      return null;
+    }
+    return afterItem.playlistItemID!;
+  }
+
   Future<void> _onReorder(int oldIndex, int newIndex) async {
     // Adjust newIndex if moving down in the list
     if (newIndex > oldIndex) {
@@ -198,22 +211,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
 
     // Determine the "after" item ID
-    // If moving to position 0, afterPlaylistItemId should be 0 (move to top)
-    // Otherwise, use the playlistItemID of the item before the new position
-    final int afterPlaylistItemId;
-    if (newIndex == 0) {
-      afterPlaylistItemId = 0; // Move to top
-    } else {
-      final afterItem = items[newIndex - 1];
-      if (afterItem.playlistItemID == null) {
-        appLogger.e('Cannot reorder: after item missing playlistItemID');
-        if (mounted) {
-          showErrorSnackBar(context, t.playlists.errorReordering);
-        }
-        return;
-      }
-      afterPlaylistItemId = afterItem.playlistItemID!;
-    }
+    final afterPlaylistItemId = _getAfterPlaylistItemId(newIndex);
+    if (afterPlaylistItemId == null) return;
 
     appLogger.d('Reordering item from $oldIndex to $newIndex (after ID: $afterPlaylistItemId)');
 
@@ -255,36 +254,19 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       appLogger.e('Cannot persist move: item missing playlistItemID');
       if (mounted) {
         showErrorSnackBar(context, t.playlists.errorReordering);
-        // Revert the UI change
-        setState(() {
-          final item = items.removeAt(newIndex);
-          items.insert(originalIndex, item);
-          _focusedIndex = originalIndex;
-        });
+        _revertMove(newIndex, originalIndex);
       }
       return;
     }
 
     // Determine the "after" item ID based on where the item is now
-    final int afterPlaylistItemId;
-    if (newIndex == 0) {
-      afterPlaylistItemId = 0; // Move to top
-    } else {
-      final afterItem = items[newIndex - 1];
-      if (afterItem.playlistItemID == null) {
-        appLogger.e('Cannot persist move: after item missing playlistItemID');
-        if (mounted) {
-          showErrorSnackBar(context, t.playlists.errorReordering);
-          // Revert the UI change
-          setState(() {
-            final item = items.removeAt(newIndex);
-            items.insert(originalIndex, item);
-            _focusedIndex = originalIndex;
-          });
-        }
-        return;
+    final afterPlaylistItemId = _getAfterPlaylistItemId(newIndex, showError: false);
+    if (afterPlaylistItemId == null) {
+      if (mounted) {
+        showErrorSnackBar(context, t.playlists.errorReordering);
+        _revertMove(newIndex, originalIndex);
       }
-      afterPlaylistItemId = afterItem.playlistItemID!;
+      return;
     }
 
     appLogger.d('Persisting move from $originalIndex to $newIndex (after ID: $afterPlaylistItemId)');
@@ -300,14 +282,19 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       // Revert on failure
       appLogger.e('Failed to persist move, reverting UI');
       if (mounted) {
-        setState(() {
-          final item = items.removeAt(newIndex);
-          items.insert(originalIndex, item);
-          _focusedIndex = originalIndex;
-        });
+        _revertMove(newIndex, originalIndex);
         showErrorSnackBar(context, t.playlists.errorReordering);
       }
     }
+  }
+
+  /// Revert a move in the UI by moving item from [fromIndex] back to [toIndex].
+  void _revertMove(int fromIndex, int toIndex) {
+    setState(() {
+      final item = items.removeAt(fromIndex);
+      items.insert(toIndex, item);
+      _focusedIndex = toIndex;
+    });
   }
 
   Future<void> _removeItem(int index) async {
