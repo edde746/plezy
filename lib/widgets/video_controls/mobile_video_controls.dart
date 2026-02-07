@@ -41,6 +41,9 @@ class MobileVideoControls extends StatelessWidget {
   /// Notifier for whether first video frame has rendered (shows loading state when false).
   final ValueNotifier<bool>? hasFirstFrame;
 
+  /// Optional callback that returns a thumbnail URL for a given timestamp.
+  final String Function(Duration time)? thumbnailUrlBuilder;
+
   const MobileVideoControls({
     super.key,
     required this.player,
@@ -60,6 +63,7 @@ class MobileVideoControls extends StatelessWidget {
     this.onPrevious,
     this.canControl = true,
     this.hasFirstFrame,
+    this.thumbnailUrlBuilder,
   });
 
   @override
@@ -167,6 +171,7 @@ class MobileVideoControls extends StatelessWidget {
           horizontalLayout: false,
           enabled: canControl,
           showFinishTime: true,
+          thumbnailUrlBuilder: thumbnailUrlBuilder,
         ),
       ),
     );

@@ -42,6 +42,7 @@ import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/language_codes.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../focus/focusable_wrapper.dart';
@@ -101,6 +102,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
   bool _isHandlingBack = false;
+  bool _hasThumbnails = false;
 
   // Auto-play next episode
   Timer? _autoPlayTimer;
@@ -132,6 +134,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata(BuildContext context) {
     return context.getClientForServer(widget.metadata.serverId!);
+  }
+
+  String? _buildThumbnailUrl(BuildContext context, Duration time) {
+    final partId = _currentMediaInfo?.partId;
+    if (partId == null || widget.isOffline) return null;
+    final client = _getClientForMetadata(context);
+    return '${client.config.baseUrl}/library/parts/$partId/indexes/sd/${time.inMilliseconds}'
+        .withPlexToken(client.config.token);
   }
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
@@ -861,7 +871,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         setState(() {
           _availableVersions = result.availableVersions.cast();
           _currentMediaInfo = result.mediaInfo;
+          _hasThumbnails = false;
         });
+
+        // Check whether any thumbnails exist by requesting the first one
+        if (_currentMediaInfo?.partId != null && !widget.isOffline) {
+          final url = _buildThumbnailUrl(context, Duration.zero);
+          if (url != null) {
+            HttpClient().getUrl(Uri.parse(url)).then((req) => req.close()).then((res) {
+              if (mounted) setState(() => _hasThumbnails = res.statusCode == 200);
+            }).catchError((_) {});
+          }
+        }
 
         // Initialize video PIP and filter manager with player and available versions
         if (player != null) {
@@ -1867,6 +1888,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         controlsVisible: _controlsVisible,
                         shaderService: _shaderService,
                         onShaderChanged: () => setState(() {}),
+                        thumbnailUrlBuilder: _hasThumbnails ? (Duration time) => _buildThumbnailUrl(context, time)! : null,
                       ),
                     );
                   },

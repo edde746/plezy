@@ -80,6 +80,9 @@ class DesktopVideoControls extends StatefulWidget {
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
 
+  /// Optional callback that returns a thumbnail URL for a given timestamp.
+  final String Function(Duration time)? thumbnailUrlBuilder;
+
   const DesktopVideoControls({
     super.key,
     required this.player,
@@ -123,6 +126,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.hasFirstFrame,
     this.shaderService,
     this.onShaderChanged,
+    this.thumbnailUrlBuilder,
   });
 
   @override
@@ -435,6 +439,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
             onKeyEvent: _handleTimelineKeyEvent,
             onFocusChange: _onFocusChange,
             enabled: canInteract,
+            thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
           ),
           const SizedBox(height: 4),
           // Row 2: Playback controls and options

@@ -72,6 +72,7 @@ Widget plexVideoControlsBuilder(
   ValueNotifier<bool>? controlsVisible,
   ShaderService? shaderService,
   VoidCallback? onShaderChanged,
+  String Function(Duration time)? thumbnailUrlBuilder,
 }) {
   return PlexVideoControls(
     player: player,
@@ -93,6 +94,7 @@ Widget plexVideoControlsBuilder(
     controlsVisible: controlsVisible,
     shaderService: shaderService,
     onShaderChanged: onShaderChanged,
+    thumbnailUrlBuilder: thumbnailUrlBuilder,
   );
 }
 
@@ -133,6 +135,9 @@ class PlexVideoControls extends StatefulWidget {
   /// Called when shader preset changes
   final VoidCallback? onShaderChanged;
 
+  /// Optional callback that returns a thumbnail URL for a given timestamp.
+  final String Function(Duration time)? thumbnailUrlBuilder;
+
   const PlexVideoControls({
     super.key,
     required this.player,
@@ -154,6 +159,7 @@ class PlexVideoControls extends StatefulWidget {
     this.controlsVisible,
     this.shaderService,
     this.onShaderChanged,
+    this.thumbnailUrlBuilder,
   });
 
   @override
@@ -1688,6 +1694,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             onPrevious: widget.onPrevious,
                                             canControl: widget.canControl,
                                             hasFirstFrame: widget.hasFirstFrame,
+                                            thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
                                           ),
                                         )
                                       : Listener(
@@ -1744,6 +1751,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             hasFirstFrame: widget.hasFirstFrame,
                                             shaderService: widget.shaderService,
                                             onShaderChanged: widget.onShaderChanged,
+                                            thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
                                           ),
                                         ),
                                 ),
