@@ -632,7 +632,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Restart the hide timer on user interaction
-  void _restartHideTimerIfPlaying() {
+  void _restartHideTimer() {
     _startHideTimer();
   }
 
@@ -651,7 +651,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
 
     // Keep the overlay visible while the user is moving the pointer
-    _restartHideTimerIfPlaying();
+    _restartHideTimer();
   }
 
   void _toggleControls() {
@@ -1364,7 +1364,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   /// Hide controls when navigating up from timeline (keyboard mode)
   /// If skip marker button or Play Next dialog is visible, focus it instead of hiding controls
-  void _hideControlsFromKeyboard() {
+  /// Hide controls immediately (called from keyboard/mouse events)
+  void _hideControlsImmediately() {
     // If skip marker button is visible, focus it instead of hiding controls
     if (_currentMarker != null) {
       _skipMarkerFocusNode.requestFocus();
@@ -1430,7 +1431,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
             // Reset hide timer on any keyboard/controller input when controls are visible
             if (_showControls) {
-              _restartHideTimerIfPlaying();
+              _restartHideTimer();
             }
 
             final key = event.logicalKey;
@@ -1519,7 +1520,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             child: MouseRegion(
               cursor: _showControls ? SystemMouseCursors.basic : SystemMouseCursors.none,
               onHover: (_) => _showControlsFromPointerActivity(),
-              onExit: (_) => _hideControlsFromKeyboard(),
+              onExit: (_) => _hideControlsImmediately(),
               child: Stack(
                 children: [
                   // Keep-alive: 1px widget that continuously repaints to prevent
@@ -1665,7 +1666,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                   child: isMobile
                                       ? Listener(
                                           behavior: HitTestBehavior.translucent,
-                                          onPointerDown: (_) => _restartHideTimerIfPlaying(),
+                                          onPointerDown: (_) => _restartHideTimer(),
                                           child: MobileVideoControls(
                                             player: widget.player,
                                             metadata: widget.metadata,
@@ -1688,7 +1689,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                         )
                                       : Listener(
                                           behavior: HitTestBehavior.translucent,
-                                          onPointerDown: (_) => _restartHideTimerIfPlaying(),
+                                          onPointerDown: (_) => _restartHideTimer(),
                                           child: DesktopVideoControls(
                                             key: _desktopControlsKey,
                                             player: widget.player,
@@ -1706,8 +1707,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             onSeekEnd: _finalizeSeek,
                                             getReplayIcon: getReplayIcon,
                                             getForwardIcon: getForwardIcon,
-                                            onFocusActivity: _restartHideTimerIfPlaying,
-                                            onHideControls: _hideControlsFromKeyboard,
+                                            onFocusActivity: _restartHideTimer,
+                                            onHideControls: _hideControlsImmediately,
                                             // Track chapter controls data
                                             availableVersions: widget.availableVersions,
                                             selectedMediaIndex: widget.selectedMediaIndex,
