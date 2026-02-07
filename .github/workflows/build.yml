@@ -280,11 +280,9 @@ jobs:
           name: macos-dmg
           path: plezy-macos.dmg
 
-  build-windows:
+  build-windows-x64:
     runs-on: windows-latest
     permissions:
-      id-token: write
-      attestations: write
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -307,26 +305,98 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Windows
+      - name: Build Windows x64
         run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true
 
-      - name: Build Windows Installer
-        run: .\windows\build-installer.ps1
+      - name: Upload x64 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-build
+          path: build/windows/x64/runner/Release/
+
+  build-windows-arm64:
+    runs-on: windows-11-arm
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install 7-Zip
+        run: choco install 7zip -y
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "master"
+          cache: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\Pub\Cache
+          key: ${{ runner.os }}-arm64-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-pub-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Windows arm64
+        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true
+
+      - name: Upload arm64 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64-build
+          path: build/windows/arm64/runner/Release/
+
+  package-windows:
+    needs: [build-windows-x64, build-windows-arm64]
+    runs-on: windows-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download x64 build
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-build
+          path: build-x64
+
+      - name: Download arm64 build
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-arm64-build
+          path: build-arm64
+
+      - name: Build installer and portables
+        run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64"
 
       - name: Attest Windows artifacts
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            plezy-windows-portable.7z
+            plezy-windows-x64-portable.7z
+            plezy-windows-arm64-portable.7z
             plezy-windows-installer.exe
 
-      - name: Upload Portable Archive
+      - name: Upload x64 portable
         uses: actions/upload-artifact@v4
         with:
-          name: windows-portable
-          path: plezy-windows-portable.7z
+          name: windows-x64-portable
+          path: plezy-windows-x64-portable.7z
 
-      - name: Upload Installer
+      - name: Upload arm64 portable
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64-portable
+          path: plezy-windows-arm64-portable.7z
+
+      - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
@@ -409,7 +479,7 @@ jobs:
             plezy-linux.pkg.tar.zst
 
   create-release:
-    needs: [build-android, build-ios, build-macos, build-windows, build-linux]
+    needs: [build-android, build-ios, build-macos, package-windows, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -431,7 +501,8 @@ jobs:
             artifacts/android-apk/plezy-android-x86_64.tar.gz
             artifacts/ios-ipa/plezy-ios.ipa
             artifacts/macos-dmg/plezy-macos.dmg
-            artifacts/windows-portable/plezy-windows-portable.7z
+            artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
+            artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
             artifacts/windows-installer/plezy-windows-installer.exe
             artifacts/linux-app/plezy-linux.tar.gz
             artifacts/linux-packages/*

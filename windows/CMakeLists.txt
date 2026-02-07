@@ -2,17 +2,53 @@
 cmake_minimum_required(VERSION 3.14)
 project(plezy LANGUAGES CXX)
 
-# Download and extract mpv-dev
-include(FetchContent)
-FetchContent_Declare(
-  mpv_dev
-  URL https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260120/mpv-dev-x86_64-v3-20260120-git-b7e8fe9.7z
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-FetchContent_MakeAvailable(mpv_dev)
+# Download and extract mpv-dev (architecture-dependent)
+set(MPV_VERSION "20260120")
+set(MPV_GIT_HASH "b7e8fe9")
 
-set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
-set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
+  # ARM64: use file(DOWNLOAD) + 7z extraction (CMake's built-in libarchive
+  # can't handle LZMA2 on ARM64)
+  set(MPV_FILENAME "mpv-dev-aarch64-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z")
+  set(MPV_URL "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/${MPV_VERSION}/${MPV_FILENAME}")
+  set(MPV_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/mpv-dev-arm64")
+  set(MPV_ARCHIVE "${MPV_DOWNLOAD_DIR}/${MPV_FILENAME}")
+
+  if(NOT EXISTS "${MPV_DOWNLOAD_DIR}/libmpv-2.dll")
+    message(STATUS "Downloading MPV for ARM64...")
+    file(DOWNLOAD "${MPV_URL}" "${MPV_ARCHIVE}" SHOW_PROGRESS STATUS MPV_DL_STATUS)
+    list(GET MPV_DL_STATUS 0 MPV_DL_RESULT)
+    if(NOT MPV_DL_RESULT EQUAL 0)
+      message(FATAL_ERROR "Failed to download MPV: ${MPV_DL_STATUS}")
+    endif()
+
+    find_program(7Z_EXECUTABLE 7z REQUIRED HINTS "C:/Program Files/7-Zip")
+    message(STATUS "Extracting MPV with ${7Z_EXECUTABLE}...")
+    execute_process(
+      COMMAND "${7Z_EXECUTABLE}" x "${MPV_ARCHIVE}" "-o${MPV_DOWNLOAD_DIR}" -y
+      RESULT_VARIABLE MPV_EXTRACT_RESULT
+    )
+    if(NOT MPV_EXTRACT_RESULT EQUAL 0)
+      message(FATAL_ERROR "Failed to extract MPV archive")
+    endif()
+    file(REMOVE "${MPV_ARCHIVE}")
+  endif()
+
+  set(MPV_INCLUDE_DIR "${MPV_DOWNLOAD_DIR}/include")
+  set(MPV_LIB_DIR "${MPV_DOWNLOAD_DIR}")
+else()
+  # x64 (AMD64): use FetchContent (existing behavior)
+  include(FetchContent)
+  FetchContent_Declare(
+    mpv_dev
+    URL https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/${MPV_VERSION}/mpv-dev-x86_64-v3-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  )
+  FetchContent_MakeAvailable(mpv_dev)
+
+  set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
+  set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
+endif()
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
