@@ -36,6 +36,9 @@ class VideoTimelineBar extends StatelessWidget {
   /// Whether to show the estimated finish time next to the remaining timestamp (mobile).
   final bool showFinishTime;
 
+  /// Optional callback that returns a thumbnail URL for a given timestamp.
+  final String Function(Duration time)? thumbnailUrlBuilder;
+
   const VideoTimelineBar({
     super.key,
     required this.player,
@@ -49,6 +52,7 @@ class VideoTimelineBar extends StatelessWidget {
     this.onFocusChange,
     this.enabled = true,
     this.showFinishTime = false,
+    this.thumbnailUrlBuilder,
   });
 
   @override
@@ -134,6 +138,7 @@ class VideoTimelineBar extends StatelessWidget {
       onKeyEvent: onKeyEvent,
       onFocusChange: onFocusChange,
       enabled: enabled,
+      thumbnailUrlBuilder: thumbnailUrlBuilder,
     );
   }
 }

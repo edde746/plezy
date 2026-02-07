@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../models/plex_media_info.dart';
 import '../../../i18n/strings.g.dart';
@@ -29,6 +30,9 @@ class TimelineSlider extends StatefulWidget {
   /// Whether the slider is enabled for interaction.
   final bool enabled;
 
+  /// Optional callback that returns a thumbnail URL for a given timestamp.
+  final String Function(Duration time)? thumbnailUrlBuilder;
+
   const TimelineSlider({
     super.key,
     required this.position,
@@ -41,6 +45,7 @@ class TimelineSlider extends StatefulWidget {
     this.onKeyEvent,
     this.onFocusChange,
     this.enabled = true,
+    this.thumbnailUrlBuilder,
   });
 
   @override
@@ -53,29 +58,68 @@ class _TimelineSliderState extends State<TimelineSlider> {
 
   static const _sliderPadding = 24.0;
 
+  static const _thumbWidth = 160.0;
+  static const _thumbHeight = 90.0;
+
   Widget _buildTooltip(double sliderWidth, double pixelX, Duration time) {
-    final tooltipWidth = 64.0;
+    // Snap to the nearest 5-second interval since Plex's thumbnails are generated every 5 seconds.
+    // Round here so the URL is consistent for widget-level cache hits rather than a new URL for each timestamp.
+    final roundedMs = (time.inMilliseconds / 5000).round() * 5000;
+    final roundedTime = Duration(milliseconds: roundedMs);
+    final thumbnailUrl = widget.thumbnailUrlBuilder?.call(roundedTime);
+    final hasThumbnail = thumbnailUrl != null;
+
+    final tooltipWidth = hasThumbnail ? _thumbWidth : 64.0;
+    final timestampOffset = 16.0;
+    final tooltipTop = hasThumbnail ? -(_thumbHeight + timestampOffset) : -timestampOffset;
 
     // Center tooltip on cursor, clamped so it stays within the slider bounds
     final left = (pixelX - tooltipWidth / 2).clamp(0.0, sliderWidth - tooltipWidth);
     return Positioned(
       left: left,
-      top: -16,
+      top: tooltipTop,
       child: IgnorePointer(
-        child: Container(
-          width: tooltipWidth,
-          height: 26,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(4)),
-          child: Text(
-            formatDurationTimestamp(time),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              height: 1.0,
-              fontFeatures: [FontFeature.tabularFigures()],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasThumbnail)
+              Container(
+                width: _thumbWidth,
+                height: _thumbHeight,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: CachedNetworkImage(
+                  imageUrl: thumbnailUrl,
+                  fit: BoxFit.cover,
+                  fadeInDuration: Duration.zero,
+                  placeholder: (_, __) => const SizedBox.shrink(), // Show nothing for placeholder
+                  errorWidget: (_, __, ___) => const SizedBox.shrink(), // Show nothing for errors
+                ),
+              ),
+            if (hasThumbnail) const SizedBox(height: 4),
+            Container(
+              width: 64.0,
+              height: 26,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                formatDurationTimestamp(time),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  height: 1.0,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
