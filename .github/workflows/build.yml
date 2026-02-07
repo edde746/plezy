@@ -332,6 +332,68 @@ jobs:
           name: windows-installer
           path: plezy-windows-installer.exe
 
+  build-windows-arm64:
+    runs-on: windows-11-arm
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Flutter ARM64 Windows support requires the master channel.
+      # TODO: Switch to stable once Flutter stable adds ARM64 Windows support.
+      - name: Setup Flutter (Master Channel for ARM64)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "master"
+          cache: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\Pub\Cache
+          key: ${{ runner.os }}-arm64-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-pub-
+
+      - name: Use ARM64 CMakeLists
+        run: Copy-Item windows/CMakeLists.arm64.txt windows/CMakeLists.txt -Force
+
+      # windows-11-arm runner doesn't have 7-Zip pre-installed (unlike windows-latest)
+      # CMake needs it to extract the MPV .7z dependency
+      - name: Install 7-Zip
+        run: choco install 7zip -y
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Windows ARM64
+        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true
+
+      - name: Build Windows ARM64 Installer
+        run: .\windows\build-installer-arm64.ps1
+
+      - name: Attest Windows ARM64 artifacts
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            plezy-windows-arm64-portable.7z
+            plezy-windows-arm64-installer.exe
+
+      - name: Upload ARM64 Portable Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64-portable
+          path: plezy-windows-arm64-portable.7z
+
+      - name: Upload ARM64 Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64-installer
+          path: plezy-windows-arm64-installer.exe
+
   build-linux:
     runs-on: ubuntu-latest
     permissions:
@@ -409,7 +471,7 @@ jobs:
             plezy-linux.pkg.tar.zst
 
   create-release:
-    needs: [build-android, build-ios, build-macos, build-windows, build-linux]
+    needs: [build-android, build-ios, build-macos, build-windows, build-windows-arm64, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -433,6 +495,8 @@ jobs:
             artifacts/macos-dmg/plezy-macos.dmg
             artifacts/windows-portable/plezy-windows-portable.7z
             artifacts/windows-installer/plezy-windows-installer.exe
+            artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
+            artifacts/windows-arm64-installer/plezy-windows-arm64-installer.exe
             artifacts/linux-app/plezy-linux.tar.gz
             artifacts/linux-packages/*
           draft: true

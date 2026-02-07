@@ -1629,35 +1629,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                                       children: [
                                         ClipRRect(
                                           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                                          child: actor.thumb != null
-                                              ? CachedNetworkImage(
-                                                  imageUrl: actor.thumb!,
-                                                  width: 120,
-                                                  height: 120,
-                                                  fit: BoxFit.cover,
-                                                  placeholder: (context, url) => Container(
-                                                    width: 120,
-                                                    height: 120,
-                                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                                    child: const Center(
-                                                      child: AppIcon(Symbols.person_rounded, fill: 1),
-                                                    ),
-                                                  ),
-                                                  errorWidget: (context, url, error) => Container(
-                                                    width: 120,
-                                                    height: 120,
-                                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                                    child: const Center(
-                                                      child: AppIcon(Symbols.person_rounded, fill: 1),
-                                                    ),
-                                                  ),
-                                                )
-                                              : Container(
-                                                  width: 120,
-                                                  height: 120,
-                                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                                  child: const Center(child: AppIcon(Symbols.person_rounded, fill: 1)),
-                                                ),
+                                          child: PlexOptimizedImage(
+                                            client: _getClientForMetadata(context),
+                                            imagePath: actor.thumb,
+                                            width: 120,
+                                            height: 120,
+                                            fit: BoxFit.cover,
+                                            imageType: ImageType.avatar,
+                                            fallbackIcon: Symbols.person_rounded,
+                                          ),
                                         ),
                                         const SizedBox(height: 8),
                                         SizedBox(
