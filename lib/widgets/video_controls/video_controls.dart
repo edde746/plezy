@@ -338,9 +338,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _playingSubscription = widget.player.streams.playing.listen((isPlaying) {
       if (isPlaying && _showControls) {
         _startHideTimer();
-      } else if (!isPlaying) {
-        _hideTimer?.cancel();
       }
+      // Note: We don't cancel the timer when paused anymore to allow controls to fade out
     });
   }
 
@@ -607,38 +606,34 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final hasFrame = widget.hasFirstFrame?.value ?? true;
     if (!hasFrame) return;
 
-    // Only auto-hide if playing
-    if (widget.player.state.playing) {
-      _hideTimer = Timer(const Duration(seconds: 3), () {
-        // Also check hasFirstFrame in callback (in case it changed)
-        final stillLoading = !(widget.hasFirstFrame?.value ?? true);
-        if (mounted && widget.player.state.playing && !stillLoading) {
-          setState(() {
-            _showControls = false;
-          });
-          // Notify parent of visibility change (for popup positioning)
-          widget.controlsVisible?.value = false;
-          // Hide traffic lights on macOS when controls auto-hide
-          if (Platform.isMacOS) {
-            _updateTrafficLightVisibility();
-          }
-          // Restore focus to the main node so keyboard shortcuts keep working
-          // after FocusScope(canRequestFocus: false) ejects child focus.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && !_focusNode.hasFocus) {
-              _focusNode.requestFocus();
-            }
-          });
+    // Auto-hide controls after 3 seconds (even when paused)
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      // Also check hasFirstFrame in callback (in case it changed)
+      final stillLoading = !(widget.hasFirstFrame?.value ?? true);
+      if (mounted && !stillLoading) {
+        setState(() {
+          _showControls = false;
+        });
+        // Notify parent of visibility change (for popup positioning)
+        widget.controlsVisible?.value = false;
+        // Hide traffic lights on macOS when controls auto-hide
+        if (Platform.isMacOS) {
+          _updateTrafficLightVisibility();
         }
-      });
-    }
+        // Restore focus to the main node so keyboard shortcuts keep working
+        // after FocusScope(canRequestFocus: false) ejects child focus.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_focusNode.hasFocus) {
+            _focusNode.requestFocus();
+          }
+        });
+      }
+    });
   }
 
-  /// Restart the hide timer on user interaction (if video is playing)
+  /// Restart the hide timer on user interaction
   void _restartHideTimerIfPlaying() {
-    if (widget.player.state.playing) {
-      _startHideTimer();
-    }
+    _startHideTimer();
   }
 
   /// Show controls in response to pointer activity (mouse/trackpad movement).
@@ -1524,6 +1519,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             child: MouseRegion(
               cursor: _showControls ? SystemMouseCursors.basic : SystemMouseCursors.none,
               onHover: (_) => _showControlsFromPointerActivity(),
+              onExit: (_) => _hideControlsFromKeyboard(),
               child: Stack(
                 children: [
                   // Keep-alive: 1px widget that continuously repaints to prevent
