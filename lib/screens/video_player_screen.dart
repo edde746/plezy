@@ -876,12 +876,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
         // Check whether any thumbnails exist by requesting the first one
         if (_currentMediaInfo?.partId != null && !widget.isOffline) {
-          final url = _buildThumbnailUrl(context, Duration.zero);
-          if (url != null) {
-            HttpClient().getUrl(Uri.parse(url)).then((req) => req.close()).then((res) {
-              if (mounted) setState(() => _hasThumbnails = res.statusCode == 200);
-            }).catchError((_) {});
-          }
+          final partId = _currentMediaInfo!.partId!;
+          final client = _getClientForMetadata(context);
+          client.checkThumbnailsAvailable(partId).then((available) {
+            // Guard against media having changed while the probe was in flight
+            if (mounted && _currentMediaInfo?.partId == partId) {
+              setState(() => _hasThumbnails = available);
+            }
+          });
         }
 
         // Initialize video PIP and filter manager with player and available versions
@@ -1888,7 +1890,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         controlsVisible: _controlsVisible,
                         shaderService: _shaderService,
                         onShaderChanged: () => setState(() {}),
-                        thumbnailUrlBuilder: _hasThumbnails ? (Duration time) => _buildThumbnailUrl(context, time)! : null,
+                        thumbnailUrlBuilder: _hasThumbnails && _currentMediaInfo?.partId != null
+                            ? (Duration time) => _buildThumbnailUrl(context, time)!
+                            : null,
                       ),
                     );
                   },

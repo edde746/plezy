@@ -754,6 +754,20 @@ class PlexClient {
     return '${config.baseUrl}/$path'.withPlexToken(config.token);
   }
 
+  /// Check whether thumbnail previews are available for a given part.
+  /// Returns true if the server responds with 200 to the first thumbnail.
+  Future<bool> checkThumbnailsAvailable(int partId) async {
+    try {
+      final response = await _dio.get(
+        '/library/parts/$partId/indexes/sd/0',
+        options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 5)),
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Get chapters for a media item
   Future<List<PlexChapter>> getChapters(String ratingKey) async {
     final response = await _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1});
