@@ -1,10 +1,15 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"flag"
+	"io"
 	"log"
+	"math/big"
+	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,6 +28,10 @@ const (
 	pongWait           = 60 * time.Second
 	pingInterval       = 30 * time.Second
 	maxMessageSize     = 64 * 1024
+	maxLogSize         = 1 * 1024 * 1024 // 1MB
+	logMaxAge          = 7 * 24 * time.Hour
+	logIDLength        = 5
+	logRateInterval    = 1 * time.Minute
 )
 
 var upgrader = websocket.Upgrader{
@@ -138,15 +147,63 @@ func (r *Room) sendTo(targetID string, msg serverMsg) bool {
 	return true
 }
 
+// --- Log store ---
+
+type logEntry struct {
+	Text      string
+	ExpiresAt time.Time
+}
+
+type logStore struct {
+	entries   map[string]logEntry
+	rateLimit map[string]time.Time // IP -> last upload time
+	mu        sync.RWMutex
+}
+
+func newLogStore() *logStore {
+	return &logStore{
+		entries:   make(map[string]logEntry),
+		rateLimit: make(map[string]time.Time),
+	}
+}
+
+const logIDChars = "abcdefghijklmnopqrstuvwxyz0123456789"
+
+func generateLogID() string {
+	b := make([]byte, logIDLength)
+	for i := range b {
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(logIDChars))))
+		b[i] = logIDChars[n.Int64()]
+	}
+	return string(b)
+}
+
+func (ls *logStore) cleanup() {
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+	now := time.Now()
+	for id, entry := range ls.entries {
+		if now.After(entry.ExpiresAt) {
+			delete(ls.entries, id)
+		}
+	}
+	for ip, lastTime := range ls.rateLimit {
+		if now.Sub(lastTime) > logRateInterval {
+			delete(ls.rateLimit, ip)
+		}
+	}
+}
+
 // --- Server ---
 
 type Server struct {
 	rooms map[string]*Room
+	logs  *logStore
 	mu    sync.RWMutex
 }
 
 func newServer() *Server {
-	s := &Server{rooms: make(map[string]*Room)}
+	s := &Server{rooms: make(map[string]*Room), logs: newLogStore()}
 	go s.cleanupLoop()
 	return s
 }
@@ -169,7 +226,88 @@ func (s *Server) cleanupLoop() {
 			}
 		}
 		s.mu.Unlock()
+		s.logs.cleanup()
 	}
+}
+
+func clientIP(r *http.Request) string {
+	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
+		return strings.SplitN(fwd, ",", 2)[0]
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
+func (s *Server) handlePostLogs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ip := clientIP(r)
+	s.logs.mu.Lock()
+	if last, ok := s.logs.rateLimit[ip]; ok && time.Since(last) < logRateInterval {
+		s.logs.mu.Unlock()
+		http.Error(w, "Rate limited: 1 upload per minute", http.StatusTooManyRequests)
+		return
+	}
+	s.logs.rateLimit[ip] = time.Now()
+	s.logs.mu.Unlock()
+
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxLogSize+1))
+	if err != nil {
+		http.Error(w, "Failed to read body", http.StatusBadRequest)
+		return
+	}
+	if len(body) > maxLogSize {
+		http.Error(w, "Log too large (max 1MB)", http.StatusRequestEntityTooLarge)
+		return
+	}
+	if len(body) == 0 {
+		http.Error(w, "Empty body", http.StatusBadRequest)
+		return
+	}
+
+	id := generateLogID()
+	s.logs.mu.Lock()
+	s.logs.entries[id] = logEntry{
+		Text:      string(body),
+		ExpiresAt: time.Now().Add(logMaxAge),
+	}
+	s.logs.mu.Unlock()
+
+	log.Printf("logs: stored %s (%d bytes) from %s", id, len(body), ip)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"id": id})
+}
+
+func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := strings.TrimPrefix(r.URL.Path, "/logs/")
+	if id == "" || len(id) != logIDLength {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
+	s.logs.mu.RLock()
+	entry, ok := s.logs.entries[id]
+	s.logs.mu.RUnlock()
+
+	if !ok || time.Now().After(entry.ExpiresAt) {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte(entry.Text))
 }
 
 func (s *Server) sendError(conn *websocket.Conn, code, message string) {
@@ -359,6 +497,8 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
+	mux.HandleFunc("/logs", srv.handlePostLogs)
+	mux.HandleFunc("/logs/", srv.handleGetLogs)
 
 	if *dev {
 		log.Println("Starting dev server on :8080")

@@ -351,7 +351,10 @@
     "noItemsAvailable": "No items available",
     "failedToCreatePlayQueueNoItems": "Failed to create play queue - no items",
     "failedPlayback": "Failed to ${action}: ${error}",
-    "switchingToCompatiblePlayer": "Switching to compatible player..."
+    "switchingToCompatiblePlayer": "Switching to compatible player...",
+    "logsUploaded": "Logs uploaded",
+    "logsUploadFailed": "Failed to upload logs",
+    "logId": "Log ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "Styling Options",
@@ -500,6 +503,7 @@
   "logs": {
     "clearLogs": "Clear Logs",
     "copyLogs": "Copy Logs",
+    "uploadLogs": "Upload Logs",
     "error": "Error:",
     "stackTrace": "Stack Trace:"
   },

@@ -511,6 +511,9 @@ class _TranslationsMessagesFr implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Échec de la création de la file d\'attente de lecture - aucun élément';
 	@override String failedPlayback({required Object action, required Object error}) => 'Echec de ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Passage au lecteur compatible...';
+	@override String get logsUploaded => 'Logs uploaded';
+	@override String get logsUploadFailed => 'Failed to upload logs';
+	@override String get logId => 'Log ID';
 }
 
 // Path: subtitlingStyling
@@ -717,6 +720,7 @@ class _TranslationsLogsFr implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Effacer les logs';
 	@override String get copyLogs => 'Copier les logs';
+	@override String get uploadLogs => 'Upload Logs';
 	@override String get error => 'Erreur:';
 	@override String get stackTrace => 'Liste des appels:';
 }
@@ -1298,6 +1302,9 @@ extension on TranslationsFr {
 			'messages.failedToCreatePlayQueueNoItems' => 'Échec de la création de la file d\'attente de lecture - aucun élément',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Echec de ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Passage au lecteur compatible...',
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => 'Options de style',
 			'subtitlingStyling.fontSize' => 'Taille de la police',
 			'subtitlingStyling.textColor' => 'Couleur du texte',
@@ -1422,6 +1429,7 @@ extension on TranslationsFr {
 			'hubDetail.noItemsFound' => 'Aucun élément trouvé',
 			'logs.clearLogs' => 'Effacer les logs',
 			'logs.copyLogs' => 'Copier les logs',
+			'logs.uploadLogs' => 'Upload Logs',
 			'logs.error' => 'Erreur:',
 			'logs.stackTrace' => 'Liste des appels:',
 			'licenses.relatedPackages' => 'Package associés',
@@ -1488,12 +1496,12 @@ extension on TranslationsFr {
 			'watchTogether.joinSession' => 'Rejoindre la session',
 			'watchTogether.joining' => 'Rejoindre...',
 			'watchTogether.controlMode' => 'Mode de contrôle',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.controlModeQuestion' => 'Qui peut contrôler la lecture ?',
 			'watchTogether.hostOnly' => 'Hôte uniquement',
 			'watchTogether.anyone' => 'N\'importe qui',
 			'watchTogether.hostingSession' => 'Session d\'hébergement',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.inSession' => 'En session',
 			'watchTogether.sessionCode' => 'Code de session',
 			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',

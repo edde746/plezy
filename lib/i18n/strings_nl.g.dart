@@ -511,6 +511,9 @@ class _TranslationsMessagesNl implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Kan afspeelwachtrij niet maken - geen items';
 	@override String failedPlayback({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Overschakelen naar compatibele speler...';
+	@override String get logsUploaded => 'Logs uploaded';
+	@override String get logsUploadFailed => 'Failed to upload logs';
+	@override String get logId => 'Log ID';
 }
 
 // Path: subtitlingStyling
@@ -717,6 +720,7 @@ class _TranslationsLogsNl implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Wis logs';
 	@override String get copyLogs => 'Kopieer logs';
+	@override String get uploadLogs => 'Upload Logs';
 	@override String get error => 'Fout:';
 	@override String get stackTrace => 'Stacktracering:';
 }
@@ -1298,6 +1302,9 @@ extension on TranslationsNl {
 			'messages.failedToCreatePlayQueueNoItems' => 'Kan afspeelwachtrij niet maken - geen items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Overschakelen naar compatibele speler...',
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => 'Opmaak opties',
 			'subtitlingStyling.fontSize' => 'Lettergrootte',
 			'subtitlingStyling.textColor' => 'Tekstkleur',
@@ -1422,6 +1429,7 @@ extension on TranslationsNl {
 			'hubDetail.noItemsFound' => 'Geen items gevonden',
 			'logs.clearLogs' => 'Wis logs',
 			'logs.copyLogs' => 'Kopieer logs',
+			'logs.uploadLogs' => 'Upload Logs',
 			'logs.error' => 'Fout:',
 			'logs.stackTrace' => 'Stacktracering:',
 			'licenses.relatedPackages' => 'Gerelateerde pakketten',
@@ -1488,12 +1496,12 @@ extension on TranslationsNl {
 			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer collectienaam in',
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
+			_ => null,
+		} ?? switch (path) {
 			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
 			'collections.created' => 'Collectie gemaakt',
 			'collections.removeFromCollection' => 'Verwijderen uit collectie',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removedFromCollection' => 'Uit collectie verwijderd',
 			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',

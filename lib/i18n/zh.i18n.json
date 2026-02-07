@@ -351,7 +351,10 @@
     "noItemsAvailable": "没有可用的项目",
     "failedToCreatePlayQueueNoItems": "创建播放队列失败 - 没有项目",
     "failedPlayback": "无法${action}: ${error}",
-    "switchingToCompatiblePlayer": "正在切换到兼容的播放器..."
+    "switchingToCompatiblePlayer": "正在切换到兼容的播放器...",
+    "logsUploaded": "Logs uploaded",
+    "logsUploadFailed": "Failed to upload logs",
+    "logId": "Log ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "样式选项",
@@ -500,6 +503,7 @@
   "logs": {
     "clearLogs": "清除日志",
     "copyLogs": "复制日志",
+    "uploadLogs": "Upload Logs",
     "error": "错误:",
     "stackTrace": "堆栈跟踪 (Stack Trace):"
   },

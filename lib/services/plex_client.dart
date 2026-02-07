@@ -36,8 +36,9 @@ class PlexStreamType {
 class ConnectionTestResult {
   final bool success;
   final int latencyMs;
+  final String? error;
 
-  ConnectionTestResult({required this.success, required this.latencyMs});
+  ConnectionTestResult({required this.success, required this.latencyMs, this.error});
 }
 
 class PlexClient {
@@ -161,10 +162,29 @@ class PlexClient {
       stopwatch.stop();
       final success = response.statusCode == 200 || response.statusCode == 401;
 
-      return ConnectionTestResult(success: success, latencyMs: stopwatch.elapsedMilliseconds);
+      return ConnectionTestResult(
+        success: success,
+        latencyMs: stopwatch.elapsedMilliseconds,
+        error: success ? null : 'HTTP ${response.statusCode}',
+      );
     } catch (e) {
       stopwatch.stop();
-      return ConnectionTestResult(success: false, latencyMs: stopwatch.elapsedMilliseconds);
+      String error;
+      if (e is DioException) {
+        error = e.type == DioExceptionType.connectionTimeout
+            ? 'Connection timeout'
+            : e.type == DioExceptionType.receiveTimeout
+                ? 'Receive timeout'
+                : e.type == DioExceptionType.connectionError
+                    ? 'Connection error'
+                    : e.type.name;
+        if (e.response?.statusCode != null) {
+          error += ' (HTTP ${e.response!.statusCode})';
+        }
+      } else {
+        error = e.runtimeType.toString();
+      }
+      return ConnectionTestResult(success: false, latencyMs: stopwatch.elapsedMilliseconds, error: error);
     }
   }
 

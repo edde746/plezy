@@ -351,7 +351,10 @@
     "noItemsAvailable": "Inga objekt tillgängliga",
     "failedToCreatePlayQueueNoItems": "Det gick inte att skapa uppspelningskö – inga objekt",
     "failedPlayback": "Kunde inte ${action}: ${error}",
-    "switchingToCompatiblePlayer": "Byter till kompatibel spelare..."
+    "switchingToCompatiblePlayer": "Byter till kompatibel spelare...",
+    "logsUploaded": "Logs uploaded",
+    "logsUploadFailed": "Failed to upload logs",
+    "logId": "Log ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "Stilalternativ",
@@ -500,6 +503,7 @@
   "logs": {
     "clearLogs": "Rensa loggar",
     "copyLogs": "Kopiera loggar",
+    "uploadLogs": "Upload Logs",
     "error": "Fel:",
     "stackTrace": "Stack trace:"
   },

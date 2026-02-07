@@ -511,6 +511,9 @@ class _TranslationsMessagesDe implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente';
 	@override String failedPlayback({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Wechsle zu kompatiblem Player...';
+	@override String get logsUploaded => 'Logs uploaded';
+	@override String get logsUploadFailed => 'Failed to upload logs';
+	@override String get logId => 'Log ID';
 }
 
 // Path: subtitlingStyling
@@ -717,6 +720,7 @@ class _TranslationsLogsDe implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Protokolle löschen';
 	@override String get copyLogs => 'Protokolle kopieren';
+	@override String get uploadLogs => 'Upload Logs';
 	@override String get error => 'Fehler:';
 	@override String get stackTrace => 'Stacktrace:';
 }
@@ -1298,6 +1302,9 @@ extension on TranslationsDe {
 			'messages.failedToCreatePlayQueueNoItems' => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Wechsle zu kompatiblem Player...',
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => 'Stiloptionen',
 			'subtitlingStyling.fontSize' => 'Schriftgröße',
 			'subtitlingStyling.textColor' => 'Textfarbe',
@@ -1422,6 +1429,7 @@ extension on TranslationsDe {
 			'hubDetail.noItemsFound' => 'Keine Elemente gefunden',
 			'logs.clearLogs' => 'Protokolle löschen',
 			'logs.copyLogs' => 'Protokolle kopieren',
+			'logs.uploadLogs' => 'Upload Logs',
 			'logs.error' => 'Fehler:',
 			'logs.stackTrace' => 'Stacktrace:',
 			'licenses.relatedPackages' => 'Verwandte Pakete',
@@ -1488,12 +1496,12 @@ extension on TranslationsDe {
 			'collections.collectionName' => 'Sammlungsname',
 			'collections.enterCollectionName' => 'Sammlungsnamen eingeben',
 			'collections.addedToCollection' => 'Zur Sammlung hinzugefügt',
+			_ => null,
+		} ?? switch (path) {
 			'collections.errorAddingToCollection' => 'Fehler beim Hinzufügen zur Sammlung',
 			'collections.created' => 'Sammlung erstellt',
 			'collections.removeFromCollection' => 'Aus Sammlung entfernen',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
 			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',

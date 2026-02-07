@@ -413,6 +413,16 @@ class PlexServer {
         PlexClient.testConnectionWithLatency(candidate.url, accessToken, timeout: raceTimeout).then((result) {
           completedTests++;
 
+          if (!result.success) {
+            appLogger.w('Connection candidate failed', error: {
+              'url': candidate.url,
+              'type': candidate.connection.displayType,
+              'https': candidate.isHttps,
+              'error': result.error,
+              'latencyMs': result.latencyMs,
+            });
+          }
+
           if (result.success && !completer.isCompleted) {
             completer.complete(candidate);
           }
@@ -425,7 +435,11 @@ class PlexServer {
 
       firstCandidate = await completer.future;
       if (firstCandidate == null) {
-        appLogger.e('No working server connections after race');
+        appLogger.e('No working server connections after race', error: {
+          'server': name,
+          'candidateCount': totalCandidates,
+          'types': candidates.map((c) => c.connection.displayType).toSet().toList(),
+        });
         return; // No working connections found
       }
       appLogger.i(

@@ -511,6 +511,9 @@ class _TranslationsMessagesIt implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Impossibile creare la coda di riproduzione - nessun elemento';
 	@override String failedPlayback({required Object action, required Object error}) => 'Impossibile ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Passaggio al lettore compatibile...';
+	@override String get logsUploaded => 'Logs uploaded';
+	@override String get logsUploadFailed => 'Failed to upload logs';
+	@override String get logId => 'Log ID';
 }
 
 // Path: subtitlingStyling
@@ -717,6 +720,7 @@ class _TranslationsLogsIt implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Cancella log';
 	@override String get copyLogs => 'Copia log';
+	@override String get uploadLogs => 'Upload Logs';
 	@override String get error => 'Errore:';
 	@override String get stackTrace => 'Traccia dello stack:';
 }
@@ -1298,6 +1302,9 @@ extension on TranslationsIt {
 			'messages.failedToCreatePlayQueueNoItems' => 'Impossibile creare la coda di riproduzione - nessun elemento',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Impossibile ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Passaggio al lettore compatibile...',
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => 'Opzioni stile',
 			'subtitlingStyling.fontSize' => 'Dimensione',
 			'subtitlingStyling.textColor' => 'Colore testo',
@@ -1422,6 +1429,7 @@ extension on TranslationsIt {
 			'hubDetail.noItemsFound' => 'Nessun elemento trovato',
 			'logs.clearLogs' => 'Cancella log',
 			'logs.copyLogs' => 'Copia log',
+			'logs.uploadLogs' => 'Upload Logs',
 			'logs.error' => 'Errore:',
 			'logs.stackTrace' => 'Traccia dello stack:',
 			'licenses.relatedPackages' => 'Pacchetti correlati',
@@ -1488,12 +1496,12 @@ extension on TranslationsIt {
 			'collections.collectionName' => 'Nome raccolta',
 			'collections.enterCollectionName' => 'Inserisci nome raccolta',
 			'collections.addedToCollection' => 'Aggiunto alla raccolta',
+			_ => null,
+		} ?? switch (path) {
 			'collections.errorAddingToCollection' => 'Errore nell\'aggiunta alla raccolta',
 			'collections.created' => 'Raccolta creata',
 			'collections.removeFromCollection' => 'Rimuovi dalla raccolta',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Rimuovere "${title}" da questa raccolta?',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removedFromCollection' => 'Rimosso dalla raccolta',
 			'collections.removeFromCollectionFailed' => 'Impossibile rimuovere dalla raccolta',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}',

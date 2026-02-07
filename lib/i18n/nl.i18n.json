@@ -351,7 +351,10 @@
     "noItemsAvailable": "Geen items beschikbaar",
     "failedToCreatePlayQueueNoItems": "Kan afspeelwachtrij niet maken - geen items",
     "failedPlayback": "Afspelen van ${action} mislukt: ${error}",
-    "switchingToCompatiblePlayer": "Overschakelen naar compatibele speler..."
+    "switchingToCompatiblePlayer": "Overschakelen naar compatibele speler...",
+    "logsUploaded": "Logs uploaded",
+    "logsUploadFailed": "Failed to upload logs",
+    "logId": "Log ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "Opmaak opties",
@@ -500,6 +503,7 @@
   "logs": {
     "clearLogs": "Wis logs",
     "copyLogs": "Kopieer logs",
+    "uploadLogs": "Upload Logs",
     "error": "Fout:",
     "stackTrace": "Stacktracering:"
   },

@@ -351,7 +351,10 @@
     "noItemsAvailable": "Keine Elemente verfügbar",
     "failedToCreatePlayQueueNoItems": "Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente",
     "failedPlayback": "Wiedergabe für ${action} fehlgeschlagen: ${error}",
-    "switchingToCompatiblePlayer": "Wechsle zu kompatiblem Player..."
+    "switchingToCompatiblePlayer": "Wechsle zu kompatiblem Player...",
+    "logsUploaded": "Logs uploaded",
+    "logsUploadFailed": "Failed to upload logs",
+    "logId": "Log ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "Stiloptionen",
@@ -500,6 +503,7 @@
   "logs": {
     "clearLogs": "Protokolle löschen",
     "copyLogs": "Protokolle kopieren",
+    "uploadLogs": "Upload Logs",
     "error": "Fehler:",
     "stackTrace": "Stacktrace:"
   },

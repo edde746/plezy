@@ -511,6 +511,9 @@ class _TranslationsMessagesZh implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => '创建播放队列失败 - 没有项目';
 	@override String failedPlayback({required Object action, required Object error}) => '无法${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => '正在切换到兼容的播放器...';
+	@override String get logsUploaded => 'Logs uploaded';
+	@override String get logsUploadFailed => 'Failed to upload logs';
+	@override String get logId => 'Log ID';
 }
 
 // Path: subtitlingStyling
@@ -717,6 +720,7 @@ class _TranslationsLogsZh implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => '清除日志';
 	@override String get copyLogs => '复制日志';
+	@override String get uploadLogs => 'Upload Logs';
 	@override String get error => '错误:';
 	@override String get stackTrace => '堆栈跟踪 (Stack Trace):';
 }
@@ -1298,6 +1302,9 @@ extension on TranslationsZh {
 			'messages.failedToCreatePlayQueueNoItems' => '创建播放队列失败 - 没有项目',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '无法${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => '正在切换到兼容的播放器...',
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => '样式选项',
 			'subtitlingStyling.fontSize' => '字号',
 			'subtitlingStyling.textColor' => '文本颜色',
@@ -1422,6 +1429,7 @@ extension on TranslationsZh {
 			'hubDetail.noItemsFound' => '未找到项目',
 			'logs.clearLogs' => '清除日志',
 			'logs.copyLogs' => '复制日志',
+			'logs.uploadLogs' => 'Upload Logs',
 			'logs.error' => '错误:',
 			'logs.stackTrace' => '堆栈跟踪 (Stack Trace):',
 			'licenses.relatedPackages' => '相关软件包',
@@ -1488,12 +1496,12 @@ extension on TranslationsZh {
 			'collections.collectionName' => '合集名称',
 			'collections.enterCollectionName' => '输入合集名称',
 			'collections.addedToCollection' => '已添加到合集',
+			_ => null,
+		} ?? switch (path) {
 			'collections.errorAddingToCollection' => '添加到合集失败',
 			'collections.created' => '已创建合集',
 			'collections.removeFromCollection' => '从合集移除',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '将“${title}”从此合集移除？',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removedFromCollection' => '已从合集移除',
 			'collections.removeFromCollectionFailed' => '从合集移除失败',
 			'collections.removeFromCollectionError' => ({required Object error}) => '从合集移除时出错：${error}',

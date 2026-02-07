@@ -351,7 +351,10 @@
     "noItemsAvailable": "Nessun elemento disponibile",
     "failedToCreatePlayQueueNoItems": "Impossibile creare la coda di riproduzione - nessun elemento",
     "failedPlayback": "Impossibile ${action}: ${error}",
-    "switchingToCompatiblePlayer": "Passaggio al lettore compatibile..."
+    "switchingToCompatiblePlayer": "Passaggio al lettore compatibile...",
+    "logsUploaded": "Logs uploaded",
+    "logsUploadFailed": "Failed to upload logs",
+    "logId": "Log ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "Opzioni stile",
@@ -500,6 +503,7 @@
   "logs": {
     "clearLogs": "Cancella log",
     "copyLogs": "Copia log",
+    "uploadLogs": "Upload Logs",
     "error": "Errore:",
     "stackTrace": "Traccia dello stack:"
   },

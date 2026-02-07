@@ -511,6 +511,9 @@ class _TranslationsMessagesSv implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Det gick inte att skapa uppspelningskö – inga objekt';
 	@override String failedPlayback({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Byter till kompatibel spelare...';
+	@override String get logsUploaded => 'Logs uploaded';
+	@override String get logsUploadFailed => 'Failed to upload logs';
+	@override String get logId => 'Log ID';
 }
 
 // Path: subtitlingStyling
@@ -717,6 +720,7 @@ class _TranslationsLogsSv implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Rensa loggar';
 	@override String get copyLogs => 'Kopiera loggar';
+	@override String get uploadLogs => 'Upload Logs';
 	@override String get error => 'Fel:';
 	@override String get stackTrace => 'Stack trace:';
 }
@@ -1298,6 +1302,9 @@ extension on TranslationsSv {
 			'messages.failedToCreatePlayQueueNoItems' => 'Det gick inte att skapa uppspelningskö – inga objekt',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Byter till kompatibel spelare...',
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => 'Stilalternativ',
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
 			'subtitlingStyling.textColor' => 'Textfärg',
@@ -1422,6 +1429,7 @@ extension on TranslationsSv {
 			'hubDetail.noItemsFound' => 'Inga objekt hittades',
 			'logs.clearLogs' => 'Rensa loggar',
 			'logs.copyLogs' => 'Kopiera loggar',
+			'logs.uploadLogs' => 'Upload Logs',
 			'logs.error' => 'Fel:',
 			'logs.stackTrace' => 'Stack trace:',
 			'licenses.relatedPackages' => 'Relaterade paket',
@@ -1488,12 +1496,12 @@ extension on TranslationsSv {
 			'collections.collectionName' => 'Samlingsnamn',
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
 			'collections.addedToCollection' => 'Tillagd i samling',
+			_ => null,
+		} ?? switch (path) {
 			'collections.errorAddingToCollection' => 'Fel vid tillägg i samling',
 			'collections.created' => 'Samling skapad',
 			'collections.removeFromCollection' => 'Ta bort från samling',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removedFromCollection' => 'Borttagen från samling',
 			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',

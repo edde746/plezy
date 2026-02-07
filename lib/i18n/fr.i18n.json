@@ -351,7 +351,10 @@
     "noItemsAvailable": "Aucun élément disponible",
     "failedToCreatePlayQueueNoItems": "Échec de la création de la file d'attente de lecture - aucun élément",
     "failedPlayback": "Echec de ${action}: ${error}",
-    "switchingToCompatiblePlayer": "Passage au lecteur compatible..."
+    "switchingToCompatiblePlayer": "Passage au lecteur compatible...",
+    "logsUploaded": "Logs uploaded",
+    "logsUploadFailed": "Failed to upload logs",
+    "logId": "Log ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "Options de style",
@@ -500,6 +503,7 @@
   "logs": {
     "clearLogs": "Effacer les logs",
     "copyLogs": "Copier les logs",
+    "uploadLogs": "Upload Logs",
     "error": "Erreur:",
     "stackTrace": "Liste des appels:"
   },

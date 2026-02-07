@@ -511,6 +511,9 @@ class _TranslationsMessagesEs implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Error al crear la cola de reproducción - no hay elementos';
 	@override String failedPlayback({required Object action, required Object error}) => 'Error al ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Cambiando a reproductor compatible...';
+	@override String get logsUploaded => 'Logs uploaded';
+	@override String get logsUploadFailed => 'Failed to upload logs';
+	@override String get logId => 'Log ID';
 }
 
 // Path: subtitlingStyling
@@ -717,6 +720,7 @@ class _TranslationsLogsEs implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Borrar Logs';
 	@override String get copyLogs => 'Copiar Logs';
+	@override String get uploadLogs => 'Upload Logs';
 	@override String get error => 'Error:';
 	@override String get stackTrace => 'Traza de la pila (Stack Trace):';
 }
@@ -1298,6 +1302,9 @@ extension on TranslationsEs {
 			'messages.failedToCreatePlayQueueNoItems' => 'Error al crear la cola de reproducción - no hay elementos',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Error al ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Cambiando a reproductor compatible...',
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => 'Opciones de Estilo',
 			'subtitlingStyling.fontSize' => 'Tamaño de Fuente',
 			'subtitlingStyling.textColor' => 'Color de Texto',
@@ -1422,6 +1429,7 @@ extension on TranslationsEs {
 			'hubDetail.noItemsFound' => 'No se encontraron elementos',
 			'logs.clearLogs' => 'Borrar Logs',
 			'logs.copyLogs' => 'Copiar Logs',
+			'logs.uploadLogs' => 'Upload Logs',
 			'logs.error' => 'Error:',
 			'logs.stackTrace' => 'Traza de la pila (Stack Trace):',
 			'licenses.relatedPackages' => 'Paquetes relacionados',
@@ -1488,12 +1496,12 @@ extension on TranslationsEs {
 			'watchTogether.joinSession' => 'Unirse a Sesión',
 			'watchTogether.joining' => 'Uniendo...',
 			'watchTogether.controlMode' => 'Modo de Control',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.controlModeQuestion' => '¿Quién puede controlar la reproducción?',
 			'watchTogether.hostOnly' => 'Solo el Anfitrión',
 			'watchTogether.anyone' => 'Cualquiera',
 			'watchTogether.hostingSession' => 'Anfitrión de la Sesión',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.inSession' => 'En Sesión',
 			'watchTogether.sessionCode' => 'Código de Sesión',
 			'watchTogether.hostControlsPlayback' => 'El anfitrión controla la reproducción',

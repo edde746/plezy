@@ -351,7 +351,10 @@
     "noItemsAvailable": "사용 가능한 항목이 없습니다",
     "failedToCreatePlayQueueNoItems": "재생 대기열 생성 실패 - 항목 없음",
     "failedPlayback": "${action}을(를) 수행할 수 없습니다: ${error}",
-    "switchingToCompatiblePlayer": "호환되는 플레이어로 전환 중..."
+    "switchingToCompatiblePlayer": "호환되는 플레이어로 전환 중...",
+    "logsUploaded": "Logs uploaded",
+    "logsUploadFailed": "Failed to upload logs",
+    "logId": "Log ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "스타일 옵션",
@@ -500,6 +503,7 @@
   "logs": {
     "clearLogs": "로그 지우기",
     "copyLogs": "로그 복사",
+    "uploadLogs": "Upload Logs",
     "error": "오류:",
     "stackTrace": "스택 추적 (Stack Trace):"
   },

@@ -511,6 +511,9 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => '재생 대기열 생성 실패 - 항목 없음';
 	@override String failedPlayback({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}';
 	@override String get switchingToCompatiblePlayer => '호환되는 플레이어로 전환 중...';
+	@override String get logsUploaded => 'Logs uploaded';
+	@override String get logsUploadFailed => 'Failed to upload logs';
+	@override String get logId => 'Log ID';
 }
 
 // Path: subtitlingStyling
@@ -717,6 +720,7 @@ class _TranslationsLogsKo implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => '로그 지우기';
 	@override String get copyLogs => '로그 복사';
+	@override String get uploadLogs => 'Upload Logs';
 	@override String get error => '오류:';
 	@override String get stackTrace => '스택 추적 (Stack Trace):';
 }
@@ -1298,6 +1302,9 @@ extension on TranslationsKo {
 			'messages.failedToCreatePlayQueueNoItems' => '재생 대기열 생성 실패 - 항목 없음',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}',
 			'messages.switchingToCompatiblePlayer' => '호환되는 플레이어로 전환 중...',
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => '스타일 옵션',
 			'subtitlingStyling.fontSize' => '글자 크기',
 			'subtitlingStyling.textColor' => '텍스트 색상',
@@ -1422,6 +1429,7 @@ extension on TranslationsKo {
 			'hubDetail.noItemsFound' => '항목이 없습니다',
 			'logs.clearLogs' => '로그 지우기',
 			'logs.copyLogs' => '로그 복사',
+			'logs.uploadLogs' => 'Upload Logs',
 			'logs.error' => '오류:',
 			'logs.stackTrace' => '스택 추적 (Stack Trace):',
 			'licenses.relatedPackages' => '관련 소프트웨어 패키지',
@@ -1488,12 +1496,12 @@ extension on TranslationsKo {
 			'watchTogether.joinSession' => '세션 참여',
 			'watchTogether.joining' => '참가 중...',
 			'watchTogether.controlMode' => '제어 모드',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.controlModeQuestion' => '누가 재생을 제어할 수 있나요?',
 			'watchTogether.hostOnly' => '호스트만',
 			'watchTogether.anyone' => '누구나',
 			'watchTogether.hostingSession' => '세션 호스팅',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.inSession' => '세션 중',
 			'watchTogether.sessionCode' => '세션 코드',
 			'watchTogether.hostControlsPlayback' => '호스트 재생 제어',

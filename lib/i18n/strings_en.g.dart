@@ -1106,6 +1106,15 @@ class TranslationsMessagesEn {
 
 	/// en: 'Switching to compatible player...'
 	String get switchingToCompatiblePlayer => 'Switching to compatible player...';
+
+	/// en: 'Logs uploaded'
+	String get logsUploaded => 'Logs uploaded';
+
+	/// en: 'Failed to upload logs'
+	String get logsUploadFailed => 'Failed to upload logs';
+
+	/// en: 'Log ID'
+	String get logId => 'Log ID';
 }
 
 // Path: subtitlingStyling
@@ -1541,6 +1550,9 @@ class TranslationsLogsEn {
 
 	/// en: 'Copy Logs'
 	String get copyLogs => 'Copy Logs';
+
+	/// en: 'Upload Logs'
+	String get uploadLogs => 'Upload Logs';
 
 	/// en: 'Error:'
 	String get error => 'Error:';
@@ -2430,6 +2442,9 @@ extension on Translations {
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => 'Styling Options',
 			'subtitlingStyling.fontSize' => 'Font Size',
 			'subtitlingStyling.textColor' => 'Text Color',
@@ -2554,6 +2569,7 @@ extension on Translations {
 			'hubDetail.noItemsFound' => 'No items found',
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
+			'logs.uploadLogs' => 'Upload Logs',
 			'logs.error' => 'Error:',
 			'logs.stackTrace' => 'Stack Trace:',
 			'licenses.relatedPackages' => 'Related Packages',
@@ -2620,12 +2636,12 @@ extension on Translations {
 			'watchTogether.joinSession' => 'Join Session',
 			'watchTogether.joining' => 'Joining...',
 			'watchTogether.controlMode' => 'Control Mode',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.controlModeQuestion' => 'Who can control playback?',
 			'watchTogether.hostOnly' => 'Host Only',
 			'watchTogether.anyone' => 'Anyone',
 			'watchTogether.hostingSession' => 'Hosting Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.inSession' => 'In Session',
 			'watchTogether.sessionCode' => 'Session Code',
 			'watchTogether.hostControlsPlayback' => 'Host controls playback',
