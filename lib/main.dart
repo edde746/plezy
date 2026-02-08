@@ -213,6 +213,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     PlexApiCache.initialize(_appDatabase);
 
     _downloadManager = DownloadManagerService(database: _appDatabase, storageService: DownloadStorageService.instance);
+    _downloadManager.recoverInterruptedDownloads();
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
 

@@ -206,11 +206,29 @@ class DownloadManagerService {
         case DioExceptionType.sendTimeout:
         case DioExceptionType.connectionError:
           return true;
+        case DioExceptionType.unknown:
+          // Mid-stream disconnects surface as DioExceptionType.unknown
+          // wrapping SocketException, HttpException, or similar
+          final inner = e.error;
+          if (inner is SocketException) return true;
+          if (inner is HttpException) return true;
+          final msg = inner?.toString() ?? '';
+          if (msg.contains('Connection closed') ||
+              msg.contains('Connection reset')) {
+            return true;
+          }
+          return false;
+        case DioExceptionType.badResponse:
+          // 5xx server errors are transient and worth retrying
+          final statusCode = e.response?.statusCode;
+          if (statusCode != null && statusCode >= 500) return true;
+          return false;
         default:
           return false;
       }
     }
     if (e is SocketException) return true;
+    if (e is HttpException) return true;
     return false;
   }
 
@@ -231,6 +249,30 @@ class DownloadManagerService {
     : _database = database,
       _storageService = storageService,
       _dio = dio ?? Dio();
+
+  /// Recover downloads that were in "downloading" state when the app was killed.
+  /// Transitions them to "queued" so _processQueue picks them up with resume
+  /// support via the existing .part file on disk.
+  Future<void> recoverInterruptedDownloads() async {
+    try {
+      final allDownloads = await _database.select(_database.downloadedMedia).get();
+      final interrupted = allDownloads.where(
+        (item) => item.status == DownloadStatus.downloading.index,
+      ).toList();
+
+      if (interrupted.isEmpty) return;
+
+      appLogger.i('Recovering ${interrupted.length} interrupted download(s)');
+      for (final item in interrupted) {
+        await _database.updateDownloadStatus(item.globalKey, DownloadStatus.queued.index);
+        // Re-add to queue so _processQueue picks it up
+        await _database.addToQueue(mediaGlobalKey: item.globalKey);
+        appLogger.d('Re-queued interrupted download: ${item.globalKey}');
+      }
+    } catch (e) {
+      appLogger.e('Failed to recover interrupted downloads', error: e);
+    }
+  }
 
   /// Delete a file if it exists and log the deletion
   /// Returns true if file was deleted, false otherwise
@@ -347,6 +389,8 @@ class DownloadManagerService {
   /// Start downloading a specific item
   /// Returns the result of the download attempt for queue processing decisions
   Future<_DownloadResult> _startDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
+    // Hoisted so catch blocks can clean up .part files
+    String? downloadFilePath;
     try {
       appLogger.i('Starting download for $globalKey');
 
@@ -401,7 +445,6 @@ class DownloadManagerService {
       appLogger.d('Starting video download for $globalKey');
 
       // Determine download path and handle SAF mode
-      final String downloadFilePath;
       final String storedPath;
 
       if (_storageService.isUsingSaf) {
@@ -502,28 +545,50 @@ class DownloadManagerService {
       // Check if this was a user-initiated cancel/pause (not a real failure)
       if (e is DioException && e.type == DioExceptionType.cancel) {
         // Status was already set by pauseDownload() or cancelDownload()
-        // Just clean up and exit without marking as failed
         appLogger.d('Download cancelled/paused for $globalKey: ${e.message}');
         _activeDownloads.remove(globalKey);
+
+        // Clean up .part file for cancel/delete, but preserve for pause
+        final reason = e.message ?? '';
+        if (reason.contains('Cancelled') || reason.contains('deleted')) {
+          if (downloadFilePath != null) {
+            await _cleanupPartFile(downloadFilePath);
+          }
+        }
+        // Paused: .part file preserved for resume
+
         return _DownloadResult.success; // User action, not a failure
       }
 
       // Check if this is a retriable network error
       if (_isRetriableNetworkError(e)) {
         // Network error - keep in queue for auto-retry when connectivity returns
+        // .part file is preserved for resume via Range header
         appLogger.w('Download interrupted by network error for $globalKey, will retry on reconnect');
         await _transitionStatus(globalKey, DownloadStatus.queued);
         _activeDownloads.remove(globalKey);
         return _DownloadResult.networkError; // Stay in queue - will auto-retry
       }
 
-      // Permanent failure - remove from queue
+      // Permanent failure - remove from queue and clean up .part file
       appLogger.e('Download failed for $globalKey', error: e);
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: e.toString());
       await _database.updateDownloadError(globalKey, e.toString());
       await _database.removeFromQueue(globalKey);
       _activeDownloads.remove(globalKey);
+      if (downloadFilePath != null) {
+        await _cleanupPartFile(downloadFilePath);
+      }
       return _DownloadResult.permanentFailure;
+    }
+  }
+
+  /// Delete the .part file for a given download path
+  Future<void> _cleanupPartFile(String filePath) async {
+    final partFile = File('$filePath.part');
+    if (await partFile.exists()) {
+      await partFile.delete();
+      appLogger.d('Cleaned up partial file: ${partFile.path}');
     }
   }
 
@@ -533,48 +598,193 @@ class DownloadManagerService {
     required String globalKey,
     required CancelToken cancelToken,
   }) async {
-    final file = File(filePath);
-    await file.parent.create(recursive: true);
+    final partPath = '$filePath.part';
+    final partFile = File(partPath);
+    await partFile.parent.create(recursive: true);
 
-    int lastBytes = 0;
+    // Determine resume offset from existing .part file
+    int offset = 0;
+    if (await partFile.exists()) {
+      final partSize = await partFile.length();
+      // Cross-validate with DB to detect corruption
+      final dbRecord = await _database.getDownloadedMedia(globalKey);
+      final dbBytes = dbRecord?.downloadedBytes ?? 0;
+      if (dbBytes > 0 && (partSize - dbBytes).abs() > 1024 * 1024) {
+        // More than 1MB discrepancy — likely corrupt, restart fresh
+        appLogger.w('Part file size ($partSize) differs from DB ($dbBytes) by >1MB, restarting');
+        await partFile.delete();
+      } else if (partSize > 0) {
+        offset = partSize;
+        appLogger.i('Resuming download from byte $offset for $globalKey');
+      }
+    }
+
+    await _downloadFileWithRange(
+      url: url,
+      filePath: filePath,
+      partPath: partPath,
+      globalKey: globalKey,
+      cancelToken: cancelToken,
+      offset: offset,
+    );
+  }
+
+  Future<void> _downloadFileWithRange({
+    required String url,
+    required String filePath,
+    required String partPath,
+    required String globalKey,
+    required CancelToken cancelToken,
+    required int offset,
+  }) async {
+    final headers = <String, dynamic>{};
+    if (offset > 0) {
+      headers['Range'] = 'bytes=$offset-';
+    }
+
+    final response = await _dio.get<ResponseBody>(
+      url,
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: headers,
+        // Prevent Dio from throwing on 206/416
+        validateStatus: (status) =>
+            status != null && (status >= 200 && status < 300 || status == 416),
+      ),
+      cancelToken: cancelToken,
+    );
+
+    final statusCode = response.statusCode;
+
+    if (statusCode == 416) {
+      // Range not satisfiable — .part is stale/invalid, restart fresh
+      appLogger.w('416 Range Not Satisfiable — deleting .part and restarting for $globalKey');
+      final partFile = File(partPath);
+      if (await partFile.exists()) await partFile.delete();
+      return _downloadFileWithRange(
+        url: url,
+        filePath: filePath,
+        partPath: partPath,
+        globalKey: globalKey,
+        cancelToken: cancelToken,
+        offset: 0,
+      );
+    }
+
+    // Determine write mode and total size based on response
+    int totalBytes;
+    FileMode fileMode;
+    int resumeOffset;
+
+    if (statusCode == 206) {
+      // Server supports Range — append to .part file
+      fileMode = FileMode.append;
+      resumeOffset = offset;
+      // Parse total from Content-Range: bytes 1000-9999/10000
+      final contentRange = response.headers.value('content-range');
+      if (contentRange != null) {
+        final match = RegExp(r'/(\d+)').firstMatch(contentRange);
+        totalBytes = match != null ? int.parse(match.group(1)!) : -1;
+      } else {
+        final contentLength = response.headers.value('content-length');
+        totalBytes = contentLength != null
+            ? int.parse(contentLength) + offset
+            : -1;
+      }
+      appLogger.i('Resuming download at $offset/$totalBytes for $globalKey');
+    } else {
+      // 200 — fresh download (server may not support Range)
+      fileMode = FileMode.write;
+      resumeOffset = 0;
+      if (offset > 0) {
+        appLogger.w('Server returned 200 instead of 206 — restarting from scratch for $globalKey');
+      }
+      final contentLength = response.headers.value('content-length');
+      totalBytes = contentLength != null ? int.parse(contentLength) : -1;
+    }
+
+    final partFile = File(partPath);
+    final sink = partFile.openWrite(mode: fileMode);
+
+    int receivedBytes = resumeOffset;
+    int lastReportedBytes = receivedBytes;
     DateTime lastUpdate = DateTime.now();
 
-    await _dio.download(
-      url,
-      filePath,
-      cancelToken: cancelToken,
-      onReceiveProgress: (received, total) {
-        // Calculate speed (update every 500ms)
+    try {
+      await for (final chunk in response.data!.stream) {
+        sink.add(chunk);
+        receivedBytes += chunk.length;
+
+        // Throttled progress reporting (every 500ms)
         final now = DateTime.now();
         if (now.difference(lastUpdate).inMilliseconds >= 500) {
-          final elapsedSeconds = now.difference(lastUpdate).inSeconds.clamp(1, double.infinity);
-          final bytesPerSecond = (received - lastBytes) / elapsedSeconds;
+          final elapsed = now.difference(lastUpdate).inMilliseconds / 1000.0;
+          final bytesPerSecond = elapsed > 0
+              ? (receivedBytes - lastReportedBytes) / elapsed
+              : 0.0;
           lastUpdate = now;
-          lastBytes = received;
+          lastReportedBytes = receivedBytes;
 
-          final progress = total > 0 ? ((received / total) * 100).round() : 0;
-
-          appLogger.d('Download progress: $progress% ($received/$total bytes) for $globalKey');
+          final progress = totalBytes > 0
+              ? ((receivedBytes / totalBytes) * 100).round()
+              : 0;
 
           _progressController.add(
             DownloadProgress(
               globalKey: globalKey,
               status: DownloadStatus.downloading,
               progress: progress,
-              downloadedBytes: received,
-              totalBytes: total,
+              downloadedBytes: receivedBytes,
+              totalBytes: totalBytes,
               speed: bytesPerSecond,
               currentFile: 'video',
             ),
           );
 
-          // Update database asynchronously (non-blocking)
-          _database.updateDownloadProgress(globalKey, progress, received, total).catchError((e) {
+          _database
+              .updateDownloadProgress(globalKey, progress, receivedBytes, totalBytes)
+              .catchError((e) {
             appLogger.w('Failed to update download progress in DB', error: e);
           });
         }
-      },
-    );
+      }
+
+      // Stream completed successfully — flush and rename
+      await sink.flush();
+      await sink.close();
+
+      // Verify file size if we know the total
+      if (totalBytes > 0) {
+        final actualSize = await partFile.length();
+        if (actualSize != totalBytes) {
+          throw Exception(
+            'Download size mismatch: expected $totalBytes bytes but got $actualSize',
+          );
+        }
+      }
+
+      // Rename .part to final path
+      await partFile.rename(filePath);
+      appLogger.i('Download complete: $filePath ($receivedBytes bytes)');
+    } catch (e) {
+      // Flush what we have so far — preserves partial data for resume
+      try {
+        await sink.flush();
+        await sink.close();
+      } catch (_) {
+        // Ignore flush errors during error handling
+      }
+      // Persist current progress to DB for resume
+      final progress = totalBytes > 0
+          ? ((receivedBytes / totalBytes) * 100).round()
+          : 0;
+      await _database
+          .updateDownloadProgress(globalKey, progress, receivedBytes, totalBytes)
+          .catchError((dbErr) {
+        appLogger.w('Failed to persist progress on error', error: dbErr);
+      });
+      rethrow;
+    }
   }
 
   /// Download artwork for a media item using hash-based storage
@@ -886,6 +1096,27 @@ class DownloadManagerService {
     // Delete files from storage (with progress updates)
     await _deleteMediaFilesWithMetadata(serverId, ratingKey);
 
+    // Clean up any .part file in SAF temp cache
+    if (_storageService.isUsingSaf) {
+      try {
+        final tempFileName = globalKey.replaceAll(':', '_');
+        // We don't know the extension, so search for any matching .part file
+        final tempDir = await _storageService.getTempDownloadPath('');
+        final tempDirObj = Directory(path.dirname(tempDir));
+        if (await tempDirObj.exists()) {
+          await for (final entity in tempDirObj.list()) {
+            if (entity is File &&
+                path.basename(entity.path).startsWith(tempFileName) &&
+                entity.path.endsWith('.part')) {
+              await _deleteFileIfExists(entity, 'SAF temp partial download');
+            }
+          }
+        }
+      } catch (e) {
+        appLogger.w('Failed to clean up SAF temp .part files', error: e);
+      }
+    }
+
     // Delete from API cache
     await _apiCache.deleteForItem(serverId, ratingKey);
 
@@ -1073,6 +1304,8 @@ class DownloadManagerService {
       final actualVideoFile = await _findFileWithAnyExtension(videoPathWithoutExt);
       if (actualVideoFile != null) {
         await _deleteFileIfExists(actualVideoFile, 'episode video');
+        // Also clean up any .part file from interrupted downloads
+        await _deleteFileIfExists(File('${actualVideoFile.path}.part'), 'partial download');
       }
 
       // Delete thumbnail
