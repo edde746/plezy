@@ -628,6 +628,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         }
       });
 
+      // Focus hero section now that it's visible, but only if no modal route is on top
+      if (onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
+        _heroFocusNode.requestFocus();
+      }
+
       // Sync to Android TV Watch Next row
       if (Platform.isAndroid) {
         _syncWatchNext(onDeck);
@@ -1244,7 +1249,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return SliverToBoxAdapter(
       child: Focus(
         focusNode: _heroFocusNode,
-        autofocus: true,
         onKeyEvent: _handleHeroKeyEvent,
         child: SizedBox(
           height: heroHeight,

@@ -6,6 +6,7 @@ import '../../providers/user_profile_provider.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import 'profile_list_tile.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
@@ -78,12 +79,16 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
 
                     return Padding(
                       padding: EdgeInsets.only(left: 16, right: 16, top: index == 0 ? 16 : 0, bottom: 8),
-                      child: Card(
-                        child: ProfileListTile(
-                          user: user,
-                          isCurrentUser: isCurrentUser,
-                          autofocus: isFirstSelectable,
-                          onTap: () => _switchToUser(context, user),
+                      child: FocusableWrapper(
+                        autofocus: isFirstSelectable,
+                        disableScale: true,
+                        onSelect: isCurrentUser ? null : () => _switchToUser(context, user),
+                        child: Card(
+                          child: ProfileListTile(
+                            user: user,
+                            isCurrentUser: isCurrentUser,
+                            onTap: () => _switchToUser(context, user),
+                          ),
                         ),
                       ),
                     );

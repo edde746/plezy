@@ -13,7 +13,6 @@ class ProfileListTile extends StatelessWidget {
   final VoidCallback onTap;
   final bool isCurrentUser;
   final bool showTrailingIcon;
-  final bool autofocus;
 
   const ProfileListTile({
     super.key,
@@ -21,7 +20,6 @@ class ProfileListTile extends StatelessWidget {
     required this.onTap,
     this.isCurrentUser = false,
     this.showTrailingIcon = true,
-    this.autofocus = false,
   });
 
   @override
@@ -29,7 +27,6 @@ class ProfileListTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListTile(
-      autofocus: autofocus,
       leading: UserAvatarWidget(user: user, size: 40, showIndicators: false),
       title: Text(user.displayName),
       subtitle: _hasUserAttributes() ? Row(children: _buildUserAttributes(theme)) : null,
