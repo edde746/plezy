@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -22,6 +23,7 @@ import '../utils/plex_image_helper.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
+import '../utils/rating_utils.dart';
 import '../models/download_models.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/download_provider.dart';
@@ -652,38 +654,103 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     );
   }
 
-  /// Build a metadata chip with optional leading icon
-  Widget _buildMetadataChip(String text, {IconData? icon}) {
+  /// Build a metadata chip with optional leading icon or widget
+  Widget _buildMetadataChip(String text, {IconData? icon, Widget? leading}) {
+    final textWidget = Text(
+      text,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSecondaryContainer,
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+
+    final hasLeading = leading != null || icon != null;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(100),
       ),
-      child: icon != null
+      child: hasLeading
           ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppIcon(icon, fill: 1, color: Theme.of(context).colorScheme.onSecondaryContainer, size: 16),
+                if (leading != null)
+                  leading
+                else
+                  AppIcon(icon!, fill: 1, color: Theme.of(context).colorScheme.onSecondaryContainer, size: 16),
                 const SizedBox(width: 4),
-                Text(
-                  text,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                textWidget,
               ],
             )
-          : Text(
-              text,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSecondaryContainer,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          : textWidget,
+    );
+  }
+
+  /// Build a rating chip that shows a source icon when available,
+  /// falling back to a generic Material icon.
+  Widget _buildRatingChip(String? imageUri, double value, IconData fallbackIcon) {
+    final info = parseRatingImage(imageUri, value);
+    if (info != null) {
+      return _buildMetadataChip(info.formattedValue, leading: SvgPicture.asset(info.assetPath, width: 16, height: 16));
+    }
+    return _buildMetadataChip('${(value * 10).toStringAsFixed(0)}%', icon: fallbackIcon);
+  }
+
+  /// Build all rating chips for the metadata.
+  /// When both critic and audience ratings are from Rotten Tomatoes,
+  /// they are combined into a single badge.
+  List<Widget> _buildRatingChips(PlexMetadata metadata) {
+    final chips = <Widget>[];
+    final bothRT =
+        metadata.rating != null &&
+        metadata.audienceRating != null &&
+        isRottenTomatoes(metadata.ratingImage) &&
+        isRottenTomatoes(metadata.audienceRatingImage);
+
+    if (bothRT) {
+      final critic = parseRatingImage(metadata.ratingImage, metadata.rating)!;
+      final audience = parseRatingImage(metadata.audienceRatingImage, metadata.audienceRating)!;
+      chips.add(_buildCombinedRtChip(critic, audience));
+    } else {
+      if (metadata.rating != null) {
+        chips.add(_buildRatingChip(metadata.ratingImage, metadata.rating!, Symbols.star_rounded));
+      }
+      if (metadata.audienceRating != null) {
+        chips.add(_buildRatingChip(metadata.audienceRatingImage, metadata.audienceRating!, Symbols.people_rounded));
+      }
+    }
+    return chips;
+  }
+
+  /// Build a combined RT chip showing critic + audience side by side.
+  Widget _buildCombinedRtChip(RatingInfo critic, RatingInfo audience) {
+    final textStyle = TextStyle(
+      color: Theme.of(context).colorScheme.onSecondaryContainer,
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SvgPicture.asset(critic.assetPath, width: 16, height: 16),
+          const SizedBox(width: 4),
+          Text(critic.formattedValue, style: textStyle),
+          const SizedBox(width: 10),
+          SvgPicture.asset(audience.assetPath, width: 16, height: 16),
+          const SizedBox(width: 4),
+          Text(audience.formattedValue, style: textStyle),
+        ],
+      ),
     );
   }
 
@@ -1514,16 +1581,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                                       _buildMetadataChip(formatContentRating(metadata.contentRating!)),
                                     if (metadata.duration != null)
                                       _buildMetadataChip(formatDurationTextual(metadata.duration!)),
-                                    if (metadata.rating != null)
-                                      _buildMetadataChip(
-                                        '${(metadata.rating! * 10).toStringAsFixed(0)}%',
-                                        icon: Symbols.star_rounded,
-                                      ),
-                                    if (metadata.audienceRating != null)
-                                      _buildMetadataChip(
-                                        '${(metadata.audienceRating! * 10).toStringAsFixed(0)}%',
-                                        icon: Symbols.people_rounded,
-                                      ),
+                                    ..._buildRatingChips(metadata),
                                   ],
                                 ),
                                 const SizedBox(height: 16),

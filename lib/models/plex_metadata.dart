@@ -77,6 +77,8 @@ class PlexMetadata with MultiServerFields {
   final int? playlistItemID; // Playlist item ID (for dumb playlists only)
   final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
   final int? librarySectionID; // Library section ID this item belongs to
+  final String? ratingImage; // Rating source URI (e.g. rottentomatoes://image.rating.ripe)
+  final String? audienceRatingImage; // Audience rating source URI
 
   // Multi-server support fields (from MultiServerFields mixin)
   @override
@@ -151,6 +153,8 @@ class PlexMetadata with MultiServerFields {
     this.playlistItemID,
     this.playQueueItemID,
     this.librarySectionID,
+    this.ratingImage,
+    this.audienceRatingImage,
     this.serverId,
     this.serverName,
     this.clearLogo,
@@ -198,6 +202,8 @@ class PlexMetadata with MultiServerFields {
     int? playlistItemID,
     int? playQueueItemID,
     int? librarySectionID,
+    String? ratingImage,
+    String? audienceRatingImage,
     String? serverId,
     String? serverName,
     String? clearLogo,
@@ -243,6 +249,8 @@ class PlexMetadata with MultiServerFields {
       playlistItemID: playlistItemID ?? this.playlistItemID,
       playQueueItemID: playQueueItemID ?? this.playQueueItemID,
       librarySectionID: librarySectionID ?? this.librarySectionID,
+      ratingImage: ratingImage ?? this.ratingImage,
+      audienceRatingImage: audienceRatingImage ?? this.audienceRatingImage,
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
       clearLogo: clearLogo ?? this.clearLogo,
