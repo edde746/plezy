@@ -287,6 +287,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Mostra su Discord cosa stai guardando';
 	@override String get matchContentFrameRate => 'Adatta frequenza fotogrammi';
 	@override String get matchContentFrameRateDescription => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria';
+	@override String get requireProfileSelectionOnOpen => 'Chiedi profilo all\'apertura';
+	@override String get requireProfileSelectionOnOpenDescription => 'Mostra la selezione del profilo ogni volta che l\'app viene aperta';
 }
 
 // Path: search
@@ -1147,6 +1149,8 @@ extension on TranslationsIt {
 			'settings.discordRichPresenceDescription' => 'Mostra su Discord cosa stai guardando',
 			'settings.matchContentFrameRate' => 'Adatta frequenza fotogrammi',
 			'settings.matchContentFrameRateDescription' => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria',
+			'settings.requireProfileSelectionOnOpen' => 'Chiedi profilo all\'apertura',
+			'settings.requireProfileSelectionOnOpenDescription' => 'Mostra la selezione del profilo ogni volta che l\'app viene aperta',
 			'search.hint' => 'Cerca film. spettacoli, musica...',
 			'search.tryDifferentTerm' => 'Prova altri termini di ricerca',
 			'search.searchYourMedia' => 'Cerca nei tuoi media',
@@ -1494,10 +1498,10 @@ extension on TranslationsIt {
 			'collections.selectCollection' => 'Seleziona raccolta',
 			'collections.createNewCollection' => 'Crea nuova raccolta',
 			'collections.collectionName' => 'Nome raccolta',
-			'collections.enterCollectionName' => 'Inserisci nome raccolta',
-			'collections.addedToCollection' => 'Aggiunto alla raccolta',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => 'Inserisci nome raccolta',
+			'collections.addedToCollection' => 'Aggiunto alla raccolta',
 			'collections.errorAddingToCollection' => 'Errore nell\'aggiunta alla raccolta',
 			'collections.created' => 'Raccolta creata',
 			'collections.removeFromCollection' => 'Rimuovi dalla raccolta',

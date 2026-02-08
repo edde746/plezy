@@ -68,6 +68,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const String _keyShowUnwatchedCount = 'show_unwatched_count';
   static const String _keyGlobalShaderPreset = 'global_shader_preset';
+  static const String _keyRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
 
   SettingsService._();
 
@@ -1027,6 +1028,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getString(_keyGlobalShaderPreset) ?? 'none'; // Default: no shader
   }
 
+  // Require Profile Selection on App Open
+  Future<void> setRequireProfileSelectionOnOpen(bool enabled) async {
+    await prefs.setBool(_keyRequireProfileSelectionOnOpen, enabled);
+  }
+
+  bool getRequireProfileSelectionOnOpen() {
+    return prefs.getBool(_keyRequireProfileSelectionOnOpen) ?? false;
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1075,6 +1085,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyAlwaysKeepSidebarOpen),
       prefs.remove(_keyShowUnwatchedCount),
       prefs.remove(_keyGlobalShaderPreset),
+      prefs.remove(_keyRequireProfileSelectionOnOpen),
     ]);
   }
 

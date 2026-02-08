@@ -18,6 +18,7 @@ import '../../services/download_storage_service.dart';
 import '../../services/saf_storage_service.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/user_profile_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
@@ -62,6 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kShowServerNameOnHubs = 'show_server_name_on_hubs';
   static const _kAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const _kShowUnwatchedCount = 'show_unwatched_count';
+  static const _kRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const _kPlayerBackend = 'player_backend';
   static const _kHardwareDecoding = 'hardware_decoding';
   static const _kMatchContentFrameRate = 'match_content_frame_rate';
@@ -109,6 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _enableDiscordRPC = false;
   bool _matchContentFrameRate = false;
   bool _useExoPlayer = true; // Android only: ExoPlayer vs MPV
+  bool _requireProfileSelectionOnOpen = false;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -175,6 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
       _matchContentFrameRate = _settingsService.getMatchContentFrameRate();
       _useExoPlayer = _settingsService.getUseExoPlayer();
+      _requireProfileSelectionOnOpen = _settingsService.getRequireProfileSelectionOnOpen();
       _isLoading = false;
     });
   }
@@ -353,6 +357,22 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 value: settingsProvider.showUnwatchedCount,
                 onChanged: (value) async {
                   await settingsProvider.setShowUnwatchedCount(value);
+                },
+              );
+            },
+          ),
+          Consumer<UserProfileProvider>(
+            builder: (context, userProfileProvider, child) {
+              if (!userProfileProvider.hasMultipleUsers) return const SizedBox.shrink();
+              return SwitchListTile(
+                focusNode: _focusTracker.get(_kRequireProfileSelectionOnOpen),
+                secondary: const AppIcon(Symbols.person_rounded, fill: 1),
+                title: Text(t.settings.requireProfileSelectionOnOpen),
+                subtitle: Text(t.settings.requireProfileSelectionOnOpenDescription),
+                value: _requireProfileSelectionOnOpen,
+                onChanged: (value) async {
+                  setState(() => _requireProfileSelectionOnOpen = value);
+                  await _settingsService.setRequireProfileSelectionOnOpen(value);
                 },
               );
             },

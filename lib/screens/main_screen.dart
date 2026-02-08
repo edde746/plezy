@@ -24,6 +24,7 @@ import '../providers/playback_state_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../services/offline_watch_sync_service.dart';
+import '../services/settings_service.dart';
 import '../providers/offline_mode_provider.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
@@ -74,7 +75,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener {
+class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener, WidgetsBindingObserver {
   late int _currentIndex;
   String? _selectedLibraryGlobalKey;
 
@@ -88,6 +89,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   bool _autoSwitchedToDownloads = false;
 
   OfflineModeProvider? _offlineModeProvider;
+
+  /// Prevents double-pushing the profile selection screen
+  bool _isShowingProfileSelection = false;
 
   late List<Widget> _screens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
@@ -106,6 +110,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   void initState() {
     super.initState();
     _isOffline = widget.isOfflineMode;
+
+    WidgetsBinding.instance.addObserver(this);
 
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
       windowManager.addListener(this);
@@ -152,11 +158,20 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   Future<void> _promptForInitialProfileSelection(UserProfileProvider userProfileProvider) async {
-    if (!mounted || !userProfileProvider.needsInitialProfileSelection) return;
+    if (!mounted || _isShowingProfileSelection) return;
 
+    final needsInitial = userProfileProvider.needsInitialProfileSelection;
+    final settingsService = await SettingsService.getInstance();
+    if (!mounted) return;
+    final requireOnOpen = settingsService.getRequireProfileSelectionOnOpen() && userProfileProvider.hasMultipleUsers;
+
+    if (!needsInitial && !requireOnOpen) return;
+
+    _isShowingProfileSelection = true;
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
+    _isShowingProfileSelection = false;
   }
 
   Future<void> _checkForUpdatesOnStartup() async {
@@ -368,6 +383,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     routeObserver.unsubscribe(this);
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
       windowManager.removeListener(this);
@@ -382,6 +398,28 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   @override
   void onWindowClose() {
     exit(0);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_isOffline && !_isShowingProfileSelection) {
+      _showProfileSelectionOnResume();
+    }
+  }
+
+  Future<void> _showProfileSelectionOnResume() async {
+    final settingsService = await SettingsService.getInstance();
+    if (!settingsService.getRequireProfileSelectionOnOpen()) return;
+    if (!mounted) return;
+
+    final userProfileProvider = context.read<UserProfileProvider>();
+    if (!userProfileProvider.hasMultipleUsers) return;
+
+    _isShowingProfileSelection = true;
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
+    _isShowingProfileSelection = false;
   }
 
   List<Widget> _buildScreens(bool offline) {

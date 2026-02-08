@@ -172,7 +172,9 @@
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Montrez ce que vous regardez sur Discord",
     "matchContentFrameRate": "Fréquence d'images du contenu correspondant",
-    "matchContentFrameRateDescription": "Ajustez la fréquence de rafraîchissement de l'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie"
+    "matchContentFrameRateDescription": "Ajustez la fréquence de rafraîchissement de l'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie",
+    "requireProfileSelectionOnOpen": "Demander le profil à l'ouverture",
+    "requireProfileSelectionOnOpenDescription": "Afficher la sélection de profil à chaque ouverture de l'application"
   },
   "search": {
     "hint": "Rechercher des films, des séries, de la musique...",

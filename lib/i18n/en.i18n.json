@@ -172,7 +172,9 @@
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Show what you're watching on Discord",
     "matchContentFrameRate": "Match Content Frame Rate",
-    "matchContentFrameRateDescription": "Adjust display refresh rate to match video content, reducing judder and saving battery"
+    "matchContentFrameRateDescription": "Adjust display refresh rate to match video content, reducing judder and saving battery",
+    "requireProfileSelectionOnOpen": "Ask for profile on app open",
+    "requireProfileSelectionOnOpenDescription": "Show profile selection every time the app is opened"
   },
   "search": {
     "hint": "Search movies, shows, music...",

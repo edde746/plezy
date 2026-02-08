@@ -616,6 +616,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Adjust display refresh rate to match video content, reducing judder and saving battery'
 	String get matchContentFrameRateDescription => 'Adjust display refresh rate to match video content, reducing judder and saving battery';
+
+	/// en: 'Ask for profile on app open'
+	String get requireProfileSelectionOnOpen => 'Ask for profile on app open';
+
+	/// en: 'Show profile selection every time the app is opened'
+	String get requireProfileSelectionOnOpenDescription => 'Show profile selection every time the app is opened';
 }
 
 // Path: search
@@ -2287,6 +2293,8 @@ extension on Translations {
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
 			'settings.matchContentFrameRateDescription' => 'Adjust display refresh rate to match video content, reducing judder and saving battery',
+			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
+			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -2634,10 +2642,10 @@ extension on Translations {
 			'watchTogether.createSession' => 'Create Session',
 			'watchTogether.creating' => 'Creating...',
 			'watchTogether.joinSession' => 'Join Session',
-			'watchTogether.joining' => 'Joining...',
-			'watchTogether.controlMode' => 'Control Mode',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joining' => 'Joining...',
+			'watchTogether.controlMode' => 'Control Mode',
 			'watchTogether.controlModeQuestion' => 'Who can control playback?',
 			'watchTogether.hostOnly' => 'Host Only',
 			'watchTogether.anyone' => 'Anyone',

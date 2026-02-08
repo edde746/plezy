@@ -172,7 +172,9 @@
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Discord에서 시청 중인 콘텐츠 표시",
     "matchContentFrameRate": "콘텐츠 프레임 레이트 맞춤",
-    "matchContentFrameRateDescription": "비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다"
+    "matchContentFrameRateDescription": "비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다",
+    "requireProfileSelectionOnOpen": "앱 실행 시 프로필 선택",
+    "requireProfileSelectionOnOpenDescription": "앱을 열 때마다 프로필 선택 화면을 표시합니다"
   },
   "search": {
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",

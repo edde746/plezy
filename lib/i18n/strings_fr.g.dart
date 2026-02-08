@@ -287,6 +287,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Montrez ce que vous regardez sur Discord';
 	@override String get matchContentFrameRate => 'Fréquence d\'images du contenu correspondant';
 	@override String get matchContentFrameRateDescription => 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie';
+	@override String get requireProfileSelectionOnOpen => 'Demander le profil à l\'ouverture';
+	@override String get requireProfileSelectionOnOpenDescription => 'Afficher la sélection de profil à chaque ouverture de l\'application';
 }
 
 // Path: search
@@ -1147,6 +1149,8 @@ extension on TranslationsFr {
 			'settings.discordRichPresenceDescription' => 'Montrez ce que vous regardez sur Discord',
 			'settings.matchContentFrameRate' => 'Fréquence d\'images du contenu correspondant',
 			'settings.matchContentFrameRateDescription' => 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie',
+			'settings.requireProfileSelectionOnOpen' => 'Demander le profil à l\'ouverture',
+			'settings.requireProfileSelectionOnOpenDescription' => 'Afficher la sélection de profil à chaque ouverture de l\'application',
 			'search.hint' => 'Rechercher des films, des séries, de la musique...',
 			'search.tryDifferentTerm' => 'Essayez un autre terme de recherche',
 			'search.searchYourMedia' => 'Rechercher dans vos médias',
@@ -1494,10 +1498,10 @@ extension on TranslationsFr {
 			'watchTogether.createSession' => 'Créer une session',
 			'watchTogether.creating' => 'Création...',
 			'watchTogether.joinSession' => 'Rejoindre la session',
-			'watchTogether.joining' => 'Rejoindre...',
-			'watchTogether.controlMode' => 'Mode de contrôle',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joining' => 'Rejoindre...',
+			'watchTogether.controlMode' => 'Mode de contrôle',
 			'watchTogether.controlModeQuestion' => 'Qui peut contrôler la lecture ?',
 			'watchTogether.hostOnly' => 'Hôte uniquement',
 			'watchTogether.anyone' => 'N\'importe qui',

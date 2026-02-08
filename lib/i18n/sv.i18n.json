@@ -172,7 +172,9 @@
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
-    "matchContentFrameRateDescription": "Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri"
+    "matchContentFrameRateDescription": "Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri",
+    "requireProfileSelectionOnOpen": "Fråga efter profil vid appstart",
+    "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",

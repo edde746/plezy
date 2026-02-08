@@ -287,6 +287,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Toon op Discord wat je aan het kijken bent';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
 	@override String get matchContentFrameRateDescription => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij';
+	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
+	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
 }
 
 // Path: search
@@ -1147,6 +1149,8 @@ extension on TranslationsNl {
 			'settings.discordRichPresenceDescription' => 'Toon op Discord wat je aan het kijken bent',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
 			'settings.matchContentFrameRateDescription' => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij',
+			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
+			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -1494,10 +1498,10 @@ extension on TranslationsNl {
 			'collections.selectCollection' => 'Selecteer collectie',
 			'collections.createNewCollection' => 'Nieuwe collectie maken',
 			'collections.collectionName' => 'Collectienaam',
-			'collections.enterCollectionName' => 'Voer collectienaam in',
-			'collections.addedToCollection' => 'Toegevoegd aan collectie',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => 'Voer collectienaam in',
+			'collections.addedToCollection' => 'Toegevoegd aan collectie',
 			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
 			'collections.created' => 'Collectie gemaakt',
 			'collections.removeFromCollection' => 'Verwijderen uit collectie',

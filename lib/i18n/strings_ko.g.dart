@@ -287,6 +287,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
 	@override String get matchContentFrameRateDescription => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
+	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
+	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 }
 
 // Path: search
@@ -1147,6 +1149,8 @@ extension on TranslationsKo {
 			'settings.discordRichPresenceDescription' => 'Discord에서 시청 중인 콘텐츠 표시',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
 			'settings.matchContentFrameRateDescription' => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다',
+			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
+			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -1494,10 +1498,10 @@ extension on TranslationsKo {
 			'watchTogether.createSession' => '세션 생성',
 			'watchTogether.creating' => '생성 중...',
 			'watchTogether.joinSession' => '세션 참여',
-			'watchTogether.joining' => '참가 중...',
-			'watchTogether.controlMode' => '제어 모드',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joining' => '참가 중...',
+			'watchTogether.controlMode' => '제어 모드',
 			'watchTogether.controlModeQuestion' => '누가 재생을 제어할 수 있나요?',
 			'watchTogether.hostOnly' => '호스트만',
 			'watchTogether.anyone' => '누구나',

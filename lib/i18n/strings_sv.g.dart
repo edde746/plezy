@@ -287,6 +287,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Visa vad du tittar på i Discord';
 	@override String get matchContentFrameRate => 'Matcha innehållets bildfrekvens';
 	@override String get matchContentFrameRateDescription => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri';
+	@override String get requireProfileSelectionOnOpen => 'Fråga efter profil vid appstart';
+	@override String get requireProfileSelectionOnOpenDescription => 'Visa profilval varje gång appen öppnas';
 }
 
 // Path: search
@@ -1147,6 +1149,8 @@ extension on TranslationsSv {
 			'settings.discordRichPresenceDescription' => 'Visa vad du tittar på i Discord',
 			'settings.matchContentFrameRate' => 'Matcha innehållets bildfrekvens',
 			'settings.matchContentFrameRateDescription' => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri',
+			'settings.requireProfileSelectionOnOpen' => 'Fråga efter profil vid appstart',
+			'settings.requireProfileSelectionOnOpenDescription' => 'Visa profilval varje gång appen öppnas',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -1494,10 +1498,10 @@ extension on TranslationsSv {
 			'collections.selectCollection' => 'Välj samling',
 			'collections.createNewCollection' => 'Skapa ny samling',
 			'collections.collectionName' => 'Samlingsnamn',
-			'collections.enterCollectionName' => 'Ange samlingsnamn',
-			'collections.addedToCollection' => 'Tillagd i samling',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => 'Ange samlingsnamn',
+			'collections.addedToCollection' => 'Tillagd i samling',
 			'collections.errorAddingToCollection' => 'Fel vid tillägg i samling',
 			'collections.created' => 'Samling skapad',
 			'collections.removeFromCollection' => 'Ta bort från samling',

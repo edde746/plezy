@@ -287,6 +287,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
 	@override String get matchContentFrameRate => '匹配内容帧率';
 	@override String get matchContentFrameRateDescription => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量';
+	@override String get requireProfileSelectionOnOpen => '打开应用时询问配置文件';
+	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
 }
 
 // Path: search
@@ -1147,6 +1149,8 @@ extension on TranslationsZh {
 			'settings.discordRichPresenceDescription' => '在 Discord 上显示您正在观看的内容',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
 			'settings.matchContentFrameRateDescription' => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量',
+			'settings.requireProfileSelectionOnOpen' => '打开应用时询问配置文件',
+			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
 			'search.hint' => '搜索电影、系列、音乐...',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -1494,10 +1498,10 @@ extension on TranslationsZh {
 			'collections.selectCollection' => '选择合集',
 			'collections.createNewCollection' => '创建新合集',
 			'collections.collectionName' => '合集名称',
-			'collections.enterCollectionName' => '输入合集名称',
-			'collections.addedToCollection' => '已添加到合集',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => '输入合集名称',
+			'collections.addedToCollection' => '已添加到合集',
 			'collections.errorAddingToCollection' => '添加到合集失败',
 			'collections.created' => '已创建合集',
 			'collections.removeFromCollection' => '从合集移除',
