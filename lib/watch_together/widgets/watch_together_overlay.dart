@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
@@ -259,27 +260,19 @@ class _SessionMenuSheet extends StatelessWidget {
     showSuccessSnackBar(context, t.watchTogether.sessionCodeCopied);
   }
 
-  void _confirmLeave(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(provider.isHost ? t.watchTogether.endSessionQuestion : t.watchTogether.leaveSessionQuestion),
-        content: Text(
-          provider.isHost ? t.watchTogether.endSessionConfirmOverlay : t.watchTogether.leaveSessionConfirmOverlay,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              provider.leaveSession();
-              onLeaveSession?.call();
-            },
-            child: Text(provider.isHost ? t.watchTogether.endSession : t.watchTogether.leave),
-          ),
-        ],
-      ),
+  void _confirmLeave(BuildContext context) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: provider.isHost ? t.watchTogether.endSessionQuestion : t.watchTogether.leaveSessionQuestion,
+      message: provider.isHost ? t.watchTogether.endSessionConfirmOverlay : t.watchTogether.leaveSessionConfirmOverlay,
+      confirmText: provider.isHost ? t.watchTogether.endSession : t.watchTogether.leave,
+      isDestructive: true,
     );
+
+    if (confirmed) {
+      provider.leaveSession();
+      onLeaveSession?.call();
+    }
   }
 }
 

@@ -28,6 +28,7 @@ import '../mixins/item_updatable.dart';
 import '../mixins/watch_state_aware.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
@@ -867,19 +868,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Future<void> _handleLogout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.common.logout),
-        content: Text(t.messages.logoutConfirm),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.logout)),
-        ],
-      ),
+    final confirm = await showConfirmDialog(
+      context,
+      title: t.common.logout,
+      message: t.messages.logoutConfirm,
+      confirmText: t.common.logout,
+      isDestructive: true,
     );
 
-    if (confirm == true && mounted) {
+    if (confirm && mounted) {
       // Use comprehensive logout through UserProfileProvider
       final userProfileProvider = Provider.of<UserProfileProvider>(context, listen: false);
       final multiServerProvider = context.read<MultiServerProvider>();

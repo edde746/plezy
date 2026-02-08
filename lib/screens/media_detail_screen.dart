@@ -30,6 +30,7 @@ import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
@@ -477,24 +478,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                 return IconButton.filledTonal(
                   onPressed: () async {
                     // Show options: Delete or Retry
-                    final action = await showDialog<String>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Cancelled Download'),
-                        content: const Text('This download was cancelled. What would you like to do?'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(context, 'delete'), child: Text(t.common.delete)),
-                          TextButton(onPressed: () => Navigator.pop(context, 'retry'), child: const Text('Retry')),
-                        ],
-                      ),
+                    final retry = await showConfirmDialog(
+                      context,
+                      title: 'Cancelled Download',
+                      message: 'This download was cancelled. What would you like to do?',
+                      cancelText: t.common.delete,
+                      confirmText: 'Retry',
                     );
 
-                    if (action == 'delete' && context.mounted) {
+                    if (!retry && context.mounted) {
                       await downloadProvider.deleteDownload(globalKey);
                       if (context.mounted) {
                         showSuccessSnackBar(context, t.downloads.downloadDeleted);
                       }
-                    } else if (action == 'retry' && context.mounted) {
+                    } else if (retry && context.mounted) {
                       final client = _getClientForMetadata(context);
                       if (client == null) return;
                       await downloadProvider.deleteDownload(globalKey);
@@ -559,23 +556,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                 return IconButton.filledTonal(
                   onPressed: () async {
                     // Show delete download confirmation
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text(t.downloads.deleteDownload),
-                        content: Text(t.downloads.deleteConfirm(title: metadata.title)),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            style: TextButton.styleFrom(foregroundColor: Colors.red),
-                            child: Text(t.common.delete),
-                          ),
-                        ],
-                      ),
+                    final confirmed = await showDeleteConfirmation(
+                      context,
+                      title: t.downloads.deleteDownload,
+                      message: t.downloads.deleteConfirm(title: metadata.title),
                     );
 
-                    if (confirmed == true && context.mounted) {
+                    if (confirmed && context.mounted) {
                       await downloadProvider.deleteDownload(globalKey);
                       if (context.mounted) {
                         showSuccessSnackBar(context, t.downloads.downloadDeleted);

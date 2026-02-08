@@ -37,6 +37,7 @@ import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
@@ -1131,23 +1132,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       // For non-host participants, show leave session confirmation
       if (_watchTogetherProvider != null && _watchTogetherProvider!.isInSession && !_watchTogetherProvider!.isHost) {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Leave Session?'),
-            content: const Text('You will be removed from the session.'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error),
-                child: const Text('Leave'),
-              ),
-            ],
-          ),
+        final confirmed = await showConfirmDialog(
+          context,
+          title: 'Leave Session?',
+          message: 'You will be removed from the session.',
+          confirmText: 'Leave',
+          isDestructive: true,
         );
 
-        if (confirmed == true && mounted) {
+        if (confirmed && mounted) {
           await _watchTogetherProvider!.leaveSession();
           if (mounted) {
             // Exit fullscreen before leaving player (Windows/Linux only)

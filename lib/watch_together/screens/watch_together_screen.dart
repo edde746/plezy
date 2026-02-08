@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/dialogs.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
@@ -143,15 +144,23 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
   }
 
   Future<ControlMode?> _showControlModeDialog() {
+    const buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
+    const buttonShape = StadiumBorder();
     return showDialog<ControlMode>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(t.watchTogether.controlMode),
         content: Text(t.watchTogether.controlModeQuestion),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+          TextButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(padding: buttonPadding, shape: buttonShape),
+            child: Text(t.common.cancel),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, ControlMode.hostOnly),
+            style: TextButton.styleFrom(padding: buttonPadding, shape: buttonShape),
             child: Text(t.watchTogether.hostOnly),
           ),
           FilledButton(
@@ -336,23 +345,15 @@ class _ActiveSessionContent extends StatelessWidget {
   }
 
   Future<void> _leaveSession(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(watchTogether.isHost ? t.watchTogether.endSessionQuestion : t.watchTogether.leaveSessionQuestion),
-        content: Text(watchTogether.isHost ? t.watchTogether.endSessionConfirm : t.watchTogether.leaveSessionConfirm),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            child: Text(watchTogether.isHost ? t.watchTogether.end : t.watchTogether.leave),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: watchTogether.isHost ? t.watchTogether.endSessionQuestion : t.watchTogether.leaveSessionQuestion,
+      message: watchTogether.isHost ? t.watchTogether.endSessionConfirm : t.watchTogether.leaveSessionConfirm,
+      confirmText: watchTogether.isHost ? t.watchTogether.end : t.watchTogether.leave,
+      isDestructive: true,
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       await watchTogether.leaveSession();
     }
   }

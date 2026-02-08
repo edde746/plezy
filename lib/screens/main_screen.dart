@@ -198,12 +198,24 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.later)),
+            TextButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(dialogContext),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                shape: const StadiumBorder(),
+              ),
+              child: Text(t.common.later),
+            ),
             TextButton(
               onPressed: () async {
                 await UpdateService.skipVersion(updateInfo['latestVersion']);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                shape: const StadiumBorder(),
+              ),
               child: Text(t.update.skipVersion),
             ),
             FilledButton(

@@ -3,26 +3,50 @@ import '../i18n/strings.g.dart';
 
 /// Utility functions for showing common dialogs
 
-/// Shows a delete confirmation dialog
-/// Returns true if user confirmed, false if cancelled
-Future<bool> showDeleteConfirmation(BuildContext context, {required String title, required String message}) async {
+const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
+const _buttonShape = StadiumBorder();
+
+/// Shows a confirmation dialog with consistent button sizing and autofocus.
+/// Returns true if user confirmed, false if cancelled.
+Future<bool> showConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmText,
+  String? cancelText,
+  bool isDestructive = false,
+}) async {
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: TextButton.styleFrom(foregroundColor: Colors.red),
-          child: Text(t.common.delete),
-        ),
-      ],
-    ),
+    builder: (dialogContext) {
+      final colorScheme = Theme.of(dialogContext).colorScheme;
+      return AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(dialogContext, false),
+            style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+            child: Text(cancelText ?? t.common.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: isDestructive ? FilledButton.styleFrom(backgroundColor: colorScheme.error) : null,
+            child: Text(confirmText),
+          ),
+        ],
+      );
+    },
   );
 
   return confirmed ?? false;
+}
+
+/// Shows a delete confirmation dialog.
+/// Convenience wrapper around [showConfirmDialog] with destructive styling.
+Future<bool> showDeleteConfirmation(BuildContext context, {required String title, required String message}) {
+  return showConfirmDialog(context, title: title, message: message, confirmText: t.common.delete, isDestructive: true);
 }
 
 /// Shows a text input dialog for creating/naming items

@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/mpv_config_models.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/desktop_app_bar.dart';
@@ -143,19 +144,8 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
     saveFocusNode.dispose();
   }
 
-  Future<bool> _showConfirmDeleteDialog({required String title, required String content}) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.delete)),
-        ],
-      ),
-    );
-    return result == true;
+  Future<bool> _showConfirmDeleteDialog({required String title, required String content}) {
+    return showDeleteConfirmation(context, title: title, message: content);
   }
 
   Future<void> _showDeleteEntryDialog(int index) async {
