@@ -42,6 +42,7 @@ import 'utils/orientation_helper.dart';
 import 'utils/language_codes.dart';
 import 'i18n/strings.g.dart';
 import 'focus/input_mode_tracker.dart';
+import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
@@ -317,7 +318,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                 theme: themeProvider.lightTheme,
                 darkTheme: themeProvider.darkTheme,
                 themeMode: themeProvider.materialThemeMode,
-                navigatorObservers: [routeObserver],
+                navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
                 home: const OrientationAwareSetup(),
               ),
             ),

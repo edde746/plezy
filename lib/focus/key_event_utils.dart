@@ -82,3 +82,18 @@ KeyEventResult handleBackKeyNavigation<T>(BuildContext context, KeyEvent event, 
   // (KeyDownEvent can be received by both the popping screen and the returned-to screen)
   return handleBackKeyAction(event, () => Navigator.pop(context, result));
 }
+
+/// Navigator observer that automatically suppresses stray back KeyUp events
+/// after any route pop caused by a back key press.
+///
+/// This catches pops triggered by Flutter's built-in DismissAction (which fires
+/// on KeyDown for dialogs) and Android TV system back gestures, preventing the
+/// orphaned KeyUp from propagating to the underlying screen's back handler.
+class BackKeySuppressorObserver extends NavigatorObserver {
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    if (BackKeyPressTracker.isBackKeyDown) {
+      BackKeyUpSuppressor.suppressBackUntilKeyUp();
+    }
+  }
+}

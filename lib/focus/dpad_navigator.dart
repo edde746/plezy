@@ -121,3 +121,32 @@ class BackKeyUpSuppressor {
     return false;
   }
 }
+
+/// Tracks whether a back key is currently physically pressed.
+///
+/// Used by [BackKeySuppressorObserver] to detect when a route pop was
+/// caused by a back key press (e.g. Flutter's built-in DismissAction,
+/// DismissAction on KeyRepeat, or Android TV system back gesture) so it
+/// can automatically suppress the stray KeyUp that follows.
+class BackKeyPressTracker {
+  static bool _isBackKeyDown = false;
+
+  /// Whether a back key is currently held down.
+  ///
+  /// Also checks [HardwareKeyboard.instance.logicalKeysPressed] as a
+  /// fallback in case our tracking drifted out of sync.
+  static bool get isBackKeyDown {
+    if (_isBackKeyDown) return true;
+    return HardwareKeyboard.instance.logicalKeysPressed.any(
+      (key) => key.isBackKey,
+    );
+  }
+
+  static bool handleKeyEvent(KeyEvent event) {
+    if (event.logicalKey.isBackKey) {
+      // KeyDown and KeyRepeat both mean the key is physically held.
+      _isBackKeyDown = event is! KeyUpEvent;
+    }
+    return false; // Never consume
+  }
+}

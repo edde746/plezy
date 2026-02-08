@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../utils/platform_detector.dart';
 import '../services/gamepad_service.dart';
+import 'dpad_navigator.dart';
 
 /// Tracks whether the user is navigating via keyboard/d-pad or pointer (mouse/touch).
 ///
@@ -66,6 +67,10 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   }
 
   bool _handleKeyEvent(KeyEvent event) {
+    // Track back key press state for automatic suppression of stray KeyUp
+    // events after route pops (see BackKeySuppressorObserver).
+    BackKeyPressTracker.handleKeyEvent(event);
+
     // Only switch to keyboard mode on key down (not repeats or releases)
     if (event is KeyDownEvent) {
       _setMode(InputMode.keyboard);

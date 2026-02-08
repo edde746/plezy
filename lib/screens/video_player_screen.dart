@@ -1155,7 +1155,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             }
             if (!mounted) return;
             _isExiting.value = true;
-            BackKeyUpSuppressor.suppressBackUntilKeyUp();
             Navigator.of(context).pop(true);
           }
         }
@@ -1176,12 +1175,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Default behavior for hosts or non-session users
       if (!mounted) return;
       _isExiting.value = true;
-      // Suppress stray BACK KeyUp on the previous route: on Android TV the
-      // system back gesture pops the route around KeyDown, so the KeyUp arrives
-      // at the previous route and would be misinterpreted as a new BACK press.
-      // markClosedViaBackKey() (set by handleBackKeyAction for key-triggered
-      // pops) makes this a no-op, so it only activates for system-back pops.
-      BackKeyUpSuppressor.suppressBackUntilKeyUp();
       Navigator.of(context).pop(true);
     } finally {
       _isHandlingBack = false;
