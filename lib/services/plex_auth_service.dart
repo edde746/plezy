@@ -9,6 +9,38 @@ import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
 import '../utils/connection_constants.dart';
 
+/// Redacts the middle of an IP address or hostname for safe logging.
+/// E.g. `192.168.1.50` → `192.***.***.50`, `my.server.example.com` → `my.***.***. com`.
+String _redactHost(String host) {
+  // Strip brackets from IPv6
+  final bare = host.startsWith('[') && host.endsWith(']')
+      ? host.substring(1, host.length - 1)
+      : host;
+
+  // IPv6
+  if (bare.contains(':')) {
+    final parts = bare.split(':');
+    if (parts.length > 2) {
+      return '${parts.first}:***:${parts.last}';
+    }
+    return bare;
+  }
+
+  // IPv4
+  final ipParts = bare.split('.');
+  if (ipParts.length == 4 && ipParts.every((p) => int.tryParse(p) != null)) {
+    return '${ipParts.first}.***.***.${ipParts.last}';
+  }
+
+  // Hostname
+  final hostParts = bare.split('.');
+  if (hostParts.length >= 3) {
+    return '${hostParts.first}.***.${hostParts.last}';
+  }
+
+  return bare;
+}
+
 class PlexAuthService {
   static const String _appName = 'Plezy';
   static const String _plexApiBase = 'https://plex.tv/api/v2';
@@ -379,6 +411,20 @@ class PlexServer {
       'Starting server connection discovery',
       error: {'preferred': preferredUri, 'candidateCount': totalCandidates},
     );
+
+    for (final conn in connections) {
+      final redactedUri = conn.uri.replaceAll(
+        RegExp(r'//[^:/]+'),
+        '//${_redactHost(conn.address)}',
+      );
+      appLogger.d('Raw API connection', error: {
+        'uri': redactedUri,
+        'address': _redactHost(conn.address),
+        'local': conn.local,
+        'relay': conn.relay,
+        'protocol': conn.protocol,
+      });
+    }
 
     _ConnectionCandidate? firstCandidate;
 
