@@ -522,6 +522,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   void _focusContent() {
     setState(() => _isSidebarFocused = false);
     _contentFocusScope.requestFocus();
+    // When content regains focus while on Discover, focus the hero section
+    if (_currentIndex == 0 && !_isOffline) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_discoverKey.currentState case final TabVisibilityAware aware) {
+          aware.onTabShown();
+        }
+      });
+    }
     // When content regains focus while on Libraries, retry focusing the active tab
     if (_currentIndex == 1 && !_isOffline) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

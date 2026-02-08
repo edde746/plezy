@@ -543,6 +543,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
+    _focusTopBoundary();
   }
 
   // Helper method to calculate visible dot range (max 5 dots)
