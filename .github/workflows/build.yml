@@ -402,11 +402,9 @@ jobs:
           name: windows-installer
           path: plezy-windows-installer.exe
 
-  build-linux:
+  build-linux-x64:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
-      attestations: write
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -429,45 +427,169 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
-
-      - name: Install fpm
-        run: sudo gem install fpm
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Linux
+      - name: Build Linux x64
         run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true
 
-      - name: Create Archive
+      - name: Create tarball
         run: |
           cd build/linux/x64/release/bundle
-          tar -czf $GITHUB_WORKSPACE/plezy-linux.tar.gz *
+          tar -czf $GITHUB_WORKSPACE/plezy-linux-x64.tar.gz *
+
+      - name: Upload x64 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-build
+          path: build/linux/x64/release/bundle/
+
+      - name: Upload x64 tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-tarball
+          path: plezy-linux-x64.tar.gz
+
+  build-linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "master"
+          cache: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-arm64-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-pub-
+
+      - name: Cache APT packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv
+          version: 1.1
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Linux arm64
+        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true
+
+      - name: Find bundle directory
+        id: find-bundle
+        run: |
+          BUNDLE_DIR=$(find build/linux -path "*/release/bundle" -type d | head -1)
+          echo "bundle_dir=$BUNDLE_DIR" >> $GITHUB_OUTPUT
+
+      - name: Create tarball
+        run: |
+          cd ${{ steps.find-bundle.outputs.bundle_dir }}
+          tar -czf $GITHUB_WORKSPACE/plezy-linux-arm64.tar.gz *
+
+      - name: Upload arm64 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-build
+          path: ${{ steps.find-bundle.outputs.bundle_dir }}/
+
+      - name: Upload arm64 tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-tarball
+          path: plezy-linux-arm64.tar.gz
+
+  package-linux:
+    needs: [build-linux-x64, build-linux-arm64]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download x64 build
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-x64-build
+          path: build-x64
+
+      - name: Download arm64 build
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-arm64-build
+          path: build-arm64
+
+      - name: Download x64 tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-x64-tarball
+
+      - name: Download arm64 tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-arm64-tarball
+
+      - name: Cache APT packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          version: 1.1
+
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+
+      - name: Install fpm
+        run: sudo gem install fpm
 
       - name: Build Linux Packages
-        run: OUTPUT_DIR=$GITHUB_WORKSPACE python3 linux/packaging/build-packages.py
+        run: |
+          X64_BUILD_DIR=$GITHUB_WORKSPACE/build-x64 \
+          ARM64_BUILD_DIR=$GITHUB_WORKSPACE/build-arm64 \
+          OUTPUT_DIR=$GITHUB_WORKSPACE \
+          python3 linux/packaging/build-packages.py
 
       - name: Attest Linux artifacts
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            plezy-linux.tar.gz
+            plezy-linux-x64.tar.gz
+            plezy-linux-arm64.tar.gz
             plezy-linux.deb
             plezy-linux.rpm
             plezy-linux.pkg.tar.zst
 
-      - name: Upload Linux App
+      - name: Upload Linux tarballs
         uses: actions/upload-artifact@v4
         with:
-          name: linux-app
-          path: plezy-linux.tar.gz
+          name: linux-tarballs
+          path: |
+            plezy-linux-x64.tar.gz
+            plezy-linux-arm64.tar.gz
 
       - name: Upload Linux Packages
         uses: actions/upload-artifact@v4
@@ -479,7 +601,7 @@ jobs:
             plezy-linux.pkg.tar.zst
 
   create-release:
-    needs: [build-android, build-ios, build-macos, package-windows, build-linux]
+    needs: [build-android, build-ios, build-macos, package-windows, package-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -504,7 +626,8 @@ jobs:
             artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
             artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
             artifacts/windows-installer/plezy-windows-installer.exe
-            artifacts/linux-app/plezy-linux.tar.gz
+            artifacts/linux-tarballs/plezy-linux-x64.tar.gz
+            artifacts/linux-tarballs/plezy-linux-arm64.tar.gz
             artifacts/linux-packages/*
           draft: true
           prerelease: false

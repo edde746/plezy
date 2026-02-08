@@ -8,8 +8,11 @@ from pathlib import Path
 # Paths
 SCRIPT_DIR = Path(__file__).parent.resolve()
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
-BUILD_DIR = PROJECT_ROOT / "build/linux/x64/release/bundle"
 OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", PROJECT_ROOT))
+
+# Build directories: use env vars if set, otherwise fall back to default Flutter paths
+X64_BUILD_DIR = Path(os.environ["X64_BUILD_DIR"]) if "X64_BUILD_DIR" in os.environ else PROJECT_ROOT / "build/linux/x64/release/bundle"
+ARM64_BUILD_DIR = Path(os.environ["ARM64_BUILD_DIR"]) if "ARM64_BUILD_DIR" in os.environ else PROJECT_ROOT / "build/linux/arm64/release/bundle"
 
 # Package metadata
 METADATA = {
@@ -28,7 +31,7 @@ ICON_SIZES = [16, 32, 48, 64, 128, 256, 512]
 DISTROS = {
     "deb": {
         "type": "deb",
-        "arch": "amd64",
+        "arch": "all",
         "category": "video",
         "ext": "deb",
         "compression": ["--deb-compression", "xz", "--deb-priority", "optional"],
@@ -43,7 +46,7 @@ DISTROS = {
     },
     "rpm": {
         "type": "rpm",
-        "arch": "x86_64",
+        "arch": "noarch",
         "category": "Multimedia",
         "ext": "rpm",
         "compression": ["--rpm-compression", "xzmt"],
@@ -58,7 +61,7 @@ DISTROS = {
     },
     "pacman": {
         "type": "pacman",
-        "arch": "x86_64",
+        "arch": "any",
         "category": None,
         "ext": "pkg.tar.zst",
         "compression": ["--pacman-compression", "zstd"],
@@ -106,11 +109,18 @@ def generate_icons():
 
 def get_file_mappings() -> list[str]:
     """Get file mappings for fpm."""
-    mappings = [
-        f"{BUILD_DIR}/=/opt/plezy/",
+    mappings = []
+
+    # Map each available architecture bundle
+    if X64_BUILD_DIR.exists():
+        mappings.append(f"{X64_BUILD_DIR}/=/opt/plezy/x64/")
+    if ARM64_BUILD_DIR.exists():
+        mappings.append(f"{ARM64_BUILD_DIR}/=/opt/plezy/arm64/")
+
+    mappings.extend([
         f"{SCRIPT_DIR}/com.edde746.plezy.desktop=/usr/share/applications/com.edde746.plezy.desktop",
         f"{SCRIPT_DIR}/plezy.sh=/usr/bin/plezy",
-    ]
+    ])
 
     for size in ICON_SIZES:
         mappings.append(
@@ -163,11 +173,21 @@ def build_package(distro: str, version: str):
 
 
 def main():
-    # Verify build exists
-    if not BUILD_DIR.exists():
-        print(f"Error: Build directory not found at {BUILD_DIR}")
-        print("Please run 'flutter build linux --release' first")
+    # Verify at least one build exists
+    has_x64 = X64_BUILD_DIR.exists()
+    has_arm64 = ARM64_BUILD_DIR.exists()
+
+    if not has_x64 and not has_arm64:
+        print(f"Error: No build directories found")
+        print(f"  x64:   {X64_BUILD_DIR}")
+        print(f"  arm64: {ARM64_BUILD_DIR}")
+        print("Please run 'flutter build linux --release' first or set X64_BUILD_DIR/ARM64_BUILD_DIR")
         exit(1)
+
+    if has_x64:
+        print(f"Found x64 build:   {X64_BUILD_DIR}")
+    if has_arm64:
+        print(f"Found arm64 build: {ARM64_BUILD_DIR}")
 
     version = get_version()
     print(f"Building packages for {METADATA['name']} version {version}")
