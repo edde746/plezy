@@ -663,6 +663,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     // Keep the overlay visible while the user is moving the pointer
     _restartHideTimerIfPlaying();
+
+    // Cancel auto-skip when user moves pointer over the player
+    _cancelAutoSkipTimer();
   }
 
   void _toggleControls() {
@@ -671,10 +674,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     });
     // Notify parent of visibility change (for popup positioning)
     widget.controlsVisible?.value = _showControls;
+    // Cancel auto-skip on any tap, not just when controls become visible
+    _cancelAutoSkipTimer();
     if (_showControls) {
       _startHideTimer();
-      // Cancel auto-skip when user manually shows controls
-      _cancelAutoSkipTimer();
     }
 
     // On macOS, hide/show traffic lights with controls
