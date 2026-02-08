@@ -174,10 +174,10 @@ class PlexClient {
         error = e.type == DioExceptionType.connectionTimeout
             ? 'Connection timeout'
             : e.type == DioExceptionType.receiveTimeout
-                ? 'Receive timeout'
-                : e.type == DioExceptionType.connectionError
-                    ? 'Connection error'
-                    : e.type.name;
+            ? 'Receive timeout'
+            : e.type == DioExceptionType.connectionError
+            ? 'Connection error'
+            : e.type.name;
         if (e.response?.statusCode != null) {
           error += ' (HTTP ${e.response!.statusCode})';
         }

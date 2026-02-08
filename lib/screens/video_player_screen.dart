@@ -141,8 +141,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final partId = _currentMediaInfo?.partId;
     if (partId == null || widget.isOffline) return null;
     final client = _getClientForMetadata(context);
-    return '${client.config.baseUrl}/library/parts/$partId/indexes/sd/${time.inMilliseconds}'
-        .withPlexToken(client.config.token);
+    return '${client.config.baseUrl}/library/parts/$partId/indexes/sd/${time.inMilliseconds}'.withPlexToken(
+      client.config.token,
+    );
   }
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering

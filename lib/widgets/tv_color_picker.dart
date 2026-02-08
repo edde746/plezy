@@ -43,10 +43,7 @@ class _TvColorPickerState extends State<TvColorPicker> {
     _saturation = (hsv.saturation * 100).round();
     _value = (hsv.value * 100).round();
     _hexController = TextEditingController(text: _currentHex());
-    _hexFocusNode = FocusNode(
-      debugLabel: 'TvColorPicker_hex',
-      onKeyEvent: _handleHexKeyEvent,
-    );
+    _hexFocusNode = FocusNode(debugLabel: 'TvColorPicker_hex', onKeyEvent: _handleHexKeyEvent);
   }
 
   @override

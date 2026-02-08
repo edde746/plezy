@@ -137,9 +137,7 @@ class BackKeyPressTracker {
   /// fallback in case our tracking drifted out of sync.
   static bool get isBackKeyDown {
     if (_isBackKeyDown) return true;
-    return HardwareKeyboard.instance.logicalKeysPressed.any(
-      (key) => key.isBackKey,
-    );
+    return HardwareKeyboard.instance.logicalKeysPressed.any((key) => key.isBackKey);
   }
 
   static bool handleKeyEvent(KeyEvent event) {

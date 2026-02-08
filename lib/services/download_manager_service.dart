@@ -213,8 +213,7 @@ class DownloadManagerService {
           if (inner is SocketException) return true;
           if (inner is HttpException) return true;
           final msg = inner?.toString() ?? '';
-          if (msg.contains('Connection closed') ||
-              msg.contains('Connection reset')) {
+          if (msg.contains('Connection closed') || msg.contains('Connection reset')) {
             return true;
           }
           return false;
@@ -256,9 +255,7 @@ class DownloadManagerService {
   Future<void> recoverInterruptedDownloads() async {
     try {
       final allDownloads = await _database.select(_database.downloadedMedia).get();
-      final interrupted = allDownloads.where(
-        (item) => item.status == DownloadStatus.downloading.index,
-      ).toList();
+      final interrupted = allDownloads.where((item) => item.status == DownloadStatus.downloading.index).toList();
 
       if (interrupted.isEmpty) return;
 
@@ -648,8 +645,7 @@ class DownloadManagerService {
         responseType: ResponseType.stream,
         headers: headers,
         // Prevent Dio from throwing on 206/416
-        validateStatus: (status) =>
-            status != null && (status >= 200 && status < 300 || status == 416),
+        validateStatus: (status) => status != null && (status >= 200 && status < 300 || status == 416),
       ),
       cancelToken: cancelToken,
     );
@@ -687,9 +683,7 @@ class DownloadManagerService {
         totalBytes = match != null ? int.parse(match.group(1)!) : -1;
       } else {
         final contentLength = response.headers.value('content-length');
-        totalBytes = contentLength != null
-            ? int.parse(contentLength) + offset
-            : -1;
+        totalBytes = contentLength != null ? int.parse(contentLength) + offset : -1;
       }
       appLogger.i('Resuming download at $offset/$totalBytes for $globalKey');
     } else {
@@ -719,15 +713,11 @@ class DownloadManagerService {
         final now = DateTime.now();
         if (now.difference(lastUpdate).inMilliseconds >= 500) {
           final elapsed = now.difference(lastUpdate).inMilliseconds / 1000.0;
-          final bytesPerSecond = elapsed > 0
-              ? (receivedBytes - lastReportedBytes) / elapsed
-              : 0.0;
+          final bytesPerSecond = elapsed > 0 ? (receivedBytes - lastReportedBytes) / elapsed : 0.0;
           lastUpdate = now;
           lastReportedBytes = receivedBytes;
 
-          final progress = totalBytes > 0
-              ? ((receivedBytes / totalBytes) * 100).round()
-              : 0;
+          final progress = totalBytes > 0 ? ((receivedBytes / totalBytes) * 100).round() : 0;
 
           _progressController.add(
             DownloadProgress(
@@ -741,9 +731,7 @@ class DownloadManagerService {
             ),
           );
 
-          _database
-              .updateDownloadProgress(globalKey, progress, receivedBytes, totalBytes)
-              .catchError((e) {
+          _database.updateDownloadProgress(globalKey, progress, receivedBytes, totalBytes).catchError((e) {
             appLogger.w('Failed to update download progress in DB', error: e);
           });
         }
@@ -757,9 +745,7 @@ class DownloadManagerService {
       if (totalBytes > 0) {
         final actualSize = await partFile.length();
         if (actualSize != totalBytes) {
-          throw Exception(
-            'Download size mismatch: expected $totalBytes bytes but got $actualSize',
-          );
+          throw Exception('Download size mismatch: expected $totalBytes bytes but got $actualSize');
         }
       }
 
@@ -775,12 +761,8 @@ class DownloadManagerService {
         // Ignore flush errors during error handling
       }
       // Persist current progress to DB for resume
-      final progress = totalBytes > 0
-          ? ((receivedBytes / totalBytes) * 100).round()
-          : 0;
-      await _database
-          .updateDownloadProgress(globalKey, progress, receivedBytes, totalBytes)
-          .catchError((dbErr) {
+      final progress = totalBytes > 0 ? ((receivedBytes / totalBytes) * 100).round() : 0;
+      await _database.updateDownloadProgress(globalKey, progress, receivedBytes, totalBytes).catchError((dbErr) {
         appLogger.w('Failed to persist progress on error', error: dbErr);
       });
       rethrow;

@@ -47,6 +47,7 @@ dependencies:
   web_socket_channel: ^3.0.1
   in_app_review: ^2.0.11
   dart_discord_presence: ^1.1.0
+  flutter_svg: ^2.2.3
 
 
 dev_dependencies:
@@ -68,6 +69,7 @@ flutter:
     - assets/go-noto-current-regular.ttf
     - assets/shaders/nvscaler/
     - assets/shaders/anime4k/
+    - assets/rating_icons/
 
 flutter_launcher_icons:
   android: true

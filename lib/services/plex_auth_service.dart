@@ -13,9 +13,7 @@ import '../utils/connection_constants.dart';
 /// E.g. `192.168.1.50` → `192.***.***.50`, `my.server.example.com` → `my.***.***. com`.
 String _redactHost(String host) {
   // Strip brackets from IPv6
-  final bare = host.startsWith('[') && host.endsWith(']')
-      ? host.substring(1, host.length - 1)
-      : host;
+  final bare = host.startsWith('[') && host.endsWith(']') ? host.substring(1, host.length - 1) : host;
 
   // IPv6
   if (bare.contains(':')) {
@@ -413,17 +411,17 @@ class PlexServer {
     );
 
     for (final conn in connections) {
-      final redactedUri = conn.uri.replaceAll(
-        RegExp(r'//[^:/]+'),
-        '//${_redactHost(conn.address)}',
+      final redactedUri = conn.uri.replaceAll(RegExp(r'//[^:/]+'), '//${_redactHost(conn.address)}');
+      appLogger.d(
+        'Raw API connection',
+        error: {
+          'uri': redactedUri,
+          'address': _redactHost(conn.address),
+          'local': conn.local,
+          'relay': conn.relay,
+          'protocol': conn.protocol,
+        },
       );
-      appLogger.d('Raw API connection', error: {
-        'uri': redactedUri,
-        'address': _redactHost(conn.address),
-        'local': conn.local,
-        'relay': conn.relay,
-        'protocol': conn.protocol,
-      });
     }
 
     _ConnectionCandidate? firstCandidate;
@@ -460,13 +458,16 @@ class PlexServer {
           completedTests++;
 
           if (!result.success) {
-            appLogger.w('Connection candidate failed', error: {
-              'url': candidate.url,
-              'type': candidate.connection.displayType,
-              'https': candidate.isHttps,
-              'error': result.error,
-              'latencyMs': result.latencyMs,
-            });
+            appLogger.w(
+              'Connection candidate failed',
+              error: {
+                'url': candidate.url,
+                'type': candidate.connection.displayType,
+                'https': candidate.isHttps,
+                'error': result.error,
+                'latencyMs': result.latencyMs,
+              },
+            );
           }
 
           if (result.success && !completer.isCompleted) {
@@ -481,11 +482,14 @@ class PlexServer {
 
       firstCandidate = await completer.future;
       if (firstCandidate == null) {
-        appLogger.e('No working server connections after race', error: {
-          'server': name,
-          'candidateCount': totalCandidates,
-          'types': candidates.map((c) => c.connection.displayType).toSet().toList(),
-        });
+        appLogger.e(
+          'No working server connections after race',
+          error: {
+            'server': name,
+            'candidateCount': totalCandidates,
+            'types': candidates.map((c) => c.connection.displayType).toSet().toList(),
+          },
+        );
         return; // No working connections found
       }
       appLogger.i(
