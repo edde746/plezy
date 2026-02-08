@@ -405,6 +405,8 @@ jobs:
   build-linux-x64:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
+      attestations: write
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -427,13 +429,16 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libegl-dev libgl-dev libwayland-dev
+          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libegl-dev libgl-dev libwayland-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libegl-dev libgl-dev libwayland-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libegl-dev libgl-dev libwayland-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+
+      - name: Install fpm
+        run: sudo gem install fpm
 
       - name: Install dependencies
         run: flutter pub get
@@ -446,21 +451,33 @@ jobs:
           cd build/linux/x64/release/bundle
           tar -czf $GITHUB_WORKSPACE/plezy-linux-x64.tar.gz *
 
-      - name: Upload x64 build
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-x64-build
-          path: build/linux/x64/release/bundle/
+      - name: Build Linux Packages
+        run: ARCH_SUFFIX=x64 OUTPUT_DIR=$GITHUB_WORKSPACE python3 linux/packaging/build-packages.py
 
-      - name: Upload x64 tarball
+      - name: Attest Linux x64 artifacts
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            plezy-linux-x64.tar.gz
+            plezy-linux-x64.deb
+            plezy-linux-x64.rpm
+            plezy-linux-x64.pkg.tar.zst
+
+      - name: Upload Linux x64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-x64-tarball
-          path: plezy-linux-x64.tar.gz
+          name: linux-x64
+          path: |
+            plezy-linux-x64.tar.gz
+            plezy-linux-x64.deb
+            plezy-linux-x64.rpm
+            plezy-linux-x64.pkg.tar.zst
 
   build-linux-arm64:
     runs-on: ubuntu-24.04-arm
     permissions:
+      id-token: write
+      attestations: write
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -483,13 +500,16 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libegl-dev libgl-dev libwayland-dev
+          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libegl-dev libgl-dev libwayland-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libegl-dev libgl-dev libwayland-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libegl-dev libgl-dev libwayland-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+
+      - name: Install fpm
+        run: sudo gem install fpm
 
       - name: Install dependencies
         run: flutter pub get
@@ -508,100 +528,34 @@ jobs:
           cd ${{ steps.find-bundle.outputs.bundle_dir }}
           tar -czf $GITHUB_WORKSPACE/plezy-linux-arm64.tar.gz *
 
-      - name: Upload arm64 build
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-arm64-build
-          path: ${{ steps.find-bundle.outputs.bundle_dir }}/
-
-      - name: Upload arm64 tarball
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-arm64-tarball
-          path: plezy-linux-arm64.tar.gz
-
-  package-linux:
-    needs: [build-linux-x64, build-linux-arm64]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      attestations: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download x64 build
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-x64-build
-          path: build-x64
-
-      - name: Download arm64 build
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-arm64-build
-          path: build-arm64
-
-      - name: Download x64 tarball
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-x64-tarball
-
-      - name: Download arm64 tarball
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-arm64-tarball
-
-      - name: Cache APT packages
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
-          version: 1.1
-
-      - name: Install packaging dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
-
-      - name: Install fpm
-        run: sudo gem install fpm
-
       - name: Build Linux Packages
         run: |
-          X64_BUILD_DIR=$GITHUB_WORKSPACE/build-x64 \
-          ARM64_BUILD_DIR=$GITHUB_WORKSPACE/build-arm64 \
+          BUILD_DIR=${{ steps.find-bundle.outputs.bundle_dir }} \
+          ARCH_SUFFIX=arm64 \
           OUTPUT_DIR=$GITHUB_WORKSPACE \
           python3 linux/packaging/build-packages.py
 
-      - name: Attest Linux artifacts
+      - name: Attest Linux arm64 artifacts
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            plezy-linux-x64.tar.gz
             plezy-linux-arm64.tar.gz
-            plezy-linux.deb
-            plezy-linux.rpm
-            plezy-linux.pkg.tar.zst
+            plezy-linux-arm64.deb
+            plezy-linux-arm64.rpm
+            plezy-linux-arm64.pkg.tar.zst
 
-      - name: Upload Linux tarballs
+      - name: Upload Linux arm64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-tarballs
+          name: linux-arm64
           path: |
-            plezy-linux-x64.tar.gz
             plezy-linux-arm64.tar.gz
-
-      - name: Upload Linux Packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-packages
-          path: |
-            plezy-linux.deb
-            plezy-linux.rpm
-            plezy-linux.pkg.tar.zst
+            plezy-linux-arm64.deb
+            plezy-linux-arm64.rpm
+            plezy-linux-arm64.pkg.tar.zst
 
   create-release:
-    needs: [build-android, build-ios, build-macos, package-windows, package-linux]
+    needs: [build-android, build-ios, build-macos, package-windows, build-linux-x64, build-linux-arm64]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -626,9 +580,8 @@ jobs:
             artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
             artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
             artifacts/windows-installer/plezy-windows-installer.exe
-            artifacts/linux-tarballs/plezy-linux-x64.tar.gz
-            artifacts/linux-tarballs/plezy-linux-arm64.tar.gz
-            artifacts/linux-packages/*
+            artifacts/linux-x64/*
+            artifacts/linux-arm64/*
           draft: true
           prerelease: false
           generate_release_notes: true
