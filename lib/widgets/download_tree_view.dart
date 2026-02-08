@@ -6,6 +6,7 @@ import '../i18n/strings.g.dart';
 import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
+import '../utils/dialogs.dart';
 
 /// Represents a node in the download tree
 class DownloadTreeNode {
@@ -790,7 +791,14 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
         _buildActionButton(
           icon: Symbols.delete_rounded,
           tooltip: 'Delete',
-          onPressed: () => widget.onDelete!(globalKey),
+          onPressed: () async {
+            final confirmed = await showDeleteConfirmation(
+              context,
+              title: t.downloads.deleteDownload,
+              message: t.downloads.deleteConfirm(title: widget.node.title),
+            );
+            if (confirmed) widget.onDelete!(globalKey);
+          },
           buttonIndex: buttonIndex++,
         ),
       );
@@ -834,7 +842,14 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
         _buildActionButton(
           icon: Symbols.delete_sweep_rounded,
           tooltip: 'Delete all',
-          onPressed: () => widget.deleteAllChildren(widget.node),
+          onPressed: () async {
+            final confirmed = await showDeleteConfirmation(
+              context,
+              title: t.downloads.deleteDownload,
+              message: t.downloads.deleteConfirm(title: widget.node.title),
+            );
+            if (confirmed) widget.deleteAllChildren(widget.node);
+          },
           buttonIndex: buttonIndex++,
         ),
       );
