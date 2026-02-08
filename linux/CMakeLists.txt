@@ -70,6 +70,10 @@ set_target_properties(${BINARY_NAME}
 )
 
 
+# Bundle SDL3 from source so the build works on systems without libsdl3-dev
+# (e.g. arm64 Linux where no distro package exists yet).
+set(BUNDLE_SDL3 ON CACHE BOOL "" FORCE)
+
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)
