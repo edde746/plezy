@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -40,6 +42,9 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
   /// Whether this bar currently has focus (for D-pad mode).
   bool _hasFocus = false;
 
+  /// Debounce timer for keyboard-driven jumps.
+  Timer? _debounce;
+
   @override
   void initState() {
     super.initState();
@@ -54,11 +59,27 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
     }
   }
 
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
   void _jumpToLetter(String letter) {
     final index = _helper.indexForLetter(letter);
     if (index != null) {
       widget.onJump(index);
     }
+  }
+
+  /// Schedule a debounced jump to the currently highlighted letter.
+  /// The highlight updates immediately for visual feedback, but the
+  /// actual scroll only fires after keyboard input settles.
+  void _debouncedJump() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 150), () {
+      _jumpToLetter(AlphaJumpHelper.allLetters[_highlightedIndex]);
+    });
   }
 
   /// Resolves a vertical drag position to a letter index.
@@ -75,14 +96,14 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
     if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
       if (_highlightedIndex > 0) {
         setState(() => _highlightedIndex--);
-        _jumpToLetter(AlphaJumpHelper.allLetters[_highlightedIndex]);
+        _debouncedJump();
       }
       return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
       if (_highlightedIndex < AlphaJumpHelper.allLetters.length - 1) {
         setState(() => _highlightedIndex++);
-        _jumpToLetter(AlphaJumpHelper.allLetters[_highlightedIndex]);
+        _debouncedJump();
       }
       return KeyEventResult.handled;
     }
