@@ -11,22 +11,22 @@ dependencies:
     sdk: flutter
   intl: ^0.20.2
   dio: ^5.4.0
-  json_annotation: ^4.8.1
+  json_annotation: ^4.9.0
   shared_preferences: ^2.2.2
   cached_network_image: ^3.4.1
   url_launcher: ^6.3.0
   uuid: ^4.4.0
-  window_manager: ^0.4.3
+  window_manager: ^0.5.1
   logger: ^2.0.2
   package_info_plus: ^9.0.0
-  device_info_plus: ^11.0.0
+  device_info_plus: ^12.3.0
   provider: ^6.1.2
   flex_color_picker: ^3.6.0
   qr_flutter: ^4.1.0
   slang: ^4.12.0
   slang_flutter: ^4.12.0
   duration: ^4.0.3
-  connectivity_plus: ^6.0.5
+  connectivity_plus: ^7.0.0
   os_media_controls:
     git:
       url: https://github.com/edde746/os-media-controls
@@ -40,7 +40,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.41
   workmanager: ^0.9.0+3
   crypto: ^3.0.7
-  file_picker: ^8.0.0
+  file_picker: ^10.3.10
   saf_util: ^0.11.0
   saf_stream: ^0.12.2
   material_symbols_icons: ^4.2892.0
@@ -52,7 +52,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
   flutter_launcher_icons: ^0.14.4

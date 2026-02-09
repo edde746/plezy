@@ -96,8 +96,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
                   imageUrl: thumbnailUrl,
                   fit: BoxFit.cover,
                   fadeInDuration: Duration.zero,
-                  placeholder: (_, __) => const SizedBox.shrink(), // Show nothing for placeholder
-                  errorWidget: (_, __, ___) => const SizedBox.shrink(), // Show nothing for errors
+                  placeholder: (_, _) => const SizedBox.shrink(), // Show nothing for placeholder
+                  errorWidget: (_, _, _) => const SizedBox.shrink(), // Show nothing for errors
                 ),
               ),
             if (hasThumbnail) const SizedBox(height: 4),
@@ -218,7 +218,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
                   ),
                 ),
               ),
-            if (tooltip != null) tooltip,
+            ?tooltip,
           ],
         );
 

@@ -346,10 +346,11 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             currentColor: _textColor,
             hexToColor: _hexToColor,
             onTap: () {
-              final onColorSelected = (String color) {
+              void onColorSelected(String color) {
                 setState(() => _textColor = color);
                 _settingsService.setSubtitleTextColor(color);
-              };
+              }
+
               if (PlatformDetector.isTV()) {
                 _showTvColorPicker(t.subtitlingStyling.textColor, _textColor, onColorSelected);
               } else {
@@ -397,10 +398,11 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             currentColor: _borderColor,
             hexToColor: _hexToColor,
             onTap: () {
-              final onColorSelected = (String color) {
+              void onColorSelected(String color) {
                 setState(() => _borderColor = color);
                 _settingsService.setSubtitleBorderColor(color);
-              };
+              }
+
               if (PlatformDetector.isTV()) {
                 _showTvColorPicker(t.subtitlingStyling.borderColor, _borderColor, onColorSelected);
               } else {
@@ -451,10 +453,11 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             currentColor: _backgroundColor,
             hexToColor: _hexToColor,
             onTap: () {
-              final onColorSelected = (String color) {
+              void onColorSelected(String color) {
                 setState(() => _backgroundColor = color);
                 _settingsService.setSubtitleBackgroundColor(color);
-              };
+              }
+
               if (PlatformDetector.isTV()) {
                 _showTvColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, onColorSelected);
               } else {

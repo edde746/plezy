@@ -1119,7 +1119,7 @@ class PlexClient {
         'key': '/library/metadata/$ratingKey',
         'time': time,
         'state': state,
-        if (duration != null) 'duration': duration,
+        'duration': ?duration,
       },
     );
   }
@@ -1572,13 +1572,7 @@ class PlexClient {
       appLogger.d('Creating collection: sectionId=$sectionId, title=$title, type=$type');
       final response = await _dio.post(
         '/library/collections',
-        queryParameters: {
-          if (type != null) 'type': type,
-          'title': title,
-          'smart': 0,
-          'sectionId': sectionId,
-          'uri': uri,
-        },
+        queryParameters: {'type': ?type, 'title': title, 'smart': 0, 'sectionId': sectionId, 'uri': uri},
       );
       appLogger.d('Create collection response: ${response.statusCode}');
 

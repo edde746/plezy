@@ -804,11 +804,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     }
 
     _scrollController
-        .animateTo(
-          clampedOffset,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        )
+        .animateTo(clampedOffset, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut)
         .then((_) {
           // Only clear the flag if no newer jump has started.
           if (mounted && gen == _jumpScrollGeneration) {

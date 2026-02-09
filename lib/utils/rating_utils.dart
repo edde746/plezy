@@ -1,5 +1,6 @@
 /// Parses Plex ratingImage / audienceRatingImage URIs and returns
 /// the corresponding local asset path and a display-formatted value.
+library;
 
 class RatingInfo {
   final String assetPath;

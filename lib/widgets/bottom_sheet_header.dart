@@ -90,7 +90,7 @@ class BottomSheetHeader extends StatelessWidget {
         children: [
           if (resolvedLeading != null) ...[resolvedLeading, const SizedBox(width: 8)],
           Expanded(child: Text(title, style: effectiveTitleStyle)),
-          if (action != null) action!,
+          ?action,
           IconButton(
             focusNode: closeFocusNode,
             icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),

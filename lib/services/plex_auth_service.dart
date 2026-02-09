@@ -220,7 +220,7 @@ class PlexAuthService {
       'X-Plex-Platform-Version': '3.8.1',
       'X-Plex-Token': currentToken,
       'X-Plex-Language': 'en',
-      if (pin != null) 'pin': pin,
+      'pin': ?pin,
     };
 
     final queryString = queryParams.entries

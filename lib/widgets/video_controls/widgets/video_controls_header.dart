@@ -47,7 +47,7 @@ class VideoControlsHeader extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         Expanded(child: style == VideoHeaderStyle.singleLine ? _buildSingleLineTitle() : _buildMultiLineTitle()),
-        if (trailing != null) trailing!,
+        ?trailing,
       ],
     );
   }
