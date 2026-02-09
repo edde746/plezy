@@ -457,7 +457,7 @@ jobs:
       - name: Build Linux x64
         run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true
         env:
-          PKG_CONFIG_PATH: libmpv-prefix/lib/pkgconfig:libmpv-prefix/lib/x86_64-linux-gnu/pkgconfig
+          PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/x86_64-linux-gnu/pkgconfig
 
       - name: Build Linux Packages
         run: ARCH_SUFFIX=x64 OUTPUT_DIR=$GITHUB_WORKSPACE python3 linux/packaging/build-packages.py
@@ -564,7 +564,7 @@ jobs:
       - name: Build Linux arm64
         run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true
         env:
-          PKG_CONFIG_PATH: libmpv-prefix/lib/pkgconfig:libmpv-prefix/lib/aarch64-linux-gnu/pkgconfig
+          PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/aarch64-linux-gnu/pkgconfig
 
       - name: Find bundle directory
         id: find-bundle
