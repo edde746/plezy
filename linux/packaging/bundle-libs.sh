@@ -22,41 +22,38 @@ fi
 
 # ── Exclusion list ──────────────────────────────────────────────────────────
 # Libraries that must come from the host system.
-EXCLUDE_PATTERN='(
-    linux-vdso\.so
-    |ld-linux.*\.so
-    |libc\.so
-    |libm\.so
-    |libpthread\.so
-    |libdl\.so
-    |librt\.so
-    |libmvec\.so
-    |libresolv\.so
-    |libnss_.*\.so
-    |libGL\.so
-    |libEGL\.so
-    |libGLX\.so
-    |libGLESv2\.so
-    |libGLdispatch\.so
-    |libOpenGL\.so
-    |libvulkan\.so
-    |libdrm\.so
-    |libgbm\.so
-    |libnvidia.*\.so
-    |libcuda.*\.so
-    |libasound\.so
-)'
+EXCLUDE_PATTERN='linux-vdso\.so|ld-linux.*\.so|libc\.so|libm\.so|libpthread\.so|libdl\.so|librt\.so|libmvec\.so|libresolv\.so|libnss_.*\.so|libGL\.so|libEGL\.so|libGLX\.so|libGLESv2\.so|libGLdispatch\.so|libOpenGL\.so|libvulkan\.so|libdrm\.so|libgbm\.so|libnvidia.*\.so|libcuda.*\.so|libasound\.so'
 
 # ── Helper: collect ldd deps ───────────────────────────────────────────────
 collect_deps() {
     # Collect resolved library paths from ldd output for the given files.
     # Filters out excluded libs and libs that don't exist on disk.
     ldd "$@" 2>/dev/null \
-        | grep -oP '\s(/\S+\.so[^\s]*)' \
+        | grep -oP '(?<==> )/\S+' \
         | sort -u \
         | grep -vE "$EXCLUDE_PATTERN" \
         || true
 }
+
+# ── Explicitly bundle dlopen'd libraries ───────────────────────────────────
+# These are loaded at runtime via dlopen() and invisible to ldd.
+bundle_dlopen_lib() {
+    local name="$1"
+    local path
+    path="$(ldconfig -p | grep -oP "/\S+/${name}[^\s]*" | head -1 || true)"
+    if [[ -n "$path" && -f "$path" ]]; then
+        local base
+        base="$(basename "$path")"
+        if [[ ! -f "$LIB_DIR/$base" ]]; then
+            echo "==> Bundling dlopen'd library: $path"
+            cp -L "$path" "$LIB_DIR/$base"
+        fi
+    else
+        echo "WARNING: Could not find $name" >&2
+    fi
+}
+
+bundle_dlopen_lib "libmpv.so"
 
 echo "==> Discovering shared library dependencies..."
 
