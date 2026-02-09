@@ -365,7 +365,8 @@
     "borderSize": "Border Size",
     "borderColor": "Border Color",
     "backgroundOpacity": "Background Opacity",
-    "backgroundColor": "Background Color"
+    "backgroundColor": "Background Color",
+    "position": "Position"
   },
   "mpvConfig": {
     "title": "MPV Configuration",

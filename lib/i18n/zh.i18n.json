@@ -365,7 +365,8 @@
     "borderSize": "边框大小",
     "borderColor": "边框颜色",
     "backgroundOpacity": "背景不透明度",
-    "backgroundColor": "背景颜色"
+    "backgroundColor": "背景颜色",
+    "position": "Position"
   },
   "mpvConfig": {
     "title": "MPV 配置",

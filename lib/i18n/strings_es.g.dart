@@ -532,6 +532,7 @@ class _TranslationsSubtitlingStylingEs implements TranslationsSubtitlingStylingE
 	@override String get borderColor => 'Color de Borde';
 	@override String get backgroundOpacity => 'Opacidad de Fondo';
 	@override String get backgroundColor => 'Color de Fondo';
+	@override String get position => 'Position';
 }
 
 // Path: mpvConfig
@@ -1316,6 +1317,7 @@ extension on TranslationsEs {
 			'subtitlingStyling.borderColor' => 'Color de Borde',
 			'subtitlingStyling.backgroundOpacity' => 'Opacidad de Fondo',
 			'subtitlingStyling.backgroundColor' => 'Color de Fondo',
+			'subtitlingStyling.position' => 'Position',
 			'mpvConfig.title' => 'Configuración de MPV',
 			'mpvConfig.description' => 'Ajustes avanzados del reproductor de video',
 			'mpvConfig.properties' => 'Propiedades',
@@ -1497,9 +1499,9 @@ extension on TranslationsEs {
 			'watchTogether.description' => 'Mira contenido en sincronía con amigos y familiares',
 			'watchTogether.createSession' => 'Crear Sesión',
 			'watchTogether.creating' => 'Creando...',
-			'watchTogether.joinSession' => 'Unirse a Sesión',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joinSession' => 'Unirse a Sesión',
 			'watchTogether.joining' => 'Uniendo...',
 			'watchTogether.controlMode' => 'Modo de Control',
 			'watchTogether.controlModeQuestion' => '¿Quién puede controlar la reproducción?',

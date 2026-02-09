@@ -365,7 +365,8 @@
     "borderSize": "Kantstorlek",
     "borderColor": "Kantfärg",
     "backgroundOpacity": "Bakgrundsopacitet",
-    "backgroundColor": "Bakgrundsfärg"
+    "backgroundColor": "Bakgrundsfärg",
+    "position": "Position"
   },
   "mpvConfig": {
     "title": "MPV-konfiguration",

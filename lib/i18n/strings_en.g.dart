@@ -1151,6 +1151,9 @@ class TranslationsSubtitlingStylingEn {
 
 	/// en: 'Background Color'
 	String get backgroundColor => 'Background Color';
+
+	/// en: 'Position'
+	String get position => 'Position';
 }
 
 // Path: mpvConfig
@@ -2460,6 +2463,7 @@ extension on Translations {
 			'subtitlingStyling.borderColor' => 'Border Color',
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
 			'subtitlingStyling.backgroundColor' => 'Background Color',
+			'subtitlingStyling.position' => 'Position',
 			'mpvConfig.title' => 'MPV Configuration',
 			'mpvConfig.description' => 'Advanced video player settings',
 			'mpvConfig.properties' => 'Properties',
@@ -2641,9 +2645,9 @@ extension on Translations {
 			'watchTogether.description' => 'Watch content in sync with friends and family',
 			'watchTogether.createSession' => 'Create Session',
 			'watchTogether.creating' => 'Creating...',
-			'watchTogether.joinSession' => 'Join Session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joinSession' => 'Join Session',
 			'watchTogether.joining' => 'Joining...',
 			'watchTogether.controlMode' => 'Control Mode',
 			'watchTogether.controlModeQuestion' => 'Who can control playback?',

@@ -532,6 +532,7 @@ class _TranslationsSubtitlingStylingKo implements TranslationsSubtitlingStylingE
 	@override String get borderColor => '테두리 색상';
 	@override String get backgroundOpacity => '배경 불투명도';
 	@override String get backgroundColor => '배경색';
+	@override String get position => 'Position';
 }
 
 // Path: mpvConfig
@@ -1316,6 +1317,7 @@ extension on TranslationsKo {
 			'subtitlingStyling.borderColor' => '테두리 색상',
 			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
 			'subtitlingStyling.backgroundColor' => '배경색',
+			'subtitlingStyling.position' => 'Position',
 			'mpvConfig.title' => 'MPV 설정',
 			'mpvConfig.description' => '고급 비디오 플레이어 설정',
 			'mpvConfig.properties' => '속성',
@@ -1497,9 +1499,9 @@ extension on TranslationsKo {
 			'watchTogether.description' => '친구 및 가족과 콘텐츠를 동시에 시청하세요',
 			'watchTogether.createSession' => '세션 생성',
 			'watchTogether.creating' => '생성 중...',
-			'watchTogether.joinSession' => '세션 참여',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joinSession' => '세션 참여',
 			'watchTogether.joining' => '참가 중...',
 			'watchTogether.controlMode' => '제어 모드',
 			'watchTogether.controlModeQuestion' => '누가 재생을 제어할 수 있나요?',

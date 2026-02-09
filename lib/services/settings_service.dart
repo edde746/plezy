@@ -46,6 +46,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySubtitleBorderColor = 'subtitle_border_color';
   static const String _keySubtitleBackgroundColor = 'subtitle_background_color';
   static const String _keySubtitleBackgroundOpacity = 'subtitle_background_opacity';
+  static const String _keySubtitlePosition = 'subtitle_position';
   static const String _keyAppLocale = 'app_locale';
   static const String _keyRememberTrackSelections = 'remember_track_selections';
   static const String _keyClickVideoTogglesPlayback = 'click_video_toggles_playback';
@@ -343,6 +344,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   int getSubtitleBackgroundOpacity() {
     return prefs.getInt(_keySubtitleBackgroundOpacity) ?? 0;
+  }
+
+  // Subtitle Position (0 = top, 100 = bottom, default 100)
+  Future<void> setSubtitlePosition(int position) async {
+    await prefs.setInt(_keySubtitlePosition, position.clamp(0, 100));
+  }
+
+  int getSubtitlePosition() {
+    return prefs.getInt(_keySubtitlePosition) ?? 100; // Default: bottom
   }
 
   // Keyboard Shortcuts (Legacy String-based)
@@ -1068,6 +1078,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keySubtitleBorderColor),
       prefs.remove(_keySubtitleBackgroundColor),
       prefs.remove(_keySubtitleBackgroundOpacity),
+      prefs.remove(_keySubtitlePosition),
       prefs.remove(_keyAppLocale),
       prefs.remove(_keyRememberTrackSelections),
       prefs.remove(_keyCustomDownloadPath),

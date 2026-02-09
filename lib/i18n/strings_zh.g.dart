@@ -532,6 +532,7 @@ class _TranslationsSubtitlingStylingZh implements TranslationsSubtitlingStylingE
 	@override String get borderColor => '边框颜色';
 	@override String get backgroundOpacity => '背景不透明度';
 	@override String get backgroundColor => '背景颜色';
+	@override String get position => 'Position';
 }
 
 // Path: mpvConfig
@@ -1316,6 +1317,7 @@ extension on TranslationsZh {
 			'subtitlingStyling.borderColor' => '边框颜色',
 			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
 			'subtitlingStyling.backgroundColor' => '背景颜色',
+			'subtitlingStyling.position' => 'Position',
 			'mpvConfig.title' => 'MPV 配置',
 			'mpvConfig.description' => '高级视频播放器设置',
 			'mpvConfig.properties' => '属性',
@@ -1497,9 +1499,9 @@ extension on TranslationsZh {
 			'collections.failedToLoadItems' => ({required Object error}) => '加载合集项目失败：${error}',
 			'collections.selectCollection' => '选择合集',
 			'collections.createNewCollection' => '创建新合集',
-			'collections.collectionName' => '合集名称',
 			_ => null,
 		} ?? switch (path) {
+			'collections.collectionName' => '合集名称',
 			'collections.enterCollectionName' => '输入合集名称',
 			'collections.addedToCollection' => '已添加到合集',
 			'collections.errorAddingToCollection' => '添加到合集失败',

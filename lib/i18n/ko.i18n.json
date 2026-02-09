@@ -365,7 +365,8 @@
     "borderSize": "테두리 크기",
     "borderColor": "테두리 색상",
     "backgroundOpacity": "배경 불투명도",
-    "backgroundColor": "배경색"
+    "backgroundColor": "배경색",
+    "position": "Position"
   },
   "mpvConfig": {
     "title": "MPV 설정",

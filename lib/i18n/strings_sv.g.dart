@@ -532,6 +532,7 @@ class _TranslationsSubtitlingStylingSv implements TranslationsSubtitlingStylingE
 	@override String get borderColor => 'Kantfärg';
 	@override String get backgroundOpacity => 'Bakgrundsopacitet';
 	@override String get backgroundColor => 'Bakgrundsfärg';
+	@override String get position => 'Position';
 }
 
 // Path: mpvConfig
@@ -1316,6 +1317,7 @@ extension on TranslationsSv {
 			'subtitlingStyling.borderColor' => 'Kantfärg',
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrundsopacitet',
 			'subtitlingStyling.backgroundColor' => 'Bakgrundsfärg',
+			'subtitlingStyling.position' => 'Position',
 			'mpvConfig.title' => 'MPV-konfiguration',
 			'mpvConfig.description' => 'Avancerade videospelares inställningar',
 			'mpvConfig.properties' => 'Egenskaper',
@@ -1497,9 +1499,9 @@ extension on TranslationsSv {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
 			'collections.selectCollection' => 'Välj samling',
 			'collections.createNewCollection' => 'Skapa ny samling',
-			'collections.collectionName' => 'Samlingsnamn',
 			_ => null,
 		} ?? switch (path) {
+			'collections.collectionName' => 'Samlingsnamn',
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
 			'collections.addedToCollection' => 'Tillagd i samling',
 			'collections.errorAddingToCollection' => 'Fel vid tillägg i samling',

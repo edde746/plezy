@@ -419,6 +419,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         val borderColor = call.argument<String>("borderColor") ?: "#000000"
         val bgColor = call.argument<String>("bgColor") ?: "#000000"
         val bgOpacity = call.argument<Number>("bgOpacity")?.toInt() ?: 0
+        val subtitlePosition = call.argument<Number>("subtitlePosition")?.toInt() ?: 100
 
         if (usingMpvFallback) {
             // MPV fallback handles styling via setProperty, no-op here
@@ -426,7 +427,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        playerCore?.setSubtitleStyle(fontSize, textColor, borderSize, borderColor, bgColor, bgOpacity)
+        playerCore?.setSubtitleStyle(fontSize, textColor, borderSize, borderColor, bgColor, bgOpacity, subtitlePosition)
         result.success(null)
     }
 

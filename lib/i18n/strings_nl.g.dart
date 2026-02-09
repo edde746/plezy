@@ -532,6 +532,7 @@ class _TranslationsSubtitlingStylingNl implements TranslationsSubtitlingStylingE
 	@override String get borderColor => 'Randkleur';
 	@override String get backgroundOpacity => 'Achtergrond transparantie';
 	@override String get backgroundColor => 'Achtergrondkleur';
+	@override String get position => 'Position';
 }
 
 // Path: mpvConfig
@@ -1316,6 +1317,7 @@ extension on TranslationsNl {
 			'subtitlingStyling.borderColor' => 'Randkleur',
 			'subtitlingStyling.backgroundOpacity' => 'Achtergrond transparantie',
 			'subtitlingStyling.backgroundColor' => 'Achtergrondkleur',
+			'subtitlingStyling.position' => 'Position',
 			'mpvConfig.title' => 'MPV-configuratie',
 			'mpvConfig.description' => 'Geavanceerde videospeler-instellingen',
 			'mpvConfig.properties' => 'Eigenschappen',
@@ -1497,9 +1499,9 @@ extension on TranslationsNl {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
 			'collections.selectCollection' => 'Selecteer collectie',
 			'collections.createNewCollection' => 'Nieuwe collectie maken',
-			'collections.collectionName' => 'Collectienaam',
 			_ => null,
 		} ?? switch (path) {
+			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer collectienaam in',
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
 			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',

@@ -365,7 +365,8 @@
     "borderSize": "Rand grootte",
     "borderColor": "Randkleur",
     "backgroundOpacity": "Achtergrond transparantie",
-    "backgroundColor": "Achtergrondkleur"
+    "backgroundColor": "Achtergrondkleur",
+    "position": "Position"
   },
   "mpvConfig": {
     "title": "MPV-configuratie",

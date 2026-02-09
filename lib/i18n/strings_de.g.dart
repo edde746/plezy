@@ -532,6 +532,7 @@ class _TranslationsSubtitlingStylingDe implements TranslationsSubtitlingStylingE
 	@override String get borderColor => 'Rahmenfarbe';
 	@override String get backgroundOpacity => 'Hintergrunddeckkraft';
 	@override String get backgroundColor => 'Hintergrundfarbe';
+	@override String get position => 'Position';
 }
 
 // Path: mpvConfig
@@ -1316,6 +1317,7 @@ extension on TranslationsDe {
 			'subtitlingStyling.borderColor' => 'Rahmenfarbe',
 			'subtitlingStyling.backgroundOpacity' => 'Hintergrunddeckkraft',
 			'subtitlingStyling.backgroundColor' => 'Hintergrundfarbe',
+			'subtitlingStyling.position' => 'Position',
 			'mpvConfig.title' => 'MPV-Konfiguration',
 			'mpvConfig.description' => 'Erweiterte Videoplayer-Einstellungen',
 			'mpvConfig.properties' => 'Eigenschaften',
@@ -1497,9 +1499,9 @@ extension on TranslationsDe {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}',
 			'collections.selectCollection' => 'Sammlung auswählen',
 			'collections.createNewCollection' => 'Neue Sammlung erstellen',
-			'collections.collectionName' => 'Sammlungsname',
 			_ => null,
 		} ?? switch (path) {
+			'collections.collectionName' => 'Sammlungsname',
 			'collections.enterCollectionName' => 'Sammlungsnamen eingeben',
 			'collections.addedToCollection' => 'Zur Sammlung hinzugefügt',
 			'collections.errorAddingToCollection' => 'Fehler beim Hinzufügen zur Sammlung',

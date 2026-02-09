@@ -532,6 +532,7 @@ class _TranslationsSubtitlingStylingIt implements TranslationsSubtitlingStylingE
 	@override String get borderColor => 'Colore bordo';
 	@override String get backgroundOpacity => 'Opacità sfondo';
 	@override String get backgroundColor => 'Colore sfondo';
+	@override String get position => 'Position';
 }
 
 // Path: mpvConfig
@@ -1316,6 +1317,7 @@ extension on TranslationsIt {
 			'subtitlingStyling.borderColor' => 'Colore bordo',
 			'subtitlingStyling.backgroundOpacity' => 'Opacità sfondo',
 			'subtitlingStyling.backgroundColor' => 'Colore sfondo',
+			'subtitlingStyling.position' => 'Position',
 			'mpvConfig.title' => 'Configurazione MPV',
 			'mpvConfig.description' => 'Impostazioni avanzate del lettore video',
 			'mpvConfig.properties' => 'Proprietà',
@@ -1497,9 +1499,9 @@ extension on TranslationsIt {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Impossibile caricare gli elementi della raccolta: ${error}',
 			'collections.selectCollection' => 'Seleziona raccolta',
 			'collections.createNewCollection' => 'Crea nuova raccolta',
-			'collections.collectionName' => 'Nome raccolta',
 			_ => null,
 		} ?? switch (path) {
+			'collections.collectionName' => 'Nome raccolta',
 			'collections.enterCollectionName' => 'Inserisci nome raccolta',
 			'collections.addedToCollection' => 'Aggiunto alla raccolta',
 			'collections.errorAddingToCollection' => 'Errore nell\'aggiunta alla raccolta',

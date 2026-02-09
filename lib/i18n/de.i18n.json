@@ -365,7 +365,8 @@
     "borderSize": "Rahmengröße",
     "borderColor": "Rahmenfarbe",
     "backgroundOpacity": "Hintergrunddeckkraft",
-    "backgroundColor": "Hintergrundfarbe"
+    "backgroundColor": "Hintergrundfarbe",
+    "position": "Position"
   },
   "mpvConfig": {
     "title": "MPV-Konfiguration",

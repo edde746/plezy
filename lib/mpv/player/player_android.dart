@@ -276,6 +276,7 @@ class PlayerAndroid extends PlayerBase {
     required String borderColor,
     required String bgColor,
     required int bgOpacity,
+    int subtitlePosition = 100,
   }) async {
     checkDisposed();
     if (!initialized) return;
@@ -286,6 +287,7 @@ class PlayerAndroid extends PlayerBase {
       'borderColor': borderColor,
       'bgColor': bgColor,
       'bgOpacity': bgOpacity,
+      'subtitlePosition': subtitlePosition,
     });
   }
 

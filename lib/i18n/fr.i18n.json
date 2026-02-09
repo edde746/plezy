@@ -365,7 +365,8 @@
     "borderSize": "Taille de la bordure",
     "borderColor": "Couleur de la bordure",
     "backgroundOpacity": "Opacité d'arrière-plan",
-    "backgroundColor": "Couleur d'arrière-plan"
+    "backgroundColor": "Couleur d'arrière-plan",
+    "position": "Position"
   },
   "mpvConfig": {
     "title": "Configuration MPV",

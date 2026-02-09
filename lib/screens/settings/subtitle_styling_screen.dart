@@ -121,6 +121,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   String _borderColor = '#000000';
   String _backgroundColor = '#000000';
   int _backgroundOpacity = 0;
+  int _subtitlePosition = 100;
 
   @override
   void initState() {
@@ -138,6 +139,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
       _borderColor = _settingsService.getSubtitleBorderColor();
       _backgroundColor = _settingsService.getSubtitleBackgroundColor();
       _backgroundOpacity = _settingsService.getSubtitleBackgroundOpacity();
+      _subtitlePosition = _settingsService.getSubtitlePosition();
       _isLoading = false;
     });
   }
@@ -337,6 +339,45 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               },
               onChangeEnd: (value) {
                 _settingsService.setSubtitleFontSize(_fontSize);
+              },
+            ),
+          const Divider(),
+          // Subtitle Position Slider
+          if (PlatformDetector.isTV())
+            ListTile(
+              title: Text(t.subtitlingStyling.position),
+              trailing: Text(_subtitlePosition == 0 ? 'Top' : _subtitlePosition == 100 ? 'Bottom' : '$_subtitlePosition%'),
+              onTap: () => _showTvSpinnerDialog(
+                title: t.subtitlingStyling.position,
+                currentValue: _subtitlePosition,
+                min: 0,
+                max: 100,
+                step: 5,
+                onSave: (value) {
+                  setState(() => _subtitlePosition = value);
+                  _settingsService.setSubtitlePosition(value);
+                },
+              ),
+            )
+          else
+            _StylingSliderSection(
+              label: t.subtitlingStyling.position,
+              value: _subtitlePosition,
+              min: 0,
+              max: 100,
+              divisions: 20,
+              valueFormatter: (value) {
+                if (value == 0) return 'Top';
+                if (value == 100) return 'Bottom';
+                return '$value%';
+              },
+              onChanged: (value) {
+                setState(() {
+                  _subtitlePosition = value.toInt();
+                });
+              },
+              onChangeEnd: (value) {
+                _settingsService.setSubtitlePosition(_subtitlePosition);
               },
             ),
           const Divider(),
