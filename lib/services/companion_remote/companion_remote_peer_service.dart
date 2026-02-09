@@ -247,13 +247,9 @@ class CompanionRemotePeerService {
     });
 
     conn.on('data').listen((data) {
-      print('🟡 PeerService: DATA RECEIVED! data type: ${data.runtimeType}');
       try {
-        print('🟡 Parsing as JSON...');
         final json = data as Map<String, dynamic>;
-        print('🟡 Creating RemoteCommand from JSON...');
         final command = RemoteCommand.fromJson(json);
-        print('🟡 Command received: ${command.type} from $peerId');
         appLogger.d('CompanionRemote: Received command: ${command.type} from $peerId');
 
         // Send acknowledgment for non-ping/pong/ack commands
@@ -261,7 +257,6 @@ class CompanionRemotePeerService {
             command.type != RemoteCommandType.pong &&
             command.type != RemoteCommandType.ack &&
             command.type != RemoteCommandType.deviceInfo) {
-          print('🟡 Sending ACK for ${command.type}...');
           final ackCommand = RemoteCommand(
             type: RemoteCommandType.ack,
             deviceId: _myPeerId ?? 'unknown',
@@ -269,21 +264,16 @@ class CompanionRemotePeerService {
             data: {'originalCommand': command.type.toString()},
           );
           _connection?.send(ackCommand.toJson());
-          print('🟡 ACK sent!');
         }
 
-        print('🟡 Adding to _commandReceivedController...');
         _commandReceivedController.add(command);
-        print('🟡 Command added to stream!');
 
         if (command.type == RemoteCommandType.ping) {
-          print('🟡 Responding to ping with pong...');
           _sendPong(deviceName, platform);
         } else if (command.type == RemoteCommandType.ack) {
-          print('✅ RECEIVED ACK from desktop for: ${json['data']?['originalCommand']}');
+          appLogger.d('CompanionRemote: Received ACK for: ${json['data']?['originalCommand']}');
         }
       } catch (e) {
-        print('🔴 PeerService: Failed to parse command: $e');
         appLogger.e('CompanionRemote: Failed to parse command', error: e);
       }
     });
@@ -374,24 +364,16 @@ class CompanionRemotePeerService {
   }
 
   void sendCommand(RemoteCommand command) {
-    print('🔵 PeerService sendCommand called! command.type: ${command.type}');
-    print('🔵 _connection: $_connection');
-
     if (_connection == null) {
-      print('🔴 PeerService: No connection!');
       appLogger.w('CompanionRemote: No connection to send command');
       return;
     }
 
     try {
-      print('🔵 Converting command to JSON...');
       final json = command.toJson();
-      print('🔵 Sending via connection.send...');
       _connection!.send(json);
-      print('🔵 Command sent over wire!');
       appLogger.d('CompanionRemote: Sent command: ${command.type}');
     } catch (e) {
-      print('🔴 PeerService send FAILED: $e');
       appLogger.e('CompanionRemote: Failed to send command', error: e);
       _errorController.add(
         RemotePeerError(

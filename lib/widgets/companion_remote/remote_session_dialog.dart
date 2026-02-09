@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../models/companion_remote/remote_session.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../utils/app_logger.dart';
 

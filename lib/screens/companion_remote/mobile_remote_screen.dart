@@ -176,12 +176,9 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
 
   void _sendCommand(RemoteCommandType type) {
     HapticFeedback.lightImpact();
-    print('🔴 MobileRemoteScreen: Button pressed! Type: $type');
     appLogger.d('MobileRemoteScreen: Sending command: $type');
     final provider = context.read<CompanionRemoteProvider>();
-    print('🔴 Provider isConnected: ${provider.isConnected}');
     provider.sendCommand(type);
-    print('🔴 sendCommand called');
   }
 
   @override
