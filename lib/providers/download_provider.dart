@@ -71,6 +71,10 @@ class DownloadProvider extends ChangeNotifier {
   /// Load all persisted downloads and metadata from the database/cache
   Future<void> _loadPersistedDownloads() async {
     try {
+      // Wait for recovery to finish before loading state so that
+      // interrupted "downloading" rows have been transitioned to "queued"
+      await _downloadManager.recoveryFuture;
+
       // Clear existing data to prevent stale entries after deletions
       _downloads.clear();
       _artworkPaths.clear();
@@ -985,6 +989,12 @@ class DownloadProvider extends ChangeNotifier {
   /// Refresh the downloads list from database
   Future<void> refresh() async {
     await _loadPersistedDownloads();
+  }
+
+  /// Resume queued downloads that were interrupted by app kill.
+  /// Call after a PlexClient becomes available (e.g. after server connect on launch).
+  void resumeQueuedDownloads(PlexClient client) {
+    _downloadManager.resumeQueuedDownloads(client);
   }
 
   /// Refresh only metadata from API cache (after watch state sync).

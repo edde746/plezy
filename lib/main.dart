@@ -214,7 +214,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     PlexApiCache.initialize(_appDatabase);
 
     _downloadManager = DownloadManagerService(database: _appDatabase, storageService: DownloadStorageService.instance);
-    _downloadManager.recoverInterruptedDownloads();
+    _downloadManager.recoveryFuture = _downloadManager.recoverInterruptedDownloads();
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
 
@@ -398,6 +398,12 @@ class _SetupScreenState extends State<SetupScreen> {
       if (!mounted) return;
 
       if (result.hasConnections) {
+        // Resume any downloads that were interrupted by app kill
+        final downloadProvider = context.read<DownloadProvider>();
+        downloadProvider.ensureInitialized().then((_) {
+          downloadProvider.resumeQueuedDownloads(result.firstClient!);
+        });
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => MainScreen(client: result.firstClient!)),

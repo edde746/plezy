@@ -244,6 +244,10 @@ class DownloadManagerService {
         !connectivity.contains(ConnectivityResult.ethernet);
   }
 
+  /// Future that completes when interrupted download recovery finishes.
+  /// Await this before reading download state from the DB to avoid races.
+  late final Future<void> recoveryFuture;
+
   DownloadManagerService({required AppDatabase database, required DownloadStorageService storageService, Dio? dio})
     : _database = database,
       _storageService = storageService,
@@ -269,6 +273,17 @@ class DownloadManagerService {
     } catch (e) {
       appLogger.e('Failed to recover interrupted downloads', error: e);
     }
+  }
+
+  /// Resume queued downloads that have no active processing.
+  /// Call after a PlexClient becomes available (e.g. after server connect on launch).
+  void resumeQueuedDownloads(PlexClient client) {
+    _database.getNextQueueItem().then((item) {
+      if (item != null && !_isProcessingQueue) {
+        appLogger.i('Resuming queued downloads after app restart');
+        _processQueue(client);
+      }
+    });
   }
 
   /// Delete a file if it exists and log the deletion
