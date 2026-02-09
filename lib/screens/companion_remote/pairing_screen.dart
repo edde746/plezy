@@ -6,7 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/companion_remote_provider.dart';
-import '../../services/companion_remote/companion_remote_discovery_service.dart';
+import '../../models/companion_remote/recent_remote_session.dart';
 import '../../utils/app_logger.dart';
 
 class PairingScreen extends StatefulWidget {
@@ -105,10 +105,7 @@ class _PairingScreenState extends State<PairingScreen> {
 
     try {
       final provider = context.read<CompanionRemoteProvider>();
-      await provider.joinSession(
-        _sessionIdController.text.trim().toUpperCase(),
-        _pinController.text.trim(),
-      );
+      await provider.joinSession(_sessionIdController.text.trim().toUpperCase(), _pinController.text.trim());
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -198,22 +195,10 @@ class _PairingScreenState extends State<PairingScreen> {
         children: [
           SegmentedButton<int>(
             segments: [
-              const ButtonSegment(
-                value: 0,
-                label: Text('Recent'),
-                icon: Icon(Icons.history),
-              ),
+              const ButtonSegment(value: 0, label: Text('Recent'), icon: Icon(Icons.history)),
               if (_isMobile)
-                ButtonSegment(
-                  value: _scanTabIndex,
-                  label: const Text('Scan'),
-                  icon: const Icon(Icons.qr_code_scanner),
-                ),
-              ButtonSegment(
-                value: _manualTabIndex,
-                label: const Text('Manual'),
-                icon: const Icon(Icons.keyboard),
-              ),
+                ButtonSegment(value: _scanTabIndex, label: const Text('Scan'), icon: const Icon(Icons.qr_code_scanner)),
+              ButtonSegment(value: _manualTabIndex, label: const Text('Manual'), icon: const Icon(Icons.keyboard)),
             ],
             selected: {_selectedTab},
             onSelectionChanged: (Set<int> selection) {
@@ -222,9 +207,7 @@ class _PairingScreenState extends State<PairingScreen> {
               });
             },
           ),
-          Expanded(
-            child: _buildTabContent(),
-          ),
+          Expanded(child: _buildTabContent()),
         ],
       ),
     );
@@ -344,27 +327,16 @@ class _PairingScreenState extends State<PairingScreen> {
               if (_isDiscovering) ...[
                 const Center(child: CircularProgressIndicator()),
                 const SizedBox(height: 16),
-                Text(
-                  'Loading...',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
+                Text('Loading...', style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
               ] else if (sessions.isEmpty) ...[
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.devices_other,
-                          size: 48,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+                        Icon(Icons.devices_other, size: 48, color: Theme.of(context).colorScheme.outline),
                         const SizedBox(height: 16),
-                        Text(
-                          'No recent connections',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+                        Text('No recent connections', style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 8),
                         Text(
                           'Connect to a device using Manual entry to get started',
@@ -390,11 +362,7 @@ class _PairingScreenState extends State<PairingScreen> {
                       ),
                       isThreeLine: true,
                       trailing: isThisConnecting
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.arrow_forward),
                       onTap: _isConnecting ? null : () => _connectToRecentSession(session),
                       onLongPress: () => _showRemoveSessionDialog(session),
@@ -410,17 +378,12 @@ class _PairingScreenState extends State<PairingScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: Theme.of(context).colorScheme.onErrorContainer,
-                        ),
+                        Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onErrorContainer),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onErrorContainer,
-                            ),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
                           ),
                         ),
                       ],
@@ -459,14 +422,8 @@ class _PairingScreenState extends State<PairingScreen> {
         title: const Text('Remove Recent Connection'),
         content: Text('Remove "${session.deviceName}" from recent connections?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
         ],
       ),
     );
@@ -486,11 +443,7 @@ class _PairingScreenState extends State<PairingScreen> {
           children: [
             const Icon(Icons.keyboard, size: 64, color: Colors.blue),
             const SizedBox(height: 24),
-            Text(
-              'Pair with Desktop',
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
+            Text('Pair with Desktop', style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(
               'Enter the session details shown on your desktop device',
@@ -505,17 +458,12 @@ class _PairingScreenState extends State<PairingScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                      ),
+                      Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onErrorContainer),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onErrorContainer,
-                          ),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
                         ),
                       ),
                     ],
@@ -571,10 +519,7 @@ class _PairingScreenState extends State<PairingScreen> {
                 ),
               ),
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(6),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter a PIN';
@@ -590,21 +535,14 @@ class _PairingScreenState extends State<PairingScreen> {
             FilledButton.icon(
               onPressed: _isConnecting ? null : _connect,
               icon: _isConnecting
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.link),
               label: Text(_isConnecting ? 'Connecting...' : 'Connect'),
             ),
             const SizedBox(height: 32),
             const Divider(),
             const SizedBox(height: 16),
-            Text(
-              'Tips',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Tips', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             _buildTipCard(
               context,
@@ -620,15 +558,11 @@ class _PairingScreenState extends State<PairingScreen> {
               ),
             ],
             const SizedBox(height: 8),
-            _buildTipCard(
-              context,
-              Icons.wifi,
-              'Make sure both devices are on the same WiFi network',
-            ),
-            ],
-          ),
+            _buildTipCard(context, Icons.wifi, 'Make sure both devices are on the same WiFi network'),
+          ],
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildTipCard(BuildContext context, IconData icon, String text) {
@@ -639,12 +573,7 @@ class _PairingScreenState extends State<PairingScreen> {
           children: [
             Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                text,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
+            Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
           ],
         ),
       ),

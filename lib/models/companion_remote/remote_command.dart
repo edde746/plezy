@@ -1,42 +1,24 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import 'remote_command_type.dart';
 
+part 'remote_command.g.dart';
+
+@JsonSerializable()
 class RemoteCommand {
+  @JsonKey(unknownEnumValue: RemoteCommandType.ping)
   final RemoteCommandType type;
   final String deviceId;
   final String deviceName;
   final DateTime timestamp;
   final Map<String, dynamic>? data;
 
-  RemoteCommand({
-    required this.type,
-    required this.deviceId,
-    required this.deviceName,
-    DateTime? timestamp,
-    this.data,
-  }) : timestamp = timestamp ?? DateTime.now();
+  RemoteCommand({required this.type, required this.deviceId, required this.deviceName, DateTime? timestamp, this.data})
+    : timestamp = timestamp ?? DateTime.now();
 
-  Map<String, dynamic> toJson() {
-    return {
-      'type': type.name,
-      'deviceId': deviceId,
-      'deviceName': deviceName,
-      'timestamp': timestamp.toIso8601String(),
-      if (data != null) 'data': data,
-    };
-  }
+  factory RemoteCommand.fromJson(Map<String, dynamic> json) => _$RemoteCommandFromJson(json);
 
-  factory RemoteCommand.fromJson(Map<String, dynamic> json) {
-    return RemoteCommand(
-      type: RemoteCommandType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => RemoteCommandType.ping,
-      ),
-      deviceId: json['deviceId'] as String,
-      deviceName: json['deviceName'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      data: json['data'] as Map<String, dynamic>?,
-    );
-  }
+  Map<String, dynamic> toJson() => _$RemoteCommandToJson(this);
 
   RemoteCommand copyWith({
     RemoteCommandType? type,
@@ -72,9 +54,6 @@ class RemoteCommand {
 
   @override
   int get hashCode {
-    return type.hashCode ^
-        deviceId.hashCode ^
-        deviceName.hashCode ^
-        timestamp.hashCode;
+    return type.hashCode ^ deviceId.hashCode ^ deviceName.hashCode ^ timestamp.hashCode;
   }
 }

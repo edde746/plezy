@@ -10,6 +10,7 @@ import '../models/companion_remote/remote_command_type.dart';
 import '../models/companion_remote/remote_session.dart';
 import '../models/companion_remote/trusted_device.dart';
 import '../services/companion_remote/companion_remote_peer_service.dart';
+import '../models/companion_remote/recent_remote_session.dart';
 import '../services/companion_remote/companion_remote_discovery_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
@@ -99,28 +100,28 @@ class CompanionRemoteProvider with ChangeNotifier {
   }
 
   void _setupPeerServiceListeners() {
-    _commandSubscription = _peerService!.onCommandReceived.listen((command) {
-      appLogger.d('CompanionRemote: Command received: ${command.type}');
+    _commandSubscription = _peerService!.onCommandReceived.listen(
+      (command) {
+        appLogger.d('CompanionRemote: Command received: ${command.type}');
 
-      if (command.type == RemoteCommandType.deviceInfo) {
-        _handleDeviceInfo(command);
-      } else if (command.type == RemoteCommandType.ping ||
-                 command.type == RemoteCommandType.pong ||
-                 command.type == RemoteCommandType.ack) {
-        // Don't call callback for these
-      } else {
-        onCommandReceived?.call(command);
-      }
-    }, onError: (error) {
-      appLogger.e('CompanionRemote: Stream error', error: error);
-    });
+        if (command.type == RemoteCommandType.deviceInfo) {
+          _handleDeviceInfo(command);
+        } else if (command.type == RemoteCommandType.ping ||
+            command.type == RemoteCommandType.pong ||
+            command.type == RemoteCommandType.ack) {
+          // Don't call callback for these
+        } else {
+          onCommandReceived?.call(command);
+        }
+      },
+      onError: (error) {
+        appLogger.e('CompanionRemote: Stream error', error: error);
+      },
+    );
 
     _deviceConnectedSubscription = _peerService!.onDeviceConnected.listen((device) async {
       appLogger.d('CompanionRemote: Device connected: ${device.name}');
-      _session = _session?.copyWith(
-        status: RemoteSessionStatus.connected,
-        connectedDevice: device,
-      );
+      _session = _session?.copyWith(status: RemoteSessionStatus.connected, connectedDevice: device);
       notifyListeners();
 
       await addTrustedDevice(device, requireApproval: isHost);
@@ -129,15 +130,10 @@ class CompanionRemoteProvider with ChangeNotifier {
     _deviceDisconnectedSubscription = _peerService!.onDeviceDisconnected.listen((_) {
       appLogger.d('CompanionRemote: Device disconnected (intentional: $_intentionalDisconnect)');
       if (_intentionalDisconnect) {
-        _session = _session?.copyWith(
-          status: RemoteSessionStatus.disconnected,
-          connectedDevice: null,
-        );
+        _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, connectedDevice: null);
         notifyListeners();
       } else {
-        _session = _session?.copyWith(
-          status: RemoteSessionStatus.reconnecting,
-        );
+        _session = _session?.copyWith(status: RemoteSessionStatus.reconnecting);
         notifyListeners();
         _scheduleReconnect();
       }
@@ -145,10 +141,7 @@ class CompanionRemoteProvider with ChangeNotifier {
 
     _errorSubscription = _peerService!.onError.listen((error) {
       appLogger.e('CompanionRemote: Error: ${error.message}');
-      _session = _session?.copyWith(
-        status: RemoteSessionStatus.error,
-        errorMessage: error.message,
-      );
+      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: error.message);
       notifyListeners();
     });
 
@@ -166,11 +159,7 @@ class CompanionRemoteProvider with ChangeNotifier {
 
       appLogger.d('CompanionRemote: Device info - name: ${command.deviceName}, platform: $platform, role: $role');
 
-      final device = RemoteDevice(
-        id: command.deviceId,
-        name: command.deviceName,
-        platform: platform,
-      );
+      final device = RemoteDevice(id: command.deviceId, name: command.deviceName, platform: platform);
 
       _session = _session?.copyWith(connectedDevice: device);
       notifyListeners();
@@ -256,10 +245,7 @@ class CompanionRemoteProvider with ChangeNotifier {
       appLogger.d('CompanionRemote: Successfully joined session');
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to join session', error: e);
-      _session = _session?.copyWith(
-        status: RemoteSessionStatus.error,
-        errorMessage: e.toString(),
-      );
+      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: e.toString());
       notifyListeners();
       rethrow;
     }
@@ -305,10 +291,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   Future<void> _attemptReconnect() async {
     if (_lastSessionId == null || _lastPin == null) {
       appLogger.w('CompanionRemote: No stored credentials for reconnect');
-      _session = _session?.copyWith(
-        status: RemoteSessionStatus.error,
-        errorMessage: 'Connection lost',
-      );
+      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: 'Connection lost');
       notifyListeners();
       return;
     }
@@ -347,10 +330,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   void cancelReconnect() {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
-    _session = _session?.copyWith(
-      status: RemoteSessionStatus.disconnected,
-      connectedDevice: null,
-    );
+    _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, connectedDevice: null);
     notifyListeners();
   }
 
@@ -379,9 +359,7 @@ class CompanionRemoteProvider with ChangeNotifier {
       if (json != null) {
         final List<dynamic> list = jsonDecode(json);
         _trustedDevices.clear();
-        _trustedDevices.addAll(
-          list.map((e) => TrustedDevice.fromJson(e as Map<String, dynamic>)),
-        );
+        _trustedDevices.addAll(list.map((e) => TrustedDevice.fromJson(e as Map<String, dynamic>)));
         appLogger.d('CompanionRemote: Loaded ${_trustedDevices.length} trusted devices');
       }
     } catch (e) {
@@ -424,12 +402,7 @@ class CompanionRemoteProvider with ChangeNotifier {
       }
 
       _trustedDevices.add(
-        TrustedDevice(
-          peerId: device.id,
-          deviceName: device.name,
-          platform: device.platform,
-          isApproved: approved,
-        ),
+        TrustedDevice(peerId: device.id, deviceName: device.name, platform: device.platform, isApproved: approved),
       );
     }
 

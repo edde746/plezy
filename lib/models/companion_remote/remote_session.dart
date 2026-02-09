@@ -1,16 +1,12 @@
-enum RemoteSessionRole {
-  host,
-  remote,
-}
+import 'package:json_annotation/json_annotation.dart';
 
-enum RemoteSessionStatus {
-  disconnected,
-  connecting,
-  connected,
-  reconnecting,
-  error,
-}
+part 'remote_session.g.dart';
 
+enum RemoteSessionRole { host, remote }
+
+enum RemoteSessionStatus { disconnected, connecting, connected, reconnecting, error }
+
+@JsonSerializable()
 class RemoteDevice {
   final String id;
   final String name;
@@ -24,28 +20,12 @@ class RemoteDevice {
     required this.platform,
     DateTime? connectedAt,
     Map<String, bool>? capabilities,
-  })  : connectedAt = connectedAt ?? DateTime.now(),
-        capabilities = capabilities ?? {};
+  }) : connectedAt = connectedAt ?? DateTime.now(),
+       capabilities = capabilities ?? {};
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'platform': platform,
-      'connectedAt': connectedAt.toIso8601String(),
-      'capabilities': capabilities,
-    };
-  }
+  factory RemoteDevice.fromJson(Map<String, dynamic> json) => _$RemoteDeviceFromJson(json);
 
-  factory RemoteDevice.fromJson(Map<String, dynamic> json) {
-    return RemoteDevice(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      platform: json['platform'] as String,
-      connectedAt: DateTime.parse(json['connectedAt'] as String),
-      capabilities: Map<String, bool>.from(json['capabilities'] as Map? ?? {}),
-    );
-  }
+  Map<String, dynamic> toJson() => _$RemoteDeviceToJson(this);
 
   RemoteDevice copyWith({
     String? id,
@@ -74,10 +54,13 @@ class RemoteDevice {
   int get hashCode => id.hashCode;
 }
 
+@JsonSerializable()
 class RemoteSession {
   final String sessionId;
   final String pin;
+  @JsonKey(unknownEnumValue: RemoteSessionRole.remote)
   final RemoteSessionRole role;
+  @JsonKey(unknownEnumValue: RemoteSessionStatus.disconnected)
   final RemoteSessionStatus status;
   final RemoteDevice? connectedDevice;
   final DateTime createdAt;
@@ -97,6 +80,10 @@ class RemoteSession {
   bool get isHost => role == RemoteSessionRole.host;
   bool get isRemote => role == RemoteSessionRole.remote;
 
+  factory RemoteSession.fromJson(Map<String, dynamic> json) => _$RemoteSessionFromJson(json);
+
+  Map<String, dynamic> toJson() => _$RemoteSessionToJson(this);
+
   RemoteSession copyWith({
     String? sessionId,
     String? pin,
@@ -114,38 +101,6 @@ class RemoteSession {
       connectedDevice: connectedDevice ?? this.connectedDevice,
       createdAt: createdAt ?? this.createdAt,
       errorMessage: errorMessage ?? this.errorMessage,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'sessionId': sessionId,
-      'pin': pin,
-      'role': role.name,
-      'status': status.name,
-      'connectedDevice': connectedDevice?.toJson(),
-      'createdAt': createdAt.toIso8601String(),
-      'errorMessage': errorMessage,
-    };
-  }
-
-  factory RemoteSession.fromJson(Map<String, dynamic> json) {
-    return RemoteSession(
-      sessionId: json['sessionId'] as String,
-      pin: json['pin'] as String,
-      role: RemoteSessionRole.values.firstWhere(
-        (e) => e.name == json['role'],
-        orElse: () => RemoteSessionRole.remote,
-      ),
-      status: RemoteSessionStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => RemoteSessionStatus.disconnected,
-      ),
-      connectedDevice: json['connectedDevice'] != null
-          ? RemoteDevice.fromJson(json['connectedDevice'] as Map<String, dynamic>)
-          : null,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      errorMessage: json['errorMessage'] as String?,
     );
   }
 }

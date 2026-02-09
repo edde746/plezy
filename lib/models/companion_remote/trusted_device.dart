@@ -1,3 +1,8 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'trusted_device.g.dart';
+
+@JsonSerializable()
 class TrustedDevice {
   final String peerId;
   final String deviceName;
@@ -13,30 +18,12 @@ class TrustedDevice {
     DateTime? firstConnected,
     DateTime? lastConnected,
     this.isApproved = false,
-  })  : firstConnected = firstConnected ?? DateTime.now(),
-        lastConnected = lastConnected ?? DateTime.now();
+  }) : firstConnected = firstConnected ?? DateTime.now(),
+       lastConnected = lastConnected ?? DateTime.now();
 
-  Map<String, dynamic> toJson() {
-    return {
-      'peerId': peerId,
-      'deviceName': deviceName,
-      'platform': platform,
-      'firstConnected': firstConnected.toIso8601String(),
-      'lastConnected': lastConnected.toIso8601String(),
-      'isApproved': isApproved,
-    };
-  }
+  factory TrustedDevice.fromJson(Map<String, dynamic> json) => _$TrustedDeviceFromJson(json);
 
-  factory TrustedDevice.fromJson(Map<String, dynamic> json) {
-    return TrustedDevice(
-      peerId: json['peerId'] as String,
-      deviceName: json['deviceName'] as String,
-      platform: json['platform'] as String,
-      firstConnected: DateTime.parse(json['firstConnected'] as String),
-      lastConnected: DateTime.parse(json['lastConnected'] as String),
-      isApproved: json['isApproved'] as bool? ?? false,
-    );
-  }
+  Map<String, dynamic> toJson() => _$TrustedDeviceToJson(this);
 
   TrustedDevice copyWith({
     String? peerId,

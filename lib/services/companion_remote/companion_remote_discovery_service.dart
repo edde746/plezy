@@ -1,64 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../../models/companion_remote/recent_remote_session.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
-
-/// Recent Companion Remote session for quick reconnection
-class RecentRemoteSession {
-  final String sessionId;
-  final String pin;
-  final String deviceName;
-  final String platform;
-  final DateTime lastConnected;
-
-  RecentRemoteSession({
-    required this.sessionId,
-    required this.pin,
-    required this.deviceName,
-    required this.platform,
-    required this.lastConnected,
-  });
-
-  factory RecentRemoteSession.fromJson(Map<String, dynamic> json) {
-    return RecentRemoteSession(
-      sessionId: json['sessionId'] as String,
-      pin: json['pin'] as String,
-      deviceName: json['deviceName'] as String,
-      platform: json['platform'] as String,
-      lastConnected: DateTime.parse(json['lastConnected'] as String),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'sessionId': sessionId,
-      'pin': pin,
-      'deviceName': deviceName,
-      'platform': platform,
-      'lastConnected': lastConnected.toIso8601String(),
-    };
-  }
-
-  /// Create from QR code data (format: "sessionId:pin:deviceName:platform")
-  factory RecentRemoteSession.fromQrData(String qrData) {
-    final parts = qrData.split(':');
-    if (parts.length < 2) {
-      throw FormatException('Invalid QR code format');
-    }
-
-    return RecentRemoteSession(
-      sessionId: parts[0],
-      pin: parts[1],
-      deviceName: parts.length > 2 ? parts[2] : 'Unknown Device',
-      platform: parts.length > 3 ? parts[3] : 'unknown',
-      lastConnected: DateTime.now(),
-    );
-  }
-
-  @override
-  String toString() => '$deviceName ($platform) - Last: ${lastConnected.toLocal()}';
-}
 
 /// Service for managing recent Companion Remote sessions
 class CompanionRemoteDiscoveryService {
@@ -87,9 +32,7 @@ class CompanionRemoteDiscoveryService {
       if (json != null) {
         final List<dynamic> list = jsonDecode(json);
         _recentSessions.clear();
-        _recentSessions.addAll(
-          list.map((e) => RecentRemoteSession.fromJson(e as Map<String, dynamic>)),
-        );
+        _recentSessions.addAll(list.map((e) => RecentRemoteSession.fromJson(e as Map<String, dynamic>)));
 
         // Sort by last connected (most recent first)
         _recentSessions.sort((a, b) => b.lastConnected.compareTo(a.lastConnected));
