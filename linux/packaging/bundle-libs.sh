@@ -131,6 +131,30 @@ if [[ -n "$GTK_LIBDIR" ]]; then
     bundle_module_dir "$PRINT_MODULE_DIR" "$PRINT_DEST"
 fi
 
+# ── Resolve transitive deps of modules ────────────────────────────────────
+# Module bundling above only resolves one level of deps. Re-run the iterative
+# walk over everything now in lib/ to catch deeper transitive deps (e.g.
+# GIO module → libsystemd → libselinux).
+echo "==> Resolving transitive dependencies of bundled modules..."
+mapfile -t seed_files < <(find "$LIB_DIR" -name '*.so*' -type f 2>/dev/null)
+while true; do
+    mapfile -t deps < <(collect_deps "${seed_files[@]}")
+    new_files=()
+    for dep in "${deps[@]}"; do
+        base="$(basename "$dep")"
+        if [[ -z "${seen[$base]:-}" && ! -f "$LIB_DIR/$base" ]]; then
+            seen[$base]=1
+            cp -L "$dep" "$LIB_DIR/$base" 2>/dev/null || true
+            new_files+=("$LIB_DIR/$base")
+        fi
+    done
+    if [[ ${#new_files[@]} -eq 0 ]]; then
+        break
+    fi
+    echo "    Bundled ${#new_files[@]} new libraries"
+    seed_files=("${new_files[@]}")
+done
+
 # ── GSettings schemas ─────────────────────────────────────────────────────
 SCHEMAS_SRC="/usr/share/glib-2.0/schemas"
 SCHEMAS_DEST="$BUNDLE_DIR/share/glib-2.0/schemas"
