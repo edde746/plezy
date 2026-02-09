@@ -465,7 +465,8 @@ jobs:
       - name: Copy libmpv into bundle
         run: |
           BUNDLE_LIB=build/linux/x64/release/bundle/lib
-          cp -a libmpv-prefix/lib/libmpv.so* "$BUNDLE_LIB/"
+          LIBMPV_DIR=$(dirname "$(find libmpv-prefix -name 'libmpv.so' | head -1)")
+          cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
           cp -a libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
 
       - name: Bundle shared libraries for portable tarball
@@ -582,7 +583,8 @@ jobs:
       - name: Copy libmpv into bundle
         run: |
           BUNDLE_LIB=${{ steps.find-bundle.outputs.bundle_dir }}/lib
-          cp -a libmpv-prefix/lib/libmpv.so* "$BUNDLE_LIB/"
+          LIBMPV_DIR=$(dirname "$(find libmpv-prefix -name 'libmpv.so' | head -1)")
+          cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
           cp -a libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
 
       - name: Bundle shared libraries for portable tarball
