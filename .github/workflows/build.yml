@@ -446,13 +446,30 @@ jobs:
       - name: Build Linux x64
         run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true
 
+      - name: Build Linux Packages
+        run: ARCH_SUFFIX=x64 OUTPUT_DIR=$GITHUB_WORKSPACE python3 linux/packaging/build-packages.py
+
+      - name: Bundle shared libraries for portable tarball
+        run: bash linux/packaging/bundle-libs.sh build/linux/x64/release/bundle
+
+      - name: Copy wrapper script into bundle
+        run: cp linux/packaging/plezy.sh build/linux/x64/release/bundle/plezy.sh
+
+      - name: Verify no missing dependencies
+        run: |
+          cd build/linux/x64/release/bundle
+          MISSING=$(LD_LIBRARY_PATH=lib ldd ./plezy 2>&1 | grep "not found" || true)
+          if [[ -n "$MISSING" ]]; then
+            echo "ERROR: Unresolved dependencies found:" >&2
+            echo "$MISSING" >&2
+            exit 1
+          fi
+          echo "All dependencies resolved."
+
       - name: Create tarball
         run: |
           cd build/linux/x64/release/bundle
           tar -czf $GITHUB_WORKSPACE/plezy-linux-x64.tar.gz *
-
-      - name: Build Linux Packages
-        run: ARCH_SUFFIX=x64 OUTPUT_DIR=$GITHUB_WORKSPACE python3 linux/packaging/build-packages.py
 
       - name: Attest Linux x64 artifacts
         uses: actions/attest-build-provenance@v2
@@ -523,17 +540,34 @@ jobs:
           BUNDLE_DIR=$(find build/linux -path "*/release/bundle" -type d | head -1)
           echo "bundle_dir=$BUNDLE_DIR" >> $GITHUB_OUTPUT
 
-      - name: Create tarball
-        run: |
-          cd ${{ steps.find-bundle.outputs.bundle_dir }}
-          tar -czf $GITHUB_WORKSPACE/plezy-linux-arm64.tar.gz *
-
       - name: Build Linux Packages
         run: |
           BUILD_DIR=${{ steps.find-bundle.outputs.bundle_dir }} \
           ARCH_SUFFIX=arm64 \
           OUTPUT_DIR=$GITHUB_WORKSPACE \
           python3 linux/packaging/build-packages.py
+
+      - name: Bundle shared libraries for portable tarball
+        run: bash linux/packaging/bundle-libs.sh ${{ steps.find-bundle.outputs.bundle_dir }}
+
+      - name: Copy wrapper script into bundle
+        run: cp linux/packaging/plezy.sh ${{ steps.find-bundle.outputs.bundle_dir }}/plezy.sh
+
+      - name: Verify no missing dependencies
+        run: |
+          cd ${{ steps.find-bundle.outputs.bundle_dir }}
+          MISSING=$(LD_LIBRARY_PATH=lib ldd ./plezy 2>&1 | grep "not found" || true)
+          if [[ -n "$MISSING" ]]; then
+            echo "ERROR: Unresolved dependencies found:" >&2
+            echo "$MISSING" >&2
+            exit 1
+          fi
+          echo "All dependencies resolved."
+
+      - name: Create tarball
+        run: |
+          cd ${{ steps.find-bundle.outputs.bundle_dir }}
+          tar -czf $GITHUB_WORKSPACE/plezy-linux-arm64.tar.gz *
 
       - name: Attest Linux arm64 artifacts
         uses: actions/attest-build-provenance@v2
