@@ -53,8 +53,6 @@ bundle_dlopen_lib() {
     fi
 }
 
-bundle_dlopen_lib "libmpv.so"
-
 echo "==> Discovering shared library dependencies..."
 
 # Seed: the main binary + all .so files already in lib/
