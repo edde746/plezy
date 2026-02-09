@@ -339,13 +339,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     });
   }
 
-  /// Listen to playback state changes to manage auto-hide timer on iOS/mobile
+  /// Listen to playback state changes to manage auto-hide timer
   void _listenToPlayingState() {
     _playingSubscription = widget.player.streams.playing.listen((isPlaying) {
       if (isPlaying && _showControls) {
         _startHideTimer();
-      } else if (!isPlaying) {
-        _hideTimer?.cancel();
+      } else if (!isPlaying && _showControls) {
+        _startPausedHideTimer();
       }
     });
   }
@@ -606,6 +606,32 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Lag during resize is now handled in native code (glViewport + resize signal handler)
   }
 
+  /// Controls hide delay: 5s on mobile/TV/keyboard-nav, 3s on desktop with mouse.
+  Duration get _hideDelay {
+    final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
+    if (isMobile || PlatformDetector.isTV() || _videoPlayerNavigationEnabled) {
+      return const Duration(seconds: 5);
+    }
+    return const Duration(seconds: 3);
+  }
+
+  /// Shared hide logic: hides controls, notifies parent, updates traffic lights, restores focus.
+  void _hideControls() {
+    if (!mounted || !_showControls) return;
+    setState(() {
+      _showControls = false;
+    });
+    widget.controlsVisible?.value = false;
+    if (Platform.isMacOS) {
+      _updateTrafficLightVisibility();
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_focusNode.hasFocus) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
   void _startHideTimer() {
     _hideTimer?.cancel();
 
@@ -615,29 +641,22 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     // Only auto-hide if playing
     if (widget.player.state.playing) {
-      _hideTimer = Timer(const Duration(seconds: 3), () {
+      _hideTimer = Timer(_hideDelay, () {
         // Also check hasFirstFrame in callback (in case it changed)
         final stillLoading = !(widget.hasFirstFrame?.value ?? true);
         if (mounted && widget.player.state.playing && !stillLoading) {
-          setState(() {
-            _showControls = false;
-          });
-          // Notify parent of visibility change (for popup positioning)
-          widget.controlsVisible?.value = false;
-          // Hide traffic lights on macOS when controls auto-hide
-          if (Platform.isMacOS) {
-            _updateTrafficLightVisibility();
-          }
-          // Restore focus to the main node so keyboard shortcuts keep working
-          // after FocusScope(canRequestFocus: false) ejects child focus.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && !_focusNode.hasFocus) {
-              _focusNode.requestFocus();
-            }
-          });
+          _hideControls();
         }
       });
     }
+  }
+
+  /// Auto-hide controls after pause (does not check playing state in callback).
+  void _startPausedHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(_hideDelay, () {
+      _hideControls();
+    });
   }
 
   /// Restart the hide timer on user interaction (if video is playing)
@@ -645,6 +664,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (widget.player.state.playing) {
       _startHideTimer();
     }
+  }
+
+  /// Hide controls immediately when the mouse leaves the player area (desktop only).
+  void _hideControlsFromPointerExit() {
+    final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
+    if (isMobile) return;
+
+    _hideTimer?.cancel();
+    _hideControls();
   }
 
   /// Show controls in response to pointer activity (mouse/trackpad movement).
@@ -1533,6 +1561,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             child: MouseRegion(
               cursor: _showControls ? SystemMouseCursors.basic : SystemMouseCursors.none,
               onHover: (_) => _showControlsFromPointerActivity(),
+              onExit: (_) => _hideControlsFromPointerExit(),
               child: Stack(
                 children: [
                   // Keep-alive: 1px widget that continuously repaints to prevent
