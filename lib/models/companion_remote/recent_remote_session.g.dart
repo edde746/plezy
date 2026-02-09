@@ -12,6 +12,7 @@ RecentRemoteSession _$RecentRemoteSessionFromJson(Map<String, dynamic> json) => 
   deviceName: json['deviceName'] as String,
   platform: json['platform'] as String,
   lastConnected: DateTime.parse(json['lastConnected'] as String),
+  hostAddress: json['hostAddress'] as String?,
 );
 
 Map<String, dynamic> _$RecentRemoteSessionToJson(RecentRemoteSession instance) => <String, dynamic>{
@@ -20,4 +21,5 @@ Map<String, dynamic> _$RecentRemoteSessionToJson(RecentRemoteSession instance) =
   'deviceName': instance.deviceName,
   'platform': instance.platform,
   'lastConnected': instance.lastConnected.toIso8601String(),
+  'hostAddress': instance.hostAddress,
 };

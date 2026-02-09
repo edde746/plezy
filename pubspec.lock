@@ -297,14 +297,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.1"
-  dart_webrtc:
-    dependency: transitive
-    description:
-      name: dart_webrtc
-      sha256: "4ed7b9fa9924e5a81eb39271e2c2356739dd1039d60a13b86ba6c5f448625086"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.7.0"
   dbus:
     dependency: transitive
     description:
@@ -369,14 +361,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.3"
-  events_emitter:
-    dependency: transitive
-    description:
-      name: events_emitter
-      sha256: a075477bdf9c8c0c31bb7c7b7bdd357b4486c34f30163119f96de4e7f54abeff
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.2"
   fake_async:
     dependency: transitive
     description:
@@ -493,14 +477,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_webrtc:
-    dependency: "direct overridden"
-    description:
-      name: flutter_webrtc
-      sha256: "0f86b518e9349e71a136a96e0ea11294cad8a8531b2bc9ae99e69df332ac898a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.3.0"
   frontend_server_client:
     dependency: transitive
     description:
@@ -838,14 +814,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
-  peerdart:
-    dependency: "direct main"
-    description:
-      name: peerdart
-      sha256: "1d0db041d42194f42e57d8889d029fb8d107610bf1062b39f43f4651de547e3c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.6"
   petitparser:
     dependency: transitive
     description:
@@ -1451,14 +1419,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.3"
-  webrtc_interface:
-    dependency: transitive
-    description:
-      name: webrtc_interface
-      sha256: ad0e5786b2acd3be72a3219ef1dde9e1cac071cf4604c685f11b61d63cdd6eb3
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.4.0"
   win32:
     dependency: transitive
     description:

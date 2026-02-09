@@ -35,14 +35,8 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                         title: const Text('Disconnect'),
                         content: const Text('Do you want to disconnect from the remote session?'),
                         actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('Disconnect'),
-                          ),
+                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Disconnect')),
                         ],
                       ),
                     );
@@ -68,10 +62,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 24),
-                  Text(
-                    'Reconnecting...',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  Text('Reconnecting...', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 8),
                   Text(
                     'Attempt ${provider.reconnectAttempts} of 5',
@@ -81,15 +72,9 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      OutlinedButton(
-                        onPressed: () => provider.cancelReconnect(),
-                        child: const Text('Cancel'),
-                      ),
+                      OutlinedButton(onPressed: () => provider.cancelReconnect(), child: const Text('Cancel')),
                       const SizedBox(width: 16),
-                      FilledButton(
-                        onPressed: () => provider.retryReconnectNow(),
-                        child: const Text('Retry Now'),
-                      ),
+                      FilledButton(onPressed: () => provider.retryReconnectNow(), child: const Text('Retry Now')),
                     ],
                   ),
                 ],
@@ -114,10 +99,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                   const SizedBox(height: 32),
                   FilledButton.icon(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const PairingScreen()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const PairingScreen()));
                     },
                     icon: const Icon(Icons.link),
                     label: const Text('Connect to Device'),
@@ -141,10 +123,7 @@ class _RemoteControlLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     if (PlatformDetector.isDesktop(context)) {
       return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: const _RemoteControlContent(),
-        ),
+        child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 400), child: const _RemoteControlContent()),
       );
     }
 
@@ -195,10 +174,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
               color: Theme.of(context).colorScheme.primaryContainer,
               child: Row(
                 children: [
-                  Icon(
-                    Icons.computer,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
+                  Icon(Icons.computer, color: Theme.of(context).colorScheme.onPrimaryContainer),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -206,15 +182,15 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
                       children: [
                         Text(
                           device.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer),
                         ),
                         Text(
                           device.platform,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer),
                         ),
                       ],
                     ),
@@ -222,10 +198,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
                   ),
                 ],
               ),
@@ -269,16 +242,8 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _RemoteButton(
-              icon: Icons.home,
-              label: 'Home',
-              onPressed: () => _sendCommand(RemoteCommandType.home),
-            ),
-            _RemoteButton(
-              icon: Icons.arrow_back,
-              label: 'Back',
-              onPressed: () => _sendCommand(RemoteCommandType.back),
-            ),
+            _RemoteButton(icon: Icons.home, label: 'Home', onPressed: () => _sendCommand(RemoteCommandType.home)),
+            _RemoteButton(icon: Icons.arrow_back, label: 'Back', onPressed: () => _sendCommand(RemoteCommandType.back)),
             _RemoteButton(
               icon: Icons.menu,
               label: 'Menu',
@@ -287,14 +252,9 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           ],
         ),
         const SizedBox(height: 32),
-        Center(
-          child: _DPad(onCommand: _sendCommand),
-        ),
+        Center(child: _DPad(onCommand: _sendCommand)),
         const SizedBox(height: 32),
-        Text(
-          'Tab Navigation',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text('Tab Navigation', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 16),
         Wrap(
           spacing: 8,
@@ -370,11 +330,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
               onPressed: () => _sendCommand(RemoteCommandType.seekBackward),
             ),
             const SizedBox(width: 16),
-            _RemoteButton(
-              icon: Icons.stop,
-              label: 'Stop',
-              onPressed: () => _sendCommand(RemoteCommandType.stop),
-            ),
+            _RemoteButton(icon: Icons.stop, label: 'Stop', onPressed: () => _sendCommand(RemoteCommandType.stop)),
             const SizedBox(width: 16),
             _RemoteButton(
               icon: Icons.forward_10,
@@ -384,10 +340,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           ],
         ),
         const SizedBox(height: 32),
-        Text(
-          'Volume',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text('Volume', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -424,11 +377,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           runSpacing: 12,
           alignment: WrapAlignment.center,
           children: [
-            _RemoteCard(
-              icon: Icons.search,
-              label: 'Search',
-              onPressed: _showSearchSheet,
-            ),
+            _RemoteCard(icon: Icons.search, label: 'Search', onPressed: _showSearchSheet),
             _RemoteCard(
               icon: Icons.fullscreen,
               label: 'Fullscreen',
@@ -583,19 +532,12 @@ class _RemoteButton extends StatelessWidget {
               HapticFeedback.lightImpact();
               onPressed();
             },
-            style: FilledButton.styleFrom(
-              padding: EdgeInsets.zero,
-              shape: const CircleBorder(),
-            ),
+            style: FilledButton.styleFrom(padding: EdgeInsets.zero, shape: const CircleBorder()),
             child: Icon(icon, size: iconSize),
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall,
-          textAlign: TextAlign.center,
-        ),
+        Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
       ],
     );
   }
@@ -606,11 +548,7 @@ class _RemoteChip extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
 
-  const _RemoteChip({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
+  const _RemoteChip({required this.icon, required this.label, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -654,12 +592,7 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom, left: 16, right: 16, top: 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -669,13 +602,8 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
             decoration: InputDecoration(
               hintText: 'Search on desktop...',
               prefixIcon: const Icon(Icons.search),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: () => _submit(_controller.text),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(100),
-              ),
+              suffixIcon: IconButton(icon: const Icon(Icons.send), onPressed: () => _submit(_controller.text)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(100)),
             ),
             onSubmitted: _submit,
           ),
@@ -691,11 +619,7 @@ class _RemoteCard extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
 
-  const _RemoteCard({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
+  const _RemoteCard({required this.icon, required this.label, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -714,11 +638,7 @@ class _RemoteCard extends StatelessWidget {
             children: [
               Icon(icon, size: 32),
               const SizedBox(height: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
+              Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
             ],
           ),
         ),

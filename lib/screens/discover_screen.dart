@@ -1129,7 +1129,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     onKeyEvent: isDesktop ? _handleCompanionRemoteKeyEvent : null,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isDesktop && _isCompanionRemoteFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                        color: isDesktop && _isCompanionRemoteFocused
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Stack(
@@ -1144,10 +1146,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               if (isDesktop) {
                                 RemoteSessionDialog.show(context);
                               } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => MobileRemoteScreen()),
-                                );
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => MobileRemoteScreen()));
                               }
                             },
                             tooltip: 'Companion Remote',
@@ -1372,12 +1371,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           // Overlaid app bar — excluded from default focus traversal so that
           // initial/tab-switch focus lands on content (hero/hubs), not the toolbar.
           // Toolbar buttons are still reachable via explicit UP from hero section.
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
-          ),
+          Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: _buildOverlaidAppBar())),
         ],
       ),
     );

@@ -816,10 +816,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                       : const Text('Control a desktop device'),
                   trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
                   },
                 ),
             ],

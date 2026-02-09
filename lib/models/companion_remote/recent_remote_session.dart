@@ -10,6 +10,7 @@ class RecentRemoteSession {
   final String deviceName;
   final String platform;
   final DateTime lastConnected;
+  final String? hostAddress; // Format: "ip:port"
 
   RecentRemoteSession({
     required this.sessionId,
@@ -17,25 +18,32 @@ class RecentRemoteSession {
     required this.deviceName,
     required this.platform,
     required this.lastConnected,
+    this.hostAddress,
   });
 
   factory RecentRemoteSession.fromJson(Map<String, dynamic> json) => _$RecentRemoteSessionFromJson(json);
 
   Map<String, dynamic> toJson() => _$RecentRemoteSessionToJson(this);
 
-  /// Create from QR code data (format: "sessionId:pin:deviceName:platform")
+  /// Create from QR code data (format: "ip|port|sessionId|pin")
   factory RecentRemoteSession.fromQrData(String qrData) {
-    final parts = qrData.split(':');
-    if (parts.length < 2) {
-      throw FormatException('Invalid QR code format');
+    final parts = qrData.split('|');
+    if (parts.length < 4) {
+      throw FormatException('Invalid QR code format - expected ip|port|sessionId|pin');
     }
 
+    final ip = parts[0];
+    final port = parts[1];
+    final sessionId = parts[2];
+    final pin = parts[3];
+
     return RecentRemoteSession(
-      sessionId: parts[0],
-      pin: parts[1],
-      deviceName: parts.length > 2 ? parts[2] : 'Unknown Device',
-      platform: parts.length > 3 ? parts[3] : 'unknown',
+      sessionId: sessionId,
+      pin: pin,
+      deviceName: 'Unknown Device',
+      platform: 'unknown',
       lastConnected: DateTime.now(),
+      hostAddress: '$ip:$port',
     );
   }
 

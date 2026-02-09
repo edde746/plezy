@@ -90,17 +90,19 @@ class RemoteSession {
     RemoteSessionRole? role,
     RemoteSessionStatus? status,
     RemoteDevice? connectedDevice,
+    bool clearConnectedDevice = false,
     DateTime? createdAt,
     String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return RemoteSession(
       sessionId: sessionId ?? this.sessionId,
       pin: pin ?? this.pin,
       role: role ?? this.role,
       status: status ?? this.status,
-      connectedDevice: connectedDevice ?? this.connectedDevice,
+      connectedDevice: clearConnectedDevice ? null : (connectedDevice ?? this.connectedDevice),
       createdAt: createdAt ?? this.createdAt,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }

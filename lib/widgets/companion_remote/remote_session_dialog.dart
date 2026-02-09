@@ -24,6 +24,7 @@ class RemoteSessionDialog extends StatefulWidget {
 class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
   bool _isCreatingSession = false;
   String? _errorMessage;
+  String? _hostAddress; // Format: "ip:port"
 
   @override
   void initState() {
@@ -35,14 +36,16 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
     setState(() {
       _isCreatingSession = true;
       _errorMessage = null;
+      _hostAddress = null;
     });
 
     try {
       final provider = context.read<CompanionRemoteProvider>();
-      await provider.createSession();
+      final result = await provider.createSession();
 
       setState(() {
         _isCreatingSession = false;
+        _hostAddress = result.address;
       });
     } catch (e) {
       appLogger.e('Failed to create companion remote session', error: e);
@@ -55,12 +58,9 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
 
   void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label copied to clipboard'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$label copied to clipboard'), duration: const Duration(seconds: 2)));
   }
 
   @override
@@ -76,10 +76,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text(
-                    'Creating remote session...',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text('Creating remote session...', style: Theme.of(context).textTheme.titleMedium),
                 ],
               ),
             ),
@@ -95,40 +92,32 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
               children: [
                 const Text('Failed to create remote session:'),
                 const SizedBox(height: 8),
-                Text(
-                  _errorMessage!,
-                  style: const TextStyle(fontFamily: 'monospace'),
-                ),
+                Text(_errorMessage!, style: const TextStyle(fontFamily: 'monospace')),
               ],
             ),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-              TextButton(
-                onPressed: _createSession,
-                child: const Text('Retry'),
-              ),
+              TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+              TextButton(onPressed: _createSession, child: const Text('Retry')),
             ],
           );
         }
 
         final session = provider.session;
-        if (session == null) {
+        if (session == null || _hostAddress == null) {
           return AlertDialog(
             title: const Text('Error'),
             content: const Text('No session available'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ],
+            actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))],
           );
         }
 
-        final qrData = '${session.sessionId}:${session.pin}';
+        // Parse IP and port from hostAddress
+        final addressParts = _hostAddress!.split(':');
+        final ip = addressParts[0];
+        final port = addressParts[1];
+
+        // New QR format: ip|port|sessionId|pin (using pipe separator)
+        final qrData = '$ip|$port|${session.sessionId}|${session.pin}';
 
         return Dialog(
           child: ConstrainedBox(
@@ -147,45 +136,32 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Companion Remote',
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
+                            Text('Companion Remote', style: Theme.of(context).textTheme.headlineSmall),
                             const SizedBox(height: 4),
                             Text(
                               session.connectedDevice != null
                                   ? 'Connected to ${session.connectedDevice!.name}'
                                   : 'Waiting for connection...',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: session.connectedDevice != null
-                                        ? Colors.green
-                                        : Theme.of(context).textTheme.bodySmall?.color,
-                                  ),
+                                color: session.connectedDevice != null
+                                    ? Colors.green
+                                    : Theme.of(context).textTheme.bodySmall?.color,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
                     ],
                   ),
                   const SizedBox(height: 24),
                   if (session.connectedDevice == null) ...[
-                    Text(
-                      'Scan QR Code',
-                      style: Theme.of(context).textTheme.titleMedium,
-                      textAlign: TextAlign.center,
-                    ),
+                    Text('Scan QR Code', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     Center(
                       child: Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
                         child: QrImageView(
                           data: qrData,
                           version: QrVersions.auto,
@@ -205,42 +181,31 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                     const SizedBox(height: 16),
                     _buildCodeCard(
                       context,
+                      'Host Address',
+                      _hostAddress!,
+                      onCopy: () => _copyToClipboard(_hostAddress!, 'Host Address'),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildCodeCard(
+                      context,
                       'Session ID',
                       session.sessionId,
                       onCopy: () => _copyToClipboard(session.sessionId, 'Session ID'),
                     ),
                     const SizedBox(height: 12),
-                    _buildCodeCard(
-                      context,
-                      'PIN',
-                      session.pin,
-                      onCopy: () => _copyToClipboard(session.pin, 'PIN'),
-                    ),
+                    _buildCodeCard(context, 'PIN', session.pin, onCopy: () => _copyToClipboard(session.pin, 'PIN')),
                   ] else ...[
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           children: [
-                            const Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 48,
-                            ),
+                            const Icon(Icons.check_circle, color: Colors.green, size: 48),
                             const SizedBox(height: 8),
-                            Text(
-                              'Connected',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
+                            Text('Connected', style: Theme.of(context).textTheme.titleLarge),
                             const SizedBox(height: 8),
-                            Text(
-                              session.connectedDevice!.name,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            Text(
-                              session.connectedDevice!.platform,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
+                            Text(session.connectedDevice!.name, style: Theme.of(context).textTheme.bodyLarge),
+                            Text(session.connectedDevice!.platform, style: Theme.of(context).textTheme.bodySmall),
                           ],
                         ),
                       ),
@@ -276,10 +241,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                         child: const Text('Disconnect'),
                       ),
                       const SizedBox(width: 8),
-                      FilledButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Minimize'),
-                      ),
+                      FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Minimize')),
                     ],
                   ),
                 ],
@@ -291,12 +253,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
     );
   }
 
-  Widget _buildCodeCard(
-    BuildContext context,
-    String label,
-    String code, {
-    VoidCallback? onCopy,
-  }) {
+  Widget _buildCodeCard(BuildContext context, String label, String code, {VoidCallback? onCopy}) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -306,26 +263,16 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text(label, style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: 4),
                   Text(
                     code,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontFamily: 'monospace',
-                          letterSpacing: 2,
-                        ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontFamily: 'monospace', letterSpacing: 2),
                   ),
                 ],
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.copy),
-              onPressed: onCopy,
-              tooltip: 'Copy to clipboard',
-            ),
+            IconButton(icon: const Icon(Icons.copy), onPressed: onCopy, tooltip: 'Copy to clipboard'),
           ],
         ),
       ),

@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
-import 'package:peerdart/peerdart.dart';
+import 'package:web_socket_channel/io.dart';
 
 import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_command_type.dart';
@@ -15,6 +17,8 @@ enum RemotePeerErrorType {
   serverError,
   timeout,
   invalidSession,
+  authFailed,
+  networkError,
   unknown,
 }
 
@@ -23,22 +27,24 @@ class RemotePeerError {
   final String message;
   final dynamic originalError;
 
-  const RemotePeerError({
-    required this.type,
-    required this.message,
-    this.originalError,
-  });
+  const RemotePeerError({required this.type, required this.message, this.originalError});
 
   @override
   String toString() => 'RemotePeerError($type): $message';
 }
 
 class CompanionRemotePeerService {
-  Peer? _peer;
-  DataConnection? _connection;
+  // Server-side (host) fields
+  HttpServer? _server;
+  WebSocket? _clientSocket;
+
+  // Client-side (remote) fields
+  IOWebSocketChannel? _channel;
+
   String? _sessionId;
   String? _pin;
   String? _myPeerId;
+  String? _hostAddress; // Format: "ip:port"
   RemoteSessionRole? _role;
 
   final _commandReceivedController = StreamController<RemoteCommand>.broadcast();
@@ -47,9 +53,6 @@ class CompanionRemotePeerService {
   final _errorController = StreamController<RemotePeerError>.broadcast();
   final _connectionStateController = StreamController<RemoteSessionStatus>.broadcast();
 
-  int _reconnectAttempts = 0;
-  static const int _maxReconnectAttempts = 3;
-  Timer? _reconnectTimer;
   Timer? _pingTimer;
 
   Stream<RemoteCommand> get onCommandReceived => _commandReceivedController.stream;
@@ -61,9 +64,10 @@ class CompanionRemotePeerService {
   String? get sessionId => _sessionId;
   String? get pin => _pin;
   String? get myPeerId => _myPeerId;
+  String? get hostAddress => _hostAddress;
   RemoteSessionRole? get role => _role;
   bool get isHost => _role == RemoteSessionRole.host;
-  bool get isConnected => _connection != null;
+  bool get isConnected => _clientSocket != null || (_channel != null && _channel?.closeCode == null);
 
   String _generateSessionId() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -76,263 +80,368 @@ class CompanionRemotePeerService {
     return List.generate(6, (index) => random.nextInt(10).toString()).join();
   }
 
-  void _attachCommonPeerListeners({
-    required Completer completer,
-    required RemotePeerErrorType errorType,
-    required String errorMessage,
-  }) {
-    _peer!.on('disconnected').listen((_) {
-      appLogger.w('CompanionRemote: Peer disconnected from server');
-      _handleDisconnectedFromServer();
-    });
+  Future<String> _getLocalIpAddress() async {
+    try {
+      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4);
 
-    _peer!.on('close').listen((_) {
-      appLogger.d('CompanionRemote: Peer closed');
-      _connectionStateController.add(RemoteSessionStatus.disconnected);
-    });
+      // Prefer WiFi interface, then any non-loopback
+      for (final interface in interfaces) {
+        // Skip loopback
+        if (interface.name.toLowerCase().contains('lo')) continue;
 
-    _peer!.on('error').listen((error) {
-      appLogger.e('CompanionRemote: Peer error', error: error);
-      _errorController.add(
-        RemotePeerError(
-          type: errorType,
-          message: '$errorMessage: $error',
-          originalError: error,
-        ),
-      );
-      if (!completer.isCompleted) {
-        completer.completeError(error);
+        for (final addr in interface.addresses) {
+          if (!addr.isLoopback && addr.type == InternetAddressType.IPv4) {
+            // Prefer names that suggest WiFi/Ethernet
+            if (interface.name.toLowerCase().contains('en') ||
+                interface.name.toLowerCase().contains('wl') ||
+                interface.name.toLowerCase().contains('eth')) {
+              return addr.address;
+            }
+          }
+        }
       }
-    });
+
+      // Fallback: return any non-loopback IPv4
+      for (final interface in interfaces) {
+        for (final addr in interface.addresses) {
+          if (!addr.isLoopback && addr.type == InternetAddressType.IPv4) {
+            return addr.address;
+          }
+        }
+      }
+
+      throw const RemotePeerError(type: RemotePeerErrorType.networkError, message: 'No network interface found');
+    } catch (e) {
+      appLogger.e('CompanionRemote: Failed to get local IP', error: e);
+      rethrow;
+    }
   }
 
-  Future<({String sessionId, String pin})> createSession(String deviceName, String platform) async {
-    if (_peer != null) {
+  Future<({String sessionId, String pin, String address})> createSession(String deviceName, String platform) async {
+    if (_server != null) {
       await disconnect();
     }
 
     _role = RemoteSessionRole.host;
     _sessionId = _generateSessionId();
     _pin = _generatePin();
-    _reconnectAttempts = 0;
-
-    final completer = Completer<({String sessionId, String pin})>();
+    _myPeerId = 'host-$_sessionId';
 
     try {
-      _peer = Peer(id: 'cr-$_sessionId-$_pin');
+      // Try preferred port first, fallback to OS-assigned port
+      const int preferredPort = 48632;
 
-      _peer!.on('open').listen((id) {
-        _myPeerId = id as String;
-        appLogger.d('CompanionRemote: Host peer opened with ID: $_myPeerId');
-        _connectionStateController.add(RemoteSessionStatus.connected);
-        if (!completer.isCompleted) {
-          completer.complete((sessionId: _sessionId!, pin: _pin!));
+      try {
+        _server = await HttpServer.bind(InternetAddress.anyIPv4, preferredPort);
+        appLogger.d('CompanionRemote: Server bound to port $preferredPort');
+      } catch (e) {
+        appLogger.w('CompanionRemote: Port $preferredPort occupied, using random port');
+        _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
+      }
+
+      final localIp = await _getLocalIpAddress();
+      final port = _server!.port;
+      _hostAddress = '$localIp:$port';
+
+      appLogger.d('CompanionRemote: Host server started at $_hostAddress');
+
+      // Listen for WebSocket connections
+      _server!.listen((HttpRequest request) async {
+        if (request.uri.path == '/ws') {
+          try {
+            final socket = await WebSocketTransformer.upgrade(request);
+            _handleNewWebSocketConnection(socket, deviceName, platform);
+          } catch (e) {
+            appLogger.e('CompanionRemote: Failed to upgrade WebSocket', error: e);
+          }
+        } else {
+          request.response.statusCode = HttpStatus.notFound;
+          request.response.close();
         }
       });
 
-      _peer!.on('connection').listen((conn) {
-        final dataConn = conn as DataConnection;
-        _handleNewConnection(dataConn, deviceName, platform);
-      });
+      _connectionStateController.add(RemoteSessionStatus.connected);
 
-      _attachCommonPeerListeners(
-        completer: completer,
-        errorType: RemotePeerErrorType.serverError,
-        errorMessage: 'Server error',
-      );
+      return (sessionId: _sessionId!, pin: _pin!, address: _hostAddress!);
     } catch (e) {
-      appLogger.e('CompanionRemote: Failed to create peer', error: e);
-      if (!completer.isCompleted) {
-        completer.completeError(e);
-      }
+      appLogger.e('CompanionRemote: Failed to create server', error: e);
+      _errorController.add(
+        RemotePeerError(
+          type: RemotePeerErrorType.serverError,
+          message: 'Failed to create server: $e',
+          originalError: e,
+        ),
+      );
+      rethrow;
     }
+  }
 
-    return completer.future.timeout(
-      const Duration(seconds: 10),
-      onTimeout: () {
-        throw RemotePeerError(
-          type: RemotePeerErrorType.timeout,
-          message: 'Timed out creating session',
+  void _handleNewWebSocketConnection(WebSocket socket, String hostDeviceName, String hostPlatform) {
+    appLogger.d('CompanionRemote: New WebSocket connection');
+
+    bool isAuthenticated = false;
+    Timer? authTimeout;
+
+    // Authentication timeout
+    authTimeout = Timer(const Duration(seconds: 10), () {
+      if (!isAuthenticated) {
+        appLogger.w('CompanionRemote: Authentication timeout');
+        socket.close(4001, 'Authentication timeout');
+      }
+    });
+
+    socket.listen(
+      (data) {
+        try {
+          final json = jsonDecode(data as String) as Map<String, dynamic>;
+
+          if (!isAuthenticated) {
+            // First message must be authentication
+            if (json['type'] == 'auth') {
+              final sessionId = json['sessionId'] as String?;
+              final pin = json['pin'] as String?;
+              final deviceName = json['deviceName'] as String?;
+              final platform = json['platform'] as String?;
+
+              if (sessionId == _sessionId && pin == _pin) {
+                isAuthenticated = true;
+                authTimeout?.cancel();
+
+                // Close existing client if present
+                if (_clientSocket != null) {
+                  appLogger.d('CompanionRemote: Replacing existing client connection');
+                  _clientSocket!.close(4004, 'Replaced by new connection');
+                }
+
+                _clientSocket = socket;
+
+                appLogger.d('CompanionRemote: Client authenticated: $deviceName ($platform)');
+
+                // Send auth success
+                socket.add(jsonEncode({'type': 'authSuccess'}));
+
+                // Notify connection
+                final device = RemoteDevice(
+                  id: 'remote-client',
+                  name: deviceName ?? 'Unknown Device',
+                  platform: platform ?? 'unknown',
+                );
+                _deviceConnectedController.add(device);
+                _connectionStateController.add(RemoteSessionStatus.connected);
+
+                // Send device info
+                sendDeviceInfo(hostDeviceName, hostPlatform);
+
+                // Note: Client sends keepalive pings, host only responds with pongs
+              } else {
+                appLogger.w('CompanionRemote: Invalid credentials');
+                socket.add(jsonEncode({'type': 'authFailed', 'message': 'Invalid session ID or PIN'}));
+                socket.close(4003, 'Invalid credentials');
+              }
+            } else {
+              appLogger.w('CompanionRemote: Expected auth, got ${json['type']}');
+              socket.close(4002, 'Authentication required');
+            }
+          } else {
+            // Handle regular commands
+            final command = RemoteCommand.fromJson(json);
+            appLogger.d('CompanionRemote: Received command: ${command.type}');
+
+            // Send acknowledgment for non-ping/pong/ack commands
+            if (command.type != RemoteCommandType.ping &&
+                command.type != RemoteCommandType.pong &&
+                command.type != RemoteCommandType.ack &&
+                command.type != RemoteCommandType.deviceInfo) {
+              final ackCommand = RemoteCommand(
+                type: RemoteCommandType.ack,
+                deviceId: _myPeerId ?? 'unknown',
+                deviceName: hostDeviceName,
+                data: {'originalCommand': command.type.toString()},
+              );
+              socket.add(jsonEncode(ackCommand.toJson()));
+            }
+
+            _commandReceivedController.add(command);
+
+            if (command.type == RemoteCommandType.ping) {
+              _sendPong(hostDeviceName, hostPlatform);
+            }
+          }
+        } catch (e) {
+          appLogger.e('CompanionRemote: Failed to process message', error: e);
+        }
+      },
+      onDone: () {
+        authTimeout?.cancel();
+        appLogger.d('CompanionRemote: WebSocket connection closed');
+        if (isAuthenticated) {
+          _clientSocket = null;
+          _deviceDisconnectedController.add(null);
+          _connectionStateController.add(RemoteSessionStatus.disconnected);
+          _stopPingTimer();
+        }
+      },
+      onError: (error) {
+        authTimeout?.cancel();
+        appLogger.e('CompanionRemote: WebSocket error', error: error);
+        _errorController.add(
+          RemotePeerError(
+            type: RemotePeerErrorType.dataChannelError,
+            message: 'WebSocket error: $error',
+            originalError: error,
+          ),
         );
       },
     );
   }
 
-  Future<void> joinSession(
-    String sessionId,
-    String pin,
-    String deviceName,
-    String platform,
-  ) async {
-    if (_peer != null) {
+  Future<void> joinSession(String sessionId, String pin, String deviceName, String platform, String hostAddress) async {
+    if (_channel != null) {
       await disconnect();
     }
 
     _role = RemoteSessionRole.remote;
     _sessionId = sessionId.toUpperCase();
     _pin = pin;
-    _reconnectAttempts = 0;
+    _hostAddress = hostAddress;
+    _myPeerId = 'remote-${Random().nextInt(99999)}';
 
     final completer = Completer<void>();
 
     try {
-      _peer = Peer();
+      final url = 'ws://$hostAddress/ws';
+      appLogger.d('CompanionRemote: Connecting to $url');
 
-      _peer!.on('open').listen((id) {
-        _myPeerId = id as String;
-        appLogger.d('CompanionRemote: Remote peer opened with ID: $_myPeerId');
+      _connectionStateController.add(RemoteSessionStatus.connecting);
 
-        final hostPeerId = 'cr-$_sessionId-$_pin';
-        appLogger.d('CompanionRemote: Connecting to host: $hostPeerId');
+      _channel = IOWebSocketChannel.connect(Uri.parse(url));
 
-        _connectionStateController.add(RemoteSessionStatus.connecting);
-
-        final conn = _peer!.connect(hostPeerId, options: PeerConnectOption(reliable: true));
-        _handleNewConnection(conn, deviceName, platform, isOutgoing: true, completer: completer);
+      // Send authentication message
+      final authMessage = jsonEncode({
+        'type': 'auth',
+        'sessionId': _sessionId,
+        'pin': _pin,
+        'deviceName': deviceName,
+        'platform': platform,
       });
+      _channel!.sink.add(authMessage);
 
-      _attachCommonPeerListeners(
-        completer: completer,
-        errorType: RemotePeerErrorType.connectionFailed,
-        errorMessage: 'Failed to connect to session',
+      // Listen for messages
+      _channel!.stream.listen(
+        (data) {
+          try {
+            final json = jsonDecode(data as String) as Map<String, dynamic>;
+            final messageType = json['type'] as String?;
+
+            if (messageType == 'authSuccess') {
+              appLogger.d('CompanionRemote: Authentication successful');
+
+              if (!completer.isCompleted) {
+                completer.complete();
+              }
+
+              final device = RemoteDevice(id: 'host', name: 'Desktop', platform: 'desktop');
+              _deviceConnectedController.add(device);
+              _connectionStateController.add(RemoteSessionStatus.connected);
+
+              // Send device info
+              sendDeviceInfo(deviceName, platform);
+
+              // Start ping timer
+              _startPingTimer();
+            } else if (messageType == 'authFailed') {
+              final message = json['message'] as String? ?? 'Authentication failed';
+              appLogger.w('CompanionRemote: $message');
+
+              if (!completer.isCompleted) {
+                completer.completeError(RemotePeerError(type: RemotePeerErrorType.authFailed, message: message));
+              }
+
+              _errorController.add(RemotePeerError(type: RemotePeerErrorType.authFailed, message: message));
+              _connectionStateController.add(RemoteSessionStatus.error);
+            } else {
+              // Regular command
+              final command = RemoteCommand.fromJson(json);
+              appLogger.d('CompanionRemote: Received command: ${command.type}');
+
+              // Send acknowledgment for non-ping/pong/ack commands
+              if (command.type != RemoteCommandType.ping &&
+                  command.type != RemoteCommandType.pong &&
+                  command.type != RemoteCommandType.ack &&
+                  command.type != RemoteCommandType.deviceInfo) {
+                final ackCommand = RemoteCommand(
+                  type: RemoteCommandType.ack,
+                  deviceId: _myPeerId ?? 'unknown',
+                  deviceName: deviceName,
+                  data: {'originalCommand': command.type.toString()},
+                );
+                _channel!.sink.add(jsonEncode(ackCommand.toJson()));
+              }
+
+              _commandReceivedController.add(command);
+
+              if (command.type == RemoteCommandType.ping) {
+                _sendPong(deviceName, platform);
+              }
+            }
+          } catch (e) {
+            appLogger.e('CompanionRemote: Failed to parse message', error: e);
+          }
+        },
+        onDone: () {
+          appLogger.d('CompanionRemote: Connection closed');
+          _deviceDisconnectedController.add(null);
+          _connectionStateController.add(RemoteSessionStatus.disconnected);
+          _stopPingTimer();
+          // Reconnection is handled by CompanionRemoteProvider
+        },
+        onError: (error) {
+          appLogger.e('CompanionRemote: Connection error', error: error);
+
+          if (!completer.isCompleted) {
+            completer.completeError(error);
+          }
+
+          _errorController.add(
+            RemotePeerError(
+              type: RemotePeerErrorType.connectionFailed,
+              message: 'Connection error: $error',
+              originalError: error,
+            ),
+          );
+          _connectionStateController.add(RemoteSessionStatus.error);
+        },
       );
     } catch (e) {
-      appLogger.e('CompanionRemote: Failed to create peer for joining', error: e);
+      appLogger.e('CompanionRemote: Failed to connect', error: e);
+
       if (!completer.isCompleted) {
         completer.completeError(e);
       }
+
+      _errorController.add(
+        RemotePeerError(type: RemotePeerErrorType.connectionFailed, message: 'Failed to connect: $e', originalError: e),
+      );
     }
 
     return completer.future.timeout(
       const Duration(seconds: 15),
-      onTimeout: () {
-        throw RemotePeerError(
-          type: RemotePeerErrorType.timeout,
-          message: 'Timed out joining session',
-        );
+      onTimeout: () async {
+        // Clean up channel on timeout
+        if (_channel != null) {
+          await _channel!.sink.close();
+          _channel = null;
+        }
+        throw const RemotePeerError(type: RemotePeerErrorType.timeout, message: 'Timed out joining session');
       },
     );
-  }
-
-  void _handleNewConnection(
-    DataConnection conn,
-    String deviceName,
-    String platform, {
-    bool isOutgoing = false,
-    Completer<void>? completer,
-  }) {
-    final peerId = conn.peer;
-    appLogger.d('CompanionRemote: New connection ${isOutgoing ? "to" : "from"}: $peerId');
-
-    conn.on('open').listen((_) {
-      appLogger.d('CompanionRemote: Data channel opened with: $peerId');
-      _connection = conn;
-      _connectionStateController.add(RemoteSessionStatus.connected);
-
-      final device = RemoteDevice(
-        id: peerId,
-        name: deviceName,
-        platform: platform,
-      );
-
-      _deviceConnectedController.add(device);
-
-      _startPingTimer();
-
-      sendDeviceInfo(deviceName, platform);
-
-      if (completer != null && !completer.isCompleted) {
-        completer.complete();
-      }
-    });
-
-    conn.on('data').listen((data) {
-      try {
-        final json = data as Map<String, dynamic>;
-        final command = RemoteCommand.fromJson(json);
-        appLogger.d('CompanionRemote: Received command: ${command.type} from $peerId');
-
-        // Send acknowledgment for non-ping/pong/ack commands
-        if (command.type != RemoteCommandType.ping &&
-            command.type != RemoteCommandType.pong &&
-            command.type != RemoteCommandType.ack &&
-            command.type != RemoteCommandType.deviceInfo) {
-          final ackCommand = RemoteCommand(
-            type: RemoteCommandType.ack,
-            deviceId: _myPeerId ?? 'unknown',
-            deviceName: deviceName,
-            data: {'originalCommand': command.type.toString()},
-          );
-          _connection?.send(ackCommand.toJson());
-        }
-
-        _commandReceivedController.add(command);
-
-        if (command.type == RemoteCommandType.ping) {
-          _sendPong(deviceName, platform);
-        } else if (command.type == RemoteCommandType.ack) {
-          appLogger.d('CompanionRemote: Received ACK for: ${json['data']?['originalCommand']}');
-        }
-      } catch (e) {
-        appLogger.e('CompanionRemote: Failed to parse command', error: e);
-      }
-    });
-
-    conn.on('close').listen((_) {
-      appLogger.d('CompanionRemote: Connection closed with: $peerId');
-      _connection = null;
-      _deviceDisconnectedController.add(null);
-      _connectionStateController.add(RemoteSessionStatus.disconnected);
-      _stopPingTimer();
-    });
-
-    conn.on('error').listen((error) {
-      appLogger.e('CompanionRemote: Connection error with $peerId', error: error);
-      _errorController.add(
-        RemotePeerError(
-          type: RemotePeerErrorType.dataChannelError,
-          message: 'Connection error with peer: $error',
-          originalError: error,
-        ),
-      );
-      _connectionStateController.add(RemoteSessionStatus.error);
-    });
-  }
-
-  void _handleDisconnectedFromServer() {
-    if (_reconnectAttempts < _maxReconnectAttempts) {
-      _reconnectAttempts++;
-      final delay = Duration(seconds: _reconnectAttempts * 2);
-
-      appLogger.d(
-        'CompanionRemote: Attempting reconnect $_reconnectAttempts/$_maxReconnectAttempts in ${delay.inSeconds}s',
-      );
-
-      _reconnectTimer?.cancel();
-      _reconnectTimer = Timer(delay, () {
-        _peer?.reconnect();
-      });
-    } else {
-      appLogger.e('CompanionRemote: Max reconnect attempts reached');
-      _errorController.add(
-        const RemotePeerError(
-          type: RemotePeerErrorType.connectionFailed,
-          message: 'Lost connection to server after multiple reconnect attempts',
-        ),
-      );
-      _connectionStateController.add(RemoteSessionStatus.error);
-    }
   }
 
   void _startPingTimer() {
     _stopPingTimer();
     _pingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (_connection != null) {
-        sendCommand(RemoteCommand(
-          type: RemoteCommandType.ping,
-          deviceId: _myPeerId ?? 'unknown',
-          deviceName: 'local',
-        ));
+      if (isConnected) {
+        sendCommand(RemoteCommand(type: RemoteCommandType.ping, deviceId: _myPeerId ?? 'unknown', deviceName: 'local'));
       }
     });
   }
@@ -343,36 +452,40 @@ class CompanionRemotePeerService {
   }
 
   void _sendPong(String deviceName, String platform) {
-    sendCommand(RemoteCommand(
-      type: RemoteCommandType.pong,
-      deviceId: _myPeerId ?? 'unknown',
-      deviceName: deviceName,
-      data: {'platform': platform},
-    ));
+    sendCommand(
+      RemoteCommand(
+        type: RemoteCommandType.pong,
+        deviceId: _myPeerId ?? 'unknown',
+        deviceName: deviceName,
+        data: {'platform': platform},
+      ),
+    );
   }
 
   void sendDeviceInfo(String deviceName, String platform) {
-    sendCommand(RemoteCommand(
-      type: RemoteCommandType.deviceInfo,
-      deviceId: _myPeerId ?? 'unknown',
-      deviceName: deviceName,
-      data: {
-        'platform': platform,
-        'role': _role?.name,
-      },
-    ));
+    sendCommand(
+      RemoteCommand(
+        type: RemoteCommandType.deviceInfo,
+        deviceId: _myPeerId ?? 'unknown',
+        deviceName: deviceName,
+        data: {'platform': platform, 'role': _role?.name},
+      ),
+    );
   }
 
   void sendCommand(RemoteCommand command) {
-    if (_connection == null) {
-      appLogger.w('CompanionRemote: No connection to send command');
-      return;
-    }
-
     try {
-      final json = command.toJson();
-      _connection!.send(json);
-      appLogger.d('CompanionRemote: Sent command: ${command.type}');
+      final json = jsonEncode(command.toJson());
+
+      if (_role == RemoteSessionRole.host && _clientSocket != null) {
+        _clientSocket!.add(json);
+        appLogger.d('CompanionRemote: Sent command (host): ${command.type}');
+      } else if (_role == RemoteSessionRole.remote && _channel != null) {
+        _channel!.sink.add(json);
+        appLogger.d('CompanionRemote: Sent command (remote): ${command.type}');
+      } else {
+        appLogger.w('CompanionRemote: No connection to send command');
+      }
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to send command', error: e);
       _errorController.add(
@@ -389,29 +502,37 @@ class CompanionRemotePeerService {
     appLogger.d('CompanionRemote: Disconnecting');
 
     _stopPingTimer();
-    _reconnectTimer?.cancel();
 
-    _connection?.close();
-    _connection = null;
+    if (_clientSocket != null) {
+      await _clientSocket!.close();
+      _clientSocket = null;
+    }
 
-    _peer?.dispose();
-    _peer = null;
+    if (_channel != null) {
+      await _channel!.sink.close();
+      _channel = null;
+    }
+
+    if (_server != null) {
+      await _server!.close();
+      _server = null;
+    }
 
     _sessionId = null;
     _pin = null;
     _myPeerId = null;
+    _hostAddress = null;
     _role = null;
-    _reconnectAttempts = 0;
 
     _connectionStateController.add(RemoteSessionStatus.disconnected);
   }
 
-  void dispose() {
-    disconnect();
-    _commandReceivedController.close();
-    _deviceConnectedController.close();
-    _deviceDisconnectedController.close();
-    _errorController.close();
-    _connectionStateController.close();
+  Future<void> dispose() async {
+    await disconnect();
+    await _commandReceivedController.close();
+    await _deviceConnectedController.close();
+    await _deviceDisconnectedController.close();
+    await _errorController.close();
+    await _connectionStateController.close();
   }
 }

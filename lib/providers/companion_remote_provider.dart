@@ -36,6 +36,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   bool _intentionalDisconnect = false;
   String? _lastSessionId;
   String? _lastPin;
+  String? _lastHostAddress;
 
   int get reconnectAttempts => _reconnectAttempts;
 
@@ -130,7 +131,10 @@ class CompanionRemoteProvider with ChangeNotifier {
     _deviceDisconnectedSubscription = _peerService!.onDeviceDisconnected.listen((_) {
       appLogger.d('CompanionRemote: Device disconnected (intentional: $_intentionalDisconnect)');
       if (_intentionalDisconnect) {
-        _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, connectedDevice: null);
+        _session = _session?.copyWith(
+          status: RemoteSessionStatus.disconnected,
+          clearConnectedDevice: true,
+        );
         notifyListeners();
       } else {
         _session = _session?.copyWith(status: RemoteSessionStatus.reconnecting);
@@ -182,7 +186,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _statusSubscription = null;
   }
 
-  Future<({String sessionId, String pin})> createSession() async {
+  Future<({String sessionId, String pin, String address})> createSession() async {
     await leaveSession();
 
     appLogger.d('CompanionRemote: Creating session as host');
@@ -201,7 +205,9 @@ class CompanionRemoteProvider with ChangeNotifier {
       );
 
       notifyListeners();
-      appLogger.d('CompanionRemote: Session created - ID: ${result.sessionId}, PIN: ${result.pin}');
+      appLogger.d(
+        'CompanionRemote: Session created - ID: ${result.sessionId}, PIN: ${result.pin}, Address: ${result.address}',
+      );
 
       return result;
     } catch (e) {
@@ -218,13 +224,14 @@ class CompanionRemoteProvider with ChangeNotifier {
     }
   }
 
-  Future<void> joinSession(String sessionId, String pin) async {
+  Future<void> joinSession(String sessionId, String pin, String hostAddress) async {
     await leaveSession();
 
     _lastSessionId = sessionId;
     _lastPin = pin;
+    _lastHostAddress = hostAddress;
 
-    appLogger.d('CompanionRemote: Joining session - ID: $sessionId');
+    appLogger.d('CompanionRemote: Joining session - ID: $sessionId, Host: $hostAddress');
 
     _peerService = CompanionRemotePeerService();
     _setupPeerServiceListeners();
@@ -238,7 +245,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _peerService!.joinSession(sessionId, pin, _deviceName, _platform);
+      await _peerService!.joinSession(sessionId, pin, _deviceName, _platform, hostAddress);
 
       _session = _session?.copyWith(status: RemoteSessionStatus.connected);
       notifyListeners();
@@ -289,7 +296,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   }
 
   Future<void> _attemptReconnect() async {
-    if (_lastSessionId == null || _lastPin == null) {
+    if (_lastSessionId == null || _lastPin == null || _lastHostAddress == null) {
       appLogger.w('CompanionRemote: No stored credentials for reconnect');
       _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: 'Connection lost');
       notifyListeners();
@@ -305,7 +312,7 @@ class CompanionRemoteProvider with ChangeNotifier {
       _peerService = CompanionRemotePeerService();
       _setupPeerServiceListeners();
 
-      await _peerService!.joinSession(_lastSessionId!, _lastPin!, _deviceName, _platform);
+      await _peerService!.joinSession(_lastSessionId!, _lastPin!, _deviceName, _platform, _lastHostAddress!);
 
       _session = _session?.copyWith(status: RemoteSessionStatus.connected);
       _reconnectAttempts = 0;
@@ -330,7 +337,10 @@ class CompanionRemoteProvider with ChangeNotifier {
   void cancelReconnect() {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
-    _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, connectedDevice: null);
+    _session = _session?.copyWith(
+      status: RemoteSessionStatus.disconnected,
+      clearConnectedDevice: true,
+    );
     notifyListeners();
   }
 
@@ -479,6 +489,7 @@ class CompanionRemoteProvider with ChangeNotifier {
       deviceName: deviceToSave.name,
       platform: deviceToSave.platform,
       lastConnected: DateTime.now(),
+      hostAddress: _peerService?.hostAddress,
     );
 
     if (_discoveryService != null) {
@@ -488,7 +499,13 @@ class CompanionRemoteProvider with ChangeNotifier {
 
   /// Connect to a recent session
   Future<void> connectToRecentSession(RecentRemoteSession session) async {
-    await joinSession(session.sessionId, session.pin);
+    if (session.hostAddress == null) {
+      throw const RemotePeerError(
+        type: RemotePeerErrorType.invalidSession,
+        message: 'No host address available for this session. Please scan a new QR code.',
+      );
+    }
+    await joinSession(session.sessionId, session.pin, session.hostAddress!);
   }
 
   /// Remove a recent session

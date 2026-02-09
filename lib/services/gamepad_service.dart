@@ -343,5 +343,4 @@ class GamepadService {
       FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
     }
   }
-
 }

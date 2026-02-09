@@ -17,6 +17,7 @@ class PairingScreen extends StatefulWidget {
 }
 
 class _PairingScreenState extends State<PairingScreen> {
+  final _hostAddressController = TextEditingController();
   final _sessionIdController = TextEditingController();
   final _pinController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -44,6 +45,7 @@ class _PairingScreenState extends State<PairingScreen> {
 
   @override
   void dispose() {
+    _hostAddressController.dispose();
     _sessionIdController.dispose();
     _pinController.dispose();
     _scannerController?.dispose();
@@ -105,7 +107,11 @@ class _PairingScreenState extends State<PairingScreen> {
 
     try {
       final provider = context.read<CompanionRemoteProvider>();
-      await provider.joinSession(_sessionIdController.text.trim().toUpperCase(), _pinController.text.trim());
+      await provider.joinSession(
+        _sessionIdController.text.trim().toUpperCase(),
+        _pinController.text.trim(),
+        _hostAddressController.text.trim(),
+      );
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -133,26 +139,33 @@ class _PairingScreenState extends State<PairingScreen> {
     if (data == _lastScannedCode) return;
     _lastScannedCode = data;
 
-    final parts = data.split(':');
-    if (parts.length == 2) {
+    // New format: ip|port|sessionId|pin (4 parts separated by pipe)
+    final parts = data.split('|');
+    if (parts.length == 4) {
+      final ip = parts[0];
+      final port = parts[1];
+      final sessionId = parts[2];
+      final pin = parts[3];
+      final hostAddress = '$ip:$port';
+
       _scannerController?.stop();
       setState(() {
         _errorMessage = null;
         _isConnecting = true;
       });
       // Connect directly instead of going through _connect() which requires Form validation
-      _connectWithCredentials(parts[0], parts[1]);
+      _connectWithCredentials(sessionId, pin, hostAddress);
     } else {
       setState(() {
-        _errorMessage = 'Invalid QR code format';
+        _errorMessage = 'Invalid QR code format - expected 4 parts (ip|port|sessionId|pin)';
       });
     }
   }
 
-  Future<void> _connectWithCredentials(String sessionId, String pin) async {
+  Future<void> _connectWithCredentials(String sessionId, String pin, String hostAddress) async {
     try {
       final provider = context.read<CompanionRemoteProvider>();
-      await provider.joinSession(sessionId.trim().toUpperCase(), pin.trim());
+      await provider.joinSession(sessionId.trim().toUpperCase(), pin.trim(), hostAddress.trim());
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -472,6 +485,33 @@ class _PairingScreenState extends State<PairingScreen> {
               ),
               const SizedBox(height: 16),
             ],
+            TextFormField(
+              controller: _hostAddressController,
+              decoration: InputDecoration(
+                labelText: 'Host Address',
+                hintText: '192.168.1.100:48632',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.computer),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.paste),
+                  onPressed: () => _pasteFromClipboard(_hostAddressController),
+                  tooltip: 'Paste',
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter host address';
+                }
+                // Validate IP:port format
+                final parts = value.split(':');
+                if (parts.length != 2) {
+                  return 'Format must be IP:port (e.g., 192.168.1.100:48632)';
+                }
+                return null;
+              },
+              enabled: !_isConnecting,
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _sessionIdController,
               decoration: InputDecoration(
