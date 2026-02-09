@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../models/plex_media_info.dart';
@@ -55,11 +57,45 @@ class TimelineSlider extends StatefulWidget {
 class _TimelineSliderState extends State<TimelineSlider> {
   double? _mousePosition;
   double? _dragValue;
+  bool _showKeySeekThumbnail = false;
+  Timer? _keySeekTimer;
 
   static const _sliderPadding = 24.0;
 
   static const _thumbWidth = 160.0;
   static const _thumbHeight = 90.0;
+  static const _keySeekThumbnailTimeout = Duration(milliseconds: 800);
+
+  @override
+  void didUpdateWidget(TimelineSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Detect user-initiated seeks. A normal playback will advance the timeline
+    // a very short amount. But a bigger jump indicates that the user changed position.
+    // For now we will check half a second, but this can probably be made higher.
+    if (widget.thumbnailUrlBuilder != null && _dragValue == null) {
+      final delta = (widget.position.inMilliseconds - oldWidget.position.inMilliseconds).abs();
+      if (delta > 500) {
+        _onKeySeek();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _keySeekTimer?.cancel();
+    super.dispose();
+  }
+
+  // Show the thumbnail and then hide it after a delay
+  void _onKeySeek() {
+    _keySeekTimer?.cancel();
+    if (!_showKeySeekThumbnail) {
+      setState(() => _showKeySeekThumbnail = true);
+    }
+    _keySeekTimer = Timer(_keySeekThumbnailTimeout, () {
+      if (mounted) setState(() => _showKeySeekThumbnail = false);
+    });
+  }
 
   Widget _buildTooltip(double sliderWidth, double pixelX, Duration time) {
     // Snap to the nearest 5-second interval since Plex's thumbnails are generated every 5 seconds.
@@ -150,6 +186,12 @@ class _TimelineSliderState extends State<TimelineSlider> {
             final fraction = ((_mousePosition! - _sliderPadding) / trackWidth).clamp(0.0, 1.0);
             final time = Duration(milliseconds: (fraction * durationMs).round());
             tooltip = _buildTooltip(sliderWidth, _mousePosition!, time);
+          } else if (_showKeySeekThumbnail && widget.thumbnailUrlBuilder != null) {
+            // Show tooltip at current playback position when user is actively seeking via d-pad/keyboard
+            // Note that this has the lowest priority, so if the user hovers, that will show instead
+            final fraction = (widget.position.inMilliseconds / durationMs).clamp(0.0, 1.0);
+            final px = _sliderPadding + fraction * trackWidth;
+            tooltip = _buildTooltip(sliderWidth, px, widget.position);
           }
         }
 
