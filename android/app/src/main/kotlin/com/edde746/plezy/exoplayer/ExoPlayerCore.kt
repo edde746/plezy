@@ -714,7 +714,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     fun setPlaybackSpeed(speed: Float) {
-        exoPlayer?.setPlaybackSpeed(speed.coerceIn(0.25f, 4f))
+        val clampedSpeed = speed.coerceIn(0.25f, 4f)
+        exoPlayer?.setPlaybackSpeed(clampedSpeed)
+
+        // Disable tunneling when speed != 1.0 — tunneled playback bypasses
+        // ExoPlayer's audio processors, silently ignoring speed changes.
+        trackSelector?.setParameters(
+            trackSelector!!.buildUponParameters()
+                .setTunnelingEnabled(clampedSpeed == 1f)
+        )
+
         delegate?.onPropertyChange("speed", speed.toDouble())
     }
 
