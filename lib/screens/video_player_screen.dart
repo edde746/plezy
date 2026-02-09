@@ -22,6 +22,7 @@ import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/discord_rpc_service.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
@@ -38,6 +39,7 @@ import '../providers/shader_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
+import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
@@ -204,6 +206,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Register app lifecycle observer
     WidgetsBinding.instance.addObserver(this);
+
+    // Wire companion remote playback callbacks
+    _setupCompanionRemoteCallbacks();
 
     // Initialize player asynchronously with buffer size from settings
     _initializePlayer();
@@ -1125,6 +1130,64 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     navigateToVideoPlayer(context, metadata: metadata, usePushReplacement: true);
   }
 
+  void _setupCompanionRemoteCallbacks() {
+    final receiver = CompanionRemoteReceiver.instance;
+    receiver.onStop = () {
+      if (mounted) _handleBackButton();
+    };
+    receiver.onNextTrack = () {
+      if (mounted && _nextEpisode != null) _playNext();
+    };
+    receiver.onPreviousTrack = () {
+      if (mounted && _previousEpisode != null) _playPrevious();
+    };
+    receiver.onSeekForward = () async {
+      if (player == null) return;
+      final settings = await SettingsService.getInstance();
+      seekWithClamping(player!, Duration(seconds: settings.getSeekTimeSmall()));
+    };
+    receiver.onSeekBackward = () async {
+      if (player == null) return;
+      final settings = await SettingsService.getInstance();
+      seekWithClamping(player!, Duration(seconds: -settings.getSeekTimeSmall()));
+    };
+    receiver.onVolumeUp = () async {
+      if (player == null) return;
+      final settings = await SettingsService.getInstance();
+      final maxVol = settings.getMaxVolume().toDouble();
+      final newVolume = (player!.state.volume + 10).clamp(0.0, maxVol);
+      player!.setVolume(newVolume);
+      settings.setVolume(newVolume);
+    };
+    receiver.onVolumeDown = () async {
+      if (player == null) return;
+      final settings = await SettingsService.getInstance();
+      final maxVol = settings.getMaxVolume().toDouble();
+      final newVolume = (player!.state.volume - 10).clamp(0.0, maxVol);
+      player!.setVolume(newVolume);
+      settings.setVolume(newVolume);
+    };
+    receiver.onVolumeMute = () async {
+      if (player == null) return;
+      final settings = await SettingsService.getInstance();
+      final newVolume = player!.state.volume > 0 ? 0.0 : 100.0;
+      player!.setVolume(newVolume);
+      settings.setVolume(newVolume);
+    };
+  }
+
+  void _cleanupCompanionRemoteCallbacks() {
+    final receiver = CompanionRemoteReceiver.instance;
+    receiver.onStop = null;
+    receiver.onNextTrack = null;
+    receiver.onPreviousTrack = null;
+    receiver.onSeekForward = null;
+    receiver.onSeekBackward = null;
+    receiver.onVolumeUp = null;
+    receiver.onVolumeDown = null;
+    receiver.onVolumeMute = null;
+  }
+
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton() async {
@@ -1186,6 +1249,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   void dispose() {
     // Unregister app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
+
+    // Clean up companion remote playback callbacks
+    _cleanupCompanionRemoteCallbacks();
 
     // Notify Watch Together guests that host is exiting the player
     // Use stored reference since context.read() may fail in dispose

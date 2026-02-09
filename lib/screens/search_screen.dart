@@ -133,6 +133,12 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
     FocusUtils.requestFocusAfterBuild(this, _searchFocusNode);
   }
 
+  /// Set the search query externally (e.g. from companion remote)
+  @override
+  void setSearchQuery(String query) {
+    _searchController.text = query;
+  }
+
   // Public method to fully reload all content (for profile switches)
   @override
   void fullRefresh() {

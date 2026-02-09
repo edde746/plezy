@@ -28,6 +28,8 @@ import '../services/settings_service.dart';
 import '../providers/offline_mode_provider.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
+import '../services/companion_remote/companion_remote_receiver.dart';
+import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/side_navigation_rail.dart';
 import '../focus/key_event_utils.dart';
@@ -362,6 +364,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
   }
 
+  bool _companionRemoteSetup = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -378,7 +382,69 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       _offlineModeProvider!.addListener(_handleOfflineStatusChanged);
     }
 
+    // Wire up Companion Remote command routing (desktop only, once)
+    if (!_companionRemoteSetup && PlatformDetector.isDesktop(context)) {
+      _companionRemoteSetup = true;
+      _setupCompanionRemote();
+    }
+
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+
+  void _setupCompanionRemote() {
+    final companionRemote = context.read<CompanionRemoteProvider>();
+    companionRemote.onCommandReceived = (command) {
+      if (mounted) {
+        CompanionRemoteReceiver.instance.handleCommand(command, context);
+      }
+    };
+
+    final receiver = CompanionRemoteReceiver.instance;
+    final tabCount = _getVisibleTabs(_isOffline).length;
+
+    receiver.onTabNext = () {
+      _selectTab((_currentIndex + 1) % tabCount);
+    };
+    receiver.onTabPrevious = () {
+      _selectTab((_currentIndex - 1 + tabCount) % tabCount);
+    };
+    receiver.onTabDiscover = () {
+      final idx = NavigationTab.indexFor(NavigationTabId.discover, isOffline: _isOffline);
+      if (idx >= 0) _selectTab(idx);
+    };
+    receiver.onTabLibraries = () {
+      final idx = NavigationTab.indexFor(NavigationTabId.libraries, isOffline: _isOffline);
+      if (idx >= 0) _selectTab(idx);
+    };
+    receiver.onTabSearch = () {
+      final idx = NavigationTab.indexFor(NavigationTabId.search, isOffline: _isOffline);
+      if (idx >= 0) _selectTab(idx);
+    };
+    receiver.onTabDownloads = () {
+      final idx = NavigationTab.indexFor(NavigationTabId.downloads, isOffline: _isOffline);
+      if (idx >= 0) _selectTab(idx);
+    };
+    receiver.onTabSettings = () {
+      final idx = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline);
+      if (idx >= 0) _selectTab(idx);
+    };
+    receiver.onHome = () {
+      final idx = NavigationTab.indexFor(NavigationTabId.discover, isOffline: _isOffline);
+      if (idx >= 0) _selectTab(idx);
+    };
+    receiver.onSearchAction = (query) {
+      final idx = NavigationTab.indexFor(NavigationTabId.search, isOffline: _isOffline);
+      if (idx >= 0) {
+        _selectTab(idx);
+        if (query != null && query.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_searchKey.currentState case final SearchInputFocusable searchable) {
+              searchable.setSearchQuery(query);
+            }
+          });
+        }
+      }
+    };
   }
 
   @override
@@ -392,6 +458,21 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _sidebarFocusScope.dispose();
     _contentFocusScope.dispose();
+
+    // Clean up companion remote callbacks
+    if (_companionRemoteSetup) {
+      final receiver = CompanionRemoteReceiver.instance;
+      receiver.onTabNext = null;
+      receiver.onTabPrevious = null;
+      receiver.onTabDiscover = null;
+      receiver.onTabLibraries = null;
+      receiver.onTabSearch = null;
+      receiver.onTabDownloads = null;
+      receiver.onTabSettings = null;
+      receiver.onHome = null;
+      receiver.onSearchAction = null;
+    }
+
     super.dispose();
   }
 
