@@ -429,13 +429,13 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake meson ninja-build pkg-config nasm libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          sudo apt-get install -y clang cmake meson ninja-build pkg-config nasm libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
 
       - name: Cache libmpv build
         id: libmpv-cache
@@ -537,13 +537,13 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake meson ninja-build pkg-config nasm libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          sudo apt-get install -y clang cmake meson ninja-build pkg-config nasm libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
 
       - name: Cache libmpv build
         id: libmpv-cache

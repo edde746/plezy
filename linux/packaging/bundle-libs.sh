@@ -22,7 +22,7 @@ fi
 
 # ── Exclusion list ──────────────────────────────────────────────────────────
 # Libraries that must come from the host system.
-EXCLUDE_PATTERN='linux-vdso\.so|ld-linux.*\.so|libc\.so|libm\.so|libpthread\.so|libdl\.so|librt\.so|libmvec\.so|libresolv\.so|libnss_.*\.so|libGL\.so|libEGL\.so|libGLX\.so|libGLESv2\.so|libGLdispatch\.so|libOpenGL\.so|libvulkan\.so|libdrm\.so|libgbm\.so|libnvidia.*\.so|libcuda.*\.so|libasound\.so'
+EXCLUDE_PATTERN='linux-vdso\.so|ld-linux.*\.so|libc\.so|libm\.so|libpthread\.so|libdl\.so|librt\.so|libmvec\.so|libresolv\.so|libnss_.*\.so|libGL\.so|libEGL\.so|libGLX\.so|libGLESv2\.so|libGLdispatch\.so|libOpenGL\.so|libepoxy\.so|libvulkan\.so|libdrm\.so|libgbm\.so|libnvidia.*\.so|libcuda.*\.so|libasound\.so|libwayland.*\.so|libxcb.*\.so|libva.*\.so|libvdpau\.so|libX11\.so|libX11-xcb\.so|libXext\.so'
 
 # ── Helper: collect ldd deps ───────────────────────────────────────────────
 collect_deps() {
