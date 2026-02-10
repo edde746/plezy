@@ -486,6 +486,19 @@ class WatchTogetherProvider with ChangeNotifier {
 
     appLogger.d('WatchTogether: Host exited player, callback set: ${onHostExitedPlayer != null}');
 
+    // Clear media info so the next mediaSwitch (even same ratingKey) isn't
+    // treated as a duplicate by the guard in _handleMediaSwitch.
+    // copyWith uses ?? so it can't set fields to null — construct directly.
+    _session = WatchSession(
+      sessionId: _session!.sessionId,
+      role: _session!.role,
+      controlMode: _session!.controlMode,
+      state: _session!.state,
+      participants: _session!.participants,
+      errorMessage: _session!.errorMessage,
+      hostPeerId: _session!.hostPeerId,
+    );
+
     // Clear the player callback BEFORE popping so that any mediaSwitch message
     // arriving during the pop animation routes to MainScreen's handler instead
     // of the dying VideoPlayerScreen.
