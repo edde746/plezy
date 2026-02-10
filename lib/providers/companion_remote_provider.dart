@@ -168,12 +168,14 @@ class CompanionRemoteProvider with ChangeNotifier {
 
   Future<void> _handleDeviceInfo(RemoteCommand command) async {
     if (command.data != null) {
+      final id = command.data!['id'] as String? ?? 'unknown';
+      final name = command.data!['name'] as String? ?? 'Unknown Device';
       final platform = command.data!['platform'] as String? ?? 'unknown';
       final role = command.data!['role'] as String?;
 
-      appLogger.d('CompanionRemote: Device info - name: ${command.deviceName}, platform: $platform, role: $role');
+      appLogger.d('CompanionRemote: Device info - name: $name, platform: $platform, role: $role');
 
-      final device = RemoteDevice(id: command.deviceId, name: command.deviceName, platform: platform);
+      final device = RemoteDevice(id: id, name: name, platform: platform);
 
       _session = _session?.copyWith(connectedDevice: device);
       notifyListeners();
@@ -275,14 +277,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     }
 
     appLogger.d('CompanionRemote: Sending command $type');
-    final command = RemoteCommand(
-      type: type,
-      deviceId: _peerService!.myPeerId ?? 'unknown',
-      deviceName: _deviceName,
-      data: data,
-    );
-
-    _peerService!.sendCommand(command);
+    _peerService!.sendCommand(RemoteCommand(type: type, data: data));
   }
 
   void _scheduleReconnect() {

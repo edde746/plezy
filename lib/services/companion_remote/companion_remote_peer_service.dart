@@ -268,13 +268,13 @@ class CompanionRemotePeerService {
             appLogger.d('CompanionRemote: Received command: ${command.type}');
 
             if (_shouldSendAck(command)) {
-              _sendAck(command, hostDeviceName);
+              _sendAck(command);
             }
 
             _commandReceivedController.add(command);
 
             if (command.type == RemoteCommandType.ping) {
-              _sendPong(hostDeviceName, hostPlatform);
+              _sendPong();
             }
           }
         } catch (e) {
@@ -375,13 +375,13 @@ class CompanionRemotePeerService {
               appLogger.d('CompanionRemote: Received command: ${command.type}');
 
               if (_shouldSendAck(command)) {
-                _sendAck(command, deviceName);
+                _sendAck(command);
               }
 
               _commandReceivedController.add(command);
 
               if (command.type == RemoteCommandType.ping) {
-                _sendPong(deviceName, platform);
+                _sendPong();
               }
             }
           } catch (e) {
@@ -441,7 +441,7 @@ class CompanionRemotePeerService {
     _stopPingTimer();
     _pingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (isConnected) {
-        sendCommand(RemoteCommand(type: RemoteCommandType.ping, deviceId: _myPeerId ?? 'unknown', deviceName: 'local'));
+        sendCommand(const RemoteCommand(type: RemoteCommandType.ping));
       }
     });
   }
@@ -458,34 +458,19 @@ class CompanionRemotePeerService {
         command.type != RemoteCommandType.deviceInfo;
   }
 
-  void _sendAck(RemoteCommand command, String deviceName) {
-    final ackCommand = RemoteCommand(
-      type: RemoteCommandType.ack,
-      deviceId: _myPeerId ?? 'unknown',
-      deviceName: deviceName,
-      data: {'originalCommand': command.type.toString()},
-    );
-    sendCommand(ackCommand);
+  void _sendAck(RemoteCommand command) {
+    sendCommand(const RemoteCommand(type: RemoteCommandType.ack));
   }
 
-  void _sendPong(String deviceName, String platform) {
-    sendCommand(
-      RemoteCommand(
-        type: RemoteCommandType.pong,
-        deviceId: _myPeerId ?? 'unknown',
-        deviceName: deviceName,
-        data: {'platform': platform},
-      ),
-    );
+  void _sendPong() {
+    sendCommand(const RemoteCommand(type: RemoteCommandType.pong));
   }
 
   void sendDeviceInfo(String deviceName, String platform) {
     sendCommand(
       RemoteCommand(
         type: RemoteCommandType.deviceInfo,
-        deviceId: _myPeerId ?? 'unknown',
-        deviceName: deviceName,
-        data: {'platform': platform, 'role': _role?.name},
+        data: {'id': _myPeerId, 'name': deviceName, 'platform': platform, 'role': _role?.name},
       ),
     );
   }

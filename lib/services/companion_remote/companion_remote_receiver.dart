@@ -119,8 +119,6 @@ class CompanionRemoteReceiver {
       case RemoteCommandType.pong:
       case RemoteCommandType.ack:
       case RemoteCommandType.deviceInfo:
-      case RemoteCommandType.capabilitiesRequest:
-      case RemoteCommandType.capabilitiesResponse:
       case RemoteCommandType.disconnect:
         break;
 

@@ -29,7 +29,8 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
   @override
   void initState() {
     super.initState();
-    _createSession();
+    // Defer to avoid notifyListeners() during build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) => _createSession());
   }
 
   Future<void> _createSession() async {
@@ -122,7 +123,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
         return Dialog(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 500),
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
