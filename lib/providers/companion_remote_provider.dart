@@ -45,6 +45,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   StreamSubscription<void>? _deviceDisconnectedSubscription;
   StreamSubscription<RemotePeerError>? _errorSubscription;
   StreamSubscription<RemoteSessionStatus>? _statusSubscription;
+  StreamSubscription<List<RecentRemoteSession>>? _recentSessionsSubscription;
 
   CommandReceivedCallback? onCommandReceived;
   DeviceApprovalCallback? onDeviceApprovalRequired;
@@ -136,6 +137,15 @@ class CompanionRemoteProvider with ChangeNotifier {
           clearConnectedDevice: true,
         );
         notifyListeners();
+      } else if (isHost) {
+        // Host keeps the server running — the client will reconnect on its own
+        _session = _session?.copyWith(
+          status: RemoteSessionStatus.reconnecting,
+          clearConnectedDevice: true,
+          clearErrorMessage: true,
+        );
+        notifyListeners();
+        appLogger.d('CompanionRemote: Host waiting for client to reconnect');
       } else {
         _session = _session?.copyWith(status: RemoteSessionStatus.reconnecting);
         notifyListeners();
@@ -314,7 +324,7 @@ class CompanionRemoteProvider with ChangeNotifier {
 
       await _peerService!.joinSession(_lastSessionId!, _lastPin!, _deviceName, _platform, _lastHostAddress!);
 
-      _session = _session?.copyWith(status: RemoteSessionStatus.connected);
+      _session = _session?.copyWith(status: RemoteSessionStatus.connected, clearErrorMessage: true);
       _reconnectAttempts = 0;
       notifyListeners();
       appLogger.d('CompanionRemote: Reconnected successfully');
@@ -451,10 +461,15 @@ class CompanionRemoteProvider with ChangeNotifier {
   /// Load recent sessions
   Future<void> loadRecentSessions() async {
     try {
+      // Dispose previous discovery service and subscription to avoid leaks
+      _recentSessionsSubscription?.cancel();
+      _recentSessionsSubscription = null;
+      _discoveryService?.dispose();
+
       _discoveryService = CompanionRemoteDiscoveryService();
 
       // Listen for recent sessions updates
-      _discoveryService!.recentSessions.listen((sessions) {
+      _recentSessionsSubscription = _discoveryService!.recentSessions.listen((sessions) {
         _recentSessions.clear();
         _recentSessions.addAll(sessions);
         notifyListeners();
@@ -526,6 +541,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   void dispose() {
     _reconnectTimer?.cancel();
     leaveSession();
+    _recentSessionsSubscription?.cancel();
     _discoveryService?.dispose();
     super.dispose();
   }

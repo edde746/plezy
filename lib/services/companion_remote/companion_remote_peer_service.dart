@@ -55,6 +55,12 @@ class CompanionRemotePeerService {
 
   Timer? _pingTimer;
 
+  // Auth rate limiting
+  int _failedAuthAttempts = 0;
+  DateTime? _authLockoutUntil;
+  static const int _maxFailedAuthAttempts = 5;
+  static const Duration _authLockoutDuration = Duration(seconds: 30);
+
   Stream<RemoteCommand> get onCommandReceived => _commandReceivedController.stream;
   Stream<RemoteDevice> get onDeviceConnected => _deviceConnectedController.stream;
   Stream<void> get onDeviceDisconnected => _deviceDisconnectedController.stream;
@@ -198,12 +204,21 @@ class CompanionRemotePeerService {
           if (!isAuthenticated) {
             // First message must be authentication
             if (json['type'] == 'auth') {
+              // Rate limiting: reject if locked out
+              if (_authLockoutUntil != null && DateTime.now().isBefore(_authLockoutUntil!)) {
+                appLogger.w('CompanionRemote: Auth attempt rejected (rate limited)');
+                socket.add(jsonEncode({'type': 'authFailed', 'message': 'Too many attempts. Try again later.'}));
+                socket.close(4005, 'Rate limited');
+                return;
+              }
+
               final sessionId = json['sessionId'] as String?;
               final pin = json['pin'] as String?;
               final deviceName = json['deviceName'] as String?;
               final platform = json['platform'] as String?;
 
               if (sessionId == _sessionId && pin == _pin) {
+                _failedAuthAttempts = 0;
                 isAuthenticated = true;
                 authTimeout?.cancel();
 
@@ -234,7 +249,12 @@ class CompanionRemotePeerService {
 
                 // Note: Client sends keepalive pings, host only responds with pongs
               } else {
-                appLogger.w('CompanionRemote: Invalid credentials');
+                _failedAuthAttempts++;
+                if (_failedAuthAttempts >= _maxFailedAuthAttempts) {
+                  _authLockoutUntil = DateTime.now().add(_authLockoutDuration);
+                  appLogger.w('CompanionRemote: Too many failed auth attempts, locked out for ${_authLockoutDuration.inSeconds}s');
+                }
+                appLogger.w('CompanionRemote: Invalid credentials (attempt $_failedAuthAttempts/$_maxFailedAuthAttempts)');
                 socket.add(jsonEncode({'type': 'authFailed', 'message': 'Invalid session ID or PIN'}));
                 socket.close(4003, 'Invalid credentials');
               }
@@ -247,18 +267,8 @@ class CompanionRemotePeerService {
             final command = RemoteCommand.fromJson(json);
             appLogger.d('CompanionRemote: Received command: ${command.type}');
 
-            // Send acknowledgment for non-ping/pong/ack commands
-            if (command.type != RemoteCommandType.ping &&
-                command.type != RemoteCommandType.pong &&
-                command.type != RemoteCommandType.ack &&
-                command.type != RemoteCommandType.deviceInfo) {
-              final ackCommand = RemoteCommand(
-                type: RemoteCommandType.ack,
-                deviceId: _myPeerId ?? 'unknown',
-                deviceName: hostDeviceName,
-                data: {'originalCommand': command.type.toString()},
-              );
-              socket.add(jsonEncode(ackCommand.toJson()));
+            if (_shouldSendAck(command)) {
+              _sendAck(command, hostDeviceName);
             }
 
             _commandReceivedController.add(command);
@@ -304,7 +314,7 @@ class CompanionRemotePeerService {
     _sessionId = sessionId.toUpperCase();
     _pin = pin;
     _hostAddress = hostAddress;
-    _myPeerId = 'remote-${Random().nextInt(99999)}';
+    _myPeerId = 'remote-${Random.secure().nextInt(99999)}';
 
     final completer = Completer<void>();
 
@@ -364,18 +374,8 @@ class CompanionRemotePeerService {
               final command = RemoteCommand.fromJson(json);
               appLogger.d('CompanionRemote: Received command: ${command.type}');
 
-              // Send acknowledgment for non-ping/pong/ack commands
-              if (command.type != RemoteCommandType.ping &&
-                  command.type != RemoteCommandType.pong &&
-                  command.type != RemoteCommandType.ack &&
-                  command.type != RemoteCommandType.deviceInfo) {
-                final ackCommand = RemoteCommand(
-                  type: RemoteCommandType.ack,
-                  deviceId: _myPeerId ?? 'unknown',
-                  deviceName: deviceName,
-                  data: {'originalCommand': command.type.toString()},
-                );
-                _channel!.sink.add(jsonEncode(ackCommand.toJson()));
+              if (_shouldSendAck(command)) {
+                _sendAck(command, deviceName);
               }
 
               _commandReceivedController.add(command);
@@ -449,6 +449,23 @@ class CompanionRemotePeerService {
   void _stopPingTimer() {
     _pingTimer?.cancel();
     _pingTimer = null;
+  }
+
+  bool _shouldSendAck(RemoteCommand command) {
+    return command.type != RemoteCommandType.ping &&
+        command.type != RemoteCommandType.pong &&
+        command.type != RemoteCommandType.ack &&
+        command.type != RemoteCommandType.deviceInfo;
+  }
+
+  void _sendAck(RemoteCommand command, String deviceName) {
+    final ackCommand = RemoteCommand(
+      type: RemoteCommandType.ack,
+      deviceId: _myPeerId ?? 'unknown',
+      deviceName: deviceName,
+      data: {'originalCommand': command.type.toString()},
+    );
+    sendCommand(ackCommand);
   }
 
   void _sendPong(String deviceName, String platform) {
