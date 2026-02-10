@@ -676,6 +676,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _hideControls();
   }
 
+  void _handlePointerSignal(PointerSignalEvent event) {
+    if (event is PointerScrollEvent && _keyboardService != null) {
+      final delta = event.scrollDelta.dy;
+      final volume = widget.player.state.volume;
+      final maxVol = _keyboardService!.maxVolume.toDouble();
+      final newVolume = (volume - delta / 20).clamp(0.0, maxVol);
+      widget.player.setVolume(newVolume);
+      SettingsService.getInstance().then((s) => s.setVolume(newVolume));
+      _showControlsFromPointerActivity();
+    }
+  }
+
   /// Show controls in response to pointer activity (mouse/trackpad movement).
   void _showControlsFromPointerActivity() {
     if (!_showControls) {
@@ -1565,6 +1577,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           child: Listener(
             behavior: HitTestBehavior.translucent,
             onPointerHover: (_) => _showControlsFromPointerActivity(),
+            onPointerSignal: _handlePointerSignal,
             child: MouseRegion(
               cursor: _showControls ? SystemMouseCursors.basic : SystemMouseCursors.none,
               onHover: (_) => _showControlsFromPointerActivity(),

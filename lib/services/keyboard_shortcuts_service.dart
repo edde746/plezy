@@ -45,6 +45,7 @@ class KeyboardShortcutsService {
 
   Map<String, String> get shortcuts => Map.from(_shortcuts);
   Map<String, HotKey> get hotkeys => Map.from(_hotkeys);
+  int get maxVolume => _maxVolume;
 
   String getShortcut(String action) {
     return _shortcuts[action] ?? '';
