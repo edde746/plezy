@@ -1927,6 +1927,9 @@ class TranslationsWatchTogetherEn {
 
 	/// en: 'Session code copied to clipboard'
 	String get sessionCodeCopied => 'Session code copied to clipboard';
+
+	/// en: 'The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.'
+	String get relayUnreachable => 'The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.';
 }
 
 // Path: downloads
@@ -3048,6 +3051,7 @@ extension on Translations {
 			'watchTogether.failedToCreate' => 'Failed to create session',
 			'watchTogether.failedToJoin' => 'Failed to join session',
 			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
+			'watchTogether.relayUnreachable' => 'The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',

@@ -643,7 +643,8 @@
     "joinInstructions": "Voer de sessiecode in die door de host is gedeeld om deel te nemen aan hun kijksessie.",
     "failedToCreate": "Sessie maken mislukt",
     "failedToJoin": "Sessie deelnemen mislukt",
-    "sessionCodeCopied": "Sessiecode gekopieerd naar klembord"
+    "sessionCodeCopied": "Sessiecode gekopieerd naar klembord",
+    "relayUnreachable": "De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet."
   },
   "shaders": {
     "title": "Shaders",

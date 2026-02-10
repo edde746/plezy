@@ -643,7 +643,8 @@
     "joinInstructions": "Gib den vom Host geteilten Sitzungscode ein, um seiner Schausitzung beizutreten.",
     "failedToCreate": "Sitzung konnte nicht erstellt werden",
     "failedToJoin": "Sitzung konnte nicht beigetreten werden",
-    "sessionCodeCopied": "Sitzungscode in Zwischenablage kopiert"
+    "sessionCodeCopied": "Sitzungscode in Zwischenablage kopiert",
+    "relayUnreachable": "Der Relay-Server ist nicht erreichbar. Möglicherweise blockiert dein Internetanbieter die Verbindung. Du kannst es trotzdem versuchen, aber Watch Together funktioniert eventuell nicht."
   },
   "shaders": {
     "title": "Shader",

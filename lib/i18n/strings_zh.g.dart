@@ -904,6 +904,7 @@ class _TranslationsWatchTogetherZh implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => '创建会话失败';
 	@override String get failedToJoin => '加入会话失败';
 	@override String get sessionCodeCopied => '会话代码已复制到剪贴板';
+	@override String get relayUnreachable => '无法连接到中继服务器。这可能是由于您的网络运营商屏蔽了连接。您仍然可以尝试，但一起观看功能可能无法正常使用。';
 }
 
 // Path: shaders
@@ -1715,6 +1716,7 @@ extension on TranslationsZh {
 			'watchTogether.failedToCreate' => '创建会话失败',
 			'watchTogether.failedToJoin' => '加入会话失败',
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
+			'watchTogether.relayUnreachable' => '无法连接到中继服务器。这可能是由于您的网络运营商屏蔽了连接。您仍然可以尝试，但一起观看功能可能无法正常使用。',
 			'shaders.title' => '着色器',
 			'shaders.noShaderDescription' => '无视频增强',
 			'shaders.nvscalerDescription' => 'NVIDIA 图像缩放，使视频更清晰',

@@ -623,7 +623,8 @@
     "joinInstructions": "Entrez le code de session partagé par l'hôte pour rejoindre sa session de visionnage.",
     "failedToCreate": "Échec de la création de la session",
     "failedToJoin": "Échec de la connexion à la session",
-    "sessionCodeCopied": "Code de session copié dans le presse-papiers"
+    "sessionCodeCopied": "Code de session copié dans le presse-papiers",
+    "relayUnreachable": "Le serveur relais est inaccessible. Cela peut être dû au blocage de la connexion par votre fournisseur d'accès. Vous pouvez quand même essayer, mais Watch Together pourrait ne pas fonctionner."
   },
   "downloads": {
     "title": "Téléchargements",

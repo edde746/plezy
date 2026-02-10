@@ -643,7 +643,8 @@
     "joinInstructions": "Inserisci il codice sessione condiviso dall'host per unirti alla loro sessione di visione.",
     "failedToCreate": "Impossibile creare la sessione",
     "failedToJoin": "Impossibile unirsi alla sessione",
-    "sessionCodeCopied": "Codice sessione copiato negli appunti"
+    "sessionCodeCopied": "Codice sessione copiato negli appunti",
+    "relayUnreachable": "Il server di inoltro non è raggiungibile. Questo potrebbe essere causato dal blocco della connessione da parte del tuo provider. Puoi comunque provare, ma Watch Together potrebbe non funzionare."
   },
   "shaders": {
     "title": "Shader",

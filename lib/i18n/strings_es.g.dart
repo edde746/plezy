@@ -877,6 +877,7 @@ class _TranslationsWatchTogetherEs implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => 'Error al crear la sesión';
 	@override String get failedToJoin => 'Error al unirse a la sesión';
 	@override String get sessionCodeCopied => 'Código de sesión copiado al portapapeles';
+	@override String get relayUnreachable => 'El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.';
 }
 
 // Path: downloads
@@ -1697,6 +1698,7 @@ extension on TranslationsEs {
 			'watchTogether.failedToCreate' => 'Error al crear la sesión',
 			'watchTogether.failedToJoin' => 'Error al unirse a la sesión',
 			'watchTogether.sessionCodeCopied' => 'Código de sesión copiado al portapapeles',
+			'watchTogether.relayUnreachable' => 'El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.',
 			'downloads.title' => 'Descargas',
 			'downloads.manage' => 'Gestionar',
 			'downloads.tvShows' => 'Series de TV',

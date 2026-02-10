@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -9,6 +11,7 @@ import '../../utils/dialogs.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
+import '../services/watch_together_peer_service.dart';
 import '../widgets/join_session_dialog.dart';
 
 /// Main screen for Watch Together functionality
@@ -71,6 +74,30 @@ class _NotInSessionView extends StatefulWidget {
 class _NotInSessionViewState extends State<_NotInSessionView> {
   bool _isCreating = false;
   bool _isJoining = false;
+  bool? _healthOk;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkHealth();
+  }
+
+  Future<void> _checkHealth() async {
+    try {
+      final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: 5);
+      final request = await client.getUrl(Uri.parse(WatchTogetherPeerService.healthUrl));
+      final response = await request.close().timeout(const Duration(seconds: 5));
+      final body = await response.transform(const SystemEncoding().decoder).join();
+      client.close();
+      if (!mounted) return;
+      setState(() => _healthOk = response.statusCode == 200 && body.trim() == 'ok');
+    } catch (e) {
+      appLogger.w('Watch Together health check failed', error: e);
+      if (!mounted) return;
+      setState(() => _healthOk = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +120,27 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
                 style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
+              if (_healthOk == false) ...[
+                const SizedBox(height: 24),
+                Card(
+                  color: theme.colorScheme.errorContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Icon(Symbols.warning_rounded, color: theme.colorScheme.onErrorContainer),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            t.watchTogether.relayUnreachable,
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,

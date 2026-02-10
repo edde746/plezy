@@ -877,6 +877,7 @@ class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => '세션 생성 실패';
 	@override String get failedToJoin => '세션 참여 실패';
 	@override String get sessionCodeCopied => '세션 코드가 클립보드에 복사되었습니다';
+	@override String get relayUnreachable => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.';
 }
 
 // Path: downloads
@@ -1697,6 +1698,7 @@ extension on TranslationsKo {
 			'watchTogether.failedToCreate' => '세션 생성 실패',
 			'watchTogether.failedToJoin' => '세션 참여 실패',
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
+			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.',
 			'downloads.title' => '다운로드',
 			'downloads.manage' => '관리',
 			'downloads.tvShows' => 'TV 프로그램',

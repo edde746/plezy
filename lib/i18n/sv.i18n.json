@@ -643,7 +643,8 @@
     "joinInstructions": "Ange sessionskoden som delats av värden för att gå med i deras tittarsession.",
     "failedToCreate": "Det gick inte att skapa session",
     "failedToJoin": "Det gick inte att gå med i session",
-    "sessionCodeCopied": "Sessionskod kopierad till urklipp"
+    "sessionCodeCopied": "Sessionskod kopierad till urklipp",
+    "relayUnreachable": "Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar."
   },
   "shaders": {
     "title": "Shaders",

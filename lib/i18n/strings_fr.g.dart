@@ -877,6 +877,7 @@ class _TranslationsWatchTogetherFr implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => 'Échec de la création de la session';
 	@override String get failedToJoin => 'Échec de la connexion à la session';
 	@override String get sessionCodeCopied => 'Code de session copié dans le presse-papiers';
+	@override String get relayUnreachable => 'Le serveur relais est inaccessible. Cela peut être dû au blocage de la connexion par votre fournisseur d\'accès. Vous pouvez quand même essayer, mais Watch Together pourrait ne pas fonctionner.';
 }
 
 // Path: downloads
@@ -1697,6 +1698,7 @@ extension on TranslationsFr {
 			'watchTogether.failedToCreate' => 'Échec de la création de la session',
 			'watchTogether.failedToJoin' => 'Échec de la connexion à la session',
 			'watchTogether.sessionCodeCopied' => 'Code de session copié dans le presse-papiers',
+			'watchTogether.relayUnreachable' => 'Le serveur relais est inaccessible. Cela peut être dû au blocage de la connexion par votre fournisseur d\'accès. Vous pouvez quand même essayer, mais Watch Together pourrait ne pas fonctionner.',
 			'downloads.title' => 'Téléchargements',
 			'downloads.manage' => 'Gérer',
 			'downloads.tvShows' => 'Show TV',

@@ -904,6 +904,7 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => 'Det gick inte att skapa session';
 	@override String get failedToJoin => 'Det gick inte att gå med i session';
 	@override String get sessionCodeCopied => 'Sessionskod kopierad till urklipp';
+	@override String get relayUnreachable => 'Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.';
 }
 
 // Path: shaders
@@ -1715,6 +1716,7 @@ extension on TranslationsSv {
 			'watchTogether.failedToCreate' => 'Det gick inte att skapa session',
 			'watchTogether.failedToJoin' => 'Det gick inte att gå med i session',
 			'watchTogether.sessionCodeCopied' => 'Sessionskod kopierad till urklipp',
+			'watchTogether.relayUnreachable' => 'Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Ingen videoförbättring',
 			'shaders.nvscalerDescription' => 'NVIDIA-bildskalning för skarpare video',

@@ -30,6 +30,8 @@ class PeerError {
 /// - Sending/receiving sync messages through the relay server
 /// - Reconnection on WebSocket drops
 class WatchTogetherPeerService {
+  static const String _baseUrl = 'https://ice.plezy.app';
+  static String get healthUrl => '$_baseUrl/health';
   static const String _relayUrl = 'wss://ice.plezy.app/relay';
 
   WebSocketChannel? _channel;

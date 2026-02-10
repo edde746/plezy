@@ -623,7 +623,8 @@
     "joinInstructions": "Enter the session code shared by the host to join their watch session.",
     "failedToCreate": "Failed to create session",
     "failedToJoin": "Failed to join session",
-    "sessionCodeCopied": "Session code copied to clipboard"
+    "sessionCodeCopied": "Session code copied to clipboard",
+    "relayUnreachable": "The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work."
   },
   "downloads": {
     "title": "Downloads",

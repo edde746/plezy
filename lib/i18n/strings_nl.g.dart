@@ -904,6 +904,7 @@ class _TranslationsWatchTogetherNl implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => 'Sessie maken mislukt';
 	@override String get failedToJoin => 'Sessie deelnemen mislukt';
 	@override String get sessionCodeCopied => 'Sessiecode gekopieerd naar klembord';
+	@override String get relayUnreachable => 'De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet.';
 }
 
 // Path: shaders
@@ -1715,6 +1716,7 @@ extension on TranslationsNl {
 			'watchTogether.failedToCreate' => 'Sessie maken mislukt',
 			'watchTogether.failedToJoin' => 'Sessie deelnemen mislukt',
 			'watchTogether.sessionCodeCopied' => 'Sessiecode gekopieerd naar klembord',
+			'watchTogether.relayUnreachable' => 'De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet.',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Geen videoverbetering',
 			'shaders.nvscalerDescription' => 'NVIDIA-beeldschaling voor scherpere video',

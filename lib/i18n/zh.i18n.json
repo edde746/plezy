@@ -643,7 +643,8 @@
     "joinInstructions": "输入主持人分享的会话代码以加入他们的观看会话。",
     "failedToCreate": "创建会话失败",
     "failedToJoin": "加入会话失败",
-    "sessionCodeCopied": "会话代码已复制到剪贴板"
+    "sessionCodeCopied": "会话代码已复制到剪贴板",
+    "relayUnreachable": "无法连接到中继服务器。这可能是由于您的网络运营商屏蔽了连接。您仍然可以尝试，但一起观看功能可能无法正常使用。"
   },
   "shaders": {
     "title": "着色器",
