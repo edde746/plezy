@@ -1,14 +1,11 @@
 {
   "app": {
-    "title": "Plezy",
-    "loading": "加载中..."
-  },
+    "title": "Plezy"
+},
   "auth": {
     "signInWithPlex": "使用 Plex 登录",
     "showQRCode": "显示二维码",
-    "cancel": "取消",
     "authenticate": "验证",
-    "retry": "重试",
     "debugEnterToken": "调试：输入 Plex Token",
     "plexTokenLabel": "Plex 授权令牌 (Auth Token)",
     "plexTokenHint": "输入你的 Plex.tv 令牌",
@@ -34,14 +31,28 @@
     "no": "否",
     "delete": "删除",
     "shuffle": "随机播放",
-    "addTo": "添加到..."
+    "addTo": "添加到...",
+    "remove": "删除",
+    "paste": "粘贴",
+    "connect": "连接",
+    "disconnect": "断开连接",
+    "play": "播放",
+    "pause": "暂停",
+    "resume": "继续",
+    "error": "错误",
+    "search": "搜索",
+    "home": "首页",
+    "back": "返回",
+    "settings": "设置",
+    "mute": "静音",
+    "ok": "确定",
+    "loading": "加载中..."
   },
   "screens": {
     "licenses": "许可证",
     "switchProfile": "切换用户",
     "subtitleStyling": "字幕样式",
     "mpvConfig": "MPV 配置",
-    "search": "搜索",
     "logs": "日志"
   },
   "update": {
@@ -203,7 +214,8 @@
       "speedReset": "重置速度",
       "subSeekNext": "跳转到下一字幕",
       "subSeekPrev": "跳转到上一字幕",
-      "shaderToggle": "切换着色器"
+      "shaderToggle": "切换着色器",
+      "skipMarker": "跳过片头/片尾"
     }
   },
   "pinEntry": {
@@ -307,7 +319,6 @@
     "timelineSlider": "视频时间轴",
     "volumeSlider": "音量调节",
     "endsAt": "${time} 结束",
-    "backButton": "返回",
     "pipFailed": "画中画启动失败",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",
@@ -315,7 +326,9 @@
       "notSupported": "此设备不支持画中画模式",
       "failed": "画中画启动失败",
       "unknown": "发生错误：${error}"
-    }
+    },
+    "chapters": "章节",
+    "noChaptersAvailable": "没有可用的章节"
   },
   "userStatus": {
     "admin": "管理员",
@@ -395,19 +408,15 @@
     "entriesCount": "${count} 条目"
   },
   "dialog": {
-    "confirmAction": "确认操作",
-    "cancel": "取消"
+    "confirmAction": "确认操作"
   },
   "discover": {
     "title": "发现",
     "switchProfile": "切换用户",
-    "logout": "登出",
     "noContentAvailable": "没有可用内容",
     "addMediaToLibraries": "请向你的媒体库添加一些媒体",
     "continueWatching": "继续观看",
-    "play": "播放",
     "playEpisode": "S${season}E${episode}",
-    "pause": "暂停",
     "overview": "概述",
     "cast": "演员表",
     "seasons": "季数",
@@ -517,10 +526,7 @@
     "licensesCount": "${count} 个许可证"
   },
   "navigation": {
-    "home": "主页",
-    "search": "搜索",
     "libraries": "媒体库",
-    "settings": "设置",
     "downloads": "下载"
   },
   "downloads": {
@@ -537,7 +543,11 @@
     "episodesQueued": "${count} 集已加入下载队列",
     "downloadDeleted": "下载已删除",
     "deleteConfirm": "确定要删除 \"${title}\" 吗？下载的文件将从您的设备中删除。",
-    "deletingWithProgress": "正在删除 ${title}... (${current}/${total})"
+    "deletingWithProgress": "正在删除 ${title}... (${current}/${total})",
+    "noDownloadsTree": "暂无下载",
+    "pauseAll": "全部暂停",
+    "resumeAll": "全部继续",
+    "deleteAll": "全部删除"
   },
   "playlists": {
     "title": "播放列表",
@@ -642,5 +652,107 @@
     "qualityFast": "快速",
     "qualityHQ": "高质量",
     "mode": "模式"
+  },
+  "companionRemote": {
+    "title": "Companion Remote",
+    "connectToDevice": "连接到设备",
+    "hostRemoteSession": "创建远程会话",
+    "controlThisDevice": "使用手机控制此设备",
+    "remoteControl": "远程控制",
+    "controlDesktop": "控制桌面设备",
+    "connectedTo": "已连接到 ${name}",
+    "session": {
+      "creatingSession": "正在创建远程会话...",
+      "failedToCreate": "创建远程会话失败：",
+      "noSession": "没有可用的会话",
+      "scanQrCode": "扫描 QR 码",
+      "orEnterManually": "或手动输入",
+      "hostAddress": "主机地址",
+      "sessionId": "会话 ID",
+      "pin": "PIN",
+      "connected": "已连接",
+      "waitingForConnection": "等待连接中...",
+      "usePhoneToControl": "使用移动设备控制此应用",
+      "copiedToClipboard": "${label}已复制到剪贴板",
+      "copyToClipboard": "复制到剪贴板",
+      "newSession": "新建会话",
+      "minimize": "最小化"
+    },
+    "pairing": {
+      "recent": "最近",
+      "scan": "扫描",
+      "manual": "手动",
+      "recentConnections": "最近连接",
+      "quickReconnect": "快速重新连接之前配对的设备",
+      "pairWithDesktop": "与桌面配对",
+      "enterSessionDetails": "输入桌面设备上显示的会话信息",
+      "hostAddressHint": "192.168.1.100:48632",
+      "sessionIdHint": "输入8位会话 ID",
+      "pinHint": "输入6位 PIN",
+      "connecting": "连接中...",
+      "tips": "提示",
+      "tipDesktop": "在桌面上打开 Plezy，并从设置或菜单中启用 Companion Remote",
+      "tipScan": "使用扫描选项卡扫描桌面上的 QR 码以快速配对",
+      "tipWifi": "请确保两台设备连接到同一个 WiFi 网络",
+      "cameraPermissionRequired": "扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。",
+      "cameraError": "无法启动相机：${error}",
+      "scanInstruction": "将相机对准桌面上显示的 QR 码",
+      "noRecentConnections": "没有最近的连接",
+      "connectUsingManual": "使用手动输入连接设备以开始使用",
+      "invalidQrCode": "无效的 QR 码格式",
+      "removeRecentConnection": "删除最近连接",
+      "removeConfirm": "确定要从最近连接中删除 \"${name}\" 吗？",
+      "validationHostRequired": "请输入主机地址",
+      "validationHostFormat": "格式必须为 IP:端口（例如 192.168.1.100:48632）",
+      "validationSessionIdRequired": "请输入会话 ID",
+      "validationSessionIdLength": "会话 ID 必须为8个字符",
+      "validationPinRequired": "请输入 PIN",
+      "validationPinLength": "PIN 必须为6位数字",
+      "connectionTimedOut": "连接超时。请检查会话 ID 和 PIN。",
+      "sessionNotFound": "找不到会话。请检查您的凭据。",
+      "failedToConnect": "连接失败：${error}",
+      "failedToLoadRecent": "加载最近会话失败：${error}"
+    },
+    "remote": {
+      "disconnectConfirm": "是否要断开远程会话的连接？",
+      "reconnecting": "重新连接中...",
+      "attemptOf": "第 ${current} 次尝试，共 5 次",
+      "retryNow": "立即重试",
+      "connectionError": "连接错误",
+      "notConnected": "未连接",
+      "tabRemote": "遥控",
+      "tabPlay": "播放",
+      "tabMore": "更多",
+      "menu": "菜单",
+      "tabNavigation": "标签导航",
+      "tabDiscover": "发现",
+      "tabLibraries": "媒体库",
+      "tabSearch": "搜索",
+      "tabDownloads": "下载",
+      "tabSettings": "设置",
+      "previous": "上一个",
+      "playPause": "播放/暂停",
+      "next": "下一个",
+      "seekBack": "后退",
+      "stop": "停止",
+      "seekForward": "快进",
+      "volume": "音量",
+      "volumeDown": "减小",
+      "volumeUp": "增大",
+      "fullscreen": "全屏",
+      "subtitles": "字幕",
+      "audio": "音频",
+      "searchHint": "在桌面上搜索..."
+    }
+  },
+  "videoSettings": {
+    "playbackSettings": "播放设置",
+    "playbackSpeed": "播放速度",
+    "sleepTimer": "睡眠定时器",
+    "audioSync": "音频同步",
+    "subtitleSync": "字幕同步",
+    "hdr": "HDR",
+    "audioOutput": "音频输出",
+    "performanceOverlay": "性能监控"
   }
 }

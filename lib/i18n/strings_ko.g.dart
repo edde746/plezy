@@ -70,6 +70,8 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsWatchTogetherKo watchTogether = _TranslationsWatchTogetherKo._(_root);
 	@override late final _TranslationsDownloadsKo downloads = _TranslationsDownloadsKo._(_root);
 	@override late final _TranslationsShadersKo shaders = _TranslationsShadersKo._(_root);
+	@override late final _TranslationsCompanionRemoteKo companionRemote = _TranslationsCompanionRemoteKo._(_root);
+	@override late final _TranslationsVideoSettingsKo videoSettings = _TranslationsVideoSettingsKo._(_root);
 }
 
 // Path: app
@@ -80,7 +82,6 @@ class _TranslationsAppKo implements TranslationsAppEn {
 
 	// Translations
 	@override String get title => 'Plezy';
-	@override String get loading => '로딩 중...';
 }
 
 // Path: auth
@@ -92,9 +93,7 @@ class _TranslationsAuthKo implements TranslationsAuthEn {
 	// Translations
 	@override String get signInWithPlex => 'Plex 계정으로 로그인';
 	@override String get showQRCode => 'QR 코드';
-	@override String get cancel => '취소';
 	@override String get authenticate => '인증';
-	@override String get retry => '재시도';
 	@override String get debugEnterToken => '디버깅을 위해 Plex 토큰을 입력하세요.';
 	@override String get plexTokenLabel => 'Plex 인증 토큰';
 	@override String get plexTokenHint => 'Plex.tv 토큰을 입력하세요';
@@ -128,6 +127,21 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get delete => '삭제';
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
+	@override String get remove => '삭제';
+	@override String get paste => '붙여넣기';
+	@override String get connect => '연결';
+	@override String get disconnect => '연결 해제';
+	@override String get play => '재생';
+	@override String get pause => '일시정지';
+	@override String get resume => '재개';
+	@override String get error => '오류';
+	@override String get search => '검색';
+	@override String get home => '홈';
+	@override String get back => '뒤로';
+	@override String get settings => '설정';
+	@override String get mute => '음소거';
+	@override String get ok => '확인';
+	@override String get loading => '로딩 중...';
 }
 
 // Path: screens
@@ -141,7 +155,6 @@ class _TranslationsScreensKo implements TranslationsScreensEn {
 	@override String get switchProfile => '프로필 전환';
 	@override String get subtitleStyling => '자막 스타일 설정';
 	@override String get mpvConfig => 'MPV 설정';
-	@override String get search => '검색';
 	@override String get logs => '로그';
 }
 
@@ -458,9 +471,10 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '타임라인';
 	@override String get volumeSlider => '볼륨 조절';
 	@override String endsAt({required Object time}) => '${time}에 종료';
-	@override String get backButton => '뒤로 가기';
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
+	@override String get chapters => '챕터';
+	@override String get noChaptersAvailable => '사용 가능한 챕터가 없습니다';
 }
 
 // Path: userStatus
@@ -576,7 +590,6 @@ class _TranslationsDialogKo implements TranslationsDialogEn {
 
 	// Translations
 	@override String get confirmAction => '확인';
-	@override String get cancel => '취소';
 }
 
 // Path: discover
@@ -588,13 +601,10 @@ class _TranslationsDiscoverKo implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => '발견';
 	@override String get switchProfile => '사용자 전환';
-	@override String get logout => '로그아웃';
 	@override String get noContentAvailable => '사용 가능한 콘텐츠가 없습니다';
 	@override String get addMediaToLibraries => '미디어 라이브러리에 미디어를 추가해 주세요';
 	@override String get continueWatching => '계속 시청';
-	@override String get play => '재생';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
-	@override String get pause => '일시정지';
 	@override String get overview => '개요';
 	@override String get cast => '출연진';
 	@override String get seasons => '시즌 수';
@@ -748,10 +758,7 @@ class _TranslationsNavigationKo implements TranslationsNavigationEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get home => '홈';
-	@override String get search => '검색';
 	@override String get libraries => '미디어 라이브러리';
-	@override String get settings => '설정';
 	@override String get downloads => '다운로드';
 }
 
@@ -893,6 +900,10 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => '다운로드 삭제됨';
 	@override String deleteConfirm({required Object title}) => '"${title}"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => '${title} 삭제 중... (${current}/${total})';
+	@override String get noDownloadsTree => '다운로드 없음';
+	@override String get pauseAll => '모두 일시정지';
+	@override String get resumeAll => '모두 재개';
+	@override String get deleteAll => '모두 삭제';
 }
 
 // Path: shaders
@@ -908,6 +919,42 @@ class _TranslationsShadersKo implements TranslationsShadersEn {
 	@override String get qualityFast => '빠름';
 	@override String get qualityHQ => '고품질';
 	@override String get mode => '모드';
+}
+
+// Path: companionRemote
+class _TranslationsCompanionRemoteKo implements TranslationsCompanionRemoteEn {
+	_TranslationsCompanionRemoteKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Companion Remote';
+	@override String get connectToDevice => '기기에 연결';
+	@override String get hostRemoteSession => '원격 세션 호스트';
+	@override String get controlThisDevice => '휴대폰으로 이 기기를 제어하세요';
+	@override String get remoteControl => '원격 제어';
+	@override String get controlDesktop => '데스크톱 기기 제어';
+	@override String connectedTo({required Object name}) => '${name}에 연결됨';
+	@override late final _TranslationsCompanionRemoteSessionKo session = _TranslationsCompanionRemoteSessionKo._(_root);
+	@override late final _TranslationsCompanionRemotePairingKo pairing = _TranslationsCompanionRemotePairingKo._(_root);
+	@override late final _TranslationsCompanionRemoteRemoteKo remote = _TranslationsCompanionRemoteRemoteKo._(_root);
+}
+
+// Path: videoSettings
+class _TranslationsVideoSettingsKo implements TranslationsVideoSettingsEn {
+	_TranslationsVideoSettingsKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get playbackSettings => '재생 설정';
+	@override String get playbackSpeed => '재생 속도';
+	@override String get sleepTimer => '취침 타이머';
+	@override String get audioSync => '오디오 동기화';
+	@override String get subtitleSync => '자막 동기화';
+	@override String get hdr => 'HDR';
+	@override String get audioOutput => '오디오 출력';
+	@override String get performanceOverlay => '성능 오버레이';
 }
 
 // Path: hotkeys.actions
@@ -935,6 +982,7 @@ class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 	@override String get subSeekNext => '다음 자막으로 이동';
 	@override String get subSeekPrev => '이전 자막으로 이동';
 	@override String get shaderToggle => '셰이더 전환';
+	@override String get skipMarker => '인트로/크레딧 건너뛰기';
 }
 
 // Path: videoControls.pipErrors
@@ -979,6 +1027,110 @@ class _TranslationsLibrariesGroupingsKo implements TranslationsLibrariesGrouping
 	@override String get folders => '폴더';
 }
 
+// Path: companionRemote.session
+class _TranslationsCompanionRemoteSessionKo implements TranslationsCompanionRemoteSessionEn {
+	_TranslationsCompanionRemoteSessionKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get creatingSession => '원격 세션 생성 중...';
+	@override String get failedToCreate => '원격 세션 생성 실패:';
+	@override String get noSession => '사용 가능한 세션이 없습니다';
+	@override String get scanQrCode => 'QR 코드 스캔';
+	@override String get orEnterManually => '또는 수동으로 입력';
+	@override String get hostAddress => '호스트 주소';
+	@override String get sessionId => '세션 ID';
+	@override String get pin => 'PIN';
+	@override String get connected => '연결됨';
+	@override String get waitingForConnection => '연결 대기 중...';
+	@override String get usePhoneToControl => '모바일 기기로 이 앱을 제어하세요';
+	@override String copiedToClipboard({required Object label}) => '${label}이(가) 클립보드에 복사되었습니다';
+	@override String get copyToClipboard => '클립보드에 복사';
+	@override String get newSession => '새 세션';
+	@override String get minimize => '최소화';
+}
+
+// Path: companionRemote.pairing
+class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemotePairingEn {
+	_TranslationsCompanionRemotePairingKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get recent => '최근';
+	@override String get scan => '스캔';
+	@override String get manual => '수동';
+	@override String get recentConnections => '최근 연결';
+	@override String get quickReconnect => '이전에 페어링한 기기에 빠르게 재연결';
+	@override String get pairWithDesktop => '데스크톱과 페어링';
+	@override String get enterSessionDetails => '데스크톱 기기에 표시된 세션 정보를 입력하세요';
+	@override String get hostAddressHint => '192.168.1.100:48632';
+	@override String get sessionIdHint => '8자리 세션 ID 입력';
+	@override String get pinHint => '6자리 PIN 입력';
+	@override String get connecting => '연결 중...';
+	@override String get tips => '팁';
+	@override String get tipDesktop => '데스크톱에서 Plezy를 열고 설정 또는 메뉴에서 Companion Remote를 활성화하세요';
+	@override String get tipScan => '스캔 탭을 사용하여 데스크톱의 QR 코드를 스캔하면 빠르게 페어링할 수 있습니다';
+	@override String get tipWifi => '두 기기가 동일한 WiFi 네트워크에 연결되어 있는지 확인하세요';
+	@override String get cameraPermissionRequired => 'QR 코드를 스캔하려면 카메라 권한이 필요합니다.\n기기 설정에서 카메라 접근을 허용해 주세요.';
+	@override String cameraError({required Object error}) => '카메라를 시작할 수 없습니다: ${error}';
+	@override String get scanInstruction => '데스크톱에 표시된 QR 코드에 카메라를 향하세요';
+	@override String get noRecentConnections => '최근 연결 없음';
+	@override String get connectUsingManual => '수동 입력으로 기기에 연결하여 시작하세요';
+	@override String get invalidQrCode => '유효하지 않은 QR 코드 형식';
+	@override String get removeRecentConnection => '최근 연결 삭제';
+	@override String removeConfirm({required Object name}) => '"${name}"을(를) 최근 연결에서 삭제하시겠습니까?';
+	@override String get validationHostRequired => '호스트 주소를 입력하세요';
+	@override String get validationHostFormat => 'IP:포트 형식이어야 합니다 (예: 192.168.1.100:48632)';
+	@override String get validationSessionIdRequired => '세션 ID를 입력하세요';
+	@override String get validationSessionIdLength => '세션 ID는 8자리여야 합니다';
+	@override String get validationPinRequired => 'PIN을 입력하세요';
+	@override String get validationPinLength => 'PIN은 6자리여야 합니다';
+	@override String get connectionTimedOut => '연결 시간이 초과되었습니다. 세션 ID와 PIN을 확인하세요.';
+	@override String get sessionNotFound => '세션을 찾을 수 없습니다. 자격 증명을 확인하세요.';
+	@override String failedToConnect({required Object error}) => '연결 실패: ${error}';
+	@override String failedToLoadRecent({required Object error}) => '최근 세션 로드 실패: ${error}';
+}
+
+// Path: companionRemote.remote
+class _TranslationsCompanionRemoteRemoteKo implements TranslationsCompanionRemoteRemoteEn {
+	_TranslationsCompanionRemoteRemoteKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get disconnectConfirm => '원격 세션 연결을 해제하시겠습니까?';
+	@override String get reconnecting => '재연결 중...';
+	@override String attemptOf({required Object current}) => '${current}/5 시도 중';
+	@override String get retryNow => '지금 재시도';
+	@override String get connectionError => '연결 오류';
+	@override String get notConnected => '연결되지 않음';
+	@override String get tabRemote => '리모컨';
+	@override String get tabPlay => '재생';
+	@override String get tabMore => '더 보기';
+	@override String get menu => '메뉴';
+	@override String get tabNavigation => '탭 탐색';
+	@override String get tabDiscover => '발견';
+	@override String get tabLibraries => '미디어 라이브러리';
+	@override String get tabSearch => '검색';
+	@override String get tabDownloads => '다운로드';
+	@override String get tabSettings => '설정';
+	@override String get previous => '이전';
+	@override String get playPause => '재생/일시정지';
+	@override String get next => '다음';
+	@override String get seekBack => '되감기';
+	@override String get stop => '정지';
+	@override String get seekForward => '빨리감기';
+	@override String get volume => '볼륨';
+	@override String get volumeDown => '줄이기';
+	@override String get volumeUp => '높이기';
+	@override String get fullscreen => '전체 화면';
+	@override String get subtitles => '자막';
+	@override String get audio => '오디오';
+	@override String get searchHint => '데스크톱에서 검색...';
+}
+
 /// The flat map containing all translations for locale <ko>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -988,12 +1140,9 @@ extension on TranslationsKo {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
-			'app.loading' => '로딩 중...',
 			'auth.signInWithPlex' => 'Plex 계정으로 로그인',
 			'auth.showQRCode' => 'QR 코드',
-			'auth.cancel' => '취소',
 			'auth.authenticate' => '인증',
-			'auth.retry' => '재시도',
 			'auth.debugEnterToken' => '디버깅을 위해 Plex 토큰을 입력하세요.',
 			'auth.plexTokenLabel' => 'Plex 인증 토큰',
 			'auth.plexTokenHint' => 'Plex.tv 토큰을 입력하세요',
@@ -1018,11 +1167,25 @@ extension on TranslationsKo {
 			'common.delete' => '삭제',
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
+			'common.remove' => '삭제',
+			'common.paste' => '붙여넣기',
+			'common.connect' => '연결',
+			'common.disconnect' => '연결 해제',
+			'common.play' => '재생',
+			'common.pause' => '일시정지',
+			'common.resume' => '재개',
+			'common.error' => '오류',
+			'common.search' => '검색',
+			'common.home' => '홈',
+			'common.back' => '뒤로',
+			'common.settings' => '설정',
+			'common.mute' => '음소거',
+			'common.ok' => '확인',
+			'common.loading' => '로딩 중...',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
 			'screens.mpvConfig' => 'MPV 설정',
-			'screens.search' => '검색',
 			'screens.logs' => '로그',
 			'update.available' => '사용 가능한 업데이트',
 			'update.versionAvailable' => ({required Object version}) => '버전 ${version} 출시됨',
@@ -1176,6 +1339,7 @@ extension on TranslationsKo {
 			'hotkeys.actions.subSeekNext' => '다음 자막으로 이동',
 			'hotkeys.actions.subSeekPrev' => '이전 자막으로 이동',
 			'hotkeys.actions.shaderToggle' => '셰이더 전환',
+			'hotkeys.actions.skipMarker' => '인트로/크레딧 건너뛰기',
 			'pinEntry.enterPin' => 'PIN 입력',
 			'pinEntry.showPin' => 'PIN 표시',
 			'pinEntry.hidePin' => 'PIN 숨기기',
@@ -1266,13 +1430,14 @@ extension on TranslationsKo {
 			'videoControls.timelineSlider' => '타임라인',
 			'videoControls.volumeSlider' => '볼륨 조절',
 			'videoControls.endsAt' => ({required Object time}) => '${time}에 종료',
-			'videoControls.backButton' => '뒤로 가기',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
 			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요',
 			'videoControls.pipErrors.notSupported' => '이 기기는 화면 속 화면 모드를 지원하지 않습니다',
 			'videoControls.pipErrors.failed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '오류가 발생했습니다: ${error}',
+			'videoControls.chapters' => '챕터',
+			'videoControls.noChaptersAvailable' => '사용 가능한 챕터가 없습니다',
 			'userStatus.admin' => '관리자',
 			'userStatus.restricted' => '제한됨',
 			'userStatus.protected' => '보호됨',
@@ -1343,16 +1508,12 @@ extension on TranslationsKo {
 			'mpvConfig.confirmDeleteProperty' => '이 속성을 삭제 하시겠습니까?',
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} 항목',
 			'dialog.confirmAction' => '확인',
-			'dialog.cancel' => '취소',
 			'discover.title' => '발견',
 			'discover.switchProfile' => '사용자 전환',
-			'discover.logout' => '로그아웃',
 			'discover.noContentAvailable' => '사용 가능한 콘텐츠가 없습니다',
 			'discover.addMediaToLibraries' => '미디어 라이브러리에 미디어를 추가해 주세요',
 			'discover.continueWatching' => '계속 시청',
-			'discover.play' => '재생',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
-			'discover.pause' => '일시정지',
 			'discover.overview' => '개요',
 			'discover.cast' => '출연진',
 			'discover.seasons' => '시즌 수',
@@ -1442,10 +1603,7 @@ extension on TranslationsKo {
 			'licenses.license' => '라이선스',
 			'licenses.licenseNumber' => ({required Object number}) => '라이선스 ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} 개의 라이선스',
-			'navigation.home' => '홈',
-			'navigation.search' => '검색',
 			'navigation.libraries' => '미디어 라이브러리',
-			'navigation.settings' => '설정',
 			'navigation.downloads' => '다운로드',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
@@ -1493,14 +1651,14 @@ extension on TranslationsKo {
 			'playlists.errorDeleting' => '재생 목록 삭제 실패',
 			'playlists.errorLoading' => '재생 목록 로드 실패',
 			'playlists.errorAdding' => '재생 목록에 추가 실패',
+			_ => null,
+		} ?? switch (path) {
 			'playlists.errorReordering' => '재생 목록 항목 재정렬 실패',
 			'playlists.errorRemoving' => '재생 목록에서 제거 실패',
 			'watchTogether.title' => '함께 보기',
 			'watchTogether.description' => '친구 및 가족과 콘텐츠를 동시에 시청하세요',
 			'watchTogether.createSession' => '세션 생성',
 			'watchTogether.creating' => '생성 중...',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.joinSession' => '세션 참여',
 			'watchTogether.joining' => '참가 중...',
 			'watchTogether.controlMode' => '제어 모드',
@@ -1553,12 +1711,108 @@ extension on TranslationsKo {
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => '${title} 삭제 중... (${current}/${total})',
+			'downloads.noDownloadsTree' => '다운로드 없음',
+			'downloads.pauseAll' => '모두 일시정지',
+			'downloads.resumeAll' => '모두 재개',
+			'downloads.deleteAll' => '모두 삭제',
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
 			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',
 			'shaders.qualityFast' => '빠름',
 			'shaders.qualityHQ' => '고품질',
 			'shaders.mode' => '모드',
+			'companionRemote.title' => 'Companion Remote',
+			'companionRemote.connectToDevice' => '기기에 연결',
+			'companionRemote.hostRemoteSession' => '원격 세션 호스트',
+			'companionRemote.controlThisDevice' => '휴대폰으로 이 기기를 제어하세요',
+			'companionRemote.remoteControl' => '원격 제어',
+			'companionRemote.controlDesktop' => '데스크톱 기기 제어',
+			'companionRemote.connectedTo' => ({required Object name}) => '${name}에 연결됨',
+			'companionRemote.session.creatingSession' => '원격 세션 생성 중...',
+			'companionRemote.session.failedToCreate' => '원격 세션 생성 실패:',
+			'companionRemote.session.noSession' => '사용 가능한 세션이 없습니다',
+			'companionRemote.session.scanQrCode' => 'QR 코드 스캔',
+			'companionRemote.session.orEnterManually' => '또는 수동으로 입력',
+			'companionRemote.session.hostAddress' => '호스트 주소',
+			'companionRemote.session.sessionId' => '세션 ID',
+			'companionRemote.session.pin' => 'PIN',
+			'companionRemote.session.connected' => '연결됨',
+			'companionRemote.session.waitingForConnection' => '연결 대기 중...',
+			'companionRemote.session.usePhoneToControl' => '모바일 기기로 이 앱을 제어하세요',
+			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label}이(가) 클립보드에 복사되었습니다',
+			'companionRemote.session.copyToClipboard' => '클립보드에 복사',
+			'companionRemote.session.newSession' => '새 세션',
+			'companionRemote.session.minimize' => '최소화',
+			'companionRemote.pairing.recent' => '최근',
+			'companionRemote.pairing.scan' => '스캔',
+			'companionRemote.pairing.manual' => '수동',
+			'companionRemote.pairing.recentConnections' => '최근 연결',
+			'companionRemote.pairing.quickReconnect' => '이전에 페어링한 기기에 빠르게 재연결',
+			'companionRemote.pairing.pairWithDesktop' => '데스크톱과 페어링',
+			'companionRemote.pairing.enterSessionDetails' => '데스크톱 기기에 표시된 세션 정보를 입력하세요',
+			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
+			'companionRemote.pairing.sessionIdHint' => '8자리 세션 ID 입력',
+			'companionRemote.pairing.pinHint' => '6자리 PIN 입력',
+			'companionRemote.pairing.connecting' => '연결 중...',
+			'companionRemote.pairing.tips' => '팁',
+			'companionRemote.pairing.tipDesktop' => '데스크톱에서 Plezy를 열고 설정 또는 메뉴에서 Companion Remote를 활성화하세요',
+			'companionRemote.pairing.tipScan' => '스캔 탭을 사용하여 데스크톱의 QR 코드를 스캔하면 빠르게 페어링할 수 있습니다',
+			'companionRemote.pairing.tipWifi' => '두 기기가 동일한 WiFi 네트워크에 연결되어 있는지 확인하세요',
+			'companionRemote.pairing.cameraPermissionRequired' => 'QR 코드를 스캔하려면 카메라 권한이 필요합니다.\n기기 설정에서 카메라 접근을 허용해 주세요.',
+			'companionRemote.pairing.cameraError' => ({required Object error}) => '카메라를 시작할 수 없습니다: ${error}',
+			'companionRemote.pairing.scanInstruction' => '데스크톱에 표시된 QR 코드에 카메라를 향하세요',
+			'companionRemote.pairing.noRecentConnections' => '최근 연결 없음',
+			'companionRemote.pairing.connectUsingManual' => '수동 입력으로 기기에 연결하여 시작하세요',
+			'companionRemote.pairing.invalidQrCode' => '유효하지 않은 QR 코드 형식',
+			'companionRemote.pairing.removeRecentConnection' => '최근 연결 삭제',
+			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '"${name}"을(를) 최근 연결에서 삭제하시겠습니까?',
+			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
+			'companionRemote.pairing.validationHostFormat' => 'IP:포트 형식이어야 합니다 (예: 192.168.1.100:48632)',
+			'companionRemote.pairing.validationSessionIdRequired' => '세션 ID를 입력하세요',
+			'companionRemote.pairing.validationSessionIdLength' => '세션 ID는 8자리여야 합니다',
+			'companionRemote.pairing.validationPinRequired' => 'PIN을 입력하세요',
+			'companionRemote.pairing.validationPinLength' => 'PIN은 6자리여야 합니다',
+			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 세션 ID와 PIN을 확인하세요.',
+			'companionRemote.pairing.sessionNotFound' => '세션을 찾을 수 없습니다. 자격 증명을 확인하세요.',
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
+			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => '최근 세션 로드 실패: ${error}',
+			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
+			'companionRemote.remote.reconnecting' => '재연결 중...',
+			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current}/5 시도 중',
+			'companionRemote.remote.retryNow' => '지금 재시도',
+			'companionRemote.remote.connectionError' => '연결 오류',
+			'companionRemote.remote.notConnected' => '연결되지 않음',
+			'companionRemote.remote.tabRemote' => '리모컨',
+			'companionRemote.remote.tabPlay' => '재생',
+			'companionRemote.remote.tabMore' => '더 보기',
+			'companionRemote.remote.menu' => '메뉴',
+			'companionRemote.remote.tabNavigation' => '탭 탐색',
+			'companionRemote.remote.tabDiscover' => '발견',
+			'companionRemote.remote.tabLibraries' => '미디어 라이브러리',
+			'companionRemote.remote.tabSearch' => '검색',
+			'companionRemote.remote.tabDownloads' => '다운로드',
+			'companionRemote.remote.tabSettings' => '설정',
+			'companionRemote.remote.previous' => '이전',
+			'companionRemote.remote.playPause' => '재생/일시정지',
+			'companionRemote.remote.next' => '다음',
+			'companionRemote.remote.seekBack' => '되감기',
+			'companionRemote.remote.stop' => '정지',
+			'companionRemote.remote.seekForward' => '빨리감기',
+			'companionRemote.remote.volume' => '볼륨',
+			'companionRemote.remote.volumeDown' => '줄이기',
+			'companionRemote.remote.volumeUp' => '높이기',
+			'companionRemote.remote.fullscreen' => '전체 화면',
+			'companionRemote.remote.subtitles' => '자막',
+			'companionRemote.remote.audio' => '오디오',
+			'companionRemote.remote.searchHint' => '데스크톱에서 검색...',
+			'videoSettings.playbackSettings' => '재생 설정',
+			'videoSettings.playbackSpeed' => '재생 속도',
+			'videoSettings.sleepTimer' => '취침 타이머',
+			'videoSettings.audioSync' => '오디오 동기화',
+			'videoSettings.subtitleSync' => '자막 동기화',
+			'videoSettings.hdr' => 'HDR',
+			'videoSettings.audioOutput' => '오디오 출력',
+			'videoSettings.performanceOverlay' => '성능 오버레이',
 			_ => null,
 		};
 	}

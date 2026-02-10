@@ -1,14 +1,11 @@
 {
   "app": {
-    "title": "Plezy",
-    "loading": "Caricamento..."
-  },
+    "title": "Plezy"
+},
   "auth": {
     "signInWithPlex": "Accedi con Plex",
     "showQRCode": "Mostra QR Code",
-    "cancel": "Cancella",
     "authenticate": "Autenticazione",
-    "retry": "Riprova",
     "debugEnterToken": "Debug: Inserisci Token Plex",
     "plexTokenLabel": "Token Auth Plex",
     "plexTokenHint": "Inserisci il tuo token di Plex.tv",
@@ -34,14 +31,28 @@
     "no": "No",
     "delete": "Elimina",
     "shuffle": "Casuale",
-    "addTo": "Aggiungi a..."
+    "addTo": "Aggiungi a...",
+    "remove": "Rimuovi",
+    "paste": "Incolla",
+    "connect": "Connetti",
+    "disconnect": "Disconnetti",
+    "play": "Riproduci",
+    "pause": "Pausa",
+    "resume": "Riprendi",
+    "error": "Errore",
+    "search": "Cerca",
+    "home": "Home",
+    "back": "Indietro",
+    "settings": "Impostazioni",
+    "mute": "Muto",
+    "ok": "OK",
+    "loading": "Caricamento..."
   },
   "screens": {
     "licenses": "Licenze",
     "switchProfile": "Cambia profilo",
     "subtitleStyling": "Stile sottotitoli",
     "mpvConfig": "Configurazione MPV",
-    "search": "Cerca",
     "logs": "Registro"
   },
   "update": {
@@ -203,7 +214,8 @@
       "speedReset": "Ripristina velocità",
       "subSeekNext": "Vai al sottotitolo successivo",
       "subSeekPrev": "Vai al sottotitolo precedente",
-      "shaderToggle": "Attiva/disattiva shader"
+      "shaderToggle": "Attiva/disattiva shader",
+      "skipMarker": "Salta intro/titoli di coda"
     }
   },
   "pinEntry": {
@@ -307,7 +319,6 @@
     "timelineSlider": "Timeline video",
     "volumeSlider": "Livello volume",
     "endsAt": "Finisce alle ${time}",
-    "backButton": "Indietro",
     "pipFailed": "Impossibile avviare la modalità Picture-in-Picture",
     "pipErrors": {
       "androidVersion": "Richiede Android 8.0 o versioni successive",
@@ -315,7 +326,9 @@
       "notSupported": "Questo dispositivo non supporta la modalità Picture-in-Picture",
       "failed": "Impossibile avviare la modalità Picture-in-Picture",
       "unknown": "Si è verificato un errore: ${error}"
-    }
+    },
+    "chapters": "Capitoli",
+    "noChaptersAvailable": "Nessun capitolo disponibile"
   },
   "userStatus": {
     "admin": "Admin",
@@ -395,19 +408,15 @@
     "entriesCount": "${count} voci"
   },
   "dialog": {
-    "confirmAction": "Conferma azione",
-    "cancel": "Cancella"
+    "confirmAction": "Conferma azione"
   },
   "discover": {
     "title": "Esplora",
     "switchProfile": "Cambia profilo",
-    "logout": "Disconnetti",
     "noContentAvailable": "Nessun contenuto disponibile",
     "addMediaToLibraries": "Aggiungi alcuni file multimediali alle tue librerie",
     "continueWatching": "Continua a guardare",
-    "play": "Riproduci",
     "playEpisode": "S${season}E${episode}",
-    "pause": "Pausa",
     "overview": "Panoramica",
     "cast": "Attori",
     "seasons": "Stagioni",
@@ -517,10 +526,7 @@
     "licensesCount": "${count} licenze"
   },
   "navigation": {
-    "home": "Home",
-    "search": "Cerca",
     "libraries": "Librerie",
-    "settings": "Impostazioni",
     "downloads": "Download"
   },
   "downloads": {
@@ -537,7 +543,11 @@
     "episodesQueued": "${count} episodi in coda per il download",
     "downloadDeleted": "Download eliminato",
     "deleteConfirm": "Sei sicuro di voler eliminare \"${title}\"? Il file scaricato verrà rimosso dal tuo dispositivo.",
-    "deletingWithProgress": "Eliminazione di ${title}... (${current} di ${total})"
+    "deletingWithProgress": "Eliminazione di ${title}... (${current} di ${total})",
+    "noDownloadsTree": "Nessun download",
+    "pauseAll": "Metti tutto in pausa",
+    "resumeAll": "Riprendi tutto",
+    "deleteAll": "Elimina tutto"
   },
   "playlists": {
     "title": "Playlist",
@@ -642,5 +652,107 @@
     "qualityFast": "Veloce",
     "qualityHQ": "Alta qualità",
     "mode": "Modalità"
+  },
+  "companionRemote": {
+    "title": "Companion Remote",
+    "connectToDevice": "Connetti a un dispositivo",
+    "hostRemoteSession": "Ospita sessione remota",
+    "controlThisDevice": "Controlla questo dispositivo con il tuo telefono",
+    "remoteControl": "Telecomando",
+    "controlDesktop": "Controlla un dispositivo desktop",
+    "connectedTo": "Connesso a ${name}",
+    "session": {
+      "creatingSession": "Creazione sessione remota...",
+      "failedToCreate": "Impossibile creare la sessione remota:",
+      "noSession": "Nessuna sessione disponibile",
+      "scanQrCode": "Scansiona QR Code",
+      "orEnterManually": "Oppure inserisci manualmente",
+      "hostAddress": "Indirizzo host",
+      "sessionId": "ID sessione",
+      "pin": "PIN",
+      "connected": "Connesso",
+      "waitingForConnection": "In attesa di connessione...",
+      "usePhoneToControl": "Usa il tuo dispositivo mobile per controllare questa app",
+      "copiedToClipboard": "${label} copiato negli appunti",
+      "copyToClipboard": "Copia negli appunti",
+      "newSession": "Nuova sessione",
+      "minimize": "Riduci"
+    },
+    "pairing": {
+      "recent": "Recenti",
+      "scan": "Scansiona",
+      "manual": "Manuale",
+      "recentConnections": "Connessioni recenti",
+      "quickReconnect": "Riconnettiti rapidamente ai dispositivi associati in precedenza",
+      "pairWithDesktop": "Associa con desktop",
+      "enterSessionDetails": "Inserisci i dettagli della sessione mostrati sul tuo dispositivo desktop",
+      "hostAddressHint": "192.168.1.100:48632",
+      "sessionIdHint": "Inserisci ID sessione di 8 caratteri",
+      "pinHint": "Inserisci PIN di 6 cifre",
+      "connecting": "Connessione...",
+      "tips": "Suggerimenti",
+      "tipDesktop": "Apri Plezy sul tuo desktop e abilita Companion Remote dalle impostazioni o dal menu",
+      "tipScan": "Usa la scheda Scansiona per associare rapidamente scansionando il QR code sul tuo desktop",
+      "tipWifi": "Assicurati che entrambi i dispositivi siano sulla stessa rete WiFi",
+      "cameraPermissionRequired": "L'autorizzazione della fotocamera è necessaria per scansionare i QR code.\nConcedi l'accesso alla fotocamera nelle impostazioni del dispositivo.",
+      "cameraError": "Impossibile avviare la fotocamera: ${error}",
+      "scanInstruction": "Punta la fotocamera verso il QR code mostrato sul tuo desktop",
+      "noRecentConnections": "Nessuna connessione recente",
+      "connectUsingManual": "Connettiti a un dispositivo tramite inserimento manuale per iniziare",
+      "invalidQrCode": "Formato QR code non valido",
+      "removeRecentConnection": "Rimuovi connessione recente",
+      "removeConfirm": "Rimuovere \"${name}\" dalle connessioni recenti?",
+      "validationHostRequired": "Inserisci l'indirizzo host",
+      "validationHostFormat": "Il formato deve essere IP:porta (es. 192.168.1.100:48632)",
+      "validationSessionIdRequired": "Inserisci un ID sessione",
+      "validationSessionIdLength": "L'ID sessione deve essere di 8 caratteri",
+      "validationPinRequired": "Inserisci un PIN",
+      "validationPinLength": "Il PIN deve essere di 6 cifre",
+      "connectionTimedOut": "Connessione scaduta. Verifica l'ID sessione e il PIN.",
+      "sessionNotFound": "Sessione non trovata. Verifica le tue credenziali.",
+      "failedToConnect": "Connessione fallita: ${error}",
+      "failedToLoadRecent": "Impossibile caricare le sessioni recenti: ${error}"
+    },
+    "remote": {
+      "disconnectConfirm": "Vuoi disconnetterti dalla sessione remota?",
+      "reconnecting": "Riconnessione...",
+      "attemptOf": "Tentativo ${current} di 5",
+      "retryNow": "Riprova ora",
+      "connectionError": "Errore di connessione",
+      "notConnected": "Non connesso",
+      "tabRemote": "Telecomando",
+      "tabPlay": "Riproduci",
+      "tabMore": "Altro",
+      "menu": "Menu",
+      "tabNavigation": "Navigazione schede",
+      "tabDiscover": "Esplora",
+      "tabLibraries": "Librerie",
+      "tabSearch": "Cerca",
+      "tabDownloads": "Download",
+      "tabSettings": "Impostazioni",
+      "previous": "Precedente",
+      "playPause": "Riproduci/Pausa",
+      "next": "Successivo",
+      "seekBack": "Riavvolgi",
+      "stop": "Ferma",
+      "seekForward": "Avanti",
+      "volume": "Volume",
+      "volumeDown": "Abbassa",
+      "volumeUp": "Alza",
+      "fullscreen": "Schermo intero",
+      "subtitles": "Sottotitoli",
+      "audio": "Audio",
+      "searchHint": "Cerca sul desktop..."
+    }
+  },
+  "videoSettings": {
+    "playbackSettings": "Impostazioni di riproduzione",
+    "playbackSpeed": "Velocità di riproduzione",
+    "sleepTimer": "Timer di spegnimento",
+    "audioSync": "Sincronizzazione audio",
+    "subtitleSync": "Sincronizzazione sottotitoli",
+    "hdr": "HDR",
+    "audioOutput": "Uscita audio",
+    "performanceOverlay": "Overlay prestazioni"
   }
 }

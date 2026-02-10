@@ -42,7 +42,7 @@ class VideoControlsHeader extends StatelessWidget {
       children: [
         AppBarBackButton(
           style: BackButtonStyle.video,
-          semanticLabel: t.videoControls.backButton,
+          semanticLabel: t.common.back,
           onPressed: onBack ?? () => Navigator.of(context).pop(true),
         ),
         const SizedBox(width: 16),

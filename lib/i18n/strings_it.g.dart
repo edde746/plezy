@@ -70,6 +70,8 @@ class TranslationsIt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCollectionsIt collections = _TranslationsCollectionsIt._(_root);
 	@override late final _TranslationsWatchTogetherIt watchTogether = _TranslationsWatchTogetherIt._(_root);
 	@override late final _TranslationsShadersIt shaders = _TranslationsShadersIt._(_root);
+	@override late final _TranslationsCompanionRemoteIt companionRemote = _TranslationsCompanionRemoteIt._(_root);
+	@override late final _TranslationsVideoSettingsIt videoSettings = _TranslationsVideoSettingsIt._(_root);
 }
 
 // Path: app
@@ -80,7 +82,6 @@ class _TranslationsAppIt implements TranslationsAppEn {
 
 	// Translations
 	@override String get title => 'Plezy';
-	@override String get loading => 'Caricamento...';
 }
 
 // Path: auth
@@ -92,9 +93,7 @@ class _TranslationsAuthIt implements TranslationsAuthEn {
 	// Translations
 	@override String get signInWithPlex => 'Accedi con Plex';
 	@override String get showQRCode => 'Mostra QR Code';
-	@override String get cancel => 'Cancella';
 	@override String get authenticate => 'Autenticazione';
-	@override String get retry => 'Riprova';
 	@override String get debugEnterToken => 'Debug: Inserisci Token Plex';
 	@override String get plexTokenLabel => 'Token Auth Plex';
 	@override String get plexTokenHint => 'Inserisci il tuo token di Plex.tv';
@@ -128,6 +127,21 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get delete => 'Elimina';
 	@override String get shuffle => 'Casuale';
 	@override String get addTo => 'Aggiungi a...';
+	@override String get remove => 'Rimuovi';
+	@override String get paste => 'Incolla';
+	@override String get connect => 'Connetti';
+	@override String get disconnect => 'Disconnetti';
+	@override String get play => 'Riproduci';
+	@override String get pause => 'Pausa';
+	@override String get resume => 'Riprendi';
+	@override String get error => 'Errore';
+	@override String get search => 'Cerca';
+	@override String get home => 'Home';
+	@override String get back => 'Indietro';
+	@override String get settings => 'Impostazioni';
+	@override String get mute => 'Muto';
+	@override String get ok => 'OK';
+	@override String get loading => 'Caricamento...';
 }
 
 // Path: screens
@@ -141,7 +155,6 @@ class _TranslationsScreensIt implements TranslationsScreensEn {
 	@override String get switchProfile => 'Cambia profilo';
 	@override String get subtitleStyling => 'Stile sottotitoli';
 	@override String get mpvConfig => 'Configurazione MPV';
-	@override String get search => 'Cerca';
 	@override String get logs => 'Registro';
 }
 
@@ -458,9 +471,10 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Timeline video';
 	@override String get volumeSlider => 'Livello volume';
 	@override String endsAt({required Object time}) => 'Finisce alle ${time}';
-	@override String get backButton => 'Indietro';
 	@override String get pipFailed => 'Impossibile avviare la modalità Picture-in-Picture';
 	@override late final _TranslationsVideoControlsPipErrorsIt pipErrors = _TranslationsVideoControlsPipErrorsIt._(_root);
+	@override String get chapters => 'Capitoli';
+	@override String get noChaptersAvailable => 'Nessun capitolo disponibile';
 }
 
 // Path: userStatus
@@ -576,7 +590,6 @@ class _TranslationsDialogIt implements TranslationsDialogEn {
 
 	// Translations
 	@override String get confirmAction => 'Conferma azione';
-	@override String get cancel => 'Cancella';
 }
 
 // Path: discover
@@ -588,13 +601,10 @@ class _TranslationsDiscoverIt implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => 'Esplora';
 	@override String get switchProfile => 'Cambia profilo';
-	@override String get logout => 'Disconnetti';
 	@override String get noContentAvailable => 'Nessun contenuto disponibile';
 	@override String get addMediaToLibraries => 'Aggiungi alcuni file multimediali alle tue librerie';
 	@override String get continueWatching => 'Continua a guardare';
-	@override String get play => 'Riproduci';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
-	@override String get pause => 'Pausa';
 	@override String get overview => 'Panoramica';
 	@override String get cast => 'Attori';
 	@override String get seasons => 'Stagioni';
@@ -748,10 +758,7 @@ class _TranslationsNavigationIt implements TranslationsNavigationEn {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get home => 'Home';
-	@override String get search => 'Cerca';
 	@override String get libraries => 'Librerie';
-	@override String get settings => 'Impostazioni';
 	@override String get downloads => 'Download';
 }
 
@@ -776,6 +783,10 @@ class _TranslationsDownloadsIt implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Download eliminato';
 	@override String deleteConfirm({required Object title}) => 'Sei sicuro di voler eliminare "${title}"? Il file scaricato verrà rimosso dal tuo dispositivo.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Eliminazione di ${title}... (${current} di ${total})';
+	@override String get noDownloadsTree => 'Nessun download';
+	@override String get pauseAll => 'Metti tutto in pausa';
+	@override String get resumeAll => 'Riprendi tutto';
+	@override String get deleteAll => 'Elimina tutto';
 }
 
 // Path: playlists
@@ -910,6 +921,42 @@ class _TranslationsShadersIt implements TranslationsShadersEn {
 	@override String get mode => 'Modalità';
 }
 
+// Path: companionRemote
+class _TranslationsCompanionRemoteIt implements TranslationsCompanionRemoteEn {
+	_TranslationsCompanionRemoteIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Companion Remote';
+	@override String get connectToDevice => 'Connetti a un dispositivo';
+	@override String get hostRemoteSession => 'Ospita sessione remota';
+	@override String get controlThisDevice => 'Controlla questo dispositivo con il tuo telefono';
+	@override String get remoteControl => 'Telecomando';
+	@override String get controlDesktop => 'Controlla un dispositivo desktop';
+	@override String connectedTo({required Object name}) => 'Connesso a ${name}';
+	@override late final _TranslationsCompanionRemoteSessionIt session = _TranslationsCompanionRemoteSessionIt._(_root);
+	@override late final _TranslationsCompanionRemotePairingIt pairing = _TranslationsCompanionRemotePairingIt._(_root);
+	@override late final _TranslationsCompanionRemoteRemoteIt remote = _TranslationsCompanionRemoteRemoteIt._(_root);
+}
+
+// Path: videoSettings
+class _TranslationsVideoSettingsIt implements TranslationsVideoSettingsEn {
+	_TranslationsVideoSettingsIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get playbackSettings => 'Impostazioni di riproduzione';
+	@override String get playbackSpeed => 'Velocità di riproduzione';
+	@override String get sleepTimer => 'Timer di spegnimento';
+	@override String get audioSync => 'Sincronizzazione audio';
+	@override String get subtitleSync => 'Sincronizzazione sottotitoli';
+	@override String get hdr => 'HDR';
+	@override String get audioOutput => 'Uscita audio';
+	@override String get performanceOverlay => 'Overlay prestazioni';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsIt implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsIt._(this._root);
@@ -935,6 +982,7 @@ class _TranslationsHotkeysActionsIt implements TranslationsHotkeysActionsEn {
 	@override String get subSeekNext => 'Vai al sottotitolo successivo';
 	@override String get subSeekPrev => 'Vai al sottotitolo precedente';
 	@override String get shaderToggle => 'Attiva/disattiva shader';
+	@override String get skipMarker => 'Salta intro/titoli di coda';
 }
 
 // Path: videoControls.pipErrors
@@ -979,6 +1027,110 @@ class _TranslationsLibrariesGroupingsIt implements TranslationsLibrariesGrouping
 	@override String get folders => 'Cartelle';
 }
 
+// Path: companionRemote.session
+class _TranslationsCompanionRemoteSessionIt implements TranslationsCompanionRemoteSessionEn {
+	_TranslationsCompanionRemoteSessionIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get creatingSession => 'Creazione sessione remota...';
+	@override String get failedToCreate => 'Impossibile creare la sessione remota:';
+	@override String get noSession => 'Nessuna sessione disponibile';
+	@override String get scanQrCode => 'Scansiona QR Code';
+	@override String get orEnterManually => 'Oppure inserisci manualmente';
+	@override String get hostAddress => 'Indirizzo host';
+	@override String get sessionId => 'ID sessione';
+	@override String get pin => 'PIN';
+	@override String get connected => 'Connesso';
+	@override String get waitingForConnection => 'In attesa di connessione...';
+	@override String get usePhoneToControl => 'Usa il tuo dispositivo mobile per controllare questa app';
+	@override String copiedToClipboard({required Object label}) => '${label} copiato negli appunti';
+	@override String get copyToClipboard => 'Copia negli appunti';
+	@override String get newSession => 'Nuova sessione';
+	@override String get minimize => 'Riduci';
+}
+
+// Path: companionRemote.pairing
+class _TranslationsCompanionRemotePairingIt implements TranslationsCompanionRemotePairingEn {
+	_TranslationsCompanionRemotePairingIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get recent => 'Recenti';
+	@override String get scan => 'Scansiona';
+	@override String get manual => 'Manuale';
+	@override String get recentConnections => 'Connessioni recenti';
+	@override String get quickReconnect => 'Riconnettiti rapidamente ai dispositivi associati in precedenza';
+	@override String get pairWithDesktop => 'Associa con desktop';
+	@override String get enterSessionDetails => 'Inserisci i dettagli della sessione mostrati sul tuo dispositivo desktop';
+	@override String get hostAddressHint => '192.168.1.100:48632';
+	@override String get sessionIdHint => 'Inserisci ID sessione di 8 caratteri';
+	@override String get pinHint => 'Inserisci PIN di 6 cifre';
+	@override String get connecting => 'Connessione...';
+	@override String get tips => 'Suggerimenti';
+	@override String get tipDesktop => 'Apri Plezy sul tuo desktop e abilita Companion Remote dalle impostazioni o dal menu';
+	@override String get tipScan => 'Usa la scheda Scansiona per associare rapidamente scansionando il QR code sul tuo desktop';
+	@override String get tipWifi => 'Assicurati che entrambi i dispositivi siano sulla stessa rete WiFi';
+	@override String get cameraPermissionRequired => 'L\'autorizzazione della fotocamera è necessaria per scansionare i QR code.\nConcedi l\'accesso alla fotocamera nelle impostazioni del dispositivo.';
+	@override String cameraError({required Object error}) => 'Impossibile avviare la fotocamera: ${error}';
+	@override String get scanInstruction => 'Punta la fotocamera verso il QR code mostrato sul tuo desktop';
+	@override String get noRecentConnections => 'Nessuna connessione recente';
+	@override String get connectUsingManual => 'Connettiti a un dispositivo tramite inserimento manuale per iniziare';
+	@override String get invalidQrCode => 'Formato QR code non valido';
+	@override String get removeRecentConnection => 'Rimuovi connessione recente';
+	@override String removeConfirm({required Object name}) => 'Rimuovere "${name}" dalle connessioni recenti?';
+	@override String get validationHostRequired => 'Inserisci l\'indirizzo host';
+	@override String get validationHostFormat => 'Il formato deve essere IP:porta (es. 192.168.1.100:48632)';
+	@override String get validationSessionIdRequired => 'Inserisci un ID sessione';
+	@override String get validationSessionIdLength => 'L\'ID sessione deve essere di 8 caratteri';
+	@override String get validationPinRequired => 'Inserisci un PIN';
+	@override String get validationPinLength => 'Il PIN deve essere di 6 cifre';
+	@override String get connectionTimedOut => 'Connessione scaduta. Verifica l\'ID sessione e il PIN.';
+	@override String get sessionNotFound => 'Sessione non trovata. Verifica le tue credenziali.';
+	@override String failedToConnect({required Object error}) => 'Connessione fallita: ${error}';
+	@override String failedToLoadRecent({required Object error}) => 'Impossibile caricare le sessioni recenti: ${error}';
+}
+
+// Path: companionRemote.remote
+class _TranslationsCompanionRemoteRemoteIt implements TranslationsCompanionRemoteRemoteEn {
+	_TranslationsCompanionRemoteRemoteIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get disconnectConfirm => 'Vuoi disconnetterti dalla sessione remota?';
+	@override String get reconnecting => 'Riconnessione...';
+	@override String attemptOf({required Object current}) => 'Tentativo ${current} di 5';
+	@override String get retryNow => 'Riprova ora';
+	@override String get connectionError => 'Errore di connessione';
+	@override String get notConnected => 'Non connesso';
+	@override String get tabRemote => 'Telecomando';
+	@override String get tabPlay => 'Riproduci';
+	@override String get tabMore => 'Altro';
+	@override String get menu => 'Menu';
+	@override String get tabNavigation => 'Navigazione schede';
+	@override String get tabDiscover => 'Esplora';
+	@override String get tabLibraries => 'Librerie';
+	@override String get tabSearch => 'Cerca';
+	@override String get tabDownloads => 'Download';
+	@override String get tabSettings => 'Impostazioni';
+	@override String get previous => 'Precedente';
+	@override String get playPause => 'Riproduci/Pausa';
+	@override String get next => 'Successivo';
+	@override String get seekBack => 'Riavvolgi';
+	@override String get stop => 'Ferma';
+	@override String get seekForward => 'Avanti';
+	@override String get volume => 'Volume';
+	@override String get volumeDown => 'Abbassa';
+	@override String get volumeUp => 'Alza';
+	@override String get fullscreen => 'Schermo intero';
+	@override String get subtitles => 'Sottotitoli';
+	@override String get audio => 'Audio';
+	@override String get searchHint => 'Cerca sul desktop...';
+}
+
 /// The flat map containing all translations for locale <it>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -988,12 +1140,9 @@ extension on TranslationsIt {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
-			'app.loading' => 'Caricamento...',
 			'auth.signInWithPlex' => 'Accedi con Plex',
 			'auth.showQRCode' => 'Mostra QR Code',
-			'auth.cancel' => 'Cancella',
 			'auth.authenticate' => 'Autenticazione',
-			'auth.retry' => 'Riprova',
 			'auth.debugEnterToken' => 'Debug: Inserisci Token Plex',
 			'auth.plexTokenLabel' => 'Token Auth Plex',
 			'auth.plexTokenHint' => 'Inserisci il tuo token di Plex.tv',
@@ -1018,11 +1167,25 @@ extension on TranslationsIt {
 			'common.delete' => 'Elimina',
 			'common.shuffle' => 'Casuale',
 			'common.addTo' => 'Aggiungi a...',
+			'common.remove' => 'Rimuovi',
+			'common.paste' => 'Incolla',
+			'common.connect' => 'Connetti',
+			'common.disconnect' => 'Disconnetti',
+			'common.play' => 'Riproduci',
+			'common.pause' => 'Pausa',
+			'common.resume' => 'Riprendi',
+			'common.error' => 'Errore',
+			'common.search' => 'Cerca',
+			'common.home' => 'Home',
+			'common.back' => 'Indietro',
+			'common.settings' => 'Impostazioni',
+			'common.mute' => 'Muto',
+			'common.ok' => 'OK',
+			'common.loading' => 'Caricamento...',
 			'screens.licenses' => 'Licenze',
 			'screens.switchProfile' => 'Cambia profilo',
 			'screens.subtitleStyling' => 'Stile sottotitoli',
 			'screens.mpvConfig' => 'Configurazione MPV',
-			'screens.search' => 'Cerca',
 			'screens.logs' => 'Registro',
 			'update.available' => 'Aggiornamento disponibile',
 			'update.versionAvailable' => ({required Object version}) => 'Versione ${version} disponibile',
@@ -1176,6 +1339,7 @@ extension on TranslationsIt {
 			'hotkeys.actions.subSeekNext' => 'Vai al sottotitolo successivo',
 			'hotkeys.actions.subSeekPrev' => 'Vai al sottotitolo precedente',
 			'hotkeys.actions.shaderToggle' => 'Attiva/disattiva shader',
+			'hotkeys.actions.skipMarker' => 'Salta intro/titoli di coda',
 			'pinEntry.enterPin' => 'Inserisci PIN',
 			'pinEntry.showPin' => 'Mostra PIN',
 			'pinEntry.hidePin' => 'Nascondi PIN',
@@ -1266,13 +1430,14 @@ extension on TranslationsIt {
 			'videoControls.timelineSlider' => 'Timeline video',
 			'videoControls.volumeSlider' => 'Livello volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Finisce alle ${time}',
-			'videoControls.backButton' => 'Indietro',
 			'videoControls.pipFailed' => 'Impossibile avviare la modalità Picture-in-Picture',
 			'videoControls.pipErrors.androidVersion' => 'Richiede Android 8.0 o versioni successive',
 			'videoControls.pipErrors.permissionDisabled' => 'L\'autorizzazione Picture-in-Picture è disabilitata. Abilitala in Impostazioni > App > Plezy > Picture-in-Picture',
 			'videoControls.pipErrors.notSupported' => 'Questo dispositivo non supporta la modalità Picture-in-Picture',
 			'videoControls.pipErrors.failed' => 'Impossibile avviare la modalità Picture-in-Picture',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Si è verificato un errore: ${error}',
+			'videoControls.chapters' => 'Capitoli',
+			'videoControls.noChaptersAvailable' => 'Nessun capitolo disponibile',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Limitato',
 			'userStatus.protected' => 'Protetto',
@@ -1343,16 +1508,12 @@ extension on TranslationsIt {
 			'mpvConfig.confirmDeleteProperty' => 'Sei sicuro di voler eliminare questa proprietà?',
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} voci',
 			'dialog.confirmAction' => 'Conferma azione',
-			'dialog.cancel' => 'Cancella',
 			'discover.title' => 'Esplora',
 			'discover.switchProfile' => 'Cambia profilo',
-			'discover.logout' => 'Disconnetti',
 			'discover.noContentAvailable' => 'Nessun contenuto disponibile',
 			'discover.addMediaToLibraries' => 'Aggiungi alcuni file multimediali alle tue librerie',
 			'discover.continueWatching' => 'Continua a guardare',
-			'discover.play' => 'Riproduci',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
-			'discover.pause' => 'Pausa',
 			'discover.overview' => 'Panoramica',
 			'discover.cast' => 'Attori',
 			'discover.seasons' => 'Stagioni',
@@ -1442,10 +1603,7 @@ extension on TranslationsIt {
 			'licenses.license' => 'Licenza',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licenza ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenze',
-			'navigation.home' => 'Home',
-			'navigation.search' => 'Cerca',
 			'navigation.libraries' => 'Librerie',
-			'navigation.settings' => 'Impostazioni',
 			'navigation.downloads' => 'Download',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
@@ -1461,6 +1619,10 @@ extension on TranslationsIt {
 			'downloads.downloadDeleted' => 'Download eliminato',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Sei sicuro di voler eliminare "${title}"? Il file scaricato verrà rimosso dal tuo dispositivo.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Eliminazione di ${title}... (${current} di ${total})',
+			'downloads.noDownloadsTree' => 'Nessun download',
+			'downloads.pauseAll' => 'Metti tutto in pausa',
+			'downloads.resumeAll' => 'Riprendi tutto',
+			'downloads.deleteAll' => 'Elimina tutto',
 			'playlists.title' => 'Playlist',
 			'playlists.noPlaylists' => 'Nessuna playlist trovata',
 			'playlists.create' => 'Crea playlist',
@@ -1489,6 +1651,8 @@ extension on TranslationsIt {
 			'playlists.playlist' => 'Playlist',
 			'collections.title' => 'Raccolte',
 			'collections.collection' => 'Raccolta',
+			_ => null,
+		} ?? switch (path) {
 			'collections.empty' => 'La raccolta è vuota',
 			'collections.unknownLibrarySection' => 'Impossibile eliminare: sezione libreria sconosciuta',
 			'collections.deleteCollection' => 'Elimina raccolta',
@@ -1499,8 +1663,6 @@ extension on TranslationsIt {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Impossibile caricare gli elementi della raccolta: ${error}',
 			'collections.selectCollection' => 'Seleziona raccolta',
 			'collections.createNewCollection' => 'Crea nuova raccolta',
-			_ => null,
-		} ?? switch (path) {
 			'collections.collectionName' => 'Nome raccolta',
 			'collections.enterCollectionName' => 'Inserisci nome raccolta',
 			'collections.addedToCollection' => 'Aggiunto alla raccolta',
@@ -1559,6 +1721,98 @@ extension on TranslationsIt {
 			'shaders.qualityFast' => 'Veloce',
 			'shaders.qualityHQ' => 'Alta qualità',
 			'shaders.mode' => 'Modalità',
+			'companionRemote.title' => 'Companion Remote',
+			'companionRemote.connectToDevice' => 'Connetti a un dispositivo',
+			'companionRemote.hostRemoteSession' => 'Ospita sessione remota',
+			'companionRemote.controlThisDevice' => 'Controlla questo dispositivo con il tuo telefono',
+			'companionRemote.remoteControl' => 'Telecomando',
+			'companionRemote.controlDesktop' => 'Controlla un dispositivo desktop',
+			'companionRemote.connectedTo' => ({required Object name}) => 'Connesso a ${name}',
+			'companionRemote.session.creatingSession' => 'Creazione sessione remota...',
+			'companionRemote.session.failedToCreate' => 'Impossibile creare la sessione remota:',
+			'companionRemote.session.noSession' => 'Nessuna sessione disponibile',
+			'companionRemote.session.scanQrCode' => 'Scansiona QR Code',
+			'companionRemote.session.orEnterManually' => 'Oppure inserisci manualmente',
+			'companionRemote.session.hostAddress' => 'Indirizzo host',
+			'companionRemote.session.sessionId' => 'ID sessione',
+			'companionRemote.session.pin' => 'PIN',
+			'companionRemote.session.connected' => 'Connesso',
+			'companionRemote.session.waitingForConnection' => 'In attesa di connessione...',
+			'companionRemote.session.usePhoneToControl' => 'Usa il tuo dispositivo mobile per controllare questa app',
+			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} copiato negli appunti',
+			'companionRemote.session.copyToClipboard' => 'Copia negli appunti',
+			'companionRemote.session.newSession' => 'Nuova sessione',
+			'companionRemote.session.minimize' => 'Riduci',
+			'companionRemote.pairing.recent' => 'Recenti',
+			'companionRemote.pairing.scan' => 'Scansiona',
+			'companionRemote.pairing.manual' => 'Manuale',
+			'companionRemote.pairing.recentConnections' => 'Connessioni recenti',
+			'companionRemote.pairing.quickReconnect' => 'Riconnettiti rapidamente ai dispositivi associati in precedenza',
+			'companionRemote.pairing.pairWithDesktop' => 'Associa con desktop',
+			'companionRemote.pairing.enterSessionDetails' => 'Inserisci i dettagli della sessione mostrati sul tuo dispositivo desktop',
+			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
+			'companionRemote.pairing.sessionIdHint' => 'Inserisci ID sessione di 8 caratteri',
+			'companionRemote.pairing.pinHint' => 'Inserisci PIN di 6 cifre',
+			'companionRemote.pairing.connecting' => 'Connessione...',
+			'companionRemote.pairing.tips' => 'Suggerimenti',
+			'companionRemote.pairing.tipDesktop' => 'Apri Plezy sul tuo desktop e abilita Companion Remote dalle impostazioni o dal menu',
+			'companionRemote.pairing.tipScan' => 'Usa la scheda Scansiona per associare rapidamente scansionando il QR code sul tuo desktop',
+			'companionRemote.pairing.tipWifi' => 'Assicurati che entrambi i dispositivi siano sulla stessa rete WiFi',
+			'companionRemote.pairing.cameraPermissionRequired' => 'L\'autorizzazione della fotocamera è necessaria per scansionare i QR code.\nConcedi l\'accesso alla fotocamera nelle impostazioni del dispositivo.',
+			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Impossibile avviare la fotocamera: ${error}',
+			'companionRemote.pairing.scanInstruction' => 'Punta la fotocamera verso il QR code mostrato sul tuo desktop',
+			'companionRemote.pairing.noRecentConnections' => 'Nessuna connessione recente',
+			'companionRemote.pairing.connectUsingManual' => 'Connettiti a un dispositivo tramite inserimento manuale per iniziare',
+			'companionRemote.pairing.invalidQrCode' => 'Formato QR code non valido',
+			'companionRemote.pairing.removeRecentConnection' => 'Rimuovi connessione recente',
+			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Rimuovere "${name}" dalle connessioni recenti?',
+			'companionRemote.pairing.validationHostRequired' => 'Inserisci l\'indirizzo host',
+			'companionRemote.pairing.validationHostFormat' => 'Il formato deve essere IP:porta (es. 192.168.1.100:48632)',
+			'companionRemote.pairing.validationSessionIdRequired' => 'Inserisci un ID sessione',
+			'companionRemote.pairing.validationSessionIdLength' => 'L\'ID sessione deve essere di 8 caratteri',
+			'companionRemote.pairing.validationPinRequired' => 'Inserisci un PIN',
+			'companionRemote.pairing.validationPinLength' => 'Il PIN deve essere di 6 cifre',
+			'companionRemote.pairing.connectionTimedOut' => 'Connessione scaduta. Verifica l\'ID sessione e il PIN.',
+			'companionRemote.pairing.sessionNotFound' => 'Sessione non trovata. Verifica le tue credenziali.',
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Connessione fallita: ${error}',
+			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Impossibile caricare le sessioni recenti: ${error}',
+			'companionRemote.remote.disconnectConfirm' => 'Vuoi disconnetterti dalla sessione remota?',
+			'companionRemote.remote.reconnecting' => 'Riconnessione...',
+			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentativo ${current} di 5',
+			'companionRemote.remote.retryNow' => 'Riprova ora',
+			'companionRemote.remote.connectionError' => 'Errore di connessione',
+			'companionRemote.remote.notConnected' => 'Non connesso',
+			'companionRemote.remote.tabRemote' => 'Telecomando',
+			'companionRemote.remote.tabPlay' => 'Riproduci',
+			'companionRemote.remote.tabMore' => 'Altro',
+			'companionRemote.remote.menu' => 'Menu',
+			'companionRemote.remote.tabNavigation' => 'Navigazione schede',
+			'companionRemote.remote.tabDiscover' => 'Esplora',
+			'companionRemote.remote.tabLibraries' => 'Librerie',
+			'companionRemote.remote.tabSearch' => 'Cerca',
+			'companionRemote.remote.tabDownloads' => 'Download',
+			'companionRemote.remote.tabSettings' => 'Impostazioni',
+			'companionRemote.remote.previous' => 'Precedente',
+			'companionRemote.remote.playPause' => 'Riproduci/Pausa',
+			'companionRemote.remote.next' => 'Successivo',
+			'companionRemote.remote.seekBack' => 'Riavvolgi',
+			'companionRemote.remote.stop' => 'Ferma',
+			'companionRemote.remote.seekForward' => 'Avanti',
+			'companionRemote.remote.volume' => 'Volume',
+			'companionRemote.remote.volumeDown' => 'Abbassa',
+			'companionRemote.remote.volumeUp' => 'Alza',
+			'companionRemote.remote.fullscreen' => 'Schermo intero',
+			'companionRemote.remote.subtitles' => 'Sottotitoli',
+			'companionRemote.remote.audio' => 'Audio',
+			'companionRemote.remote.searchHint' => 'Cerca sul desktop...',
+			'videoSettings.playbackSettings' => 'Impostazioni di riproduzione',
+			'videoSettings.playbackSpeed' => 'Velocità di riproduzione',
+			'videoSettings.sleepTimer' => 'Timer di spegnimento',
+			'videoSettings.audioSync' => 'Sincronizzazione audio',
+			'videoSettings.subtitleSync' => 'Sincronizzazione sottotitoli',
+			'videoSettings.hdr' => 'HDR',
+			'videoSettings.audioOutput' => 'Uscita audio',
+			'videoSettings.performanceOverlay' => 'Overlay prestazioni',
 			_ => null,
 		};
 	}

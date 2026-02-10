@@ -1,14 +1,11 @@
 {
   "app": {
-    "title": "Plezy",
-    "loading": "로딩 중..."
-  },
+    "title": "Plezy"
+},
   "auth": {
     "signInWithPlex": "Plex 계정으로 로그인",
     "showQRCode": "QR 코드",
-    "cancel": "취소",
     "authenticate": "인증",
-    "retry": "재시도",
     "debugEnterToken": "디버깅을 위해 Plex 토큰을 입력하세요.",
     "plexTokenLabel": "Plex 인증 토큰",
     "plexTokenHint": "Plex.tv 토큰을 입력하세요",
@@ -34,14 +31,28 @@
     "no": "아니오",
     "delete": "삭제",
     "shuffle": "무작위 재생",
-    "addTo": "추가하기..."
+    "addTo": "추가하기...",
+    "remove": "삭제",
+    "paste": "붙여넣기",
+    "connect": "연결",
+    "disconnect": "연결 해제",
+    "play": "재생",
+    "pause": "일시정지",
+    "resume": "재개",
+    "error": "오류",
+    "search": "검색",
+    "home": "홈",
+    "back": "뒤로",
+    "settings": "설정",
+    "mute": "음소거",
+    "ok": "확인",
+    "loading": "로딩 중..."
   },
   "screens": {
     "licenses": "라이선스",
     "switchProfile": "프로필 전환",
     "subtitleStyling": "자막 스타일 설정",
     "mpvConfig": "MPV 설정",
-    "search": "검색",
     "logs": "로그"
   },
   "update": {
@@ -203,7 +214,8 @@
       "speedReset": "속도 초기화",
       "subSeekNext": "다음 자막으로 이동",
       "subSeekPrev": "이전 자막으로 이동",
-      "shaderToggle": "셰이더 전환"
+      "shaderToggle": "셰이더 전환",
+      "skipMarker": "인트로/크레딧 건너뛰기"
     }
   },
   "pinEntry": {
@@ -307,7 +319,6 @@
     "timelineSlider": "타임라인",
     "volumeSlider": "볼륨 조절",
     "endsAt": "${time}에 종료",
-    "backButton": "뒤로 가기",
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
     "pipErrors": {
       "androidVersion": "Android 8.0 이상이 필요합니다",
@@ -315,7 +326,9 @@
       "notSupported": "이 기기는 화면 속 화면 모드를 지원하지 않습니다",
       "failed": "화면 속 화면 모드를 시작할 수 없습니다",
       "unknown": "오류가 발생했습니다: ${error}"
-    }
+    },
+    "chapters": "챕터",
+    "noChaptersAvailable": "사용 가능한 챕터가 없습니다"
   },
   "userStatus": {
     "admin": "관리자",
@@ -395,19 +408,15 @@
     "entriesCount": "${count} 항목"
   },
   "dialog": {
-    "confirmAction": "확인",
-    "cancel": "취소"
+    "confirmAction": "확인"
   },
   "discover": {
     "title": "발견",
     "switchProfile": "사용자 전환",
-    "logout": "로그아웃",
     "noContentAvailable": "사용 가능한 콘텐츠가 없습니다",
     "addMediaToLibraries": "미디어 라이브러리에 미디어를 추가해 주세요",
     "continueWatching": "계속 시청",
-    "play": "재생",
     "playEpisode": "S${season}E${episode}",
-    "pause": "일시정지",
     "overview": "개요",
     "cast": "출연진",
     "seasons": "시즌 수",
@@ -517,10 +526,7 @@
     "licensesCount": "${count} 개의 라이선스"
   },
   "navigation": {
-    "home": "홈",
-    "search": "검색",
     "libraries": "미디어 라이브러리",
-    "settings": "설정",
     "downloads": "다운로드"
   },
   "collections": {
@@ -633,7 +639,11 @@
     "episodesQueued": "${count} 에피소드가 다운로드 대기열에 추가 되었습니다",
     "downloadDeleted": "다운로드 삭제됨",
     "deleteConfirm": "\"${title}\"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.",
-    "deletingWithProgress": "${title} 삭제 중... (${current}/${total})"
+    "deletingWithProgress": "${title} 삭제 중... (${current}/${total})",
+    "noDownloadsTree": "다운로드 없음",
+    "pauseAll": "모두 일시정지",
+    "resumeAll": "모두 재개",
+    "deleteAll": "모두 삭제"
   },
   "shaders": {
     "title": "셰이더",
@@ -642,5 +652,107 @@
     "qualityFast": "빠름",
     "qualityHQ": "고품질",
     "mode": "모드"
+  },
+  "companionRemote": {
+    "title": "Companion Remote",
+    "connectToDevice": "기기에 연결",
+    "hostRemoteSession": "원격 세션 호스트",
+    "controlThisDevice": "휴대폰으로 이 기기를 제어하세요",
+    "remoteControl": "원격 제어",
+    "controlDesktop": "데스크톱 기기 제어",
+    "connectedTo": "${name}에 연결됨",
+    "session": {
+      "creatingSession": "원격 세션 생성 중...",
+      "failedToCreate": "원격 세션 생성 실패:",
+      "noSession": "사용 가능한 세션이 없습니다",
+      "scanQrCode": "QR 코드 스캔",
+      "orEnterManually": "또는 수동으로 입력",
+      "hostAddress": "호스트 주소",
+      "sessionId": "세션 ID",
+      "pin": "PIN",
+      "connected": "연결됨",
+      "waitingForConnection": "연결 대기 중...",
+      "usePhoneToControl": "모바일 기기로 이 앱을 제어하세요",
+      "copiedToClipboard": "${label}이(가) 클립보드에 복사되었습니다",
+      "copyToClipboard": "클립보드에 복사",
+      "newSession": "새 세션",
+      "minimize": "최소화"
+    },
+    "pairing": {
+      "recent": "최근",
+      "scan": "스캔",
+      "manual": "수동",
+      "recentConnections": "최근 연결",
+      "quickReconnect": "이전에 페어링한 기기에 빠르게 재연결",
+      "pairWithDesktop": "데스크톱과 페어링",
+      "enterSessionDetails": "데스크톱 기기에 표시된 세션 정보를 입력하세요",
+      "hostAddressHint": "192.168.1.100:48632",
+      "sessionIdHint": "8자리 세션 ID 입력",
+      "pinHint": "6자리 PIN 입력",
+      "connecting": "연결 중...",
+      "tips": "팁",
+      "tipDesktop": "데스크톱에서 Plezy를 열고 설정 또는 메뉴에서 Companion Remote를 활성화하세요",
+      "tipScan": "스캔 탭을 사용하여 데스크톱의 QR 코드를 스캔하면 빠르게 페어링할 수 있습니다",
+      "tipWifi": "두 기기가 동일한 WiFi 네트워크에 연결되어 있는지 확인하세요",
+      "cameraPermissionRequired": "QR 코드를 스캔하려면 카메라 권한이 필요합니다.\n기기 설정에서 카메라 접근을 허용해 주세요.",
+      "cameraError": "카메라를 시작할 수 없습니다: ${error}",
+      "scanInstruction": "데스크톱에 표시된 QR 코드에 카메라를 향하세요",
+      "noRecentConnections": "최근 연결 없음",
+      "connectUsingManual": "수동 입력으로 기기에 연결하여 시작하세요",
+      "invalidQrCode": "유효하지 않은 QR 코드 형식",
+      "removeRecentConnection": "최근 연결 삭제",
+      "removeConfirm": "\"${name}\"을(를) 최근 연결에서 삭제하시겠습니까?",
+      "validationHostRequired": "호스트 주소를 입력하세요",
+      "validationHostFormat": "IP:포트 형식이어야 합니다 (예: 192.168.1.100:48632)",
+      "validationSessionIdRequired": "세션 ID를 입력하세요",
+      "validationSessionIdLength": "세션 ID는 8자리여야 합니다",
+      "validationPinRequired": "PIN을 입력하세요",
+      "validationPinLength": "PIN은 6자리여야 합니다",
+      "connectionTimedOut": "연결 시간이 초과되었습니다. 세션 ID와 PIN을 확인하세요.",
+      "sessionNotFound": "세션을 찾을 수 없습니다. 자격 증명을 확인하세요.",
+      "failedToConnect": "연결 실패: ${error}",
+      "failedToLoadRecent": "최근 세션 로드 실패: ${error}"
+    },
+    "remote": {
+      "disconnectConfirm": "원격 세션 연결을 해제하시겠습니까?",
+      "reconnecting": "재연결 중...",
+      "attemptOf": "${current}/5 시도 중",
+      "retryNow": "지금 재시도",
+      "connectionError": "연결 오류",
+      "notConnected": "연결되지 않음",
+      "tabRemote": "리모컨",
+      "tabPlay": "재생",
+      "tabMore": "더 보기",
+      "menu": "메뉴",
+      "tabNavigation": "탭 탐색",
+      "tabDiscover": "발견",
+      "tabLibraries": "미디어 라이브러리",
+      "tabSearch": "검색",
+      "tabDownloads": "다운로드",
+      "tabSettings": "설정",
+      "previous": "이전",
+      "playPause": "재생/일시정지",
+      "next": "다음",
+      "seekBack": "되감기",
+      "stop": "정지",
+      "seekForward": "빨리감기",
+      "volume": "볼륨",
+      "volumeDown": "줄이기",
+      "volumeUp": "높이기",
+      "fullscreen": "전체 화면",
+      "subtitles": "자막",
+      "audio": "오디오",
+      "searchHint": "데스크톱에서 검색..."
+    }
+  },
+  "videoSettings": {
+    "playbackSettings": "재생 설정",
+    "playbackSpeed": "재생 속도",
+    "sleepTimer": "취침 타이머",
+    "audioSync": "오디오 동기화",
+    "subtitleSync": "자막 동기화",
+    "hdr": "HDR",
+    "audioOutput": "오디오 출력",
+    "performanceOverlay": "성능 오버레이"
   }
 }

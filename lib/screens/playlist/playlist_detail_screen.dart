@@ -62,7 +62,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   List<AppBarButtonConfig> getAppBarButtons() {
     final buttons = <AppBarButtonConfig>[];
     if (items.isNotEmpty) {
-      buttons.add(AppBarButtonConfig(icon: Symbols.play_arrow_rounded, tooltip: t.discover.play, onPressed: playItems));
+      buttons.add(AppBarButtonConfig(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems));
       buttons.add(
         AppBarButtonConfig(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       );

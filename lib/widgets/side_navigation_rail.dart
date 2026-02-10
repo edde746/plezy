@@ -323,7 +323,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                         _buildNavItem(
                           icon: Symbols.home_rounded,
                           selectedIcon: Symbols.home_rounded,
-                          label: Translations.of(context).navigation.home,
+                          label: Translations.of(context).common.home,
                           isSelected: widget.selectedIndex == 0,
                           isFocused: _focusTracker.isFocused(_kHome),
                           onTap: () => widget.onDestinationSelected(0),
@@ -342,7 +342,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                         _buildNavItem(
                           icon: Symbols.search_rounded,
                           selectedIcon: Symbols.search_rounded,
-                          label: Translations.of(context).navigation.search,
+                          label: Translations.of(context).common.search,
                           isSelected: widget.selectedIndex == 2,
                           isFocused: _focusTracker.isFocused(_kSearch),
                           onTap: () => widget.onDestinationSelected(2),
@@ -377,7 +377,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                       _buildNavItem(
                         icon: Symbols.settings_rounded,
                         selectedIcon: Symbols.settings_rounded,
-                        label: Translations.of(context).navigation.settings,
+                        label: Translations.of(context).common.settings,
                         isSelected: NavigationTab.isTabAtIndex(
                           NavigationTabId.settings,
                           widget.selectedIndex,

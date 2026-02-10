@@ -1,14 +1,11 @@
 {
   "app": {
-    "title": "Plezy",
-    "loading": "Laden..."
-  },
+    "title": "Plezy"
+},
   "auth": {
     "signInWithPlex": "Inloggen met Plex",
     "showQRCode": "Toon QR-code",
-    "cancel": "Annuleren",
     "authenticate": "Authenticeren",
-    "retry": "Opnieuw proberen",
     "debugEnterToken": "Debug: Voer Plex Token in",
     "plexTokenLabel": "Plex Authenticatietoken",
     "plexTokenHint": "Voer je Plex.tv token in",
@@ -34,14 +31,28 @@
     "no": "Nee",
     "delete": "Verwijderen",
     "shuffle": "Willekeurig",
-    "addTo": "Toevoegen aan..."
+    "addTo": "Toevoegen aan...",
+    "remove": "Verwijderen",
+    "paste": "Plakken",
+    "connect": "Verbinden",
+    "disconnect": "Verbinding verbreken",
+    "play": "Afspelen",
+    "pause": "Pauzeren",
+    "resume": "Hervatten",
+    "error": "Fout",
+    "search": "Zoeken",
+    "home": "Home",
+    "back": "Terug",
+    "settings": "Instellingen",
+    "mute": "Dempen",
+    "ok": "OK",
+    "loading": "Laden..."
   },
   "screens": {
     "licenses": "Licenties",
     "switchProfile": "Wissel van profiel",
     "subtitleStyling": "Ondertitel opmaak",
     "mpvConfig": "MPV-configuratie",
-    "search": "Zoeken",
     "logs": "Logbestanden"
   },
   "update": {
@@ -203,7 +214,8 @@
       "speedReset": "Snelheid resetten",
       "subSeekNext": "Naar volgende ondertitel",
       "subSeekPrev": "Naar vorige ondertitel",
-      "shaderToggle": "Shaders aan/uit"
+      "shaderToggle": "Shaders aan/uit",
+      "skipMarker": "Intro/aftiteling overslaan"
     }
   },
   "pinEntry": {
@@ -307,7 +319,6 @@
     "timelineSlider": "Videotijdlijn",
     "volumeSlider": "Volumeniveau",
     "endsAt": "Eindigt om ${time}",
-    "backButton": "Terug",
     "pipFailed": "Beeld-in-beeld kon niet worden gestart",
     "pipErrors": {
       "androidVersion": "Vereist Android 8.0 of nieuwer",
@@ -315,7 +326,9 @@
       "notSupported": "Dit apparaat ondersteunt geen beeld-in-beeld modus",
       "failed": "Beeld-in-beeld kon niet worden gestart",
       "unknown": "Er is een fout opgetreden: ${error}"
-    }
+    },
+    "chapters": "Hoofdstukken",
+    "noChaptersAvailable": "Geen hoofdstukken beschikbaar"
   },
   "userStatus": {
     "admin": "Beheerder",
@@ -395,19 +408,15 @@
     "entriesCount": "${count} items"
   },
   "dialog": {
-    "confirmAction": "Bevestig actie",
-    "cancel": "Annuleren"
+    "confirmAction": "Bevestig actie"
   },
   "discover": {
     "title": "Ontdekken",
     "switchProfile": "Wissel van profiel",
-    "logout": "Uitloggen",
     "noContentAvailable": "Geen inhoud beschikbaar",
     "addMediaToLibraries": "Voeg wat media toe aan je bibliotheken",
     "continueWatching": "Verder kijken",
-    "play": "Afspelen",
     "playEpisode": "S${season}E${episode}",
-    "pause": "Pauzeren",
     "overview": "Overzicht",
     "cast": "Acteurs",
     "seasons": "Seizoenen",
@@ -517,10 +526,7 @@
     "licensesCount": "${count} licenties"
   },
   "navigation": {
-    "home": "Thuis",
-    "search": "Zoeken",
     "libraries": "Bibliotheken",
-    "settings": "Instellingen",
     "downloads": "Downloads"
   },
   "downloads": {
@@ -537,7 +543,11 @@
     "episodesQueued": "${count} afleveringen in wachtrij voor download",
     "downloadDeleted": "Download verwijderd",
     "deleteConfirm": "Weet je zeker dat je \"${title}\" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.",
-    "deletingWithProgress": "Verwijderen van ${title}... (${current} van ${total})"
+    "deletingWithProgress": "Verwijderen van ${title}... (${current} van ${total})",
+    "noDownloadsTree": "Geen downloads",
+    "pauseAll": "Alles pauzeren",
+    "resumeAll": "Alles hervatten",
+    "deleteAll": "Alles verwijderen"
   },
   "playlists": {
     "title": "Afspeellijsten",
@@ -642,5 +652,107 @@
     "qualityFast": "Snel",
     "qualityHQ": "Hoge kwaliteit",
     "mode": "Modus"
+  },
+  "companionRemote": {
+    "title": "Companion Remote",
+    "connectToDevice": "Verbinden met apparaat",
+    "hostRemoteSession": "Externe sessie hosten",
+    "controlThisDevice": "Bedien dit apparaat met je telefoon",
+    "remoteControl": "Afstandsbediening",
+    "controlDesktop": "Bedien een desktop-apparaat",
+    "connectedTo": "Verbonden met ${name}",
+    "session": {
+      "creatingSession": "Externe sessie aanmaken...",
+      "failedToCreate": "Kan externe sessie niet aanmaken:",
+      "noSession": "Geen sessie beschikbaar",
+      "scanQrCode": "Scan QR-code",
+      "orEnterManually": "Of voer handmatig in",
+      "hostAddress": "Hostadres",
+      "sessionId": "Sessie-ID",
+      "pin": "PIN",
+      "connected": "Verbonden",
+      "waitingForConnection": "Wachten op verbinding...",
+      "usePhoneToControl": "Gebruik je mobiele apparaat om deze app te bedienen",
+      "copiedToClipboard": "${label} gekopieerd naar klembord",
+      "copyToClipboard": "Kopieer naar klembord",
+      "newSession": "Nieuwe sessie",
+      "minimize": "Minimaliseren"
+    },
+    "pairing": {
+      "recent": "Recent",
+      "scan": "Scannen",
+      "manual": "Handmatig",
+      "recentConnections": "Recente verbindingen",
+      "quickReconnect": "Snel opnieuw verbinden met eerder gekoppelde apparaten",
+      "pairWithDesktop": "Koppelen met desktop",
+      "enterSessionDetails": "Voer de sessiegegevens in die op je desktop-apparaat worden getoond",
+      "hostAddressHint": "192.168.1.100:48632",
+      "sessionIdHint": "Voer 8-tekens sessie-ID in",
+      "pinHint": "Voer 6-cijferige PIN in",
+      "connecting": "Verbinden...",
+      "tips": "Tips",
+      "tipDesktop": "Open Plezy op je desktop en schakel Companion Remote in via instellingen of menu",
+      "tipScan": "Gebruik het tabblad Scannen om snel te koppelen door de QR-code op je desktop te scannen",
+      "tipWifi": "Zorg ervoor dat beide apparaten op hetzelfde WiFi-netwerk zitten",
+      "cameraPermissionRequired": "Cameratoestemming is vereist om QR-codes te scannen.\nGeef cameratoegang in je apparaatinstellingen.",
+      "cameraError": "Kan camera niet starten: ${error}",
+      "scanInstruction": "Richt je camera op de QR-code die op je desktop wordt getoond",
+      "noRecentConnections": "Geen recente verbindingen",
+      "connectUsingManual": "Verbind met een apparaat via Handmatige invoer om te beginnen",
+      "invalidQrCode": "Ongeldig QR-codeformaat",
+      "removeRecentConnection": "Recente verbinding verwijderen",
+      "removeConfirm": "\"${name}\" verwijderen uit recente verbindingen?",
+      "validationHostRequired": "Voer een hostadres in",
+      "validationHostFormat": "Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)",
+      "validationSessionIdRequired": "Voer een sessie-ID in",
+      "validationSessionIdLength": "Sessie-ID moet 8 tekens zijn",
+      "validationPinRequired": "Voer een PIN in",
+      "validationPinLength": "PIN moet 6 cijfers zijn",
+      "connectionTimedOut": "Verbinding verlopen. Controleer de sessie-ID en PIN.",
+      "sessionNotFound": "Kan de sessie niet vinden. Controleer je gegevens.",
+      "failedToConnect": "Verbinden mislukt: ${error}",
+      "failedToLoadRecent": "Kan recente sessies niet laden: ${error}"
+    },
+    "remote": {
+      "disconnectConfirm": "Wil je de verbinding met de externe sessie verbreken?",
+      "reconnecting": "Opnieuw verbinden...",
+      "attemptOf": "Poging ${current} van 5",
+      "retryNow": "Nu opnieuw proberen",
+      "connectionError": "Verbindingsfout",
+      "notConnected": "Niet verbonden",
+      "tabRemote": "Afstandsbediening",
+      "tabPlay": "Afspelen",
+      "tabMore": "Meer",
+      "menu": "Menu",
+      "tabNavigation": "Tabnavigatie",
+      "tabDiscover": "Ontdekken",
+      "tabLibraries": "Bibliotheken",
+      "tabSearch": "Zoeken",
+      "tabDownloads": "Downloads",
+      "tabSettings": "Instellingen",
+      "previous": "Vorige",
+      "playPause": "Afspelen/Pauzeren",
+      "next": "Volgende",
+      "seekBack": "Terugspoelen",
+      "stop": "Stoppen",
+      "seekForward": "Vooruitspoelen",
+      "volume": "Volume",
+      "volumeDown": "Omlaag",
+      "volumeUp": "Omhoog",
+      "fullscreen": "Volledig scherm",
+      "subtitles": "Ondertitels",
+      "audio": "Audio",
+      "searchHint": "Zoeken op desktop..."
+    }
+  },
+  "videoSettings": {
+    "playbackSettings": "Afspeelinstellingen",
+    "playbackSpeed": "Afspeelsnelheid",
+    "sleepTimer": "Slaaptimer",
+    "audioSync": "Audio synchronisatie",
+    "subtitleSync": "Ondertitel synchronisatie",
+    "hdr": "HDR",
+    "audioOutput": "Audio-uitvoer",
+    "performanceOverlay": "Prestatie-overlay"
   }
 }

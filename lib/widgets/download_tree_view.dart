@@ -109,7 +109,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
     final flattenedNodes = _flattenTree(tree);
 
     if (flattenedNodes.isEmpty) {
-      return const Center(child: Text('No downloads'));
+      return Center(child: Text(t.downloads.noDownloadsTree));
     }
 
     return ListView.builder(
@@ -741,7 +741,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
       actions.add(
         _buildActionButton(
           icon: Symbols.pause_rounded,
-          tooltip: 'Pause',
+          tooltip: t.common.pause,
           onPressed: () => widget.onPause!(globalKey),
           buttonIndex: buttonIndex++,
         ),
@@ -753,7 +753,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
       actions.add(
         _buildActionButton(
           icon: Symbols.play_arrow_rounded,
-          tooltip: 'Resume',
+          tooltip: t.common.resume,
           onPressed: () => widget.onResume!(globalKey),
           buttonIndex: buttonIndex++,
         ),
@@ -765,7 +765,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
       actions.add(
         _buildActionButton(
           icon: Symbols.close_rounded,
-          tooltip: 'Cancel',
+          tooltip: t.common.cancel,
           onPressed: () => widget.onCancel!(globalKey),
           buttonIndex: buttonIndex++,
         ),
@@ -790,7 +790,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
       actions.add(
         _buildActionButton(
           icon: Symbols.delete_rounded,
-          tooltip: 'Delete',
+          tooltip: t.common.delete,
           onPressed: () async {
             final confirmed = await showDeleteConfirmation(
               context,
@@ -817,7 +817,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
       actions.add(
         _buildActionButton(
           icon: Symbols.pause_rounded,
-          tooltip: 'Pause all',
+          tooltip: t.downloads.pauseAll,
           onPressed: () => widget.pauseAllChildren(widget.node),
           buttonIndex: buttonIndex++,
         ),
@@ -829,7 +829,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
       actions.add(
         _buildActionButton(
           icon: Symbols.play_arrow_rounded,
-          tooltip: 'Resume all',
+          tooltip: t.downloads.resumeAll,
           onPressed: () => widget.resumeAllChildren(widget.node),
           buttonIndex: buttonIndex++,
         ),
@@ -841,7 +841,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
       actions.add(
         _buildActionButton(
           icon: Symbols.delete_sweep_rounded,
-          tooltip: 'Delete all',
+          tooltip: t.downloads.deleteAll,
           onPressed: () async {
             final confirmed = await showDeleteConfirmation(
               context,

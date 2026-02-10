@@ -161,7 +161,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
       if (items.isNotEmpty)
         IconButton(
           icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1),
-          tooltip: t.discover.play,
+          tooltip: t.common.play,
           onPressed: playItems,
         ),
       // Shuffle button

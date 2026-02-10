@@ -2157,7 +2157,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                                           side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
                                           padding: const EdgeInsets.symmetric(vertical: 12),
                                         ),
-                                        child: Text(t.dialog.cancel),
+                                        child: Text(t.common.cancel),
                                       ),
                                     ),
                                   ),

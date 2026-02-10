@@ -115,7 +115,7 @@ class PlayQueueLauncher {
   }) async {
     return _executeWithLoading(
       showLoading: showLoadingIndicator,
-      action: t.discover.play,
+      action: t.common.play,
       execute: (dismissLoading) async {
         final playQueue = await client.createPlayQueue(
           playlistID: int.parse(playlist.ratingKey),

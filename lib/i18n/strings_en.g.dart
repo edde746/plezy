@@ -73,6 +73,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsWatchTogetherEn watchTogether = TranslationsWatchTogetherEn._(_root);
 	late final TranslationsDownloadsEn downloads = TranslationsDownloadsEn._(_root);
 	late final TranslationsShadersEn shaders = TranslationsShadersEn._(_root);
+	late final TranslationsCompanionRemoteEn companionRemote = TranslationsCompanionRemoteEn._(_root);
+	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn._(_root);
 }
 
 // Path: app
@@ -85,9 +87,6 @@ class TranslationsAppEn {
 
 	/// en: 'Plezy'
 	String get title => 'Plezy';
-
-	/// en: 'Loading...'
-	String get loading => 'Loading...';
 }
 
 // Path: auth
@@ -104,14 +103,8 @@ class TranslationsAuthEn {
 	/// en: 'Show QR Code'
 	String get showQRCode => 'Show QR Code';
 
-	/// en: 'Cancel'
-	String get cancel => 'Cancel';
-
 	/// en: 'Authenticate'
 	String get authenticate => 'Authenticate';
-
-	/// en: 'Retry'
-	String get retry => 'Retry';
 
 	/// en: 'Debug: Enter Plex Token'
 	String get debugEnterToken => 'Debug: Enter Plex Token';
@@ -193,6 +186,51 @@ class TranslationsCommonEn {
 
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
+
+	/// en: 'Remove'
+	String get remove => 'Remove';
+
+	/// en: 'Paste'
+	String get paste => 'Paste';
+
+	/// en: 'Connect'
+	String get connect => 'Connect';
+
+	/// en: 'Disconnect'
+	String get disconnect => 'Disconnect';
+
+	/// en: 'Play'
+	String get play => 'Play';
+
+	/// en: 'Pause'
+	String get pause => 'Pause';
+
+	/// en: 'Resume'
+	String get resume => 'Resume';
+
+	/// en: 'Error'
+	String get error => 'Error';
+
+	/// en: 'Search'
+	String get search => 'Search';
+
+	/// en: 'Home'
+	String get home => 'Home';
+
+	/// en: 'Back'
+	String get back => 'Back';
+
+	/// en: 'Settings'
+	String get settings => 'Settings';
+
+	/// en: 'Mute'
+	String get mute => 'Mute';
+
+	/// en: 'OK'
+	String get ok => 'OK';
+
+	/// en: 'Loading...'
+	String get loading => 'Loading...';
 }
 
 // Path: screens
@@ -214,9 +252,6 @@ class TranslationsScreensEn {
 
 	/// en: 'MPV Configuration'
 	String get mpvConfig => 'MPV Configuration';
-
-	/// en: 'Search'
-	String get search => 'Search';
 
 	/// en: 'Logs'
 	String get logs => 'Logs';
@@ -985,13 +1020,16 @@ class TranslationsVideoControlsEn {
 	/// en: 'Ends at ${time}'
 	String endsAt({required Object time}) => 'Ends at ${time}';
 
-	/// en: 'Back'
-	String get backButton => 'Back';
-
 	/// en: 'Picture-in-picture failed to start'
 	String get pipFailed => 'Picture-in-picture failed to start';
 
 	late final TranslationsVideoControlsPipErrorsEn pipErrors = TranslationsVideoControlsPipErrorsEn._(_root);
+
+	/// en: 'Chapters'
+	String get chapters => 'Chapters';
+
+	/// en: 'No chapters available'
+	String get noChaptersAvailable => 'No chapters available';
 }
 
 // Path: userStatus
@@ -1247,9 +1285,6 @@ class TranslationsDialogEn {
 
 	/// en: 'Confirm Action'
 	String get confirmAction => 'Confirm Action';
-
-	/// en: 'Cancel'
-	String get cancel => 'Cancel';
 }
 
 // Path: discover
@@ -1266,9 +1301,6 @@ class TranslationsDiscoverEn {
 	/// en: 'Switch Profile'
 	String get switchProfile => 'Switch Profile';
 
-	/// en: 'Logout'
-	String get logout => 'Logout';
-
 	/// en: 'No content available'
 	String get noContentAvailable => 'No content available';
 
@@ -1278,14 +1310,8 @@ class TranslationsDiscoverEn {
 	/// en: 'Continue Watching'
 	String get continueWatching => 'Continue Watching';
 
-	/// en: 'Play'
-	String get play => 'Play';
-
 	/// en: 'S${season}E${episode}'
 	String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
-
-	/// en: 'Pause'
-	String get pause => 'Pause';
 
 	/// en: 'Overview'
 	String get overview => 'Overview';
@@ -1599,17 +1625,8 @@ class TranslationsNavigationEn {
 
 	// Translations
 
-	/// en: 'Home'
-	String get home => 'Home';
-
-	/// en: 'Search'
-	String get search => 'Search';
-
 	/// en: 'Libraries'
 	String get libraries => 'Libraries';
-
-	/// en: 'Settings'
-	String get settings => 'Settings';
 
 	/// en: 'Downloads'
 	String get downloads => 'Downloads';
@@ -1961,6 +1978,18 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Deleting ${title}... (${current} of ${total})'
 	String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})';
+
+	/// en: 'No downloads'
+	String get noDownloadsTree => 'No downloads';
+
+	/// en: 'Pause all'
+	String get pauseAll => 'Pause all';
+
+	/// en: 'Resume all'
+	String get resumeAll => 'Resume all';
+
+	/// en: 'Delete all'
+	String get deleteAll => 'Delete all';
 }
 
 // Path: shaders
@@ -1988,6 +2017,73 @@ class TranslationsShadersEn {
 
 	/// en: 'Mode'
 	String get mode => 'Mode';
+}
+
+// Path: companionRemote
+class TranslationsCompanionRemoteEn {
+	TranslationsCompanionRemoteEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Companion Remote'
+	String get title => 'Companion Remote';
+
+	/// en: 'Connect to Device'
+	String get connectToDevice => 'Connect to Device';
+
+	/// en: 'Host Remote Session'
+	String get hostRemoteSession => 'Host Remote Session';
+
+	/// en: 'Control this device with your phone'
+	String get controlThisDevice => 'Control this device with your phone';
+
+	/// en: 'Remote Control'
+	String get remoteControl => 'Remote Control';
+
+	/// en: 'Control a desktop device'
+	String get controlDesktop => 'Control a desktop device';
+
+	/// en: 'Connected to ${name}'
+	String connectedTo({required Object name}) => 'Connected to ${name}';
+
+	late final TranslationsCompanionRemoteSessionEn session = TranslationsCompanionRemoteSessionEn._(_root);
+	late final TranslationsCompanionRemotePairingEn pairing = TranslationsCompanionRemotePairingEn._(_root);
+	late final TranslationsCompanionRemoteRemoteEn remote = TranslationsCompanionRemoteRemoteEn._(_root);
+}
+
+// Path: videoSettings
+class TranslationsVideoSettingsEn {
+	TranslationsVideoSettingsEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Playback Settings'
+	String get playbackSettings => 'Playback Settings';
+
+	/// en: 'Playback Speed'
+	String get playbackSpeed => 'Playback Speed';
+
+	/// en: 'Sleep Timer'
+	String get sleepTimer => 'Sleep Timer';
+
+	/// en: 'Audio Sync'
+	String get audioSync => 'Audio Sync';
+
+	/// en: 'Subtitle Sync'
+	String get subtitleSync => 'Subtitle Sync';
+
+	/// en: 'HDR'
+	String get hdr => 'HDR';
+
+	/// en: 'Audio Output'
+	String get audioOutput => 'Audio Output';
+
+	/// en: 'Performance Overlay'
+	String get performanceOverlay => 'Performance Overlay';
 }
 
 // Path: hotkeys.actions
@@ -2128,6 +2224,264 @@ class TranslationsLibrariesGroupingsEn {
 	String get folders => 'Folders';
 }
 
+// Path: companionRemote.session
+class TranslationsCompanionRemoteSessionEn {
+	TranslationsCompanionRemoteSessionEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Creating remote session...'
+	String get creatingSession => 'Creating remote session...';
+
+	/// en: 'Failed to create remote session:'
+	String get failedToCreate => 'Failed to create remote session:';
+
+	/// en: 'No session available'
+	String get noSession => 'No session available';
+
+	/// en: 'Scan QR Code'
+	String get scanQrCode => 'Scan QR Code';
+
+	/// en: 'Or enter manually'
+	String get orEnterManually => 'Or enter manually';
+
+	/// en: 'Host Address'
+	String get hostAddress => 'Host Address';
+
+	/// en: 'Session ID'
+	String get sessionId => 'Session ID';
+
+	/// en: 'PIN'
+	String get pin => 'PIN';
+
+	/// en: 'Connected'
+	String get connected => 'Connected';
+
+	/// en: 'Waiting for connection...'
+	String get waitingForConnection => 'Waiting for connection...';
+
+	/// en: 'Use your mobile device to control this app'
+	String get usePhoneToControl => 'Use your mobile device to control this app';
+
+	/// en: '${label} copied to clipboard'
+	String copiedToClipboard({required Object label}) => '${label} copied to clipboard';
+
+	/// en: 'Copy to clipboard'
+	String get copyToClipboard => 'Copy to clipboard';
+
+	/// en: 'New Session'
+	String get newSession => 'New Session';
+
+	/// en: 'Minimize'
+	String get minimize => 'Minimize';
+}
+
+// Path: companionRemote.pairing
+class TranslationsCompanionRemotePairingEn {
+	TranslationsCompanionRemotePairingEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Recent'
+	String get recent => 'Recent';
+
+	/// en: 'Scan'
+	String get scan => 'Scan';
+
+	/// en: 'Manual'
+	String get manual => 'Manual';
+
+	/// en: 'Recent Connections'
+	String get recentConnections => 'Recent Connections';
+
+	/// en: 'Quickly reconnect to previously paired devices'
+	String get quickReconnect => 'Quickly reconnect to previously paired devices';
+
+	/// en: 'Pair with Desktop'
+	String get pairWithDesktop => 'Pair with Desktop';
+
+	/// en: 'Enter the session details shown on your desktop device'
+	String get enterSessionDetails => 'Enter the session details shown on your desktop device';
+
+	/// en: '192.168.1.100:48632'
+	String get hostAddressHint => '192.168.1.100:48632';
+
+	/// en: 'Enter 8-character session ID'
+	String get sessionIdHint => 'Enter 8-character session ID';
+
+	/// en: 'Enter 6-digit PIN'
+	String get pinHint => 'Enter 6-digit PIN';
+
+	/// en: 'Connecting...'
+	String get connecting => 'Connecting...';
+
+	/// en: 'Tips'
+	String get tips => 'Tips';
+
+	/// en: 'Open Plezy on your desktop and enable Companion Remote from settings or menu'
+	String get tipDesktop => 'Open Plezy on your desktop and enable Companion Remote from settings or menu';
+
+	/// en: 'Use the Scan tab to quickly pair by scanning the QR code on your desktop'
+	String get tipScan => 'Use the Scan tab to quickly pair by scanning the QR code on your desktop';
+
+	/// en: 'Make sure both devices are on the same WiFi network'
+	String get tipWifi => 'Make sure both devices are on the same WiFi network';
+
+	/// en: 'Camera permission is required to scan QR codes. Please grant camera access in your device settings.'
+	String get cameraPermissionRequired => 'Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.';
+
+	/// en: 'Could not start camera: ${error}'
+	String cameraError({required Object error}) => 'Could not start camera: ${error}';
+
+	/// en: 'Point your camera at the QR code shown on your desktop'
+	String get scanInstruction => 'Point your camera at the QR code shown on your desktop';
+
+	/// en: 'No recent connections'
+	String get noRecentConnections => 'No recent connections';
+
+	/// en: 'Connect to a device using Manual entry to get started'
+	String get connectUsingManual => 'Connect to a device using Manual entry to get started';
+
+	/// en: 'Invalid QR code format'
+	String get invalidQrCode => 'Invalid QR code format';
+
+	/// en: 'Remove Recent Connection'
+	String get removeRecentConnection => 'Remove Recent Connection';
+
+	/// en: 'Remove "${name}" from recent connections?'
+	String removeConfirm({required Object name}) => 'Remove "${name}" from recent connections?';
+
+	/// en: 'Please enter host address'
+	String get validationHostRequired => 'Please enter host address';
+
+	/// en: 'Format must be IP:port (e.g., 192.168.1.100:48632)'
+	String get validationHostFormat => 'Format must be IP:port (e.g., 192.168.1.100:48632)';
+
+	/// en: 'Please enter a session ID'
+	String get validationSessionIdRequired => 'Please enter a session ID';
+
+	/// en: 'Session ID must be 8 characters'
+	String get validationSessionIdLength => 'Session ID must be 8 characters';
+
+	/// en: 'Please enter a PIN'
+	String get validationPinRequired => 'Please enter a PIN';
+
+	/// en: 'PIN must be 6 digits'
+	String get validationPinLength => 'PIN must be 6 digits';
+
+	/// en: 'Connection timed out. Please check the session ID and PIN.'
+	String get connectionTimedOut => 'Connection timed out. Please check the session ID and PIN.';
+
+	/// en: 'Could not find the session. Please check your credentials.'
+	String get sessionNotFound => 'Could not find the session. Please check your credentials.';
+
+	/// en: 'Failed to connect: ${error}'
+	String failedToConnect({required Object error}) => 'Failed to connect: ${error}';
+
+	/// en: 'Failed to load recent sessions: ${error}'
+	String failedToLoadRecent({required Object error}) => 'Failed to load recent sessions: ${error}';
+}
+
+// Path: companionRemote.remote
+class TranslationsCompanionRemoteRemoteEn {
+	TranslationsCompanionRemoteRemoteEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Do you want to disconnect from the remote session?'
+	String get disconnectConfirm => 'Do you want to disconnect from the remote session?';
+
+	/// en: 'Reconnecting...'
+	String get reconnecting => 'Reconnecting...';
+
+	/// en: 'Attempt ${current} of 5'
+	String attemptOf({required Object current}) => 'Attempt ${current} of 5';
+
+	/// en: 'Retry Now'
+	String get retryNow => 'Retry Now';
+
+	/// en: 'Connection error'
+	String get connectionError => 'Connection error';
+
+	/// en: 'Not connected'
+	String get notConnected => 'Not connected';
+
+	/// en: 'Remote'
+	String get tabRemote => 'Remote';
+
+	/// en: 'Play'
+	String get tabPlay => 'Play';
+
+	/// en: 'More'
+	String get tabMore => 'More';
+
+	/// en: 'Menu'
+	String get menu => 'Menu';
+
+	/// en: 'Tab Navigation'
+	String get tabNavigation => 'Tab Navigation';
+
+	/// en: 'Discover'
+	String get tabDiscover => 'Discover';
+
+	/// en: 'Libraries'
+	String get tabLibraries => 'Libraries';
+
+	/// en: 'Search'
+	String get tabSearch => 'Search';
+
+	/// en: 'Downloads'
+	String get tabDownloads => 'Downloads';
+
+	/// en: 'Settings'
+	String get tabSettings => 'Settings';
+
+	/// en: 'Previous'
+	String get previous => 'Previous';
+
+	/// en: 'Play/Pause'
+	String get playPause => 'Play/Pause';
+
+	/// en: 'Next'
+	String get next => 'Next';
+
+	/// en: 'Seek Back'
+	String get seekBack => 'Seek Back';
+
+	/// en: 'Stop'
+	String get stop => 'Stop';
+
+	/// en: 'Seek Fwd'
+	String get seekForward => 'Seek Fwd';
+
+	/// en: 'Volume'
+	String get volume => 'Volume';
+
+	/// en: 'Down'
+	String get volumeDown => 'Down';
+
+	/// en: 'Up'
+	String get volumeUp => 'Up';
+
+	/// en: 'Fullscreen'
+	String get fullscreen => 'Fullscreen';
+
+	/// en: 'Subtitles'
+	String get subtitles => 'Subtitles';
+
+	/// en: 'Audio'
+	String get audio => 'Audio';
+
+	/// en: 'Search on desktop...'
+	String get searchHint => 'Search on desktop...';
+}
+
 /// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -2137,12 +2491,9 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
-			'app.loading' => 'Loading...',
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
-			'auth.cancel' => 'Cancel',
 			'auth.authenticate' => 'Authenticate',
-			'auth.retry' => 'Retry',
 			'auth.debugEnterToken' => 'Debug: Enter Plex Token',
 			'auth.plexTokenLabel' => 'Plex Auth Token',
 			'auth.plexTokenHint' => 'Enter your Plex.tv token',
@@ -2167,11 +2518,25 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.shuffle' => 'Shuffle',
 			'common.addTo' => 'Add to...',
+			'common.remove' => 'Remove',
+			'common.paste' => 'Paste',
+			'common.connect' => 'Connect',
+			'common.disconnect' => 'Disconnect',
+			'common.play' => 'Play',
+			'common.pause' => 'Pause',
+			'common.resume' => 'Resume',
+			'common.error' => 'Error',
+			'common.search' => 'Search',
+			'common.home' => 'Home',
+			'common.back' => 'Back',
+			'common.settings' => 'Settings',
+			'common.mute' => 'Mute',
+			'common.ok' => 'OK',
+			'common.loading' => 'Loading...',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
 			'screens.mpvConfig' => 'MPV Configuration',
-			'screens.search' => 'Search',
 			'screens.logs' => 'Logs',
 			'update.available' => 'Update Available',
 			'update.versionAvailable' => ({required Object version}) => 'Version ${version} is available',
@@ -2416,13 +2781,14 @@ extension on Translations {
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
-			'videoControls.backButton' => 'Back',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture',
 			'videoControls.pipErrors.notSupported' => 'Device doesn\'t support picture-in-picture mode',
 			'videoControls.pipErrors.failed' => 'Picture-in-picture failed to start',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'An error occurred: ${error}',
+			'videoControls.chapters' => 'Chapters',
+			'videoControls.noChaptersAvailable' => 'No chapters available',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Restricted',
 			'userStatus.protected' => 'Protected',
@@ -2493,16 +2859,12 @@ extension on Translations {
 			'mpvConfig.confirmDeleteProperty' => 'Are you sure you want to delete this property?',
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entries',
 			'dialog.confirmAction' => 'Confirm Action',
-			'dialog.cancel' => 'Cancel',
 			'discover.title' => 'Discover',
 			'discover.switchProfile' => 'Switch Profile',
-			'discover.logout' => 'Logout',
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
 			'discover.continueWatching' => 'Continue Watching',
-			'discover.play' => 'Play',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
-			'discover.pause' => 'Pause',
 			'discover.overview' => 'Overview',
 			'discover.cast' => 'Cast',
 			'discover.seasons' => 'Seasons',
@@ -2592,10 +2954,7 @@ extension on Translations {
 			'licenses.license' => 'License',
 			'licenses.licenseNumber' => ({required Object number}) => 'License ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenses',
-			'navigation.home' => 'Home',
-			'navigation.search' => 'Search',
 			'navigation.libraries' => 'Libraries',
-			'navigation.settings' => 'Settings',
 			'navigation.downloads' => 'Downloads',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
@@ -2643,13 +3002,13 @@ extension on Translations {
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
 			'playlists.errorAdding' => 'Failed to add to playlist',
+			_ => null,
+		} ?? switch (path) {
 			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
 			'watchTogether.title' => 'Watch Together',
 			'watchTogether.description' => 'Watch content in sync with friends and family',
 			'watchTogether.createSession' => 'Create Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.creating' => 'Creating...',
 			'watchTogether.joinSession' => 'Join Session',
 			'watchTogether.joining' => 'Joining...',
@@ -2703,12 +3062,108 @@ extension on Translations {
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This will remove the downloaded file from your device.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
+			'downloads.noDownloadsTree' => 'No downloads',
+			'downloads.pauseAll' => 'Pause all',
+			'downloads.resumeAll' => 'Resume all',
+			'downloads.deleteAll' => 'Delete all',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
 			'shaders.mode' => 'Mode',
+			'companionRemote.title' => 'Companion Remote',
+			'companionRemote.connectToDevice' => 'Connect to Device',
+			'companionRemote.hostRemoteSession' => 'Host Remote Session',
+			'companionRemote.controlThisDevice' => 'Control this device with your phone',
+			'companionRemote.remoteControl' => 'Remote Control',
+			'companionRemote.controlDesktop' => 'Control a desktop device',
+			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
+			'companionRemote.session.creatingSession' => 'Creating remote session...',
+			'companionRemote.session.failedToCreate' => 'Failed to create remote session:',
+			'companionRemote.session.noSession' => 'No session available',
+			'companionRemote.session.scanQrCode' => 'Scan QR Code',
+			'companionRemote.session.orEnterManually' => 'Or enter manually',
+			'companionRemote.session.hostAddress' => 'Host Address',
+			'companionRemote.session.sessionId' => 'Session ID',
+			'companionRemote.session.pin' => 'PIN',
+			'companionRemote.session.connected' => 'Connected',
+			'companionRemote.session.waitingForConnection' => 'Waiting for connection...',
+			'companionRemote.session.usePhoneToControl' => 'Use your mobile device to control this app',
+			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} copied to clipboard',
+			'companionRemote.session.copyToClipboard' => 'Copy to clipboard',
+			'companionRemote.session.newSession' => 'New Session',
+			'companionRemote.session.minimize' => 'Minimize',
+			'companionRemote.pairing.recent' => 'Recent',
+			'companionRemote.pairing.scan' => 'Scan',
+			'companionRemote.pairing.manual' => 'Manual',
+			'companionRemote.pairing.recentConnections' => 'Recent Connections',
+			'companionRemote.pairing.quickReconnect' => 'Quickly reconnect to previously paired devices',
+			'companionRemote.pairing.pairWithDesktop' => 'Pair with Desktop',
+			'companionRemote.pairing.enterSessionDetails' => 'Enter the session details shown on your desktop device',
+			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
+			'companionRemote.pairing.sessionIdHint' => 'Enter 8-character session ID',
+			'companionRemote.pairing.pinHint' => 'Enter 6-digit PIN',
+			'companionRemote.pairing.connecting' => 'Connecting...',
+			'companionRemote.pairing.tips' => 'Tips',
+			'companionRemote.pairing.tipDesktop' => 'Open Plezy on your desktop and enable Companion Remote from settings or menu',
+			'companionRemote.pairing.tipScan' => 'Use the Scan tab to quickly pair by scanning the QR code on your desktop',
+			'companionRemote.pairing.tipWifi' => 'Make sure both devices are on the same WiFi network',
+			'companionRemote.pairing.cameraPermissionRequired' => 'Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.',
+			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Could not start camera: ${error}',
+			'companionRemote.pairing.scanInstruction' => 'Point your camera at the QR code shown on your desktop',
+			'companionRemote.pairing.noRecentConnections' => 'No recent connections',
+			'companionRemote.pairing.connectUsingManual' => 'Connect to a device using Manual entry to get started',
+			'companionRemote.pairing.invalidQrCode' => 'Invalid QR code format',
+			'companionRemote.pairing.removeRecentConnection' => 'Remove Recent Connection',
+			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Remove "${name}" from recent connections?',
+			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
+			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
+			'companionRemote.pairing.validationSessionIdRequired' => 'Please enter a session ID',
+			'companionRemote.pairing.validationSessionIdLength' => 'Session ID must be 8 characters',
+			'companionRemote.pairing.validationPinRequired' => 'Please enter a PIN',
+			'companionRemote.pairing.validationPinLength' => 'PIN must be 6 digits',
+			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Please check the session ID and PIN.',
+			'companionRemote.pairing.sessionNotFound' => 'Could not find the session. Please check your credentials.',
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
+			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Failed to load recent sessions: ${error}',
+			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
+			'companionRemote.remote.reconnecting' => 'Reconnecting...',
+			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
+			'companionRemote.remote.retryNow' => 'Retry Now',
+			'companionRemote.remote.connectionError' => 'Connection error',
+			'companionRemote.remote.notConnected' => 'Not connected',
+			'companionRemote.remote.tabRemote' => 'Remote',
+			'companionRemote.remote.tabPlay' => 'Play',
+			'companionRemote.remote.tabMore' => 'More',
+			'companionRemote.remote.menu' => 'Menu',
+			'companionRemote.remote.tabNavigation' => 'Tab Navigation',
+			'companionRemote.remote.tabDiscover' => 'Discover',
+			'companionRemote.remote.tabLibraries' => 'Libraries',
+			'companionRemote.remote.tabSearch' => 'Search',
+			'companionRemote.remote.tabDownloads' => 'Downloads',
+			'companionRemote.remote.tabSettings' => 'Settings',
+			'companionRemote.remote.previous' => 'Previous',
+			'companionRemote.remote.playPause' => 'Play/Pause',
+			'companionRemote.remote.next' => 'Next',
+			'companionRemote.remote.seekBack' => 'Seek Back',
+			'companionRemote.remote.stop' => 'Stop',
+			'companionRemote.remote.seekForward' => 'Seek Fwd',
+			'companionRemote.remote.volume' => 'Volume',
+			'companionRemote.remote.volumeDown' => 'Down',
+			'companionRemote.remote.volumeUp' => 'Up',
+			'companionRemote.remote.fullscreen' => 'Fullscreen',
+			'companionRemote.remote.subtitles' => 'Subtitles',
+			'companionRemote.remote.audio' => 'Audio',
+			'companionRemote.remote.searchHint' => 'Search on desktop...',
+			'videoSettings.playbackSettings' => 'Playback Settings',
+			'videoSettings.playbackSpeed' => 'Playback Speed',
+			'videoSettings.sleepTimer' => 'Sleep Timer',
+			'videoSettings.audioSync' => 'Audio Sync',
+			'videoSettings.subtitleSync' => 'Subtitle Sync',
+			'videoSettings.hdr' => 'HDR',
+			'videoSettings.audioOutput' => 'Audio Output',
+			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			_ => null,
 		};
 	}

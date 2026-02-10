@@ -70,6 +70,8 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCollectionsZh collections = _TranslationsCollectionsZh._(_root);
 	@override late final _TranslationsWatchTogetherZh watchTogether = _TranslationsWatchTogetherZh._(_root);
 	@override late final _TranslationsShadersZh shaders = _TranslationsShadersZh._(_root);
+	@override late final _TranslationsCompanionRemoteZh companionRemote = _TranslationsCompanionRemoteZh._(_root);
+	@override late final _TranslationsVideoSettingsZh videoSettings = _TranslationsVideoSettingsZh._(_root);
 }
 
 // Path: app
@@ -80,7 +82,6 @@ class _TranslationsAppZh implements TranslationsAppEn {
 
 	// Translations
 	@override String get title => 'Plezy';
-	@override String get loading => '加载中...';
 }
 
 // Path: auth
@@ -92,9 +93,7 @@ class _TranslationsAuthZh implements TranslationsAuthEn {
 	// Translations
 	@override String get signInWithPlex => '使用 Plex 登录';
 	@override String get showQRCode => '显示二维码';
-	@override String get cancel => '取消';
 	@override String get authenticate => '验证';
-	@override String get retry => '重试';
 	@override String get debugEnterToken => '调试：输入 Plex Token';
 	@override String get plexTokenLabel => 'Plex 授权令牌 (Auth Token)';
 	@override String get plexTokenHint => '输入你的 Plex.tv 令牌';
@@ -128,6 +127,21 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get delete => '删除';
 	@override String get shuffle => '随机播放';
 	@override String get addTo => '添加到...';
+	@override String get remove => '删除';
+	@override String get paste => '粘贴';
+	@override String get connect => '连接';
+	@override String get disconnect => '断开连接';
+	@override String get play => '播放';
+	@override String get pause => '暂停';
+	@override String get resume => '继续';
+	@override String get error => '错误';
+	@override String get search => '搜索';
+	@override String get home => '首页';
+	@override String get back => '返回';
+	@override String get settings => '设置';
+	@override String get mute => '静音';
+	@override String get ok => '确定';
+	@override String get loading => '加载中...';
 }
 
 // Path: screens
@@ -141,7 +155,6 @@ class _TranslationsScreensZh implements TranslationsScreensEn {
 	@override String get switchProfile => '切换用户';
 	@override String get subtitleStyling => '字幕样式';
 	@override String get mpvConfig => 'MPV 配置';
-	@override String get search => '搜索';
 	@override String get logs => '日志';
 }
 
@@ -458,9 +471,10 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '视频时间轴';
 	@override String get volumeSlider => '音量调节';
 	@override String endsAt({required Object time}) => '${time} 结束';
-	@override String get backButton => '返回';
 	@override String get pipFailed => '画中画启动失败';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
+	@override String get chapters => '章节';
+	@override String get noChaptersAvailable => '没有可用的章节';
 }
 
 // Path: userStatus
@@ -576,7 +590,6 @@ class _TranslationsDialogZh implements TranslationsDialogEn {
 
 	// Translations
 	@override String get confirmAction => '确认操作';
-	@override String get cancel => '取消';
 }
 
 // Path: discover
@@ -588,13 +601,10 @@ class _TranslationsDiscoverZh implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => '发现';
 	@override String get switchProfile => '切换用户';
-	@override String get logout => '登出';
 	@override String get noContentAvailable => '没有可用内容';
 	@override String get addMediaToLibraries => '请向你的媒体库添加一些媒体';
 	@override String get continueWatching => '继续观看';
-	@override String get play => '播放';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
-	@override String get pause => '暂停';
 	@override String get overview => '概述';
 	@override String get cast => '演员表';
 	@override String get seasons => '季数';
@@ -748,10 +758,7 @@ class _TranslationsNavigationZh implements TranslationsNavigationEn {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get home => '主页';
-	@override String get search => '搜索';
 	@override String get libraries => '媒体库';
-	@override String get settings => '设置';
 	@override String get downloads => '下载';
 }
 
@@ -776,6 +783,10 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => '下载已删除';
 	@override String deleteConfirm({required Object title}) => '确定要删除 "${title}" 吗？下载的文件将从您的设备中删除。';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => '正在删除 ${title}... (${current}/${total})';
+	@override String get noDownloadsTree => '暂无下载';
+	@override String get pauseAll => '全部暂停';
+	@override String get resumeAll => '全部继续';
+	@override String get deleteAll => '全部删除';
 }
 
 // Path: playlists
@@ -910,6 +921,42 @@ class _TranslationsShadersZh implements TranslationsShadersEn {
 	@override String get mode => '模式';
 }
 
+// Path: companionRemote
+class _TranslationsCompanionRemoteZh implements TranslationsCompanionRemoteEn {
+	_TranslationsCompanionRemoteZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Companion Remote';
+	@override String get connectToDevice => '连接到设备';
+	@override String get hostRemoteSession => '创建远程会话';
+	@override String get controlThisDevice => '使用手机控制此设备';
+	@override String get remoteControl => '远程控制';
+	@override String get controlDesktop => '控制桌面设备';
+	@override String connectedTo({required Object name}) => '已连接到 ${name}';
+	@override late final _TranslationsCompanionRemoteSessionZh session = _TranslationsCompanionRemoteSessionZh._(_root);
+	@override late final _TranslationsCompanionRemotePairingZh pairing = _TranslationsCompanionRemotePairingZh._(_root);
+	@override late final _TranslationsCompanionRemoteRemoteZh remote = _TranslationsCompanionRemoteRemoteZh._(_root);
+}
+
+// Path: videoSettings
+class _TranslationsVideoSettingsZh implements TranslationsVideoSettingsEn {
+	_TranslationsVideoSettingsZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get playbackSettings => '播放设置';
+	@override String get playbackSpeed => '播放速度';
+	@override String get sleepTimer => '睡眠定时器';
+	@override String get audioSync => '音频同步';
+	@override String get subtitleSync => '字幕同步';
+	@override String get hdr => 'HDR';
+	@override String get audioOutput => '音频输出';
+	@override String get performanceOverlay => '性能监控';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsZh._(this._root);
@@ -935,6 +982,7 @@ class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	@override String get subSeekNext => '跳转到下一字幕';
 	@override String get subSeekPrev => '跳转到上一字幕';
 	@override String get shaderToggle => '切换着色器';
+	@override String get skipMarker => '跳过片头/片尾';
 }
 
 // Path: videoControls.pipErrors
@@ -979,6 +1027,110 @@ class _TranslationsLibrariesGroupingsZh implements TranslationsLibrariesGrouping
 	@override String get folders => '文件夹';
 }
 
+// Path: companionRemote.session
+class _TranslationsCompanionRemoteSessionZh implements TranslationsCompanionRemoteSessionEn {
+	_TranslationsCompanionRemoteSessionZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get creatingSession => '正在创建远程会话...';
+	@override String get failedToCreate => '创建远程会话失败：';
+	@override String get noSession => '没有可用的会话';
+	@override String get scanQrCode => '扫描 QR 码';
+	@override String get orEnterManually => '或手动输入';
+	@override String get hostAddress => '主机地址';
+	@override String get sessionId => '会话 ID';
+	@override String get pin => 'PIN';
+	@override String get connected => '已连接';
+	@override String get waitingForConnection => '等待连接中...';
+	@override String get usePhoneToControl => '使用移动设备控制此应用';
+	@override String copiedToClipboard({required Object label}) => '${label}已复制到剪贴板';
+	@override String get copyToClipboard => '复制到剪贴板';
+	@override String get newSession => '新建会话';
+	@override String get minimize => '最小化';
+}
+
+// Path: companionRemote.pairing
+class _TranslationsCompanionRemotePairingZh implements TranslationsCompanionRemotePairingEn {
+	_TranslationsCompanionRemotePairingZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get recent => '最近';
+	@override String get scan => '扫描';
+	@override String get manual => '手动';
+	@override String get recentConnections => '最近连接';
+	@override String get quickReconnect => '快速重新连接之前配对的设备';
+	@override String get pairWithDesktop => '与桌面配对';
+	@override String get enterSessionDetails => '输入桌面设备上显示的会话信息';
+	@override String get hostAddressHint => '192.168.1.100:48632';
+	@override String get sessionIdHint => '输入8位会话 ID';
+	@override String get pinHint => '输入6位 PIN';
+	@override String get connecting => '连接中...';
+	@override String get tips => '提示';
+	@override String get tipDesktop => '在桌面上打开 Plezy，并从设置或菜单中启用 Companion Remote';
+	@override String get tipScan => '使用扫描选项卡扫描桌面上的 QR 码以快速配对';
+	@override String get tipWifi => '请确保两台设备连接到同一个 WiFi 网络';
+	@override String get cameraPermissionRequired => '扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。';
+	@override String cameraError({required Object error}) => '无法启动相机：${error}';
+	@override String get scanInstruction => '将相机对准桌面上显示的 QR 码';
+	@override String get noRecentConnections => '没有最近的连接';
+	@override String get connectUsingManual => '使用手动输入连接设备以开始使用';
+	@override String get invalidQrCode => '无效的 QR 码格式';
+	@override String get removeRecentConnection => '删除最近连接';
+	@override String removeConfirm({required Object name}) => '确定要从最近连接中删除 "${name}" 吗？';
+	@override String get validationHostRequired => '请输入主机地址';
+	@override String get validationHostFormat => '格式必须为 IP:端口（例如 192.168.1.100:48632）';
+	@override String get validationSessionIdRequired => '请输入会话 ID';
+	@override String get validationSessionIdLength => '会话 ID 必须为8个字符';
+	@override String get validationPinRequired => '请输入 PIN';
+	@override String get validationPinLength => 'PIN 必须为6位数字';
+	@override String get connectionTimedOut => '连接超时。请检查会话 ID 和 PIN。';
+	@override String get sessionNotFound => '找不到会话。请检查您的凭据。';
+	@override String failedToConnect({required Object error}) => '连接失败：${error}';
+	@override String failedToLoadRecent({required Object error}) => '加载最近会话失败：${error}';
+}
+
+// Path: companionRemote.remote
+class _TranslationsCompanionRemoteRemoteZh implements TranslationsCompanionRemoteRemoteEn {
+	_TranslationsCompanionRemoteRemoteZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get disconnectConfirm => '是否要断开远程会话的连接？';
+	@override String get reconnecting => '重新连接中...';
+	@override String attemptOf({required Object current}) => '第 ${current} 次尝试，共 5 次';
+	@override String get retryNow => '立即重试';
+	@override String get connectionError => '连接错误';
+	@override String get notConnected => '未连接';
+	@override String get tabRemote => '遥控';
+	@override String get tabPlay => '播放';
+	@override String get tabMore => '更多';
+	@override String get menu => '菜单';
+	@override String get tabNavigation => '标签导航';
+	@override String get tabDiscover => '发现';
+	@override String get tabLibraries => '媒体库';
+	@override String get tabSearch => '搜索';
+	@override String get tabDownloads => '下载';
+	@override String get tabSettings => '设置';
+	@override String get previous => '上一个';
+	@override String get playPause => '播放/暂停';
+	@override String get next => '下一个';
+	@override String get seekBack => '后退';
+	@override String get stop => '停止';
+	@override String get seekForward => '快进';
+	@override String get volume => '音量';
+	@override String get volumeDown => '减小';
+	@override String get volumeUp => '增大';
+	@override String get fullscreen => '全屏';
+	@override String get subtitles => '字幕';
+	@override String get audio => '音频';
+	@override String get searchHint => '在桌面上搜索...';
+}
+
 /// The flat map containing all translations for locale <zh>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -988,12 +1140,9 @@ extension on TranslationsZh {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
-			'app.loading' => '加载中...',
 			'auth.signInWithPlex' => '使用 Plex 登录',
 			'auth.showQRCode' => '显示二维码',
-			'auth.cancel' => '取消',
 			'auth.authenticate' => '验证',
-			'auth.retry' => '重试',
 			'auth.debugEnterToken' => '调试：输入 Plex Token',
 			'auth.plexTokenLabel' => 'Plex 授权令牌 (Auth Token)',
 			'auth.plexTokenHint' => '输入你的 Plex.tv 令牌',
@@ -1018,11 +1167,25 @@ extension on TranslationsZh {
 			'common.delete' => '删除',
 			'common.shuffle' => '随机播放',
 			'common.addTo' => '添加到...',
+			'common.remove' => '删除',
+			'common.paste' => '粘贴',
+			'common.connect' => '连接',
+			'common.disconnect' => '断开连接',
+			'common.play' => '播放',
+			'common.pause' => '暂停',
+			'common.resume' => '继续',
+			'common.error' => '错误',
+			'common.search' => '搜索',
+			'common.home' => '首页',
+			'common.back' => '返回',
+			'common.settings' => '设置',
+			'common.mute' => '静音',
+			'common.ok' => '确定',
+			'common.loading' => '加载中...',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
 			'screens.mpvConfig' => 'MPV 配置',
-			'screens.search' => '搜索',
 			'screens.logs' => '日志',
 			'update.available' => '有可用更新',
 			'update.versionAvailable' => ({required Object version}) => '版本 ${version} 已发布',
@@ -1176,6 +1339,7 @@ extension on TranslationsZh {
 			'hotkeys.actions.subSeekNext' => '跳转到下一字幕',
 			'hotkeys.actions.subSeekPrev' => '跳转到上一字幕',
 			'hotkeys.actions.shaderToggle' => '切换着色器',
+			'hotkeys.actions.skipMarker' => '跳过片头/片尾',
 			'pinEntry.enterPin' => '输入 PIN',
 			'pinEntry.showPin' => '显示 PIN',
 			'pinEntry.hidePin' => '隐藏 PIN',
@@ -1266,13 +1430,14 @@ extension on TranslationsZh {
 			'videoControls.timelineSlider' => '视频时间轴',
 			'videoControls.volumeSlider' => '音量调节',
 			'videoControls.endsAt' => ({required Object time}) => '${time} 结束',
-			'videoControls.backButton' => '返回',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
 			'videoControls.pipErrors.permissionDisabled' => '画中画权限已禁用。请在设置 > 应用 > Plezy > 画中画中启用',
 			'videoControls.pipErrors.notSupported' => '此设备不支持画中画模式',
 			'videoControls.pipErrors.failed' => '画中画启动失败',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '发生错误：${error}',
+			'videoControls.chapters' => '章节',
+			'videoControls.noChaptersAvailable' => '没有可用的章节',
 			'userStatus.admin' => '管理员',
 			'userStatus.restricted' => '受限',
 			'userStatus.protected' => '受保护',
@@ -1343,16 +1508,12 @@ extension on TranslationsZh {
 			'mpvConfig.confirmDeleteProperty' => '确定要删除此属性吗？',
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} 条目',
 			'dialog.confirmAction' => '确认操作',
-			'dialog.cancel' => '取消',
 			'discover.title' => '发现',
 			'discover.switchProfile' => '切换用户',
-			'discover.logout' => '登出',
 			'discover.noContentAvailable' => '没有可用内容',
 			'discover.addMediaToLibraries' => '请向你的媒体库添加一些媒体',
 			'discover.continueWatching' => '继续观看',
-			'discover.play' => '播放',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
-			'discover.pause' => '暂停',
 			'discover.overview' => '概述',
 			'discover.cast' => '演员表',
 			'discover.seasons' => '季数',
@@ -1442,10 +1603,7 @@ extension on TranslationsZh {
 			'licenses.license' => '许可证',
 			'licenses.licenseNumber' => ({required Object number}) => '许可证 ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} 个许可证',
-			'navigation.home' => '主页',
-			'navigation.search' => '搜索',
 			'navigation.libraries' => '媒体库',
-			'navigation.settings' => '设置',
 			'navigation.downloads' => '下载',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
@@ -1461,6 +1619,10 @@ extension on TranslationsZh {
 			'downloads.downloadDeleted' => '下载已删除',
 			'downloads.deleteConfirm' => ({required Object title}) => '确定要删除 "${title}" 吗？下载的文件将从您的设备中删除。',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => '正在删除 ${title}... (${current}/${total})',
+			'downloads.noDownloadsTree' => '暂无下载',
+			'downloads.pauseAll' => '全部暂停',
+			'downloads.resumeAll' => '全部继续',
+			'downloads.deleteAll' => '全部删除',
 			'playlists.title' => '播放列表',
 			'playlists.noPlaylists' => '未找到播放列表',
 			'playlists.create' => '创建播放列表',
@@ -1489,6 +1651,8 @@ extension on TranslationsZh {
 			'playlists.playlist' => '播放列表',
 			'collections.title' => '合集',
 			'collections.collection' => '合集',
+			_ => null,
+		} ?? switch (path) {
 			'collections.empty' => '合集为空',
 			'collections.unknownLibrarySection' => '无法删除：未知的媒体库分区',
 			'collections.deleteCollection' => '删除合集',
@@ -1499,8 +1663,6 @@ extension on TranslationsZh {
 			'collections.failedToLoadItems' => ({required Object error}) => '加载合集项目失败：${error}',
 			'collections.selectCollection' => '选择合集',
 			'collections.createNewCollection' => '创建新合集',
-			_ => null,
-		} ?? switch (path) {
 			'collections.collectionName' => '合集名称',
 			'collections.enterCollectionName' => '输入合集名称',
 			'collections.addedToCollection' => '已添加到合集',
@@ -1559,6 +1721,98 @@ extension on TranslationsZh {
 			'shaders.qualityFast' => '快速',
 			'shaders.qualityHQ' => '高质量',
 			'shaders.mode' => '模式',
+			'companionRemote.title' => 'Companion Remote',
+			'companionRemote.connectToDevice' => '连接到设备',
+			'companionRemote.hostRemoteSession' => '创建远程会话',
+			'companionRemote.controlThisDevice' => '使用手机控制此设备',
+			'companionRemote.remoteControl' => '远程控制',
+			'companionRemote.controlDesktop' => '控制桌面设备',
+			'companionRemote.connectedTo' => ({required Object name}) => '已连接到 ${name}',
+			'companionRemote.session.creatingSession' => '正在创建远程会话...',
+			'companionRemote.session.failedToCreate' => '创建远程会话失败：',
+			'companionRemote.session.noSession' => '没有可用的会话',
+			'companionRemote.session.scanQrCode' => '扫描 QR 码',
+			'companionRemote.session.orEnterManually' => '或手动输入',
+			'companionRemote.session.hostAddress' => '主机地址',
+			'companionRemote.session.sessionId' => '会话 ID',
+			'companionRemote.session.pin' => 'PIN',
+			'companionRemote.session.connected' => '已连接',
+			'companionRemote.session.waitingForConnection' => '等待连接中...',
+			'companionRemote.session.usePhoneToControl' => '使用移动设备控制此应用',
+			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label}已复制到剪贴板',
+			'companionRemote.session.copyToClipboard' => '复制到剪贴板',
+			'companionRemote.session.newSession' => '新建会话',
+			'companionRemote.session.minimize' => '最小化',
+			'companionRemote.pairing.recent' => '最近',
+			'companionRemote.pairing.scan' => '扫描',
+			'companionRemote.pairing.manual' => '手动',
+			'companionRemote.pairing.recentConnections' => '最近连接',
+			'companionRemote.pairing.quickReconnect' => '快速重新连接之前配对的设备',
+			'companionRemote.pairing.pairWithDesktop' => '与桌面配对',
+			'companionRemote.pairing.enterSessionDetails' => '输入桌面设备上显示的会话信息',
+			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
+			'companionRemote.pairing.sessionIdHint' => '输入8位会话 ID',
+			'companionRemote.pairing.pinHint' => '输入6位 PIN',
+			'companionRemote.pairing.connecting' => '连接中...',
+			'companionRemote.pairing.tips' => '提示',
+			'companionRemote.pairing.tipDesktop' => '在桌面上打开 Plezy，并从设置或菜单中启用 Companion Remote',
+			'companionRemote.pairing.tipScan' => '使用扫描选项卡扫描桌面上的 QR 码以快速配对',
+			'companionRemote.pairing.tipWifi' => '请确保两台设备连接到同一个 WiFi 网络',
+			'companionRemote.pairing.cameraPermissionRequired' => '扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。',
+			'companionRemote.pairing.cameraError' => ({required Object error}) => '无法启动相机：${error}',
+			'companionRemote.pairing.scanInstruction' => '将相机对准桌面上显示的 QR 码',
+			'companionRemote.pairing.noRecentConnections' => '没有最近的连接',
+			'companionRemote.pairing.connectUsingManual' => '使用手动输入连接设备以开始使用',
+			'companionRemote.pairing.invalidQrCode' => '无效的 QR 码格式',
+			'companionRemote.pairing.removeRecentConnection' => '删除最近连接',
+			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '确定要从最近连接中删除 "${name}" 吗？',
+			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
+			'companionRemote.pairing.validationHostFormat' => '格式必须为 IP:端口（例如 192.168.1.100:48632）',
+			'companionRemote.pairing.validationSessionIdRequired' => '请输入会话 ID',
+			'companionRemote.pairing.validationSessionIdLength' => '会话 ID 必须为8个字符',
+			'companionRemote.pairing.validationPinRequired' => '请输入 PIN',
+			'companionRemote.pairing.validationPinLength' => 'PIN 必须为6位数字',
+			'companionRemote.pairing.connectionTimedOut' => '连接超时。请检查会话 ID 和 PIN。',
+			'companionRemote.pairing.sessionNotFound' => '找不到会话。请检查您的凭据。',
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
+			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => '加载最近会话失败：${error}',
+			'companionRemote.remote.disconnectConfirm' => '是否要断开远程会话的连接？',
+			'companionRemote.remote.reconnecting' => '重新连接中...',
+			'companionRemote.remote.attemptOf' => ({required Object current}) => '第 ${current} 次尝试，共 5 次',
+			'companionRemote.remote.retryNow' => '立即重试',
+			'companionRemote.remote.connectionError' => '连接错误',
+			'companionRemote.remote.notConnected' => '未连接',
+			'companionRemote.remote.tabRemote' => '遥控',
+			'companionRemote.remote.tabPlay' => '播放',
+			'companionRemote.remote.tabMore' => '更多',
+			'companionRemote.remote.menu' => '菜单',
+			'companionRemote.remote.tabNavigation' => '标签导航',
+			'companionRemote.remote.tabDiscover' => '发现',
+			'companionRemote.remote.tabLibraries' => '媒体库',
+			'companionRemote.remote.tabSearch' => '搜索',
+			'companionRemote.remote.tabDownloads' => '下载',
+			'companionRemote.remote.tabSettings' => '设置',
+			'companionRemote.remote.previous' => '上一个',
+			'companionRemote.remote.playPause' => '播放/暂停',
+			'companionRemote.remote.next' => '下一个',
+			'companionRemote.remote.seekBack' => '后退',
+			'companionRemote.remote.stop' => '停止',
+			'companionRemote.remote.seekForward' => '快进',
+			'companionRemote.remote.volume' => '音量',
+			'companionRemote.remote.volumeDown' => '减小',
+			'companionRemote.remote.volumeUp' => '增大',
+			'companionRemote.remote.fullscreen' => '全屏',
+			'companionRemote.remote.subtitles' => '字幕',
+			'companionRemote.remote.audio' => '音频',
+			'companionRemote.remote.searchHint' => '在桌面上搜索...',
+			'videoSettings.playbackSettings' => '播放设置',
+			'videoSettings.playbackSpeed' => '播放速度',
+			'videoSettings.sleepTimer' => '睡眠定时器',
+			'videoSettings.audioSync' => '音频同步',
+			'videoSettings.subtitleSync' => '字幕同步',
+			'videoSettings.hdr' => 'HDR',
+			'videoSettings.audioOutput' => '音频输出',
+			'videoSettings.performanceOverlay' => '性能监控',
 			_ => null,
 		};
 	}

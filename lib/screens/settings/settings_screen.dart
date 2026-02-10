@@ -791,17 +791,17 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Companion Remote',
+                  t.companionRemote.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               if (PlatformDetector.isDesktop(context))
                 ListTile(
                   leading: const AppIcon(Symbols.phone_android_rounded, fill: 1),
-                  title: const Text('Host Remote Session'),
+                  title: Text(t.companionRemote.hostRemoteSession),
                   subtitle: companionRemote.isConnected
-                      ? Text('Connected to ${companionRemote.connectedDevice?.name}')
-                      : const Text('Control this device with your phone'),
+                      ? Text(t.companionRemote.connectedTo(name: companionRemote.connectedDevice?.name ?? ''))
+                      : Text(t.companionRemote.controlThisDevice),
                   trailing: companionRemote.isConnected
                       ? const AppIcon(Symbols.check_circle_rounded, fill: 1, color: Colors.green)
                       : const AppIcon(Symbols.chevron_right_rounded, fill: 1),
@@ -810,10 +810,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               else
                 ListTile(
                   leading: const AppIcon(Symbols.phone_android_rounded, fill: 1),
-                  title: const Text('Remote Control'),
+                  title: Text(t.companionRemote.remoteControl),
                   subtitle: companionRemote.isConnected
-                      ? Text('Connected to ${companionRemote.connectedDevice?.name}')
-                      : const Text('Control a desktop device'),
+                      ? Text(t.companionRemote.connectedTo(name: companionRemote.connectedDevice?.name ?? ''))
+                      : Text(t.companionRemote.controlDesktop),
                   trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));

@@ -438,7 +438,7 @@ class _SetupScreenState extends State<SetupScreen> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [const CircularProgressIndicator(), const SizedBox(height: 16), Text(t.app.loading)],
+          children: [const CircularProgressIndicator(), const SizedBox(height: 16), Text(t.common.loading)],
         ),
       ),
     );

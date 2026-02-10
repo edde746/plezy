@@ -200,17 +200,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   String _getTitle() {
     switch (_currentView) {
       case _SettingsView.menu:
-        return 'Playback Settings';
+        return t.videoSettings.playbackSettings;
       case _SettingsView.speed:
-        return 'Playback Speed';
+        return t.videoSettings.playbackSpeed;
       case _SettingsView.sleep:
-        return 'Sleep Timer';
+        return t.videoSettings.sleepTimer;
       case _SettingsView.audioSync:
-        return 'Audio Sync';
+        return t.videoSettings.audioSync;
       case _SettingsView.subtitleSync:
-        return 'Subtitle Sync';
+        return t.videoSettings.subtitleSync;
       case _SettingsView.audioDevice:
-        return 'Audio Output';
+        return t.videoSettings.audioOutput;
       case _SettingsView.shader:
         return t.shaders.title;
     }
@@ -263,7 +263,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               return _SettingsMenuItem(
                 focusNode: _initialFocusNode,
                 icon: Symbols.speed_rounded,
-                title: 'Playback Speed',
+                title: t.videoSettings.playbackSpeed,
                 valueText: _formatSpeed(currentRate),
                 onTap: () => _navigateTo(_SettingsView.speed),
               );
@@ -277,7 +277,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final isActive = sleepTimer.isActive;
             return _SettingsMenuItem(
               icon: isActive ? Symbols.bedtime_rounded : Symbols.bedtime_rounded,
-              title: 'Sleep Timer',
+              title: t.videoSettings.sleepTimer,
               valueText: _formatSleepTimer(sleepTimer),
               isHighlighted: isActive,
               onTap: () => _navigateTo(_SettingsView.sleep),
@@ -288,7 +288,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         // Audio Sync
         _SettingsMenuItem(
           icon: Symbols.sync_rounded,
-          title: 'Audio Sync',
+          title: t.videoSettings.audioSync,
           valueText: formatSyncOffset(_audioSyncOffset.toDouble()),
           isHighlighted: _audioSyncOffset != 0,
           onTap: () => _navigateTo(_SettingsView.audioSync),
@@ -297,7 +297,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         // Subtitle Sync
         _SettingsMenuItem(
           icon: Symbols.subtitles_rounded,
-          title: 'Subtitle Sync',
+          title: t.videoSettings.subtitleSync,
           valueText: formatSyncOffset(_subtitleSyncOffset.toDouble()),
           isHighlighted: _subtitleSyncOffset != 0,
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
@@ -307,7 +307,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
           ListTile(
             leading: AppIcon(Symbols.hdr_strong_rounded, fill: 1, color: _enableHDR ? Colors.amber : Colors.white70),
-            title: const Text('HDR', style: TextStyle(color: Colors.white)),
+            title: Text(t.videoSettings.hdr, style: const TextStyle(color: Colors.white)),
             trailing: Switch(value: _enableHDR, onChanged: (_) => _toggleHDR(), activeThumbColor: Colors.amber),
             onTap: _toggleHDR,
           ),
@@ -341,7 +341,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
               return _SettingsMenuItem(
                 icon: Symbols.speaker_rounded,
-                title: 'Audio Output',
+                title: t.videoSettings.audioOutput,
                 valueText: deviceLabel,
                 allowValueOverflow: true,
                 onTap: () => _navigateTo(_SettingsView.audioDevice),
@@ -366,7 +366,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             fill: 1,
             color: _showPerformanceOverlay ? Colors.amber : Colors.white70,
           ),
-          title: const Text('Performance Overlay', style: TextStyle(color: Colors.white)),
+          title: Text(t.videoSettings.performanceOverlay, style: const TextStyle(color: Colors.white)),
           trailing: Switch(
             value: _showPerformanceOverlay,
             onChanged: (_) => _togglePerformanceOverlay(),

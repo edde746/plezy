@@ -38,11 +38,11 @@ class NavigationTab {
 }
 
 // Label getters (must be top-level for const constructor)
-String _getHomeLabel() => t.navigation.home;
+String _getHomeLabel() => t.common.home;
 String _getLibrariesLabel() => t.navigation.libraries;
-String _getSearchLabel() => t.navigation.search;
+String _getSearchLabel() => t.common.search;
 String _getDownloadsLabel() => t.navigation.downloads;
-String _getSettingsLabel() => t.navigation.settings;
+String _getSettingsLabel() => t.common.settings;
 
 /// All navigation tabs in display order
 const allNavigationTabs = [

@@ -70,6 +70,8 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCollectionsSv collections = _TranslationsCollectionsSv._(_root);
 	@override late final _TranslationsWatchTogetherSv watchTogether = _TranslationsWatchTogetherSv._(_root);
 	@override late final _TranslationsShadersSv shaders = _TranslationsShadersSv._(_root);
+	@override late final _TranslationsCompanionRemoteSv companionRemote = _TranslationsCompanionRemoteSv._(_root);
+	@override late final _TranslationsVideoSettingsSv videoSettings = _TranslationsVideoSettingsSv._(_root);
 }
 
 // Path: app
@@ -80,7 +82,6 @@ class _TranslationsAppSv implements TranslationsAppEn {
 
 	// Translations
 	@override String get title => 'Plezy';
-	@override String get loading => 'Laddar...';
 }
 
 // Path: auth
@@ -92,9 +93,7 @@ class _TranslationsAuthSv implements TranslationsAuthEn {
 	// Translations
 	@override String get signInWithPlex => 'Logga in med Plex';
 	@override String get showQRCode => 'Visa QR-kod';
-	@override String get cancel => 'Avbryt';
 	@override String get authenticate => 'Autentisera';
-	@override String get retry => 'Försök igen';
 	@override String get debugEnterToken => 'Debug: Ange Plex-token';
 	@override String get plexTokenLabel => 'Plex-autentiseringstoken';
 	@override String get plexTokenHint => 'Ange din Plex.tv-token';
@@ -128,6 +127,21 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get delete => 'Ta bort';
 	@override String get shuffle => 'Blanda';
 	@override String get addTo => 'Lägg till i...';
+	@override String get remove => 'Ta bort';
+	@override String get paste => 'Klistra in';
+	@override String get connect => 'Anslut';
+	@override String get disconnect => 'Koppla från';
+	@override String get play => 'Spela';
+	@override String get pause => 'Pausa';
+	@override String get resume => 'Återuppta';
+	@override String get error => 'Fel';
+	@override String get search => 'Sök';
+	@override String get home => 'Hem';
+	@override String get back => 'Tillbaka';
+	@override String get settings => 'Inställningar';
+	@override String get mute => 'Ljud av';
+	@override String get ok => 'OK';
+	@override String get loading => 'Laddar...';
 }
 
 // Path: screens
@@ -141,7 +155,6 @@ class _TranslationsScreensSv implements TranslationsScreensEn {
 	@override String get switchProfile => 'Byt profil';
 	@override String get subtitleStyling => 'Undertext-styling';
 	@override String get mpvConfig => 'MPV-konfiguration';
-	@override String get search => 'Sök';
 	@override String get logs => 'Loggar';
 }
 
@@ -458,9 +471,10 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Volymnivå';
 	@override String endsAt({required Object time}) => 'Slutar ${time}';
-	@override String get backButton => 'Tillbaka';
 	@override String get pipFailed => 'Bild-i-bild kunde inte starta';
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
+	@override String get chapters => 'Kapitel';
+	@override String get noChaptersAvailable => 'Inga kapitel tillgängliga';
 }
 
 // Path: userStatus
@@ -576,7 +590,6 @@ class _TranslationsDialogSv implements TranslationsDialogEn {
 
 	// Translations
 	@override String get confirmAction => 'Bekräfta åtgärd';
-	@override String get cancel => 'Avbryt';
 }
 
 // Path: discover
@@ -588,13 +601,10 @@ class _TranslationsDiscoverSv implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => 'Upptäck';
 	@override String get switchProfile => 'Byt profil';
-	@override String get logout => 'Logga ut';
 	@override String get noContentAvailable => 'Inget innehåll tillgängligt';
 	@override String get addMediaToLibraries => 'Lägg till media till dina bibliotek';
 	@override String get continueWatching => 'Fortsätt titta';
-	@override String get play => 'Spela';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
-	@override String get pause => 'Pausa';
 	@override String get overview => 'Översikt';
 	@override String get cast => 'Rollbesättning';
 	@override String get seasons => 'Säsonger';
@@ -748,10 +758,7 @@ class _TranslationsNavigationSv implements TranslationsNavigationEn {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get home => 'Hem';
-	@override String get search => 'Sök';
 	@override String get libraries => 'Bibliotek';
-	@override String get settings => 'Inställningar';
 	@override String get downloads => 'Nedladdningar';
 }
 
@@ -776,6 +783,10 @@ class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Nedladdning borttagen';
 	@override String deleteConfirm({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Tar bort ${title}... (${current} av ${total})';
+	@override String get noDownloadsTree => 'Inga nedladdningar';
+	@override String get pauseAll => 'Pausa alla';
+	@override String get resumeAll => 'Återuppta alla';
+	@override String get deleteAll => 'Ta bort alla';
 }
 
 // Path: playlists
@@ -910,6 +921,42 @@ class _TranslationsShadersSv implements TranslationsShadersEn {
 	@override String get mode => 'Läge';
 }
 
+// Path: companionRemote
+class _TranslationsCompanionRemoteSv implements TranslationsCompanionRemoteEn {
+	_TranslationsCompanionRemoteSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Companion Remote';
+	@override String get connectToDevice => 'Anslut till enhet';
+	@override String get hostRemoteSession => 'Starta fjärrsession';
+	@override String get controlThisDevice => 'Styr den här enheten med din telefon';
+	@override String get remoteControl => 'Fjärrkontroll';
+	@override String get controlDesktop => 'Styr en datorenhet';
+	@override String connectedTo({required Object name}) => 'Ansluten till ${name}';
+	@override late final _TranslationsCompanionRemoteSessionSv session = _TranslationsCompanionRemoteSessionSv._(_root);
+	@override late final _TranslationsCompanionRemotePairingSv pairing = _TranslationsCompanionRemotePairingSv._(_root);
+	@override late final _TranslationsCompanionRemoteRemoteSv remote = _TranslationsCompanionRemoteRemoteSv._(_root);
+}
+
+// Path: videoSettings
+class _TranslationsVideoSettingsSv implements TranslationsVideoSettingsEn {
+	_TranslationsVideoSettingsSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get playbackSettings => 'Uppspelningsinställningar';
+	@override String get playbackSpeed => 'Uppspelningshastighet';
+	@override String get sleepTimer => 'Sovtimer';
+	@override String get audioSync => 'Ljudsynkronisering';
+	@override String get subtitleSync => 'Undertextsynkronisering';
+	@override String get hdr => 'HDR';
+	@override String get audioOutput => 'Ljudutgång';
+	@override String get performanceOverlay => 'Prestandaöverlägg';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsSv implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsSv._(this._root);
@@ -935,6 +982,7 @@ class _TranslationsHotkeysActionsSv implements TranslationsHotkeysActionsEn {
 	@override String get subSeekNext => 'Hoppa till nästa undertext';
 	@override String get subSeekPrev => 'Hoppa till föregående undertext';
 	@override String get shaderToggle => 'Växla shaders';
+	@override String get skipMarker => 'Hoppa över intro/eftertexter';
 }
 
 // Path: videoControls.pipErrors
@@ -979,6 +1027,110 @@ class _TranslationsLibrariesGroupingsSv implements TranslationsLibrariesGrouping
 	@override String get folders => 'Mappar';
 }
 
+// Path: companionRemote.session
+class _TranslationsCompanionRemoteSessionSv implements TranslationsCompanionRemoteSessionEn {
+	_TranslationsCompanionRemoteSessionSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get creatingSession => 'Skapar fjärrsession...';
+	@override String get failedToCreate => 'Kunde inte skapa fjärrsession:';
+	@override String get noSession => 'Ingen session tillgänglig';
+	@override String get scanQrCode => 'Skanna QR-kod';
+	@override String get orEnterManually => 'Eller ange manuellt';
+	@override String get hostAddress => 'Värdadress';
+	@override String get sessionId => 'Sessions-ID';
+	@override String get pin => 'PIN';
+	@override String get connected => 'Ansluten';
+	@override String get waitingForConnection => 'Väntar på anslutning...';
+	@override String get usePhoneToControl => 'Använd din mobila enhet för att styra denna app';
+	@override String copiedToClipboard({required Object label}) => '${label} kopierad till urklipp';
+	@override String get copyToClipboard => 'Kopiera till urklipp';
+	@override String get newSession => 'Ny session';
+	@override String get minimize => 'Minimera';
+}
+
+// Path: companionRemote.pairing
+class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemotePairingEn {
+	_TranslationsCompanionRemotePairingSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get recent => 'Senaste';
+	@override String get scan => 'Skanna';
+	@override String get manual => 'Manuell';
+	@override String get recentConnections => 'Senaste anslutningar';
+	@override String get quickReconnect => 'Återanslut snabbt till tidigare parkopplade enheter';
+	@override String get pairWithDesktop => 'Parkoppla med dator';
+	@override String get enterSessionDetails => 'Ange sessionsuppgifterna som visas på din datorenhet';
+	@override String get hostAddressHint => '192.168.1.100:48632';
+	@override String get sessionIdHint => 'Ange 8-teckens sessions-ID';
+	@override String get pinHint => 'Ange 6-siffrig PIN';
+	@override String get connecting => 'Ansluter...';
+	@override String get tips => 'Tips';
+	@override String get tipDesktop => 'Öppna Plezy på din dator och aktivera Companion Remote via inställningar eller meny';
+	@override String get tipScan => 'Använd fliken Skanna för att snabbt parkoppla genom att skanna QR-koden på din dator';
+	@override String get tipWifi => 'Se till att båda enheterna är på samma WiFi-nätverk';
+	@override String get cameraPermissionRequired => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.';
+	@override String cameraError({required Object error}) => 'Kunde inte starta kameran: ${error}';
+	@override String get scanInstruction => 'Rikta kameran mot QR-koden som visas på din dator';
+	@override String get noRecentConnections => 'Inga senaste anslutningar';
+	@override String get connectUsingManual => 'Anslut till en enhet via Manuell inmatning för att komma igång';
+	@override String get invalidQrCode => 'Ogiltigt QR-kodformat';
+	@override String get removeRecentConnection => 'Ta bort senaste anslutning';
+	@override String removeConfirm({required Object name}) => 'Ta bort "${name}" från senaste anslutningar?';
+	@override String get validationHostRequired => 'Ange en värdadress';
+	@override String get validationHostFormat => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)';
+	@override String get validationSessionIdRequired => 'Ange ett sessions-ID';
+	@override String get validationSessionIdLength => 'Sessions-ID måste vara 8 tecken';
+	@override String get validationPinRequired => 'Ange en PIN';
+	@override String get validationPinLength => 'PIN måste vara 6 siffror';
+	@override String get connectionTimedOut => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.';
+	@override String get sessionNotFound => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.';
+	@override String failedToConnect({required Object error}) => 'Kunde inte ansluta: ${error}';
+	@override String failedToLoadRecent({required Object error}) => 'Kunde inte ladda senaste sessioner: ${error}';
+}
+
+// Path: companionRemote.remote
+class _TranslationsCompanionRemoteRemoteSv implements TranslationsCompanionRemoteRemoteEn {
+	_TranslationsCompanionRemoteRemoteSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get disconnectConfirm => 'Vill du koppla från fjärrsessionen?';
+	@override String get reconnecting => 'Återansluter...';
+	@override String attemptOf({required Object current}) => 'Försök ${current} av 5';
+	@override String get retryNow => 'Försök nu';
+	@override String get connectionError => 'Anslutningsfel';
+	@override String get notConnected => 'Inte ansluten';
+	@override String get tabRemote => 'Fjärrkontroll';
+	@override String get tabPlay => 'Spela';
+	@override String get tabMore => 'Mer';
+	@override String get menu => 'Meny';
+	@override String get tabNavigation => 'Fliknavigering';
+	@override String get tabDiscover => 'Upptäck';
+	@override String get tabLibraries => 'Bibliotek';
+	@override String get tabSearch => 'Sök';
+	@override String get tabDownloads => 'Nedladdningar';
+	@override String get tabSettings => 'Inställningar';
+	@override String get previous => 'Föregående';
+	@override String get playPause => 'Spela/Pausa';
+	@override String get next => 'Nästa';
+	@override String get seekBack => 'Spola bakåt';
+	@override String get stop => 'Stopp';
+	@override String get seekForward => 'Spola framåt';
+	@override String get volume => 'Volym';
+	@override String get volumeDown => 'Ner';
+	@override String get volumeUp => 'Upp';
+	@override String get fullscreen => 'Helskärm';
+	@override String get subtitles => 'Undertexter';
+	@override String get audio => 'Ljud';
+	@override String get searchHint => 'Sök på datorn...';
+}
+
 /// The flat map containing all translations for locale <sv>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -988,12 +1140,9 @@ extension on TranslationsSv {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
-			'app.loading' => 'Laddar...',
 			'auth.signInWithPlex' => 'Logga in med Plex',
 			'auth.showQRCode' => 'Visa QR-kod',
-			'auth.cancel' => 'Avbryt',
 			'auth.authenticate' => 'Autentisera',
-			'auth.retry' => 'Försök igen',
 			'auth.debugEnterToken' => 'Debug: Ange Plex-token',
 			'auth.plexTokenLabel' => 'Plex-autentiseringstoken',
 			'auth.plexTokenHint' => 'Ange din Plex.tv-token',
@@ -1018,11 +1167,25 @@ extension on TranslationsSv {
 			'common.delete' => 'Ta bort',
 			'common.shuffle' => 'Blanda',
 			'common.addTo' => 'Lägg till i...',
+			'common.remove' => 'Ta bort',
+			'common.paste' => 'Klistra in',
+			'common.connect' => 'Anslut',
+			'common.disconnect' => 'Koppla från',
+			'common.play' => 'Spela',
+			'common.pause' => 'Pausa',
+			'common.resume' => 'Återuppta',
+			'common.error' => 'Fel',
+			'common.search' => 'Sök',
+			'common.home' => 'Hem',
+			'common.back' => 'Tillbaka',
+			'common.settings' => 'Inställningar',
+			'common.mute' => 'Ljud av',
+			'common.ok' => 'OK',
+			'common.loading' => 'Laddar...',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
 			'screens.mpvConfig' => 'MPV-konfiguration',
-			'screens.search' => 'Sök',
 			'screens.logs' => 'Loggar',
 			'update.available' => 'Uppdatering tillgänglig',
 			'update.versionAvailable' => ({required Object version}) => 'Version ${version} är tillgänglig',
@@ -1176,6 +1339,7 @@ extension on TranslationsSv {
 			'hotkeys.actions.subSeekNext' => 'Hoppa till nästa undertext',
 			'hotkeys.actions.subSeekPrev' => 'Hoppa till föregående undertext',
 			'hotkeys.actions.shaderToggle' => 'Växla shaders',
+			'hotkeys.actions.skipMarker' => 'Hoppa över intro/eftertexter',
 			'pinEntry.enterPin' => 'Ange PIN',
 			'pinEntry.showPin' => 'Visa PIN',
 			'pinEntry.hidePin' => 'Dölj PIN',
@@ -1266,13 +1430,14 @@ extension on TranslationsSv {
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Volymnivå',
 			'videoControls.endsAt' => ({required Object time}) => 'Slutar ${time}',
-			'videoControls.backButton' => 'Tillbaka',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
 			'videoControls.pipErrors.permissionDisabled' => 'Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild',
 			'videoControls.pipErrors.notSupported' => 'Denna enhet stöder inte bild-i-bild-läge',
 			'videoControls.pipErrors.failed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ett fel uppstod: ${error}',
+			'videoControls.chapters' => 'Kapitel',
+			'videoControls.noChaptersAvailable' => 'Inga kapitel tillgängliga',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Begränsad',
 			'userStatus.protected' => 'Skyddad',
@@ -1343,16 +1508,12 @@ extension on TranslationsSv {
 			'mpvConfig.confirmDeleteProperty' => 'Är du säker på att du vill ta bort denna egenskap?',
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} poster',
 			'dialog.confirmAction' => 'Bekräfta åtgärd',
-			'dialog.cancel' => 'Avbryt',
 			'discover.title' => 'Upptäck',
 			'discover.switchProfile' => 'Byt profil',
-			'discover.logout' => 'Logga ut',
 			'discover.noContentAvailable' => 'Inget innehåll tillgängligt',
 			'discover.addMediaToLibraries' => 'Lägg till media till dina bibliotek',
 			'discover.continueWatching' => 'Fortsätt titta',
-			'discover.play' => 'Spela',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
-			'discover.pause' => 'Pausa',
 			'discover.overview' => 'Översikt',
 			'discover.cast' => 'Rollbesättning',
 			'discover.seasons' => 'Säsonger',
@@ -1442,10 +1603,7 @@ extension on TranslationsSv {
 			'licenses.license' => 'Licens',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licens ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenser',
-			'navigation.home' => 'Hem',
-			'navigation.search' => 'Sök',
 			'navigation.libraries' => 'Bibliotek',
-			'navigation.settings' => 'Inställningar',
 			'navigation.downloads' => 'Nedladdningar',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
@@ -1461,6 +1619,10 @@ extension on TranslationsSv {
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Tar bort ${title}... (${current} av ${total})',
+			'downloads.noDownloadsTree' => 'Inga nedladdningar',
+			'downloads.pauseAll' => 'Pausa alla',
+			'downloads.resumeAll' => 'Återuppta alla',
+			'downloads.deleteAll' => 'Ta bort alla',
 			'playlists.title' => 'Spellistor',
 			'playlists.noPlaylists' => 'Inga spellistor hittades',
 			'playlists.create' => 'Skapa spellista',
@@ -1489,6 +1651,8 @@ extension on TranslationsSv {
 			'playlists.playlist' => 'Spellista',
 			'collections.title' => 'Samlingar',
 			'collections.collection' => 'Samling',
+			_ => null,
+		} ?? switch (path) {
 			'collections.empty' => 'Samlingen är tom',
 			'collections.unknownLibrarySection' => 'Kan inte ta bort: okänd bibliotekssektion',
 			'collections.deleteCollection' => 'Ta bort samling',
@@ -1499,8 +1663,6 @@ extension on TranslationsSv {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
 			'collections.selectCollection' => 'Välj samling',
 			'collections.createNewCollection' => 'Skapa ny samling',
-			_ => null,
-		} ?? switch (path) {
 			'collections.collectionName' => 'Samlingsnamn',
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
 			'collections.addedToCollection' => 'Tillagd i samling',
@@ -1559,6 +1721,98 @@ extension on TranslationsSv {
 			'shaders.qualityFast' => 'Snabb',
 			'shaders.qualityHQ' => 'Hög kvalitet',
 			'shaders.mode' => 'Läge',
+			'companionRemote.title' => 'Companion Remote',
+			'companionRemote.connectToDevice' => 'Anslut till enhet',
+			'companionRemote.hostRemoteSession' => 'Starta fjärrsession',
+			'companionRemote.controlThisDevice' => 'Styr den här enheten med din telefon',
+			'companionRemote.remoteControl' => 'Fjärrkontroll',
+			'companionRemote.controlDesktop' => 'Styr en datorenhet',
+			'companionRemote.connectedTo' => ({required Object name}) => 'Ansluten till ${name}',
+			'companionRemote.session.creatingSession' => 'Skapar fjärrsession...',
+			'companionRemote.session.failedToCreate' => 'Kunde inte skapa fjärrsession:',
+			'companionRemote.session.noSession' => 'Ingen session tillgänglig',
+			'companionRemote.session.scanQrCode' => 'Skanna QR-kod',
+			'companionRemote.session.orEnterManually' => 'Eller ange manuellt',
+			'companionRemote.session.hostAddress' => 'Värdadress',
+			'companionRemote.session.sessionId' => 'Sessions-ID',
+			'companionRemote.session.pin' => 'PIN',
+			'companionRemote.session.connected' => 'Ansluten',
+			'companionRemote.session.waitingForConnection' => 'Väntar på anslutning...',
+			'companionRemote.session.usePhoneToControl' => 'Använd din mobila enhet för att styra denna app',
+			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} kopierad till urklipp',
+			'companionRemote.session.copyToClipboard' => 'Kopiera till urklipp',
+			'companionRemote.session.newSession' => 'Ny session',
+			'companionRemote.session.minimize' => 'Minimera',
+			'companionRemote.pairing.recent' => 'Senaste',
+			'companionRemote.pairing.scan' => 'Skanna',
+			'companionRemote.pairing.manual' => 'Manuell',
+			'companionRemote.pairing.recentConnections' => 'Senaste anslutningar',
+			'companionRemote.pairing.quickReconnect' => 'Återanslut snabbt till tidigare parkopplade enheter',
+			'companionRemote.pairing.pairWithDesktop' => 'Parkoppla med dator',
+			'companionRemote.pairing.enterSessionDetails' => 'Ange sessionsuppgifterna som visas på din datorenhet',
+			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
+			'companionRemote.pairing.sessionIdHint' => 'Ange 8-teckens sessions-ID',
+			'companionRemote.pairing.pinHint' => 'Ange 6-siffrig PIN',
+			'companionRemote.pairing.connecting' => 'Ansluter...',
+			'companionRemote.pairing.tips' => 'Tips',
+			'companionRemote.pairing.tipDesktop' => 'Öppna Plezy på din dator och aktivera Companion Remote via inställningar eller meny',
+			'companionRemote.pairing.tipScan' => 'Använd fliken Skanna för att snabbt parkoppla genom att skanna QR-koden på din dator',
+			'companionRemote.pairing.tipWifi' => 'Se till att båda enheterna är på samma WiFi-nätverk',
+			'companionRemote.pairing.cameraPermissionRequired' => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.',
+			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kunde inte starta kameran: ${error}',
+			'companionRemote.pairing.scanInstruction' => 'Rikta kameran mot QR-koden som visas på din dator',
+			'companionRemote.pairing.noRecentConnections' => 'Inga senaste anslutningar',
+			'companionRemote.pairing.connectUsingManual' => 'Anslut till en enhet via Manuell inmatning för att komma igång',
+			'companionRemote.pairing.invalidQrCode' => 'Ogiltigt QR-kodformat',
+			'companionRemote.pairing.removeRecentConnection' => 'Ta bort senaste anslutning',
+			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Ta bort "${name}" från senaste anslutningar?',
+			'companionRemote.pairing.validationHostRequired' => 'Ange en värdadress',
+			'companionRemote.pairing.validationHostFormat' => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)',
+			'companionRemote.pairing.validationSessionIdRequired' => 'Ange ett sessions-ID',
+			'companionRemote.pairing.validationSessionIdLength' => 'Sessions-ID måste vara 8 tecken',
+			'companionRemote.pairing.validationPinRequired' => 'Ange en PIN',
+			'companionRemote.pairing.validationPinLength' => 'PIN måste vara 6 siffror',
+			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.',
+			'companionRemote.pairing.sessionNotFound' => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.',
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
+			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Kunde inte ladda senaste sessioner: ${error}',
+			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
+			'companionRemote.remote.reconnecting' => 'Återansluter...',
+			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Försök ${current} av 5',
+			'companionRemote.remote.retryNow' => 'Försök nu',
+			'companionRemote.remote.connectionError' => 'Anslutningsfel',
+			'companionRemote.remote.notConnected' => 'Inte ansluten',
+			'companionRemote.remote.tabRemote' => 'Fjärrkontroll',
+			'companionRemote.remote.tabPlay' => 'Spela',
+			'companionRemote.remote.tabMore' => 'Mer',
+			'companionRemote.remote.menu' => 'Meny',
+			'companionRemote.remote.tabNavigation' => 'Fliknavigering',
+			'companionRemote.remote.tabDiscover' => 'Upptäck',
+			'companionRemote.remote.tabLibraries' => 'Bibliotek',
+			'companionRemote.remote.tabSearch' => 'Sök',
+			'companionRemote.remote.tabDownloads' => 'Nedladdningar',
+			'companionRemote.remote.tabSettings' => 'Inställningar',
+			'companionRemote.remote.previous' => 'Föregående',
+			'companionRemote.remote.playPause' => 'Spela/Pausa',
+			'companionRemote.remote.next' => 'Nästa',
+			'companionRemote.remote.seekBack' => 'Spola bakåt',
+			'companionRemote.remote.stop' => 'Stopp',
+			'companionRemote.remote.seekForward' => 'Spola framåt',
+			'companionRemote.remote.volume' => 'Volym',
+			'companionRemote.remote.volumeDown' => 'Ner',
+			'companionRemote.remote.volumeUp' => 'Upp',
+			'companionRemote.remote.fullscreen' => 'Helskärm',
+			'companionRemote.remote.subtitles' => 'Undertexter',
+			'companionRemote.remote.audio' => 'Ljud',
+			'companionRemote.remote.searchHint' => 'Sök på datorn...',
+			'videoSettings.playbackSettings' => 'Uppspelningsinställningar',
+			'videoSettings.playbackSpeed' => 'Uppspelningshastighet',
+			'videoSettings.sleepTimer' => 'Sovtimer',
+			'videoSettings.audioSync' => 'Ljudsynkronisering',
+			'videoSettings.subtitleSync' => 'Undertextsynkronisering',
+			'videoSettings.hdr' => 'HDR',
+			'videoSettings.audioOutput' => 'Ljudutgång',
+			'videoSettings.performanceOverlay' => 'Prestandaöverlägg',
 			_ => null,
 		};
 	}

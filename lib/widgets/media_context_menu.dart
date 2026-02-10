@@ -140,7 +140,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Special actions for collections and playlists
     if (isCollection || isPlaylist) {
       // Play
-      menuActions.add(_MenuAction(value: 'play', icon: Symbols.play_arrow_rounded, label: t.discover.play));
+      menuActions.add(_MenuAction(value: 'play', icon: Symbols.play_arrow_rounded, label: t.common.play));
 
       // Shuffle
       menuActions.add(_MenuAction(value: 'shuffle', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay));

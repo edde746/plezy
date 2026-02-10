@@ -248,7 +248,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.auth.cancel)),
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.common.cancel)),
                 ElevatedButton(
                   onPressed: () async {
                     final token = tokenController.text.trim();
@@ -452,7 +452,7 @@ class _AuthScreenState extends State<AuthScreen> {
         OutlinedButton(
           onPressed: _retryAuthentication,
           style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-          child: Text(t.auth.retry),
+          child: Text(t.common.retry),
         ),
       ],
     );
@@ -491,7 +491,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 autofocus: true,
                 onPressed: _retryAuthentication,
                 style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-                child: Text(t.auth.retry),
+                child: Text(t.common.retry),
               ),
               const SizedBox(width: 16),
               OutlinedButton(

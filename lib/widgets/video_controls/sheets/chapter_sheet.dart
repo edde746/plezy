@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../i18n/strings.g.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/plex_client.dart';
 import '../../../services/download_storage_service.dart';
@@ -108,8 +109,8 @@ class _ChapterSheetState extends State<ChapterSheet> {
           if (!widget.chaptersLoaded) {
             content = const Center(child: CircularProgressIndicator());
           } else if (widget.chapters.isEmpty) {
-            content = const Center(
-              child: Text('No chapters available', style: TextStyle(color: Colors.white70)),
+            content = Center(
+              child: Text(t.videoControls.noChaptersAvailable, style: const TextStyle(color: Colors.white70)),
             );
           } else {
             content = ListView.builder(
@@ -179,7 +180,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
             );
           }
 
-          return BaseVideoControlSheet(title: 'Chapters', icon: Symbols.video_library_rounded, child: content);
+          return BaseVideoControlSheet(title: t.videoControls.chapters, icon: Symbols.video_library_rounded, child: content);
         },
       ),
     );

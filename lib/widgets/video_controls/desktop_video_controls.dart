@@ -540,38 +540,51 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   semanticLabel: t.videoControls.nextButton,
                 ),
               ),
-              // Finish time
-              StreamBuilder<Duration>(
-                stream: widget.player.streams.position,
-                initialData: widget.player.state.position,
-                builder: (context, posSnap) {
-                  return StreamBuilder<Duration>(
-                    stream: widget.player.streams.duration,
-                    initialData: widget.player.state.duration,
-                    builder: (context, durSnap) {
-                      return StreamBuilder<double>(
-                        stream: widget.player.streams.rate,
-                        initialData: widget.player.state.rate,
-                        builder: (context, rateSnap) {
-                          final position = posSnap.data ?? Duration.zero;
-                          final duration = durSnap.data ?? Duration.zero;
-                          final remaining = duration - position;
-                          final rate = rateSnap.data ?? 1.0;
-                          if (remaining.inSeconds <= 0) return const SizedBox.shrink();
-                          return Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: Text(
-                              t.videoControls.endsAt(time: formatFinishTime(remaining, rate: rate)),
-                              style: const TextStyle(color: Colors.white70, fontSize: 13),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
+              // Finish time (hidden when too narrow to fit)
+              Expanded(
+                child: StreamBuilder<Duration>(
+                  stream: widget.player.streams.position,
+                  initialData: widget.player.state.position,
+                  builder: (context, posSnap) {
+                    return StreamBuilder<Duration>(
+                      stream: widget.player.streams.duration,
+                      initialData: widget.player.state.duration,
+                      builder: (context, durSnap) {
+                        return StreamBuilder<double>(
+                          stream: widget.player.streams.rate,
+                          initialData: widget.player.state.rate,
+                          builder: (context, rateSnap) {
+                            final position = posSnap.data ?? Duration.zero;
+                            final duration = durSnap.data ?? Duration.zero;
+                            final remaining = duration - position;
+                            final rate = rateSnap.data ?? 1.0;
+                            if (remaining.inSeconds <= 0) return const SizedBox.shrink();
+
+                            final text = t.videoControls.endsAt(time: formatFinishTime(remaining, rate: rate));
+                            const style = TextStyle(color: Colors.white70, fontSize: 13);
+
+                            return LayoutBuilder(
+                              builder: (context, constraints) {
+                                final tp = TextPainter(
+                                  text: TextSpan(text: text, style: style),
+                                  textDirection: TextDirection.ltr,
+                                )..layout();
+                                final textWidth = tp.width + 8;
+                                tp.dispose();
+                                if (textWidth > constraints.maxWidth) return const SizedBox.shrink();
+                                return Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: Text(text, style: style),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-              const Spacer(),
               // Volume control
               VolumeControl(
                 player: widget.player,

@@ -70,6 +70,8 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCollectionsNl collections = _TranslationsCollectionsNl._(_root);
 	@override late final _TranslationsWatchTogetherNl watchTogether = _TranslationsWatchTogetherNl._(_root);
 	@override late final _TranslationsShadersNl shaders = _TranslationsShadersNl._(_root);
+	@override late final _TranslationsCompanionRemoteNl companionRemote = _TranslationsCompanionRemoteNl._(_root);
+	@override late final _TranslationsVideoSettingsNl videoSettings = _TranslationsVideoSettingsNl._(_root);
 }
 
 // Path: app
@@ -80,7 +82,6 @@ class _TranslationsAppNl implements TranslationsAppEn {
 
 	// Translations
 	@override String get title => 'Plezy';
-	@override String get loading => 'Laden...';
 }
 
 // Path: auth
@@ -92,9 +93,7 @@ class _TranslationsAuthNl implements TranslationsAuthEn {
 	// Translations
 	@override String get signInWithPlex => 'Inloggen met Plex';
 	@override String get showQRCode => 'Toon QR-code';
-	@override String get cancel => 'Annuleren';
 	@override String get authenticate => 'Authenticeren';
-	@override String get retry => 'Opnieuw proberen';
 	@override String get debugEnterToken => 'Debug: Voer Plex Token in';
 	@override String get plexTokenLabel => 'Plex Authenticatietoken';
 	@override String get plexTokenHint => 'Voer je Plex.tv token in';
@@ -128,6 +127,21 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get delete => 'Verwijderen';
 	@override String get shuffle => 'Willekeurig';
 	@override String get addTo => 'Toevoegen aan...';
+	@override String get remove => 'Verwijderen';
+	@override String get paste => 'Plakken';
+	@override String get connect => 'Verbinden';
+	@override String get disconnect => 'Verbinding verbreken';
+	@override String get play => 'Afspelen';
+	@override String get pause => 'Pauzeren';
+	@override String get resume => 'Hervatten';
+	@override String get error => 'Fout';
+	@override String get search => 'Zoeken';
+	@override String get home => 'Home';
+	@override String get back => 'Terug';
+	@override String get settings => 'Instellingen';
+	@override String get mute => 'Dempen';
+	@override String get ok => 'OK';
+	@override String get loading => 'Laden...';
 }
 
 // Path: screens
@@ -141,7 +155,6 @@ class _TranslationsScreensNl implements TranslationsScreensEn {
 	@override String get switchProfile => 'Wissel van profiel';
 	@override String get subtitleStyling => 'Ondertitel opmaak';
 	@override String get mpvConfig => 'MPV-configuratie';
-	@override String get search => 'Zoeken';
 	@override String get logs => 'Logbestanden';
 }
 
@@ -458,9 +471,10 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Videotijdlijn';
 	@override String get volumeSlider => 'Volumeniveau';
 	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
-	@override String get backButton => 'Terug';
 	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
 	@override late final _TranslationsVideoControlsPipErrorsNl pipErrors = _TranslationsVideoControlsPipErrorsNl._(_root);
+	@override String get chapters => 'Hoofdstukken';
+	@override String get noChaptersAvailable => 'Geen hoofdstukken beschikbaar';
 }
 
 // Path: userStatus
@@ -576,7 +590,6 @@ class _TranslationsDialogNl implements TranslationsDialogEn {
 
 	// Translations
 	@override String get confirmAction => 'Bevestig actie';
-	@override String get cancel => 'Annuleren';
 }
 
 // Path: discover
@@ -588,13 +601,10 @@ class _TranslationsDiscoverNl implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => 'Ontdekken';
 	@override String get switchProfile => 'Wissel van profiel';
-	@override String get logout => 'Uitloggen';
 	@override String get noContentAvailable => 'Geen inhoud beschikbaar';
 	@override String get addMediaToLibraries => 'Voeg wat media toe aan je bibliotheken';
 	@override String get continueWatching => 'Verder kijken';
-	@override String get play => 'Afspelen';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
-	@override String get pause => 'Pauzeren';
 	@override String get overview => 'Overzicht';
 	@override String get cast => 'Acteurs';
 	@override String get seasons => 'Seizoenen';
@@ -748,10 +758,7 @@ class _TranslationsNavigationNl implements TranslationsNavigationEn {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get home => 'Thuis';
-	@override String get search => 'Zoeken';
 	@override String get libraries => 'Bibliotheken';
-	@override String get settings => 'Instellingen';
 	@override String get downloads => 'Downloads';
 }
 
@@ -776,6 +783,10 @@ class _TranslationsDownloadsNl implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Download verwijderd';
 	@override String deleteConfirm({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})';
+	@override String get noDownloadsTree => 'Geen downloads';
+	@override String get pauseAll => 'Alles pauzeren';
+	@override String get resumeAll => 'Alles hervatten';
+	@override String get deleteAll => 'Alles verwijderen';
 }
 
 // Path: playlists
@@ -910,6 +921,42 @@ class _TranslationsShadersNl implements TranslationsShadersEn {
 	@override String get mode => 'Modus';
 }
 
+// Path: companionRemote
+class _TranslationsCompanionRemoteNl implements TranslationsCompanionRemoteEn {
+	_TranslationsCompanionRemoteNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Companion Remote';
+	@override String get connectToDevice => 'Verbinden met apparaat';
+	@override String get hostRemoteSession => 'Externe sessie hosten';
+	@override String get controlThisDevice => 'Bedien dit apparaat met je telefoon';
+	@override String get remoteControl => 'Afstandsbediening';
+	@override String get controlDesktop => 'Bedien een desktop-apparaat';
+	@override String connectedTo({required Object name}) => 'Verbonden met ${name}';
+	@override late final _TranslationsCompanionRemoteSessionNl session = _TranslationsCompanionRemoteSessionNl._(_root);
+	@override late final _TranslationsCompanionRemotePairingNl pairing = _TranslationsCompanionRemotePairingNl._(_root);
+	@override late final _TranslationsCompanionRemoteRemoteNl remote = _TranslationsCompanionRemoteRemoteNl._(_root);
+}
+
+// Path: videoSettings
+class _TranslationsVideoSettingsNl implements TranslationsVideoSettingsEn {
+	_TranslationsVideoSettingsNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get playbackSettings => 'Afspeelinstellingen';
+	@override String get playbackSpeed => 'Afspeelsnelheid';
+	@override String get sleepTimer => 'Slaaptimer';
+	@override String get audioSync => 'Audio synchronisatie';
+	@override String get subtitleSync => 'Ondertitel synchronisatie';
+	@override String get hdr => 'HDR';
+	@override String get audioOutput => 'Audio-uitvoer';
+	@override String get performanceOverlay => 'Prestatie-overlay';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsNl._(this._root);
@@ -935,6 +982,7 @@ class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	@override String get subSeekNext => 'Naar volgende ondertitel';
 	@override String get subSeekPrev => 'Naar vorige ondertitel';
 	@override String get shaderToggle => 'Shaders aan/uit';
+	@override String get skipMarker => 'Intro/aftiteling overslaan';
 }
 
 // Path: videoControls.pipErrors
@@ -979,6 +1027,110 @@ class _TranslationsLibrariesGroupingsNl implements TranslationsLibrariesGrouping
 	@override String get folders => 'Mappen';
 }
 
+// Path: companionRemote.session
+class _TranslationsCompanionRemoteSessionNl implements TranslationsCompanionRemoteSessionEn {
+	_TranslationsCompanionRemoteSessionNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get creatingSession => 'Externe sessie aanmaken...';
+	@override String get failedToCreate => 'Kan externe sessie niet aanmaken:';
+	@override String get noSession => 'Geen sessie beschikbaar';
+	@override String get scanQrCode => 'Scan QR-code';
+	@override String get orEnterManually => 'Of voer handmatig in';
+	@override String get hostAddress => 'Hostadres';
+	@override String get sessionId => 'Sessie-ID';
+	@override String get pin => 'PIN';
+	@override String get connected => 'Verbonden';
+	@override String get waitingForConnection => 'Wachten op verbinding...';
+	@override String get usePhoneToControl => 'Gebruik je mobiele apparaat om deze app te bedienen';
+	@override String copiedToClipboard({required Object label}) => '${label} gekopieerd naar klembord';
+	@override String get copyToClipboard => 'Kopieer naar klembord';
+	@override String get newSession => 'Nieuwe sessie';
+	@override String get minimize => 'Minimaliseren';
+}
+
+// Path: companionRemote.pairing
+class _TranslationsCompanionRemotePairingNl implements TranslationsCompanionRemotePairingEn {
+	_TranslationsCompanionRemotePairingNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get recent => 'Recent';
+	@override String get scan => 'Scannen';
+	@override String get manual => 'Handmatig';
+	@override String get recentConnections => 'Recente verbindingen';
+	@override String get quickReconnect => 'Snel opnieuw verbinden met eerder gekoppelde apparaten';
+	@override String get pairWithDesktop => 'Koppelen met desktop';
+	@override String get enterSessionDetails => 'Voer de sessiegegevens in die op je desktop-apparaat worden getoond';
+	@override String get hostAddressHint => '192.168.1.100:48632';
+	@override String get sessionIdHint => 'Voer 8-tekens sessie-ID in';
+	@override String get pinHint => 'Voer 6-cijferige PIN in';
+	@override String get connecting => 'Verbinden...';
+	@override String get tips => 'Tips';
+	@override String get tipDesktop => 'Open Plezy op je desktop en schakel Companion Remote in via instellingen of menu';
+	@override String get tipScan => 'Gebruik het tabblad Scannen om snel te koppelen door de QR-code op je desktop te scannen';
+	@override String get tipWifi => 'Zorg ervoor dat beide apparaten op hetzelfde WiFi-netwerk zitten';
+	@override String get cameraPermissionRequired => 'Cameratoestemming is vereist om QR-codes te scannen.\nGeef cameratoegang in je apparaatinstellingen.';
+	@override String cameraError({required Object error}) => 'Kan camera niet starten: ${error}';
+	@override String get scanInstruction => 'Richt je camera op de QR-code die op je desktop wordt getoond';
+	@override String get noRecentConnections => 'Geen recente verbindingen';
+	@override String get connectUsingManual => 'Verbind met een apparaat via Handmatige invoer om te beginnen';
+	@override String get invalidQrCode => 'Ongeldig QR-codeformaat';
+	@override String get removeRecentConnection => 'Recente verbinding verwijderen';
+	@override String removeConfirm({required Object name}) => '"${name}" verwijderen uit recente verbindingen?';
+	@override String get validationHostRequired => 'Voer een hostadres in';
+	@override String get validationHostFormat => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)';
+	@override String get validationSessionIdRequired => 'Voer een sessie-ID in';
+	@override String get validationSessionIdLength => 'Sessie-ID moet 8 tekens zijn';
+	@override String get validationPinRequired => 'Voer een PIN in';
+	@override String get validationPinLength => 'PIN moet 6 cijfers zijn';
+	@override String get connectionTimedOut => 'Verbinding verlopen. Controleer de sessie-ID en PIN.';
+	@override String get sessionNotFound => 'Kan de sessie niet vinden. Controleer je gegevens.';
+	@override String failedToConnect({required Object error}) => 'Verbinden mislukt: ${error}';
+	@override String failedToLoadRecent({required Object error}) => 'Kan recente sessies niet laden: ${error}';
+}
+
+// Path: companionRemote.remote
+class _TranslationsCompanionRemoteRemoteNl implements TranslationsCompanionRemoteRemoteEn {
+	_TranslationsCompanionRemoteRemoteNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get disconnectConfirm => 'Wil je de verbinding met de externe sessie verbreken?';
+	@override String get reconnecting => 'Opnieuw verbinden...';
+	@override String attemptOf({required Object current}) => 'Poging ${current} van 5';
+	@override String get retryNow => 'Nu opnieuw proberen';
+	@override String get connectionError => 'Verbindingsfout';
+	@override String get notConnected => 'Niet verbonden';
+	@override String get tabRemote => 'Afstandsbediening';
+	@override String get tabPlay => 'Afspelen';
+	@override String get tabMore => 'Meer';
+	@override String get menu => 'Menu';
+	@override String get tabNavigation => 'Tabnavigatie';
+	@override String get tabDiscover => 'Ontdekken';
+	@override String get tabLibraries => 'Bibliotheken';
+	@override String get tabSearch => 'Zoeken';
+	@override String get tabDownloads => 'Downloads';
+	@override String get tabSettings => 'Instellingen';
+	@override String get previous => 'Vorige';
+	@override String get playPause => 'Afspelen/Pauzeren';
+	@override String get next => 'Volgende';
+	@override String get seekBack => 'Terugspoelen';
+	@override String get stop => 'Stoppen';
+	@override String get seekForward => 'Vooruitspoelen';
+	@override String get volume => 'Volume';
+	@override String get volumeDown => 'Omlaag';
+	@override String get volumeUp => 'Omhoog';
+	@override String get fullscreen => 'Volledig scherm';
+	@override String get subtitles => 'Ondertitels';
+	@override String get audio => 'Audio';
+	@override String get searchHint => 'Zoeken op desktop...';
+}
+
 /// The flat map containing all translations for locale <nl>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -988,12 +1140,9 @@ extension on TranslationsNl {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
-			'app.loading' => 'Laden...',
 			'auth.signInWithPlex' => 'Inloggen met Plex',
 			'auth.showQRCode' => 'Toon QR-code',
-			'auth.cancel' => 'Annuleren',
 			'auth.authenticate' => 'Authenticeren',
-			'auth.retry' => 'Opnieuw proberen',
 			'auth.debugEnterToken' => 'Debug: Voer Plex Token in',
 			'auth.plexTokenLabel' => 'Plex Authenticatietoken',
 			'auth.plexTokenHint' => 'Voer je Plex.tv token in',
@@ -1018,11 +1167,25 @@ extension on TranslationsNl {
 			'common.delete' => 'Verwijderen',
 			'common.shuffle' => 'Willekeurig',
 			'common.addTo' => 'Toevoegen aan...',
+			'common.remove' => 'Verwijderen',
+			'common.paste' => 'Plakken',
+			'common.connect' => 'Verbinden',
+			'common.disconnect' => 'Verbinding verbreken',
+			'common.play' => 'Afspelen',
+			'common.pause' => 'Pauzeren',
+			'common.resume' => 'Hervatten',
+			'common.error' => 'Fout',
+			'common.search' => 'Zoeken',
+			'common.home' => 'Home',
+			'common.back' => 'Terug',
+			'common.settings' => 'Instellingen',
+			'common.mute' => 'Dempen',
+			'common.ok' => 'OK',
+			'common.loading' => 'Laden...',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
 			'screens.mpvConfig' => 'MPV-configuratie',
-			'screens.search' => 'Zoeken',
 			'screens.logs' => 'Logbestanden',
 			'update.available' => 'Update beschikbaar',
 			'update.versionAvailable' => ({required Object version}) => 'Versie ${version} is beschikbaar',
@@ -1176,6 +1339,7 @@ extension on TranslationsNl {
 			'hotkeys.actions.subSeekNext' => 'Naar volgende ondertitel',
 			'hotkeys.actions.subSeekPrev' => 'Naar vorige ondertitel',
 			'hotkeys.actions.shaderToggle' => 'Shaders aan/uit',
+			'hotkeys.actions.skipMarker' => 'Intro/aftiteling overslaan',
 			'pinEntry.enterPin' => 'Voer PIN in',
 			'pinEntry.showPin' => 'Toon PIN',
 			'pinEntry.hidePin' => 'Verberg PIN',
@@ -1266,13 +1430,14 @@ extension on TranslationsNl {
 			'videoControls.timelineSlider' => 'Videotijdlijn',
 			'videoControls.volumeSlider' => 'Volumeniveau',
 			'videoControls.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
-			'videoControls.backButton' => 'Terug',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
 			'videoControls.pipErrors.permissionDisabled' => 'Beeld-in-beeld toestemming is uitgeschakeld. Schakel deze in via Instellingen > Apps > Plezy > Beeld-in-beeld',
 			'videoControls.pipErrors.notSupported' => 'Dit apparaat ondersteunt geen beeld-in-beeld modus',
 			'videoControls.pipErrors.failed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Er is een fout opgetreden: ${error}',
+			'videoControls.chapters' => 'Hoofdstukken',
+			'videoControls.noChaptersAvailable' => 'Geen hoofdstukken beschikbaar',
 			'userStatus.admin' => 'Beheerder',
 			'userStatus.restricted' => 'Beperkt',
 			'userStatus.protected' => 'Beschermd',
@@ -1343,16 +1508,12 @@ extension on TranslationsNl {
 			'mpvConfig.confirmDeleteProperty' => 'Weet je zeker dat je deze eigenschap wilt verwijderen?',
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} items',
 			'dialog.confirmAction' => 'Bevestig actie',
-			'dialog.cancel' => 'Annuleren',
 			'discover.title' => 'Ontdekken',
 			'discover.switchProfile' => 'Wissel van profiel',
-			'discover.logout' => 'Uitloggen',
 			'discover.noContentAvailable' => 'Geen inhoud beschikbaar',
 			'discover.addMediaToLibraries' => 'Voeg wat media toe aan je bibliotheken',
 			'discover.continueWatching' => 'Verder kijken',
-			'discover.play' => 'Afspelen',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
-			'discover.pause' => 'Pauzeren',
 			'discover.overview' => 'Overzicht',
 			'discover.cast' => 'Acteurs',
 			'discover.seasons' => 'Seizoenen',
@@ -1442,10 +1603,7 @@ extension on TranslationsNl {
 			'licenses.license' => 'Licentie',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licentie ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenties',
-			'navigation.home' => 'Thuis',
-			'navigation.search' => 'Zoeken',
 			'navigation.libraries' => 'Bibliotheken',
-			'navigation.settings' => 'Instellingen',
 			'navigation.downloads' => 'Downloads',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
@@ -1461,6 +1619,10 @@ extension on TranslationsNl {
 			'downloads.downloadDeleted' => 'Download verwijderd',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})',
+			'downloads.noDownloadsTree' => 'Geen downloads',
+			'downloads.pauseAll' => 'Alles pauzeren',
+			'downloads.resumeAll' => 'Alles hervatten',
+			'downloads.deleteAll' => 'Alles verwijderen',
 			'playlists.title' => 'Afspeellijsten',
 			'playlists.noPlaylists' => 'Geen afspeellijsten gevonden',
 			'playlists.create' => 'Afspeellijst maken',
@@ -1489,6 +1651,8 @@ extension on TranslationsNl {
 			'playlists.playlist' => 'Afspeellijst',
 			'collections.title' => 'Collecties',
 			'collections.collection' => 'Collectie',
+			_ => null,
+		} ?? switch (path) {
 			'collections.empty' => 'Collectie is leeg',
 			'collections.unknownLibrarySection' => 'Kan niet verwijderen: onbekende bibliotheeksectie',
 			'collections.deleteCollection' => 'Collectie verwijderen',
@@ -1499,8 +1663,6 @@ extension on TranslationsNl {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
 			'collections.selectCollection' => 'Selecteer collectie',
 			'collections.createNewCollection' => 'Nieuwe collectie maken',
-			_ => null,
-		} ?? switch (path) {
 			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer collectienaam in',
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
@@ -1559,6 +1721,98 @@ extension on TranslationsNl {
 			'shaders.qualityFast' => 'Snel',
 			'shaders.qualityHQ' => 'Hoge kwaliteit',
 			'shaders.mode' => 'Modus',
+			'companionRemote.title' => 'Companion Remote',
+			'companionRemote.connectToDevice' => 'Verbinden met apparaat',
+			'companionRemote.hostRemoteSession' => 'Externe sessie hosten',
+			'companionRemote.controlThisDevice' => 'Bedien dit apparaat met je telefoon',
+			'companionRemote.remoteControl' => 'Afstandsbediening',
+			'companionRemote.controlDesktop' => 'Bedien een desktop-apparaat',
+			'companionRemote.connectedTo' => ({required Object name}) => 'Verbonden met ${name}',
+			'companionRemote.session.creatingSession' => 'Externe sessie aanmaken...',
+			'companionRemote.session.failedToCreate' => 'Kan externe sessie niet aanmaken:',
+			'companionRemote.session.noSession' => 'Geen sessie beschikbaar',
+			'companionRemote.session.scanQrCode' => 'Scan QR-code',
+			'companionRemote.session.orEnterManually' => 'Of voer handmatig in',
+			'companionRemote.session.hostAddress' => 'Hostadres',
+			'companionRemote.session.sessionId' => 'Sessie-ID',
+			'companionRemote.session.pin' => 'PIN',
+			'companionRemote.session.connected' => 'Verbonden',
+			'companionRemote.session.waitingForConnection' => 'Wachten op verbinding...',
+			'companionRemote.session.usePhoneToControl' => 'Gebruik je mobiele apparaat om deze app te bedienen',
+			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} gekopieerd naar klembord',
+			'companionRemote.session.copyToClipboard' => 'Kopieer naar klembord',
+			'companionRemote.session.newSession' => 'Nieuwe sessie',
+			'companionRemote.session.minimize' => 'Minimaliseren',
+			'companionRemote.pairing.recent' => 'Recent',
+			'companionRemote.pairing.scan' => 'Scannen',
+			'companionRemote.pairing.manual' => 'Handmatig',
+			'companionRemote.pairing.recentConnections' => 'Recente verbindingen',
+			'companionRemote.pairing.quickReconnect' => 'Snel opnieuw verbinden met eerder gekoppelde apparaten',
+			'companionRemote.pairing.pairWithDesktop' => 'Koppelen met desktop',
+			'companionRemote.pairing.enterSessionDetails' => 'Voer de sessiegegevens in die op je desktop-apparaat worden getoond',
+			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
+			'companionRemote.pairing.sessionIdHint' => 'Voer 8-tekens sessie-ID in',
+			'companionRemote.pairing.pinHint' => 'Voer 6-cijferige PIN in',
+			'companionRemote.pairing.connecting' => 'Verbinden...',
+			'companionRemote.pairing.tips' => 'Tips',
+			'companionRemote.pairing.tipDesktop' => 'Open Plezy op je desktop en schakel Companion Remote in via instellingen of menu',
+			'companionRemote.pairing.tipScan' => 'Gebruik het tabblad Scannen om snel te koppelen door de QR-code op je desktop te scannen',
+			'companionRemote.pairing.tipWifi' => 'Zorg ervoor dat beide apparaten op hetzelfde WiFi-netwerk zitten',
+			'companionRemote.pairing.cameraPermissionRequired' => 'Cameratoestemming is vereist om QR-codes te scannen.\nGeef cameratoegang in je apparaatinstellingen.',
+			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kan camera niet starten: ${error}',
+			'companionRemote.pairing.scanInstruction' => 'Richt je camera op de QR-code die op je desktop wordt getoond',
+			'companionRemote.pairing.noRecentConnections' => 'Geen recente verbindingen',
+			'companionRemote.pairing.connectUsingManual' => 'Verbind met een apparaat via Handmatige invoer om te beginnen',
+			'companionRemote.pairing.invalidQrCode' => 'Ongeldig QR-codeformaat',
+			'companionRemote.pairing.removeRecentConnection' => 'Recente verbinding verwijderen',
+			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '"${name}" verwijderen uit recente verbindingen?',
+			'companionRemote.pairing.validationHostRequired' => 'Voer een hostadres in',
+			'companionRemote.pairing.validationHostFormat' => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)',
+			'companionRemote.pairing.validationSessionIdRequired' => 'Voer een sessie-ID in',
+			'companionRemote.pairing.validationSessionIdLength' => 'Sessie-ID moet 8 tekens zijn',
+			'companionRemote.pairing.validationPinRequired' => 'Voer een PIN in',
+			'companionRemote.pairing.validationPinLength' => 'PIN moet 6 cijfers zijn',
+			'companionRemote.pairing.connectionTimedOut' => 'Verbinding verlopen. Controleer de sessie-ID en PIN.',
+			'companionRemote.pairing.sessionNotFound' => 'Kan de sessie niet vinden. Controleer je gegevens.',
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Verbinden mislukt: ${error}',
+			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Kan recente sessies niet laden: ${error}',
+			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',
+			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
+			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Poging ${current} van 5',
+			'companionRemote.remote.retryNow' => 'Nu opnieuw proberen',
+			'companionRemote.remote.connectionError' => 'Verbindingsfout',
+			'companionRemote.remote.notConnected' => 'Niet verbonden',
+			'companionRemote.remote.tabRemote' => 'Afstandsbediening',
+			'companionRemote.remote.tabPlay' => 'Afspelen',
+			'companionRemote.remote.tabMore' => 'Meer',
+			'companionRemote.remote.menu' => 'Menu',
+			'companionRemote.remote.tabNavigation' => 'Tabnavigatie',
+			'companionRemote.remote.tabDiscover' => 'Ontdekken',
+			'companionRemote.remote.tabLibraries' => 'Bibliotheken',
+			'companionRemote.remote.tabSearch' => 'Zoeken',
+			'companionRemote.remote.tabDownloads' => 'Downloads',
+			'companionRemote.remote.tabSettings' => 'Instellingen',
+			'companionRemote.remote.previous' => 'Vorige',
+			'companionRemote.remote.playPause' => 'Afspelen/Pauzeren',
+			'companionRemote.remote.next' => 'Volgende',
+			'companionRemote.remote.seekBack' => 'Terugspoelen',
+			'companionRemote.remote.stop' => 'Stoppen',
+			'companionRemote.remote.seekForward' => 'Vooruitspoelen',
+			'companionRemote.remote.volume' => 'Volume',
+			'companionRemote.remote.volumeDown' => 'Omlaag',
+			'companionRemote.remote.volumeUp' => 'Omhoog',
+			'companionRemote.remote.fullscreen' => 'Volledig scherm',
+			'companionRemote.remote.subtitles' => 'Ondertitels',
+			'companionRemote.remote.audio' => 'Audio',
+			'companionRemote.remote.searchHint' => 'Zoeken op desktop...',
+			'videoSettings.playbackSettings' => 'Afspeelinstellingen',
+			'videoSettings.playbackSpeed' => 'Afspeelsnelheid',
+			'videoSettings.sleepTimer' => 'Slaaptimer',
+			'videoSettings.audioSync' => 'Audio synchronisatie',
+			'videoSettings.subtitleSync' => 'Ondertitel synchronisatie',
+			'videoSettings.hdr' => 'HDR',
+			'videoSettings.audioOutput' => 'Audio-uitvoer',
+			'videoSettings.performanceOverlay' => 'Prestatie-overlay',
 			_ => null,
 		};
 	}

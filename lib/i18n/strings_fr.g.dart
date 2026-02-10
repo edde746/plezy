@@ -70,6 +70,8 @@ class TranslationsFr with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsWatchTogetherFr watchTogether = _TranslationsWatchTogetherFr._(_root);
 	@override late final _TranslationsDownloadsFr downloads = _TranslationsDownloadsFr._(_root);
 	@override late final _TranslationsShadersFr shaders = _TranslationsShadersFr._(_root);
+	@override late final _TranslationsCompanionRemoteFr companionRemote = _TranslationsCompanionRemoteFr._(_root);
+	@override late final _TranslationsVideoSettingsFr videoSettings = _TranslationsVideoSettingsFr._(_root);
 }
 
 // Path: app
@@ -80,7 +82,6 @@ class _TranslationsAppFr implements TranslationsAppEn {
 
 	// Translations
 	@override String get title => 'Plezy';
-	@override String get loading => 'Chargement...';
 }
 
 // Path: auth
@@ -92,9 +93,7 @@ class _TranslationsAuthFr implements TranslationsAuthEn {
 	// Translations
 	@override String get signInWithPlex => 'S\'inscrire avec Plex';
 	@override String get showQRCode => 'Afficher le QR Code';
-	@override String get cancel => 'Annuler';
 	@override String get authenticate => 'S\'authentifier';
-	@override String get retry => 'Réessayer';
 	@override String get debugEnterToken => 'Debug: Entrez votre token Plex';
 	@override String get plexTokenLabel => 'Token d\'authentification Plex';
 	@override String get plexTokenHint => 'Entrez votre token Plex.tv';
@@ -128,6 +127,21 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get delete => 'Supprimer';
 	@override String get shuffle => 'Mélanger';
 	@override String get addTo => 'Ajouter à...';
+	@override String get remove => 'Supprimer';
+	@override String get paste => 'Coller';
+	@override String get connect => 'Connecter';
+	@override String get disconnect => 'Déconnecter';
+	@override String get play => 'Lire';
+	@override String get pause => 'Pause';
+	@override String get resume => 'Reprendre';
+	@override String get error => 'Erreur';
+	@override String get search => 'Recherche';
+	@override String get home => 'Accueil';
+	@override String get back => 'Retour';
+	@override String get settings => 'Paramètres';
+	@override String get mute => 'Muet';
+	@override String get ok => 'OK';
+	@override String get loading => 'Chargement...';
 }
 
 // Path: screens
@@ -141,7 +155,6 @@ class _TranslationsScreensFr implements TranslationsScreensEn {
 	@override String get switchProfile => 'Changer de profil';
 	@override String get subtitleStyling => 'Configuration des sous-titres';
 	@override String get mpvConfig => 'Configuration MPV';
-	@override String get search => 'Recherche';
 	@override String get logs => 'Logs';
 }
 
@@ -458,9 +471,10 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Timeline vidéo';
 	@override String get volumeSlider => 'Niveau sonore';
 	@override String endsAt({required Object time}) => 'Fin à ${time}';
-	@override String get backButton => 'Retour';
 	@override String get pipFailed => 'Échec du démarrage du mode image dans l\'image';
 	@override late final _TranslationsVideoControlsPipErrorsFr pipErrors = _TranslationsVideoControlsPipErrorsFr._(_root);
+	@override String get chapters => 'Chapitres';
+	@override String get noChaptersAvailable => 'Aucun chapitre disponible';
 }
 
 // Path: userStatus
@@ -576,7 +590,6 @@ class _TranslationsDialogFr implements TranslationsDialogEn {
 
 	// Translations
 	@override String get confirmAction => 'Confirmer l\'action';
-	@override String get cancel => 'Annuler';
 }
 
 // Path: discover
@@ -588,13 +601,10 @@ class _TranslationsDiscoverFr implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => 'Découvrez';
 	@override String get switchProfile => 'Changer de profil';
-	@override String get logout => 'Déconnexion';
 	@override String get noContentAvailable => 'Aucun contenu disponible';
 	@override String get addMediaToLibraries => 'Ajoutez des médias à votre bibliothèque';
 	@override String get continueWatching => 'Continuer à regarder';
-	@override String get play => 'Lire';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
-	@override String get pause => 'Pause';
 	@override String get overview => 'Aperçu';
 	@override String get cast => 'Cast';
 	@override String get seasons => 'Saisons';
@@ -748,10 +758,7 @@ class _TranslationsNavigationFr implements TranslationsNavigationEn {
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String get home => 'Accueil';
-	@override String get search => 'Rechercher';
 	@override String get libraries => 'Bibliothèques';
-	@override String get settings => 'Paramètres';
 	@override String get downloads => 'Téléchargements';
 }
 
@@ -893,6 +900,10 @@ class _TranslationsDownloadsFr implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Télécharger supprimé';
 	@override String deleteConfirm({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Suppression de ${title}... (${current} sur ${total})';
+	@override String get noDownloadsTree => 'Aucun téléchargement';
+	@override String get pauseAll => 'Tout mettre en pause';
+	@override String get resumeAll => 'Tout reprendre';
+	@override String get deleteAll => 'Tout supprimer';
 }
 
 // Path: shaders
@@ -908,6 +919,42 @@ class _TranslationsShadersFr implements TranslationsShadersEn {
 	@override String get qualityFast => 'Rapide';
 	@override String get qualityHQ => 'Haute qualité';
 	@override String get mode => 'Mode';
+}
+
+// Path: companionRemote
+class _TranslationsCompanionRemoteFr implements TranslationsCompanionRemoteEn {
+	_TranslationsCompanionRemoteFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Companion Remote';
+	@override String get connectToDevice => 'Se connecter à un appareil';
+	@override String get hostRemoteSession => 'Héberger une session distante';
+	@override String get controlThisDevice => 'Contrôlez cet appareil avec votre téléphone';
+	@override String get remoteControl => 'Télécommande';
+	@override String get controlDesktop => 'Contrôler un appareil de bureau';
+	@override String connectedTo({required Object name}) => 'Connecté à ${name}';
+	@override late final _TranslationsCompanionRemoteSessionFr session = _TranslationsCompanionRemoteSessionFr._(_root);
+	@override late final _TranslationsCompanionRemotePairingFr pairing = _TranslationsCompanionRemotePairingFr._(_root);
+	@override late final _TranslationsCompanionRemoteRemoteFr remote = _TranslationsCompanionRemoteRemoteFr._(_root);
+}
+
+// Path: videoSettings
+class _TranslationsVideoSettingsFr implements TranslationsVideoSettingsEn {
+	_TranslationsVideoSettingsFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get playbackSettings => 'Paramètres de lecture';
+	@override String get playbackSpeed => 'Vitesse de lecture';
+	@override String get sleepTimer => 'Minuterie de mise en veille';
+	@override String get audioSync => 'Synchronisation audio';
+	@override String get subtitleSync => 'Synchronisation des sous-titres';
+	@override String get hdr => 'HDR';
+	@override String get audioOutput => 'Sortie audio';
+	@override String get performanceOverlay => 'Superposition de performance';
 }
 
 // Path: hotkeys.actions
@@ -935,6 +982,7 @@ class _TranslationsHotkeysActionsFr implements TranslationsHotkeysActionsEn {
 	@override String get subSeekNext => 'Rechercher le sous-titre suivant';
 	@override String get subSeekPrev => 'Rechercher le sous-titre précédent';
 	@override String get shaderToggle => 'Activer/désactiver les shaders';
+	@override String get skipMarker => 'Passer l\'intro/le générique';
 }
 
 // Path: videoControls.pipErrors
@@ -979,6 +1027,110 @@ class _TranslationsLibrariesGroupingsFr implements TranslationsLibrariesGrouping
 	@override String get folders => 'Dossiers';
 }
 
+// Path: companionRemote.session
+class _TranslationsCompanionRemoteSessionFr implements TranslationsCompanionRemoteSessionEn {
+	_TranslationsCompanionRemoteSessionFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get creatingSession => 'Création de la session distante...';
+	@override String get failedToCreate => 'Échec de la création de la session distante :';
+	@override String get noSession => 'Aucune session disponible';
+	@override String get scanQrCode => 'Scanner le QR Code';
+	@override String get orEnterManually => 'Ou saisir manuellement';
+	@override String get hostAddress => 'Adresse de l\'hôte';
+	@override String get sessionId => 'ID de session';
+	@override String get pin => 'PIN';
+	@override String get connected => 'Connecté';
+	@override String get waitingForConnection => 'En attente de connexion...';
+	@override String get usePhoneToControl => 'Utilisez votre appareil mobile pour contrôler cette application';
+	@override String copiedToClipboard({required Object label}) => '${label} copié dans le presse-papiers';
+	@override String get copyToClipboard => 'Copier dans le presse-papiers';
+	@override String get newSession => 'Nouvelle session';
+	@override String get minimize => 'Réduire';
+}
+
+// Path: companionRemote.pairing
+class _TranslationsCompanionRemotePairingFr implements TranslationsCompanionRemotePairingEn {
+	_TranslationsCompanionRemotePairingFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get recent => 'Récents';
+	@override String get scan => 'Scanner';
+	@override String get manual => 'Manuel';
+	@override String get recentConnections => 'Connexions récentes';
+	@override String get quickReconnect => 'Reconnexion rapide aux appareils précédemment jumelés';
+	@override String get pairWithDesktop => 'Jumeler avec un bureau';
+	@override String get enterSessionDetails => 'Saisissez les détails de la session affichés sur votre appareil de bureau';
+	@override String get hostAddressHint => '192.168.1.100:48632';
+	@override String get sessionIdHint => 'Saisissez l\'ID de session à 8 caractères';
+	@override String get pinHint => 'Saisissez le PIN à 6 chiffres';
+	@override String get connecting => 'Connexion...';
+	@override String get tips => 'Conseils';
+	@override String get tipDesktop => 'Ouvrez Plezy sur votre bureau et activez Companion Remote depuis les paramètres ou le menu';
+	@override String get tipScan => 'Utilisez l\'onglet Scanner pour jumeler rapidement en scannant le QR code sur votre bureau';
+	@override String get tipWifi => 'Assurez-vous que les deux appareils sont sur le même réseau WiFi';
+	@override String get cameraPermissionRequired => 'L\'autorisation de la caméra est requise pour scanner les QR codes.\nVeuillez accorder l\'accès à la caméra dans les paramètres de votre appareil.';
+	@override String cameraError({required Object error}) => 'Impossible de démarrer la caméra : ${error}';
+	@override String get scanInstruction => 'Pointez votre caméra vers le QR code affiché sur votre bureau';
+	@override String get noRecentConnections => 'Aucune connexion récente';
+	@override String get connectUsingManual => 'Connectez-vous à un appareil via la saisie manuelle pour commencer';
+	@override String get invalidQrCode => 'Format de QR code invalide';
+	@override String get removeRecentConnection => 'Supprimer la connexion récente';
+	@override String removeConfirm({required Object name}) => 'Supprimer "${name}" des connexions récentes ?';
+	@override String get validationHostRequired => 'Veuillez saisir l\'adresse de l\'hôte';
+	@override String get validationHostFormat => 'Le format doit être IP:port (ex : 192.168.1.100:48632)';
+	@override String get validationSessionIdRequired => 'Veuillez saisir un ID de session';
+	@override String get validationSessionIdLength => 'L\'ID de session doit contenir 8 caractères';
+	@override String get validationPinRequired => 'Veuillez saisir un PIN';
+	@override String get validationPinLength => 'Le PIN doit contenir 6 chiffres';
+	@override String get connectionTimedOut => 'Délai de connexion expiré. Veuillez vérifier l\'ID de session et le PIN.';
+	@override String get sessionNotFound => 'Session introuvable. Veuillez vérifier vos identifiants.';
+	@override String failedToConnect({required Object error}) => 'Échec de la connexion : ${error}';
+	@override String failedToLoadRecent({required Object error}) => 'Échec du chargement des sessions récentes : ${error}';
+}
+
+// Path: companionRemote.remote
+class _TranslationsCompanionRemoteRemoteFr implements TranslationsCompanionRemoteRemoteEn {
+	_TranslationsCompanionRemoteRemoteFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get disconnectConfirm => 'Voulez-vous vous déconnecter de la session distante ?';
+	@override String get reconnecting => 'Reconnexion...';
+	@override String attemptOf({required Object current}) => 'Tentative ${current} sur 5';
+	@override String get retryNow => 'Réessayer maintenant';
+	@override String get connectionError => 'Erreur de connexion';
+	@override String get notConnected => 'Non connecté';
+	@override String get tabRemote => 'Télécommande';
+	@override String get tabPlay => 'Lecture';
+	@override String get tabMore => 'Plus';
+	@override String get menu => 'Menu';
+	@override String get tabNavigation => 'Navigation par onglets';
+	@override String get tabDiscover => 'Découvrir';
+	@override String get tabLibraries => 'Bibliothèques';
+	@override String get tabSearch => 'Rechercher';
+	@override String get tabDownloads => 'Téléchargements';
+	@override String get tabSettings => 'Paramètres';
+	@override String get previous => 'Précédent';
+	@override String get playPause => 'Lecture/Pause';
+	@override String get next => 'Suivant';
+	@override String get seekBack => 'Reculer';
+	@override String get stop => 'Arrêter';
+	@override String get seekForward => 'Avancer';
+	@override String get volume => 'Volume';
+	@override String get volumeDown => 'Baisser';
+	@override String get volumeUp => 'Augmenter';
+	@override String get fullscreen => 'Plein écran';
+	@override String get subtitles => 'Sous-titres';
+	@override String get audio => 'Audio';
+	@override String get searchHint => 'Rechercher sur le bureau...';
+}
+
 /// The flat map containing all translations for locale <fr>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -988,12 +1140,9 @@ extension on TranslationsFr {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
-			'app.loading' => 'Chargement...',
 			'auth.signInWithPlex' => 'S\'inscrire avec Plex',
 			'auth.showQRCode' => 'Afficher le QR Code',
-			'auth.cancel' => 'Annuler',
 			'auth.authenticate' => 'S\'authentifier',
-			'auth.retry' => 'Réessayer',
 			'auth.debugEnterToken' => 'Debug: Entrez votre token Plex',
 			'auth.plexTokenLabel' => 'Token d\'authentification Plex',
 			'auth.plexTokenHint' => 'Entrez votre token Plex.tv',
@@ -1018,11 +1167,25 @@ extension on TranslationsFr {
 			'common.delete' => 'Supprimer',
 			'common.shuffle' => 'Mélanger',
 			'common.addTo' => 'Ajouter à...',
+			'common.remove' => 'Supprimer',
+			'common.paste' => 'Coller',
+			'common.connect' => 'Connecter',
+			'common.disconnect' => 'Déconnecter',
+			'common.play' => 'Lire',
+			'common.pause' => 'Pause',
+			'common.resume' => 'Reprendre',
+			'common.error' => 'Erreur',
+			'common.search' => 'Recherche',
+			'common.home' => 'Accueil',
+			'common.back' => 'Retour',
+			'common.settings' => 'Paramètres',
+			'common.mute' => 'Muet',
+			'common.ok' => 'OK',
+			'common.loading' => 'Chargement...',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
 			'screens.mpvConfig' => 'Configuration MPV',
-			'screens.search' => 'Recherche',
 			'screens.logs' => 'Logs',
 			'update.available' => 'Mise à jour disponible',
 			'update.versionAvailable' => ({required Object version}) => 'Version ${version} disponible',
@@ -1176,6 +1339,7 @@ extension on TranslationsFr {
 			'hotkeys.actions.subSeekNext' => 'Rechercher le sous-titre suivant',
 			'hotkeys.actions.subSeekPrev' => 'Rechercher le sous-titre précédent',
 			'hotkeys.actions.shaderToggle' => 'Activer/désactiver les shaders',
+			'hotkeys.actions.skipMarker' => 'Passer l\'intro/le générique',
 			'pinEntry.enterPin' => 'Entrer le code PIN',
 			'pinEntry.showPin' => 'Afficher le code PIN',
 			'pinEntry.hidePin' => 'Masquer le code PIN',
@@ -1266,13 +1430,14 @@ extension on TranslationsFr {
 			'videoControls.timelineSlider' => 'Timeline vidéo',
 			'videoControls.volumeSlider' => 'Niveau sonore',
 			'videoControls.endsAt' => ({required Object time}) => 'Fin à ${time}',
-			'videoControls.backButton' => 'Retour',
 			'videoControls.pipFailed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.pipErrors.androidVersion' => 'Nécessite Android 8.0 ou plus récent',
 			'videoControls.pipErrors.permissionDisabled' => 'L\'autorisation Image dans l\'image est désactivée. Activez-la dans Paramètres > Applications > Plezy > Image dans l\'image',
 			'videoControls.pipErrors.notSupported' => 'Cet appareil ne prend pas en charge le mode image dans l\'image',
 			'videoControls.pipErrors.failed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Une erreur s\'est produite : ${error}',
+			'videoControls.chapters' => 'Chapitres',
+			'videoControls.noChaptersAvailable' => 'Aucun chapitre disponible',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Restreint',
 			'userStatus.protected' => 'Protégé',
@@ -1343,16 +1508,12 @@ extension on TranslationsFr {
 			'mpvConfig.confirmDeleteProperty' => 'Êtes-vous sûr de vouloir supprimer cette propriété ?',
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entrées',
 			'dialog.confirmAction' => 'Confirmer l\'action',
-			'dialog.cancel' => 'Annuler',
 			'discover.title' => 'Découvrez',
 			'discover.switchProfile' => 'Changer de profil',
-			'discover.logout' => 'Déconnexion',
 			'discover.noContentAvailable' => 'Aucun contenu disponible',
 			'discover.addMediaToLibraries' => 'Ajoutez des médias à votre bibliothèque',
 			'discover.continueWatching' => 'Continuer à regarder',
-			'discover.play' => 'Lire',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
-			'discover.pause' => 'Pause',
 			'discover.overview' => 'Aperçu',
 			'discover.cast' => 'Cast',
 			'discover.seasons' => 'Saisons',
@@ -1442,10 +1603,7 @@ extension on TranslationsFr {
 			'licenses.license' => 'Licence',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licence ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licences',
-			'navigation.home' => 'Accueil',
-			'navigation.search' => 'Rechercher',
 			'navigation.libraries' => 'Bibliothèques',
-			'navigation.settings' => 'Paramètres',
 			'navigation.downloads' => 'Téléchargements',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
@@ -1493,14 +1651,14 @@ extension on TranslationsFr {
 			'playlists.errorDeleting' => 'Échec de suppression de playlist',
 			'playlists.errorLoading' => 'Échec de chargement de playlists',
 			'playlists.errorAdding' => 'Échec d\'ajout dans la playlist',
+			_ => null,
+		} ?? switch (path) {
 			'playlists.errorReordering' => 'Échec de réordonnacement d\'élément de playlist',
 			'playlists.errorRemoving' => 'Échec de suppression depuis la playlist',
 			'watchTogether.title' => 'Regarder ensemble',
 			'watchTogether.description' => 'Regardez du contenu en synchronisation avec vos amis et votre famille',
 			'watchTogether.createSession' => 'Créer une session',
 			'watchTogether.creating' => 'Création...',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.joinSession' => 'Rejoindre la session',
 			'watchTogether.joining' => 'Rejoindre...',
 			'watchTogether.controlMode' => 'Mode de contrôle',
@@ -1553,12 +1711,108 @@ extension on TranslationsFr {
 			'downloads.downloadDeleted' => 'Télécharger supprimé',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Suppression de ${title}... (${current} sur ${total})',
+			'downloads.noDownloadsTree' => 'Aucun téléchargement',
+			'downloads.pauseAll' => 'Tout mettre en pause',
+			'downloads.resumeAll' => 'Tout reprendre',
+			'downloads.deleteAll' => 'Tout supprimer',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Aucune amélioration vidéo',
 			'shaders.nvscalerDescription' => 'Mise à l\'échelle NVIDIA pour une vidéo plus nette',
 			'shaders.qualityFast' => 'Rapide',
 			'shaders.qualityHQ' => 'Haute qualité',
 			'shaders.mode' => 'Mode',
+			'companionRemote.title' => 'Companion Remote',
+			'companionRemote.connectToDevice' => 'Se connecter à un appareil',
+			'companionRemote.hostRemoteSession' => 'Héberger une session distante',
+			'companionRemote.controlThisDevice' => 'Contrôlez cet appareil avec votre téléphone',
+			'companionRemote.remoteControl' => 'Télécommande',
+			'companionRemote.controlDesktop' => 'Contrôler un appareil de bureau',
+			'companionRemote.connectedTo' => ({required Object name}) => 'Connecté à ${name}',
+			'companionRemote.session.creatingSession' => 'Création de la session distante...',
+			'companionRemote.session.failedToCreate' => 'Échec de la création de la session distante :',
+			'companionRemote.session.noSession' => 'Aucune session disponible',
+			'companionRemote.session.scanQrCode' => 'Scanner le QR Code',
+			'companionRemote.session.orEnterManually' => 'Ou saisir manuellement',
+			'companionRemote.session.hostAddress' => 'Adresse de l\'hôte',
+			'companionRemote.session.sessionId' => 'ID de session',
+			'companionRemote.session.pin' => 'PIN',
+			'companionRemote.session.connected' => 'Connecté',
+			'companionRemote.session.waitingForConnection' => 'En attente de connexion...',
+			'companionRemote.session.usePhoneToControl' => 'Utilisez votre appareil mobile pour contrôler cette application',
+			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} copié dans le presse-papiers',
+			'companionRemote.session.copyToClipboard' => 'Copier dans le presse-papiers',
+			'companionRemote.session.newSession' => 'Nouvelle session',
+			'companionRemote.session.minimize' => 'Réduire',
+			'companionRemote.pairing.recent' => 'Récents',
+			'companionRemote.pairing.scan' => 'Scanner',
+			'companionRemote.pairing.manual' => 'Manuel',
+			'companionRemote.pairing.recentConnections' => 'Connexions récentes',
+			'companionRemote.pairing.quickReconnect' => 'Reconnexion rapide aux appareils précédemment jumelés',
+			'companionRemote.pairing.pairWithDesktop' => 'Jumeler avec un bureau',
+			'companionRemote.pairing.enterSessionDetails' => 'Saisissez les détails de la session affichés sur votre appareil de bureau',
+			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
+			'companionRemote.pairing.sessionIdHint' => 'Saisissez l\'ID de session à 8 caractères',
+			'companionRemote.pairing.pinHint' => 'Saisissez le PIN à 6 chiffres',
+			'companionRemote.pairing.connecting' => 'Connexion...',
+			'companionRemote.pairing.tips' => 'Conseils',
+			'companionRemote.pairing.tipDesktop' => 'Ouvrez Plezy sur votre bureau et activez Companion Remote depuis les paramètres ou le menu',
+			'companionRemote.pairing.tipScan' => 'Utilisez l\'onglet Scanner pour jumeler rapidement en scannant le QR code sur votre bureau',
+			'companionRemote.pairing.tipWifi' => 'Assurez-vous que les deux appareils sont sur le même réseau WiFi',
+			'companionRemote.pairing.cameraPermissionRequired' => 'L\'autorisation de la caméra est requise pour scanner les QR codes.\nVeuillez accorder l\'accès à la caméra dans les paramètres de votre appareil.',
+			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Impossible de démarrer la caméra : ${error}',
+			'companionRemote.pairing.scanInstruction' => 'Pointez votre caméra vers le QR code affiché sur votre bureau',
+			'companionRemote.pairing.noRecentConnections' => 'Aucune connexion récente',
+			'companionRemote.pairing.connectUsingManual' => 'Connectez-vous à un appareil via la saisie manuelle pour commencer',
+			'companionRemote.pairing.invalidQrCode' => 'Format de QR code invalide',
+			'companionRemote.pairing.removeRecentConnection' => 'Supprimer la connexion récente',
+			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Supprimer "${name}" des connexions récentes ?',
+			'companionRemote.pairing.validationHostRequired' => 'Veuillez saisir l\'adresse de l\'hôte',
+			'companionRemote.pairing.validationHostFormat' => 'Le format doit être IP:port (ex : 192.168.1.100:48632)',
+			'companionRemote.pairing.validationSessionIdRequired' => 'Veuillez saisir un ID de session',
+			'companionRemote.pairing.validationSessionIdLength' => 'L\'ID de session doit contenir 8 caractères',
+			'companionRemote.pairing.validationPinRequired' => 'Veuillez saisir un PIN',
+			'companionRemote.pairing.validationPinLength' => 'Le PIN doit contenir 6 chiffres',
+			'companionRemote.pairing.connectionTimedOut' => 'Délai de connexion expiré. Veuillez vérifier l\'ID de session et le PIN.',
+			'companionRemote.pairing.sessionNotFound' => 'Session introuvable. Veuillez vérifier vos identifiants.',
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Échec de la connexion : ${error}',
+			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Échec du chargement des sessions récentes : ${error}',
+			'companionRemote.remote.disconnectConfirm' => 'Voulez-vous vous déconnecter de la session distante ?',
+			'companionRemote.remote.reconnecting' => 'Reconnexion...',
+			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentative ${current} sur 5',
+			'companionRemote.remote.retryNow' => 'Réessayer maintenant',
+			'companionRemote.remote.connectionError' => 'Erreur de connexion',
+			'companionRemote.remote.notConnected' => 'Non connecté',
+			'companionRemote.remote.tabRemote' => 'Télécommande',
+			'companionRemote.remote.tabPlay' => 'Lecture',
+			'companionRemote.remote.tabMore' => 'Plus',
+			'companionRemote.remote.menu' => 'Menu',
+			'companionRemote.remote.tabNavigation' => 'Navigation par onglets',
+			'companionRemote.remote.tabDiscover' => 'Découvrir',
+			'companionRemote.remote.tabLibraries' => 'Bibliothèques',
+			'companionRemote.remote.tabSearch' => 'Rechercher',
+			'companionRemote.remote.tabDownloads' => 'Téléchargements',
+			'companionRemote.remote.tabSettings' => 'Paramètres',
+			'companionRemote.remote.previous' => 'Précédent',
+			'companionRemote.remote.playPause' => 'Lecture/Pause',
+			'companionRemote.remote.next' => 'Suivant',
+			'companionRemote.remote.seekBack' => 'Reculer',
+			'companionRemote.remote.stop' => 'Arrêter',
+			'companionRemote.remote.seekForward' => 'Avancer',
+			'companionRemote.remote.volume' => 'Volume',
+			'companionRemote.remote.volumeDown' => 'Baisser',
+			'companionRemote.remote.volumeUp' => 'Augmenter',
+			'companionRemote.remote.fullscreen' => 'Plein écran',
+			'companionRemote.remote.subtitles' => 'Sous-titres',
+			'companionRemote.remote.audio' => 'Audio',
+			'companionRemote.remote.searchHint' => 'Rechercher sur le bureau...',
+			'videoSettings.playbackSettings' => 'Paramètres de lecture',
+			'videoSettings.playbackSpeed' => 'Vitesse de lecture',
+			'videoSettings.sleepTimer' => 'Minuterie de mise en veille',
+			'videoSettings.audioSync' => 'Synchronisation audio',
+			'videoSettings.subtitleSync' => 'Synchronisation des sous-titres',
+			'videoSettings.hdr' => 'HDR',
+			'videoSettings.audioOutput' => 'Sortie audio',
+			'videoSettings.performanceOverlay' => 'Superposition de performance',
 			_ => null,
 		};
 	}

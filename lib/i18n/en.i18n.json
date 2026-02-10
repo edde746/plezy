@@ -1,14 +1,11 @@
 {
   "app": {
-    "title": "Plezy",
-    "loading": "Loading..."
+    "title": "Plezy"
   },
   "auth": {
     "signInWithPlex": "Sign in with Plex",
     "showQRCode": "Show QR Code",
-    "cancel": "Cancel",
     "authenticate": "Authenticate",
-    "retry": "Retry",
     "debugEnterToken": "Debug: Enter Plex Token",
     "plexTokenLabel": "Plex Auth Token",
     "plexTokenHint": "Enter your Plex.tv token",
@@ -34,14 +31,28 @@
     "no": "No",
     "delete": "Delete",
     "shuffle": "Shuffle",
-    "addTo": "Add to..."
+    "addTo": "Add to...",
+    "remove": "Remove",
+    "paste": "Paste",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "play": "Play",
+    "pause": "Pause",
+    "resume": "Resume",
+    "error": "Error",
+    "search": "Search",
+    "home": "Home",
+    "back": "Back",
+    "settings": "Settings",
+    "mute": "Mute",
+    "ok": "OK",
+    "loading": "Loading..."
   },
   "screens": {
     "licenses": "Licenses",
     "switchProfile": "Switch Profile",
     "subtitleStyling": "Subtitle Styling",
     "mpvConfig": "MPV Configuration",
-    "search": "Search",
     "logs": "Logs"
   },
   "update": {
@@ -308,7 +319,6 @@
     "timelineSlider": "Video timeline",
     "volumeSlider": "Volume level",
     "endsAt": "Ends at ${time}",
-    "backButton": "Back",
     "pipFailed": "Picture-in-picture failed to start",
     "pipErrors": {
       "androidVersion": "Requires Android 8.0 or newer",
@@ -316,7 +326,9 @@
       "notSupported": "Device doesn't support picture-in-picture mode",
       "failed": "Picture-in-picture failed to start",
       "unknown": "An error occurred: ${error}"
-    }
+    },
+    "chapters": "Chapters",
+    "noChaptersAvailable": "No chapters available"
   },
   "userStatus": {
     "admin": "Admin",
@@ -396,19 +408,15 @@
     "entriesCount": "${count} entries"
   },
   "dialog": {
-    "confirmAction": "Confirm Action",
-    "cancel": "Cancel"
+    "confirmAction": "Confirm Action"
   },
   "discover": {
     "title": "Discover",
     "switchProfile": "Switch Profile",
-    "logout": "Logout",
     "noContentAvailable": "No content available",
     "addMediaToLibraries": "Add some media to your libraries",
     "continueWatching": "Continue Watching",
-    "play": "Play",
     "playEpisode": "S${season}E${episode}",
-    "pause": "Pause",
     "overview": "Overview",
     "cast": "Cast",
     "seasons": "Seasons",
@@ -518,10 +526,7 @@
     "licensesCount": "${count} licenses"
   },
   "navigation": {
-    "home": "Home",
-    "search": "Search",
     "libraries": "Libraries",
-    "settings": "Settings",
     "downloads": "Downloads"
   },
   "collections": {
@@ -634,7 +639,11 @@
     "episodesQueued": "${count} episodes queued for download",
     "downloadDeleted": "Download deleted",
     "deleteConfirm": "Are you sure you want to delete \"${title}\"? This will remove the downloaded file from your device.",
-    "deletingWithProgress": "Deleting ${title}... (${current} of ${total})"
+    "deletingWithProgress": "Deleting ${title}... (${current} of ${total})",
+    "noDownloadsTree": "No downloads",
+    "pauseAll": "Pause all",
+    "resumeAll": "Resume all",
+    "deleteAll": "Delete all"
   },
   "shaders": {
     "title": "Shaders",
@@ -643,5 +652,107 @@
     "qualityFast": "Fast",
     "qualityHQ": "High Quality",
     "mode": "Mode"
+  },
+  "companionRemote": {
+    "title": "Companion Remote",
+    "connectToDevice": "Connect to Device",
+    "hostRemoteSession": "Host Remote Session",
+    "controlThisDevice": "Control this device with your phone",
+    "remoteControl": "Remote Control",
+    "controlDesktop": "Control a desktop device",
+    "connectedTo": "Connected to ${name}",
+    "session": {
+      "creatingSession": "Creating remote session...",
+      "failedToCreate": "Failed to create remote session:",
+      "noSession": "No session available",
+      "scanQrCode": "Scan QR Code",
+      "orEnterManually": "Or enter manually",
+      "hostAddress": "Host Address",
+      "sessionId": "Session ID",
+      "pin": "PIN",
+      "connected": "Connected",
+      "waitingForConnection": "Waiting for connection...",
+      "usePhoneToControl": "Use your mobile device to control this app",
+      "copiedToClipboard": "${label} copied to clipboard",
+      "copyToClipboard": "Copy to clipboard",
+      "newSession": "New Session",
+      "minimize": "Minimize"
+    },
+    "pairing": {
+      "recent": "Recent",
+      "scan": "Scan",
+      "manual": "Manual",
+      "recentConnections": "Recent Connections",
+      "quickReconnect": "Quickly reconnect to previously paired devices",
+      "pairWithDesktop": "Pair with Desktop",
+      "enterSessionDetails": "Enter the session details shown on your desktop device",
+      "hostAddressHint": "192.168.1.100:48632",
+      "sessionIdHint": "Enter 8-character session ID",
+      "pinHint": "Enter 6-digit PIN",
+      "connecting": "Connecting...",
+      "tips": "Tips",
+      "tipDesktop": "Open Plezy on your desktop and enable Companion Remote from settings or menu",
+      "tipScan": "Use the Scan tab to quickly pair by scanning the QR code on your desktop",
+      "tipWifi": "Make sure both devices are on the same WiFi network",
+      "cameraPermissionRequired": "Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.",
+      "cameraError": "Could not start camera: ${error}",
+      "scanInstruction": "Point your camera at the QR code shown on your desktop",
+      "noRecentConnections": "No recent connections",
+      "connectUsingManual": "Connect to a device using Manual entry to get started",
+      "invalidQrCode": "Invalid QR code format",
+      "removeRecentConnection": "Remove Recent Connection",
+      "removeConfirm": "Remove \"${name}\" from recent connections?",
+      "validationHostRequired": "Please enter host address",
+      "validationHostFormat": "Format must be IP:port (e.g., 192.168.1.100:48632)",
+      "validationSessionIdRequired": "Please enter a session ID",
+      "validationSessionIdLength": "Session ID must be 8 characters",
+      "validationPinRequired": "Please enter a PIN",
+      "validationPinLength": "PIN must be 6 digits",
+      "connectionTimedOut": "Connection timed out. Please check the session ID and PIN.",
+      "sessionNotFound": "Could not find the session. Please check your credentials.",
+      "failedToConnect": "Failed to connect: ${error}",
+      "failedToLoadRecent": "Failed to load recent sessions: ${error}"
+    },
+    "remote": {
+      "disconnectConfirm": "Do you want to disconnect from the remote session?",
+      "reconnecting": "Reconnecting...",
+      "attemptOf": "Attempt ${current} of 5",
+      "retryNow": "Retry Now",
+      "connectionError": "Connection error",
+      "notConnected": "Not connected",
+      "tabRemote": "Remote",
+      "tabPlay": "Play",
+      "tabMore": "More",
+      "menu": "Menu",
+      "tabNavigation": "Tab Navigation",
+      "tabDiscover": "Discover",
+      "tabLibraries": "Libraries",
+      "tabSearch": "Search",
+      "tabDownloads": "Downloads",
+      "tabSettings": "Settings",
+      "previous": "Previous",
+      "playPause": "Play/Pause",
+      "next": "Next",
+      "seekBack": "Seek Back",
+      "stop": "Stop",
+      "seekForward": "Seek Fwd",
+      "volume": "Volume",
+      "volumeDown": "Down",
+      "volumeUp": "Up",
+      "fullscreen": "Fullscreen",
+      "subtitles": "Subtitles",
+      "audio": "Audio",
+      "searchHint": "Search on desktop..."
+    }
+  },
+  "videoSettings": {
+    "playbackSettings": "Playback Settings",
+    "playbackSpeed": "Playback Speed",
+    "sleepTimer": "Sleep Timer",
+    "audioSync": "Audio Sync",
+    "subtitleSync": "Subtitle Sync",
+    "hdr": "HDR",
+    "audioOutput": "Audio Output",
+    "performanceOverlay": "Performance Overlay"
   }
 }

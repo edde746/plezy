@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/companion_remote/remote_command_type.dart';
 import '../../models/companion_remote/remote_session.dart';
+import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/app_logger.dart';
@@ -21,7 +22,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Companion Remote'),
+        title: Text(t.companionRemote.title),
         actions: [
           Consumer<CompanionRemoteProvider>(
             builder: (context, provider, child) {
@@ -32,11 +33,11 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Disconnect'),
-                        content: const Text('Do you want to disconnect from the remote session?'),
+                        title: Text(t.common.disconnect),
+                        content: Text(t.companionRemote.remote.disconnectConfirm),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Disconnect')),
+                          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
+                          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.disconnect)),
                         ],
                       ),
                     );
@@ -45,7 +46,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                       await context.read<CompanionRemoteProvider>().leaveSession();
                     }
                   },
-                  tooltip: 'Disconnect',
+                  tooltip: t.common.disconnect,
                 );
               }
               return const SizedBox.shrink();
@@ -62,19 +63,19 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 24),
-                  Text('Reconnecting...', style: Theme.of(context).textTheme.titleLarge),
+                  Text(t.companionRemote.remote.reconnecting, style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 8),
                   Text(
-                    'Attempt ${provider.reconnectAttempts} of 5',
+                    t.companionRemote.remote.attemptOf(current: provider.reconnectAttempts),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                   ),
                   const SizedBox(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      OutlinedButton(onPressed: () => provider.cancelReconnect(), child: const Text('Cancel')),
+                      OutlinedButton(onPressed: () => provider.cancelReconnect(), child: Text(t.common.cancel)),
                       const SizedBox(width: 16),
-                      FilledButton(onPressed: () => provider.retryReconnectNow(), child: const Text('Retry Now')),
+                      FilledButton(onPressed: () => provider.retryReconnectNow(), child: Text(t.companionRemote.remote.retryNow)),
                     ],
                   ),
                 ],
@@ -91,8 +92,8 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                   const SizedBox(height: 16),
                   Text(
                     provider.status == RemoteSessionStatus.error
-                        ? provider.session?.errorMessage ?? 'Connection error'
-                        : 'Not connected',
+                        ? provider.session?.errorMessage ?? t.companionRemote.remote.connectionError
+                        : t.companionRemote.remote.notConnected,
                     style: const TextStyle(fontSize: 20, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
@@ -102,7 +103,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => const PairingScreen()));
                     },
                     icon: const Icon(Icons.link),
-                    label: const Text('Connect to Device'),
+                    label: Text(t.companionRemote.connectToDevice),
                   ),
                 ],
               ),
@@ -212,10 +213,10 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
               children: [
                 SegmentedButton<int>(
                   showSelectedIcon: false,
-                  segments: const [
-                    ButtonSegment(value: 0, label: Text('Remote'), icon: Icon(Icons.navigation)),
-                    ButtonSegment(value: 1, label: Text('Play'), icon: Icon(Icons.play_arrow)),
-                    ButtonSegment(value: 2, label: Text('More'), icon: Icon(Icons.flash_on)),
+                  segments: [
+                    ButtonSegment(value: 0, label: Text(t.companionRemote.remote.tabRemote), icon: const Icon(Icons.navigation)),
+                    ButtonSegment(value: 1, label: Text(t.companionRemote.remote.tabPlay), icon: const Icon(Icons.play_arrow)),
+                    ButtonSegment(value: 2, label: Text(t.companionRemote.remote.tabMore), icon: const Icon(Icons.flash_on)),
                   ],
                   selected: {_selectedTab},
                   onSelectionChanged: (Set<int> selection) {
@@ -245,11 +246,11 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _RemoteButton(icon: Icons.home, label: 'Home', onPressed: () => _sendCommand(RemoteCommandType.home)),
-            _RemoteButton(icon: Icons.arrow_back, label: 'Back', onPressed: () => _sendCommand(RemoteCommandType.back)),
+            _RemoteButton(icon: Icons.home, label: t.common.home, onPressed: () => _sendCommand(RemoteCommandType.home)),
+            _RemoteButton(icon: Icons.arrow_back, label: t.common.back, onPressed: () => _sendCommand(RemoteCommandType.back)),
             _RemoteButton(
               icon: Icons.menu,
-              label: 'Menu',
+              label: t.companionRemote.remote.menu,
               onPressed: () => _sendCommand(RemoteCommandType.contextMenu),
             ),
           ],
@@ -258,7 +259,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         Center(child: _DPad(onCommand: _sendCommand)),
         if (!isPlayerActive) ...[
           const SizedBox(height: 32),
-          Text('Tab Navigation', style: Theme.of(context).textTheme.titleMedium),
+          Text(t.companionRemote.remote.tabNavigation, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
@@ -267,27 +268,27 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
             children: [
               _RemoteChip(
                 icon: Icons.explore,
-                label: 'Discover',
+                label: t.companionRemote.remote.tabDiscover,
                 onPressed: () => _sendCommand(RemoteCommandType.tabDiscover),
               ),
               _RemoteChip(
                 icon: Icons.video_library,
-                label: 'Libraries',
+                label: t.companionRemote.remote.tabLibraries,
                 onPressed: () => _sendCommand(RemoteCommandType.tabLibraries),
               ),
               _RemoteChip(
                 icon: Icons.search,
-                label: 'Search',
+                label: t.companionRemote.remote.tabSearch,
                 onPressed: () => _showSearchSheet(switchToSearchTab: true),
               ),
               _RemoteChip(
                 icon: Icons.download,
-                label: 'Downloads',
+                label: t.companionRemote.remote.tabDownloads,
                 onPressed: () => _sendCommand(RemoteCommandType.tabDownloads),
               ),
               _RemoteChip(
                 icon: Icons.settings,
-                label: 'Settings',
+                label: t.companionRemote.remote.tabSettings,
                 onPressed: () => _sendCommand(RemoteCommandType.tabSettings),
               ),
             ],
@@ -306,13 +307,13 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           children: [
             _RemoteButton(
               icon: Icons.skip_previous,
-              label: 'Previous',
+              label: t.companionRemote.remote.previous,
               onPressed: () => _sendCommand(RemoteCommandType.previousTrack),
             ),
             const SizedBox(width: 16),
             _RemoteButton(
               icon: Icons.play_arrow,
-              label: 'Play/Pause',
+              label: t.companionRemote.remote.playPause,
               size: 64,
               iconSize: 36,
               onPressed: () => _sendCommand(RemoteCommandType.playPause),
@@ -320,7 +321,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
             const SizedBox(width: 16),
             _RemoteButton(
               icon: Icons.skip_next,
-              label: 'Next',
+              label: t.companionRemote.remote.next,
               onPressed: () => _sendCommand(RemoteCommandType.nextTrack),
             ),
           ],
@@ -331,40 +332,40 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           children: [
             _RemoteButton(
               icon: Icons.replay_10,
-              label: 'Seek Back',
+              label: t.companionRemote.remote.seekBack,
               onPressed: () => _sendCommand(RemoteCommandType.seekBackward),
             ),
             const SizedBox(width: 16),
-            _RemoteButton(icon: Icons.stop, label: 'Stop', onPressed: () => _sendCommand(RemoteCommandType.stop)),
+            _RemoteButton(icon: Icons.stop, label: t.companionRemote.remote.stop, onPressed: () => _sendCommand(RemoteCommandType.stop)),
             const SizedBox(width: 16),
             _RemoteButton(
               icon: Icons.forward_10,
-              label: 'Seek Fwd',
+              label: t.companionRemote.remote.seekForward,
               onPressed: () => _sendCommand(RemoteCommandType.seekForward),
             ),
           ],
         ),
         const SizedBox(height: 32),
-        Text('Volume', style: Theme.of(context).textTheme.titleMedium),
+        Text(t.companionRemote.remote.volume, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _RemoteButton(
               icon: Icons.volume_off,
-              label: 'Mute',
+              label: t.common.mute,
               onPressed: () => _sendCommand(RemoteCommandType.volumeMute),
             ),
             const SizedBox(width: 16),
             _RemoteButton(
               icon: Icons.volume_down,
-              label: 'Down',
+              label: t.companionRemote.remote.volumeDown,
               onPressed: () => _sendCommand(RemoteCommandType.volumeDown),
             ),
             const SizedBox(width: 16),
             _RemoteButton(
               icon: Icons.volume_up,
-              label: 'Up',
+              label: t.companionRemote.remote.volumeUp,
               onPressed: () => _sendCommand(RemoteCommandType.volumeUp),
             ),
           ],
@@ -385,21 +386,21 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           alignment: WrapAlignment.center,
           children: [
             if (!isPlayerActive)
-              _RemoteCard(icon: Icons.search, label: 'Search', onPressed: _showSearchSheet),
+              _RemoteCard(icon: Icons.search, label: t.common.search, onPressed: _showSearchSheet),
             if (isPlayerActive) ...[
               _RemoteCard(
                 icon: Icons.fullscreen,
-                label: 'Fullscreen',
+                label: t.companionRemote.remote.fullscreen,
                 onPressed: () => _sendCommand(RemoteCommandType.fullscreen),
               ),
               _RemoteCard(
                 icon: Icons.subtitles,
-                label: 'Subtitles',
+                label: t.companionRemote.remote.subtitles,
                 onPressed: () => _sendCommand(RemoteCommandType.subtitles),
               ),
               _RemoteCard(
                 icon: Icons.audiotrack,
-                label: 'Audio',
+                label: t.companionRemote.remote.audio,
                 onPressed: () => _sendCommand(RemoteCommandType.audioTracks),
               ),
             ],
@@ -467,7 +468,7 @@ class _DPad extends StatelessWidget {
             top: size + gap,
             child: _DPadButton(
               icon: Icons.check,
-              label: 'OK',
+              label: t.common.ok,
               onPressed: () => onCommand(RemoteCommandType.select),
               size: size,
               isPrimary: true,
@@ -621,7 +622,7 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
             controller: _controller,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: 'Search on desktop...',
+              hintText: t.companionRemote.remote.searchHint,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: IconButton(icon: const Icon(Icons.send), onPressed: () => _submit(_controller.text)),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(100)),

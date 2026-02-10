@@ -1014,7 +1014,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           ),
         PopupMenuItem(
           value: 'logout',
-          child: Row(children: [AppIcon(Symbols.logout_rounded, fill: 1), SizedBox(width: 8), Text(t.discover.logout)]),
+          child: Row(children: [AppIcon(Symbols.logout_rounded, fill: 1), SizedBox(width: 8), Text(t.common.logout)]),
         ),
       ],
     ).then((value) {
@@ -1150,7 +1150,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 Navigator.push(context, MaterialPageRoute(builder: (context) => MobileRemoteScreen()));
                               }
                             },
-                            tooltip: 'Companion Remote',
+                            tooltip: t.companionRemote.title,
                           ),
                           // Badge showing connection status
                           if (companionRemote.isConnected)
@@ -1213,7 +1213,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               children: [
                                 AppIcon(Symbols.logout_rounded, fill: 1),
                                 SizedBox(width: 8),
-                                Text(t.discover.logout),
+                                Text(t.common.logout),
                               ],
                             ),
                           ),
@@ -1453,7 +1453,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         fill: 1,
                         color: Theme.of(context).colorScheme.onSurface,
                         size: 18,
-                        semanticLabel: '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
+                        semanticLabel: '${_isAutoScrollPaused ? t.common.play : t.common.pause} auto-scroll',
                       ),
                     ),
                     // Spacer to separate indicators from button
@@ -1821,7 +1821,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
             ] else
               Text(
-                t.discover.play,
+                t.common.play,
                 style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600),
               ),
           ],

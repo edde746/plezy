@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
+import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
+import '../../utils/formatters.dart';
 import '../../models/companion_remote/recent_remote_session.dart';
 import '../../utils/app_logger.dart';
 
@@ -67,7 +69,7 @@ class _PairingScreenState extends State<PairingScreen> {
       appLogger.e('Failed to load recent sessions', error: e);
       setState(() {
         _isDiscovering = false;
-        _errorMessage = 'Failed to load recent sessions: ${e.toString()}';
+        _errorMessage = t.companionRemote.pairing.failedToLoadRecent(error: e.toString());
       });
     }
   }
@@ -127,11 +129,11 @@ class _PairingScreenState extends State<PairingScreen> {
 
   String _parseErrorMessage(String error) {
     if (error.contains('timeout') || error.contains('Timed out')) {
-      return 'Connection timed out. Please check the session ID and PIN.';
+      return t.companionRemote.pairing.connectionTimedOut;
     } else if (error.contains('Failed to connect')) {
-      return 'Could not find the session. Please check your credentials.';
+      return t.companionRemote.pairing.sessionNotFound;
     }
-    return 'Failed to connect: ${error.replaceAll('Exception: ', '')}';
+    return t.companionRemote.pairing.failedToConnect(error: error.replaceAll('Exception: ', ''));
   }
 
   void _handleQrCode(String data) {
@@ -157,7 +159,7 @@ class _PairingScreenState extends State<PairingScreen> {
       _connectWithCredentials(sessionId, pin, hostAddress);
     } else {
       setState(() {
-        _errorMessage = 'Invalid QR code format - expected 4 parts (ip|port|sessionId|pin)';
+        _errorMessage = t.companionRemote.pairing.invalidQrCode;
       });
     }
   }
@@ -194,13 +196,13 @@ class _PairingScreenState extends State<PairingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Connect to Device'),
+        title: Text(t.companionRemote.connectToDevice),
         actions: [
           if (_selectedTab == 0)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: _isDiscovering ? null : _loadRecentSessions,
-              tooltip: 'Refresh',
+              tooltip: t.common.refresh,
             ),
         ],
       ),
@@ -208,10 +210,10 @@ class _PairingScreenState extends State<PairingScreen> {
         children: [
           SegmentedButton<int>(
             segments: [
-              const ButtonSegment(value: 0, label: Text('Recent'), icon: Icon(Icons.history)),
+              ButtonSegment(value: 0, label: Text(t.companionRemote.pairing.recent), icon: const Icon(Icons.history)),
               if (_isMobile)
-                ButtonSegment(value: _scanTabIndex, label: const Text('Scan'), icon: const Icon(Icons.qr_code_scanner)),
-              ButtonSegment(value: _manualTabIndex, label: const Text('Manual'), icon: const Icon(Icons.keyboard)),
+                ButtonSegment(value: _scanTabIndex, label: Text(t.companionRemote.pairing.scan), icon: const Icon(Icons.qr_code_scanner)),
+              ButtonSegment(value: _manualTabIndex, label: Text(t.companionRemote.pairing.manual), icon: const Icon(Icons.keyboard)),
             ],
             selected: {_selectedTab},
             onSelectionChanged: (Set<int> selection) {
@@ -261,8 +263,8 @@ class _PairingScreenState extends State<PairingScreen> {
                             const SizedBox(height: 16),
                             Text(
                               error.errorCode == MobileScannerErrorCode.permissionDenied
-                                  ? 'Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.'
-                                  : 'Could not start camera: ${error.errorDetails?.message ?? error.errorCode.name}',
+                                  ? t.companionRemote.pairing.cameraPermissionRequired
+                                  : t.companionRemote.pairing.cameraError(error: error.errorDetails?.message ?? error.errorCode.name),
                               textAlign: TextAlign.center,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
@@ -281,7 +283,7 @@ class _PairingScreenState extends State<PairingScreen> {
           child: Column(
             children: [
               Text(
-                'Point your camera at the QR code shown on your desktop',
+                t.companionRemote.pairing.scanInstruction,
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -326,13 +328,13 @@ class _PairingScreenState extends State<PairingScreen> {
               const Icon(Icons.history, size: 64, color: Colors.blue),
               const SizedBox(height: 24),
               Text(
-                'Recent Connections',
+                t.companionRemote.pairing.recentConnections,
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Quickly reconnect to previously paired devices',
+                t.companionRemote.pairing.quickReconnect,
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -340,7 +342,7 @@ class _PairingScreenState extends State<PairingScreen> {
               if (_isDiscovering) ...[
                 const Center(child: CircularProgressIndicator()),
                 const SizedBox(height: 16),
-                Text('Loading...', style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
+                Text(t.common.loading, style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
               ] else if (sessions.isEmpty) ...[
                 Card(
                   child: Padding(
@@ -349,10 +351,10 @@ class _PairingScreenState extends State<PairingScreen> {
                       children: [
                         Icon(Icons.devices_other, size: 48, color: Theme.of(context).colorScheme.outline),
                         const SizedBox(height: 16),
-                        Text('No recent connections', style: Theme.of(context).textTheme.titleMedium),
+                        Text(t.companionRemote.pairing.noRecentConnections, style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 8),
                         Text(
-                          'Connect to a device using Manual entry to get started',
+                          t.companionRemote.pairing.connectUsingManual,
                           style: Theme.of(context).textTheme.bodySmall,
                           textAlign: TextAlign.center,
                         ),
@@ -412,31 +414,18 @@ class _PairingScreenState extends State<PairingScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return '${date.month}/${date.day}/${date.year}';
-    }
+    return formatRelativeTime(date);
   }
 
   Future<void> _showRemoveSessionDialog(RecentRemoteSession session) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove Recent Connection'),
-        content: Text('Remove "${session.deviceName}" from recent connections?'),
+        title: Text(t.companionRemote.pairing.removeRecentConnection),
+        content: Text(t.companionRemote.pairing.removeConfirm(name: session.deviceName)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.remove)),
         ],
       ),
     );
@@ -456,10 +445,10 @@ class _PairingScreenState extends State<PairingScreen> {
           children: [
             const Icon(Icons.keyboard, size: 64, color: Colors.blue),
             const SizedBox(height: 24),
-            Text('Pair with Desktop', style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
+            Text(t.companionRemote.pairing.pairWithDesktop, style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(
-              'Enter the session details shown on your desktop device',
+              t.companionRemote.pairing.enterSessionDetails,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -488,24 +477,24 @@ class _PairingScreenState extends State<PairingScreen> {
             TextFormField(
               controller: _hostAddressController,
               decoration: InputDecoration(
-                labelText: 'Host Address',
-                hintText: '192.168.1.100:48632',
+                labelText: t.companionRemote.session.hostAddress,
+                hintText: t.companionRemote.pairing.hostAddressHint,
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.computer),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.paste),
                   onPressed: () => _pasteFromClipboard(_hostAddressController),
-                  tooltip: 'Paste',
+                  tooltip: t.common.paste,
                 ),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter host address';
+                  return t.companionRemote.pairing.validationHostRequired;
                 }
                 // Validate IP:port format
                 final parts = value.split(':');
                 if (parts.length != 2) {
-                  return 'Format must be IP:port (e.g., 192.168.1.100:48632)';
+                  return t.companionRemote.pairing.validationHostFormat;
                 }
                 return null;
               },
@@ -515,14 +504,14 @@ class _PairingScreenState extends State<PairingScreen> {
             TextFormField(
               controller: _sessionIdController,
               decoration: InputDecoration(
-                labelText: 'Session ID',
-                hintText: 'Enter 8-character session ID',
+                labelText: t.companionRemote.session.sessionId,
+                hintText: t.companionRemote.pairing.sessionIdHint,
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.vpn_key),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.paste),
                   onPressed: () => _pasteFromClipboard(_sessionIdController),
-                  tooltip: 'Paste',
+                  tooltip: t.common.paste,
                 ),
               ),
               textCapitalization: TextCapitalization.characters,
@@ -535,10 +524,10 @@ class _PairingScreenState extends State<PairingScreen> {
               ],
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter a session ID';
+                  return t.companionRemote.pairing.validationSessionIdRequired;
                 }
                 if (value.length != 8) {
-                  return 'Session ID must be 8 characters';
+                  return t.companionRemote.pairing.validationSessionIdLength;
                 }
                 return null;
               },
@@ -548,24 +537,24 @@ class _PairingScreenState extends State<PairingScreen> {
             TextFormField(
               controller: _pinController,
               decoration: InputDecoration(
-                labelText: 'PIN',
-                hintText: 'Enter 6-digit PIN',
+                labelText: t.companionRemote.session.pin,
+                hintText: t.companionRemote.pairing.pinHint,
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.lock),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.paste),
                   onPressed: () => _pasteFromClipboard(_pinController),
-                  tooltip: 'Paste',
+                  tooltip: t.common.paste,
                 ),
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter a PIN';
+                  return t.companionRemote.pairing.validationPinRequired;
                 }
                 if (value.length != 6) {
-                  return 'PIN must be 6 digits';
+                  return t.companionRemote.pairing.validationPinLength;
                 }
                 return null;
               },
@@ -577,28 +566,28 @@ class _PairingScreenState extends State<PairingScreen> {
               icon: _isConnecting
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.link),
-              label: Text(_isConnecting ? 'Connecting...' : 'Connect'),
+              label: Text(_isConnecting ? t.companionRemote.pairing.connecting : t.common.connect),
             ),
             const SizedBox(height: 32),
             const Divider(),
             const SizedBox(height: 16),
-            Text('Tips', style: Theme.of(context).textTheme.titleMedium),
+            Text(t.companionRemote.pairing.tips, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             _buildTipCard(
               context,
               Icons.computer,
-              'Open Plezy on your desktop and enable Companion Remote from settings or menu',
+              t.companionRemote.pairing.tipDesktop,
             ),
             if (_isMobile) ...[
               const SizedBox(height: 8),
               _buildTipCard(
                 context,
                 Icons.qr_code,
-                'Use the Scan tab to quickly pair by scanning the QR code on your desktop',
+                t.companionRemote.pairing.tipScan,
               ),
             ],
             const SizedBox(height: 8),
-            _buildTipCard(context, Icons.wifi, 'Make sure both devices are on the same WiFi network'),
+            _buildTipCard(context, Icons.wifi, t.companionRemote.pairing.tipWifi),
           ],
         ),
       ),

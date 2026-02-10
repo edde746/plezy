@@ -1,14 +1,11 @@
 {
   "app": {
-    "title": "Plezy",
-    "loading": "Laddar..."
-  },
+    "title": "Plezy"
+},
   "auth": {
     "signInWithPlex": "Logga in med Plex",
     "showQRCode": "Visa QR-kod",
-    "cancel": "Avbryt",
     "authenticate": "Autentisera",
-    "retry": "Försök igen",
     "debugEnterToken": "Debug: Ange Plex-token",
     "plexTokenLabel": "Plex-autentiseringstoken",
     "plexTokenHint": "Ange din Plex.tv-token",
@@ -34,14 +31,28 @@
     "no": "Nej",
     "delete": "Ta bort",
     "shuffle": "Blanda",
-    "addTo": "Lägg till i..."
+    "addTo": "Lägg till i...",
+    "remove": "Ta bort",
+    "paste": "Klistra in",
+    "connect": "Anslut",
+    "disconnect": "Koppla från",
+    "play": "Spela",
+    "pause": "Pausa",
+    "resume": "Återuppta",
+    "error": "Fel",
+    "search": "Sök",
+    "home": "Hem",
+    "back": "Tillbaka",
+    "settings": "Inställningar",
+    "mute": "Ljud av",
+    "ok": "OK",
+    "loading": "Laddar..."
   },
   "screens": {
     "licenses": "Licenser",
     "switchProfile": "Byt profil",
     "subtitleStyling": "Undertext-styling",
     "mpvConfig": "MPV-konfiguration",
-    "search": "Sök",
     "logs": "Loggar"
   },
   "update": {
@@ -203,7 +214,8 @@
       "speedReset": "Återställ hastighet",
       "subSeekNext": "Hoppa till nästa undertext",
       "subSeekPrev": "Hoppa till föregående undertext",
-      "shaderToggle": "Växla shaders"
+      "shaderToggle": "Växla shaders",
+      "skipMarker": "Hoppa över intro/eftertexter"
     }
   },
   "pinEntry": {
@@ -307,7 +319,6 @@
     "timelineSlider": "Videotidslinje",
     "volumeSlider": "Volymnivå",
     "endsAt": "Slutar ${time}",
-    "backButton": "Tillbaka",
     "pipFailed": "Bild-i-bild kunde inte starta",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",
@@ -315,7 +326,9 @@
       "notSupported": "Denna enhet stöder inte bild-i-bild-läge",
       "failed": "Bild-i-bild kunde inte starta",
       "unknown": "Ett fel uppstod: ${error}"
-    }
+    },
+    "chapters": "Kapitel",
+    "noChaptersAvailable": "Inga kapitel tillgängliga"
   },
   "userStatus": {
     "admin": "Admin",
@@ -395,19 +408,15 @@
     "entriesCount": "${count} poster"
   },
   "dialog": {
-    "confirmAction": "Bekräfta åtgärd",
-    "cancel": "Avbryt"
+    "confirmAction": "Bekräfta åtgärd"
   },
   "discover": {
     "title": "Upptäck",
     "switchProfile": "Byt profil",
-    "logout": "Logga ut",
     "noContentAvailable": "Inget innehåll tillgängligt",
     "addMediaToLibraries": "Lägg till media till dina bibliotek",
     "continueWatching": "Fortsätt titta",
-    "play": "Spela",
     "playEpisode": "S${season}E${episode}",
-    "pause": "Pausa",
     "overview": "Översikt",
     "cast": "Rollbesättning",
     "seasons": "Säsonger",
@@ -517,10 +526,7 @@
     "licensesCount": "${count} licenser"
   },
   "navigation": {
-    "home": "Hem",
-    "search": "Sök",
     "libraries": "Bibliotek",
-    "settings": "Inställningar",
     "downloads": "Nedladdningar"
   },
   "downloads": {
@@ -537,7 +543,11 @@
     "episodesQueued": "${count} avsnitt köade för nedladdning",
     "downloadDeleted": "Nedladdning borttagen",
     "deleteConfirm": "Är du säker på att du vill ta bort \"${title}\"? Den nedladdade filen kommer att tas bort från din enhet.",
-    "deletingWithProgress": "Tar bort ${title}... (${current} av ${total})"
+    "deletingWithProgress": "Tar bort ${title}... (${current} av ${total})",
+    "noDownloadsTree": "Inga nedladdningar",
+    "pauseAll": "Pausa alla",
+    "resumeAll": "Återuppta alla",
+    "deleteAll": "Ta bort alla"
   },
   "playlists": {
     "title": "Spellistor",
@@ -642,5 +652,107 @@
     "qualityFast": "Snabb",
     "qualityHQ": "Hög kvalitet",
     "mode": "Läge"
+  },
+  "companionRemote": {
+    "title": "Companion Remote",
+    "connectToDevice": "Anslut till enhet",
+    "hostRemoteSession": "Starta fjärrsession",
+    "controlThisDevice": "Styr den här enheten med din telefon",
+    "remoteControl": "Fjärrkontroll",
+    "controlDesktop": "Styr en datorenhet",
+    "connectedTo": "Ansluten till ${name}",
+    "session": {
+      "creatingSession": "Skapar fjärrsession...",
+      "failedToCreate": "Kunde inte skapa fjärrsession:",
+      "noSession": "Ingen session tillgänglig",
+      "scanQrCode": "Skanna QR-kod",
+      "orEnterManually": "Eller ange manuellt",
+      "hostAddress": "Värdadress",
+      "sessionId": "Sessions-ID",
+      "pin": "PIN",
+      "connected": "Ansluten",
+      "waitingForConnection": "Väntar på anslutning...",
+      "usePhoneToControl": "Använd din mobila enhet för att styra denna app",
+      "copiedToClipboard": "${label} kopierad till urklipp",
+      "copyToClipboard": "Kopiera till urklipp",
+      "newSession": "Ny session",
+      "minimize": "Minimera"
+    },
+    "pairing": {
+      "recent": "Senaste",
+      "scan": "Skanna",
+      "manual": "Manuell",
+      "recentConnections": "Senaste anslutningar",
+      "quickReconnect": "Återanslut snabbt till tidigare parkopplade enheter",
+      "pairWithDesktop": "Parkoppla med dator",
+      "enterSessionDetails": "Ange sessionsuppgifterna som visas på din datorenhet",
+      "hostAddressHint": "192.168.1.100:48632",
+      "sessionIdHint": "Ange 8-teckens sessions-ID",
+      "pinHint": "Ange 6-siffrig PIN",
+      "connecting": "Ansluter...",
+      "tips": "Tips",
+      "tipDesktop": "Öppna Plezy på din dator och aktivera Companion Remote via inställningar eller meny",
+      "tipScan": "Använd fliken Skanna för att snabbt parkoppla genom att skanna QR-koden på din dator",
+      "tipWifi": "Se till att båda enheterna är på samma WiFi-nätverk",
+      "cameraPermissionRequired": "Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.",
+      "cameraError": "Kunde inte starta kameran: ${error}",
+      "scanInstruction": "Rikta kameran mot QR-koden som visas på din dator",
+      "noRecentConnections": "Inga senaste anslutningar",
+      "connectUsingManual": "Anslut till en enhet via Manuell inmatning för att komma igång",
+      "invalidQrCode": "Ogiltigt QR-kodformat",
+      "removeRecentConnection": "Ta bort senaste anslutning",
+      "removeConfirm": "Ta bort \"${name}\" från senaste anslutningar?",
+      "validationHostRequired": "Ange en värdadress",
+      "validationHostFormat": "Format måste vara IP:port (t.ex. 192.168.1.100:48632)",
+      "validationSessionIdRequired": "Ange ett sessions-ID",
+      "validationSessionIdLength": "Sessions-ID måste vara 8 tecken",
+      "validationPinRequired": "Ange en PIN",
+      "validationPinLength": "PIN måste vara 6 siffror",
+      "connectionTimedOut": "Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.",
+      "sessionNotFound": "Kunde inte hitta sessionen. Kontrollera dina uppgifter.",
+      "failedToConnect": "Kunde inte ansluta: ${error}",
+      "failedToLoadRecent": "Kunde inte ladda senaste sessioner: ${error}"
+    },
+    "remote": {
+      "disconnectConfirm": "Vill du koppla från fjärrsessionen?",
+      "reconnecting": "Återansluter...",
+      "attemptOf": "Försök ${current} av 5",
+      "retryNow": "Försök nu",
+      "connectionError": "Anslutningsfel",
+      "notConnected": "Inte ansluten",
+      "tabRemote": "Fjärrkontroll",
+      "tabPlay": "Spela",
+      "tabMore": "Mer",
+      "menu": "Meny",
+      "tabNavigation": "Fliknavigering",
+      "tabDiscover": "Upptäck",
+      "tabLibraries": "Bibliotek",
+      "tabSearch": "Sök",
+      "tabDownloads": "Nedladdningar",
+      "tabSettings": "Inställningar",
+      "previous": "Föregående",
+      "playPause": "Spela/Pausa",
+      "next": "Nästa",
+      "seekBack": "Spola bakåt",
+      "stop": "Stopp",
+      "seekForward": "Spola framåt",
+      "volume": "Volym",
+      "volumeDown": "Ner",
+      "volumeUp": "Upp",
+      "fullscreen": "Helskärm",
+      "subtitles": "Undertexter",
+      "audio": "Ljud",
+      "searchHint": "Sök på datorn..."
+    }
+  },
+  "videoSettings": {
+    "playbackSettings": "Uppspelningsinställningar",
+    "playbackSpeed": "Uppspelningshastighet",
+    "sleepTimer": "Sovtimer",
+    "audioSync": "Ljudsynkronisering",
+    "subtitleSync": "Undertextsynkronisering",
+    "hdr": "HDR",
+    "audioOutput": "Ljudutgång",
+    "performanceOverlay": "Prestandaöverlägg"
   }
 }
