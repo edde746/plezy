@@ -203,7 +203,8 @@
       "speedReset": "Reset Speed",
       "subSeekNext": "Seek to Next Subtitle",
       "subSeekPrev": "Seek to Previous Subtitle",
-      "shaderToggle": "Toggle Shaders"
+      "shaderToggle": "Toggle Shaders",
+      "skipMarker": "Skip Intro/Credits"
     }
   },
   "pinEntry": {

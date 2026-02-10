@@ -2051,6 +2051,9 @@ class TranslationsHotkeysActionsEn {
 
 	/// en: 'Toggle Shaders'
 	String get shaderToggle => 'Toggle Shaders';
+
+	/// en: 'Skip Intro/Credits'
+	String get skipMarker => 'Skip Intro/Credits';
 }
 
 // Path: videoControls.pipErrors
@@ -2322,6 +2325,7 @@ extension on Translations {
 			'hotkeys.actions.subSeekNext' => 'Seek to Next Subtitle',
 			'hotkeys.actions.subSeekPrev' => 'Seek to Previous Subtitle',
 			'hotkeys.actions.shaderToggle' => 'Toggle Shaders',
+			'hotkeys.actions.skipMarker' => 'Skip Intro/Credits',
 			'pinEntry.enterPin' => 'Enter PIN',
 			'pinEntry.showPin' => 'Show PIN',
 			'pinEntry.hidePin' => 'Hide PIN',
@@ -2644,9 +2648,9 @@ extension on Translations {
 			'watchTogether.title' => 'Watch Together',
 			'watchTogether.description' => 'Watch content in sync with friends and family',
 			'watchTogether.createSession' => 'Create Session',
-			'watchTogether.creating' => 'Creating...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.creating' => 'Creating...',
 			'watchTogether.joinSession' => 'Join Session',
 			'watchTogether.joining' => 'Joining...',
 			'watchTogether.controlMode' => 'Control Mode',

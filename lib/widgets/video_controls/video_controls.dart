@@ -1557,6 +1557,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               _previousChapter,
               onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
               onToggleShader: _toggleShader,
+              onSkipMarker: _performAutoSkip,
             );
             // Never return .ignored from fullscreen video — prevent leaking to previous routes
             return result == KeyEventResult.ignored ? KeyEventResult.handled : result;

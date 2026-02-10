@@ -403,6 +403,7 @@ class SettingsService extends BaseSharedPreferencesService {
       'sub_seek_next': HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
       'sub_seek_prev': HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
       'shader_toggle': HotKey(key: PhysicalKeyboardKey.keyG),
+      'skip_marker': HotKey(key: PhysicalKeyboardKey.enter),
     };
   }
 

@@ -136,6 +136,7 @@ class KeyboardShortcutsService {
     VoidCallback? onPreviousChapter, {
     VoidCallback? onBack,
     VoidCallback? onToggleShader,
+    VoidCallback? onSkipMarker,
   }) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
@@ -212,6 +213,7 @@ class KeyboardShortcutsService {
           onNextChapter,
           onPreviousChapter,
           onToggleShader: onToggleShader,
+          onSkipMarker: onSkipMarker,
         );
         return KeyEventResult.handled;
       }
@@ -230,6 +232,7 @@ class KeyboardShortcutsService {
     VoidCallback? onNextChapter,
     VoidCallback? onPreviousChapter, {
     VoidCallback? onToggleShader,
+    VoidCallback? onSkipMarker,
   }) {
     switch (action) {
       case 'play_pause':
@@ -303,6 +306,9 @@ class KeyboardShortcutsService {
       case 'shader_toggle':
         onToggleShader?.call();
         break;
+      case 'skip_marker':
+        onSkipMarker?.call();
+        break;
     }
   }
 
@@ -349,6 +355,8 @@ class KeyboardShortcutsService {
         return t.hotkeys.actions.subSeekPrev;
       case 'shader_toggle':
         return t.hotkeys.actions.shaderToggle;
+      case 'skip_marker':
+        return t.hotkeys.actions.skipMarker;
       default:
         return action;
     }
