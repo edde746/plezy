@@ -542,6 +542,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   void _startAutoScroll() {
+    _autoScrollTimer?.cancel();
     if (_isAutoScrollPaused) return;
 
     _startIndicatorProgress();
