@@ -258,6 +258,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       _initAlwaysOnTopState();
     }
 
+
     // Focus play/pause button on first frame if in keyboard mode
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusPlayPauseIfKeyboardMode();
@@ -733,7 +734,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   void _updateTrafficLightVisibility() async {
-    await MacOSWindowService.setTrafficLightsVisible(_showControls);
+    // When maximized or fullscreen, always keep traffic lights visible so the
+    // user can reach them without the controls-hide-on-mouse-leave race.
+    // In normal windowed mode, toggle with controls as before.
+    final isMaximizedOrFullscreen = await windowManager.isMaximized() || await windowManager.isFullScreen();
+    final visible = isMaximizedOrFullscreen ? true : _showControls;
+    await MacOSWindowService.setTrafficLightsVisible(visible);
   }
 
   /// Check whether PiP is supported on this device

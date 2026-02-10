@@ -211,10 +211,11 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
             child: Column(
               children: [
                 SegmentedButton<int>(
+                  showSelectedIcon: false,
                   segments: const [
-                    ButtonSegment(value: 0, label: Text('Navigate'), icon: Icon(Icons.navigation)),
-                    ButtonSegment(value: 1, label: Text('Playback'), icon: Icon(Icons.play_arrow)),
-                    ButtonSegment(value: 2, label: Text('Quick'), icon: Icon(Icons.flash_on)),
+                    ButtonSegment(value: 0, label: Text('Remote'), icon: Icon(Icons.navigation)),
+                    ButtonSegment(value: 1, label: Text('Play'), icon: Icon(Icons.play_arrow)),
+                    ButtonSegment(value: 2, label: Text('More'), icon: Icon(Icons.flash_on)),
                   ],
                   selected: {_selectedTab},
                   onSelectionChanged: (Set<int> selection) {
@@ -236,6 +237,8 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
   }
 
   Widget _buildNavigationTab() {
+    final isPlayerActive = context.watch<CompanionRemoteProvider>().isPlayerActive;
+
     return Column(
       children: [
         const SizedBox(height: 16),
@@ -253,41 +256,43 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         ),
         const SizedBox(height: 32),
         Center(child: _DPad(onCommand: _sendCommand)),
-        const SizedBox(height: 32),
-        Text('Tab Navigation', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          alignment: WrapAlignment.center,
-          children: [
-            _RemoteChip(
-              icon: Icons.explore,
-              label: 'Discover',
-              onPressed: () => _sendCommand(RemoteCommandType.tabDiscover),
-            ),
-            _RemoteChip(
-              icon: Icons.video_library,
-              label: 'Libraries',
-              onPressed: () => _sendCommand(RemoteCommandType.tabLibraries),
-            ),
-            _RemoteChip(
-              icon: Icons.search,
-              label: 'Search',
-              onPressed: () => _showSearchSheet(switchToSearchTab: true),
-            ),
-            _RemoteChip(
-              icon: Icons.download,
-              label: 'Downloads',
-              onPressed: () => _sendCommand(RemoteCommandType.tabDownloads),
-            ),
-            _RemoteChip(
-              icon: Icons.settings,
-              label: 'Settings',
-              onPressed: () => _sendCommand(RemoteCommandType.tabSettings),
-            ),
-          ],
-        ),
+        if (!isPlayerActive) ...[
+          const SizedBox(height: 32),
+          Text('Tab Navigation', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              _RemoteChip(
+                icon: Icons.explore,
+                label: 'Discover',
+                onPressed: () => _sendCommand(RemoteCommandType.tabDiscover),
+              ),
+              _RemoteChip(
+                icon: Icons.video_library,
+                label: 'Libraries',
+                onPressed: () => _sendCommand(RemoteCommandType.tabLibraries),
+              ),
+              _RemoteChip(
+                icon: Icons.search,
+                label: 'Search',
+                onPressed: () => _showSearchSheet(switchToSearchTab: true),
+              ),
+              _RemoteChip(
+                icon: Icons.download,
+                label: 'Downloads',
+                onPressed: () => _sendCommand(RemoteCommandType.tabDownloads),
+              ),
+              _RemoteChip(
+                icon: Icons.settings,
+                label: 'Settings',
+                onPressed: () => _sendCommand(RemoteCommandType.tabSettings),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -369,6 +374,8 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
   }
 
   Widget _buildQuickActionsTab() {
+    final isPlayerActive = context.watch<CompanionRemoteProvider>().isPlayerActive;
+
     return Column(
       children: [
         const SizedBox(height: 16),
@@ -377,12 +384,25 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           runSpacing: 12,
           alignment: WrapAlignment.center,
           children: [
-            _RemoteCard(icon: Icons.search, label: 'Search', onPressed: _showSearchSheet),
-            _RemoteCard(
-              icon: Icons.fullscreen,
-              label: 'Fullscreen',
-              onPressed: () => _sendCommand(RemoteCommandType.fullscreen),
-            ),
+            if (!isPlayerActive)
+              _RemoteCard(icon: Icons.search, label: 'Search', onPressed: _showSearchSheet),
+            if (isPlayerActive) ...[
+              _RemoteCard(
+                icon: Icons.fullscreen,
+                label: 'Fullscreen',
+                onPressed: () => _sendCommand(RemoteCommandType.fullscreen),
+              ),
+              _RemoteCard(
+                icon: Icons.subtitles,
+                label: 'Subtitles',
+                onPressed: () => _sendCommand(RemoteCommandType.subtitles),
+              ),
+              _RemoteCard(
+                icon: Icons.audiotrack,
+                label: 'Audio',
+                onPressed: () => _sendCommand(RemoteCommandType.audioTracks),
+              ),
+            ],
           ],
         ),
       ],
@@ -397,16 +417,17 @@ class _DPad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = 80.0;
-    const centerSize = 60.0;
+    const size = 72.0;
+    const gap = 8.0;
+    const total = size * 3 + gap * 2;
 
     return SizedBox(
-      width: size * 3,
-      height: size * 3,
+      width: total,
+      height: total,
       child: Stack(
         children: [
           Positioned(
-            left: size,
+            left: size + gap,
             top: 0,
             child: _DPadButton(
               icon: Icons.arrow_drop_up,
@@ -415,7 +436,7 @@ class _DPad extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: size,
+            left: size + gap,
             bottom: 0,
             child: _DPadButton(
               icon: Icons.arrow_drop_down,
@@ -425,7 +446,7 @@ class _DPad extends StatelessWidget {
           ),
           Positioned(
             left: 0,
-            top: size,
+            top: size + gap,
             child: _DPadButton(
               icon: Icons.arrow_left,
               onPressed: () => onCommand(RemoteCommandType.dpadLeft),
@@ -434,7 +455,7 @@ class _DPad extends StatelessWidget {
           ),
           Positioned(
             right: 0,
-            top: size,
+            top: size + gap,
             child: _DPadButton(
               icon: Icons.arrow_right,
               onPressed: () => onCommand(RemoteCommandType.dpadRight),
@@ -442,13 +463,13 @@ class _DPad extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: (size * 3 - centerSize) / 2,
-            top: (size * 3 - centerSize) / 2,
+            left: size + gap,
+            top: size + gap,
             child: _DPadButton(
               icon: Icons.check,
               label: 'OK',
               onPressed: () => onCommand(RemoteCommandType.select),
-              size: centerSize,
+              size: size,
               isPrimary: true,
             ),
           ),

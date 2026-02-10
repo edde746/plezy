@@ -26,6 +26,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   String _platform = 'unknown';
   final List<TrustedDevice> _trustedDevices = [];
   final List<RecentRemoteSession> _recentSessions = [];
+  bool _isPlayerActive = false;
 
   static const String _storageKey = 'companion_remote_trusted_devices';
   static const String _lastDeviceKey = 'companion_remote_last_device';
@@ -61,6 +62,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   RemoteDevice? get connectedDevice => _session?.connectedDevice;
   List<TrustedDevice> get trustedDevices => List.unmodifiable(_trustedDevices);
   List<RecentRemoteSession> get recentSessions => List.unmodifiable(_recentSessions);
+  bool get isPlayerActive => _isPlayerActive;
 
   CompanionRemoteProvider() {
     _initializeDeviceInfo();
@@ -108,6 +110,8 @@ class CompanionRemoteProvider with ChangeNotifier {
 
         if (command.type == RemoteCommandType.deviceInfo) {
           _handleDeviceInfo(command);
+        } else if (command.type == RemoteCommandType.syncState) {
+          _handleSyncState(command);
         } else if (command.type == RemoteCommandType.ping ||
             command.type == RemoteCommandType.pong ||
             command.type == RemoteCommandType.ack) {
@@ -182,6 +186,14 @@ class CompanionRemoteProvider with ChangeNotifier {
 
       // Save to recent sessions now that we have the remote device's real identity
       await _addToRecentSessions();
+    }
+  }
+
+  void _handleSyncState(RemoteCommand command) {
+    final playerActive = command.data?['playerActive'] as bool? ?? false;
+    if (_isPlayerActive != playerActive) {
+      _isPlayerActive = playerActive;
+      notifyListeners();
     }
   }
 
@@ -363,6 +375,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _cleanupSubscriptions();
 
     _session = null;
+    _isPlayerActive = false;
     _intentionalDisconnect = false;
     notifyListeners();
   }

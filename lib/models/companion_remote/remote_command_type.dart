@@ -49,4 +49,5 @@ enum RemoteCommandType {
   deviceInfo,
   disconnect,
   ack,
+  syncState,
 }

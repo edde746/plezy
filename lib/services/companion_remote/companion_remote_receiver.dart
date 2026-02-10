@@ -37,6 +37,9 @@ class CompanionRemoteReceiver {
   VoidCallback? onVolumeUp;
   VoidCallback? onVolumeDown;
   VoidCallback? onVolumeMute;
+  VoidCallback? onSubtitles;
+  VoidCallback? onAudioTracks;
+  VoidCallback? onFullscreen;
 
   void handleCommand(RemoteCommand command, BuildContext? context) {
     appLogger.d('CompanionRemoteReceiver: Handling command: ${command.type}');
@@ -109,17 +112,23 @@ class CompanionRemoteReceiver {
         onPreviousTrack?.call();
 
       case RemoteCommandType.subtitles:
+        onSubtitles?.call();
       case RemoteCommandType.audioTracks:
-        break; // No-op: track cycling not yet implemented
+        onAudioTracks?.call();
 
       case RemoteCommandType.fullscreen:
-        simulateKeyPress(LogicalKeyboardKey.keyF);
+        if (onFullscreen != null) {
+          onFullscreen!.call();
+        } else {
+          simulateKeyPress(LogicalKeyboardKey.keyF);
+        }
 
       case RemoteCommandType.ping:
       case RemoteCommandType.pong:
       case RemoteCommandType.ack:
       case RemoteCommandType.deviceInfo:
       case RemoteCommandType.disconnect:
+      case RemoteCommandType.syncState:
         break;
 
       default:

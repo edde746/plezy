@@ -22,7 +22,10 @@ import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../models/companion_remote/remote_command_type.dart';
+import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
+import '../services/macos_window_service.dart';
 import '../services/discord_rpc_service.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
@@ -45,6 +48,7 @@ import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/language_codes.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/track_label_builder.dart' as tlb;
 import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
@@ -133,6 +137,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   // Watch Together provider reference (stored early to use in dispose)
   WatchTogetherProvider? _watchTogetherProvider;
+
+  // Companion remote state (stored early for use in dispose)
+  CompanionRemoteProvider? _companionRemoteProvider;
+  VoidCallback? _savedOnHome;
 
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata(BuildContext context) {
@@ -1174,6 +1182,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player!.setVolume(newVolume);
       settings.setVolume(newVolume);
     };
+    receiver.onSubtitles = _cycleSubtitleTrack;
+    receiver.onAudioTracks = _cycleAudioTrack;
+    receiver.onFullscreen = _toggleFullscreen;
+
+    // Override home to exit the player first (main screen handler runs after pop)
+    _savedOnHome = receiver.onHome;
+    receiver.onHome = () {
+      if (mounted) _handleBackButton();
+    };
+
+    // Store provider reference for use in dispose and notify remote
+    try {
+      _companionRemoteProvider = context.read<CompanionRemoteProvider>();
+      _companionRemoteProvider!.sendCommand(
+        RemoteCommandType.syncState,
+        data: {'playerActive': true},
+      );
+    } catch (_) {}
   }
 
   void _cleanupCompanionRemoteCallbacks() {
@@ -1186,6 +1212,84 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     receiver.onVolumeUp = null;
     receiver.onVolumeDown = null;
     receiver.onVolumeMute = null;
+    receiver.onSubtitles = null;
+    receiver.onAudioTracks = null;
+    receiver.onFullscreen = null;
+    receiver.onHome = _savedOnHome;
+    _savedOnHome = null;
+
+    // Notify remote that player is no longer active
+    _companionRemoteProvider?.sendCommand(
+      RemoteCommandType.syncState,
+      data: {'playerActive': false},
+    );
+    _companionRemoteProvider = null;
+  }
+
+  void _cycleSubtitleTrack() {
+    if (player == null) return;
+    final tracks = player!.state.tracks.subtitle.where((t) => t.id != 'auto').toList();
+    if (tracks.isEmpty) return;
+
+    final current = player!.state.track.subtitle;
+    // tracks includes 'no' (off). Find current index and advance.
+    final currentIndex = tracks.indexWhere((t) => t.id == current?.id);
+    final nextIndex = (currentIndex + 1) % tracks.length;
+    final next = tracks[nextIndex];
+    player!.selectSubtitleTrack(next);
+    _onSubtitleTrackChanged(next);
+
+    if (mounted) {
+      final label = next.id == 'no'
+          ? 'Subtitles: Off'
+          : 'Subtitles: ${tlb.TrackLabelBuilder.buildSubtitleLabel(title: next.title, language: next.language, codec: next.codec, index: nextIndex)}';
+      showAppSnackBar(context, label, duration: const Duration(seconds: 1));
+    }
+  }
+
+  void _cycleAudioTrack() {
+    if (player == null) return;
+    final tracks = player!.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
+    if (tracks.length <= 1) return;
+
+    final current = player!.state.track.audio;
+    final currentIndex = tracks.indexWhere((t) => t.id == current?.id);
+    final nextIndex = (currentIndex + 1) % tracks.length;
+    final next = tracks[nextIndex];
+    player!.selectAudioTrack(next);
+    _onAudioTrackChanged(next);
+
+    if (mounted) {
+      final label = 'Audio: ${tlb.TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
+      showAppSnackBar(context, label, duration: const Duration(seconds: 1));
+    }
+  }
+
+  Future<void> _toggleFullscreen() async {
+    if (PlatformDetector.isMobile(context)) return;
+    final isCurrentlyFullscreen = await windowManager.isFullScreen();
+    if (Platform.isMacOS) {
+      if (isCurrentlyFullscreen) {
+        await MacOSWindowService.exitFullscreen();
+      } else {
+        await MacOSWindowService.enterFullscreen();
+      }
+    } else {
+      await windowManager.setFullScreen(!isCurrentlyFullscreen);
+    }
+  }
+
+  /// Exit fullscreen before leaving the player (Windows/Linux only).
+  /// macOS is excluded because we can't distinguish native fullscreen
+  /// from maximized state, so we leave the window state unchanged.
+  Future<void> _exitFullscreenIfNeeded() async {
+    if (Platform.isWindows || Platform.isLinux) {
+      final isFullscreen = await windowManager.isFullScreen();
+      if (isFullscreen) {
+        await windowManager.setFullScreen(false);
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
   }
 
   /// Handle back button press
@@ -1207,16 +1311,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (confirmed && mounted) {
           await _watchTogetherProvider!.leaveSession();
           if (mounted) {
-            // Exit fullscreen before leaving player (Windows/Linux only)
-            if (Platform.isWindows || Platform.isLinux) {
-              final isFullscreen = await windowManager.isFullScreen();
-              if (isFullscreen) {
-                await windowManager.setFullScreen(false);
-                // Wait for a frame to allow window manager to process the fullscreen exit
-                await Future.delayed(const Duration(milliseconds: 100));
-                if (!mounted) return;
-              }
-            }
+            await _exitFullscreenIfNeeded();
             if (!mounted) return;
             _isExiting.value = true;
             Navigator.of(context).pop(true);
@@ -1225,16 +1320,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         return;
       }
 
-      // Exit fullscreen before leaving player (Windows/Linux only)
-      if (Platform.isWindows || Platform.isLinux) {
-        final isFullscreen = await windowManager.isFullScreen();
-        if (isFullscreen) {
-          await windowManager.setFullScreen(false);
-          // Wait for a frame to allow window manager to process the fullscreen exit
-          await Future.delayed(const Duration(milliseconds: 100));
-          if (!mounted) return;
-        }
-      }
+      await _exitFullscreenIfNeeded();
 
       // Default behavior for hosts or non-session users
       if (!mounted) return;
