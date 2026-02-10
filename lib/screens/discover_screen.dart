@@ -39,6 +39,9 @@ import 'auth_screen.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
 import '../watch_together/watch_together.dart';
+import '../providers/companion_remote_provider.dart';
+import '../widgets/companion_remote/remote_session_dialog.dart';
+import 'companion_remote/mobile_remote_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final VoidCallback? onBecameVisible;
@@ -118,6 +121,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _refreshContinueWatching();
   }
 
+  // Track initial load so we can focus hero when content first appears
+  bool _initialLoadComplete = false;
+
   // Hub navigation keys
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
   final List<GlobalKey<HubSectionState>> _hubKeys = [];
@@ -126,9 +132,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   late FocusNode _heroFocusNode;
   late FocusNode _refreshButtonFocusNode;
   late FocusNode _watchTogetherButtonFocusNode;
+  late FocusNode _companionRemoteButtonFocusNode;
   late FocusNode _userButtonFocusNode;
   bool _isRefreshFocused = false;
   bool _isWatchTogetherFocused = false;
+  bool _isCompanionRemoteFocused = false;
   bool _isUserFocused = false;
 
   /// Get the correct PlexClient for an item's server
@@ -242,9 +250,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
     _watchTogetherButtonFocusNode = FocusNode(debugLabel: 'watch_together_button');
+    _companionRemoteButtonFocusNode = FocusNode(debugLabel: 'companion_remote_button');
     _userButtonFocusNode = FocusNode(debugLabel: 'user_button');
     _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
     _watchTogetherButtonFocusNode.addListener(_onWatchTogetherFocusChange);
+    _companionRemoteButtonFocusNode.addListener(_onCompanionRemoteFocusChange);
     _userButtonFocusNode.addListener(_onUserFocusChange);
     _loadContent();
     _startAutoScroll();
@@ -262,6 +272,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (mounted) {
       setState(() {
         _isWatchTogetherFocused = _watchTogetherButtonFocusNode.hasFocus;
+      });
+    }
+  }
+
+  void _onCompanionRemoteFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isCompanionRemoteFocused = _companionRemoteButtonFocusNode.hasFocus;
       });
     }
   }
@@ -386,7 +404,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
-    // RIGHT: Move to user button
+    // RIGHT: Move to companion remote button (desktop only)
+    if (key.isRightKey && PlatformDetector.isDesktop(context)) {
+      _companionRemoteButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: Move to user button (non-desktop, skip companion remote)
     if (key.isRightKey) {
       _userButtonFocusNode.requestFocus();
       return KeyEventResult.handled;
@@ -400,6 +424,46 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // SELECT: Navigate to Watch Together screen
     if (key.isSelectKey) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen()));
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  /// Handle key events for the companion remote button in app bar
+  KeyEventResult _handleCompanionRemoteKeyEvent(FocusNode node, KeyEvent event) {
+    if (!event.isActionable) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // DOWN: Return to hero
+    if (key.isDownKey) {
+      _heroFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT: Move to watch together button
+    if (key.isLeftKey) {
+      _watchTogetherButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: Move to user button
+    if (key.isRightKey) {
+      _userButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // UP: Block at boundary
+    if (key.isUpKey) {
+      return KeyEventResult.handled;
+    }
+
+    // SELECT: Show companion remote dialog
+    if (key.isSelectKey) {
+      RemoteSessionDialog.show(context);
       return KeyEventResult.handled;
     }
 
@@ -420,7 +484,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
-    // LEFT: Move to watch together button
+    // LEFT: Move to companion remote button (desktop only)
+    if (key.isLeftKey && PlatformDetector.isDesktop(context)) {
+      _companionRemoteButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT: Move to watch together button (non-desktop, skip companion remote)
     if (key.isLeftKey) {
       _watchTogetherButtonFocusNode.requestFocus();
       return KeyEventResult.handled;
@@ -454,6 +524,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _refreshButtonFocusNode.dispose();
     _watchTogetherButtonFocusNode.removeListener(_onWatchTogetherFocusChange);
     _watchTogetherButtonFocusNode.dispose();
+    _companionRemoteButtonFocusNode.removeListener(_onCompanionRemoteFocusChange);
+    _companionRemoteButtonFocusNode.dispose();
     _userButtonFocusNode.removeListener(_onUserFocusChange);
     _userButtonFocusNode.dispose();
     super.dispose();
@@ -643,6 +715,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Sync PageController to first page after OnDeck loads
       if (_heroController.hasClients && onDeck.isNotEmpty) {
         _heroController.jumpToPage(0);
+      }
+
+      // On initial load, focus the hero so the user starts on content (not the toolbar)
+      if (!_initialLoadComplete && onDeck.isNotEmpty) {
+        _initialLoadComplete = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _heroFocusNode.canRequestFocus) {
+            _heroFocusNode.requestFocus();
+          }
+        });
       }
 
       // Wait for global hubs
@@ -1037,6 +1119,59 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   );
                 },
               ),
+              // Companion Remote button
+              Consumer<CompanionRemoteProvider>(
+                builder: (context, companionRemote, child) {
+                  final isDesktop = PlatformDetector.isDesktop(context);
+
+                  return Focus(
+                    focusNode: isDesktop ? _companionRemoteButtonFocusNode : null,
+                    onKeyEvent: isDesktop ? _handleCompanionRemoteKeyEvent : null,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDesktop && _isCompanionRemoteFocused
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Stack(
+                        children: [
+                          IconButton(
+                            icon: AppIcon(
+                              Symbols.phone_android_rounded,
+                              fill: companionRemote.isConnected ? 1 : 0,
+                              color: companionRemote.isConnected ? Theme.of(context).colorScheme.primary : Colors.white,
+                            ),
+                            onPressed: () {
+                              if (isDesktop) {
+                                RemoteSessionDialog.show(context);
+                              } else {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => MobileRemoteScreen()));
+                              }
+                            },
+                            tooltip: 'Companion Remote',
+                          ),
+                          // Badge showing connection status
+                          if (companionRemote.isConnected)
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
               Consumer<UserProfileProvider>(
                 builder: (context, userProvider, child) {
                   return Focus(
@@ -1233,8 +1368,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ],
             ),
           ),
-          // Overlaid app bar
-          Positioned(top: 0, left: 0, right: 0, child: _buildOverlaidAppBar()),
+          // Overlaid app bar — excluded from default focus traversal so that
+          // initial/tab-switch focus lands on content (hero/hubs), not the toolbar.
+          // Toolbar buttons are still reachable via explicit UP from hero section.
+          Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: _buildOverlaidAppBar())),
         ],
       ),
     );

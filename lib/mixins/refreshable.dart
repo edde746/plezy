@@ -15,6 +15,7 @@ mixin FocusableTab {
 /// Mixin for screens with focusable search input
 mixin SearchInputFocusable {
   void focusSearchInput();
+  void setSearchQuery(String query);
 }
 
 /// Mixin for screens that can load a specific library by key

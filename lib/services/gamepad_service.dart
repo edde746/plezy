@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:universal_gamepad/universal_gamepad.dart';
 
 import '../utils/app_logger.dart';
+import '../utils/key_event_simulator.dart' as key_sim;
 
 /// Service that bridges gamepad input to Flutter's focus navigation system.
 ///
@@ -106,7 +107,7 @@ class GamepadService {
     if (event.pressed) {
       onGamepadInput?.call();
       _setTraditionalFocusHighlight();
-      _scheduleFrameIfIdle();
+      key_sim.scheduleFrameIfIdle();
     }
 
     final wasPressed = _pressedButtons.contains(event.button);
@@ -170,7 +171,7 @@ class GamepadService {
     if (event.value.abs() > 0.3) {
       onGamepadInput?.call();
       _setTraditionalFocusHighlight();
-      _scheduleFrameIfIdle();
+      SchedulerBinding.instance.ensureVisualUpdate();
     }
 
     switch (event.axis) {
@@ -340,15 +341,6 @@ class GamepadService {
   void _setTraditionalFocusHighlight() {
     if (FocusManager.instance.highlightStrategy != FocusHighlightStrategy.alwaysTraditional) {
       FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
-    }
-  }
-
-  // Force a frame when the engine is idle so focus visuals update immediately
-  // on gamepad input (desktop may not wake up without mouse/keyboard activity).
-  void _scheduleFrameIfIdle() {
-    final scheduler = SchedulerBinding.instance;
-    if (scheduler.schedulerPhase == SchedulerPhase.idle) {
-      scheduler.scheduleFrame();
     }
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../utils/platform_detector.dart';
 import '../services/gamepad_service.dart';
 import 'dpad_navigator.dart';
+import '../services/companion_remote/companion_remote_receiver.dart';
 
 /// Tracks whether the user is navigating via keyboard/d-pad or pointer (mouse/touch).
 ///
@@ -57,12 +58,16 @@ class _InputModeTrackerState extends State<InputModeTracker> {
 
     // Register callback for gamepad input to switch to keyboard mode
     GamepadService.onGamepadInput = () => _setMode(InputMode.keyboard);
+
+    // Register callback for companion remote input to switch to keyboard mode
+    CompanionRemoteReceiver.onRemoteInput = () => _setMode(InputMode.keyboard);
   }
 
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     GamepadService.onGamepadInput = null;
+    CompanionRemoteReceiver.onRemoteInput = null;
     super.dispose();
   }
 
@@ -112,7 +117,15 @@ class _InputModeTrackerState extends State<InputModeTracker> {
       onPointerDown: (_) => _setMode(InputMode.pointer),
       onPointerHover: (_) => _setMode(InputMode.pointer),
       behavior: HitTestBehavior.translucent,
-      child: _InputModeProvider(mode: _mode, child: widget.child),
+      child: MouseRegion(
+        cursor: _mode == InputMode.keyboard
+            ? SystemMouseCursors.none
+            : MouseCursor.defer,
+        child: IgnorePointer(
+          ignoring: _mode == InputMode.keyboard,
+          child: _InputModeProvider(mode: _mode, child: widget.child),
+        ),
+      ),
     );
   }
 }

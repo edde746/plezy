@@ -27,6 +27,9 @@ import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/tv_number_spinner.dart';
 import 'hotkey_recorder_widget.dart';
+import '../../providers/companion_remote_provider.dart';
+import '../../screens/companion_remote/mobile_remote_screen.dart';
+import '../../widgets/companion_remote/remote_session_dialog.dart';
 import 'about_screen.dart';
 import 'logs_screen.dart';
 import 'mpv_config_screen.dart';
@@ -206,6 +209,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   _buildDownloadsSection(),
                   const SizedBox(height: 24),
                   if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection(), const SizedBox(height: 24)],
+                  _buildCompanionRemoteSection(),
+                  const SizedBox(height: 24),
                   _buildAdvancedSection(),
                   const SizedBox(height: 24),
                   if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection(), const SizedBox(height: 24)],
@@ -773,6 +778,51 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCompanionRemoteSection() {
+    return Consumer<CompanionRemoteProvider>(
+      builder: (context, companionRemote, child) {
+        return Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Companion Remote',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+              if (PlatformDetector.isDesktop(context))
+                ListTile(
+                  leading: const AppIcon(Symbols.phone_android_rounded, fill: 1),
+                  title: const Text('Host Remote Session'),
+                  subtitle: companionRemote.isConnected
+                      ? Text('Connected to ${companionRemote.connectedDevice?.name}')
+                      : const Text('Control this device with your phone'),
+                  trailing: companionRemote.isConnected
+                      ? const AppIcon(Symbols.check_circle_rounded, fill: 1, color: Colors.green)
+                      : const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  onTap: () => RemoteSessionDialog.show(context),
+                )
+              else
+                ListTile(
+                  leading: const AppIcon(Symbols.phone_android_rounded, fill: 1),
+                  title: const Text('Remote Control'),
+                  subtitle: companionRemote.isConnected
+                      ? Text('Connected to ${companionRemote.connectedDevice?.name}')
+                      : const Text('Control a desktop device'),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
+                  },
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
