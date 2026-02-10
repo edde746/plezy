@@ -404,15 +404,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
-    // RIGHT: Move to companion remote button (desktop only)
-    if (key.isRightKey && PlatformDetector.isDesktop(context)) {
-      _companionRemoteButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // RIGHT: Move to user button (non-desktop, skip companion remote)
+    // RIGHT: Move to companion remote button
     if (key.isRightKey) {
-      _userButtonFocusNode.requestFocus();
+      _companionRemoteButtonFocusNode.requestFocus();
       return KeyEventResult.handled;
     }
 
@@ -461,7 +455,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
-    // SELECT: Show companion remote dialog
+    // SELECT: Show companion remote dialog (host a remote session)
     if (key.isSelectKey) {
       RemoteSessionDialog.show(context);
       return KeyEventResult.handled;
@@ -484,15 +478,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
-    // LEFT: Move to companion remote button (desktop only)
-    if (key.isLeftKey && PlatformDetector.isDesktop(context)) {
-      _companionRemoteButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // LEFT: Move to watch together button (non-desktop, skip companion remote)
+    // LEFT: Move to companion remote button
     if (key.isLeftKey) {
-      _watchTogetherButtonFocusNode.requestFocus();
+      _companionRemoteButtonFocusNode.requestFocus();
       return KeyEventResult.handled;
     }
 
@@ -1124,13 +1112,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               Consumer<CompanionRemoteProvider>(
                 builder: (context, companionRemote, child) {
                   final isDesktop = PlatformDetector.isDesktop(context);
+                  final hasDpadNav = isDesktop || PlatformDetector.isTV();
 
                   return Focus(
-                    focusNode: isDesktop ? _companionRemoteButtonFocusNode : null,
-                    onKeyEvent: isDesktop ? _handleCompanionRemoteKeyEvent : null,
+                    focusNode: hasDpadNav ? _companionRemoteButtonFocusNode : null,
+                    onKeyEvent: hasDpadNav ? _handleCompanionRemoteKeyEvent : null,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isDesktop && _isCompanionRemoteFocused
+                        color: hasDpadNav && _isCompanionRemoteFocused
                             ? Colors.white.withValues(alpha: 0.2)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(20),

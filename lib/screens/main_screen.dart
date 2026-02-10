@@ -1,7 +1,7 @@
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemNavigator;
+import 'package:flutter/services.dart' show KeyUpEvent, SystemNavigator;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
@@ -32,6 +32,7 @@ import '../services/companion_remote/companion_remote_receiver.dart';
 import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/side_navigation_rail.dart';
+import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
 import 'libraries/libraries_screen.dart';
@@ -150,7 +151,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       }
 
       // Focus content initially (replaces autofocus which caused focus stealing issues)
-      if (!_isSidebarFocused) {
+      // Skip if profile selection is on top — it manages its own focus.
+      if (!_isSidebarFocused && !_isShowingProfileSelection) {
         _contentFocusScope.requestFocus();
       }
 
@@ -630,7 +632,17 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
   }
 
+  /// Suppress stray back events after a child route pops.
+  /// On Android TV the platform popRoute can arrive before the key events,
+  /// so BackKeySuppressorObserver misses them and they leak into _handleBackKey.
+  bool _suppressBackAfterPop = false;
+
   KeyEventResult _handleBackKey(KeyEvent event) {
+    if (_suppressBackAfterPop && event.logicalKey.isBackKey) {
+      if (event is KeyUpEvent) _suppressBackAfterPop = false;
+      return KeyEventResult.handled;
+    }
+
     if (!_isSidebarFocused) {
       // Content focused → move to sidebar
       return handleBackKeyAction(event, _focusSidebar);
@@ -660,6 +672,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   @override
   void didPopNext() {
+    // Suppress stray back key events from the pop that just returned us here
+    _suppressBackAfterPop = true;
+    // Auto-clear after 2 frames in case no back event arrives
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _suppressBackAfterPop = false;
+      });
+    });
+
     // Called when returning to this route from a child route (e.g., from video player)
     if (_currentIndex == 0 && !_isOffline) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
