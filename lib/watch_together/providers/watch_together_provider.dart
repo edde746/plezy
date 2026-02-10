@@ -356,6 +356,10 @@ class WatchTogetherProvider with ChangeNotifier {
         _handleSessionConfig(message);
         break;
 
+      case SyncMessageType.requestSessionConfig:
+        // Handled at sync manager level (host responds with config)
+        break;
+
       default:
         break;
     }
@@ -371,6 +375,18 @@ class WatchTogetherProvider with ChangeNotifier {
       _session = _session!.copyWith(controlMode: message.controlMode);
       _syncManager?.updateSession(_session!); // Update sync manager if it exists
       notifyListeners();
+    }
+
+    // If config contains media info that differs from our current state,
+    // trigger a media switch so the guest navigates to the correct content.
+    // This handles the case where a guest missed a mediaSwitch broadcast
+    // (e.g., host switched episodes while guest was popping out of the player).
+    if (message.ratingKey != null &&
+        message.serverId != null &&
+        message.mediaTitle != null &&
+        message.ratingKey != _session?.mediaRatingKey) {
+      appLogger.d('WatchTogether: Session config contains different media, triggering switch');
+      _handleMediaSwitch(message);
     }
   }
 
@@ -431,7 +447,17 @@ class WatchTogetherProvider with ChangeNotifier {
 
     appLogger.d('WatchTogether: Received media switch: ${message.mediaTitle}');
 
-    // Update local session state
+    // Dispatch callback BEFORE updating session state.
+    // If the callback fails silently (e.g., player disposed mid-animation),
+    // the ratingKey stays unchanged so the next positionSync or re-sent
+    // message can retry instead of being treated as a duplicate.
+    if (onPlayerMediaSwitched != null) {
+      onPlayerMediaSwitched!(message.ratingKey!, message.serverId!, message.mediaTitle!);
+    } else {
+      onMediaSwitched?.call(message.ratingKey!, message.serverId!, message.mediaTitle!);
+    }
+
+    // Update local session state after successful dispatch
     _session = _session?.copyWith(
       mediaRatingKey: message.ratingKey,
       mediaServerId: message.serverId,
@@ -439,15 +465,6 @@ class WatchTogetherProvider with ChangeNotifier {
     );
 
     notifyListeners();
-
-    // If player handler is set (VideoPlayerScreen is active), use that for proper navigation context
-    if (onPlayerMediaSwitched != null) {
-      onPlayerMediaSwitched!(message.ratingKey!, message.serverId!, message.mediaTitle!);
-      return;
-    }
-
-    // Otherwise, trigger app-level navigation callback (MainScreen handles it)
-    onMediaSwitched?.call(message.ratingKey!, message.serverId!, message.mediaTitle!);
   }
 
   /// Notify guests that host is exiting the video player
@@ -468,6 +485,11 @@ class WatchTogetherProvider with ChangeNotifier {
     if (isHost) return; // Host doesn't need to handle their own exit
 
     appLogger.d('WatchTogether: Host exited player, callback set: ${onHostExitedPlayer != null}');
+
+    // Clear the player callback BEFORE popping so that any mediaSwitch message
+    // arriving during the pop animation routes to MainScreen's handler instead
+    // of the dying VideoPlayerScreen.
+    onPlayerMediaSwitched = null;
 
     // Trigger callback for the app to navigate guest out of player
     if (onHostExitedPlayer != null) {

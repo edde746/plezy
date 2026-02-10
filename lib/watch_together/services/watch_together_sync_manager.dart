@@ -136,6 +136,15 @@ class WatchTogetherSyncManager {
 
     // Note: playerReady will be announced when video loads (first buffering: false)
 
+    // If guest, request current session config from host in case we missed
+    // a mediaSwitch broadcast (e.g., host switched episodes while we were
+    // popping out of the previous player).
+    if (!_session.isHost) {
+      _peerService.broadcast(
+        SyncMessage.requestSessionConfig(peerId: _peerService.myPeerId),
+      );
+    }
+
     appLogger.d('WatchTogether: Player attached, isHost: ${_session.isHost}');
   }
 
@@ -504,6 +513,14 @@ class WatchTogetherSyncManager {
           await _checkAutoResume();
         }
         break;
+
+      case SyncMessageType.requestSessionConfig:
+        // Guest is requesting current session config (recovery after missed mediaSwitch)
+        if (_session.isHost && _hasAnnouncedReady && message.peerId != null) {
+          appLogger.d('WatchTogether: Guest ${message.peerId} requested session config, sending');
+          _sendSessionConfig(toPeerId: message.peerId);
+        }
+        break;
     }
   }
 
@@ -776,6 +793,9 @@ class WatchTogetherSyncManager {
       isPlaying: isPlaying,
       playbackRate: rate,
       peerId: _peerService.myPeerId,
+      ratingKey: _session.mediaRatingKey,
+      serverId: _session.mediaServerId,
+      mediaTitle: _session.mediaTitle,
     );
 
     if (toPeerId != null) {

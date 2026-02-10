@@ -45,6 +45,9 @@ enum SyncMessageType {
 
   /// Player is ready (attached and loaded)
   playerReady,
+
+  /// Request session config from host (guest recovery)
+  requestSessionConfig,
 }
 
 /// A message sent over the WebRTC data channel for synchronization
@@ -181,12 +184,18 @@ class SyncMessage {
   }
 
   /// Create a SESSION_CONFIG message (sent by host to new guests)
+  ///
+  /// Optionally includes current media info so guests can catch up
+  /// if they missed a mediaSwitch broadcast.
   factory SyncMessage.sessionConfig({
     required ControlMode controlMode,
     required Duration currentPosition,
     required bool isPlaying,
     required double playbackRate,
     String? peerId,
+    String? ratingKey,
+    String? serverId,
+    String? mediaTitle,
   }) {
     return SyncMessage(
       type: SyncMessageType.sessionConfig,
@@ -195,6 +204,18 @@ class SyncMessage {
       positionMs: currentPosition.inMilliseconds,
       bufferingState: !isPlaying, // Reuse field: false = playing, true = paused
       rate: playbackRate,
+      peerId: peerId,
+      ratingKey: ratingKey,
+      serverId: serverId,
+      mediaTitle: mediaTitle,
+    );
+  }
+
+  /// Create a REQUEST_SESSION_CONFIG message (sent by guest to request current config from host)
+  factory SyncMessage.requestSessionConfig({String? peerId}) {
+    return SyncMessage(
+      type: SyncMessageType.requestSessionConfig,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
       peerId: peerId,
     );
   }
