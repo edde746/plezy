@@ -627,6 +627,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (Platform.isMacOS) {
       _updateTrafficLightVisibility();
     }
+    // Immediately try to reclaim focus (important for TV where global handler
+    // won't fire if _focusNode lost focus)
+    if (!_focusNode.hasFocus) {
+      _focusNode.requestFocus();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_focusNode.hasFocus) {
         _focusNode.requestFocus();
@@ -1333,6 +1338,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Global key event handler for focus-independent shortcuts (desktop only)
   bool _handleGlobalKeyEvent(KeyEvent event) {
     if (!mounted) return false;
+
+    // TV back key fallback — Focus.onKeyEvent won't fire if _focusNode lost focus
+    if (PlatformDetector.isTV() && event.logicalKey.isBackKey) {
+      if (!_focusNode.hasFocus) {
+        final backResult = handleBackKeyAction(event, () {
+          if (!_showControls) {
+            _showControlsWithFocus();
+          } else {
+            (widget.onBack ?? () => Navigator.of(context).pop(true))();
+          }
+        });
+        if (backResult != KeyEventResult.ignored) return true;
+      }
+    }
 
     // Only handle when video player navigation is disabled (desktop mode without D-pad nav)
     if (_videoPlayerNavigationEnabled) return false;

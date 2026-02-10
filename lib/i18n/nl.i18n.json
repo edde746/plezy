@@ -644,7 +644,10 @@
     "failedToCreate": "Sessie maken mislukt",
     "failedToJoin": "Sessie deelnemen mislukt",
     "sessionCodeCopied": "Sessiecode gekopieerd naar klembord",
-    "relayUnreachable": "De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet."
+    "relayUnreachable": "De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet.",
+    "reconnectingToHost": "Opnieuw verbinden met host...",
+    "participantJoined": "${name} is toegetreden",
+    "participantLeft": "${name} heeft de sessie verlaten"
   },
   "shaders": {
     "title": "Shaders",

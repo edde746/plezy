@@ -810,7 +810,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   AppLocale getAppLocale() {
     final localeString = prefs.getString(_keyAppLocale);
-    if (localeString == null) return AppLocale.en; // Default to English
+    if (localeString == null) return AppLocaleUtils.findDeviceLocale();
 
     return AppLocale.values.firstWhere((locale) => locale.languageCode == localeString, orElse: () => AppLocale.en);
   }

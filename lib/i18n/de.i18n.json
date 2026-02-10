@@ -644,7 +644,10 @@
     "failedToCreate": "Sitzung konnte nicht erstellt werden",
     "failedToJoin": "Sitzung konnte nicht beigetreten werden",
     "sessionCodeCopied": "Sitzungscode in Zwischenablage kopiert",
-    "relayUnreachable": "Der Relay-Server ist nicht erreichbar. Möglicherweise blockiert dein Internetanbieter die Verbindung. Du kannst es trotzdem versuchen, aber Watch Together funktioniert eventuell nicht."
+    "relayUnreachable": "Der Relay-Server ist nicht erreichbar. Möglicherweise blockiert dein Internetanbieter die Verbindung. Du kannst es trotzdem versuchen, aber Watch Together funktioniert eventuell nicht.",
+    "reconnectingToHost": "Verbindung zum Host wird wiederhergestellt...",
+    "participantJoined": "${name} ist beigetreten",
+    "participantLeft": "${name} hat die Sitzung verlassen"
   },
   "shaders": {
     "title": "Shader",

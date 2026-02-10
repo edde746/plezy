@@ -624,7 +624,10 @@
     "failedToCreate": "Failed to create session",
     "failedToJoin": "Failed to join session",
     "sessionCodeCopied": "Session code copied to clipboard",
-    "relayUnreachable": "The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work."
+    "relayUnreachable": "The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.",
+    "reconnectingToHost": "Reconnecting to host...",
+    "participantJoined": "${name} joined",
+    "participantLeft": "${name} left"
   },
   "downloads": {
     "title": "Downloads",

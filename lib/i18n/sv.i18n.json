@@ -644,7 +644,10 @@
     "failedToCreate": "Det gick inte att skapa session",
     "failedToJoin": "Det gick inte att gå med i session",
     "sessionCodeCopied": "Sessionskod kopierad till urklipp",
-    "relayUnreachable": "Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar."
+    "relayUnreachable": "Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.",
+    "reconnectingToHost": "Återansluter till värd...",
+    "participantJoined": "${name} gick med",
+    "participantLeft": "${name} lämnade"
   },
   "shaders": {
     "title": "Shaders",

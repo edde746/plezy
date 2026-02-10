@@ -1930,6 +1930,15 @@ class TranslationsWatchTogetherEn {
 
 	/// en: 'The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.'
 	String get relayUnreachable => 'The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.';
+
+	/// en: 'Reconnecting to host...'
+	String get reconnectingToHost => 'Reconnecting to host...';
+
+	/// en: '${name} joined'
+	String participantJoined({required Object name}) => '${name} joined';
+
+	/// en: '${name} left'
+	String participantLeft({required Object name}) => '${name} left';
 }
 
 // Path: downloads
@@ -3052,6 +3061,9 @@ extension on Translations {
 			'watchTogether.failedToJoin' => 'Failed to join session',
 			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
 			'watchTogether.relayUnreachable' => 'The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.',
+			'watchTogether.reconnectingToHost' => 'Reconnecting to host...',
+			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',

@@ -58,6 +58,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
+import '../watch_together/widgets/watch_together_overlay.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -1986,13 +1987,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       }
                     });
 
-                    // Compute canControl from Watch Together provider
+                    // Compute canControl from Watch Together provider (reactive)
                     bool canControl = true;
                     try {
-                      final watchTogether = this.context.read<WatchTogetherProvider>();
-                      if (watchTogether.isInSession) {
-                        canControl = watchTogether.canControl();
-                      }
+                      canControl = context.select<WatchTogetherProvider, bool>(
+                        (wt) => wt.isInSession ? wt.canControl() : true,
+                      );
                     } catch (e) {
                       // Watch Together not available, default to can control
                     }
@@ -2249,6 +2249,37 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                   );
                 },
               ),
+              // Watch Together: reconnecting to host overlay
+              Consumer<WatchTogetherProvider>(
+                builder: (context, provider, child) {
+                  if (!provider.isWaitingForHostReconnect) return const SizedBox.shrink();
+                  return Positioned(
+                    bottom: 120,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(t.watchTogether.reconnectingToHost, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // Watch Together: participant join/leave notifications
+              const ParticipantNotificationOverlay(),
               // Black overlay during exit (no spinner - just covers transparency)
               ValueListenableBuilder<bool>(
                 valueListenable: _isExiting,

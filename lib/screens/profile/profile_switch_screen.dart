@@ -22,6 +22,14 @@ class ProfileSwitchScreen extends StatefulWidget {
 
 class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
   bool _allowPop = false;
+  final FocusNode _firstSelectableFocusNode = FocusNode();
+  bool _focusRequested = false;
+
+  @override
+  void dispose() {
+    _firstSelectableFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,10 +85,18 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
                     final isFirstSelectable =
                         !isCurrentUser && !users.take(index).any((u) => u.uuid != userProvider.currentUser?.uuid);
 
+                    if (isFirstSelectable && !_focusRequested) {
+                      _focusRequested = true;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _firstSelectableFocusNode.requestFocus();
+                      });
+                    }
+
                     return Padding(
                       padding: EdgeInsets.only(left: 16, right: 16, top: index == 0 ? 16 : 0, bottom: 8),
                       child: FocusableWrapper(
                         autofocus: isFirstSelectable,
+                        focusNode: isFirstSelectable ? _firstSelectableFocusNode : null,
                         disableScale: true,
                         onSelect: isCurrentUser ? null : () => _switchToUser(context, user),
                         child: Card(

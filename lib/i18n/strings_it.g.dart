@@ -905,6 +905,9 @@ class _TranslationsWatchTogetherIt implements TranslationsWatchTogetherEn {
 	@override String get failedToJoin => 'Impossibile unirsi alla sessione';
 	@override String get sessionCodeCopied => 'Codice sessione copiato negli appunti';
 	@override String get relayUnreachable => 'Il server di inoltro non è raggiungibile. Questo potrebbe essere causato dal blocco della connessione da parte del tuo provider. Puoi comunque provare, ma Watch Together potrebbe non funzionare.';
+	@override String get reconnectingToHost => 'Riconnessione all\'host...';
+	@override String participantJoined({required Object name}) => '${name} si è unito';
+	@override String participantLeft({required Object name}) => '${name} se ne è andato';
 }
 
 // Path: shaders
@@ -1717,6 +1720,9 @@ extension on TranslationsIt {
 			'watchTogether.failedToJoin' => 'Impossibile unirsi alla sessione',
 			'watchTogether.sessionCodeCopied' => 'Codice sessione copiato negli appunti',
 			'watchTogether.relayUnreachable' => 'Il server di inoltro non è raggiungibile. Questo potrebbe essere causato dal blocco della connessione da parte del tuo provider. Puoi comunque provare, ma Watch Together potrebbe non funzionare.',
+			'watchTogether.reconnectingToHost' => 'Riconnessione all\'host...',
+			'watchTogether.participantJoined' => ({required Object name}) => '${name} si è unito',
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} se ne è andato',
 			'shaders.title' => 'Shader',
 			'shaders.noShaderDescription' => 'Nessun miglioramento video',
 			'shaders.nvscalerDescription' => 'Ridimensionamento NVIDIA per video più nitido',

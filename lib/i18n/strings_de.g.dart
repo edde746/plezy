@@ -905,6 +905,9 @@ class _TranslationsWatchTogetherDe implements TranslationsWatchTogetherEn {
 	@override String get failedToJoin => 'Sitzung konnte nicht beigetreten werden';
 	@override String get sessionCodeCopied => 'Sitzungscode in Zwischenablage kopiert';
 	@override String get relayUnreachable => 'Der Relay-Server ist nicht erreichbar. Möglicherweise blockiert dein Internetanbieter die Verbindung. Du kannst es trotzdem versuchen, aber Watch Together funktioniert eventuell nicht.';
+	@override String get reconnectingToHost => 'Verbindung zum Host wird wiederhergestellt...';
+	@override String participantJoined({required Object name}) => '${name} ist beigetreten';
+	@override String participantLeft({required Object name}) => '${name} hat die Sitzung verlassen';
 }
 
 // Path: shaders
@@ -1717,6 +1720,9 @@ extension on TranslationsDe {
 			'watchTogether.failedToJoin' => 'Sitzung konnte nicht beigetreten werden',
 			'watchTogether.sessionCodeCopied' => 'Sitzungscode in Zwischenablage kopiert',
 			'watchTogether.relayUnreachable' => 'Der Relay-Server ist nicht erreichbar. Möglicherweise blockiert dein Internetanbieter die Verbindung. Du kannst es trotzdem versuchen, aber Watch Together funktioniert eventuell nicht.',
+			'watchTogether.reconnectingToHost' => 'Verbindung zum Host wird wiederhergestellt...',
+			'watchTogether.participantJoined' => ({required Object name}) => '${name} ist beigetreten',
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} hat die Sitzung verlassen',
 			'shaders.title' => 'Shader',
 			'shaders.noShaderDescription' => 'Keine Videoverbesserung',
 			'shaders.nvscalerDescription' => 'NVIDIA-Bildskalierung für schärferes Video',

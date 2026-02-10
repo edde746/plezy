@@ -624,7 +624,10 @@
     "failedToCreate": "Error al crear la sesión",
     "failedToJoin": "Error al unirse a la sesión",
     "sessionCodeCopied": "Código de sesión copiado al portapapeles",
-    "relayUnreachable": "El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar."
+    "relayUnreachable": "El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.",
+    "reconnectingToHost": "Reconectando con el anfitrión...",
+    "participantJoined": "${name} se unió",
+    "participantLeft": "${name} se fue"
   },
   "downloads": {
     "title": "Descargas",
