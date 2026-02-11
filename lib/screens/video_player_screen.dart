@@ -26,6 +26,7 @@ import '../models/companion_remote/remote_command_type.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/macos_window_service.dart';
+import '../services/fullscreen_state_manager.dart';
 import '../services/discord_rpc_service.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
@@ -1270,16 +1271,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   Future<void> _toggleFullscreen() async {
     if (PlatformDetector.isMobile(context)) return;
-    final isCurrentlyFullscreen = await windowManager.isFullScreen();
-    if (Platform.isMacOS) {
-      if (isCurrentlyFullscreen) {
-        await MacOSWindowService.exitFullscreen();
-      } else {
-        await MacOSWindowService.enterFullscreen();
-      }
-    } else {
-      await windowManager.setFullScreen(!isCurrentlyFullscreen);
-    }
+    await FullscreenStateManager().toggleFullscreen();
   }
 
   /// Exit fullscreen before leaving the player (Windows/Linux only).
@@ -1289,7 +1281,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (Platform.isWindows || Platform.isLinux) {
       final isFullscreen = await windowManager.isFullScreen();
       if (isFullscreen) {
-        await windowManager.setFullScreen(false);
+        await FullscreenStateManager().exitFullscreen();
         await Future.delayed(const Duration(milliseconds: 100));
       }
     }

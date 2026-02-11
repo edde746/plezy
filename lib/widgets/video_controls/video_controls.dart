@@ -15,6 +15,7 @@ import 'package:flutter/services.dart'
         KeyEvent,
         KeyDownEvent,
         HardwareKeyboard;
+import '../../services/fullscreen_state_manager.dart';
 import '../../services/macos_window_service.dart';
 import '../../services/pip_service.dart';
 import 'package:window_manager/window_manager.dart';
@@ -1236,27 +1237,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   Future<void> _toggleFullscreen() async {
     if (!PlatformDetector.isMobile(context)) {
-      // Query actual window state to determine what action to take
-      // This ensures we always toggle correctly regardless of local state
-      final isCurrentlyFullscreen = await windowManager.isFullScreen();
-
-      if (Platform.isMacOS) {
-        // Use native macOS fullscreen - titlebar is handled automatically
-        // Window listener will update _isFullscreen for UI
-        if (isCurrentlyFullscreen) {
-          await MacOSWindowService.exitFullscreen();
-        } else {
-          await MacOSWindowService.enterFullscreen();
-        }
-      } else {
-        // For Windows/Linux, use window_manager
-        // Window listener will update _isFullscreen for UI
-        if (isCurrentlyFullscreen) {
-          await windowManager.setFullScreen(false);
-        } else {
-          await windowManager.setFullScreen(true);
-        }
-      }
+      await FullscreenStateManager().toggleFullscreen();
     }
   }
 
