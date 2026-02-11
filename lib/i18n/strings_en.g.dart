@@ -68,6 +68,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsLogsEn logs = TranslationsLogsEn._(_root);
 	late final TranslationsLicensesEn licenses = TranslationsLicensesEn._(_root);
 	late final TranslationsNavigationEn navigation = TranslationsNavigationEn._(_root);
+	late final TranslationsLiveTvEn liveTv = TranslationsLiveTvEn._(_root);
 	late final TranslationsCollectionsEn collections = TranslationsCollectionsEn._(_root);
 	late final TranslationsPlaylistsEn playlists = TranslationsPlaylistsEn._(_root);
 	late final TranslationsWatchTogetherEn watchTogether = TranslationsWatchTogetherEn._(_root);
@@ -1631,6 +1632,102 @@ class TranslationsNavigationEn {
 
 	/// en: 'Downloads'
 	String get downloads => 'Downloads';
+
+	/// en: 'Live TV'
+	String get liveTv => 'Live TV';
+}
+
+// Path: liveTv
+class TranslationsLiveTvEn {
+	TranslationsLiveTvEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Live TV'
+	String get title => 'Live TV';
+
+	/// en: 'Channels'
+	String get channels => 'Channels';
+
+	/// en: 'Guide'
+	String get guide => 'Guide';
+
+	/// en: 'Recordings'
+	String get recordings => 'Recordings';
+
+	/// en: 'Subscriptions'
+	String get subscriptions => 'Subscriptions';
+
+	/// en: 'Scheduled'
+	String get scheduled => 'Scheduled';
+
+	/// en: 'No channels available'
+	String get noChannels => 'No channels available';
+
+	/// en: 'No DVR configured on any server'
+	String get noDvr => 'No DVR configured on any server';
+
+	/// en: 'Failed to tune channel'
+	String get tuneFailed => 'Failed to tune channel';
+
+	/// en: 'Loading channels...'
+	String get loading => 'Loading channels...';
+
+	/// en: 'Now Playing'
+	String get nowPlaying => 'Now Playing';
+
+	/// en: 'What's On Now'
+	String get whatsOnNow => 'What\'s On Now';
+
+	/// en: 'Record'
+	String get record => 'Record';
+
+	/// en: 'Record Series'
+	String get recordSeries => 'Record Series';
+
+	/// en: 'Cancel Recording'
+	String get cancelRecording => 'Cancel Recording';
+
+	/// en: 'Delete Recording Rule'
+	String get deleteSubscription => 'Delete Recording Rule';
+
+	/// en: 'Are you sure you want to delete this recording rule?'
+	String get deleteSubscriptionConfirm => 'Are you sure you want to delete this recording rule?';
+
+	/// en: 'Recording rule deleted'
+	String get subscriptionDeleted => 'Recording rule deleted';
+
+	/// en: 'No program data available'
+	String get noPrograms => 'No program data available';
+
+	/// en: 'No recordings scheduled'
+	String get noRecordings => 'No recordings scheduled';
+
+	/// en: 'No recording rules'
+	String get noSubscriptions => 'No recording rules';
+
+	/// en: 'Ch. ${number}'
+	String channelNumber({required Object number}) => 'Ch. ${number}';
+
+	/// en: 'LIVE'
+	String get live => 'LIVE';
+
+	/// en: 'HD'
+	String get hd => 'HD';
+
+	/// en: 'NEW'
+	String get premiere => 'NEW';
+
+	/// en: 'Reload Guide'
+	String get reloadGuide => 'Reload Guide';
+
+	/// en: 'Guide data reloaded'
+	String get guideReloaded => 'Guide data reloaded';
+
+	/// en: 'All Channels'
+	String get allChannels => 'All Channels';
 }
 
 // Path: collections
@@ -3023,6 +3120,35 @@ extension on Translations {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenses',
 			'navigation.libraries' => 'Libraries',
 			'navigation.downloads' => 'Downloads',
+			'navigation.liveTv' => 'Live TV',
+			'liveTv.title' => 'Live TV',
+			'liveTv.channels' => 'Channels',
+			'liveTv.guide' => 'Guide',
+			'liveTv.recordings' => 'Recordings',
+			'liveTv.subscriptions' => 'Subscriptions',
+			'liveTv.scheduled' => 'Scheduled',
+			'liveTv.noChannels' => 'No channels available',
+			'liveTv.noDvr' => 'No DVR configured on any server',
+			'liveTv.tuneFailed' => 'Failed to tune channel',
+			'liveTv.loading' => 'Loading channels...',
+			'liveTv.nowPlaying' => 'Now Playing',
+			'liveTv.whatsOnNow' => 'What\'s On Now',
+			'liveTv.record' => 'Record',
+			'liveTv.recordSeries' => 'Record Series',
+			'liveTv.cancelRecording' => 'Cancel Recording',
+			'liveTv.deleteSubscription' => 'Delete Recording Rule',
+			'liveTv.deleteSubscriptionConfirm' => 'Are you sure you want to delete this recording rule?',
+			'liveTv.subscriptionDeleted' => 'Recording rule deleted',
+			'liveTv.noPrograms' => 'No program data available',
+			'liveTv.noRecordings' => 'No recordings scheduled',
+			'liveTv.noSubscriptions' => 'No recording rules',
+			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
+			'liveTv.live' => 'LIVE',
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NEW',
+			'liveTv.reloadGuide' => 'Reload Guide',
+			'liveTv.guideReloaded' => 'Guide data reloaded',
+			'liveTv.allChannels' => 'All Channels',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
@@ -3040,6 +3166,8 @@ extension on Translations {
 			'collections.addedToCollection' => 'Added to collection',
 			'collections.errorAddingToCollection' => 'Failed to add to collection',
 			'collections.created' => 'Collection created',
+			_ => null,
+		} ?? switch (path) {
 			'collections.removeFromCollection' => 'Remove from collection',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Remove "${title}" from this collection?',
 			'collections.removedFromCollection' => 'Removed from collection',
@@ -3069,8 +3197,6 @@ extension on Translations {
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
 			'playlists.errorAdding' => 'Failed to add to playlist',
-			_ => null,
-		} ?? switch (path) {
 			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
 			'watchTogether.title' => 'Watch Together',

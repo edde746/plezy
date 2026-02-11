@@ -65,6 +65,7 @@ class TranslationsDe with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLogsDe logs = _TranslationsLogsDe._(_root);
 	@override late final _TranslationsLicensesDe licenses = _TranslationsLicensesDe._(_root);
 	@override late final _TranslationsNavigationDe navigation = _TranslationsNavigationDe._(_root);
+	@override late final _TranslationsLiveTvDe liveTv = _TranslationsLiveTvDe._(_root);
 	@override late final _TranslationsDownloadsDe downloads = _TranslationsDownloadsDe._(_root);
 	@override late final _TranslationsPlaylistsDe playlists = _TranslationsPlaylistsDe._(_root);
 	@override late final _TranslationsCollectionsDe collections = _TranslationsCollectionsDe._(_root);
@@ -761,6 +762,44 @@ class _TranslationsNavigationDe implements TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Mediatheken';
 	@override String get downloads => 'Downloads';
+	@override String get liveTv => 'Live-TV';
+}
+
+// Path: liveTv
+class _TranslationsLiveTvDe implements TranslationsLiveTvEn {
+	_TranslationsLiveTvDe._(this._root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Live-TV';
+	@override String get channels => 'Kanäle';
+	@override String get guide => 'Programmführer';
+	@override String get recordings => 'Aufnahmen';
+	@override String get subscriptions => 'Aufnahmeregeln';
+	@override String get scheduled => 'Geplant';
+	@override String get noChannels => 'Keine Kanäle verfügbar';
+	@override String get noDvr => 'Kein DVR auf einem Server konfiguriert';
+	@override String get tuneFailed => 'Kanal konnte nicht eingestellt werden';
+	@override String get loading => 'Kanäle werden geladen...';
+	@override String get nowPlaying => 'Läuft gerade';
+	@override String get whatsOnNow => 'Jetzt im TV';
+	@override String get record => 'Aufnehmen';
+	@override String get recordSeries => 'Serie aufnehmen';
+	@override String get cancelRecording => 'Aufnahme abbrechen';
+	@override String get deleteSubscription => 'Aufnahmeregel löschen';
+	@override String get deleteSubscriptionConfirm => 'Möchten Sie diese Aufnahmeregel wirklich löschen?';
+	@override String get subscriptionDeleted => 'Aufnahmeregel gelöscht';
+	@override String get noPrograms => 'Keine Programmdaten verfügbar';
+	@override String get noRecordings => 'Keine Aufnahmen geplant';
+	@override String get noSubscriptions => 'Keine Aufnahmeregeln';
+	@override String channelNumber({required Object number}) => 'Kanal ${number}';
+	@override String get live => 'LIVE';
+	@override String get hd => 'HD';
+	@override String get premiere => 'NEU';
+	@override String get reloadGuide => 'Programmführer neu laden';
+	@override String get guideReloaded => 'Programmdaten neu geladen';
+	@override String get allChannels => 'Alle Kanäle';
 }
 
 // Path: downloads
@@ -1634,6 +1673,35 @@ extension on TranslationsDe {
 			'licenses.licensesCount' => ({required Object count}) => '${count} Lizenzen',
 			'navigation.libraries' => 'Mediatheken',
 			'navigation.downloads' => 'Downloads',
+			'navigation.liveTv' => 'Live-TV',
+			'liveTv.title' => 'Live-TV',
+			'liveTv.channels' => 'Kanäle',
+			'liveTv.guide' => 'Programmführer',
+			'liveTv.recordings' => 'Aufnahmen',
+			'liveTv.subscriptions' => 'Aufnahmeregeln',
+			'liveTv.scheduled' => 'Geplant',
+			'liveTv.noChannels' => 'Keine Kanäle verfügbar',
+			'liveTv.noDvr' => 'Kein DVR auf einem Server konfiguriert',
+			'liveTv.tuneFailed' => 'Kanal konnte nicht eingestellt werden',
+			'liveTv.loading' => 'Kanäle werden geladen...',
+			'liveTv.nowPlaying' => 'Läuft gerade',
+			'liveTv.whatsOnNow' => 'Jetzt im TV',
+			'liveTv.record' => 'Aufnehmen',
+			'liveTv.recordSeries' => 'Serie aufnehmen',
+			'liveTv.cancelRecording' => 'Aufnahme abbrechen',
+			'liveTv.deleteSubscription' => 'Aufnahmeregel löschen',
+			'liveTv.deleteSubscriptionConfirm' => 'Möchten Sie diese Aufnahmeregel wirklich löschen?',
+			'liveTv.subscriptionDeleted' => 'Aufnahmeregel gelöscht',
+			'liveTv.noPrograms' => 'Keine Programmdaten verfügbar',
+			'liveTv.noRecordings' => 'Keine Aufnahmen geplant',
+			'liveTv.noSubscriptions' => 'Keine Aufnahmeregeln',
+			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
+			'liveTv.live' => 'LIVE',
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NEU',
+			'liveTv.reloadGuide' => 'Programmführer neu laden',
+			'liveTv.guideReloaded' => 'Programmdaten neu geladen',
+			'liveTv.allChannels' => 'Alle Kanäle',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
@@ -1651,6 +1719,8 @@ extension on TranslationsDe {
 			'downloads.noDownloadsTree' => 'Keine Downloads',
 			'downloads.pauseAll' => 'Alle pausieren',
 			'downloads.resumeAll' => 'Alle fortsetzen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.deleteAll' => 'Alle löschen',
 			'playlists.title' => 'Wiedergabelisten',
 			'playlists.noPlaylists' => 'Keine Wiedergabelisten gefunden',
@@ -1680,8 +1750,6 @@ extension on TranslationsDe {
 			'playlists.playlist' => 'Wiedergabeliste',
 			'collections.title' => 'Sammlungen',
 			'collections.collection' => 'Sammlung',
-			_ => null,
-		} ?? switch (path) {
 			'collections.empty' => 'Sammlung ist leer',
 			'collections.unknownLibrarySection' => 'Löschen nicht möglich: Unbekannte Bibliothekssektion',
 			'collections.deleteCollection' => 'Sammlung löschen',

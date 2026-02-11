@@ -75,6 +75,8 @@ Widget plexVideoControlsBuilder(
   ShaderService? shaderService,
   VoidCallback? onShaderChanged,
   String Function(Duration time)? thumbnailUrlBuilder,
+  bool isLive = false,
+  String? liveChannelName,
 }) {
   return PlexVideoControls(
     player: player,
@@ -97,6 +99,8 @@ Widget plexVideoControlsBuilder(
     shaderService: shaderService,
     onShaderChanged: onShaderChanged,
     thumbnailUrlBuilder: thumbnailUrlBuilder,
+    isLive: isLive,
+    liveChannelName: liveChannelName,
   );
 }
 
@@ -140,6 +144,12 @@ class PlexVideoControls extends StatefulWidget {
   /// Optional callback that returns a thumbnail URL for a given timestamp.
   final String Function(Duration time)? thumbnailUrlBuilder;
 
+  /// Whether this is a live TV stream (disables seek, progress, etc.)
+  final bool isLive;
+
+  /// Channel name for live TV display
+  final String? liveChannelName;
+
   const PlexVideoControls({
     super.key,
     required this.player,
@@ -162,6 +172,8 @@ class PlexVideoControls extends StatefulWidget {
     this.shaderService,
     this.onShaderChanged,
     this.thumbnailUrlBuilder,
+    this.isLive = false,
+    this.liveChannelName,
   });
 
   @override
@@ -1748,6 +1760,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             canControl: widget.canControl,
                                             hasFirstFrame: widget.hasFirstFrame,
                                             thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+                                            isLive: widget.isLive,
+                                            liveChannelName: widget.liveChannelName,
                                           ),
                                         )
                                       : Listener(
@@ -1805,6 +1819,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             shaderService: widget.shaderService,
                                             onShaderChanged: widget.onShaderChanged,
                                             thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+                                            isLive: widget.isLive,
+                                            liveChannelName: widget.liveChannelName,
                                           ),
                                         ),
                                 ),

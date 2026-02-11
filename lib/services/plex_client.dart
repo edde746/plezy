@@ -2,6 +2,11 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import '../models/livetv_channel.dart';
+import '../models/livetv_dvr.dart';
+import '../models/livetv_program.dart';
+import '../models/livetv_scheduled_recording.dart';
+import '../models/livetv_subscription.dart';
 import '../models/plex_config.dart';
 import '../models/play_queue_response.dart';
 import '../models/plex_file_info.dart';
@@ -1933,6 +1938,265 @@ class PlexClient {
     } catch (e) {
       appLogger.e('Failed to get watch history count: $e');
       return 0;
+    }
+  }
+
+  // ============================================================================
+  // Live TV / DVR Methods
+  // ============================================================================
+
+  /// Get all DVR devices configured on this server
+  Future<List<LiveTvDvr>> getDvrs() async {
+    return _wrapListApiCall<LiveTvDvr>(
+      () => _dio.get('/livetv/dvrs'),
+      (response) {
+        final container = _getMediaContainer(response);
+        if (container != null && container['Dvr'] != null) {
+          return (container['Dvr'] as List)
+              .map((json) => LiveTvDvr.fromJson(json as Map<String, dynamic>))
+              .toList();
+        }
+        return [];
+      },
+      'Failed to get DVRs',
+    );
+  }
+
+  /// Check if this server has at least one DVR configured
+  Future<bool> hasDvr() async {
+    final dvrs = await getDvrs();
+    return dvrs.isNotEmpty;
+  }
+
+  /// Get EPG channels for a specific lineup
+  Future<List<LiveTvChannel>> getEpgChannels({String? lineup}) async {
+    final queryParams = <String, dynamic>{};
+    if (lineup != null) queryParams['lineup'] = lineup;
+
+    return _wrapListApiCall<LiveTvChannel>(
+      () => _dio.get('/livetv/epg/channels', queryParameters: queryParams),
+      (response) {
+        final container = _getMediaContainer(response);
+        if (container != null && container['Channel'] != null) {
+          return (container['Channel'] as List)
+              .map((json) => LiveTvChannel.fromJson(json as Map<String, dynamic>)
+                  .copyWith(serverId: serverId, serverName: serverName))
+              .toList();
+        }
+        // Also check for Metadata key (some endpoints return channels there)
+        if (container != null && container['Metadata'] != null) {
+          return (container['Metadata'] as List)
+              .map((json) => LiveTvChannel.fromJson(json as Map<String, dynamic>)
+                  .copyWith(serverId: serverId, serverName: serverName))
+              .toList();
+        }
+        return [];
+      },
+      'Failed to get EPG channels',
+    );
+  }
+
+  /// Get guide/program data for channels (EPG grid data)
+  /// Returns programs grouped in the MediaContainer
+  Future<List<LiveTvProgram>> getEpgGrid({
+    String? lineup,
+    int? beginsAt,
+    int? endsAt,
+  }) async {
+    final queryParams = <String, dynamic>{};
+    if (lineup != null) queryParams['lineup'] = lineup;
+    if (beginsAt != null) queryParams['beginsAt>'] = beginsAt;
+    if (endsAt != null) queryParams['endsAt<'] = endsAt;
+
+    return _wrapListApiCall<LiveTvProgram>(
+      () => _dio.get('/livetv/epg', queryParameters: queryParams),
+      (response) {
+        final container = _getMediaContainer(response);
+        final programs = <LiveTvProgram>[];
+        if (container != null && container['Metadata'] != null) {
+          for (final item in container['Metadata'] as List) {
+            try {
+              programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
+            } catch (_) {}
+          }
+        }
+        // Some responses nest programs inside Hub entries
+        if (container != null && container['Hub'] != null) {
+          for (final hub in container['Hub'] as List) {
+            if (hub is Map && hub['Metadata'] != null) {
+              for (final item in hub['Metadata'] as List) {
+                try {
+                  programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
+                } catch (_) {}
+              }
+            }
+          }
+        }
+        return programs;
+      },
+      'Failed to get EPG grid',
+    );
+  }
+
+  /// Tune to a live TV channel. Returns metadata and the stream URL path.
+  Future<({PlexMetadata metadata, String streamPath})?> tuneChannel(String dvrKey, String channelIdentifier) async {
+    try {
+      final response = await _dio.post(
+        '/livetv/dvrs/$dvrKey/channels/$channelIdentifier/tune',
+      );
+      final metadataJson = _getFirstMetadataJson(response);
+      if (metadataJson == null) return null;
+
+      final metadata = _createTaggedMetadata(metadataJson);
+
+      // Extract stream path from Media[0].Part[0].key
+      String? streamPath;
+      final mediaList = metadataJson['Media'] as List?;
+      if (mediaList != null && mediaList.isNotEmpty) {
+        final parts = (mediaList[0] as Map<String, dynamic>)['Part'] as List?;
+        if (parts != null && parts.isNotEmpty) {
+          streamPath = (parts[0] as Map<String, dynamic>)['key'] as String?;
+        }
+      }
+
+      if (streamPath == null) return null;
+      return (metadata: metadata, streamPath: streamPath);
+    } catch (e) {
+      appLogger.e('Failed to tune channel', error: e);
+      return null;
+    }
+  }
+
+  /// Reload the DVR guide data
+  Future<bool> reloadGuide(String dvrKey) async {
+    return _wrapBoolApiCall(
+      () => _dio.post('/livetv/dvrs/$dvrKey/reloadGuide'),
+      'Failed to reload guide',
+    );
+  }
+
+  /// Get active live TV sessions
+  Future<List<PlexMetadata>> getLiveTvSessions() async {
+    return _wrapListApiCall<PlexMetadata>(
+      () => _dio.get('/livetv/sessions'),
+      _extractMetadataList,
+      'Failed to get live TV sessions',
+    );
+  }
+
+  /// Get all DVR recording subscriptions
+  Future<List<LiveTvSubscription>> getSubscriptions() async {
+    return _wrapListApiCall<LiveTvSubscription>(
+      () => _dio.get('/media/subscriptions'),
+      (response) {
+        final container = _getMediaContainer(response);
+        if (container != null && container['MediaSubscription'] != null) {
+          return (container['MediaSubscription'] as List)
+              .map((json) {
+                final sub = LiveTvSubscription.fromJson(json as Map<String, dynamic>);
+                return LiveTvSubscription(
+                  key: sub.key, ratingKey: sub.ratingKey, guid: sub.guid,
+                  title: sub.title, summary: sub.summary, type: sub.type,
+                  thumb: sub.thumb, art: sub.art,
+                  targetLibrarySectionID: sub.targetLibrarySectionID,
+                  targetSectionID: sub.targetSectionID, createdAt: sub.createdAt,
+                  settings: sub.settings, serverId: serverId,
+                );
+              })
+              .toList();
+        }
+        return [];
+      },
+      'Failed to get subscriptions',
+    );
+  }
+
+  /// Create a DVR recording subscription
+  Future<LiveTvSubscription?> createSubscription({
+    required String type,
+    required int targetSectionID,
+    required int targetLibrarySectionID,
+    Map<String, String>? prefs,
+    String? hint,
+    String? uri,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'type': type,
+        'targetSectionID': targetSectionID,
+        'targetLibrarySectionID': targetLibrarySectionID,
+      };
+      if (hint != null) queryParams['hint'] = hint;
+      if (uri != null) queryParams['uri'] = uri;
+      if (prefs != null) {
+        for (final entry in prefs.entries) {
+          queryParams['prefs[${entry.key}]'] = entry.value;
+        }
+      }
+
+      final response = await _dio.post('/media/subscriptions', queryParameters: queryParams);
+      final container = _getMediaContainer(response);
+      if (container != null && container['MediaSubscription'] != null) {
+        final subs = container['MediaSubscription'] as List;
+        if (subs.isNotEmpty) {
+          return LiveTvSubscription.fromJson(subs.first as Map<String, dynamic>);
+        }
+      }
+      return null;
+    } catch (e) {
+      appLogger.e('Failed to create subscription', error: e);
+      return null;
+    }
+  }
+
+  /// Delete a DVR recording subscription
+  Future<bool> deleteSubscription(String subscriptionId) async {
+    return _wrapBoolApiCall(
+      () => _dio.delete('/media/subscriptions/$subscriptionId'),
+      'Failed to delete subscription',
+    );
+  }
+
+  /// Edit a DVR recording subscription's preferences
+  Future<bool> editSubscription(String subscriptionId, Map<String, String> prefs) async {
+    final queryParams = <String, dynamic>{};
+    for (final entry in prefs.entries) {
+      queryParams['prefs[${entry.key}]'] = entry.value;
+    }
+    return _wrapBoolApiCall(
+      () => _dio.put('/media/subscriptions/$subscriptionId', queryParameters: queryParams),
+      'Failed to edit subscription',
+    );
+  }
+
+  /// Get scheduled DVR recordings
+  Future<List<ScheduledRecording>> getScheduledRecordings() async {
+    return _wrapListApiCall<ScheduledRecording>(
+      () => _dio.get('/media/subscriptions/scheduled'),
+      (response) {
+        final container = _getMediaContainer(response);
+        if (container != null && container['Metadata'] != null) {
+          return (container['Metadata'] as List)
+              .map((json) => ScheduledRecording.fromJson(json as Map<String, dynamic>))
+              .toList();
+        }
+        return [];
+      },
+      'Failed to get scheduled recordings',
+    );
+  }
+
+  /// Get subscription template for a program (used for recording setup)
+  Future<Map<String, dynamic>?> getSubscriptionTemplate(String guid) async {
+    try {
+      final response = await _dio.get(
+        '/media/subscriptions/template',
+        queryParameters: {'guid': guid},
+      );
+      return _getMediaContainer(response);
+    } catch (e) {
+      appLogger.e('Failed to get subscription template', error: e);
+      return null;
     }
   }
 

@@ -65,6 +65,7 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLogsSv logs = _TranslationsLogsSv._(_root);
 	@override late final _TranslationsLicensesSv licenses = _TranslationsLicensesSv._(_root);
 	@override late final _TranslationsNavigationSv navigation = _TranslationsNavigationSv._(_root);
+	@override late final _TranslationsLiveTvSv liveTv = _TranslationsLiveTvSv._(_root);
 	@override late final _TranslationsDownloadsSv downloads = _TranslationsDownloadsSv._(_root);
 	@override late final _TranslationsPlaylistsSv playlists = _TranslationsPlaylistsSv._(_root);
 	@override late final _TranslationsCollectionsSv collections = _TranslationsCollectionsSv._(_root);
@@ -761,6 +762,44 @@ class _TranslationsNavigationSv implements TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Bibliotek';
 	@override String get downloads => 'Nedladdningar';
+	@override String get liveTv => 'Live-TV';
+}
+
+// Path: liveTv
+class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
+	_TranslationsLiveTvSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Live-TV';
+	@override String get channels => 'Kanaler';
+	@override String get guide => 'Programguide';
+	@override String get recordings => 'Inspelningar';
+	@override String get subscriptions => 'Inspelningsregler';
+	@override String get scheduled => 'Schemalagda';
+	@override String get noChannels => 'Inga kanaler tillgängliga';
+	@override String get noDvr => 'Ingen DVR konfigurerad på någon server';
+	@override String get tuneFailed => 'Kunde inte ställa in kanalen';
+	@override String get loading => 'Laddar kanaler...';
+	@override String get nowPlaying => 'Spelas nu';
+	@override String get whatsOnNow => 'På TV just nu';
+	@override String get record => 'Spela in';
+	@override String get recordSeries => 'Spela in serie';
+	@override String get cancelRecording => 'Avbryt inspelning';
+	@override String get deleteSubscription => 'Ta bort inspelningsregel';
+	@override String get deleteSubscriptionConfirm => 'Är du säker på att du vill ta bort denna inspelningsregel?';
+	@override String get subscriptionDeleted => 'Inspelningsregel borttagen';
+	@override String get noPrograms => 'Ingen programdata tillgänglig';
+	@override String get noRecordings => 'Inga inspelningar schemalagda';
+	@override String get noSubscriptions => 'Inga inspelningsregler';
+	@override String channelNumber({required Object number}) => 'Kanal ${number}';
+	@override String get live => 'LIVE';
+	@override String get hd => 'HD';
+	@override String get premiere => 'NY';
+	@override String get reloadGuide => 'Ladda om programguide';
+	@override String get guideReloaded => 'Programdata omladdad';
+	@override String get allChannels => 'Alla kanaler';
 }
 
 // Path: downloads
@@ -1634,6 +1673,35 @@ extension on TranslationsSv {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenser',
 			'navigation.libraries' => 'Bibliotek',
 			'navigation.downloads' => 'Nedladdningar',
+			'navigation.liveTv' => 'Live-TV',
+			'liveTv.title' => 'Live-TV',
+			'liveTv.channels' => 'Kanaler',
+			'liveTv.guide' => 'Programguide',
+			'liveTv.recordings' => 'Inspelningar',
+			'liveTv.subscriptions' => 'Inspelningsregler',
+			'liveTv.scheduled' => 'Schemalagda',
+			'liveTv.noChannels' => 'Inga kanaler tillgängliga',
+			'liveTv.noDvr' => 'Ingen DVR konfigurerad på någon server',
+			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
+			'liveTv.loading' => 'Laddar kanaler...',
+			'liveTv.nowPlaying' => 'Spelas nu',
+			'liveTv.whatsOnNow' => 'På TV just nu',
+			'liveTv.record' => 'Spela in',
+			'liveTv.recordSeries' => 'Spela in serie',
+			'liveTv.cancelRecording' => 'Avbryt inspelning',
+			'liveTv.deleteSubscription' => 'Ta bort inspelningsregel',
+			'liveTv.deleteSubscriptionConfirm' => 'Är du säker på att du vill ta bort denna inspelningsregel?',
+			'liveTv.subscriptionDeleted' => 'Inspelningsregel borttagen',
+			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
+			'liveTv.noRecordings' => 'Inga inspelningar schemalagda',
+			'liveTv.noSubscriptions' => 'Inga inspelningsregler',
+			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
+			'liveTv.live' => 'LIVE',
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NY',
+			'liveTv.reloadGuide' => 'Ladda om programguide',
+			'liveTv.guideReloaded' => 'Programdata omladdad',
+			'liveTv.allChannels' => 'Alla kanaler',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
@@ -1651,6 +1719,8 @@ extension on TranslationsSv {
 			'downloads.noDownloadsTree' => 'Inga nedladdningar',
 			'downloads.pauseAll' => 'Pausa alla',
 			'downloads.resumeAll' => 'Återuppta alla',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.deleteAll' => 'Ta bort alla',
 			'playlists.title' => 'Spellistor',
 			'playlists.noPlaylists' => 'Inga spellistor hittades',
@@ -1680,8 +1750,6 @@ extension on TranslationsSv {
 			'playlists.playlist' => 'Spellista',
 			'collections.title' => 'Samlingar',
 			'collections.collection' => 'Samling',
-			_ => null,
-		} ?? switch (path) {
 			'collections.empty' => 'Samlingen är tom',
 			'collections.unknownLibrarySection' => 'Kan inte ta bort: okänd bibliotekssektion',
 			'collections.deleteCollection' => 'Ta bort samling',

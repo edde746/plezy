@@ -65,6 +65,7 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLogsZh logs = _TranslationsLogsZh._(_root);
 	@override late final _TranslationsLicensesZh licenses = _TranslationsLicensesZh._(_root);
 	@override late final _TranslationsNavigationZh navigation = _TranslationsNavigationZh._(_root);
+	@override late final _TranslationsLiveTvZh liveTv = _TranslationsLiveTvZh._(_root);
 	@override late final _TranslationsDownloadsZh downloads = _TranslationsDownloadsZh._(_root);
 	@override late final _TranslationsPlaylistsZh playlists = _TranslationsPlaylistsZh._(_root);
 	@override late final _TranslationsCollectionsZh collections = _TranslationsCollectionsZh._(_root);
@@ -761,6 +762,44 @@ class _TranslationsNavigationZh implements TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => '媒体库';
 	@override String get downloads => '下载';
+	@override String get liveTv => '电视直播';
+}
+
+// Path: liveTv
+class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
+	_TranslationsLiveTvZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '电视直播';
+	@override String get channels => '频道';
+	@override String get guide => '节目指南';
+	@override String get recordings => '录制';
+	@override String get subscriptions => '录制规则';
+	@override String get scheduled => '已计划';
+	@override String get noChannels => '没有可用的频道';
+	@override String get noDvr => '没有服务器配置了DVR';
+	@override String get tuneFailed => '无法调谐频道';
+	@override String get loading => '正在加载频道...';
+	@override String get nowPlaying => '正在播放';
+	@override String get whatsOnNow => '正在播出';
+	@override String get record => '录制';
+	@override String get recordSeries => '录制系列';
+	@override String get cancelRecording => '取消录制';
+	@override String get deleteSubscription => '删除录制规则';
+	@override String get deleteSubscriptionConfirm => '确定要删除此录制规则吗？';
+	@override String get subscriptionDeleted => '录制规则已删除';
+	@override String get noPrograms => '没有可用的节目数据';
+	@override String get noRecordings => '没有计划的录制';
+	@override String get noSubscriptions => '没有录制规则';
+	@override String channelNumber({required Object number}) => '频道 ${number}';
+	@override String get live => '直播';
+	@override String get hd => '高清';
+	@override String get premiere => '新';
+	@override String get reloadGuide => '重新加载节目指南';
+	@override String get guideReloaded => '节目指南已重新加载';
+	@override String get allChannels => '所有频道';
 }
 
 // Path: downloads
@@ -1634,6 +1673,35 @@ extension on TranslationsZh {
 			'licenses.licensesCount' => ({required Object count}) => '${count} 个许可证',
 			'navigation.libraries' => '媒体库',
 			'navigation.downloads' => '下载',
+			'navigation.liveTv' => '电视直播',
+			'liveTv.title' => '电视直播',
+			'liveTv.channels' => '频道',
+			'liveTv.guide' => '节目指南',
+			'liveTv.recordings' => '录制',
+			'liveTv.subscriptions' => '录制规则',
+			'liveTv.scheduled' => '已计划',
+			'liveTv.noChannels' => '没有可用的频道',
+			'liveTv.noDvr' => '没有服务器配置了DVR',
+			'liveTv.tuneFailed' => '无法调谐频道',
+			'liveTv.loading' => '正在加载频道...',
+			'liveTv.nowPlaying' => '正在播放',
+			'liveTv.whatsOnNow' => '正在播出',
+			'liveTv.record' => '录制',
+			'liveTv.recordSeries' => '录制系列',
+			'liveTv.cancelRecording' => '取消录制',
+			'liveTv.deleteSubscription' => '删除录制规则',
+			'liveTv.deleteSubscriptionConfirm' => '确定要删除此录制规则吗？',
+			'liveTv.subscriptionDeleted' => '录制规则已删除',
+			'liveTv.noPrograms' => '没有可用的节目数据',
+			'liveTv.noRecordings' => '没有计划的录制',
+			'liveTv.noSubscriptions' => '没有录制规则',
+			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
+			'liveTv.live' => '直播',
+			'liveTv.hd' => '高清',
+			'liveTv.premiere' => '新',
+			'liveTv.reloadGuide' => '重新加载节目指南',
+			'liveTv.guideReloaded' => '节目指南已重新加载',
+			'liveTv.allChannels' => '所有频道',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
@@ -1651,6 +1719,8 @@ extension on TranslationsZh {
 			'downloads.noDownloadsTree' => '暂无下载',
 			'downloads.pauseAll' => '全部暂停',
 			'downloads.resumeAll' => '全部继续',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.deleteAll' => '全部删除',
 			'playlists.title' => '播放列表',
 			'playlists.noPlaylists' => '未找到播放列表',
@@ -1680,8 +1750,6 @@ extension on TranslationsZh {
 			'playlists.playlist' => '播放列表',
 			'collections.title' => '合集',
 			'collections.collection' => '合集',
-			_ => null,
-		} ?? switch (path) {
 			'collections.empty' => '合集为空',
 			'collections.unknownLibrarySection' => '无法删除：未知的媒体库分区',
 			'collections.deleteCollection' => '删除合集',

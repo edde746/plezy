@@ -44,6 +44,12 @@ class MobileVideoControls extends StatelessWidget {
   /// Optional callback that returns a thumbnail URL for a given timestamp.
   final String Function(Duration time)? thumbnailUrlBuilder;
 
+  /// Whether this is a live TV stream
+  final bool isLive;
+
+  /// Channel name for live TV display
+  final String? liveChannelName;
+
   const MobileVideoControls({
     super.key,
     required this.player,
@@ -64,6 +70,8 @@ class MobileVideoControls extends StatelessWidget {
     this.canControl = true,
     this.hasFirstFrame,
     this.thumbnailUrlBuilder,
+    this.isLive = false,
+    this.liveChannelName,
   });
 
   @override
@@ -153,6 +161,34 @@ class MobileVideoControls extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext context) {
+    if (isLive) {
+      // For live TV, show channel name instead of timeline
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                t.liveTv.live,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+            if (liveChannelName != null) ...[
+              const SizedBox(width: 8),
+              Text(
+                liveChannelName!,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
     return FirstFrameGuard(hasFirstFrame: hasFirstFrame, builder: (context) => _buildBottomBarContent(context));
   }
 

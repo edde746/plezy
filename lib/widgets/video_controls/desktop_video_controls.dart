@@ -83,6 +83,12 @@ class DesktopVideoControls extends StatefulWidget {
   /// Optional callback that returns a thumbnail URL for a given timestamp.
   final String Function(Duration time)? thumbnailUrlBuilder;
 
+  /// Whether this is a live TV stream
+  final bool isLive;
+
+  /// Channel name for live TV display
+  final String? liveChannelName;
+
   const DesktopVideoControls({
     super.key,
     required this.player,
@@ -127,6 +133,8 @@ class DesktopVideoControls extends StatefulWidget {
     this.shaderService,
     this.onShaderChanged,
     this.thumbnailUrlBuilder,
+    this.isLive = false,
+    this.liveChannelName,
   });
 
   @override
@@ -411,10 +419,30 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   Widget _buildTopBarContent(BuildContext context, double leftPadding) {
     final topBar = Padding(
       padding: EdgeInsets.only(left: leftPadding, right: 16),
-      child: VideoControlsHeader(
-        metadata: widget.metadata,
-        style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
-        onBack: widget.onBack,
+      child: Row(
+        children: [
+          Expanded(
+            child: VideoControlsHeader(
+              metadata: widget.metadata,
+              style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
+              onBack: widget.onBack,
+            ),
+          ),
+          if (widget.isLive) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                widget.liveChannelName != null ? '${t.liveTv.live} · ${widget.liveChannelName}' : t.liveTv.live,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+          ],
+        ],
       ),
     );
 
@@ -427,21 +455,23 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         children: [
-          // Row 1: Timeline with time indicators
-          VideoTimelineBar(
-            player: widget.player,
-            chapters: widget.chapters,
-            chaptersLoaded: widget.chaptersLoaded,
-            onSeek: widget.onSeek,
-            onSeekEnd: widget.onSeekEnd,
-            horizontalLayout: true,
-            focusNode: _timelineFocusNode,
-            onKeyEvent: _handleTimelineKeyEvent,
-            onFocusChange: _onFocusChange,
-            enabled: canInteract,
-            thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
-          ),
-          const SizedBox(height: 4),
+          // Row 1: Timeline with time indicators (hidden for live TV)
+          if (!widget.isLive) ...[
+            VideoTimelineBar(
+              player: widget.player,
+              chapters: widget.chapters,
+              chaptersLoaded: widget.chaptersLoaded,
+              onSeek: widget.onSeek,
+              onSeekEnd: widget.onSeekEnd,
+              horizontalLayout: true,
+              focusNode: _timelineFocusNode,
+              onKeyEvent: _handleTimelineKeyEvent,
+              onFocusChange: _onFocusChange,
+              enabled: canInteract,
+              thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+            ),
+            const SizedBox(height: 4),
+          ],
           // Row 2: Playback controls and options
           Row(
             children: [

@@ -65,6 +65,7 @@ class TranslationsFr with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLogsFr logs = _TranslationsLogsFr._(_root);
 	@override late final _TranslationsLicensesFr licenses = _TranslationsLicensesFr._(_root);
 	@override late final _TranslationsNavigationFr navigation = _TranslationsNavigationFr._(_root);
+	@override late final _TranslationsLiveTvFr liveTv = _TranslationsLiveTvFr._(_root);
 	@override late final _TranslationsCollectionsFr collections = _TranslationsCollectionsFr._(_root);
 	@override late final _TranslationsPlaylistsFr playlists = _TranslationsPlaylistsFr._(_root);
 	@override late final _TranslationsWatchTogetherFr watchTogether = _TranslationsWatchTogetherFr._(_root);
@@ -761,6 +762,44 @@ class _TranslationsNavigationFr implements TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Bibliothèques';
 	@override String get downloads => 'Téléchargements';
+	@override String get liveTv => 'TV en direct';
+}
+
+// Path: liveTv
+class _TranslationsLiveTvFr implements TranslationsLiveTvEn {
+	_TranslationsLiveTvFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'TV en direct';
+	@override String get channels => 'Chaînes';
+	@override String get guide => 'Guide';
+	@override String get recordings => 'Enregistrements';
+	@override String get subscriptions => 'Règles d\'enregistrement';
+	@override String get scheduled => 'Programmés';
+	@override String get noChannels => 'Aucune chaîne disponible';
+	@override String get noDvr => 'Aucun DVR configuré sur les serveurs';
+	@override String get tuneFailed => 'Impossible de syntoniser la chaîne';
+	@override String get loading => 'Chargement des chaînes...';
+	@override String get nowPlaying => 'En cours de lecture';
+	@override String get whatsOnNow => 'En ce moment';
+	@override String get record => 'Enregistrer';
+	@override String get recordSeries => 'Enregistrer la série';
+	@override String get cancelRecording => 'Annuler l\'enregistrement';
+	@override String get deleteSubscription => 'Supprimer la règle d\'enregistrement';
+	@override String get deleteSubscriptionConfirm => 'Voulez-vous vraiment supprimer cette règle d\'enregistrement ?';
+	@override String get subscriptionDeleted => 'Règle d\'enregistrement supprimée';
+	@override String get noPrograms => 'Aucune donnée de programme disponible';
+	@override String get noRecordings => 'Aucun enregistrement programmé';
+	@override String get noSubscriptions => 'Aucune règle d\'enregistrement';
+	@override String channelNumber({required Object number}) => 'Ch. ${number}';
+	@override String get live => 'EN DIRECT';
+	@override String get hd => 'HD';
+	@override String get premiere => 'NOUVEAU';
+	@override String get reloadGuide => 'Recharger le guide';
+	@override String get guideReloaded => 'Données du guide rechargées';
+	@override String get allChannels => 'Toutes les chaînes';
 }
 
 // Path: collections
@@ -1634,6 +1673,35 @@ extension on TranslationsFr {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licences',
 			'navigation.libraries' => 'Bibliothèques',
 			'navigation.downloads' => 'Téléchargements',
+			'navigation.liveTv' => 'TV en direct',
+			'liveTv.title' => 'TV en direct',
+			'liveTv.channels' => 'Chaînes',
+			'liveTv.guide' => 'Guide',
+			'liveTv.recordings' => 'Enregistrements',
+			'liveTv.subscriptions' => 'Règles d\'enregistrement',
+			'liveTv.scheduled' => 'Programmés',
+			'liveTv.noChannels' => 'Aucune chaîne disponible',
+			'liveTv.noDvr' => 'Aucun DVR configuré sur les serveurs',
+			'liveTv.tuneFailed' => 'Impossible de syntoniser la chaîne',
+			'liveTv.loading' => 'Chargement des chaînes...',
+			'liveTv.nowPlaying' => 'En cours de lecture',
+			'liveTv.whatsOnNow' => 'En ce moment',
+			'liveTv.record' => 'Enregistrer',
+			'liveTv.recordSeries' => 'Enregistrer la série',
+			'liveTv.cancelRecording' => 'Annuler l\'enregistrement',
+			'liveTv.deleteSubscription' => 'Supprimer la règle d\'enregistrement',
+			'liveTv.deleteSubscriptionConfirm' => 'Voulez-vous vraiment supprimer cette règle d\'enregistrement ?',
+			'liveTv.subscriptionDeleted' => 'Règle d\'enregistrement supprimée',
+			'liveTv.noPrograms' => 'Aucune donnée de programme disponible',
+			'liveTv.noRecordings' => 'Aucun enregistrement programmé',
+			'liveTv.noSubscriptions' => 'Aucune règle d\'enregistrement',
+			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
+			'liveTv.live' => 'EN DIRECT',
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NOUVEAU',
+			'liveTv.reloadGuide' => 'Recharger le guide',
+			'liveTv.guideReloaded' => 'Données du guide rechargées',
+			'liveTv.allChannels' => 'Toutes les chaînes',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'La collection est vide',
@@ -1651,6 +1719,8 @@ extension on TranslationsFr {
 			'collections.addedToCollection' => 'Ajouté à la collection',
 			'collections.errorAddingToCollection' => 'Échec de l\'ajout à la collection',
 			'collections.created' => 'Collection créée',
+			_ => null,
+		} ?? switch (path) {
 			'collections.removeFromCollection' => 'Supprimer de la collection',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Retirer "${title}" de cette collection ?',
 			'collections.removedFromCollection' => 'Retiré de la collection',
@@ -1680,8 +1750,6 @@ extension on TranslationsFr {
 			'playlists.errorDeleting' => 'Échec de suppression de playlist',
 			'playlists.errorLoading' => 'Échec de chargement de playlists',
 			'playlists.errorAdding' => 'Échec d\'ajout dans la playlist',
-			_ => null,
-		} ?? switch (path) {
 			'playlists.errorReordering' => 'Échec de réordonnacement d\'élément de playlist',
 			'playlists.errorRemoving' => 'Échec de suppression depuis la playlist',
 			'watchTogether.title' => 'Regarder ensemble',

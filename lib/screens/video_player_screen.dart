@@ -14,6 +14,7 @@ import '../mpv/mpv.dart';
 import '../mpv/player/player_android.dart';
 
 import '../../services/plex_client.dart';
+import '../models/livetv_channel.dart';
 import '../services/plex_api_cache.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
@@ -67,6 +68,15 @@ class VideoPlayerScreen extends StatefulWidget {
   final int selectedMediaIndex;
   final bool isOffline;
 
+  // Live TV fields
+  final bool isLive;
+  final String? liveChannelName;
+  final String? liveStreamUrl;
+  final List<LiveTvChannel>? liveChannels;
+  final int? liveCurrentChannelIndex;
+  final String? liveDvrKey;
+  final PlexClient? liveClient;
+
   const VideoPlayerScreen({
     super.key,
     required this.metadata,
@@ -74,6 +84,13 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredSubtitleTrack,
     this.selectedMediaIndex = 0,
     this.isOffline = false,
+    this.isLive = false,
+    this.liveChannelName,
+    this.liveStreamUrl,
+    this.liveChannels,
+    this.liveCurrentChannelIndex,
+    this.liveDvrKey,
+    this.liveClient,
   });
 
   @override
@@ -111,6 +128,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _waitingForExternalSubsTrackSelection = false;
   bool _isHandlingBack = false;
   bool _hasThumbnails = false;
+
+  // Live TV channel navigation
+  int _liveChannelIndex = -1;
+  String? _liveChannelName;
 
   // Auto-play next episode
   Timer? _autoPlayTimer;
@@ -170,6 +191,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     _activeRatingKey = widget.metadata.ratingKey;
     _activeMediaIndex = widget.selectedMediaIndex;
+
+    // Initialize live TV channel tracking
+    _liveChannelIndex = widget.liveCurrentChannelIndex ?? -1;
+    _liveChannelName = widget.liveChannelName;
 
     // Initialize Play Next dialog focus nodes
     _playNextCancelFocusNode = FocusNode(debugLabel: 'PlayNextCancel');
@@ -567,6 +592,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _initializeServices() async {
     if (!mounted || player == null) return;
 
+    // Skip progress tracking for live TV
+    if (widget.isLive) return;
+
     // Get client (null in offline mode)
     final client = widget.isOffline ? null : _getClientForMetadata(context);
 
@@ -735,7 +763,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _loadAdjacentEpisodes() async {
-    if (!mounted) return;
+    if (!mounted || widget.isLive) return;
 
     if (widget.isOffline) {
       // Offline mode: find next/previous from downloaded episodes
@@ -805,6 +833,37 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   Future<void> _startPlayback() async {
     if (!mounted) return;
+
+    // Live TV mode: bypass standard playback initialization
+    if (widget.isLive && widget.liveStreamUrl != null) {
+      try {
+        _hasFirstFrame.value = false;
+        await player!.requestAudioFocus();
+
+        final client = widget.liveClient ?? _getClientForMetadata(context);
+        final plexHeaders = client.config.headers;
+
+        await player!.open(
+          Media(widget.liveStreamUrl!, headers: plexHeaders),
+          play: true,
+        );
+
+        if (mounted) {
+          setState(() {
+            _availableVersions = [];
+            _currentMediaInfo = null;
+            _isPlayerInitialized = true;
+          });
+        }
+      } catch (e) {
+        appLogger.e('Failed to start live TV playback', error: e);
+        if (mounted) {
+          showErrorSnackBar(context, e.toString());
+          _handleBackButton();
+        }
+      }
+      return;
+    }
 
     // Capture providers before async gaps
     final offlineWatchService = widget.isOffline ? context.read<OfflineWatchSyncService>() : null;
@@ -1556,6 +1615,69 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     await _navigateToEpisode(_previousEpisode!);
   }
 
+  bool _isSwitchingChannel = false;
+
+  /// Switch to an adjacent live TV channel (delta: +1 for next, -1 for previous)
+  Future<void> _switchLiveChannel(int delta) async {
+    final channels = widget.liveChannels;
+    if (channels == null || channels.isEmpty) return;
+    if (_isSwitchingChannel) return; // debounce concurrent switches
+
+    final newIndex = _liveChannelIndex + delta;
+    if (newIndex < 0 || newIndex >= channels.length) return;
+
+    _isSwitchingChannel = true;
+
+    final channel = channels[newIndex];
+    final channelId = channel.identifier ?? channel.key;
+    appLogger.d('Switching to channel: ${channel.displayName} ($channelId)');
+
+    setState(() => _hasFirstFrame.value = false);
+
+    try {
+      // Look up the correct client/DVR for this channel's server
+      final multiServer = context.read<MultiServerProvider>();
+      final serverInfo = multiServer.liveTvServers.where(
+        (s) => s.serverId == channel.serverId,
+      ).firstOrNull ?? multiServer.liveTvServers.firstOrNull;
+
+      if (serverInfo == null) return;
+
+      final client = multiServer.getClientForServer(serverInfo.serverId);
+      if (client == null) return;
+
+      final result = await client.tuneChannel(serverInfo.dvrKey, channelId);
+      if (result == null || !mounted) return;
+
+      final streamUrl = '${client.config.baseUrl}${result.streamPath}'.withPlexToken(client.config.token);
+
+      await player!.open(
+        Media(streamUrl, headers: client.config.headers),
+        play: true,
+      );
+
+      setState(() {
+        _liveChannelIndex = newIndex;
+        _liveChannelName = channel.displayName;
+      });
+    } catch (e) {
+      appLogger.e('Failed to switch channel', error: e);
+    } finally {
+      _isSwitchingChannel = false;
+    }
+  }
+
+  bool get _hasNextChannel =>
+      widget.isLive &&
+      widget.liveChannels != null &&
+      _liveChannelIndex >= 0 &&
+      _liveChannelIndex < (widget.liveChannels!.length - 1);
+
+  bool get _hasPreviousChannel =>
+      widget.isLive &&
+      widget.liveChannels != null &&
+      _liveChannelIndex > 0;
+
   void _startAutoPlayTimer() {
     _autoPlayTimer?.cancel();
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -1993,8 +2115,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       controls: (context) => plexVideoControlsBuilder(
                         player!,
                         widget.metadata,
-                        onNext: (_nextEpisode != null && _canNavigateEpisodes()) ? _playNext : null,
-                        onPrevious: (_previousEpisode != null && _canNavigateEpisodes()) ? _playPrevious : null,
+                        onNext: widget.isLive
+                            ? (_hasNextChannel ? () => _switchLiveChannel(1) : null)
+                            : ((_nextEpisode != null && _canNavigateEpisodes()) ? _playNext : null),
+                        onPrevious: widget.isLive
+                            ? (_hasPreviousChannel ? () => _switchLiveChannel(-1) : null)
+                            : ((_previousEpisode != null && _canNavigateEpisodes()) ? _playPrevious : null),
                         availableVersions: _availableVersions,
                         selectedMediaIndex: widget.selectedMediaIndex,
                         onTogglePIPMode: _togglePIPMode,
@@ -2025,6 +2151,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         thumbnailUrlBuilder: _hasThumbnails && _currentMediaInfo?.partId != null
                             ? (Duration time) => _buildThumbnailUrl(context, time)!
                             : null,
+                        isLive: widget.isLive,
+                        liveChannelName: _liveChannelName,
                       ),
                     );
                   },

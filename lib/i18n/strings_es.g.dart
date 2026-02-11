@@ -65,6 +65,7 @@ class TranslationsEs with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLogsEs logs = _TranslationsLogsEs._(_root);
 	@override late final _TranslationsLicensesEs licenses = _TranslationsLicensesEs._(_root);
 	@override late final _TranslationsNavigationEs navigation = _TranslationsNavigationEs._(_root);
+	@override late final _TranslationsLiveTvEs liveTv = _TranslationsLiveTvEs._(_root);
 	@override late final _TranslationsCollectionsEs collections = _TranslationsCollectionsEs._(_root);
 	@override late final _TranslationsPlaylistsEs playlists = _TranslationsPlaylistsEs._(_root);
 	@override late final _TranslationsWatchTogetherEs watchTogether = _TranslationsWatchTogetherEs._(_root);
@@ -761,6 +762,44 @@ class _TranslationsNavigationEs implements TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Bibliotecas';
 	@override String get downloads => 'Descargas';
+	@override String get liveTv => 'TV en vivo';
+}
+
+// Path: liveTv
+class _TranslationsLiveTvEs implements TranslationsLiveTvEn {
+	_TranslationsLiveTvEs._(this._root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'TV en vivo';
+	@override String get channels => 'Canales';
+	@override String get guide => 'Guía';
+	@override String get recordings => 'Grabaciones';
+	@override String get subscriptions => 'Reglas de grabación';
+	@override String get scheduled => 'Programadas';
+	@override String get noChannels => 'No hay canales disponibles';
+	@override String get noDvr => 'No hay DVR configurado en ningún servidor';
+	@override String get tuneFailed => 'Error al sintonizar el canal';
+	@override String get loading => 'Cargando canales...';
+	@override String get nowPlaying => 'Reproduciendo ahora';
+	@override String get whatsOnNow => 'En emisión ahora';
+	@override String get record => 'Grabar';
+	@override String get recordSeries => 'Grabar serie';
+	@override String get cancelRecording => 'Cancelar grabación';
+	@override String get deleteSubscription => 'Eliminar regla de grabación';
+	@override String get deleteSubscriptionConfirm => '¿Estás seguro de que quieres eliminar esta regla de grabación?';
+	@override String get subscriptionDeleted => 'Regla de grabación eliminada';
+	@override String get noPrograms => 'No hay datos de programación disponibles';
+	@override String get noRecordings => 'No hay grabaciones programadas';
+	@override String get noSubscriptions => 'No hay reglas de grabación';
+	@override String channelNumber({required Object number}) => 'Canal ${number}';
+	@override String get live => 'EN VIVO';
+	@override String get hd => 'HD';
+	@override String get premiere => 'NUEVO';
+	@override String get reloadGuide => 'Recargar guía';
+	@override String get guideReloaded => 'Datos de la guía recargados';
+	@override String get allChannels => 'Todos los canales';
 }
 
 // Path: collections
@@ -1634,6 +1673,35 @@ extension on TranslationsEs {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licencias',
 			'navigation.libraries' => 'Bibliotecas',
 			'navigation.downloads' => 'Descargas',
+			'navigation.liveTv' => 'TV en vivo',
+			'liveTv.title' => 'TV en vivo',
+			'liveTv.channels' => 'Canales',
+			'liveTv.guide' => 'Guía',
+			'liveTv.recordings' => 'Grabaciones',
+			'liveTv.subscriptions' => 'Reglas de grabación',
+			'liveTv.scheduled' => 'Programadas',
+			'liveTv.noChannels' => 'No hay canales disponibles',
+			'liveTv.noDvr' => 'No hay DVR configurado en ningún servidor',
+			'liveTv.tuneFailed' => 'Error al sintonizar el canal',
+			'liveTv.loading' => 'Cargando canales...',
+			'liveTv.nowPlaying' => 'Reproduciendo ahora',
+			'liveTv.whatsOnNow' => 'En emisión ahora',
+			'liveTv.record' => 'Grabar',
+			'liveTv.recordSeries' => 'Grabar serie',
+			'liveTv.cancelRecording' => 'Cancelar grabación',
+			'liveTv.deleteSubscription' => 'Eliminar regla de grabación',
+			'liveTv.deleteSubscriptionConfirm' => '¿Estás seguro de que quieres eliminar esta regla de grabación?',
+			'liveTv.subscriptionDeleted' => 'Regla de grabación eliminada',
+			'liveTv.noPrograms' => 'No hay datos de programación disponibles',
+			'liveTv.noRecordings' => 'No hay grabaciones programadas',
+			'liveTv.noSubscriptions' => 'No hay reglas de grabación',
+			'liveTv.channelNumber' => ({required Object number}) => 'Canal ${number}',
+			'liveTv.live' => 'EN VIVO',
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NUEVO',
+			'liveTv.reloadGuide' => 'Recargar guía',
+			'liveTv.guideReloaded' => 'Datos de la guía recargados',
+			'liveTv.allChannels' => 'Todos los canales',
 			'collections.title' => 'Colecciones',
 			'collections.collection' => 'Colección',
 			'collections.empty' => 'La colección está vacía',
@@ -1651,6 +1719,8 @@ extension on TranslationsEs {
 			'collections.addedToCollection' => 'Añadido a la colección',
 			'collections.errorAddingToCollection' => 'Error al añadir a la colección',
 			'collections.created' => 'Colección creada',
+			_ => null,
+		} ?? switch (path) {
 			'collections.removeFromCollection' => 'Eliminar de la colección',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '¿Eliminar "${title}" de esta colección?',
 			'collections.removedFromCollection' => 'Eliminado de la colección',
@@ -1680,8 +1750,6 @@ extension on TranslationsEs {
 			'playlists.errorDeleting' => 'Error al eliminar la lista',
 			'playlists.errorLoading' => 'Error al cargar las listas',
 			'playlists.errorAdding' => 'Error al añadir a la lista',
-			_ => null,
-		} ?? switch (path) {
 			'playlists.errorReordering' => 'Error al reordenar los elementos de la lista',
 			'playlists.errorRemoving' => 'Error al eliminar de la lista',
 			'watchTogether.title' => 'Ver Juntos',
