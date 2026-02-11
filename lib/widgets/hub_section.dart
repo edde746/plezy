@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import '../providers/settings_provider.dart';
-import '../services/settings_service.dart' show EpisodePosterMode;
+import '../services/settings_service.dart' show EpisodePosterMode, LibraryDensity;
 import '../theme/mono_tokens.dart';
 import '../utils/layout_constants.dart';
 import '../focus/locked_hub_controller.dart';
@@ -370,16 +370,22 @@ class HubSectionState extends State<HubSection> {
               builder: (context, constraints) {
                 // Responsive base card width for posters (2:3 aspect ratio)
                 final screenWidth = constraints.maxWidth;
-                final baseCardWidth = ScreenBreakpoints.isLargeDesktop(screenWidth)
+                final settings = context.watch<SettingsProvider>();
+                final densityScale = switch (settings.libraryDensity) {
+                  LibraryDensity.compact => 0.8,
+                  LibraryDensity.normal => 1.0,
+                  LibraryDensity.comfortable => 1.15,
+                };
+                final baseCardWidth = (ScreenBreakpoints.isLargeDesktop(screenWidth)
                     ? 220.0
                     : ScreenBreakpoints.isDesktop(screenWidth)
                     ? 200.0
                     : ScreenBreakpoints.isWideTablet(screenWidth)
                     ? 190.0
-                    : 160.0;
+                    : 160.0) * densityScale;
 
                 // Get episode poster mode setting
-                final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
+                final episodePosterMode = settings.episodePosterMode;
 
                 // Determine hub content type for layout decisions
                 final hasEpisodes = widget.hub.items.any((item) => item.usesWideAspectRatio(episodePosterMode));

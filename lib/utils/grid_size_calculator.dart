@@ -76,31 +76,31 @@ class GridSizeCalculator {
 
       switch (density) {
         case LibraryDensity.comfortable:
-          divisor = 5.0;
-          maxItemWidth = 320;
-        case LibraryDensity.normal:
-          divisor = 6.0;
+          divisor = 5.5;
           maxItemWidth = 260;
+        case LibraryDensity.normal:
+          divisor = 6.5;
+          maxItemWidth = 230;
         case LibraryDensity.compact:
-          divisor = 7.5;
-          maxItemWidth = 200;
+          divisor = 9.0;
+          maxItemWidth = 160;
       }
 
       return (availableWidth / divisor).clamp(0, maxItemWidth);
     } else if (ScreenBreakpoints.isTablet(screenWidth)) {
-      // Medium screens (tablets): Fixed 3-4-5 items
+      // Medium screens (tablets): Fixed 3-4-6 items
       int targetItemCount = switch (density) {
         LibraryDensity.comfortable => 3,
         LibraryDensity.normal => 4,
-        LibraryDensity.compact => 5,
+        LibraryDensity.compact => 6,
       };
       return availableWidth / targetItemCount;
     } else {
-      // Small screens (phones): Fixed 2-3-3 items
+      // Small screens (phones): Fixed 2-3-4 items
       int targetItemCount = switch (density) {
         LibraryDensity.comfortable => 2,
         LibraryDensity.normal => 3,
-        LibraryDensity.compact => 3,
+        LibraryDensity.compact => 4,
       };
       return availableWidth / targetItemCount;
     }
