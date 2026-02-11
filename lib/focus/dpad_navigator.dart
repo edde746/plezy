@@ -45,6 +45,11 @@ extension DpadKeyExtension on LogicalKeyboardKey {
   /// Whether this key is a context menu key.
   bool get isContextMenuKey => _contextMenuKeys.contains(this);
 
+  /// Whether this key is a navigation key (dpad, select, back, context menu, tab).
+  /// Use this to distinguish navigation keys from typing/volume/media keys.
+  bool get isNavigationKey =>
+      isDpadDirection || isSelectKey || isBackKey || isContextMenuKey || this == LogicalKeyboardKey.tab;
+
   /// Whether this key moves focus left.
   bool get isLeftKey => this == LogicalKeyboardKey.arrowLeft;
 

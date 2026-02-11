@@ -1484,8 +1484,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             }
 
             // Only handle KeyDown and KeyRepeat events
-            // Consume KeyUp events to prevent them leaking to previous routes
+            // Consume KeyUp events for navigation keys to prevent leaking to previous routes
+            // Let non-navigation keys (volume, etc.) pass through to the OS
             if (!event.isActionable) {
+              if (!event.logicalKey.isNavigationKey) return KeyEventResult.ignored;
               return KeyEventResult.handled;
             }
 
@@ -1572,7 +1574,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               onToggleShader: _toggleShader,
               onSkipMarker: _performAutoSkip,
             );
-            // Never return .ignored from fullscreen video — prevent leaking to previous routes
+            // Let non-navigation keys (volume, etc.) pass through to the OS
+            if (!event.logicalKey.isNavigationKey) return KeyEventResult.ignored;
+            // Never return .ignored for navigation keys — prevent leaking to previous routes
             return result == KeyEventResult.ignored ? KeyEventResult.handled : result;
           },
           child: Listener(
