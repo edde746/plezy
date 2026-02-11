@@ -758,5 +758,22 @@
     "hdr": "HDR",
     "audioOutput": "Audio-uitvoer",
     "performanceOverlay": "Prestatie-overlay"
+  },
+  "externalPlayer": {
+    "title": "Externe speler",
+    "useExternalPlayer": "Externe speler gebruiken",
+    "useExternalPlayerDescription": "Open video's in een externe app in plaats van de ingebouwde speler",
+    "selectPlayer": "Speler selecteren",
+    "systemDefault": "Systeemstandaard",
+    "addCustomPlayer": "Aangepaste speler toevoegen",
+    "playerName": "Spelernaam",
+    "playerCommand": "Commando",
+    "playerPackage": "Pakketnaam",
+    "playerUrlScheme": "URL-schema",
+    "customPlayer": "Aangepaste speler",
+    "off": "Uit",
+    "launchFailed": "Kan externe speler niet openen",
+    "appNotInstalled": "${name} is niet geïnstalleerd",
+    "playInExternalPlayer": "Afspelen in externe speler"
   }
 }

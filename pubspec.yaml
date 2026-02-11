@@ -52,6 +52,7 @@ dependencies:
   dart_discord_presence: ^1.1.0
   flutter_svg: ^2.2.3
   mobile_scanner: ^6.0.2
+  android_intent_plus: ^5.0.2
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +73,7 @@ flutter:
     - assets/go-noto-current-regular.ttf
     - assets/shaders/nvscaler/
     - assets/shaders/anime4k/
+    - assets/player_icons/
     - assets/rating_icons/
 
 flutter_launcher_icons:

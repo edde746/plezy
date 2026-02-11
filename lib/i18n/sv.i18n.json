@@ -758,5 +758,22 @@
     "hdr": "HDR",
     "audioOutput": "Ljudutgång",
     "performanceOverlay": "Prestandaöverlägg"
+  },
+  "externalPlayer": {
+    "title": "Extern spelare",
+    "useExternalPlayer": "Använd extern spelare",
+    "useExternalPlayerDescription": "Öppna videor i en extern app istället för den inbyggda spelaren",
+    "selectPlayer": "Välj spelare",
+    "systemDefault": "Systemstandard",
+    "addCustomPlayer": "Lägg till anpassad spelare",
+    "playerName": "Spelarnamn",
+    "playerCommand": "Kommando",
+    "playerPackage": "Paketnamn",
+    "playerUrlScheme": "URL-schema",
+    "customPlayer": "Anpassad spelare",
+    "off": "Av",
+    "launchFailed": "Kunde inte öppna extern spelare",
+    "appNotInstalled": "${name} är inte installerad",
+    "playInExternalPlayer": "Spela i extern spelare"
   }
 }

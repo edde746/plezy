@@ -72,6 +72,7 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsShadersNl shaders = _TranslationsShadersNl._(_root);
 	@override late final _TranslationsCompanionRemoteNl companionRemote = _TranslationsCompanionRemoteNl._(_root);
 	@override late final _TranslationsVideoSettingsNl videoSettings = _TranslationsVideoSettingsNl._(_root);
+	@override late final _TranslationsExternalPlayerNl externalPlayer = _TranslationsExternalPlayerNl._(_root);
 }
 
 // Path: app
@@ -961,6 +962,30 @@ class _TranslationsVideoSettingsNl implements TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Prestatie-overlay';
 }
 
+// Path: externalPlayer
+class _TranslationsExternalPlayerNl implements TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Externe speler';
+	@override String get useExternalPlayer => 'Externe speler gebruiken';
+	@override String get useExternalPlayerDescription => 'Open video\'s in een externe app in plaats van de ingebouwde speler';
+	@override String get selectPlayer => 'Speler selecteren';
+	@override String get systemDefault => 'Systeemstandaard';
+	@override String get addCustomPlayer => 'Aangepaste speler toevoegen';
+	@override String get playerName => 'Spelernaam';
+	@override String get playerCommand => 'Commando';
+	@override String get playerPackage => 'Pakketnaam';
+	@override String get playerUrlScheme => 'URL-schema';
+	@override String get customPlayer => 'Aangepaste speler';
+	@override String get off => 'Uit';
+	@override String get launchFailed => 'Kan externe speler niet openen';
+	@override String appNotInstalled({required Object name}) => '${name} is niet geïnstalleerd';
+	@override String get playInExternalPlayer => 'Afspelen in externe speler';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsNl._(this._root);
@@ -1821,6 +1846,21 @@ extension on TranslationsNl {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audio-uitvoer',
 			'videoSettings.performanceOverlay' => 'Prestatie-overlay',
+			'externalPlayer.title' => 'Externe speler',
+			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
+			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een externe app in plaats van de ingebouwde speler',
+			'externalPlayer.selectPlayer' => 'Speler selecteren',
+			'externalPlayer.systemDefault' => 'Systeemstandaard',
+			'externalPlayer.addCustomPlayer' => 'Aangepaste speler toevoegen',
+			'externalPlayer.playerName' => 'Spelernaam',
+			'externalPlayer.playerCommand' => 'Commando',
+			'externalPlayer.playerPackage' => 'Pakketnaam',
+			'externalPlayer.playerUrlScheme' => 'URL-schema',
+			'externalPlayer.customPlayer' => 'Aangepaste speler',
+			'externalPlayer.off' => 'Uit',
+			'externalPlayer.launchFailed' => 'Kan externe speler niet openen',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is niet geïnstalleerd',
+			'externalPlayer.playInExternalPlayer' => 'Afspelen in externe speler',
 			_ => null,
 		};
 	}

@@ -758,5 +758,22 @@
     "hdr": "HDR",
     "audioOutput": "音频输出",
     "performanceOverlay": "性能监控"
+  },
+  "externalPlayer": {
+    "title": "外部播放器",
+    "useExternalPlayer": "使用外部播放器",
+    "useExternalPlayerDescription": "在外部应用中打开视频，而不是使用内置播放器",
+    "selectPlayer": "选择播放器",
+    "systemDefault": "系统默认",
+    "addCustomPlayer": "添加自定义播放器",
+    "playerName": "播放器名称",
+    "playerCommand": "命令",
+    "playerPackage": "包名",
+    "playerUrlScheme": "URL 方案",
+    "customPlayer": "自定义播放器",
+    "off": "关闭",
+    "launchFailed": "无法打开外部播放器",
+    "appNotInstalled": "${name} 未安装",
+    "playInExternalPlayer": "在外部播放器中播放"
   }
 }

@@ -31,6 +31,7 @@ import '../../providers/companion_remote_provider.dart';
 import '../../screens/companion_remote/mobile_remote_screen.dart';
 import '../../widgets/companion_remote/remote_session_dialog.dart';
 import 'about_screen.dart';
+import 'external_player_screen.dart';
 import 'logs_screen.dart';
 import 'mpv_config_screen.dart';
 import 'subtitle_styling_screen.dart';
@@ -68,6 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kShowUnwatchedCount = 'show_unwatched_count';
   static const _kRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const _kPlayerBackend = 'player_backend';
+  static const _kExternalPlayer = 'external_player';
   static const _kHardwareDecoding = 'hardware_decoding';
   static const _kMatchContentFrameRate = 'match_content_frame_rate';
   static const _kBufferSize = 'buffer_size';
@@ -115,6 +117,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _matchContentFrameRate = false;
   bool _useExoPlayer = true; // Android only: ExoPlayer vs MPV
   bool _requireProfileSelectionOnOpen = false;
+  bool _useExternalPlayer = false;
+  String _selectedExternalPlayerName = '';
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -182,6 +186,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _matchContentFrameRate = _settingsService.getMatchContentFrameRate();
       _useExoPlayer = _settingsService.getUseExoPlayer();
       _requireProfileSelectionOnOpen = _settingsService.getRequireProfileSelectionOnOpen();
+      _useExternalPlayer = _settingsService.getUseExternalPlayer();
+      _selectedExternalPlayerName = _settingsService.getSelectedExternalPlayer().name;
       _isLoading = false;
     });
   }
@@ -410,6 +416,22 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
               onTap: () => _showPlayerBackendDialog(),
             ),
+          ListTile(
+            focusNode: _focusTracker.get(_kExternalPlayer),
+            leading: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
+            title: Text(t.externalPlayer.title),
+            subtitle: Text(_useExternalPlayer ? _selectedExternalPlayerName : t.externalPlayer.off),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            onTap: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (context) => const ExternalPlayerScreen()));
+              // Reload to reflect any changes
+              final s = await settings.SettingsService.getInstance();
+              setState(() {
+                _useExternalPlayer = s.getUseExternalPlayer();
+                _selectedExternalPlayerName = s.getSelectedExternalPlayer().name;
+              });
+            },
+          ),
           SwitchListTile(
             focusNode: _focusTracker.get(_kHardwareDecoding),
             secondary: const AppIcon(Symbols.hardware_rounded, fill: 1),

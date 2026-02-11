@@ -72,6 +72,7 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsShadersZh shaders = _TranslationsShadersZh._(_root);
 	@override late final _TranslationsCompanionRemoteZh companionRemote = _TranslationsCompanionRemoteZh._(_root);
 	@override late final _TranslationsVideoSettingsZh videoSettings = _TranslationsVideoSettingsZh._(_root);
+	@override late final _TranslationsExternalPlayerZh externalPlayer = _TranslationsExternalPlayerZh._(_root);
 }
 
 // Path: app
@@ -961,6 +962,30 @@ class _TranslationsVideoSettingsZh implements TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => '性能监控';
 }
 
+// Path: externalPlayer
+class _TranslationsExternalPlayerZh implements TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '外部播放器';
+	@override String get useExternalPlayer => '使用外部播放器';
+	@override String get useExternalPlayerDescription => '在外部应用中打开视频，而不是使用内置播放器';
+	@override String get selectPlayer => '选择播放器';
+	@override String get systemDefault => '系统默认';
+	@override String get addCustomPlayer => '添加自定义播放器';
+	@override String get playerName => '播放器名称';
+	@override String get playerCommand => '命令';
+	@override String get playerPackage => '包名';
+	@override String get playerUrlScheme => 'URL 方案';
+	@override String get customPlayer => '自定义播放器';
+	@override String get off => '关闭';
+	@override String get launchFailed => '无法打开外部播放器';
+	@override String appNotInstalled({required Object name}) => '${name} 未安装';
+	@override String get playInExternalPlayer => '在外部播放器中播放';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsZh._(this._root);
@@ -1821,6 +1846,21 @@ extension on TranslationsZh {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => '音频输出',
 			'videoSettings.performanceOverlay' => '性能监控',
+			'externalPlayer.title' => '外部播放器',
+			'externalPlayer.useExternalPlayer' => '使用外部播放器',
+			'externalPlayer.useExternalPlayerDescription' => '在外部应用中打开视频，而不是使用内置播放器',
+			'externalPlayer.selectPlayer' => '选择播放器',
+			'externalPlayer.systemDefault' => '系统默认',
+			'externalPlayer.addCustomPlayer' => '添加自定义播放器',
+			'externalPlayer.playerName' => '播放器名称',
+			'externalPlayer.playerCommand' => '命令',
+			'externalPlayer.playerPackage' => '包名',
+			'externalPlayer.playerUrlScheme' => 'URL 方案',
+			'externalPlayer.customPlayer' => '自定义播放器',
+			'externalPlayer.off' => '关闭',
+			'externalPlayer.launchFailed' => '无法打开外部播放器',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
+			'externalPlayer.playInExternalPlayer' => '在外部播放器中播放',
 			_ => null,
 		};
 	}

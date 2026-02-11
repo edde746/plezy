@@ -72,6 +72,7 @@ class TranslationsDe with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsShadersDe shaders = _TranslationsShadersDe._(_root);
 	@override late final _TranslationsCompanionRemoteDe companionRemote = _TranslationsCompanionRemoteDe._(_root);
 	@override late final _TranslationsVideoSettingsDe videoSettings = _TranslationsVideoSettingsDe._(_root);
+	@override late final _TranslationsExternalPlayerDe externalPlayer = _TranslationsExternalPlayerDe._(_root);
 }
 
 // Path: app
@@ -961,6 +962,30 @@ class _TranslationsVideoSettingsDe implements TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Leistungsanzeige';
 }
 
+// Path: externalPlayer
+class _TranslationsExternalPlayerDe implements TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerDe._(this._root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Externer Player';
+	@override String get useExternalPlayer => 'Externen Player verwenden';
+	@override String get useExternalPlayerDescription => 'Videos in einer externen App statt im integrierten Player öffnen';
+	@override String get selectPlayer => 'Player auswählen';
+	@override String get systemDefault => 'Systemstandard';
+	@override String get addCustomPlayer => 'Benutzerdefinierten Player hinzufügen';
+	@override String get playerName => 'Playername';
+	@override String get playerCommand => 'Befehl';
+	@override String get playerPackage => 'Paketname';
+	@override String get playerUrlScheme => 'URL-Schema';
+	@override String get customPlayer => 'Benutzerdefinierter Player';
+	@override String get off => 'Aus';
+	@override String get launchFailed => 'Externer Player konnte nicht geöffnet werden';
+	@override String appNotInstalled({required Object name}) => '${name} ist nicht installiert';
+	@override String get playInExternalPlayer => 'In externem Player abspielen';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsDe implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsDe._(this._root);
@@ -1821,6 +1846,21 @@ extension on TranslationsDe {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audioausgabe',
 			'videoSettings.performanceOverlay' => 'Leistungsanzeige',
+			'externalPlayer.title' => 'Externer Player',
+			'externalPlayer.useExternalPlayer' => 'Externen Player verwenden',
+			'externalPlayer.useExternalPlayerDescription' => 'Videos in einer externen App statt im integrierten Player öffnen',
+			'externalPlayer.selectPlayer' => 'Player auswählen',
+			'externalPlayer.systemDefault' => 'Systemstandard',
+			'externalPlayer.addCustomPlayer' => 'Benutzerdefinierten Player hinzufügen',
+			'externalPlayer.playerName' => 'Playername',
+			'externalPlayer.playerCommand' => 'Befehl',
+			'externalPlayer.playerPackage' => 'Paketname',
+			'externalPlayer.playerUrlScheme' => 'URL-Schema',
+			'externalPlayer.customPlayer' => 'Benutzerdefinierter Player',
+			'externalPlayer.off' => 'Aus',
+			'externalPlayer.launchFailed' => 'Externer Player konnte nicht geöffnet werden',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} ist nicht installiert',
+			'externalPlayer.playInExternalPlayer' => 'In externem Player abspielen',
 			_ => null,
 		};
 	}

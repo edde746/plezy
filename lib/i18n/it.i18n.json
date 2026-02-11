@@ -758,5 +758,22 @@
     "hdr": "HDR",
     "audioOutput": "Uscita audio",
     "performanceOverlay": "Overlay prestazioni"
+  },
+  "externalPlayer": {
+    "title": "Lettore esterno",
+    "useExternalPlayer": "Usa lettore esterno",
+    "useExternalPlayerDescription": "Apri i video in un'app esterna invece del lettore integrato",
+    "selectPlayer": "Seleziona lettore",
+    "systemDefault": "Predefinito di sistema",
+    "addCustomPlayer": "Aggiungi lettore personalizzato",
+    "playerName": "Nome lettore",
+    "playerCommand": "Comando",
+    "playerPackage": "Nome pacchetto",
+    "playerUrlScheme": "Schema URL",
+    "customPlayer": "Lettore personalizzato",
+    "off": "Disattivato",
+    "launchFailed": "Impossibile aprire il lettore esterno",
+    "appNotInstalled": "${name} non è installato",
+    "playInExternalPlayer": "Riproduci in lettore esterno"
   }
 }

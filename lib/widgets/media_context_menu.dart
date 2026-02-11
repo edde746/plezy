@@ -16,6 +16,7 @@ import '../utils/library_refresh_notifier.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
 import '../utils/focus_utils.dart';
+import '../services/external_player_service.dart';
 import '../focus/dpad_navigator.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
@@ -217,6 +218,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo));
       }
 
+      // Play in External Player (for episodes and movies)
+      if (mediaType == PlexMediaType.episode || mediaType == PlexMediaType.movie) {
+        menuActions.add(
+          _MenuAction(
+            value: 'play_external',
+            icon: Symbols.open_in_new_rounded,
+            label: t.externalPlayer.playInExternalPlayer,
+          ),
+        );
+      }
+
       // Download options (for episodes, movies, shows, and seasons)
       if (mediaType == PlexMediaType.episode ||
           mediaType == PlexMediaType.movie ||
@@ -415,6 +427,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'delete':
           await _handleDelete(context, isCollection, isPlaylist);
+          break;
+
+        case 'play_external':
+          await _handlePlayExternal(context);
           break;
 
         case 'download':
@@ -979,6 +995,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
     }
+  }
+
+  /// Handle play in external player action
+  Future<void> _handlePlayExternal(BuildContext context) async {
+    final metadata = widget.item as PlexMetadata;
+    final client = _getClientForItem();
+
+    await ExternalPlayerService.launch(
+      context: context,
+      metadata: metadata,
+      client: client,
+    );
   }
 
   /// Handle download action

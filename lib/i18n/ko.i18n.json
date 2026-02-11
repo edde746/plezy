@@ -758,5 +758,22 @@
     "hdr": "HDR",
     "audioOutput": "오디오 출력",
     "performanceOverlay": "성능 오버레이"
+  },
+  "externalPlayer": {
+    "title": "외부 플레이어",
+    "useExternalPlayer": "외부 플레이어 사용",
+    "useExternalPlayerDescription": "내장 플레이어 대신 외부 앱에서 동영상 열기",
+    "selectPlayer": "플레이어 선택",
+    "systemDefault": "시스템 기본값",
+    "addCustomPlayer": "사용자 정의 플레이어 추가",
+    "playerName": "플레이어 이름",
+    "playerCommand": "명령어",
+    "playerPackage": "패키지 이름",
+    "playerUrlScheme": "URL 스킴",
+    "customPlayer": "사용자 정의 플레이어",
+    "off": "꺼짐",
+    "launchFailed": "외부 플레이어를 열 수 없습니다",
+    "appNotInstalled": "${name}이(가) 설치되어 있지 않습니다",
+    "playInExternalPlayer": "외부 플레이어에서 재생"
   }
 }

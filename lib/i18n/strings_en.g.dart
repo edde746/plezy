@@ -75,6 +75,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsShadersEn shaders = TranslationsShadersEn._(_root);
 	late final TranslationsCompanionRemoteEn companionRemote = TranslationsCompanionRemoteEn._(_root);
 	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn._(_root);
+	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn._(_root);
 }
 
 // Path: app
@@ -2098,6 +2099,60 @@ class TranslationsVideoSettingsEn {
 	String get performanceOverlay => 'Performance Overlay';
 }
 
+// Path: externalPlayer
+class TranslationsExternalPlayerEn {
+	TranslationsExternalPlayerEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'External Player'
+	String get title => 'External Player';
+
+	/// en: 'Use External Player'
+	String get useExternalPlayer => 'Use External Player';
+
+	/// en: 'Open videos in an external app instead of the built-in player'
+	String get useExternalPlayerDescription => 'Open videos in an external app instead of the built-in player';
+
+	/// en: 'Select Player'
+	String get selectPlayer => 'Select Player';
+
+	/// en: 'System Default'
+	String get systemDefault => 'System Default';
+
+	/// en: 'Add Custom Player'
+	String get addCustomPlayer => 'Add Custom Player';
+
+	/// en: 'Player Name'
+	String get playerName => 'Player Name';
+
+	/// en: 'Command'
+	String get playerCommand => 'Command';
+
+	/// en: 'Package Name'
+	String get playerPackage => 'Package Name';
+
+	/// en: 'URL Scheme'
+	String get playerUrlScheme => 'URL Scheme';
+
+	/// en: 'Custom Player'
+	String get customPlayer => 'Custom Player';
+
+	/// en: 'Off'
+	String get off => 'Off';
+
+	/// en: 'Failed to open external player'
+	String get launchFailed => 'Failed to open external player';
+
+	/// en: '${name} is not installed'
+	String appNotInstalled({required Object name}) => '${name} is not installed';
+
+	/// en: 'Play in External Player'
+	String get playInExternalPlayer => 'Play in External Player';
+}
+
 // Path: hotkeys.actions
 class TranslationsHotkeysActionsEn {
 	TranslationsHotkeysActionsEn._(this._root);
@@ -3180,6 +3235,21 @@ extension on Translations {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
+			'externalPlayer.title' => 'External Player',
+			'externalPlayer.useExternalPlayer' => 'Use External Player',
+			'externalPlayer.useExternalPlayerDescription' => 'Open videos in an external app instead of the built-in player',
+			'externalPlayer.selectPlayer' => 'Select Player',
+			'externalPlayer.systemDefault' => 'System Default',
+			'externalPlayer.addCustomPlayer' => 'Add Custom Player',
+			'externalPlayer.playerName' => 'Player Name',
+			'externalPlayer.playerCommand' => 'Command',
+			'externalPlayer.playerPackage' => 'Package Name',
+			'externalPlayer.playerUrlScheme' => 'URL Scheme',
+			'externalPlayer.customPlayer' => 'Custom Player',
+			'externalPlayer.off' => 'Off',
+			'externalPlayer.launchFailed' => 'Failed to open external player',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
+			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			_ => null,
 		};
 	}

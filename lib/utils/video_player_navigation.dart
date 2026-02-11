@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../mpv/mpv.dart';
 import '../models/plex_metadata.dart';
 import '../screens/video_player_screen.dart';
+import '../services/external_player_service.dart';
 import '../services/settings_service.dart';
+import '../utils/provider_extensions.dart';
 import 'app_logger.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
@@ -51,6 +53,26 @@ Future<bool?> navigateToVideoPlayer(
       }
     } catch (e) {
       // Ignore errors loading preference, use default
+    }
+  }
+
+  // Check if external player is enabled (skip for offline mode)
+  if (!isOffline) {
+    try {
+      final settingsService = await SettingsService.getInstance();
+      if (settingsService.getUseExternalPlayer()) {
+        final client = context.getClientForMetadata(metadata);
+        final launched = await ExternalPlayerService.launch(
+          context: context,
+          metadata: metadata,
+          client: client,
+          mediaIndex: mediaIndex,
+        );
+        if (launched) return null;
+        // Fall through to built-in player on failure
+      }
+    } catch (e) {
+      appLogger.w('External player launch failed, falling back to built-in player', error: e);
     }
   }
 

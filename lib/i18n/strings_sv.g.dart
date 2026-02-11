@@ -72,6 +72,7 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsShadersSv shaders = _TranslationsShadersSv._(_root);
 	@override late final _TranslationsCompanionRemoteSv companionRemote = _TranslationsCompanionRemoteSv._(_root);
 	@override late final _TranslationsVideoSettingsSv videoSettings = _TranslationsVideoSettingsSv._(_root);
+	@override late final _TranslationsExternalPlayerSv externalPlayer = _TranslationsExternalPlayerSv._(_root);
 }
 
 // Path: app
@@ -961,6 +962,30 @@ class _TranslationsVideoSettingsSv implements TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Prestandaöverlägg';
 }
 
+// Path: externalPlayer
+class _TranslationsExternalPlayerSv implements TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Extern spelare';
+	@override String get useExternalPlayer => 'Använd extern spelare';
+	@override String get useExternalPlayerDescription => 'Öppna videor i en extern app istället för den inbyggda spelaren';
+	@override String get selectPlayer => 'Välj spelare';
+	@override String get systemDefault => 'Systemstandard';
+	@override String get addCustomPlayer => 'Lägg till anpassad spelare';
+	@override String get playerName => 'Spelarnamn';
+	@override String get playerCommand => 'Kommando';
+	@override String get playerPackage => 'Paketnamn';
+	@override String get playerUrlScheme => 'URL-schema';
+	@override String get customPlayer => 'Anpassad spelare';
+	@override String get off => 'Av';
+	@override String get launchFailed => 'Kunde inte öppna extern spelare';
+	@override String appNotInstalled({required Object name}) => '${name} är inte installerad';
+	@override String get playInExternalPlayer => 'Spela i extern spelare';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsSv implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsSv._(this._root);
@@ -1821,6 +1846,21 @@ extension on TranslationsSv {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Ljudutgång',
 			'videoSettings.performanceOverlay' => 'Prestandaöverlägg',
+			'externalPlayer.title' => 'Extern spelare',
+			'externalPlayer.useExternalPlayer' => 'Använd extern spelare',
+			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en extern app istället för den inbyggda spelaren',
+			'externalPlayer.selectPlayer' => 'Välj spelare',
+			'externalPlayer.systemDefault' => 'Systemstandard',
+			'externalPlayer.addCustomPlayer' => 'Lägg till anpassad spelare',
+			'externalPlayer.playerName' => 'Spelarnamn',
+			'externalPlayer.playerCommand' => 'Kommando',
+			'externalPlayer.playerPackage' => 'Paketnamn',
+			'externalPlayer.playerUrlScheme' => 'URL-schema',
+			'externalPlayer.customPlayer' => 'Anpassad spelare',
+			'externalPlayer.off' => 'Av',
+			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
+			'externalPlayer.playInExternalPlayer' => 'Spela i extern spelare',
 			_ => null,
 		};
 	}

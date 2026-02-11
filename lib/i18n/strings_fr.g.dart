@@ -72,6 +72,7 @@ class TranslationsFr with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsShadersFr shaders = _TranslationsShadersFr._(_root);
 	@override late final _TranslationsCompanionRemoteFr companionRemote = _TranslationsCompanionRemoteFr._(_root);
 	@override late final _TranslationsVideoSettingsFr videoSettings = _TranslationsVideoSettingsFr._(_root);
+	@override late final _TranslationsExternalPlayerFr externalPlayer = _TranslationsExternalPlayerFr._(_root);
 }
 
 // Path: app
@@ -961,6 +962,30 @@ class _TranslationsVideoSettingsFr implements TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Superposition de performance';
 }
 
+// Path: externalPlayer
+class _TranslationsExternalPlayerFr implements TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Lecteur externe';
+	@override String get useExternalPlayer => 'Utiliser un lecteur externe';
+	@override String get useExternalPlayerDescription => 'Ouvrir les vidéos dans une application externe au lieu du lecteur intégré';
+	@override String get selectPlayer => 'Sélectionner le lecteur';
+	@override String get systemDefault => 'Par défaut du système';
+	@override String get addCustomPlayer => 'Ajouter un lecteur personnalisé';
+	@override String get playerName => 'Nom du lecteur';
+	@override String get playerCommand => 'Commande';
+	@override String get playerPackage => 'Nom du paquet';
+	@override String get playerUrlScheme => 'Schéma URL';
+	@override String get customPlayer => 'Lecteur personnalisé';
+	@override String get off => 'Désactivé';
+	@override String get launchFailed => 'Impossible d\'ouvrir le lecteur externe';
+	@override String appNotInstalled({required Object name}) => '${name} n\'est pas installé';
+	@override String get playInExternalPlayer => 'Lire dans un lecteur externe';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsFr implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsFr._(this._root);
@@ -1821,6 +1846,21 @@ extension on TranslationsFr {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Sortie audio',
 			'videoSettings.performanceOverlay' => 'Superposition de performance',
+			'externalPlayer.title' => 'Lecteur externe',
+			'externalPlayer.useExternalPlayer' => 'Utiliser un lecteur externe',
+			'externalPlayer.useExternalPlayerDescription' => 'Ouvrir les vidéos dans une application externe au lieu du lecteur intégré',
+			'externalPlayer.selectPlayer' => 'Sélectionner le lecteur',
+			'externalPlayer.systemDefault' => 'Par défaut du système',
+			'externalPlayer.addCustomPlayer' => 'Ajouter un lecteur personnalisé',
+			'externalPlayer.playerName' => 'Nom du lecteur',
+			'externalPlayer.playerCommand' => 'Commande',
+			'externalPlayer.playerPackage' => 'Nom du paquet',
+			'externalPlayer.playerUrlScheme' => 'Schéma URL',
+			'externalPlayer.customPlayer' => 'Lecteur personnalisé',
+			'externalPlayer.off' => 'Désactivé',
+			'externalPlayer.launchFailed' => 'Impossible d\'ouvrir le lecteur externe',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} n\'est pas installé',
+			'externalPlayer.playInExternalPlayer' => 'Lire dans un lecteur externe',
 			_ => null,
 		};
 	}

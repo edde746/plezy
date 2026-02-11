@@ -72,6 +72,7 @@ class TranslationsEs with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsShadersEs shaders = _TranslationsShadersEs._(_root);
 	@override late final _TranslationsCompanionRemoteEs companionRemote = _TranslationsCompanionRemoteEs._(_root);
 	@override late final _TranslationsVideoSettingsEs videoSettings = _TranslationsVideoSettingsEs._(_root);
+	@override late final _TranslationsExternalPlayerEs externalPlayer = _TranslationsExternalPlayerEs._(_root);
 }
 
 // Path: app
@@ -961,6 +962,30 @@ class _TranslationsVideoSettingsEs implements TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Indicador de rendimiento';
 }
 
+// Path: externalPlayer
+class _TranslationsExternalPlayerEs implements TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerEs._(this._root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Reproductor externo';
+	@override String get useExternalPlayer => 'Usar reproductor externo';
+	@override String get useExternalPlayerDescription => 'Abrir vídeos en una app externa en lugar del reproductor integrado';
+	@override String get selectPlayer => 'Seleccionar reproductor';
+	@override String get systemDefault => 'Predeterminado del sistema';
+	@override String get addCustomPlayer => 'Añadir reproductor personalizado';
+	@override String get playerName => 'Nombre del reproductor';
+	@override String get playerCommand => 'Comando';
+	@override String get playerPackage => 'Nombre del paquete';
+	@override String get playerUrlScheme => 'Esquema URL';
+	@override String get customPlayer => 'Reproductor personalizado';
+	@override String get off => 'Desactivado';
+	@override String get launchFailed => 'No se pudo abrir el reproductor externo';
+	@override String appNotInstalled({required Object name}) => '${name} no está instalado';
+	@override String get playInExternalPlayer => 'Reproducir en reproductor externo';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsEs implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsEs._(this._root);
@@ -1821,6 +1846,21 @@ extension on TranslationsEs {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Salida de audio',
 			'videoSettings.performanceOverlay' => 'Indicador de rendimiento',
+			'externalPlayer.title' => 'Reproductor externo',
+			'externalPlayer.useExternalPlayer' => 'Usar reproductor externo',
+			'externalPlayer.useExternalPlayerDescription' => 'Abrir vídeos en una app externa en lugar del reproductor integrado',
+			'externalPlayer.selectPlayer' => 'Seleccionar reproductor',
+			'externalPlayer.systemDefault' => 'Predeterminado del sistema',
+			'externalPlayer.addCustomPlayer' => 'Añadir reproductor personalizado',
+			'externalPlayer.playerName' => 'Nombre del reproductor',
+			'externalPlayer.playerCommand' => 'Comando',
+			'externalPlayer.playerPackage' => 'Nombre del paquete',
+			'externalPlayer.playerUrlScheme' => 'Esquema URL',
+			'externalPlayer.customPlayer' => 'Reproductor personalizado',
+			'externalPlayer.off' => 'Desactivado',
+			'externalPlayer.launchFailed' => 'No se pudo abrir el reproductor externo',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} no está instalado',
+			'externalPlayer.playInExternalPlayer' => 'Reproducir en reproductor externo',
 			_ => null,
 		};
 	}

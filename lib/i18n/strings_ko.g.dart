@@ -72,6 +72,7 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsShadersKo shaders = _TranslationsShadersKo._(_root);
 	@override late final _TranslationsCompanionRemoteKo companionRemote = _TranslationsCompanionRemoteKo._(_root);
 	@override late final _TranslationsVideoSettingsKo videoSettings = _TranslationsVideoSettingsKo._(_root);
+	@override late final _TranslationsExternalPlayerKo externalPlayer = _TranslationsExternalPlayerKo._(_root);
 }
 
 // Path: app
@@ -961,6 +962,30 @@ class _TranslationsVideoSettingsKo implements TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => '성능 오버레이';
 }
 
+// Path: externalPlayer
+class _TranslationsExternalPlayerKo implements TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '외부 플레이어';
+	@override String get useExternalPlayer => '외부 플레이어 사용';
+	@override String get useExternalPlayerDescription => '내장 플레이어 대신 외부 앱에서 동영상 열기';
+	@override String get selectPlayer => '플레이어 선택';
+	@override String get systemDefault => '시스템 기본값';
+	@override String get addCustomPlayer => '사용자 정의 플레이어 추가';
+	@override String get playerName => '플레이어 이름';
+	@override String get playerCommand => '명령어';
+	@override String get playerPackage => '패키지 이름';
+	@override String get playerUrlScheme => 'URL 스킴';
+	@override String get customPlayer => '사용자 정의 플레이어';
+	@override String get off => '꺼짐';
+	@override String get launchFailed => '외부 플레이어를 열 수 없습니다';
+	@override String appNotInstalled({required Object name}) => '${name}이(가) 설치되어 있지 않습니다';
+	@override String get playInExternalPlayer => '외부 플레이어에서 재생';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsKo._(this._root);
@@ -1821,6 +1846,21 @@ extension on TranslationsKo {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => '오디오 출력',
 			'videoSettings.performanceOverlay' => '성능 오버레이',
+			'externalPlayer.title' => '외부 플레이어',
+			'externalPlayer.useExternalPlayer' => '외부 플레이어 사용',
+			'externalPlayer.useExternalPlayerDescription' => '내장 플레이어 대신 외부 앱에서 동영상 열기',
+			'externalPlayer.selectPlayer' => '플레이어 선택',
+			'externalPlayer.systemDefault' => '시스템 기본값',
+			'externalPlayer.addCustomPlayer' => '사용자 정의 플레이어 추가',
+			'externalPlayer.playerName' => '플레이어 이름',
+			'externalPlayer.playerCommand' => '명령어',
+			'externalPlayer.playerPackage' => '패키지 이름',
+			'externalPlayer.playerUrlScheme' => 'URL 스킴',
+			'externalPlayer.customPlayer' => '사용자 정의 플레이어',
+			'externalPlayer.off' => '꺼짐',
+			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',
+			'externalPlayer.playInExternalPlayer' => '외부 플레이어에서 재생',
 			_ => null,
 		};
 	}
