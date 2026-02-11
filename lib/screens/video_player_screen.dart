@@ -25,7 +25,6 @@ import '../providers/playback_state_provider.dart';
 import '../models/companion_remote/remote_command_type.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
-import '../services/macos_window_service.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/discord_rpc_service.dart';
 import '../services/episode_navigation_service.dart';
