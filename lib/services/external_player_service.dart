@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/external_player_models.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
