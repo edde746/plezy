@@ -327,8 +327,9 @@ class MultiServerManager {
           },
         );
 
-        // Re-optimize all servers
+        // Re-optimize all servers and re-probe offline ones
         _reoptimizeAllServers(reason: 'connectivity:${status.name}');
+        checkServerHealth();
       },
       onError: (error, stackTrace) {
         appLogger.w('Connectivity listener error', error: error, stackTrace: stackTrace);
