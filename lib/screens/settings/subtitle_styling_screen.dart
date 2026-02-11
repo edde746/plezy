@@ -317,7 +317,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onTap: () => _showTvSpinnerDialog(
                 title: t.subtitlingStyling.fontSize,
                 currentValue: _fontSize,
-                min: 30,
+                min: 10,
                 max: 80,
                 onSave: (value) {
                   setState(() => _fontSize = value);
@@ -329,9 +329,9 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             _StylingSliderSection(
               label: t.subtitlingStyling.fontSize,
               value: _fontSize,
-              min: 30,
+              min: 10,
               max: 80,
-              divisions: 50,
+              divisions: 70,
               onChanged: (value) {
                 setState(() {
                   _fontSize = value.toInt();
