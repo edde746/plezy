@@ -11,6 +11,7 @@ import '../../utils/formatters.dart';
 import '../../utils/live_tv_player_navigation.dart';
 import '../../utils/plex_image_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 
 /// Shows all upcoming airings of a show, matching the Plex "upcoming episodes" view.
 class LiveTvShowScheduleScreen extends StatefulWidget {
@@ -234,30 +235,35 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.showTitle)),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _programs.isEmpty
-              ? Center(child: Text(t.liveTv.noPrograms))
-              : ListView.builder(
-                  itemCount: _programs.length,
-                  itemBuilder: (context, index) {
-                    final program = _programs[index];
-                    final channel = _findChannel(program.channelIdentifier);
-                    return _ScheduleListTile(
-                      program: program,
-                      channel: channel,
-                      onTap: () {
-                        if (program.isCurrentlyAiring && channel != null) {
-                          _tuneChannel(channel);
-                        } else {
-                          _showProgramDetails(program, channel);
-                        }
-                      },
-                    );
+    return FocusedScrollScaffold(
+      title: Text(widget.showTitle),
+      slivers: [
+        if (_isLoading)
+          const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+        else if (_programs.isEmpty)
+          SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final program = _programs[index];
+                final channel = _findChannel(program.channelIdentifier);
+                return _ScheduleListTile(
+                  program: program,
+                  channel: channel,
+                  onTap: () {
+                    if (program.isCurrentlyAiring && channel != null) {
+                      _tuneChannel(channel);
+                    } else {
+                      _showProgramDetails(program, channel);
+                    }
                   },
-                ),
+                );
+              },
+              childCount: _programs.length,
+            ),
+          ),
+      ],
     );
   }
 }

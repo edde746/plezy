@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_scheduled_recording.dart';
 import '../../models/livetv_subscription.dart';
@@ -10,6 +11,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/desktop_app_bar.dart';
 
 /// Screen for managing DVR recording subscriptions and scheduled recordings
 class DvrRecordingsScreen extends StatefulWidget {
@@ -169,44 +171,50 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t.liveTv.recordings),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: t.liveTv.subscriptions),
-            Tab(text: t.liveTv.scheduled),
+    return Focus(
+      canRequestFocus: false,
+      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+      child: Scaffold(
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            CustomAppBar(
+              title: Text(t.liveTv.recordings),
+              pinned: true,
+              bottom: TabBar(
+                controller: _tabController,
+                tabs: [
+                  Tab(text: t.liveTv.subscriptions),
+                  Tab(text: t.liveTv.scheduled),
+                ],
+              ),
+            ),
           ],
+          body: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error!, style: theme.textTheme.bodyLarge),
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: _loadData,
+                            icon: const AppIcon(Symbols.refresh_rounded),
+                            label: Text(t.common.retry),
+                          ),
+                        ],
+                      ),
+                    )
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildSubscriptionsTab(theme),
+                        _buildScheduledTab(theme),
+                      ],
+                    ),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!, style: theme.textTheme.bodyLarge),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: _loadData,
-                        icon: const AppIcon(Symbols.refresh_rounded),
-                        label: Text(t.common.retry),
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadData,
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildSubscriptionsTab(theme),
-                      _buildScheduledTab(theme),
-                    ],
-                  ),
-                ),
     );
   }
 
