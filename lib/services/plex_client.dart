@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 
@@ -2038,31 +2039,120 @@ class PlexClient {
     );
   }
 
-  /// Tune to a live TV channel. Returns metadata and the stream URL path.
+  /// Generate 24-char random alphanumeric string (matching official client format)
+  static String _generateSessionIdentifier() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final rand = Random();
+    return List.generate(24, (_) => chars[rand.nextInt(chars.length)]).join();
+  }
+
+  /// Tune to a live TV channel and set up the transcode session.
+  ///
+  /// Flow: tune → decision → return /start path (MKV-over-HTTP).
   Future<({PlexMetadata metadata, String streamPath})?> tuneChannel(String dvrKey, String channelIdentifier) async {
     try {
+      final sessionIdentifier = _generateSessionIdentifier();
+
       final response = await _dio.post(
         '/livetv/dvrs/$dvrKey/channels/$channelIdentifier/tune',
+        queryParameters: {'X-Plex-Session-Identifier': sessionIdentifier},
       );
-      final metadataJson = _getFirstMetadataJson(response);
-      if (metadataJson == null) return null;
+
+      if (response.statusCode != null && response.statusCode! >= 400) {
+        appLogger.w('Tune channel returned status ${response.statusCode}');
+        return null;
+      }
+
+      final container = _getMediaContainer(response);
+      if (container == null) return null;
+
+      // Metadata is nested: MediaSubscription[0].MediaGrabOperation[0].Metadata
+      Map<String, dynamic>? metadataJson;
+      final subscriptions = container['MediaSubscription'] as List?;
+      if (subscriptions != null && subscriptions.isNotEmpty) {
+        final sub = subscriptions[0] as Map<String, dynamic>;
+        final ops = sub['MediaGrabOperation'] as List?;
+        if (ops != null && ops.isNotEmpty) {
+          final op = ops[0] as Map<String, dynamic>;
+          final nested = op['Metadata'];
+          if (nested is Map<String, dynamic>) {
+            metadataJson = nested;
+          }
+        }
+      }
+      metadataJson ??= (container['Metadata'] as List?)?.firstOrNull as Map<String, dynamic>?;
+
+      if (metadataJson == null) {
+        appLogger.w('Tune channel: no metadata in response');
+        return null;
+      }
 
       final metadata = _createTaggedMetadata(metadataJson);
 
-      // Extract stream path from Media[0].Part[0].key
-      String? streamPath;
-      final mediaList = metadataJson['Media'] as List?;
-      if (mediaList != null && mediaList.isNotEmpty) {
-        final parts = (mediaList[0] as Map<String, dynamic>)['Part'] as List?;
-        if (parts != null && parts.isNotEmpty) {
-          streamPath = (parts[0] as Map<String, dynamic>)['key'] as String?;
-        }
+      final sessionPath = metadataJson['key'] as String?;
+      if (sessionPath == null) {
+        appLogger.w('Tune channel: no session path in metadata key');
+        return null;
       }
 
-      if (streamPath == null) return null;
-      return (metadata: metadata, streamPath: streamPath);
-    } catch (e) {
-      appLogger.e('Failed to tune channel', error: e);
+      // All identity goes in query params; the only HTTP header is Accept-Language
+      // (matching the official Plex client behaviour).
+      final allParams = <String, String>{
+        'hasMDE': '1',
+        'path': sessionPath,
+        'mediaIndex': '0',
+        'partIndex': '0',
+        'protocol': 'http',
+        'fastSeek': '1',
+        'directPlay': '0',
+        'directStream': '1',
+        'subtitleSize': '100',
+        'audioBoost': '100',
+        'location': 'lan',
+        'addDebugOverlay': '0',
+        'autoAdjustQuality': '0',
+        'directStreamAudio': '1',
+        'advancedSubtitles': 'text',
+        'mediaBufferSize': '157286',
+        'session': _generateSessionIdentifier(),
+        'subtitles': 'auto',
+        'copyts': '0',
+        'Accept-Language': 'en',
+        'X-Plex-Session-Identifier': sessionIdentifier,
+        'X-Plex-Chunked': '1',
+        'X-Plex-Incomplete-Segments': '1',
+        'X-Plex-Product': config.product,
+        'X-Plex-Version': config.version,
+        'X-Plex-Client-Identifier': config.clientIdentifier,
+        'X-Plex-Platform': config.platform,
+        'X-Plex-Client-Profile-Name': 'Plex Desktop',
+        if (config.token != null) 'X-Plex-Token': config.token!,
+      };
+
+      // Manual query encoding — Dio encodes spaces as '+' but Plex requires '%20'.
+      final queryString = allParams.entries
+          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+
+      // Decision — bare Dio so no default X-Plex-* HTTP headers leak through.
+      final decisionDio = Dio(BaseOptions(headers: {'Accept-Language': 'en'}));
+      final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
+      final decisionResponse = await decisionDio.getUri(Uri.parse(decisionUrl));
+
+      if (decisionResponse.statusCode != 200) {
+        appLogger.w('Decision returned ${decisionResponse.statusCode}');
+        return null;
+      }
+
+      // Token is added by the caller via .withPlexToken()
+      final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
+      final startQuery = startParams.entries
+          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+
+      return (metadata: metadata, streamPath: '/video/:/transcode/universal/start?$startQuery');
+    } catch (e, st) {
+      appLogger.e('Failed to tune channel', error: e, stackTrace: st);
       return null;
     }
   }

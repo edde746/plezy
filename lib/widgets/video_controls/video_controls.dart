@@ -792,6 +792,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   Future<void> _loadPlaybackExtras() async {
+    // Live TV metadata uses EPG rating keys, not library items
+    if (widget.isLive) return;
+
     try {
       appLogger.d('_loadPlaybackExtras: starting for ${widget.metadata.ratingKey}');
       final client = _getClientForMetadata();
@@ -902,6 +905,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       onStartAutoHide: _startHideTimer,
       serverId: widget.metadata.serverId ?? '',
       canControl: widget.canControl,
+      isLive: widget.isLive,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
     );
@@ -1167,7 +1171,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   /// Handle long-press start - activate 2x speed
   void _handleLongPressStart() {
-    if (!widget.canControl) return; // Respect Watch Together permissions
+    if (!widget.canControl || widget.isLive) return;
 
     setState(() {
       _isLongPressing = true;

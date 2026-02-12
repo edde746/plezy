@@ -704,6 +704,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Skip play queue in offline mode (requires server connection)
     if (widget.isOffline) return;
 
+    // Skip play queue for live TV (would interfere with tuner session)
+    if (widget.isLive) return;
+
     // Only create play queues for episodes
     if (!widget.metadata.isEpisode) {
       return;
@@ -839,12 +842,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       try {
         _hasFirstFrame.value = false;
         await player!.requestAudioFocus();
-
-        final client = widget.liveClient ?? _getClientForMetadata(context);
-        final plexHeaders = client.config.headers;
+        await _setLiveStreamOptions();
 
         await player!.open(
-          Media(widget.liveStreamUrl!, headers: plexHeaders),
+          Media(widget.liveStreamUrl!, headers: const {'Accept-Language': 'en'}),
           play: true,
         );
 
@@ -1618,6 +1619,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isSwitchingChannel = false;
 
   /// Switch to an adjacent live TV channel (delta: +1 for next, -1 for previous)
+  /// Configure MPV/FFmpeg options for live streaming resilience.
+  /// Enables automatic reconnection on EOF and network errors.
+  Future<void> _setLiveStreamOptions() async {
+    final p = player!;
+    // FFmpeg HTTP protocol reconnection
+    await p.setProperty('stream-lavf-o-append', 'reconnect=1');
+    await p.setProperty('stream-lavf-o-append', 'reconnect_at_eof=1');
+    await p.setProperty('stream-lavf-o-append', 'reconnect_streamed=1');
+    await p.setProperty('stream-lavf-o-append', 'reconnect_on_network_error=1');
+    await p.setProperty('stream-lavf-o-append', 'reconnect_delay_max=30');
+    // Demuxer: retry up to 1000 times on stream reload failures
+    await p.setProperty('demuxer-lavf-o', 'max_reload=1000');
+    // Re-open the stream URL when EOF is reached
+    await p.setProperty('loop-playlist', 'force');
+    await p.setProperty('force-seekable', 'no');
+  }
+
   Future<void> _switchLiveChannel(int delta) async {
     final channels = widget.liveChannels;
     if (channels == null || channels.isEmpty) return;
@@ -1651,8 +1669,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       final streamUrl = '${client.config.baseUrl}${result.streamPath}'.withPlexToken(client.config.token);
 
+      await _setLiveStreamOptions();
       await player!.open(
-        Media(streamUrl, headers: client.config.headers),
+        Media(streamUrl, headers: const {'Accept-Language': 'en'}),
         play: true,
       );
 
