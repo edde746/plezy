@@ -542,7 +542,6 @@
     "tuneFailed": "Kunde inte ställa in kanalen",
     "loading": "Laddar kanaler...",
     "nowPlaying": "Spelas nu",
-    "whatsOnNow": "På TV just nu",
     "record": "Spela in",
     "recordSeries": "Spela in serie",
     "cancelRecording": "Avbryt inspelning",
@@ -566,7 +565,8 @@
     "morning": "Morgon",
     "daytime": "Dagtid",
     "evening": "Kväll",
-    "lateNight": "Sen kväll"
+    "lateNight": "Sen kväll",
+    "whatsOn": "På TV nu"
   },
   "downloads": {
     "title": "Nedladdningar",

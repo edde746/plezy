@@ -542,7 +542,6 @@
     "tuneFailed": "Kan zender niet afstemmen",
     "loading": "Zenders laden...",
     "nowPlaying": "Nu aan het afspelen",
-    "whatsOnNow": "Nu op TV",
     "record": "Opnemen",
     "recordSeries": "Serie opnemen",
     "cancelRecording": "Opname annuleren",
@@ -566,7 +565,8 @@
     "morning": "Ochtend",
     "daytime": "Overdag",
     "evening": "Avond",
-    "lateNight": "Late avond"
+    "lateNight": "Late avond",
+    "whatsOn": "Nu op TV"
   },
   "downloads": {
     "title": "Downloads",

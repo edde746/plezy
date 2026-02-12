@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 
 import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
+import '../models/livetv_hub_result.dart';
 import '../models/livetv_program.dart';
 import '../models/livetv_scheduled_recording.dart';
 import '../models/livetv_subscription.dart';
@@ -2023,6 +2024,9 @@ class PlexClient {
   /// Cached EPG grid endpoint path (discovered from /media/providers)
   String? _epgGridEndpoint;
 
+  /// Cached EPG provider identifier (e.g. "tv.plex.providers.epg.xmltv:21")
+  String? _epgProviderIdentifier;
+
   /// Discover the EPG grid endpoint from media providers
   Future<String?> _getEpgGridEndpoint() async {
     if (_epgGridEndpoint != null) return _epgGridEndpoint;
@@ -2040,13 +2044,15 @@ class PlexClient {
         final protocols = provider['protocols'] as String?;
         if (protocols == null || !protocols.contains('livetv')) continue;
 
+        _epgProviderIdentifier = provider['identifier'] as String?;
+
         final features = provider['Feature'] as List?;
         if (features == null) continue;
         for (final feature in features) {
           if (feature is! Map) continue;
           if (feature['type'] == 'grid') {
             _epgGridEndpoint = feature['key'] as String?;
-            appLogger.d('Discovered EPG grid endpoint: $_epgGridEndpoint');
+            appLogger.d('Discovered EPG grid endpoint: $_epgGridEndpoint (provider: $_epgProviderIdentifier)');
             return _epgGridEndpoint;
           }
         }
@@ -2108,6 +2114,94 @@ class PlexClient {
       },
       'Failed to get EPG grid',
     );
+  }
+
+  /// Get live TV hubs (What's On Now, etc.) from the EPG provider's discover endpoint.
+  /// Returns hubs with both display metadata and EPG timing/channel data per item.
+  Future<List<LiveTvHubResult>> getLiveTvHubs({int count = 12}) async {
+    await _getEpgGridEndpoint();
+    if (_epgProviderIdentifier == null) return [];
+
+    try {
+      final response = await _dio.get(
+        '/$_epgProviderIdentifier/hubs/discover',
+        queryParameters: {
+          'count': count,
+          'includeStations': 1,
+          'includeRecentChannels': 1,
+          'includeMeta': 1,
+          'includeExternalMetadata': 1,
+        },
+      );
+
+      final container = _getMediaContainer(response);
+      if (container != null && container['Hub'] != null) {
+        final hubs = <LiveTvHubResult>[];
+        for (final hubJson in container['Hub'] as List) {
+          try {
+            final metadataList = hubJson['Metadata'] as List?;
+            if (metadataList == null || metadataList.isEmpty) continue;
+
+            final entries = <LiveTvHubEntry>[];
+            for (final itemJson in metadataList) {
+              if (itemJson is! Map<String, dynamic>) continue;
+
+              // Extract poster/art from Image array before parsing
+              _extractLiveTvImages(itemJson);
+
+              try {
+                final metadata = PlexMetadata.fromJson(itemJson)
+                    .copyWith(serverId: serverId, serverName: serverName);
+                final program = LiveTvProgram.fromJson(itemJson);
+                entries.add(LiveTvHubEntry(metadata: metadata, program: program));
+              } catch (_) {}
+            }
+
+            if (entries.isNotEmpty) {
+              hubs.add(LiveTvHubResult(
+                title: hubJson['title'] as String? ?? 'Unknown',
+                hubKey: hubJson['key'] as String? ?? '',
+                entries: entries,
+              ));
+            }
+          } catch (e) {
+            appLogger.w('Failed to parse live TV hub', error: e);
+          }
+        }
+        return hubs;
+      }
+    } catch (e) {
+      appLogger.e('Failed to get live TV hubs', error: e);
+    }
+    return [];
+  }
+
+  /// Extract poster/art URLs from the Image array in EPG metadata items.
+  /// EPG items often have images only in the Image array (coverPoster, coverArt, etc.)
+  /// rather than in the standard thumb/art fields.
+  void _extractLiveTvImages(Map item) {
+    final images = item['Image'] as List?;
+    if (images == null) return;
+
+    for (final img in images) {
+      if (img is! Map) continue;
+      final type = img['type'] as String?;
+      final url = img['url'] as String?;
+      if (url == null) continue;
+
+      switch (type) {
+        case 'coverPoster':
+          // Always prefer coverPoster as thumb for poster display
+          item['thumb'] = url;
+          break;
+        case 'coverArt':
+          item['art'] ??= url;
+          break;
+        case 'background':
+          item['art'] ??= url;
+          break;
+      }
+    }
   }
 
   /// Generate 24-char random alphanumeric string (matching official client format)

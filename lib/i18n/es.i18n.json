@@ -542,7 +542,6 @@
     "tuneFailed": "Error al sintonizar el canal",
     "loading": "Cargando canales...",
     "nowPlaying": "Reproduciendo ahora",
-    "whatsOnNow": "En emisión ahora",
     "record": "Grabar",
     "recordSeries": "Grabar serie",
     "cancelRecording": "Cancelar grabación",
@@ -566,7 +565,8 @@
     "morning": "Mañana",
     "daytime": "Día",
     "evening": "Noche",
-    "lateNight": "Trasnoche"
+    "lateNight": "Trasnoche",
+    "whatsOn": "En emisión"
   },
   "collections": {
     "title": "Colecciones",

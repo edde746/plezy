@@ -783,7 +783,6 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get tuneFailed => 'Kunde inte ställa in kanalen';
 	@override String get loading => 'Laddar kanaler...';
 	@override String get nowPlaying => 'Spelas nu';
-	@override String get whatsOnNow => 'På TV just nu';
 	@override String get record => 'Spela in';
 	@override String get recordSeries => 'Spela in serie';
 	@override String get cancelRecording => 'Avbryt inspelning';
@@ -800,6 +799,15 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get reloadGuide => 'Ladda om programguide';
 	@override String get guideReloaded => 'Programdata omladdad';
 	@override String get allChannels => 'Alla kanaler';
+	@override String get now => 'Nu';
+	@override String get today => 'Idag';
+	@override String get midnight => 'Midnatt';
+	@override String get overnight => 'Natt';
+	@override String get morning => 'Morgon';
+	@override String get daytime => 'Dagtid';
+	@override String get evening => 'Kväll';
+	@override String get lateNight => 'Sen kväll';
+	@override String get whatsOn => 'På TV nu';
 }
 
 // Path: downloads
@@ -1685,7 +1693,6 @@ extension on TranslationsSv {
 			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
 			'liveTv.loading' => 'Laddar kanaler...',
 			'liveTv.nowPlaying' => 'Spelas nu',
-			'liveTv.whatsOnNow' => 'På TV just nu',
 			'liveTv.record' => 'Spela in',
 			'liveTv.recordSeries' => 'Spela in serie',
 			'liveTv.cancelRecording' => 'Avbryt inspelning',
@@ -1702,6 +1709,15 @@ extension on TranslationsSv {
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.guideReloaded' => 'Programdata omladdad',
 			'liveTv.allChannels' => 'Alla kanaler',
+			'liveTv.now' => 'Nu',
+			'liveTv.today' => 'Idag',
+			'liveTv.midnight' => 'Midnatt',
+			'liveTv.overnight' => 'Natt',
+			'liveTv.morning' => 'Morgon',
+			'liveTv.daytime' => 'Dagtid',
+			'liveTv.evening' => 'Kväll',
+			'liveTv.lateNight' => 'Sen kväll',
+			'liveTv.whatsOn' => 'På TV nu',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
@@ -1711,6 +1727,8 @@ extension on TranslationsSv {
 			'downloads.downloadNow' => 'Ladda ner',
 			'downloads.deleteDownload' => 'Ta bort nedladdning',
 			'downloads.retryDownload' => 'Försök igen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadQueued' => 'Nedladdning köad',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',
@@ -1719,8 +1737,6 @@ extension on TranslationsSv {
 			'downloads.noDownloadsTree' => 'Inga nedladdningar',
 			'downloads.pauseAll' => 'Pausa alla',
 			'downloads.resumeAll' => 'Återuppta alla',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteAll' => 'Ta bort alla',
 			'playlists.title' => 'Spellistor',
 			'playlists.noPlaylists' => 'Inga spellistor hittades',

@@ -542,7 +542,6 @@
     "tuneFailed": "Impossible de syntoniser la chaîne",
     "loading": "Chargement des chaînes...",
     "nowPlaying": "En cours de lecture",
-    "whatsOnNow": "En ce moment",
     "record": "Enregistrer",
     "recordSeries": "Enregistrer la série",
     "cancelRecording": "Annuler l'enregistrement",
@@ -566,7 +565,8 @@
     "morning": "Matin",
     "daytime": "Journée",
     "evening": "Soirée",
-    "lateNight": "Nuit tardive"
+    "lateNight": "Nuit tardive",
+    "whatsOn": "En ce moment"
   },
   "collections": {
     "title": "Collections",

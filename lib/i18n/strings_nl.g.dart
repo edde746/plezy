@@ -783,7 +783,6 @@ class _TranslationsLiveTvNl implements TranslationsLiveTvEn {
 	@override String get tuneFailed => 'Kan zender niet afstemmen';
 	@override String get loading => 'Zenders laden...';
 	@override String get nowPlaying => 'Nu aan het afspelen';
-	@override String get whatsOnNow => 'Nu op TV';
 	@override String get record => 'Opnemen';
 	@override String get recordSeries => 'Serie opnemen';
 	@override String get cancelRecording => 'Opname annuleren';
@@ -800,6 +799,15 @@ class _TranslationsLiveTvNl implements TranslationsLiveTvEn {
 	@override String get reloadGuide => 'Gids herladen';
 	@override String get guideReloaded => 'Gidsgegevens herladen';
 	@override String get allChannels => 'Alle zenders';
+	@override String get now => 'Nu';
+	@override String get today => 'Vandaag';
+	@override String get midnight => 'Middernacht';
+	@override String get overnight => 'Nacht';
+	@override String get morning => 'Ochtend';
+	@override String get daytime => 'Overdag';
+	@override String get evening => 'Avond';
+	@override String get lateNight => 'Late avond';
+	@override String get whatsOn => 'Nu op TV';
 }
 
 // Path: downloads
@@ -1685,7 +1693,6 @@ extension on TranslationsNl {
 			'liveTv.tuneFailed' => 'Kan zender niet afstemmen',
 			'liveTv.loading' => 'Zenders laden...',
 			'liveTv.nowPlaying' => 'Nu aan het afspelen',
-			'liveTv.whatsOnNow' => 'Nu op TV',
 			'liveTv.record' => 'Opnemen',
 			'liveTv.recordSeries' => 'Serie opnemen',
 			'liveTv.cancelRecording' => 'Opname annuleren',
@@ -1702,6 +1709,15 @@ extension on TranslationsNl {
 			'liveTv.reloadGuide' => 'Gids herladen',
 			'liveTv.guideReloaded' => 'Gidsgegevens herladen',
 			'liveTv.allChannels' => 'Alle zenders',
+			'liveTv.now' => 'Nu',
+			'liveTv.today' => 'Vandaag',
+			'liveTv.midnight' => 'Middernacht',
+			'liveTv.overnight' => 'Nacht',
+			'liveTv.morning' => 'Ochtend',
+			'liveTv.daytime' => 'Overdag',
+			'liveTv.evening' => 'Avond',
+			'liveTv.lateNight' => 'Late avond',
+			'liveTv.whatsOn' => 'Nu op TV',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
@@ -1711,6 +1727,8 @@ extension on TranslationsNl {
 			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Download verwijderen',
 			'downloads.retryDownload' => 'Download opnieuw proberen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadQueued' => 'Download in wachtrij',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',
@@ -1719,8 +1737,6 @@ extension on TranslationsNl {
 			'downloads.noDownloadsTree' => 'Geen downloads',
 			'downloads.pauseAll' => 'Alles pauzeren',
 			'downloads.resumeAll' => 'Alles hervatten',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteAll' => 'Alles verwijderen',
 			'playlists.title' => 'Afspeellijsten',
 			'playlists.noPlaylists' => 'Geen afspeellijsten gevonden',

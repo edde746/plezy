@@ -783,7 +783,6 @@ class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
 	@override String get tuneFailed => '채널 튜닝에 실패했습니다';
 	@override String get loading => '채널 로딩 중...';
 	@override String get nowPlaying => '현재 재생 중';
-	@override String get whatsOnNow => '지금 방송 중';
 	@override String get record => '녹화';
 	@override String get recordSeries => '시리즈 녹화';
 	@override String get cancelRecording => '녹화 취소';
@@ -800,6 +799,15 @@ class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
 	@override String get reloadGuide => '편성표 새로고침';
 	@override String get guideReloaded => '편성표 데이터가 새로고침되었습니다';
 	@override String get allChannels => '전체 채널';
+	@override String get now => '지금';
+	@override String get today => '오늘';
+	@override String get midnight => '자정';
+	@override String get overnight => '심야';
+	@override String get morning => '아침';
+	@override String get daytime => '낮';
+	@override String get evening => '저녁';
+	@override String get lateNight => '심야 방송';
+	@override String get whatsOn => '지금 방송 중';
 }
 
 // Path: collections
@@ -1685,7 +1693,6 @@ extension on TranslationsKo {
 			'liveTv.tuneFailed' => '채널 튜닝에 실패했습니다',
 			'liveTv.loading' => '채널 로딩 중...',
 			'liveTv.nowPlaying' => '현재 재생 중',
-			'liveTv.whatsOnNow' => '지금 방송 중',
 			'liveTv.record' => '녹화',
 			'liveTv.recordSeries' => '시리즈 녹화',
 			'liveTv.cancelRecording' => '녹화 취소',
@@ -1702,6 +1709,15 @@ extension on TranslationsKo {
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.guideReloaded' => '편성표 데이터가 새로고침되었습니다',
 			'liveTv.allChannels' => '전체 채널',
+			'liveTv.now' => '지금',
+			'liveTv.today' => '오늘',
+			'liveTv.midnight' => '자정',
+			'liveTv.overnight' => '심야',
+			'liveTv.morning' => '아침',
+			'liveTv.daytime' => '낮',
+			'liveTv.evening' => '저녁',
+			'liveTv.lateNight' => '심야 방송',
+			'liveTv.whatsOn' => '지금 방송 중',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',
@@ -1711,6 +1727,8 @@ extension on TranslationsKo {
 			'collections.deleted' => '컬렉션 삭제됨',
 			'collections.deleteFailed' => '컬렉션 삭제 실패',
 			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'collections.failedToLoadItems' => ({required Object error}) => '컬렉션 항목 로드 실패: ${error}',
 			'collections.selectCollection' => '컬렉션 선택',
 			'collections.createNewCollection' => '새 컬렉션 생성',
@@ -1719,8 +1737,6 @@ extension on TranslationsKo {
 			'collections.addedToCollection' => '컬렉션에 추가됨',
 			'collections.errorAddingToCollection' => '컬렉션에 추가 실패',
 			'collections.created' => '컬렉션 생성됨',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removeFromCollection' => '컬렉션에서 제거',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '${title}을/를 이 컬렉션에서 제거 하시겠습니까?',
 			'collections.removedFromCollection' => '컬렉션에서 제거됨',

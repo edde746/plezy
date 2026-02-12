@@ -783,7 +783,6 @@ class _TranslationsLiveTvDe implements TranslationsLiveTvEn {
 	@override String get tuneFailed => 'Kanal konnte nicht eingestellt werden';
 	@override String get loading => 'Kanäle werden geladen...';
 	@override String get nowPlaying => 'Läuft gerade';
-	@override String get whatsOnNow => 'Jetzt im TV';
 	@override String get record => 'Aufnehmen';
 	@override String get recordSeries => 'Serie aufnehmen';
 	@override String get cancelRecording => 'Aufnahme abbrechen';
@@ -800,6 +799,15 @@ class _TranslationsLiveTvDe implements TranslationsLiveTvEn {
 	@override String get reloadGuide => 'Programmführer neu laden';
 	@override String get guideReloaded => 'Programmdaten neu geladen';
 	@override String get allChannels => 'Alle Kanäle';
+	@override String get now => 'Jetzt';
+	@override String get today => 'Heute';
+	@override String get midnight => 'Mitternacht';
+	@override String get overnight => 'Nacht';
+	@override String get morning => 'Morgen';
+	@override String get daytime => 'Tagsüber';
+	@override String get evening => 'Abend';
+	@override String get lateNight => 'Spätnacht';
+	@override String get whatsOn => 'Jetzt im TV';
 }
 
 // Path: downloads
@@ -1685,7 +1693,6 @@ extension on TranslationsDe {
 			'liveTv.tuneFailed' => 'Kanal konnte nicht eingestellt werden',
 			'liveTv.loading' => 'Kanäle werden geladen...',
 			'liveTv.nowPlaying' => 'Läuft gerade',
-			'liveTv.whatsOnNow' => 'Jetzt im TV',
 			'liveTv.record' => 'Aufnehmen',
 			'liveTv.recordSeries' => 'Serie aufnehmen',
 			'liveTv.cancelRecording' => 'Aufnahme abbrechen',
@@ -1702,6 +1709,15 @@ extension on TranslationsDe {
 			'liveTv.reloadGuide' => 'Programmführer neu laden',
 			'liveTv.guideReloaded' => 'Programmdaten neu geladen',
 			'liveTv.allChannels' => 'Alle Kanäle',
+			'liveTv.now' => 'Jetzt',
+			'liveTv.today' => 'Heute',
+			'liveTv.midnight' => 'Mitternacht',
+			'liveTv.overnight' => 'Nacht',
+			'liveTv.morning' => 'Morgen',
+			'liveTv.daytime' => 'Tagsüber',
+			'liveTv.evening' => 'Abend',
+			'liveTv.lateNight' => 'Spätnacht',
+			'liveTv.whatsOn' => 'Jetzt im TV',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
@@ -1711,6 +1727,8 @@ extension on TranslationsDe {
 			'downloads.downloadNow' => 'Herunterladen',
 			'downloads.deleteDownload' => 'Download löschen',
 			'downloads.retryDownload' => 'Download wiederholen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadQueued' => 'Download in Warteschlange',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
 			'downloads.downloadDeleted' => 'Download gelöscht',
@@ -1719,8 +1737,6 @@ extension on TranslationsDe {
 			'downloads.noDownloadsTree' => 'Keine Downloads',
 			'downloads.pauseAll' => 'Alle pausieren',
 			'downloads.resumeAll' => 'Alle fortsetzen',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteAll' => 'Alle löschen',
 			'playlists.title' => 'Wiedergabelisten',
 			'playlists.noPlaylists' => 'Keine Wiedergabelisten gefunden',

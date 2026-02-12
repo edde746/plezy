@@ -542,7 +542,6 @@
     "tuneFailed": "Impossibile sintonizzare il canale",
     "loading": "Caricamento canali...",
     "nowPlaying": "In riproduzione",
-    "whatsOnNow": "In onda adesso",
     "record": "Registra",
     "recordSeries": "Registra serie",
     "cancelRecording": "Annulla registrazione",
@@ -566,7 +565,8 @@
     "morning": "Mattina",
     "daytime": "Giorno",
     "evening": "Sera",
-    "lateNight": "Notte tarda"
+    "lateNight": "Notte tarda",
+    "whatsOn": "In onda ora"
   },
   "downloads": {
     "title": "Download",

@@ -1678,9 +1678,6 @@ class TranslationsLiveTvEn {
 	/// en: 'Now Playing'
 	String get nowPlaying => 'Now Playing';
 
-	/// en: 'What's On Now'
-	String get whatsOnNow => 'What\'s On Now';
-
 	/// en: 'Record'
 	String get record => 'Record';
 
@@ -1752,6 +1749,9 @@ class TranslationsLiveTvEn {
 
 	/// en: 'Late Night'
 	String get lateNight => 'Late Night';
+
+	/// en: 'What's On'
+	String get whatsOn => 'What\'s On';
 }
 
 // Path: collections
@@ -3156,7 +3156,6 @@ extension on Translations {
 			'liveTv.tuneFailed' => 'Failed to tune channel',
 			'liveTv.loading' => 'Loading channels...',
 			'liveTv.nowPlaying' => 'Now Playing',
-			'liveTv.whatsOnNow' => 'What\'s On Now',
 			'liveTv.record' => 'Record',
 			'liveTv.recordSeries' => 'Record Series',
 			'liveTv.cancelRecording' => 'Cancel Recording',
@@ -3181,6 +3180,7 @@ extension on Translations {
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
+			'liveTv.whatsOn' => 'What\'s On',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',

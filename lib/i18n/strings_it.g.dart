@@ -783,7 +783,6 @@ class _TranslationsLiveTvIt implements TranslationsLiveTvEn {
 	@override String get tuneFailed => 'Impossibile sintonizzare il canale';
 	@override String get loading => 'Caricamento canali...';
 	@override String get nowPlaying => 'In riproduzione';
-	@override String get whatsOnNow => 'In onda adesso';
 	@override String get record => 'Registra';
 	@override String get recordSeries => 'Registra serie';
 	@override String get cancelRecording => 'Annulla registrazione';
@@ -800,6 +799,15 @@ class _TranslationsLiveTvIt implements TranslationsLiveTvEn {
 	@override String get reloadGuide => 'Ricarica guida';
 	@override String get guideReloaded => 'Dati della guida ricaricati';
 	@override String get allChannels => 'Tutti i canali';
+	@override String get now => 'Ora';
+	@override String get today => 'Oggi';
+	@override String get midnight => 'Mezzanotte';
+	@override String get overnight => 'Notte';
+	@override String get morning => 'Mattina';
+	@override String get daytime => 'Giorno';
+	@override String get evening => 'Sera';
+	@override String get lateNight => 'Notte tarda';
+	@override String get whatsOn => 'In onda ora';
 }
 
 // Path: downloads
@@ -1685,7 +1693,6 @@ extension on TranslationsIt {
 			'liveTv.tuneFailed' => 'Impossibile sintonizzare il canale',
 			'liveTv.loading' => 'Caricamento canali...',
 			'liveTv.nowPlaying' => 'In riproduzione',
-			'liveTv.whatsOnNow' => 'In onda adesso',
 			'liveTv.record' => 'Registra',
 			'liveTv.recordSeries' => 'Registra serie',
 			'liveTv.cancelRecording' => 'Annulla registrazione',
@@ -1702,6 +1709,15 @@ extension on TranslationsIt {
 			'liveTv.reloadGuide' => 'Ricarica guida',
 			'liveTv.guideReloaded' => 'Dati della guida ricaricati',
 			'liveTv.allChannels' => 'Tutti i canali',
+			'liveTv.now' => 'Ora',
+			'liveTv.today' => 'Oggi',
+			'liveTv.midnight' => 'Mezzanotte',
+			'liveTv.overnight' => 'Notte',
+			'liveTv.morning' => 'Mattina',
+			'liveTv.daytime' => 'Giorno',
+			'liveTv.evening' => 'Sera',
+			'liveTv.lateNight' => 'Notte tarda',
+			'liveTv.whatsOn' => 'In onda ora',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',
@@ -1711,6 +1727,8 @@ extension on TranslationsIt {
 			'downloads.downloadNow' => 'Scarica',
 			'downloads.deleteDownload' => 'Elimina download',
 			'downloads.retryDownload' => 'Riprova download',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadQueued' => 'Download in coda',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodi in coda per il download',
 			'downloads.downloadDeleted' => 'Download eliminato',
@@ -1719,8 +1737,6 @@ extension on TranslationsIt {
 			'downloads.noDownloadsTree' => 'Nessun download',
 			'downloads.pauseAll' => 'Metti tutto in pausa',
 			'downloads.resumeAll' => 'Riprendi tutto',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteAll' => 'Elimina tutto',
 			'playlists.title' => 'Playlist',
 			'playlists.noPlaylists' => 'Nessuna playlist trovata',

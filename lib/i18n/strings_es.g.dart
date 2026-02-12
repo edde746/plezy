@@ -783,7 +783,6 @@ class _TranslationsLiveTvEs implements TranslationsLiveTvEn {
 	@override String get tuneFailed => 'Error al sintonizar el canal';
 	@override String get loading => 'Cargando canales...';
 	@override String get nowPlaying => 'Reproduciendo ahora';
-	@override String get whatsOnNow => 'En emisión ahora';
 	@override String get record => 'Grabar';
 	@override String get recordSeries => 'Grabar serie';
 	@override String get cancelRecording => 'Cancelar grabación';
@@ -800,6 +799,15 @@ class _TranslationsLiveTvEs implements TranslationsLiveTvEn {
 	@override String get reloadGuide => 'Recargar guía';
 	@override String get guideReloaded => 'Datos de la guía recargados';
 	@override String get allChannels => 'Todos los canales';
+	@override String get now => 'Ahora';
+	@override String get today => 'Hoy';
+	@override String get midnight => 'Medianoche';
+	@override String get overnight => 'Madrugada';
+	@override String get morning => 'Mañana';
+	@override String get daytime => 'Día';
+	@override String get evening => 'Noche';
+	@override String get lateNight => 'Trasnoche';
+	@override String get whatsOn => 'En emisión';
 }
 
 // Path: collections
@@ -1685,7 +1693,6 @@ extension on TranslationsEs {
 			'liveTv.tuneFailed' => 'Error al sintonizar el canal',
 			'liveTv.loading' => 'Cargando canales...',
 			'liveTv.nowPlaying' => 'Reproduciendo ahora',
-			'liveTv.whatsOnNow' => 'En emisión ahora',
 			'liveTv.record' => 'Grabar',
 			'liveTv.recordSeries' => 'Grabar serie',
 			'liveTv.cancelRecording' => 'Cancelar grabación',
@@ -1702,6 +1709,15 @@ extension on TranslationsEs {
 			'liveTv.reloadGuide' => 'Recargar guía',
 			'liveTv.guideReloaded' => 'Datos de la guía recargados',
 			'liveTv.allChannels' => 'Todos los canales',
+			'liveTv.now' => 'Ahora',
+			'liveTv.today' => 'Hoy',
+			'liveTv.midnight' => 'Medianoche',
+			'liveTv.overnight' => 'Madrugada',
+			'liveTv.morning' => 'Mañana',
+			'liveTv.daytime' => 'Día',
+			'liveTv.evening' => 'Noche',
+			'liveTv.lateNight' => 'Trasnoche',
+			'liveTv.whatsOn' => 'En emisión',
 			'collections.title' => 'Colecciones',
 			'collections.collection' => 'Colección',
 			'collections.empty' => 'La colección está vacía',
@@ -1711,6 +1727,8 @@ extension on TranslationsEs {
 			'collections.deleted' => 'Colección eliminada',
 			'collections.deleteFailed' => 'Error al eliminar la colección',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Error al eliminar la colección: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Error al cargar los elementos de la colección: ${error}',
 			'collections.selectCollection' => 'Seleccionar Colección',
 			'collections.createNewCollection' => 'Crear Nueva Colección',
@@ -1719,8 +1737,6 @@ extension on TranslationsEs {
 			'collections.addedToCollection' => 'Añadido a la colección',
 			'collections.errorAddingToCollection' => 'Error al añadir a la colección',
 			'collections.created' => 'Colección creada',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removeFromCollection' => 'Eliminar de la colección',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '¿Eliminar "${title}" de esta colección?',
 			'collections.removedFromCollection' => 'Eliminado de la colección',

@@ -783,7 +783,6 @@ class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
 	@override String get tuneFailed => '无法调谐频道';
 	@override String get loading => '正在加载频道...';
 	@override String get nowPlaying => '正在播放';
-	@override String get whatsOnNow => '正在播出';
 	@override String get record => '录制';
 	@override String get recordSeries => '录制系列';
 	@override String get cancelRecording => '取消录制';
@@ -800,6 +799,15 @@ class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
 	@override String get reloadGuide => '重新加载节目指南';
 	@override String get guideReloaded => '节目指南已重新加载';
 	@override String get allChannels => '所有频道';
+	@override String get now => '现在';
+	@override String get today => '今天';
+	@override String get midnight => '午夜';
+	@override String get overnight => '凌晨';
+	@override String get morning => '上午';
+	@override String get daytime => '白天';
+	@override String get evening => '晚上';
+	@override String get lateNight => '深夜';
+	@override String get whatsOn => '正在播出';
 }
 
 // Path: downloads
@@ -1685,7 +1693,6 @@ extension on TranslationsZh {
 			'liveTv.tuneFailed' => '无法调谐频道',
 			'liveTv.loading' => '正在加载频道...',
 			'liveTv.nowPlaying' => '正在播放',
-			'liveTv.whatsOnNow' => '正在播出',
 			'liveTv.record' => '录制',
 			'liveTv.recordSeries' => '录制系列',
 			'liveTv.cancelRecording' => '取消录制',
@@ -1702,6 +1709,15 @@ extension on TranslationsZh {
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.guideReloaded' => '节目指南已重新加载',
 			'liveTv.allChannels' => '所有频道',
+			'liveTv.now' => '现在',
+			'liveTv.today' => '今天',
+			'liveTv.midnight' => '午夜',
+			'liveTv.overnight' => '凌晨',
+			'liveTv.morning' => '上午',
+			'liveTv.daytime' => '白天',
+			'liveTv.evening' => '晚上',
+			'liveTv.lateNight' => '深夜',
+			'liveTv.whatsOn' => '正在播出',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
@@ -1711,6 +1727,8 @@ extension on TranslationsZh {
 			'downloads.downloadNow' => '下载',
 			'downloads.deleteDownload' => '删除下载',
 			'downloads.retryDownload' => '重试下载',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadQueued' => '下载已排队',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',
@@ -1719,8 +1737,6 @@ extension on TranslationsZh {
 			'downloads.noDownloadsTree' => '暂无下载',
 			'downloads.pauseAll' => '全部暂停',
 			'downloads.resumeAll' => '全部继续',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.deleteAll' => '全部删除',
 			'playlists.title' => '播放列表',
 			'playlists.noPlaylists' => '未找到播放列表',

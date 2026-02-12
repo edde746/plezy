@@ -542,7 +542,6 @@
     "tuneFailed": "Failed to tune channel",
     "loading": "Loading channels...",
     "nowPlaying": "Now Playing",
-    "whatsOnNow": "What's On Now",
     "record": "Record",
     "recordSeries": "Record Series",
     "cancelRecording": "Cancel Recording",
@@ -566,7 +565,8 @@
     "morning": "Morning",
     "daytime": "Daytime",
     "evening": "Evening",
-    "lateNight": "Late Night"
+    "lateNight": "Late Night",
+    "whatsOn": "What's On"
   },
   "collections": {
     "title": "Collections",

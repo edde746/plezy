@@ -542,7 +542,6 @@
     "tuneFailed": "无法调谐频道",
     "loading": "正在加载频道...",
     "nowPlaying": "正在播放",
-    "whatsOnNow": "正在播出",
     "record": "录制",
     "recordSeries": "录制系列",
     "cancelRecording": "取消录制",
@@ -566,7 +565,8 @@
     "morning": "上午",
     "daytime": "白天",
     "evening": "晚上",
-    "lateNight": "深夜"
+    "lateNight": "深夜",
+    "whatsOn": "正在播出"
   },
   "downloads": {
     "title": "下载",

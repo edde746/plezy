@@ -542,7 +542,6 @@
     "tuneFailed": "채널 튜닝에 실패했습니다",
     "loading": "채널 로딩 중...",
     "nowPlaying": "현재 재생 중",
-    "whatsOnNow": "지금 방송 중",
     "record": "녹화",
     "recordSeries": "시리즈 녹화",
     "cancelRecording": "녹화 취소",
@@ -566,7 +565,8 @@
     "morning": "아침",
     "daytime": "낮",
     "evening": "저녁",
-    "lateNight": "심야 방송"
+    "lateNight": "심야 방송",
+    "whatsOn": "지금 방송 중"
   },
   "collections": {
     "title": "컬렉션",

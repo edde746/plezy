@@ -542,7 +542,6 @@
     "tuneFailed": "Kanal konnte nicht eingestellt werden",
     "loading": "Kanäle werden geladen...",
     "nowPlaying": "Läuft gerade",
-    "whatsOnNow": "Jetzt im TV",
     "record": "Aufnehmen",
     "recordSeries": "Serie aufnehmen",
     "cancelRecording": "Aufnahme abbrechen",
@@ -566,7 +565,8 @@
     "morning": "Morgen",
     "daytime": "Tagsüber",
     "evening": "Abend",
-    "lateNight": "Spätnacht"
+    "lateNight": "Spätnacht",
+    "whatsOn": "Jetzt im TV"
   },
   "downloads": {
     "title": "Downloads",
