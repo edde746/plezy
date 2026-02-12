@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_wrapper.dart';
+import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
 import '../../providers/multi_server_provider.dart';
@@ -9,6 +11,7 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
 import '../../utils/live_tv_player_navigation.dart';
 import '../../utils/plex_image_helper.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'program_details_sheet.dart';
 
@@ -23,12 +26,7 @@ class LiveTvShowScheduleScreen extends StatefulWidget {
   /// Full channel list for tuning.
   final List<LiveTvChannel> channels;
 
-  const LiveTvShowScheduleScreen({
-    super.key,
-    required this.showTitle,
-    required this.serverId,
-    required this.channels,
-  });
+  const LiveTvShowScheduleScreen({super.key, required this.showTitle, required this.serverId, required this.channels});
 
   @override
   State<LiveTvShowScheduleScreen> createState() => _LiveTvShowScheduleScreenState();
@@ -86,9 +84,8 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
 
   Future<void> _tuneChannel(LiveTvChannel channel) async {
     final multiServer = context.read<MultiServerProvider>();
-    final serverInfo = multiServer.liveTvServers
-            .where((s) => s.serverId == channel.serverId)
-            .firstOrNull ??
+    final serverInfo =
+        multiServer.liveTvServers.where((s) => s.serverId == channel.serverId).firstOrNull ??
         multiServer.liveTvServers.firstOrNull;
     if (serverInfo == null) return;
 
@@ -139,24 +136,27 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
           SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
         else
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final program = _programs[index];
-                final channel = _findChannel(program.channelIdentifier);
-                return _ScheduleListTile(
-                  program: program,
-                  channel: channel,
-                  onTap: () {
-                    if (program.isCurrentlyAiring && channel != null) {
-                      _tuneChannel(channel);
-                    } else {
-                      _showProgramDetails(program, channel);
-                    }
-                  },
-                );
-              },
-              childCount: _programs.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final program = _programs[index];
+              final channel = _findChannel(program.channelIdentifier);
+              final onTap = () {
+                if (program.isCurrentlyAiring && channel != null) {
+                  _tuneChannel(channel);
+                } else {
+                  _showProgramDetails(program, channel);
+                }
+              };
+              return FocusableWrapper(
+                autofocus: index == 0,
+                autoScroll: true,
+                useComfortableZone: true,
+                useBackgroundFocus: true,
+                disableScale: true,
+                onSelect: onTap,
+                onBack: () => Navigator.pop(context),
+                child: _ScheduleListTile(program: program, channel: channel, onTap: onTap),
+              );
+            }, childCount: _programs.length),
           ),
       ],
     );
@@ -168,11 +168,7 @@ class _ScheduleListTile extends StatelessWidget {
   final LiveTvChannel? channel;
   final VoidCallback onTap;
 
-  const _ScheduleListTile({
-    required this.program,
-    required this.channel,
-    required this.onTap,
-  });
+  const _ScheduleListTile({required this.program, required this.channel, required this.onTap});
 
   String _formatTimeInfo() {
     final now = DateTime.now();
@@ -228,14 +224,13 @@ class _ScheduleListTile extends StatelessWidget {
     ].join(' — ');
 
     return InkWell(
+      canRequestFocus: false,
       onTap: onTap,
       child: Container(
         decoration: isLive
             ? BoxDecoration(
                 color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                border: Border(
-                  left: BorderSide(color: theme.colorScheme.primary, width: 3),
-                ),
+                border: Border(left: BorderSide(color: theme.colorScheme.primary, width: 3)),
               )
             : null,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -247,17 +242,14 @@ class _ScheduleListTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     titleText,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (isLive) ...[
                   const SizedBox(width: 8),
-                  AppIcon(Symbols.play_circle_rounded,
-                      size: 20, color: theme.colorScheme.primary),
+                  AppIcon(Symbols.play_circle_rounded, size: 20, color: theme.colorScheme.primary),
                 ],
               ],
             ),
@@ -265,21 +257,14 @@ class _ScheduleListTile extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: tokens(context).textMuted,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
             if (channel != null) ...[
               const SizedBox(height: 2),
-              Text(
-                channel!.displayName,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: tokens(context).textMuted,
-                ),
-              ),
+              Text(channel!.displayName, style: theme.textTheme.labelSmall?.copyWith(color: tokens(context).textMuted)),
             ],
           ],
         ),

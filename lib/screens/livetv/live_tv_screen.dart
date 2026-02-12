@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/dpad_navigator.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
 import '../../mixins/tab_navigation_mixin.dart';
@@ -21,10 +23,17 @@ class LiveTvScreen extends StatefulWidget {
   State<LiveTvScreen> createState() => _LiveTvScreenState();
 }
 
-class _LiveTvScreenState extends State<LiveTvScreen>
-    with SingleTickerProviderStateMixin, TabNavigationMixin {
+class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderStateMixin, TabNavigationMixin {
   final _guideTabFocusNode = FocusNode(debugLabel: 'tab_chip_guide');
   final _whatsOnTabFocusNode = FocusNode(debugLabel: 'tab_chip_whats_on');
+  final _guideTabKey = GlobalKey<GuideTabState>();
+  final _whatsOnTabKey = GlobalKey<WhatsOnTabState>();
+
+  // App bar action button focus
+  final _refreshButtonFocusNode = FocusNode(debugLabel: 'RefreshButton');
+  final _dvrButtonFocusNode = FocusNode(debugLabel: 'DvrButton');
+  bool _isRefreshFocused = false;
+  bool _isDvrFocused = false;
 
   List<LiveTvChannel> _channels = [];
   bool _isLoading = true;
@@ -38,6 +47,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     super.initState();
     suppressAutoFocus = true;
     initTabNavigation();
+    _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
+    _dvrButtonFocusNode.addListener(_onDvrFocusChange);
     _loadChannels();
   }
 
@@ -45,8 +56,20 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void dispose() {
     _guideTabFocusNode.dispose();
     _whatsOnTabFocusNode.dispose();
+    _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
+    _refreshButtonFocusNode.dispose();
+    _dvrButtonFocusNode.removeListener(_onDvrFocusChange);
+    _dvrButtonFocusNode.dispose();
     disposeTabNavigation();
     super.dispose();
+  }
+
+  void _onRefreshFocusChange() {
+    if (mounted) setState(() => _isRefreshFocused = _refreshButtonFocusNode.hasFocus);
+  }
+
+  void _onDvrFocusChange() {
+    if (mounted) setState(() => _isDvrFocused = _dvrButtonFocusNode.hasFocus);
   }
 
   @override
@@ -99,6 +122,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         _channels = allChannels;
         _isLoading = false;
       });
+
+      if (allChannels.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _focusCurrentTab();
+        });
+      }
     } catch (e) {
       appLogger.e('Failed to load Live TV channels', error: e);
       if (mounted) {
@@ -111,16 +140,75 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   void _openRecordings() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const DvrRecordingsScreen()),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DvrRecordingsScreen()));
   }
 
   void _focusCurrentTab() {
+    if (tabController.index == 0) {
+      _guideTabKey.currentState?.focusContent();
+    } else if (tabController.index == 1) {
+      _whatsOnTabKey.currentState?.focusFirstHub();
+    }
     setState(() {
       suppressAutoFocus = false;
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Action button key handlers
+  // ---------------------------------------------------------------------------
+
+  KeyEventResult _handleRefreshKeyEvent(FocusNode node, KeyEvent event) {
+    if (!event.isActionable) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    if (key.isLeftKey) {
+      getTabChipFocusNode(tabCount - 1).requestFocus();
+      return KeyEventResult.handled;
+    }
+    if (key.isRightKey) {
+      _dvrButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+    if (key.isDownKey) {
+      _focusCurrentTab();
+      return KeyEventResult.handled;
+    }
+    if (key.isUpKey) {
+      return KeyEventResult.handled;
+    }
+    if (key.isSelectKey) {
+      _loadChannels();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  KeyEventResult _handleDvrKeyEvent(FocusNode node, KeyEvent event) {
+    if (!event.isActionable) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    if (key.isLeftKey) {
+      _refreshButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+    if (key.isRightKey || key.isUpKey) {
+      return KeyEventResult.handled;
+    }
+    if (key.isDownKey) {
+      _focusCurrentTab();
+      return KeyEventResult.handled;
+    }
+    if (key.isSelectKey) {
+      _openRecordings();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tab chips
+  // ---------------------------------------------------------------------------
 
   Widget _buildTabChip(String label, int index) {
     final isSelected = tabController.index == index;
@@ -157,11 +245,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               });
               getTabChipFocusNode(newIndex).requestFocus();
             }
-          : null,
+          : () => _refreshButtonFocusNode.requestFocus(),
       onNavigateDown: _focusCurrentTab,
       onBack: onTabBarBack,
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -180,68 +272,97 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               )
             : Text(t.liveTv.title),
         actions: [
-          IconButton(
-            icon: const AppIcon(Symbols.refresh_rounded),
-            tooltip: t.liveTv.reloadGuide,
-            onPressed: _loadChannels,
+          Focus(
+            focusNode: _refreshButtonFocusNode,
+            onKeyEvent: _handleRefreshKeyEvent,
+            child: Container(
+              decoration: BoxDecoration(
+                color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: IconButton(
+                icon: const AppIcon(Symbols.refresh_rounded),
+                tooltip: t.liveTv.reloadGuide,
+                onPressed: _loadChannels,
+              ),
+            ),
           ),
-          IconButton(
-            icon: const AppIcon(Symbols.fiber_dvr_rounded),
-            tooltip: t.liveTv.recordings,
-            onPressed: _openRecordings,
+          Focus(
+            focusNode: _dvrButtonFocusNode,
+            onKeyEvent: _handleDvrKeyEvent,
+            child: Container(
+              decoration: BoxDecoration(
+                color: _isDvrFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: IconButton(
+                icon: const AppIcon(Symbols.fiber_dvr_rounded),
+                tooltip: t.liveTv.recordings,
+                onPressed: _openRecordings,
+              ),
+            ),
           ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppIcon(Symbols.error_rounded, size: 48, color: theme.colorScheme.error),
+                  const SizedBox(height: 16),
+                  Text(_error!, style: theme.textTheme.bodyLarge),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: _loadChannels,
+                    icon: const AppIcon(Symbols.refresh_rounded),
+                    label: Text(t.common.retry),
+                  ),
+                ],
+              ),
+            )
+          : _channels.isEmpty
+          ? Center(child: Text(t.liveTv.noChannels))
+          : Column(
+              children: [
+                if (!useSideNav)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    alignment: Alignment.centerLeft,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildTabChip(t.liveTv.guide, 0),
+                          const SizedBox(width: 8),
+                          _buildTabChip(t.liveTv.whatsOn, 1),
+                        ],
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: TabBarView(
+                    controller: tabController,
                     children: [
-                      AppIcon(Symbols.error_rounded,
-                          size: 48, color: theme.colorScheme.error),
-                      const SizedBox(height: 16),
-                      Text(_error!, style: theme.textTheme.bodyLarge),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: _loadChannels,
-                        icon: const AppIcon(Symbols.refresh_rounded),
-                        label: Text(t.common.retry),
+                      GuideTab(
+                        key: _guideTabKey,
+                        channels: _channels,
+                        onNavigateUp: focusTabBar,
+                        onBack: onTabBarBack,
+                      ),
+                      WhatsOnTab(
+                        key: _whatsOnTabKey,
+                        channels: _channels,
+                        onNavigateUp: focusTabBar,
+                        onBack: onTabBarBack,
                       ),
                     ],
                   ),
-                )
-              : _channels.isEmpty
-                  ? Center(child: Text(t.liveTv.noChannels))
-                  : Column(
-                      children: [
-                        if (!useSideNav)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            alignment: Alignment.centerLeft,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  _buildTabChip(t.liveTv.guide, 0),
-                                  const SizedBox(width: 8),
-                                  _buildTabChip(t.liveTv.whatsOn, 1),
-                                ],
-                              ),
-                            ),
-                          ),
-                        Expanded(
-                          child: TabBarView(
-                            controller: tabController,
-                            children: [
-                              GuideTab(channels: _channels),
-                              WhatsOnTab(channels: _channels),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
+              ],
+            ),
     );
   }
 }

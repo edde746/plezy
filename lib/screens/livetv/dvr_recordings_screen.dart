@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_wrapper.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_scheduled_recording.dart';
@@ -102,14 +103,8 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
         title: Text(t.liveTv.deleteSubscription),
         content: Text(t.liveTv.deleteSubscriptionConfirm),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(t.common.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(t.common.delete),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(t.common.cancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(t.common.delete)),
         ],
       ),
     );
@@ -117,9 +112,7 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
     if (confirmed != true || !mounted) return;
 
     final multiServer = context.read<MultiServerProvider>();
-    final client = subscription.serverId != null
-        ? multiServer.getClientForServer(subscription.serverId!)
-        : null;
+    final client = subscription.serverId != null ? multiServer.getClientForServer(subscription.serverId!) : null;
 
     if (client != null) {
       final success = await client.deleteSubscription(subscription.key);
@@ -132,9 +125,7 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
 
   Future<void> _editSubscription(LiveTvSubscription subscription) async {
     // Filter to visible settings only
-    final editableSettings = subscription.settings
-        .where((s) => s.hidden != true)
-        .toList();
+    final editableSettings = subscription.settings.where((s) => s.hidden != true).toList();
 
     if (editableSettings.isEmpty) return;
 
@@ -145,19 +136,14 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
 
     final result = await showDialog<Map<String, String>?>(
       context: context,
-      builder: (dialogContext) => _SubscriptionEditDialog(
-        subscription: subscription,
-        settings: editableSettings,
-        initialPrefs: prefs,
-      ),
+      builder: (dialogContext) =>
+          _SubscriptionEditDialog(subscription: subscription, settings: editableSettings, initialPrefs: prefs),
     );
 
     if (result == null || !mounted) return;
 
     final multiServer = context.read<MultiServerProvider>();
-    final client = subscription.serverId != null
-        ? multiServer.getClientForServer(subscription.serverId!)
-        : null;
+    final client = subscription.serverId != null ? multiServer.getClientForServer(subscription.serverId!) : null;
 
     if (client != null) {
       final success = await client.editSubscription(subscription.key, result);
@@ -192,27 +178,24 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
           body: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(_error!, style: theme.textTheme.bodyLarge),
-                          const SizedBox(height: 16),
-                          FilledButton.icon(
-                            onPressed: _loadData,
-                            icon: const AppIcon(Symbols.refresh_rounded),
-                            label: Text(t.common.retry),
-                          ),
-                        ],
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_error!, style: theme.textTheme.bodyLarge),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: _loadData,
+                        icon: const AppIcon(Symbols.refresh_rounded),
+                        label: Text(t.common.retry),
                       ),
-                    )
-                  : TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildSubscriptionsTab(theme),
-                        _buildScheduledTab(theme),
-                      ],
-                    ),
+                    ],
+                  ),
+                )
+              : TabBarView(
+                  controller: _tabController,
+                  children: [_buildSubscriptionsTab(theme), _buildScheduledTab(theme)],
+                ),
         ),
       ),
     );
@@ -228,42 +211,45 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
       itemCount: _subscriptions.length,
       itemBuilder: (context, index) {
         final sub = _subscriptions[index];
-        return _buildSubscriptionCard(sub, theme);
+        return FocusableWrapper(
+          autofocus: index == 0,
+          autoScroll: true,
+          useComfortableZone: true,
+          onSelect: () => _editSubscription(sub),
+          onBack: () => Navigator.pop(context),
+          child: _buildSubscriptionCard(sub, theme),
+        );
       },
     );
   }
 
   Widget _buildSubscriptionCard(LiveTvSubscription subscription, ThemeData theme) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
-        leading: const AppIcon(Symbols.fiber_dvr_rounded, size: 32),
-        title: Text(
-          subscription.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: subscription.type != null
-            ? Text(
-                subscription.type!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+    return ExcludeFocus(
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: ListTile(
+          leading: const AppIcon(Symbols.fiber_dvr_rounded, size: 32),
+          title: Text(subscription.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: subscription.type != null
+              ? Text(
+                  subscription.type!,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                )
+              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (subscription.settings.isNotEmpty)
+                IconButton(
+                  icon: const AppIcon(Symbols.settings_rounded),
+                  onPressed: () => _editSubscription(subscription),
                 ),
-              )
-            : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (subscription.settings.isNotEmpty)
               IconButton(
-                icon: const AppIcon(Symbols.settings_rounded),
-                onPressed: () => _editSubscription(subscription),
+                icon: AppIcon(Symbols.delete_rounded, color: theme.colorScheme.error),
+                onPressed: () => _deleteSubscription(subscription),
               ),
-            IconButton(
-              icon: AppIcon(Symbols.delete_rounded, color: theme.colorScheme.error),
-              onPressed: () => _deleteSubscription(subscription),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -279,7 +265,13 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
       itemCount: _scheduled.length,
       itemBuilder: (context, index) {
         final recording = _scheduled[index];
-        return _buildScheduledCard(recording, theme);
+        return FocusableWrapper(
+          autofocus: index == 0,
+          autoScroll: true,
+          useComfortableZone: true,
+          onBack: () => Navigator.pop(context),
+          child: _buildScheduledCard(recording, theme),
+        );
       },
     );
   }
@@ -290,23 +282,19 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
         ? '${startTime.month}/${startTime.day} ${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}'
         : '';
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
-        leading: const AppIcon(Symbols.fiber_manual_record_rounded, size: 32, color: Colors.red),
-        title: Text(
-          recording.displayTitle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          [
-            if (recording.channelCallSign != null) recording.channelCallSign!,
-            timeStr,
-            if (recording.durationMinutes > 0) formatDurationTextual(recording.durationMinutes * 60000),
-          ].join(' · '),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+    return ExcludeFocus(
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: ListTile(
+          leading: const AppIcon(Symbols.fiber_manual_record_rounded, size: 32, color: Colors.red),
+          title: Text(recording.displayTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Text(
+            [
+              if (recording.channelCallSign != null) recording.channelCallSign!,
+              timeStr,
+              if (recording.durationMinutes > 0) formatDurationTextual(recording.durationMinutes * 60000),
+            ].join(' · '),
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
       ),
@@ -320,11 +308,7 @@ class _SubscriptionEditDialog extends StatefulWidget {
   final List<SubscriptionSetting> settings;
   final Map<String, String> initialPrefs;
 
-  const _SubscriptionEditDialog({
-    required this.subscription,
-    required this.settings,
-    required this.initialPrefs,
-  });
+  const _SubscriptionEditDialog({required this.subscription, required this.settings, required this.initialPrefs});
 
   @override
   State<_SubscriptionEditDialog> createState() => _SubscriptionEditDialogState();
@@ -364,14 +348,8 @@ class _SubscriptionEditDialogState extends State<_SubscriptionEditDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
-          child: Text(t.common.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(_prefs),
-          child: Text(t.common.save),
-        ),
+        TextButton(onPressed: () => Navigator.of(context).pop(null), child: Text(t.common.cancel)),
+        FilledButton(onPressed: () => Navigator.of(context).pop(_prefs), child: Text(t.common.save)),
       ],
     );
   }
@@ -413,10 +391,7 @@ class _SubscriptionEditDialogState extends State<_SubscriptionEditDialog> {
     }
 
     // Default: text field
-    final controller = _textControllers.putIfAbsent(
-      setting.id,
-      () => TextEditingController(text: value),
-    );
+    final controller = _textControllers.putIfAbsent(setting.id, () => TextEditingController(text: value));
     return ListTile(
       title: Text(setting.label ?? setting.id),
       subtitle: TextField(
