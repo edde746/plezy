@@ -182,13 +182,6 @@ class MobileVideoControls extends StatelessWidget {
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
               ),
             ),
-            if (liveChannelName != null) ...[
-              const SizedBox(width: 8),
-              Text(
-                liveChannelName!,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-            ],
           ],
         ),
       );

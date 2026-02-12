@@ -437,7 +437,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                widget.liveChannelName != null ? '${t.liveTv.live} · ${widget.liveChannelName}' : t.liveTv.live,
+                t.liveTv.live,
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
               ),
             ),

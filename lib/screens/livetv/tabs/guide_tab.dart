@@ -11,11 +11,13 @@ import '../../../i18n/strings.g.dart';
 import '../../../models/livetv_channel.dart';
 import '../../../models/livetv_program.dart';
 import '../../../providers/multi_server_provider.dart';
+import '../../../services/plex_client.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/plex_image_helper.dart';
 import '../../../utils/live_tv_player_navigation.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/plex_optimized_image.dart';
 import '../program_details_sheet.dart';
 
 class GuideTab extends StatefulWidget {
@@ -94,6 +96,15 @@ class GuideTabState extends State<GuideTab> {
     _gridHorizontalController.addListener(_syncGridToHeader);
     _headerHorizontalController.addListener(_syncHeaderToGrid);
 
+    _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  void pauseRefresh() => _timeIndicatorTimer?.cancel();
+
+  void resumeRefresh() {
+    _timeIndicatorTimer?.cancel();
     _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -189,18 +200,22 @@ class GuideTabState extends State<GuideTab> {
       final allPrograms = <LiveTvProgram>[];
 
       for (final serverInfo in liveTvServers) {
-        final client = multiServer.getClientForServer(serverInfo.serverId);
-        if (client == null) continue;
+        try {
+          final client = multiServer.getClientForServer(serverInfo.serverId);
+          if (client == null) continue;
 
-        final startEpoch = _gridStart.millisecondsSinceEpoch ~/ 1000;
-        final endEpoch = _gridEnd.millisecondsSinceEpoch ~/ 1000;
+          final startEpoch = _gridStart.millisecondsSinceEpoch ~/ 1000;
+          final endEpoch = _gridEnd.millisecondsSinceEpoch ~/ 1000;
 
-        final programs = await client.getEpgGrid(
-          lineup: serverInfo.lineup,
-          beginsAt: startEpoch,
-          endsAt: endEpoch,
-        );
-        allPrograms.addAll(programs);
+          final programs = await client.getEpgGrid(
+            lineup: serverInfo.lineup,
+            beginsAt: startEpoch,
+            endsAt: endEpoch,
+          );
+          allPrograms.addAll(programs);
+        } catch (e) {
+          appLogger.e('Failed to load programs from server ${serverInfo.serverId}', error: e);
+        }
       }
 
       if (!mounted) return;
@@ -868,24 +883,13 @@ class GuideTabState extends State<GuideTab> {
     final multiServer = context.read<MultiServerProvider>();
     final client = multiServer.getClientForServer(channel.serverId ?? '');
 
-    String? imageUrl;
-    if (channel.thumb != null && client != null) {
-      imageUrl = PlexImageHelper.getOptimizedImageUrl(
-        client: client,
-        thumbPath: channel.thumb,
-        maxWidth: _channelColumnWidth - 16,
-        maxHeight: _rowHeight - 16,
-        devicePixelRatio: PlexImageHelper.effectiveDevicePixelRatio(context),
-        imageType: ImageType.logo,
-      );
-    }
-
     final isFocused = _hasFocus && _focusZone == _GuideZone.grid && _gridColumn == 0 && _gridChannelIndex == index;
 
     return _ChannelCell(
       rowHeight: _rowHeight,
       channelColumnWidth: _channelColumnWidth,
-      imageUrl: imageUrl,
+      channelThumb: channel.thumb,
+      client: client,
       channel: channel,
       theme: theme,
       onTap: () => _tuneChannel(channel),
@@ -1113,7 +1117,8 @@ class GuideTabState extends State<GuideTab> {
 class _ChannelCell extends StatefulWidget {
   final double rowHeight;
   final double channelColumnWidth;
-  final String? imageUrl;
+  final String? channelThumb;
+  final PlexClient? client;
   final LiveTvChannel channel;
   final ThemeData theme;
   final VoidCallback onTap;
@@ -1123,7 +1128,8 @@ class _ChannelCell extends StatefulWidget {
   const _ChannelCell({
     required this.rowHeight,
     required this.channelColumnWidth,
-    required this.imageUrl,
+    required this.channelThumb,
+    required this.client,
     required this.channel,
     required this.theme,
     required this.onTap,
@@ -1170,14 +1176,13 @@ class _ChannelCellState extends State<_ChannelCell> {
                 AnimatedOpacity(
                   opacity: showAction ? 0.3 : 1.0,
                   duration: const Duration(milliseconds: 150),
-                  child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          widget.imageUrl!,
+                  child: widget.channelThumb != null && widget.client != null
+                      ? PlexOptimizedImage.thumb(
+                          client: widget.client!,
+                          imagePath: widget.channelThumb,
                           width: widget.channelColumnWidth - 16,
                           height: widget.rowHeight - 16,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, _, _) =>
-                              widget.fallbackBuilder(),
                         )
                       : widget.fallbackBuilder(),
                 ),

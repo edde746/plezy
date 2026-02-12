@@ -53,6 +53,15 @@ class WhatsOnTabState extends State<WhatsOnTab> {
     });
   }
 
+  void pauseRefresh() => _refreshTimer?.cancel();
+
+  void resumeRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      if (mounted) _loadHubs();
+    });
+  }
+
   @override
   void dispose() {
     _refreshTimer?.cancel();
@@ -69,11 +78,15 @@ class WhatsOnTabState extends State<WhatsOnTab> {
       final allHubs = <LiveTvHubResult>[];
 
       for (final serverInfo in liveTvServers) {
-        final client = multiServer.getClientForServer(serverInfo.serverId);
-        if (client == null) continue;
+        try {
+          final client = multiServer.getClientForServer(serverInfo.serverId);
+          if (client == null) continue;
 
-        final hubs = await client.getLiveTvHubs();
-        allHubs.addAll(hubs);
+          final hubs = await client.getLiveTvHubs();
+          allHubs.addAll(hubs);
+        } catch (e) {
+          appLogger.e('Failed to load hubs from server ${serverInfo.serverId}', error: e);
+        }
       }
 
       if (!mounted) return;

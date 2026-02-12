@@ -892,6 +892,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _startLiveTimelineUpdates();
       } catch (e) {
         appLogger.e('Failed to start live TV playback', error: e);
+        _sendLiveTimeline('stopped');
         if (mounted) {
           showErrorSnackBar(context, e.toString());
           _handleBackButton();
@@ -1654,7 +1655,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   void _startLiveTimelineUpdates() {
     _liveTimelineTimer?.cancel();
     _liveTimelineTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      _sendLiveTimeline('playing');
+      final state = player?.state.playing == true ? 'playing' : 'paused';
+      _sendLiveTimeline(state);
     });
     // Send initial heartbeat immediately
     _sendLiveTimeline('playing');
@@ -1713,6 +1715,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (newIndex < 0 || newIndex >= channels.length) return;
 
     _isSwitchingChannel = true;
+
+    // Stop old session heartbeats and notify server
+    _stopLiveTimelineUpdates();
+    await _sendLiveTimeline('stopped');
 
     final channel = channels[newIndex];
     final channelId = channel.identifier ?? channel.key;

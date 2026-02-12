@@ -76,6 +76,14 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
   void onTabChanged() {
     if (!tabController.indexIsChanging) {
       super.onTabChanged();
+      // Pause/resume timers based on active tab
+      if (tabController.index == 0) {
+        _whatsOnTabKey.currentState?.pauseRefresh();
+        _guideTabKey.currentState?.resumeRefresh();
+      } else {
+        _guideTabKey.currentState?.pauseRefresh();
+        _whatsOnTabKey.currentState?.resumeRefresh();
+      }
     }
   }
 
@@ -101,11 +109,15 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
       final allChannels = <LiveTvChannel>[];
 
       for (final serverInfo in liveTvServers) {
-        final client = multiServer.getClientForServer(serverInfo.serverId);
-        if (client == null) continue;
+        try {
+          final client = multiServer.getClientForServer(serverInfo.serverId);
+          if (client == null) continue;
 
-        final channels = await client.getEpgChannels(lineup: serverInfo.lineup);
-        allChannels.addAll(channels);
+          final channels = await client.getEpgChannels(lineup: serverInfo.lineup);
+          allChannels.addAll(channels);
+        } catch (e) {
+          appLogger.e('Failed to load channels from server ${serverInfo.serverId}', error: e);
+        }
       }
 
       allChannels.sort((a, b) {

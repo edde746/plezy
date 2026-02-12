@@ -2006,6 +2006,7 @@ class PlexClient {
           return (container['Channel'] as List)
               .map((json) => LiveTvChannel.fromJson(json as Map<String, dynamic>)
                   .copyWith(serverId: serverId, serverName: serverName))
+              .where((ch) => ch.key.isNotEmpty)
               .toList();
         }
         // Also check for Metadata key (some endpoints return channels there)
@@ -2013,6 +2014,7 @@ class PlexClient {
           return (container['Metadata'] as List)
               .map((json) => LiveTvChannel.fromJson(json as Map<String, dynamic>)
                   .copyWith(serverId: serverId, serverName: serverName))
+              .where((ch) => ch.key.isNotEmpty)
               .toList();
         }
         return [];
@@ -2084,14 +2086,8 @@ class PlexClient {
       () => _dio.get(gridEndpoint, queryParameters: queryParams),
       (response) {
         final container = _getMediaContainer(response);
-        appLogger.d('getEpgGrid: container keys=${container?.keys.toList()}');
         final programs = <LiveTvProgram>[];
         if (container != null && container['Metadata'] != null) {
-          final firstItem = (container['Metadata'] as List).firstOrNull;
-          if (firstItem is Map) {
-            appLogger.d('getEpgGrid: sample program keys=${firstItem.keys.toList()}');
-            appLogger.d('getEpgGrid: Channel=${firstItem['Channel']}, Media=${firstItem['Media']}, beginsAt=${firstItem['beginsAt']}, endsAt=${firstItem['endsAt']}, duration=${firstItem['duration']}');
-          }
           for (final item in container['Metadata'] as List) {
             try {
               programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
@@ -2300,7 +2296,11 @@ class PlexClient {
           .join('&');
 
       // Decision — bare Dio so no default X-Plex-* HTTP headers leak through.
-      final decisionDio = Dio(BaseOptions(headers: {'Accept-Language': 'en'}));
+      final decisionDio = Dio(BaseOptions(
+        headers: {'Accept-Language': 'en'},
+        connectTimeout: ConnectionTimeouts.connect,
+        receiveTimeout: ConnectionTimeouts.receive,
+      ));
       final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
       final decisionResponse = await decisionDio.getUri(Uri.parse(decisionUrl));
 

@@ -69,7 +69,8 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
   void _buildButtonFocusNodes() {
     int count = 0;
     if (widget.program.isCurrentlyAiring && widget.onTuneChannel != null) count++;
-    count++; // Record button always present
+    // TODO: Implement recording
+    // count++; // Record button
     if (!widget.program.isCurrentlyAiring && widget.onTuneChannel != null) count++;
 
     for (int i = 0; i < count; i++) {
@@ -122,39 +123,37 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
       buttonIndex++;
     }
 
-    if (program.isCurrentlyAiring && widget.onTuneChannel != null) {
-      buttons.add(const SizedBox(width: 8));
-    }
-
-    // Record button
-    {
-      final idx = buttonIndex;
-      buttons.add(
-        FocusableWrapper(
-          focusNode: _buttonFocusNodes[idx],
-          onSelect: () {
-            Navigator.of(context).pop();
-            // TODO: Record action
-          },
-          onNavigateLeft: idx > 0 ? () => _focusButton(idx - 1) : null,
-          onNavigateRight: idx < _buttonFocusNodes.length - 1 ? () => _focusButton(idx + 1) : null,
-          onBack: () => Navigator.of(context).pop(),
-          borderRadius: 100,
-          useBackgroundFocus: true,
-          disableScale: true,
-          child: OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-            onPressed: () {
-              Navigator.of(context).pop();
-              // TODO: Record action
-            },
-            icon: const AppIcon(Symbols.fiber_manual_record_rounded),
-            label: Text(t.liveTv.record),
-          ),
-        ),
-      );
-      buttonIndex++;
-    }
+    // TODO: Implement recording
+    // if (program.isCurrentlyAiring && widget.onTuneChannel != null) {
+    //   buttons.add(const SizedBox(width: 8));
+    // }
+    // // Record button
+    // {
+    //   final idx = buttonIndex;
+    //   buttons.add(
+    //     FocusableWrapper(
+    //       focusNode: _buttonFocusNodes[idx],
+    //       onSelect: () {
+    //         Navigator.of(context).pop();
+    //       },
+    //       onNavigateLeft: idx > 0 ? () => _focusButton(idx - 1) : null,
+    //       onNavigateRight: idx < _buttonFocusNodes.length - 1 ? () => _focusButton(idx + 1) : null,
+    //       onBack: () => Navigator.of(context).pop(),
+    //       borderRadius: 100,
+    //       useBackgroundFocus: true,
+    //       disableScale: true,
+    //       child: OutlinedButton.icon(
+    //         style: OutlinedButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+    //         onPressed: () {
+    //           Navigator.of(context).pop();
+    //         },
+    //         icon: const AppIcon(Symbols.fiber_manual_record_rounded),
+    //         label: Text(t.liveTv.record),
+    //       ),
+    //     ),
+    //   );
+    //   buttonIndex++;
+    // }
 
     if (!program.isCurrentlyAiring && widget.onTuneChannel != null) {
       buttons.add(const SizedBox(width: 8));
