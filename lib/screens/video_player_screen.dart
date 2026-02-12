@@ -850,13 +850,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (!mounted) return;
 
     // Live TV mode: bypass standard playback initialization
-    if (widget.isLive && widget.liveStreamUrl != null) {
+    if (widget.isLive) {
       try {
         _hasFirstFrame.value = false;
         await player!.requestAudioFocus();
         await _setLiveStreamOptions();
 
-        await player!.open(Media(widget.liveStreamUrl!, headers: const {'Accept-Language': 'en'}), play: true);
+        String streamUrl;
+        if (widget.liveStreamUrl != null) {
+          streamUrl = widget.liveStreamUrl!;
+        } else {
+          // Tune channel inside the player (shows loading spinner while tuning)
+          final channels = widget.liveChannels;
+          final channelIndex = _liveChannelIndex;
+          if (channels == null || channelIndex < 0 || channelIndex >= channels.length) {
+            throw Exception('No channel to tune');
+          }
+          final channel = channels[channelIndex];
+          final channelId = channel.identifier ?? channel.key;
+          final client = widget.liveClient!;
+          final result = await client.tuneChannel(widget.liveDvrKey!, channelId);
+          if (result == null) throw Exception('Failed to tune channel');
+
+          streamUrl = '${client.config.baseUrl}${result.streamPath}'
+              .withPlexToken(client.config.token);
+
+          _liveSessionIdentifier = result.sessionIdentifier;
+          _liveSessionPath = result.sessionPath;
+        }
+
+        await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true);
 
         if (mounted) {
           setState(() {
@@ -865,6 +888,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             _isPlayerInitialized = true;
           });
         }
+
+        _startLiveTimelineUpdates();
       } catch (e) {
         appLogger.e('Failed to start live TV playback', error: e);
         if (mounted) {
