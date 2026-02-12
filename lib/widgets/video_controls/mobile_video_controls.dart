@@ -124,14 +124,16 @@ class MobileVideoControls extends StatelessWidget {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Previous episode button (greyed out when unavailable)
-            CircularControlButton(
-              semanticLabel: t.videoControls.previousButton,
-              icon: Symbols.skip_previous_rounded,
-              iconSize: 48,
-              onPressed: onPrevious,
-            ),
-            const SizedBox(width: 24),
+            if (!isLive) ...[
+              // Previous episode button (greyed out when unavailable)
+              CircularControlButton(
+                semanticLabel: t.videoControls.previousButton,
+                icon: Symbols.skip_previous_rounded,
+                iconSize: 48,
+                onPressed: onPrevious,
+              ),
+              const SizedBox(width: 24),
+            ],
             CircularControlButton(
               semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
               icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
@@ -146,14 +148,16 @@ class MobileVideoControls extends StatelessWidget {
                 }
               },
             ),
-            const SizedBox(width: 24),
-            // Next episode button (greyed out when unavailable)
-            CircularControlButton(
-              semanticLabel: t.videoControls.nextButton,
-              icon: Symbols.skip_next_rounded,
-              iconSize: 48,
-              onPressed: onNext,
-            ),
+            if (!isLive) ...[
+              const SizedBox(width: 24),
+              // Next episode button (greyed out when unavailable)
+              CircularControlButton(
+                semanticLabel: t.videoControls.nextButton,
+                icon: Symbols.skip_next_rounded,
+                iconSize: 48,
+                onPressed: onNext,
+              ),
+            ],
           ],
         );
       },

@@ -475,41 +475,43 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
           // Row 2: Playback controls and options
           Row(
             children: [
-              // Previous item
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _prevItemFocusNode,
-                  index: 0,
-                  icon: Symbols.skip_previous_rounded,
-                  color: widget.onPrevious != null && widget.canControl ? Colors.white : Colors.white54,
-                  onPressed: widget.canControl ? widget.onPrevious : null,
-                  semanticLabel: t.videoControls.previousButton,
+              if (!widget.isLive) ...[
+                // Previous item
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _prevItemFocusNode,
+                    index: 0,
+                    icon: Symbols.skip_previous_rounded,
+                    color: widget.onPrevious != null && widget.canControl ? Colors.white : Colors.white54,
+                    onPressed: widget.canControl ? widget.onPrevious : null,
+                    semanticLabel: t.videoControls.previousButton,
+                  ),
                 ),
-              ),
-              // Previous chapter
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _prevChapterFocusNode,
-                  index: 1,
-                  icon: Symbols.fast_rewind_rounded,
-                  color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
-                  onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
-                  semanticLabel: t.videoControls.previousChapterButton,
+                // Previous chapter
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _prevChapterFocusNode,
+                    index: 1,
+                    icon: Symbols.fast_rewind_rounded,
+                    color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
+                    onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
+                    semanticLabel: t.videoControls.previousChapterButton,
+                  ),
                 ),
-              ),
-              // Skip backward
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _skipBackFocusNode,
-                  index: 2,
-                  icon: widget.getReplayIcon(widget.seekTimeSmall),
-                  onPressed: widget.canControl ? widget.onSeekBackward : null,
-                  semanticLabel: t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall),
+                // Skip backward
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _skipBackFocusNode,
+                    index: 2,
+                    icon: widget.getReplayIcon(widget.seekTimeSmall),
+                    onPressed: widget.canControl ? widget.onSeekBackward : null,
+                    semanticLabel: t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall),
+                  ),
                 ),
-              ),
+              ],
               // Play/Pause
               Opacity(
                 opacity: widget.canControl ? 1.0 : 0.5,
@@ -535,41 +537,43 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   },
                 ),
               ),
-              // Skip forward
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _skipForwardFocusNode,
-                  index: 4,
-                  icon: widget.getForwardIcon(widget.seekTimeSmall),
-                  onPressed: widget.canControl ? widget.onSeekForward : null,
-                  semanticLabel: t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall),
+              if (!widget.isLive) ...[
+                // Skip forward
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _skipForwardFocusNode,
+                    index: 4,
+                    icon: widget.getForwardIcon(widget.seekTimeSmall),
+                    onPressed: widget.canControl ? widget.onSeekForward : null,
+                    semanticLabel: t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall),
+                  ),
                 ),
-              ),
-              // Next chapter
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _nextChapterFocusNode,
-                  index: 5,
-                  icon: Symbols.fast_forward_rounded,
-                  color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
-                  onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
-                  semanticLabel: t.videoControls.nextChapterButton,
+                // Next chapter
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _nextChapterFocusNode,
+                    index: 5,
+                    icon: Symbols.fast_forward_rounded,
+                    color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
+                    onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
+                    semanticLabel: t.videoControls.nextChapterButton,
+                  ),
                 ),
-              ),
-              // Next item
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _nextItemFocusNode,
-                  index: 6,
-                  icon: Symbols.skip_next_rounded,
-                  color: widget.onNext != null && widget.canControl ? Colors.white : Colors.white54,
-                  onPressed: widget.canControl ? widget.onNext : null,
-                  semanticLabel: t.videoControls.nextButton,
+                // Next item
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _nextItemFocusNode,
+                    index: 6,
+                    icon: Symbols.skip_next_rounded,
+                    color: widget.onNext != null && widget.canControl ? Colors.white : Colors.white54,
+                    onPressed: widget.canControl ? widget.onNext : null,
+                    semanticLabel: t.videoControls.nextButton,
+                  ),
                 ),
-              ),
+              ],
               // Finish time (hidden for live TV and when too narrow to fit)
               if (widget.isLive)
                 const Spacer()
