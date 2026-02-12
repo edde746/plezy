@@ -1130,6 +1130,29 @@ class PlexClient {
     );
   }
 
+  /// Send a live TV timeline heartbeat to keep the transcode session alive.
+  Future<void> updateLiveTimeline({
+    required String ratingKey,
+    required String sessionPath,
+    required String sessionIdentifier,
+    required String state,
+    required int time,
+    required int duration,
+  }) async {
+    await _dio.post(
+      '/:/timeline',
+      queryParameters: {
+        'ratingKey': ratingKey,
+        'key': sessionPath,
+        'state': state,
+        'hasMDE': '1',
+        'time': time,
+        'duration': duration,
+        'X-Plex-Session-Identifier': sessionIdentifier,
+      },
+    );
+  }
+
   /// Remove item from Continue Watching (On Deck) without affecting watch status or progress
   /// This uses the same endpoint Plex Web uses to hide items from Continue Watching
   Future<void> removeFromOnDeck(String ratingKey) async {
@@ -2049,7 +2072,7 @@ class PlexClient {
   /// Tune to a live TV channel and set up the transcode session.
   ///
   /// Flow: tune → decision → return /start path (MKV-over-HTTP).
-  Future<({PlexMetadata metadata, String streamPath})?> tuneChannel(String dvrKey, String channelIdentifier) async {
+  Future<({PlexMetadata metadata, String streamPath, String sessionIdentifier, String sessionPath})?> tuneChannel(String dvrKey, String channelIdentifier) async {
     try {
       final sessionIdentifier = _generateSessionIdentifier();
 
@@ -2150,7 +2173,12 @@ class PlexClient {
           .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
           .join('&');
 
-      return (metadata: metadata, streamPath: '/video/:/transcode/universal/start?$startQuery');
+      return (
+        metadata: metadata,
+        streamPath: '/video/:/transcode/universal/start?$startQuery',
+        sessionIdentifier: sessionIdentifier,
+        sessionPath: sessionPath,
+      );
     } catch (e, st) {
       appLogger.e('Failed to tune channel', error: e, stackTrace: st);
       return null;

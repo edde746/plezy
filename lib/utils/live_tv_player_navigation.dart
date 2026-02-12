@@ -56,6 +56,8 @@ Future<void> navigateToLiveTv(
       ),
       liveDvrKey: dvrKey,
       liveClient: client,
+      liveSessionIdentifier: result.sessionIdentifier,
+      liveSessionPath: result.sessionPath,
     ),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,
