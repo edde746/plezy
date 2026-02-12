@@ -724,7 +724,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
           width: width.clamp(2.0, double.infinity),
           top: 0,
           bottom: 0,
-          child: _buildProgramBlock(channel, program, theme),
+          child: _buildProgramBlock(channel, program, theme, isLast: program == programs.last),
         ),
       );
     }
@@ -746,7 +746,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
   }
 
   Widget _buildProgramBlock(
-      LiveTvChannel channel, LiveTvProgram program, ThemeData theme) {
+      LiveTvChannel channel, LiveTvProgram program, ThemeData theme, {bool isLast = false}) {
     final isCurrentlyAiring = program.isCurrentlyAiring;
     final isPast = program.endsAt != null &&
         program.endsAt! < DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -763,7 +763,10 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
         onTap: () => _showProgramDetails(channel, program),
         child: Container(
           decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3))),
+            border: Border(
+              left: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
+              right: isLast ? BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)) : BorderSide.none,
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           child: Column(
@@ -816,6 +819,20 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
   void _showProgramDetails(LiveTvChannel channel, LiveTvProgram program) {
     final theme = Theme.of(context);
 
+    final multiServer = context.read<MultiServerProvider>();
+    final client = multiServer.getClientForServer(channel.serverId ?? '');
+    String? posterUrl;
+    if (program.thumb != null && client != null) {
+      posterUrl = PlexImageHelper.getOptimizedImageUrl(
+        client: client,
+        thumbPath: program.thumb,
+        maxWidth: 80,
+        maxHeight: 120,
+        devicePixelRatio: PlexImageHelper.effectiveDevicePixelRatio(context),
+        imageType: ImageType.poster,
+      );
+    }
+
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) {
@@ -826,47 +843,72 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (posterUrl != null) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.network(
+                        posterUrl,
+                        width: 80,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                  ],
                   Expanded(
-                    child: Text(
-                      program.displayTitle,
-                      style: theme.textTheme.titleMedium,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                program.displayTitle,
+                                style: theme.textTheme.titleMedium,
+                              ),
+                            ),
+                            if (program.isCurrentlyAiring)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  t.liveTv.live,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${channel.displayName} · ${program.startTime?.hour.toString().padLeft(2, '0')}:${program.startTime?.minute.toString().padLeft(2, '0')} - ${program.endTime?.hour.toString().padLeft(2, '0')}:${program.endTime?.minute.toString().padLeft(2, '0')} · ${formatDurationTextual(program.durationMinutes * 60000)}',
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                        if (program.summary != null &&
+                            program.summary!.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            program.summary!,
+                            style: theme.textTheme.bodyMedium,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  if (program.isCurrentlyAiring)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        t.liveTv.live,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11),
-                      ),
-                    ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${channel.displayName} · ${program.startTime?.hour.toString().padLeft(2, '0')}:${program.startTime?.minute.toString().padLeft(2, '0')} - ${program.endTime?.hour.toString().padLeft(2, '0')}:${program.endTime?.minute.toString().padLeft(2, '0')} · ${formatDurationTextual(program.durationMinutes * 60000)}',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-              if (program.summary != null &&
-                  program.summary!.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  program.summary!,
-                  style: theme.textTheme.bodyMedium,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
               const SizedBox(height: 16),
               Row(
                 children: [

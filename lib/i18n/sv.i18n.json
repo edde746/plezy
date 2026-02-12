@@ -558,7 +558,15 @@
     "premiere": "NY",
     "reloadGuide": "Ladda om programguide",
     "guideReloaded": "Programdata omladdad",
-    "allChannels": "Alla kanaler"
+    "allChannels": "Alla kanaler",
+    "now": "Nu",
+    "today": "Idag",
+    "midnight": "Midnatt",
+    "overnight": "Natt",
+    "morning": "Morgon",
+    "daytime": "Dagtid",
+    "evening": "Kväll",
+    "lateNight": "Sen kväll"
   },
   "downloads": {
     "title": "Nedladdningar",

@@ -558,7 +558,15 @@
     "premiere": "신규",
     "reloadGuide": "편성표 새로고침",
     "guideReloaded": "편성표 데이터가 새로고침되었습니다",
-    "allChannels": "전체 채널"
+    "allChannels": "전체 채널",
+    "now": "지금",
+    "today": "오늘",
+    "midnight": "자정",
+    "overnight": "심야",
+    "morning": "아침",
+    "daytime": "낮",
+    "evening": "저녁",
+    "lateNight": "심야 방송"
   },
   "collections": {
     "title": "컬렉션",

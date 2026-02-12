@@ -558,7 +558,15 @@
     "premiere": "NUEVO",
     "reloadGuide": "Recargar guía",
     "guideReloaded": "Datos de la guía recargados",
-    "allChannels": "Todos los canales"
+    "allChannels": "Todos los canales",
+    "now": "Ahora",
+    "today": "Hoy",
+    "midnight": "Medianoche",
+    "overnight": "Madrugada",
+    "morning": "Mañana",
+    "daytime": "Día",
+    "evening": "Noche",
+    "lateNight": "Trasnoche"
   },
   "collections": {
     "title": "Colecciones",

@@ -558,7 +558,15 @@
     "premiere": "NEU",
     "reloadGuide": "Programmführer neu laden",
     "guideReloaded": "Programmdaten neu geladen",
-    "allChannels": "Alle Kanäle"
+    "allChannels": "Alle Kanäle",
+    "now": "Jetzt",
+    "today": "Heute",
+    "midnight": "Mitternacht",
+    "overnight": "Nacht",
+    "morning": "Morgen",
+    "daytime": "Tagsüber",
+    "evening": "Abend",
+    "lateNight": "Spätnacht"
   },
   "downloads": {
     "title": "Downloads",

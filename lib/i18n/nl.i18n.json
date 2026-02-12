@@ -558,7 +558,15 @@
     "premiere": "NIEUW",
     "reloadGuide": "Gids herladen",
     "guideReloaded": "Gidsgegevens herladen",
-    "allChannels": "Alle zenders"
+    "allChannels": "Alle zenders",
+    "now": "Nu",
+    "today": "Vandaag",
+    "midnight": "Middernacht",
+    "overnight": "Nacht",
+    "morning": "Ochtend",
+    "daytime": "Overdag",
+    "evening": "Avond",
+    "lateNight": "Late avond"
   },
   "downloads": {
     "title": "Downloads",

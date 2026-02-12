@@ -558,7 +558,15 @@
     "premiere": "新",
     "reloadGuide": "重新加载节目指南",
     "guideReloaded": "节目指南已重新加载",
-    "allChannels": "所有频道"
+    "allChannels": "所有频道",
+    "now": "现在",
+    "today": "今天",
+    "midnight": "午夜",
+    "overnight": "凌晨",
+    "morning": "上午",
+    "daytime": "白天",
+    "evening": "晚上",
+    "lateNight": "深夜"
   },
   "downloads": {
     "title": "下载",
