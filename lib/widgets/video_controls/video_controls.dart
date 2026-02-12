@@ -72,6 +72,7 @@ Widget plexVideoControlsBuilder(
   ValueNotifier<bool>? hasFirstFrame,
   FocusNode? playNextFocusNode,
   ValueNotifier<bool>? controlsVisible,
+  ValueNotifier<bool>? controlSheetOpen,
   ShaderService? shaderService,
   VoidCallback? onShaderChanged,
   String Function(Duration time)? thumbnailUrlBuilder,
@@ -94,6 +95,7 @@ Widget plexVideoControlsBuilder(
     hasFirstFrame: hasFirstFrame,
     playNextFocusNode: playNextFocusNode,
     controlsVisible: controlsVisible,
+    controlSheetOpen: controlSheetOpen,
     shaderService: shaderService,
     onShaderChanged: onShaderChanged,
     thumbnailUrlBuilder: thumbnailUrlBuilder,
@@ -131,6 +133,9 @@ class PlexVideoControls extends StatefulWidget {
   /// Notifier to report controls visibility to parent (for popup positioning)
   final ValueNotifier<bool>? controlsVisible;
 
+  /// Notifier to report whether a control sheet/menu is open.
+  final ValueNotifier<bool>? controlSheetOpen;
+
   /// Optional shader service for MPV shader control
   final ShaderService? shaderService;
 
@@ -159,6 +164,7 @@ class PlexVideoControls extends StatefulWidget {
     this.hasFirstFrame,
     this.playNextFocusNode,
     this.controlsVisible,
+    this.controlSheetOpen,
     this.shaderService,
     this.onShaderChanged,
     this.thumbnailUrlBuilder,
@@ -170,6 +176,7 @@ class PlexVideoControls extends StatefulWidget {
 
 class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListener, WidgetsBindingObserver {
   bool _showControls = true;
+  bool _isControlSheetOpen = false;
   List<PlexChapter> _chapters = [];
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
@@ -260,7 +267,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       _initAlwaysOnTopState();
     }
 
-
     // Focus play/pause button on first frame if in keyboard mode
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusPlayPauseIfKeyboardMode();
@@ -283,8 +289,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Called when controlsVisible is set externally (e.g. screen-level focus recovery
   /// after controls auto-hide ejects focus on Android TV).
   void _onControlsVisibleExternal() {
-    if (widget.controlsVisible?.value == true && !_showControls && mounted) {
+    if (!mounted || widget.controlsVisible == null) return;
+    final shouldShow = widget.controlsVisible!.value;
+    if (shouldShow && !_showControls) {
       _showControlsWithFocus();
+    } else if (!shouldShow && _showControls) {
+      _hideControls();
     }
   }
 
@@ -618,9 +628,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     return const Duration(seconds: 3);
   }
 
+  bool get _controlsAreVisible => _showControls || (widget.controlsVisible?.value ?? false);
+
   /// Shared hide logic: hides controls, notifies parent, updates traffic lights, restores focus.
   void _hideControls() {
-    if (!mounted || !_showControls) return;
+    if (!mounted || !_controlsAreVisible) return;
     setState(() {
       _showControls = false;
     });
@@ -886,8 +898,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           await _loadSeekTimes();
         }
       },
-      onCancelAutoHide: () => _hideTimer?.cancel(),
-      onStartAutoHide: _startHideTimer,
+      onCancelAutoHide: () {
+        _hideTimer?.cancel();
+        _isControlSheetOpen = true;
+      },
+      onStartAutoHide: () {
+        _isControlSheetOpen = false;
+        _startHideTimer();
+      },
       serverId: widget.metadata.serverId ?? '',
       canControl: widget.canControl,
       shaderService: widget.shaderService,
@@ -1324,8 +1342,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (PlatformDetector.isTV() && event.logicalKey.isBackKey) {
       if (!_focusNode.hasFocus) {
         final backResult = handleBackKeyAction(event, () {
-          if (!_showControls) {
-            _showControlsWithFocus();
+          // If a menu is open (subtitles, audio, etc.), back press will close the menu.
+          if (_isControlSheetOpen) {
+            Navigator.of(context).maybePop();
+            return;
+          }
+
+          // Check if video has loaded (otherwise it believes the control overlay is up and will attempt to close it).
+          final isLoadingFirstFrame = !(widget.hasFirstFrame?.value ?? true);
+          // If on TV, back button will close control overlay if open.
+          if (_controlsAreVisible && !isLoadingFirstFrame) {
+            _hideControls();
           } else {
             (widget.onBack ?? () => Navigator.of(context).pop(true))();
           }
@@ -1467,12 +1494,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           autofocus: true,
           onKeyEvent: (node, event) {
             final backResult = handleBackKeyAction(event, () {
+              // If a menu is open (subtitles, audio, etc.), back press will close the menu.
+              if (_isControlSheetOpen) {
+                Navigator.of(context).maybePop();
+                return;
+              }
               // On Windows/Linux with navigation off, ESC first exits fullscreen
               if (!_videoPlayerNavigationEnabled && _isFullscreen && (Platform.isWindows || Platform.isLinux)) {
                 _toggleFullscreen();
                 return;
               }
-              if (!_showControls) {
+              // Check if video has loaded (otherwise it believes the control overlay is up and will attempt to close it).
+              final isLoadingFirstFrame = !(widget.hasFirstFrame?.value ?? true);
+              // If on TV, back button will close control overlay if open.
+              if (_controlsAreVisible && PlatformDetector.isTV() && !isLoadingFirstFrame) {
+                _hideControls();
+                return;
+              }
+              // For all other platforms, back button brings up controls.
+              if (!_controlsAreVisible && !PlatformDetector.isTV()) {
                 _showControlsWithFocus();
                 return;
               }
@@ -1744,8 +1784,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             onSeekEnd: _finalizeSeek,
                                             onSeekCompleted: widget.onSeekCompleted,
                                             onPlayPause: () {}, // Not used, handled internally
-                                            onCancelAutoHide: () => _hideTimer?.cancel(),
-                                            onStartAutoHide: _startHideTimer,
+                                            onCancelAutoHide: () {
+                                              _hideTimer?.cancel();
+                                              _isControlSheetOpen = true;
+                                              widget.controlSheetOpen?.value = true;
+                                            },
+                                            onStartAutoHide: () {
+                                              _isControlSheetOpen = false;
+                                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                if (mounted) {
+                                                  widget.controlSheetOpen?.value = false;
+                                                }
+                                              });
+                                              _startHideTimer();
+                                            },
                                             onBack: widget.onBack,
                                             onNext: widget.onNext,
                                             onPrevious: widget.onPrevious,
@@ -1800,8 +1852,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                                 await _loadSeekTimes();
                                               }
                                             },
-                                            onCancelAutoHide: () => _hideTimer?.cancel(),
-                                            onStartAutoHide: _startHideTimer,
+                                            onCancelAutoHide: () {
+                                              _hideTimer?.cancel();
+                                              _isControlSheetOpen = true;
+                                              widget.controlSheetOpen?.value = true;
+                                            },
+                                            onStartAutoHide: () {
+                                              _isControlSheetOpen = false;
+                                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                if (mounted) {
+                                                  widget.controlSheetOpen?.value = false;
+                                                }
+                                              });
+                                              _startHideTimer();
+                                            },
                                             serverId: widget.metadata.serverId ?? '',
                                             onBack: widget.onBack,
                                             canControl: widget.canControl,

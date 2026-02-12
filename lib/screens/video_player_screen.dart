@@ -163,6 +163,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   final ValueNotifier<bool> _controlsVisible = ValueNotifier<bool>(
     true,
   ); // Track if video controls are visible (for popup positioning)
+  final ValueNotifier<bool> _isControlSheetOpen = ValueNotifier<bool>(
+    false,
+  ); // Track if a controls sheet is open (for TV back handling)
 
   @override
   void initState() {
@@ -1198,10 +1201,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Store provider reference for use in dispose and notify remote
     try {
       _companionRemoteProvider = context.read<CompanionRemoteProvider>();
-      _companionRemoteProvider!.sendCommand(
-        RemoteCommandType.syncState,
-        data: {'playerActive': true},
-      );
+      _companionRemoteProvider!.sendCommand(RemoteCommandType.syncState, data: {'playerActive': true});
     } catch (_) {}
   }
 
@@ -1222,10 +1222,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _savedOnHome = null;
 
     // Notify remote that player is no longer active
-    _companionRemoteProvider?.sendCommand(
-      RemoteCommandType.syncState,
-      data: {'playerActive': false},
-    );
+    _companionRemoteProvider?.sendCommand(RemoteCommandType.syncState, data: {'playerActive': false});
     _companionRemoteProvider = null;
   }
 
@@ -1263,7 +1260,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _onAudioTrackChanged(next);
 
     if (mounted) {
-      final label = 'Audio: ${tlb.TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
+      final label =
+          'Audio: ${tlb.TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
       showAppSnackBar(context, label, duration: const Duration(seconds: 1));
     }
   }
@@ -1351,6 +1349,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _hasFirstFrame.dispose();
     _isExiting.dispose();
     _controlsVisible.dispose();
+    _isControlSheetOpen.dispose();
 
     // Stop progress tracking and send final state.
     // Fire-and-forget: dispose() is synchronous so we can't await, but the
@@ -1928,6 +1927,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // gesture arrives (which would cause a double-pop on Android TV).
         if (!didPop) {
           if (BackKeyCoordinator.consumeIfHandled()) return;
+          if (_isControlSheetOpen.value) {
+            BackKeyCoordinator.markHandled();
+            return;
+          }
+          final isLoadingFirstFrame = !_hasFirstFrame.value;
+          if (PlatformDetector.isTV() && _controlsVisible.value && !isLoadingFirstFrame) {
+            BackKeyCoordinator.markHandled();
+            _controlsVisible.value = false;
+            return;
+          }
           BackKeyCoordinator.markHandled();
           _handleBackButton();
         }
@@ -2020,6 +2029,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         hasFirstFrame: _hasFirstFrame,
                         playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
                         controlsVisible: _controlsVisible,
+                        controlSheetOpen: _isControlSheetOpen,
                         shaderService: _shaderService,
                         onShaderChanged: () => setState(() {}),
                         thumbnailUrlBuilder: _hasThumbnails && _currentMediaInfo?.partId != null
@@ -2261,7 +2271,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             ),
                             const SizedBox(width: 8),
-                            Text(t.watchTogether.reconnectingToHost, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                            Text(
+                              t.watchTogether.reconnectingToHost,
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                            ),
                           ],
                         ),
                       ),
