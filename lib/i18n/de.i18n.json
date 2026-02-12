@@ -566,7 +566,8 @@
     "daytime": "Tagsüber",
     "evening": "Abend",
     "lateNight": "Spätnacht",
-    "whatsOn": "Jetzt im TV"
+    "whatsOn": "Jetzt im TV",
+    "watchChannel": "Kanal ansehen"
   },
   "downloads": {
     "title": "Downloads",

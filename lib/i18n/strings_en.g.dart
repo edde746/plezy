@@ -1752,6 +1752,9 @@ class TranslationsLiveTvEn {
 
 	/// en: 'What's On'
 	String get whatsOn => 'What\'s On';
+
+	/// en: 'Watch Channel'
+	String get watchChannel => 'Watch Channel';
 }
 
 // Path: collections
@@ -3181,6 +3184,7 @@ extension on Translations {
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
+			'liveTv.watchChannel' => 'Watch Channel',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
@@ -3189,9 +3193,9 @@ extension on Translations {
 			'collections.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.',
 			'collections.deleted' => 'Collection deleted',
 			'collections.deleteFailed' => 'Failed to delete collection',
-			'collections.deleteFailedWithError' => ({required Object error}) => 'Failed to delete collection: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'collections.deleteFailedWithError' => ({required Object error}) => 'Failed to delete collection: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Failed to load collection items: ${error}',
 			'collections.selectCollection' => 'Select Collection',
 			'collections.createNewCollection' => 'Create New Collection',

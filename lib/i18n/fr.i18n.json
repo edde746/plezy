@@ -566,7 +566,8 @@
     "daytime": "Journée",
     "evening": "Soirée",
     "lateNight": "Nuit tardive",
-    "whatsOn": "En ce moment"
+    "whatsOn": "En ce moment",
+    "watchChannel": "Regarder la chaîne"
   },
   "collections": {
     "title": "Collections",

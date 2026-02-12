@@ -808,6 +808,7 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get evening => 'Kväll';
 	@override String get lateNight => 'Sen kväll';
 	@override String get whatsOn => 'På TV nu';
+	@override String get watchChannel => 'Titta på kanal';
 }
 
 // Path: downloads
@@ -1718,6 +1719,7 @@ extension on TranslationsSv {
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
+			'liveTv.watchChannel' => 'Titta på kanal',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
@@ -1726,9 +1728,9 @@ extension on TranslationsSv {
 			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
 			'downloads.downloadNow' => 'Ladda ner',
 			'downloads.deleteDownload' => 'Ta bort nedladdning',
-			'downloads.retryDownload' => 'Försök igen',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.retryDownload' => 'Försök igen',
 			'downloads.downloadQueued' => 'Nedladdning köad',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',

@@ -808,6 +808,7 @@ class _TranslationsLiveTvEs implements TranslationsLiveTvEn {
 	@override String get evening => 'Noche';
 	@override String get lateNight => 'Trasnoche';
 	@override String get whatsOn => 'En emisión';
+	@override String get watchChannel => 'Ver canal';
 }
 
 // Path: collections
@@ -1718,6 +1719,7 @@ extension on TranslationsEs {
 			'liveTv.evening' => 'Noche',
 			'liveTv.lateNight' => 'Trasnoche',
 			'liveTv.whatsOn' => 'En emisión',
+			'liveTv.watchChannel' => 'Ver canal',
 			'collections.title' => 'Colecciones',
 			'collections.collection' => 'Colección',
 			'collections.empty' => 'La colección está vacía',
@@ -1726,9 +1728,9 @@ extension on TranslationsEs {
 			'collections.deleteConfirm' => ({required Object title}) => '¿Estás seguro de que quieres eliminar "${title}"? Esta acción no se puede deshacer.',
 			'collections.deleted' => 'Colección eliminada',
 			'collections.deleteFailed' => 'Error al eliminar la colección',
-			'collections.deleteFailedWithError' => ({required Object error}) => 'Error al eliminar la colección: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'collections.deleteFailedWithError' => ({required Object error}) => 'Error al eliminar la colección: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Error al cargar los elementos de la colección: ${error}',
 			'collections.selectCollection' => 'Seleccionar Colección',
 			'collections.createNewCollection' => 'Crear Nueva Colección',

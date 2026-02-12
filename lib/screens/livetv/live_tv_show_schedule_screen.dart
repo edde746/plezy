@@ -215,7 +215,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
                       icon: const AppIcon(Symbols.play_arrow_rounded),
                       label: Text(t.common.play),
                     ),
-                  const SizedBox(width: 8),
+                  if (program.isCurrentlyAiring) const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: () {
                       Navigator.of(sheetContext).pop();
@@ -224,6 +224,17 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
                     icon: const AppIcon(Symbols.fiber_manual_record_rounded),
                     label: Text(t.liveTv.record),
                   ),
+                  if (!program.isCurrentlyAiring && channel != null) ...[
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        _tuneChannel(channel);
+                      },
+                      icon: const AppIcon(Symbols.live_tv_rounded),
+                      label: Text(t.liveTv.watchChannel),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -333,7 +344,7 @@ class _ScheduleListTile extends StatelessWidget {
     ].join(' — ');
 
     return InkWell(
-      onTap: isLive ? onTap : null,
+      onTap: onTap,
       child: Container(
         decoration: isLive
             ? BoxDecoration(

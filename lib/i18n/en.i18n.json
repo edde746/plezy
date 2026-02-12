@@ -566,7 +566,8 @@
     "daytime": "Daytime",
     "evening": "Evening",
     "lateNight": "Late Night",
-    "whatsOn": "What's On"
+    "whatsOn": "What's On",
+    "watchChannel": "Watch Channel"
   },
   "collections": {
     "title": "Collections",

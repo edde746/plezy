@@ -566,7 +566,8 @@
     "daytime": "Overdag",
     "evening": "Avond",
     "lateNight": "Late avond",
-    "whatsOn": "Nu op TV"
+    "whatsOn": "Nu op TV",
+    "watchChannel": "Kanaal bekijken"
   },
   "downloads": {
     "title": "Downloads",

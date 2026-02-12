@@ -566,7 +566,8 @@
     "daytime": "낮",
     "evening": "저녁",
     "lateNight": "심야 방송",
-    "whatsOn": "지금 방송 중"
+    "whatsOn": "지금 방송 중",
+    "watchChannel": "채널 시청"
   },
   "collections": {
     "title": "컬렉션",

@@ -808,6 +808,7 @@ class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
 	@override String get evening => '저녁';
 	@override String get lateNight => '심야 방송';
 	@override String get whatsOn => '지금 방송 중';
+	@override String get watchChannel => '채널 시청';
 }
 
 // Path: collections
@@ -1718,6 +1719,7 @@ extension on TranslationsKo {
 			'liveTv.evening' => '저녁',
 			'liveTv.lateNight' => '심야 방송',
 			'liveTv.whatsOn' => '지금 방송 중',
+			'liveTv.watchChannel' => '채널 시청',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',
@@ -1726,9 +1728,9 @@ extension on TranslationsKo {
 			'collections.deleteConfirm' => ({required Object title}) => '"${title}"을(를) 삭제 하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
 			'collections.deleted' => '컬렉션 삭제됨',
 			'collections.deleteFailed' => '컬렉션 삭제 실패',
-			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => '컬렉션 항목 로드 실패: ${error}',
 			'collections.selectCollection' => '컬렉션 선택',
 			'collections.createNewCollection' => '새 컬렉션 생성',

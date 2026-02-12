@@ -808,6 +808,7 @@ class _TranslationsLiveTvIt implements TranslationsLiveTvEn {
 	@override String get evening => 'Sera';
 	@override String get lateNight => 'Notte tarda';
 	@override String get whatsOn => 'In onda ora';
+	@override String get watchChannel => 'Guarda canale';
 }
 
 // Path: downloads
@@ -1718,6 +1719,7 @@ extension on TranslationsIt {
 			'liveTv.evening' => 'Sera',
 			'liveTv.lateNight' => 'Notte tarda',
 			'liveTv.whatsOn' => 'In onda ora',
+			'liveTv.watchChannel' => 'Guarda canale',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',
@@ -1726,9 +1728,9 @@ extension on TranslationsIt {
 			'downloads.noDownloadsDescription' => 'I contenuti scaricati appariranno qui per la visualizzazione offline',
 			'downloads.downloadNow' => 'Scarica',
 			'downloads.deleteDownload' => 'Elimina download',
-			'downloads.retryDownload' => 'Riprova download',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.retryDownload' => 'Riprova download',
 			'downloads.downloadQueued' => 'Download in coda',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodi in coda per il download',
 			'downloads.downloadDeleted' => 'Download eliminato',

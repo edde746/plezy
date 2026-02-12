@@ -566,7 +566,8 @@
     "daytime": "Giorno",
     "evening": "Sera",
     "lateNight": "Notte tarda",
-    "whatsOn": "In onda ora"
+    "whatsOn": "In onda ora",
+    "watchChannel": "Guarda canale"
   },
   "downloads": {
     "title": "Download",

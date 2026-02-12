@@ -808,6 +808,7 @@ class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
 	@override String get evening => '晚上';
 	@override String get lateNight => '深夜';
 	@override String get whatsOn => '正在播出';
+	@override String get watchChannel => '观看频道';
 }
 
 // Path: downloads
@@ -1718,6 +1719,7 @@ extension on TranslationsZh {
 			'liveTv.evening' => '晚上',
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '正在播出',
+			'liveTv.watchChannel' => '观看频道',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
@@ -1726,9 +1728,9 @@ extension on TranslationsZh {
 			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',
 			'downloads.downloadNow' => '下载',
 			'downloads.deleteDownload' => '删除下载',
-			'downloads.retryDownload' => '重试下载',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.retryDownload' => '重试下载',
 			'downloads.downloadQueued' => '下载已排队',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',

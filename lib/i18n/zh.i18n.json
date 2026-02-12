@@ -566,7 +566,8 @@
     "daytime": "白天",
     "evening": "晚上",
     "lateNight": "深夜",
-    "whatsOn": "正在播出"
+    "whatsOn": "正在播出",
+    "watchChannel": "观看频道"
   },
   "downloads": {
     "title": "下载",

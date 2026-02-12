@@ -808,6 +808,7 @@ class _TranslationsLiveTvNl implements TranslationsLiveTvEn {
 	@override String get evening => 'Avond';
 	@override String get lateNight => 'Late avond';
 	@override String get whatsOn => 'Nu op TV';
+	@override String get watchChannel => 'Kanaal bekijken';
 }
 
 // Path: downloads
@@ -1718,6 +1719,7 @@ extension on TranslationsNl {
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
+			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
@@ -1726,9 +1728,9 @@ extension on TranslationsNl {
 			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
 			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Download verwijderen',
-			'downloads.retryDownload' => 'Download opnieuw proberen',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.retryDownload' => 'Download opnieuw proberen',
 			'downloads.downloadQueued' => 'Download in wachtrij',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',

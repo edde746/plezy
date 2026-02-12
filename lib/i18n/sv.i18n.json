@@ -566,7 +566,8 @@
     "daytime": "Dagtid",
     "evening": "Kväll",
     "lateNight": "Sen kväll",
-    "whatsOn": "På TV nu"
+    "whatsOn": "På TV nu",
+    "watchChannel": "Titta på kanal"
   },
   "downloads": {
     "title": "Nedladdningar",
