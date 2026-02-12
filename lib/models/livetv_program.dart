@@ -43,6 +43,10 @@ class LiveTvProgram {
   });
 
   factory LiveTvProgram.fromJson(Map<String, dynamic> json) {
+    // Grid endpoint nests timing/channel info inside Media[0] and Channel[0]
+    final media = (json['Media'] as List?)?.firstOrNull as Map<String, dynamic>?;
+    final channel = (json['Channel'] as List?)?.firstOrNull as Map<String, dynamic>?;
+
     return LiveTvProgram(
       key: json['key'] as String?,
       ratingKey: json['ratingKey'] as String?,
@@ -51,16 +55,19 @@ class LiveTvProgram {
       summary: json['summary'] as String?,
       type: json['type'] as String?,
       year: (json['year'] as num?)?.toInt(),
-      beginsAt: (json['beginsAt'] as num?)?.toInt(),
-      endsAt: (json['endsAt'] as num?)?.toInt(),
+      beginsAt: (json['beginsAt'] as num?)?.toInt() ?? (media?['beginsAt'] as num?)?.toInt(),
+      endsAt: (json['endsAt'] as num?)?.toInt() ?? (media?['endsAt'] as num?)?.toInt(),
       grandparentTitle: json['grandparentTitle'] as String?,
       parentTitle: json['parentTitle'] as String?,
       index: (json['index'] as num?)?.toInt(),
       parentIndex: (json['parentIndex'] as num?)?.toInt(),
-      thumb: json['thumb'] as String?,
+      thumb: json['thumb'] as String? ?? json['grandparentThumb'] as String?,
       art: json['art'] as String?,
-      channelIdentifier: json['channelIdentifier'] as String?,
-      channelCallSign: json['channelCallSign'] as String?,
+      channelIdentifier: json['channelIdentifier'] as String?
+          ?? media?['channelIdentifier']?.toString()
+          ?? channel?['id']?.toString(),
+      channelCallSign: json['channelCallSign'] as String?
+          ?? media?['channelCallSign'] as String?,
       live: json['live'] == true || json['live'] == 1 || json['live'] == '1',
       premiere: json['premiere'] == true || json['premiere'] == 1 || json['premiere'] == '1',
     );

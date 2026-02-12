@@ -1995,7 +1995,7 @@ class PlexClient {
   /// Get EPG channels for a specific lineup
   Future<List<LiveTvChannel>> getEpgChannels({String? lineup}) async {
     final queryParams = <String, dynamic>{};
-    if (lineup != null) queryParams['lineup'] = lineup;
+    if (lineup != null) queryParams['lineup'] = Uri.decodeComponent(lineup);
 
     return _wrapListApiCall<LiveTvChannel>(
       () => _dio.get('/livetv/epg/channels', queryParameters: queryParams),
@@ -2020,24 +2020,72 @@ class PlexClient {
     );
   }
 
+  /// Cached EPG grid endpoint path (discovered from /media/providers)
+  String? _epgGridEndpoint;
+
+  /// Discover the EPG grid endpoint from media providers
+  Future<String?> _getEpgGridEndpoint() async {
+    if (_epgGridEndpoint != null) return _epgGridEndpoint;
+
+    try {
+      final response = await _dio.get('/media/providers');
+      final container = _getMediaContainer(response);
+      if (container == null) return null;
+
+      final providers = container['MediaProvider'] as List?;
+      if (providers == null) return null;
+
+      for (final provider in providers) {
+        if (provider is! Map) continue;
+        final protocols = provider['protocols'] as String?;
+        if (protocols == null || !protocols.contains('livetv')) continue;
+
+        final features = provider['Feature'] as List?;
+        if (features == null) continue;
+        for (final feature in features) {
+          if (feature is! Map) continue;
+          if (feature['type'] == 'grid') {
+            _epgGridEndpoint = feature['key'] as String?;
+            appLogger.d('Discovered EPG grid endpoint: $_epgGridEndpoint');
+            return _epgGridEndpoint;
+          }
+        }
+      }
+    } catch (e) {
+      appLogger.e('Failed to discover EPG grid endpoint', error: e);
+    }
+    return null;
+  }
+
   /// Get guide/program data for channels (EPG grid data)
-  /// Returns programs grouped in the MediaContainer
+  /// Discovers the grid endpoint from /media/providers on first call
   Future<List<LiveTvProgram>> getEpgGrid({
     String? lineup,
     int? beginsAt,
     int? endsAt,
   }) async {
+    final gridEndpoint = await _getEpgGridEndpoint();
+    if (gridEndpoint == null) {
+      appLogger.w('No EPG grid endpoint found');
+      return [];
+    }
+
     final queryParams = <String, dynamic>{};
-    if (lineup != null) queryParams['lineup'] = lineup;
     if (beginsAt != null) queryParams['beginsAt>'] = beginsAt;
     if (endsAt != null) queryParams['endsAt<'] = endsAt;
 
     return _wrapListApiCall<LiveTvProgram>(
-      () => _dio.get('/livetv/epg', queryParameters: queryParams),
+      () => _dio.get(gridEndpoint, queryParameters: queryParams),
       (response) {
         final container = _getMediaContainer(response);
+        appLogger.d('getEpgGrid: container keys=${container?.keys.toList()}');
         final programs = <LiveTvProgram>[];
         if (container != null && container['Metadata'] != null) {
+          final firstItem = (container['Metadata'] as List).firstOrNull;
+          if (firstItem is Map) {
+            appLogger.d('getEpgGrid: sample program keys=${firstItem.keys.toList()}');
+            appLogger.d('getEpgGrid: Channel=${firstItem['Channel']}, Media=${firstItem['Media']}, beginsAt=${firstItem['beginsAt']}, endsAt=${firstItem['endsAt']}, duration=${firstItem['duration']}');
+          }
           for (final item in container['Metadata'] as List) {
             try {
               programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));

@@ -558,7 +558,15 @@
     "premiere": "NEW",
     "reloadGuide": "Reload Guide",
     "guideReloaded": "Guide data reloaded",
-    "allChannels": "All Channels"
+    "allChannels": "All Channels",
+    "now": "Now",
+    "today": "Today",
+    "midnight": "Midnight",
+    "overnight": "Overnight",
+    "morning": "Morning",
+    "daytime": "Daytime",
+    "evening": "Evening",
+    "lateNight": "Late Night"
   },
   "collections": {
     "title": "Collections",

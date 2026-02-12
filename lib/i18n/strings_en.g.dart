@@ -1728,6 +1728,30 @@ class TranslationsLiveTvEn {
 
 	/// en: 'All Channels'
 	String get allChannels => 'All Channels';
+
+	/// en: 'Now'
+	String get now => 'Now';
+
+	/// en: 'Today'
+	String get today => 'Today';
+
+	/// en: 'Midnight'
+	String get midnight => 'Midnight';
+
+	/// en: 'Overnight'
+	String get overnight => 'Overnight';
+
+	/// en: 'Morning'
+	String get morning => 'Morning';
+
+	/// en: 'Daytime'
+	String get daytime => 'Daytime';
+
+	/// en: 'Evening'
+	String get evening => 'Evening';
+
+	/// en: 'Late Night'
+	String get lateNight => 'Late Night';
 }
 
 // Path: collections
@@ -3149,6 +3173,14 @@ extension on Translations {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.guideReloaded' => 'Guide data reloaded',
 			'liveTv.allChannels' => 'All Channels',
+			'liveTv.now' => 'Now',
+			'liveTv.today' => 'Today',
+			'liveTv.midnight' => 'Midnight',
+			'liveTv.overnight' => 'Overnight',
+			'liveTv.morning' => 'Morning',
+			'liveTv.daytime' => 'Daytime',
+			'liveTv.evening' => 'Evening',
+			'liveTv.lateNight' => 'Late Night',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
@@ -3158,6 +3190,8 @@ extension on Translations {
 			'collections.deleted' => 'Collection deleted',
 			'collections.deleteFailed' => 'Failed to delete collection',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Failed to delete collection: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Failed to load collection items: ${error}',
 			'collections.selectCollection' => 'Select Collection',
 			'collections.createNewCollection' => 'Create New Collection',
@@ -3166,8 +3200,6 @@ extension on Translations {
 			'collections.addedToCollection' => 'Added to collection',
 			'collections.errorAddingToCollection' => 'Failed to add to collection',
 			'collections.created' => 'Collection created',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removeFromCollection' => 'Remove from collection',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Remove "${title}" from this collection?',
 			'collections.removedFromCollection' => 'Removed from collection',
