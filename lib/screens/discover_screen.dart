@@ -183,6 +183,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   void _focusTopBoundary() {
+    if (!(ModalRoute.of(context)?.isCurrent ?? false)) return;
     if (_isHeroSectionVisible) {
       _heroFocusNode.requestFocus();
     } else {
@@ -710,7 +711,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (!_initialLoadComplete && onDeck.isNotEmpty) {
         _initialLoadComplete = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _heroFocusNode.canRequestFocus) {
+          if (mounted && _heroFocusNode.canRequestFocus && (ModalRoute.of(context)?.isCurrent ?? false)) {
             _heroFocusNode.requestFocus();
           }
         });
