@@ -458,16 +458,24 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 ),
               ),
               // Previous chapter
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _prevChapterFocusNode,
-                  index: 1,
-                  icon: Symbols.fast_rewind_rounded,
-                  color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
-                  onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
-                  semanticLabel: t.videoControls.previousChapterButton,
-                ),
+              StreamBuilder<Duration>(
+                stream: widget.player.streams.position,
+                initialData: widget.player.state.position,
+                builder: (context, posSnapshot) {
+                  final prevLabel = _getPreviousChapterLabel(posSnapshot.data ?? Duration.zero);
+                  return Opacity(
+                    opacity: widget.canControl ? 1.0 : 0.5,
+                    child: _buildFocusableButton(
+                      focusNode: _prevChapterFocusNode,
+                      index: 1,
+                      icon: Symbols.fast_rewind_rounded,
+                      color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
+                      onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
+                      semanticLabel: t.videoControls.previousChapterButton,
+                      tooltip: prevLabel,
+                    ),
+                  );
+                },
               ),
               // Skip backward
               Opacity(
@@ -517,16 +525,24 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 ),
               ),
               // Next chapter
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _nextChapterFocusNode,
-                  index: 5,
-                  icon: Symbols.fast_forward_rounded,
-                  color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
-                  onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
-                  semanticLabel: t.videoControls.nextChapterButton,
-                ),
+              StreamBuilder<Duration>(
+                stream: widget.player.streams.position,
+                initialData: widget.player.state.position,
+                builder: (context, posSnapshot) {
+                  final nextLabel = _getNextChapterLabel(posSnapshot.data ?? Duration.zero);
+                  return Opacity(
+                    opacity: widget.canControl ? 1.0 : 0.5,
+                    child: _buildFocusableButton(
+                      focusNode: _nextChapterFocusNode,
+                      index: 5,
+                      icon: Symbols.fast_forward_rounded,
+                      color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
+                      onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
+                      semanticLabel: t.videoControls.nextChapterButton,
+                      tooltip: nextLabel,
+                    ),
+                  );
+                },
               ),
               // Next item
               Opacity(
@@ -632,6 +648,32 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     );
   }
 
+  /// Returns the label of the next chapter the user would seek to, or null.
+  String? _getNextChapterLabel(Duration position) {
+    if (widget.chapters.isEmpty) return null;
+    final currentPositionMs = position.inMilliseconds;
+    for (final chapter in widget.chapters) {
+      final chapterStart = chapter.startTimeOffset ?? 0;
+      if (chapterStart > currentPositionMs) {
+        return chapter.label;
+      }
+    }
+    return null;
+  }
+
+  /// Returns the label of the previous chapter the user would seek to, or null.
+  String? _getPreviousChapterLabel(Duration position) {
+    if (widget.chapters.isEmpty) return null;
+    final currentPositionMs = position.inMilliseconds;
+    for (int i = widget.chapters.length - 1; i >= 0; i--) {
+      final chapterStart = widget.chapters[i].startTimeOffset ?? 0;
+      if (currentPositionMs > chapterStart + 3000) {
+        return widget.chapters[i].label;
+      }
+    }
+    return null;
+  }
+
   Widget _buildFocusableButton({
     required FocusNode focusNode,
     required int index,
@@ -640,6 +682,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     required String semanticLabel,
     Color color = Colors.white,
     double iconSize = 24,
+    String? tooltip,
   }) {
     return FocusableWrapper(
       focusNode: focusNode,
@@ -657,6 +700,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
         child: IconButton(
           icon: AppIcon(icon, fill: 1, color: color, size: iconSize),
           iconSize: iconSize,
+          tooltip: tooltip,
           onPressed: onPressed,
         ),
       ),
