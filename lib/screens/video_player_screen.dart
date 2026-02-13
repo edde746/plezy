@@ -868,6 +868,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           }
           final channel = channels[channelIndex];
           final channelId = channel.identifier ?? channel.key;
+          appLogger.d('Tune: dvrKey=${widget.liveDvrKey} channelId=$channelId (identifier=${channel.identifier}, key=${channel.key})');
           final client = widget.liveClient!;
           final result = await client.tuneChannel(widget.liveDvrKey!, channelId);
           if (result == null) throw Exception('Failed to tune channel');
@@ -1722,7 +1723,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     final channel = channels[newIndex];
     final channelId = channel.identifier ?? channel.key;
-    appLogger.d('Switching to channel: ${channel.displayName} ($channelId)');
+    appLogger.d('Switching to channel: ${channel.displayName} ($channelId) (identifier=${channel.identifier}, key=${channel.key})');
 
     setState(() => _hasFirstFrame.value = false);
 

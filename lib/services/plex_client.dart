@@ -1996,12 +1996,15 @@ class PlexClient {
   /// Get EPG channels for a specific lineup
   Future<List<LiveTvChannel>> getEpgChannels({String? lineup}) async {
     final queryParams = <String, dynamic>{};
-    if (lineup != null) queryParams['lineup'] = Uri.decodeComponent(lineup);
+    if (lineup != null) queryParams['lineup'] = lineup;
 
     return _wrapListApiCall<LiveTvChannel>(
       () => _dio.get('/livetv/epg/channels', queryParameters: queryParams),
       (response) {
         final container = _getMediaContainer(response);
+        if (container != null && container['Channel'] is List && (container['Channel'] as List).isNotEmpty) {
+          appLogger.d('EPG channel sample: ${(container['Channel'] as List).first}');
+        }
         if (container != null && container['Channel'] != null) {
           return (container['Channel'] as List)
               .map((json) => LiveTvChannel.fromJson(json as Map<String, dynamic>)
@@ -2063,6 +2066,7 @@ class PlexClient {
       }
 
       _epgProviders = results;
+      appLogger.d('Discovered ${results.length} EPG provider(s)');
       if (results.isEmpty) {
         appLogger.w('No EPG providers found');
       }
@@ -2094,6 +2098,9 @@ class PlexClient {
           () => _dio.get(provider.gridEndpoint, queryParameters: queryParams),
           (response) {
             final container = _getMediaContainer(response);
+            if (container != null && container['Metadata'] is List && (container['Metadata'] as List).isNotEmpty) {
+              appLogger.d('EPG grid sample from ${provider.identifier}: ${(container['Metadata'] as List).first}');
+            }
             final programs = <LiveTvProgram>[];
             if (container != null && container['Metadata'] != null) {
               for (final item in container['Metadata'] as List) {
@@ -2118,6 +2125,7 @@ class PlexClient {
           },
           'Failed to get EPG grid from ${provider.identifier}',
         );
+        appLogger.d('EPG grid from ${provider.identifier}: ${programs.length} programs');
         allPrograms.addAll(programs);
       } catch (e) {
         appLogger.e('Failed to get EPG grid from provider ${provider.identifier}', error: e);
