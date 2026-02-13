@@ -513,11 +513,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       }
     });
 
-    // Clear filters in storage when changing library
-    if (isChangingLibrary) {
-      await storage.saveLibraryFilters({}, sectionId: libraryGlobalKey);
-    }
-
     // Cancel any existing requests
     _cancelToken?.cancel();
     _cancelToken = CancelToken();
