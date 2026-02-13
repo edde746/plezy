@@ -376,6 +376,8 @@ class _EpisodeCardState extends State<_EpisodeCard> {
         widget.episode.viewOffset! > 0;
     final progress = hasProgress ? widget.episode.viewOffset! / widget.episode.duration! : 0.0;
 
+    final hasActiveProgress = hasProgress && widget.episode.viewOffset! < widget.episode.duration!;
+
     return FocusableWrapper(
       autofocus: widget.autofocus,
       enableLongPress: true,
@@ -459,7 +461,7 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                       ),
 
                       // Progress bar at bottom
-                      if (hasProgress && !widget.episode.isWatched)
+                      if (hasActiveProgress)
                         Positioned(
                           bottom: 0,
                           left: 0,
@@ -477,7 +479,7 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                           ),
                         ),
 
-                      if (widget.episode.isWatched)
+                      if (widget.episode.isWatched && !hasActiveProgress)
                         Positioned(
                           top: 4,
                           right: 4,
