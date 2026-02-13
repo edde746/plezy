@@ -198,8 +198,10 @@ class GuideTabState extends State<GuideTab> {
       final multiServer = context.read<MultiServerProvider>();
       final liveTvServers = multiServer.liveTvServers;
       final allPrograms = <LiveTvProgram>[];
+      final queriedServers = <String>{};
 
       for (final serverInfo in liveTvServers) {
+        if (!queriedServers.add(serverInfo.serverId)) continue;
         try {
           final client = multiServer.getClientForServer(serverInfo.serverId);
           if (client == null) continue;
@@ -208,7 +210,6 @@ class GuideTabState extends State<GuideTab> {
           final endEpoch = _gridEnd.millisecondsSinceEpoch ~/ 1000;
 
           final programs = await client.getEpgGrid(
-            lineup: serverInfo.lineup,
             beginsAt: startEpoch,
             endsAt: endEpoch,
           );

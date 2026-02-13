@@ -2023,153 +2023,171 @@ class PlexClient {
     );
   }
 
-  /// Cached EPG grid endpoint path (discovered from /media/providers)
-  String? _epgGridEndpoint;
+  /// Cached EPG providers (discovered from /media/providers)
+  List<({String identifier, String gridEndpoint})>? _epgProviders;
 
-  /// Cached EPG provider identifier (e.g. "tv.plex.providers.epg.xmltv:21")
-  String? _epgProviderIdentifier;
-
-  /// Discover the EPG grid endpoint from media providers
-  Future<String?> _getEpgGridEndpoint() async {
-    if (_epgGridEndpoint != null) return _epgGridEndpoint;
+  /// Discover all EPG providers from media providers
+  Future<List<({String identifier, String gridEndpoint})>> _discoverEpgProviders() async {
+    if (_epgProviders != null) return _epgProviders!;
 
     try {
       final response = await _dio.get('/media/providers');
       final container = _getMediaContainer(response);
-      if (container == null) return null;
+      if (container == null) return [];
 
       final providers = container['MediaProvider'] as List?;
-      if (providers == null) return null;
+      if (providers == null) return [];
+
+      final results = <({String identifier, String gridEndpoint})>[];
 
       for (final provider in providers) {
         if (provider is! Map) continue;
         final protocols = provider['protocols'] as String?;
         if (protocols == null || !protocols.contains('livetv')) continue;
 
-        _epgProviderIdentifier = provider['identifier'] as String?;
+        final identifier = provider['identifier'] as String?;
+        if (identifier == null) continue;
 
         final features = provider['Feature'] as List?;
         if (features == null) continue;
         for (final feature in features) {
           if (feature is! Map) continue;
           if (feature['type'] == 'grid') {
-            _epgGridEndpoint = feature['key'] as String?;
-            appLogger.d('Discovered EPG grid endpoint: $_epgGridEndpoint (provider: $_epgProviderIdentifier)');
-            return _epgGridEndpoint;
+            final gridEndpoint = feature['key'] as String?;
+            if (gridEndpoint != null) {
+              results.add((identifier: identifier, gridEndpoint: gridEndpoint));
+              appLogger.d('Discovered EPG provider: $identifier (grid: $gridEndpoint)');
+            }
           }
         }
       }
+
+      _epgProviders = results;
+      if (results.isEmpty) {
+        appLogger.w('No EPG providers found');
+      }
+      return results;
     } catch (e) {
-      appLogger.e('Failed to discover EPG grid endpoint', error: e);
+      appLogger.e('Failed to discover EPG providers', error: e);
     }
-    return null;
+    return [];
   }
 
   /// Get guide/program data for channels (EPG grid data)
-  /// Discovers the grid endpoint from /media/providers on first call
+  /// Discovers grid endpoints from /media/providers on first call and queries all providers
   Future<List<LiveTvProgram>> getEpgGrid({
-    String? lineup,
     int? beginsAt,
     int? endsAt,
   }) async {
-    final gridEndpoint = await _getEpgGridEndpoint();
-    if (gridEndpoint == null) {
-      appLogger.w('No EPG grid endpoint found');
-      return [];
-    }
+    final providers = await _discoverEpgProviders();
+    if (providers.isEmpty) return [];
 
     final queryParams = <String, dynamic>{};
     if (beginsAt != null) queryParams['beginsAt>'] = beginsAt;
     if (endsAt != null) queryParams['endsAt<'] = endsAt;
 
-    return _wrapListApiCall<LiveTvProgram>(
-      () => _dio.get(gridEndpoint, queryParameters: queryParams),
-      (response) {
-        final container = _getMediaContainer(response);
-        final programs = <LiveTvProgram>[];
-        if (container != null && container['Metadata'] != null) {
-          for (final item in container['Metadata'] as List) {
-            try {
-              programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
-            } catch (_) {}
-          }
-        }
-        // Some responses nest programs inside Hub entries
-        if (container != null && container['Hub'] != null) {
-          for (final hub in container['Hub'] as List) {
-            if (hub is Map && hub['Metadata'] != null) {
-              for (final item in hub['Metadata'] as List) {
+    final allPrograms = <LiveTvProgram>[];
+
+    for (final provider in providers) {
+      try {
+        final programs = await _wrapListApiCall<LiveTvProgram>(
+          () => _dio.get(provider.gridEndpoint, queryParameters: queryParams),
+          (response) {
+            final container = _getMediaContainer(response);
+            final programs = <LiveTvProgram>[];
+            if (container != null && container['Metadata'] != null) {
+              for (final item in container['Metadata'] as List) {
                 try {
                   programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
                 } catch (_) {}
               }
             }
-          }
-        }
-        return programs;
-      },
-      'Failed to get EPG grid',
-    );
+            // Some responses nest programs inside Hub entries
+            if (container != null && container['Hub'] != null) {
+              for (final hub in container['Hub'] as List) {
+                if (hub is Map && hub['Metadata'] != null) {
+                  for (final item in hub['Metadata'] as List) {
+                    try {
+                      programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
+                    } catch (_) {}
+                  }
+                }
+              }
+            }
+            return programs;
+          },
+          'Failed to get EPG grid from ${provider.identifier}',
+        );
+        allPrograms.addAll(programs);
+      } catch (e) {
+        appLogger.e('Failed to get EPG grid from provider ${provider.identifier}', error: e);
+      }
+    }
+
+    return allPrograms;
   }
 
-  /// Get live TV hubs (What's On Now, etc.) from the EPG provider's discover endpoint.
+  /// Get live TV hubs (What's On Now, etc.) from all EPG providers' discover endpoints.
   /// Returns hubs with both display metadata and EPG timing/channel data per item.
   Future<List<LiveTvHubResult>> getLiveTvHubs({int count = 12}) async {
-    await _getEpgGridEndpoint();
-    if (_epgProviderIdentifier == null) return [];
+    final providers = await _discoverEpgProviders();
+    if (providers.isEmpty) return [];
 
-    try {
-      final response = await _dio.get(
-        '/$_epgProviderIdentifier/hubs/discover',
-        queryParameters: {
-          'count': count,
-          'includeStations': 1,
-          'includeRecentChannels': 1,
-          'includeMeta': 1,
-          'includeExternalMetadata': 1,
-        },
-      );
+    final allHubs = <LiveTvHubResult>[];
 
-      final container = _getMediaContainer(response);
-      if (container != null && container['Hub'] != null) {
-        final hubs = <LiveTvHubResult>[];
-        for (final hubJson in container['Hub'] as List) {
-          try {
-            final metadataList = hubJson['Metadata'] as List?;
-            if (metadataList == null || metadataList.isEmpty) continue;
+    for (final provider in providers) {
+      try {
+        final response = await _dio.get(
+          '/${provider.identifier}/hubs/discover',
+          queryParameters: {
+            'count': count,
+            'includeStations': 1,
+            'includeRecentChannels': 1,
+            'includeMeta': 1,
+            'includeExternalMetadata': 1,
+          },
+        );
 
-            final entries = <LiveTvHubEntry>[];
-            for (final itemJson in metadataList) {
-              if (itemJson is! Map<String, dynamic>) continue;
+        final container = _getMediaContainer(response);
+        if (container != null && container['Hub'] != null) {
+          for (final hubJson in container['Hub'] as List) {
+            try {
+              final metadataList = hubJson['Metadata'] as List?;
+              if (metadataList == null || metadataList.isEmpty) continue;
 
-              // Extract poster/art from Image array before parsing
-              _extractLiveTvImages(itemJson);
+              final entries = <LiveTvHubEntry>[];
+              for (final itemJson in metadataList) {
+                if (itemJson is! Map<String, dynamic>) continue;
 
-              try {
-                final metadata = PlexMetadata.fromJson(itemJson)
-                    .copyWith(serverId: serverId, serverName: serverName);
-                final program = LiveTvProgram.fromJson(itemJson);
-                entries.add(LiveTvHubEntry(metadata: metadata, program: program));
-              } catch (_) {}
+                // Extract poster/art from Image array before parsing
+                _extractLiveTvImages(itemJson);
+
+                try {
+                  final metadata = PlexMetadata.fromJson(itemJson)
+                      .copyWith(serverId: serverId, serverName: serverName);
+                  final program = LiveTvProgram.fromJson(itemJson);
+                  entries.add(LiveTvHubEntry(metadata: metadata, program: program));
+                } catch (_) {}
+              }
+
+              if (entries.isNotEmpty) {
+                allHubs.add(LiveTvHubResult(
+                  title: hubJson['title'] as String? ?? 'Unknown',
+                  hubKey: hubJson['key'] as String? ?? '',
+                  entries: entries,
+                ));
+              }
+            } catch (e) {
+              appLogger.w('Failed to parse live TV hub', error: e);
             }
-
-            if (entries.isNotEmpty) {
-              hubs.add(LiveTvHubResult(
-                title: hubJson['title'] as String? ?? 'Unknown',
-                hubKey: hubJson['key'] as String? ?? '',
-                entries: entries,
-              ));
-            }
-          } catch (e) {
-            appLogger.w('Failed to parse live TV hub', error: e);
           }
         }
-        return hubs;
+      } catch (e) {
+        appLogger.e('Failed to get live TV hubs from provider ${provider.identifier}', error: e);
       }
-    } catch (e) {
-      appLogger.e('Failed to get live TV hubs', error: e);
     }
-    return [];
+
+    return allHubs;
   }
 
   /// Extract poster/art URLs from the Image array in EPG metadata items.

@@ -107,6 +107,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
       }
 
       final allChannels = <LiveTvChannel>[];
+      final seenChannels = <String>{};
 
       for (final serverInfo in liveTvServers) {
         try {
@@ -114,7 +115,12 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
           if (client == null) continue;
 
           final channels = await client.getEpgChannels(lineup: serverInfo.lineup);
-          allChannels.addAll(channels);
+          for (final channel in channels) {
+            final dedupKey = '${serverInfo.serverId}:${channel.identifier ?? channel.key}';
+            if (seenChannels.add(dedupKey)) {
+              allChannels.add(channel);
+            }
+          }
         } catch (e) {
           appLogger.e('Failed to load channels from server ${serverInfo.serverId}', error: e);
         }

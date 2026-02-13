@@ -76,8 +76,10 @@ class WhatsOnTabState extends State<WhatsOnTab> {
       final multiServer = context.read<MultiServerProvider>();
       final liveTvServers = multiServer.liveTvServers;
       final allHubs = <LiveTvHubResult>[];
+      final queriedServers = <String>{};
 
       for (final serverInfo in liveTvServers) {
+        if (!queriedServers.add(serverInfo.serverId)) continue;
         try {
           final client = multiServer.getClientForServer(serverInfo.serverId);
           if (client == null) continue;
