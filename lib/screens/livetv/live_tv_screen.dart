@@ -118,12 +118,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
 
           final channels = await client.getEpgChannels(lineup: serverInfo.lineup);
           appLogger.d('Channels from DVR ${serverInfo.dvrKey}: ${channels.length} channels');
-          if (channels.isNotEmpty) {
-            final sample = channels.first;
-            appLogger.d('Sample channel: key=${sample.key} identifier=${sample.identifier} number=${sample.number} slug=${sample.slug}');
-          }
           for (final channel in channels) {
-            final dedupKey = '${serverInfo.serverId}:${channel.identifier ?? channel.key}';
+            final dedupKey = '${serverInfo.serverId}:${channel.key}';
             if (seenChannels.add(dedupKey)) {
               allChannels.add(channel);
             }

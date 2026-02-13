@@ -21,14 +21,13 @@ Future<void> navigateToLiveTv(
   required LiveTvChannel channel,
   List<LiveTvChannel>? channels,
 }) async {
-  final channelId = channel.identifier ?? channel.key;
   final navigator = Navigator.of(context);
 
-  appLogger.d('Navigating to live channel: ${channel.displayName} ($channelId)');
+  appLogger.d('Navigating to live channel: ${channel.displayName} (${channel.key})');
 
   final placeholder = PlexMetadata(
-    ratingKey: channelId,
-    key: channelId,
+    ratingKey: channel.key,
+    key: channel.key,
     type: 'clip',
     title: channel.displayName,
   );
@@ -42,7 +41,7 @@ Future<void> navigateToLiveTv(
       liveStreamUrl: null,
       liveChannels: channels,
       liveCurrentChannelIndex: channels?.indexWhere(
-        (ch) => (ch.identifier ?? ch.key) == channelId,
+        (ch) => ch.key == channel.key,
       ),
       liveDvrKey: dvrKey,
       liveClient: client,

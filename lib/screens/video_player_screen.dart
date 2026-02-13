@@ -867,10 +867,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             throw Exception('No channel to tune');
           }
           final channel = channels[channelIndex];
-          final channelId = channel.identifier ?? channel.key;
-          appLogger.d('Tune: dvrKey=${widget.liveDvrKey} channelId=$channelId (identifier=${channel.identifier}, key=${channel.key})');
+          appLogger.d('Tune: dvrKey=${widget.liveDvrKey} channelKey=${channel.key}');
           final client = widget.liveClient!;
-          final result = await client.tuneChannel(widget.liveDvrKey!, channelId);
+          final result = await client.tuneChannel(widget.liveDvrKey!, channel.key);
           if (result == null) throw Exception('Failed to tune channel');
 
           streamUrl = '${client.config.baseUrl}${result.streamPath}'
@@ -1722,8 +1721,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     await _sendLiveTimeline('stopped');
 
     final channel = channels[newIndex];
-    final channelId = channel.identifier ?? channel.key;
-    appLogger.d('Switching to channel: ${channel.displayName} ($channelId) (identifier=${channel.identifier}, key=${channel.key})');
+    appLogger.d('Switching to channel: ${channel.displayName} (${channel.key})');
 
     setState(() => _hasFirstFrame.value = false);
 
@@ -1739,7 +1737,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final client = multiServer.getClientForServer(serverInfo.serverId);
       if (client == null) return;
 
-      final result = await client.tuneChannel(serverInfo.dvrKey, channelId);
+      final result = await client.tuneChannel(serverInfo.dvrKey, channel.key);
       if (result == null || !mounted) return;
 
       final streamUrl = '${client.config.baseUrl}${result.streamPath}'.withPlexToken(client.config.token);

@@ -258,8 +258,7 @@ class GuideTabState extends State<GuideTab> {
   }
 
   List<LiveTvProgram> _getProgramsForChannel(LiveTvChannel channel) {
-    final channelId = channel.identifier ?? channel.key;
-    return _programs.where((p) => p.channelIdentifier == channelId).toList()
+    return _programs.where((p) => p.channelIdentifier == channel.key).toList()
       ..sort((a, b) => (a.beginsAt ?? 0).compareTo(b.beginsAt ?? 0));
   }
 

@@ -40,7 +40,7 @@ class LiveTvChannel {
       title: json['title'] as String? ?? json['callSign'] as String?,
       thumb: json['thumb'] as String?,
       art: json['art'] as String?,
-      number: json['number'] as String? ?? json['channelNumber'] as String?,
+      number: json['number'] as String? ?? json['channelNumber'] as String? ?? json['channelVcn']?.toString(),
       hd: json['hd'] == true || json['hd'] == 1,
       lineup: json['lineup'] as String?,
       slug: json['slug'] as String?,
