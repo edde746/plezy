@@ -79,7 +79,7 @@ class ChannelMapping {
     return ChannelMapping(
       channelKey: json['channelKey'] as String?,
       deviceIdentifier: json['deviceIdentifier'] as String?,
-      enabled: json['enabled'] == true || json['enabled'] == 1,
+      enabled: json['enabled'] == true || json['enabled'] == 1 || json['enabled'] == '1',
       lineupIdentifier: json['lineupIdentifier'] as String?,
     );
   }

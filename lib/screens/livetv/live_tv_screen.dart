@@ -111,14 +111,46 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
 
       appLogger.d('Live TV DVRs: ${liveTvServers.map((s) => '${s.serverId}/${s.dvrKey} lineup=${s.lineup}').join(', ')}');
 
+      // Build a set of enabled channel keys per server from DVR mappings
+      final enabledKeysByServer = <String, Set<String>>{};
+      final queriedServers = <String>{};
+      for (final serverInfo in liveTvServers) {
+        if (!queriedServers.add(serverInfo.serverId)) continue;
+        try {
+          final client = multiServer.getClientForServer(serverInfo.serverId);
+          if (client == null) continue;
+          final dvrs = await client.getDvrs();
+          final enabledKeys = <String>{};
+          bool hasMappings = false;
+          for (final dvr in dvrs) {
+            if (dvr.channelMappings.isNotEmpty) {
+              hasMappings = true;
+              for (final m in dvr.channelMappings) {
+                if (m.enabled == true && m.channelKey != null) {
+                  enabledKeys.add(m.channelKey!);
+                }
+              }
+            }
+          }
+          if (hasMappings) {
+            enabledKeysByServer[serverInfo.serverId] = enabledKeys;
+          }
+        } catch (e) {
+          appLogger.e('Failed to load DVR mappings for server ${serverInfo.serverId}', error: e);
+        }
+      }
+
       for (final serverInfo in liveTvServers) {
         try {
           final client = multiServer.getClientForServer(serverInfo.serverId);
           if (client == null) continue;
 
           final channels = await client.getEpgChannels(lineup: serverInfo.lineup);
-          appLogger.d('Channels from DVR ${serverInfo.dvrKey}: ${channels.length} channels');
+          final enabledKeys = enabledKeysByServer[serverInfo.serverId];
+          appLogger.d('Channels from DVR ${serverInfo.dvrKey}: ${channels.length} channels (${enabledKeys?.length ?? 'all'} enabled)');
           for (final channel in channels) {
+            // Skip disabled channels if DVR has mapping data
+            if (enabledKeys != null && !enabledKeys.contains(channel.key)) continue;
             final dedupKey = '${serverInfo.serverId}:${channel.key}';
             if (seenChannels.add(dedupKey)) {
               allChannels.add(channel);
@@ -144,7 +176,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
         _isLoading = false;
       });
 
-      if (allChannels.isNotEmpty) {
+      if (allChannels.isNotEmpty && PlatformDetector.shouldUseSideNavigation(context)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _focusCurrentTab();
         });

@@ -516,72 +516,117 @@ class GuideTabState extends State<GuideTab> {
     return Column(
       children: [
         _buildTimeNavigation(theme),
-        Row(
-          children: [
-            SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
-            Expanded(
-              child: SingleChildScrollView(
-                controller: _headerHorizontalController,
-                scrollDirection: Axis.horizontal,
-                physics: const ClampingScrollPhysics(),
-                child: SizedBox(
-                  width: _totalGridWidth(),
-                  height: _timeHeaderHeight,
-                  child: _buildTimeHeader(theme),
-                ),
-              ),
-            ),
-          ],
-        ),
         Expanded(
-          child: Row(
-            children: [
-              SizedBox(
-                width: _channelColumnWidth,
-                child: ListView.builder(
-                  controller: _channelVerticalController,
-                  itemCount: widget.channels.length,
-                  itemExtent: _rowHeight,
-                  itemBuilder: (context, index) =>
-                      _buildChannelCell(widget.channels[index], theme, index: index),
-                ),
-              ),
-              Expanded(
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    if (notification is ScrollUpdateNotification &&
-                        notification.metrics.axis == Axis.vertical) {
-                      if (_channelVerticalController.hasClients) {
-                        _channelVerticalController
-                            .jumpTo(notification.metrics.pixels);
-                      }
-                    }
-                    return false;
-                  },
-                  child: SingleChildScrollView(
-                    controller: _gridHorizontalController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const ClampingScrollPhysics(),
-                    child: SizedBox(
-                      width: _totalGridWidth(),
-                      child: ListView.builder(
-                        controller: _gridVerticalController,
-                        itemCount: widget.channels.length,
-                        itemExtent: _rowHeight,
-                        itemBuilder: (context, index) {
-                          final channel = widget.channels[index];
-                          final programs = _getProgramsForChannel(channel);
-                          return _buildProgramRow(channel, programs, theme, channelIndex: index);
-                        },
+          child: ListenableBuilder(
+            listenable: _gridHorizontalController,
+            builder: (context, child) {
+              return Stack(
+                children: [
+                  child!,
+                  _buildNowIndicatorOverlay(theme),
+                ],
+              );
+            },
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: _headerHorizontalController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const ClampingScrollPhysics(),
+                        child: SizedBox(
+                          width: _totalGridWidth(),
+                          height: _timeHeaderHeight,
+                          child: _buildTimeHeader(theme),
+                        ),
                       ),
                     ),
+                  ],
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: _channelColumnWidth,
+                        child: ListView.builder(
+                          controller: _channelVerticalController,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: widget.channels.length,
+                          itemExtent: _rowHeight,
+                          itemBuilder: (context, index) =>
+                              _buildChannelCell(widget.channels[index], theme, index: index),
+                        ),
+                      ),
+                      Expanded(
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            if (notification is ScrollUpdateNotification &&
+                                notification.metrics.axis == Axis.vertical) {
+                              if (_channelVerticalController.hasClients) {
+                                _channelVerticalController
+                                    .jumpTo(notification.metrics.pixels);
+                              }
+                            }
+                            return false;
+                          },
+                          child: SingleChildScrollView(
+                            controller: _gridHorizontalController,
+                            scrollDirection: Axis.horizontal,
+                            physics: const ClampingScrollPhysics(),
+                            child: SizedBox(
+                              width: _totalGridWidth(),
+                              child: ListView.builder(
+                                controller: _gridVerticalController,
+                                itemCount: widget.channels.length,
+                                itemExtent: _rowHeight,
+                                itemBuilder: (context, index) {
+                                  final channel = widget.channels[index];
+                                  final programs = _getProgramsForChannel(channel);
+                                  return _buildProgramRow(channel, programs, theme, channelIndex: index);
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNowIndicatorOverlay(ThemeData theme) {
+    final now = DateTime.now();
+    if (now.isBefore(_gridStart) || now.isAfter(_gridEnd)) {
+      return const SizedBox.shrink();
+    }
+    final minutesSinceStart = now.difference(_gridStart).inMinutes.toDouble();
+    final nowOffset = (minutesSinceStart / _minutesPerSlot) * _slotWidth;
+    final scrollOffset = _gridHorizontalController.hasClients
+        ? _gridHorizontalController.offset
+        : 0.0;
+    final left = _channelColumnWidth + nowOffset - scrollOffset;
+
+    // Hide when scrolled behind the channel column
+    if (left < _channelColumnWidth) return const SizedBox.shrink();
+
+    final gridHeight = _timeHeaderHeight + widget.channels.length * _rowHeight;
+
+    return Positioned(
+      left: left,
+      top: 0,
+      height: gridHeight,
+      child: IgnorePointer(
+        child: Container(width: 2, color: Colors.red),
+      ),
     );
   }
 
@@ -851,29 +896,9 @@ class GuideTabState extends State<GuideTab> {
       current = current.add(const Duration(minutes: _minutesPerSlot));
     }
 
-    return Stack(
-      children: [
-        Row(children: slots),
-        _buildNowIndicator(theme),
-      ],
-    );
+    return Row(children: slots);
   }
 
-  Widget _buildNowIndicator(ThemeData theme) {
-    final now = DateTime.now();
-    if (now.isBefore(_gridStart) || now.isAfter(_gridEnd)) {
-      return const SizedBox.shrink();
-    }
-    final minutesSinceStart = now.difference(_gridStart).inMinutes.toDouble();
-    final offset = (minutesSinceStart / _minutesPerSlot) * _slotWidth;
-
-    return Positioned(
-      left: offset,
-      top: 0,
-      bottom: 0,
-      child: Container(width: 2, color: Colors.red),
-    );
-  }
 
   // ---------------------------------------------------------------------------
   // Channel column
@@ -994,12 +1019,7 @@ class GuideTabState extends State<GuideTab> {
           bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
         ),
       ),
-      child: Stack(
-        children: [
-          ...blocks,
-          _buildNowIndicator(theme),
-        ],
-      ),
+      child: Stack(children: blocks),
     );
   }
 
