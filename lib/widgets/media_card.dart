@@ -98,11 +98,14 @@ class MediaCardState extends State<MediaCard> {
     }
 
     // Add watched status
-    if (item.isWatched) {
-      baseLabel = '$baseLabel, ${t.accessibility.mediaCardWatched}';
-    } else if (item.viewOffset != null && item.duration != null && item.viewOffset! > 0) {
+    final hasActiveProgress =
+        item.viewOffset != null && item.duration != null && item.viewOffset! > 0 && item.viewOffset! < item.duration!;
+
+    if (hasActiveProgress) {
       final percent = ((item.viewOffset! / item.duration!) * 100).round();
       baseLabel = '$baseLabel, ${t.accessibility.mediaCardPartiallyWatched(percent: percent)}';
+    } else if (item.isWatched) {
+      baseLabel = '$baseLabel, ${t.accessibility.mediaCardWatched}';
     } else {
       baseLabel = '$baseLabel, ${t.accessibility.mediaCardUnwatched}';
     }
@@ -716,10 +719,16 @@ class _MediaCardHelpers {
   static Widget buildWatchProgress(BuildContext context, PlexMetadata metadata) {
     final showUnwatchedCount = context.watch<SettingsProvider>().showUnwatchedCount;
 
+    final hasActiveProgress =
+        metadata.viewOffset != null &&
+        metadata.duration != null &&
+        metadata.viewOffset! > 0 &&
+        metadata.viewOffset! < metadata.duration!;
+
     return Stack(
       children: [
         // Watched indicator (checkmark)
-        if (metadata.isWatched)
+        if (metadata.isWatched && !hasActiveProgress)
           Positioned(
             top: 4,
             right: 4,
@@ -756,7 +765,7 @@ class _MediaCardHelpers {
             ),
           ),
         // Progress bar for partially watched content (episodes/movies)
-        if (metadata.viewOffset != null && metadata.duration != null && metadata.viewOffset! > 0 && !metadata.isWatched)
+        if (hasActiveProgress)
           Positioned(
             bottom: 0,
             left: 0,
