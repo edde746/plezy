@@ -269,7 +269,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             value: 'delete_media',
             icon: Symbols.delete_rounded,
             label: t.common.delete,
-            hoverColor: Colors.red,
+            hoverColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -1002,11 +1002,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final metadata = widget.item as PlexMetadata;
     final client = _getClientForItem();
 
-    await ExternalPlayerService.launch(
-      context: context,
-      metadata: metadata,
-      client: client,
-    );
+    await ExternalPlayerService.launch(context: context, metadata: metadata, client: client);
   }
 
   /// Handle download action
