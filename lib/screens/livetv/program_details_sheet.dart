@@ -204,7 +204,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                       width: 80,
                       height: 120,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
                     ),
                   ),
                   const SizedBox(width: 14),

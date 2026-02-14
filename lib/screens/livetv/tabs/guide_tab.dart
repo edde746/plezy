@@ -172,23 +172,6 @@ class GuideTabState extends State<GuideTab> {
     _loadPrograms();
   }
 
-  void _jumpToDay(DateTime day) {
-    final now = DateTime.now();
-    final isToday = day.year == now.year &&
-        day.month == now.month &&
-        day.day == now.day;
-
-    if (isToday) {
-      _jumpToNow();
-      return;
-    }
-
-    setState(() {
-      _gridStart = DateTime(day.year, day.month, day.day);
-      _gridEnd = _gridStart.add(const Duration(hours: 6));
-    });
-    _loadPrograms();
-  }
 
   Future<void> _loadPrograms() async {
     if (!mounted) return;

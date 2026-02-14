@@ -115,7 +115,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
         borderRadius: BorderRadius.circular(6),
         child: player.iconAsset!.endsWith('.svg')
             ? SvgPicture.asset(player.iconAsset!, width: 32, height: 32)
-            : Image.asset(player.iconAsset!, width: 32, height: 32, errorBuilder: (_, __, ___) {
+            : Image.asset(player.iconAsset!, width: 32, height: 32, errorBuilder: (_, _, _) {
                 return const AppIcon(Symbols.play_circle_rounded, fill: 1, size: 32);
               }),
       );

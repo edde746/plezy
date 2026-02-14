@@ -8,7 +8,6 @@ import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../theme/mono_tokens.dart';
-import '../../utils/formatters.dart';
 import '../../utils/live_tv_player_navigation.dart';
 import '../../utils/plex_image_helper.dart';
 import '../../widgets/app_icon.dart';
@@ -139,13 +138,13 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
             delegate: SliverChildBuilderDelegate((context, index) {
               final program = _programs[index];
               final channel = _findChannel(program.channelIdentifier);
-              final onTap = () {
+              void onTap() {
                 if (program.isCurrentlyAiring && channel != null) {
                   _tuneChannel(channel);
                 } else {
                   _showProgramDetails(program, channel);
                 }
-              };
+              }
               return FocusableWrapper(
                 autofocus: index == 0,
                 autoScroll: true,
