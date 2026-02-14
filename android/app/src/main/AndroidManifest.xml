@@ -76,6 +76,16 @@
                 <data android:scheme="plezy" android:host="play"/>
             </intent-filter>
         </activity>
+        <!-- FileProvider for sharing downloaded files with external players -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.edde746.plezy.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

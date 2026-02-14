@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- App-internal files directory (getApplicationDocumentsDirectory on Android) -->
+    <files-path name="app_files" path="." />
+    <!-- External files directory (fallback) -->
+    <external-files-path name="external_files" path="." />
+</paths>

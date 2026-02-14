@@ -1000,8 +1000,20 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Handle play in external player action
   Future<void> _handlePlayExternal(BuildContext context) async {
     final metadata = widget.item as PlexMetadata;
-    final client = _getClientForItem();
 
+    // Check if the item is downloaded and use local file path if available
+    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+    if (downloadProvider.isDownloaded(globalKey)) {
+      final videoPath = await downloadProvider.getVideoFilePath(globalKey);
+      if (videoPath != null) {
+        final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+        await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
+        return;
+      }
+    }
+
+    final client = _getClientForItem();
     await ExternalPlayerService.launch(context: context, metadata: metadata, client: client);
   }
 

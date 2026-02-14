@@ -1,6 +1,7 @@
 package com.edde746.plezy
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.app.AppOpsManager
@@ -8,6 +9,7 @@ import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.res.Configuration
 import android.util.Rational
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.RenderMode
 import io.flutter.embedding.android.TransparencyMode
@@ -16,10 +18,12 @@ import io.flutter.plugin.common.MethodChannel
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
 import com.edde746.plezy.watchnext.WatchNextPlugin
+import java.io.File
 
 class MainActivity : FlutterActivity() {
 
     private val PIP_CHANNEL = "app.plezy/pip"
+    private val EXTERNAL_PLAYER_CHANNEL = "app.plezy/external_player"
     private var watchNextPlugin: WatchNextPlugin? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +68,44 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         flutterEngine.plugins.add(MpvPlayerPlugin())
         flutterEngine.plugins.add(ExoPlayerPlugin())
+
+        // External player: open local video files with proper content:// URIs
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, EXTERNAL_PLAYER_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "openVideo" -> {
+                    val filePath = call.argument<String>("filePath")
+                    val packageName = call.argument<String>("package")
+
+                    if (filePath == null) {
+                        result.error("INVALID_ARGUMENT", "filePath is required", null)
+                        return@setMethodCallHandler
+                    }
+
+                    try {
+                        val uri: Uri = if (filePath.startsWith("content://")) {
+                            Uri.parse(filePath)
+                        } else {
+                            // Convert file path to content:// URI via FileProvider
+                            val path = if (filePath.startsWith("file://")) filePath.removePrefix("file://") else filePath
+                            FileProvider.getUriForFile(this, "com.edde746.plezy.fileprovider", File(path))
+                        }
+
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "video/*")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                            if (packageName != null) {
+                                setPackage(packageName)
+                            }
+                        }
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
 
         // Register Watch Next plugin and keep reference for deep link handling
         watchNextPlugin = WatchNextPlugin()

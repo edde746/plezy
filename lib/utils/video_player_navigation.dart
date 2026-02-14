@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'package:provider/provider.dart';
+
 import '../mpv/mpv.dart';
 import '../models/plex_metadata.dart';
+import '../providers/download_provider.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
 import '../services/settings_service.dart';
@@ -56,24 +59,36 @@ Future<bool?> navigateToVideoPlayer(
     }
   }
 
-  // Check if external player is enabled (skip for offline mode)
-  if (!isOffline) {
-    try {
-      final settingsService = await SettingsService.getInstance();
-      if (settingsService.getUseExternalPlayer()) {
+  // Check if external player is enabled
+  try {
+    final settingsService = await SettingsService.getInstance();
+    if (settingsService.getUseExternalPlayer()) {
+      bool launched = false;
+
+      if (isOffline) {
+        // Offline mode: resolve local file path for the external player
+        final downloadProvider = context.read<DownloadProvider>();
+        final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+        final videoPath = await downloadProvider.getVideoFilePath(globalKey);
+        if (videoPath != null) {
+          final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+          launched = await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
+        }
+      } else {
         final client = context.getClientForMetadata(metadata);
-        final launched = await ExternalPlayerService.launch(
+        launched = await ExternalPlayerService.launch(
           context: context,
           metadata: metadata,
           client: client,
           mediaIndex: mediaIndex,
         );
-        if (launched) return null;
-        // Fall through to built-in player on failure
       }
-    } catch (e) {
-      appLogger.w('External player launch failed, falling back to built-in player', error: e);
+
+      if (launched) return null;
+      // Fall through to built-in player on failure
     }
+  } catch (e) {
+    appLogger.w('External player launch failed, falling back to built-in player', error: e);
   }
 
   // Prevent stacking an identical video player when already active
