@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:background_downloader/background_downloader.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
@@ -7,6 +8,7 @@ import 'package:path/path.dart' as path;
 import 'package:plezy/utils/content_utils.dart';
 import '../database/app_database.dart';
 import 'settings_service.dart';
+import 'saf_storage_service.dart';
 import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
@@ -19,8 +21,6 @@ import '../utils/global_key_utils.dart';
 import '../utils/plex_cache_parser.dart';
 
 /// Extension methods on AppDatabase for download operations
-/// Result of a download attempt for queue processing decisions
-enum _DownloadResult { success, networkError, permanentFailure }
 
 extension DownloadDatabaseOperations on AppDatabase {
   /// Insert a new download into the database
@@ -75,7 +75,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     ).join([innerJoin(downloadedMedia, downloadedMedia.globalKey.equalsExp(downloadQueue.mediaGlobalKey))]);
 
     query
-      ..where(downloadedMedia.status.equals(DownloadStatus.paused.index).not())
+      ..where(downloadedMedia.status.equals(DownloadStatus.queued.index))
       ..orderBy([
         OrderingTerm(expression: downloadQueue.priority, mode: OrderingMode.desc),
         OrderingTerm(expression: downloadQueue.addedAt),
@@ -164,6 +164,43 @@ extension DownloadDatabaseOperations on AppDatabase {
   Future<List<DownloadedMediaItem>> getEpisodesByShow(String showKey) {
     return (select(downloadedMedia)..where((t) => t.grandparentRatingKey.equals(showKey))).get();
   }
+
+  /// Update the background_downloader task ID for a download
+  Future<void> updateBgTaskId(String globalKey, String? taskId) async {
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+      DownloadedMediaCompanion(bgTaskId: Value(taskId)),
+    );
+  }
+
+  /// Get the background_downloader task ID for a download
+  Future<String?> getBgTaskId(String globalKey) async {
+    final item = await getDownloadedMedia(globalKey);
+    return item?.bgTaskId;
+  }
+}
+
+/// Context for a download that's been enqueued with background_downloader.
+/// Carries metadata needed between enqueue and completion callback.
+class _DownloadContext {
+  final PlexMetadata metadata;
+  final DownloadQueueItem queueItem;
+  final String filePath; // Absolute path (normal) or SAF dir URI (SAF mode)
+  final String extension;
+  final PlexClient client;
+  final int? showYear;
+  final bool isSafMode;
+  final PlexMediaInfo? mediaInfo;
+
+  _DownloadContext({
+    required this.metadata,
+    required this.queueItem,
+    required this.filePath,
+    required this.extension,
+    required this.client,
+    this.showYear,
+    this.isSafMode = false,
+    this.mediaInfo,
+  });
 }
 
 class DownloadManagerService {
@@ -180,56 +217,24 @@ class DownloadManagerService {
   final _deletionProgressController = StreamController<DeletionProgress>.broadcast();
   Stream<DeletionProgress> get deletionProgressStream => _deletionProgressController.stream;
 
-  // Active downloads with cancel tokens
-  final Map<String, CancelToken> _activeDownloads = {};
+  // Context for downloads enqueued in this session
+  final Map<String, _DownloadContext> _pendingDownloadContext = {};
 
-  // Flag to prevent multiple queue processing
-  bool _isProcessingQueue = false;
+  // Items recovered with video complete but supplementary downloads missing
+  final Set<String> _pendingSupplementaryDownloads = {};
 
-  // Connectivity listener for auto-resume
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
-
-  // Cached client for auto-resume
+  // Cached client for recovery and queue processing
   PlexClient? _lastClient;
 
-  /// Check if downloads should be blocked due to cellular-only setting
-  Future<bool> _shouldBlockDownload() async {
-    return shouldBlockDownloadOnCellular();
-  }
+  // background_downloader state
+  bool _fileDownloaderInitialized = false;
+  static const _downloadGroup = 'video_downloads';
 
-  /// Determine if an error is a retriable network error vs a permanent failure
-  bool _isRetriableNetworkError(Object e) {
-    if (e is DioException) {
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.receiveTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.connectionError:
-          return true;
-        case DioExceptionType.unknown:
-          // Mid-stream disconnects surface as DioExceptionType.unknown
-          // wrapping SocketException, HttpException, or similar
-          final inner = e.error;
-          if (inner is SocketException) return true;
-          if (inner is HttpException) return true;
-          final msg = inner?.toString() ?? '';
-          if (msg.contains('Connection closed') || msg.contains('Connection reset')) {
-            return true;
-          }
-          return false;
-        case DioExceptionType.badResponse:
-          // 5xx server errors are transient and worth retrying
-          final statusCode = e.response?.statusCode;
-          if (statusCode != null && statusCode >= 500) return true;
-          return false;
-        default:
-          return false;
-      }
-    }
-    if (e is SocketException) return true;
-    if (e is HttpException) return true;
-    return false;
-  }
+  // Keys currently being paused — prevents holding queue from promoting them
+  final Set<String> _pausingKeys = {};
+
+  // Prevents concurrent _processQueue calls
+  bool _isProcessingQueue = false;
 
   /// Public method to check if downloads should be blocked due to cellular-only setting
   /// Can be used by DownloadProvider to show user-friendly error
@@ -253,22 +258,77 @@ class DownloadManagerService {
       _storageService = storageService,
       _dio = dio ?? Dio();
 
-  /// Recover downloads that were in "downloading" state when the app was killed.
-  /// Transitions them to "queued" so _processQueue picks them up with resume
-  /// support via the existing .part file on disk.
+  /// Initialize background_downloader with callbacks, notifications, and concurrency config.
+  Future<void> _initializeFileDownloader() async {
+    if (_fileDownloaderInitialized) return;
+
+    FileDownloader()
+        .registerCallbacks(
+          group: _downloadGroup,
+          taskStatusCallback: _onTaskStatusChanged,
+          taskProgressCallback: _onTaskProgress,
+        )
+        .configureNotificationForGroup(
+          _downloadGroup,
+          running: const TaskNotification('{displayName}', 'Downloading...'),
+          complete: const TaskNotification('{displayName}', 'Download complete'),
+          error: const TaskNotification('{displayName}', 'Download failed'),
+          paused: const TaskNotification('{displayName}', 'Download paused'),
+          progressBar: true,
+        );
+
+    // Configure native holding queue: max 1 concurrent (Plex server limitation)
+    await FileDownloader().configure(globalConfig: (Config.holdingQueue, (1, 1, 1)));
+
+    // Track tasks for persistence across app restarts
+    await FileDownloader().trackTasks();
+
+    _fileDownloaderInitialized = true;
+  }
+
+  /// Recover downloads that were interrupted when the app was killed.
+  /// Uses background_downloader's rescheduleKilledTasks for native recovery,
+  /// then scans drift for orphaned items.
   Future<void> recoverInterruptedDownloads() async {
     try {
+      await _initializeFileDownloader();
+
+      // Let background_downloader re-enqueue tasks killed by the OS
+      final (rescheduled, _) = await FileDownloader().rescheduleKilledTasks();
+      if (rescheduled.isNotEmpty) {
+        appLogger.i('Rescheduled ${rescheduled.length} killed download task(s)');
+      }
+
+      // Scan drift for orphaned items stuck in 'downloading'
       final allDownloads = await _database.select(_database.downloadedMedia).get();
-      final interrupted = allDownloads.where((item) => item.status == DownloadStatus.downloading.index).toList();
 
-      if (interrupted.isEmpty) return;
+      for (final item in allDownloads) {
+        if (item.status == DownloadStatus.downloading.index) {
+          // Video already downloaded but post-processing didn't complete
+          if (item.videoFilePath != null) {
+            appLogger.i('Download ${item.globalKey} has video but incomplete post-processing, completing');
+            await _database.updateDownloadStatus(item.globalKey, DownloadStatus.completed.index);
+            await _database.removeFromQueue(item.globalKey);
+            _emitProgress(item.globalKey, DownloadStatus.completed, 100);
+            _pendingSupplementaryDownloads.add(item.globalKey);
+            continue;
+          }
 
-      appLogger.i('Recovering ${interrupted.length} interrupted download(s)');
-      for (final item in interrupted) {
-        await _database.updateDownloadStatus(item.globalKey, DownloadStatus.queued.index);
-        // Re-add to queue so _processQueue picks it up
-        await _database.addToQueue(mediaGlobalKey: item.globalKey);
-        appLogger.d('Re-queued interrupted download: ${item.globalKey}');
+          // Check if background_downloader still has this task
+          Task? bgTask;
+          if (item.bgTaskId != null) {
+            bgTask = await FileDownloader().taskForId(item.bgTaskId!);
+          }
+
+          if (bgTask == null) {
+            // No active bg task — orphan, re-queue it
+            appLogger.i('Re-queuing orphaned download: ${item.globalKey}');
+            await _database.updateDownloadStatus(item.globalKey, DownloadStatus.queued.index);
+            await _database.updateBgTaskId(item.globalKey, null);
+            await _database.addToQueue(mediaGlobalKey: item.globalKey);
+          }
+          // If bgTask exists, background_downloader is still handling it
+        }
       }
     } catch (e) {
       appLogger.e('Failed to recover interrupted downloads', error: e);
@@ -278,12 +338,64 @@ class DownloadManagerService {
   /// Resume queued downloads that have no active processing.
   /// Call after a PlexClient becomes available (e.g. after server connect on launch).
   void resumeQueuedDownloads(PlexClient client) {
+    _lastClient = client;
+
+    // Attempt deferred supplementary downloads for recovered items
+    _processPendingSupplementaryDownloads(client);
+
     _database.getNextQueueItem().then((item) {
-      if (item != null && !_isProcessingQueue) {
+      if (item != null) {
         appLogger.i('Resuming queued downloads after app restart');
         _processQueue(client);
       }
     });
+  }
+
+  /// Attempt supplementary downloads (artwork, subtitles) for items that were
+  /// recovered with a completed video but missed post-processing.
+  Future<void> _processPendingSupplementaryDownloads(PlexClient client) async {
+    if (_pendingSupplementaryDownloads.isEmpty) return;
+
+    final keys = Set<String>.from(_pendingSupplementaryDownloads);
+    _pendingSupplementaryDownloads.clear();
+
+    for (final globalKey in keys) {
+      try {
+        final metadata = await _resolveMetadata(globalKey);
+        if (metadata == null) {
+          appLogger.w('No metadata for deferred supplementary download: $globalKey');
+          continue;
+        }
+
+        // Look up show year for episodes
+        int? showYear;
+        if (metadata.type == 'episode' && metadata.grandparentRatingKey != null) {
+          final parsed = parseGlobalKey(globalKey);
+          if (parsed != null) {
+            final showCached = await _apiCache.get(parsed.serverId, '/library/metadata/${metadata.grandparentRatingKey}');
+            final showJson = PlexCacheParser.extractFirstMetadata(showCached);
+            if (showJson != null) showYear = PlexMetadata.fromJson(showJson).year;
+          }
+        }
+
+        await _downloadArtwork(globalKey, metadata, client, showYear: showYear);
+        await _downloadChapterThumbnails(metadata.serverId!, metadata.ratingKey, client);
+
+        // Attempt subtitles
+        try {
+          final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+          if (playbackData.mediaInfo != null) {
+            await _downloadSubtitles(globalKey, metadata, playbackData.mediaInfo!, client, showYear: showYear);
+          }
+        } catch (e) {
+          appLogger.w('Could not fetch playback data for deferred subtitles: $globalKey', error: e);
+        }
+
+        appLogger.i('Deferred supplementary downloads completed for $globalKey');
+      } catch (e) {
+        appLogger.w('Deferred supplementary downloads failed for $globalKey', error: e);
+      }
+    }
   }
 
   /// Delete a file if it exists and log the deletion
@@ -344,444 +456,382 @@ class DownloadManagerService {
     _processQueue(client);
   }
 
-  /// Start processing the download queue - processes one item at a time
+  /// Process the download queue — prepares and enqueues items with background_downloader.
+  /// Non-blocking: returns after all queued items are enqueued (downloads run natively).
   Future<void> _processQueue(PlexClient client) async {
-    if (_isProcessingQueue) {
-      appLogger.d('Queue processing already in progress');
-      return;
-    }
-
+    if (_isProcessingQueue) return;
     _isProcessingQueue = true;
-    _lastClient = client; // Cache for auto-resume
-    _setupConnectivityListener(); // Setup listener for auto-resume
+    _lastClient = client;
 
     try {
+      await _initializeFileDownloader();
+
       while (true) {
-        // Check if we should pause due to cellular
-        if (await _shouldBlockDownload()) {
-          appLogger.i('Pausing downloads - on cellular data with WiFi-only enabled');
-          break;
-        }
-
-        // Get next item from queue
         final nextItem = await _database.getNextQueueItem();
-        if (nextItem == null) {
-          appLogger.d('No more items in queue');
-          break;
-        }
+        if (nextItem == null) break;
 
-        final result = await _startDownload(nextItem.mediaGlobalKey, client, nextItem);
-
-        // If download failed due to network, wait before retrying to avoid rapid loops
-        if (result == _DownloadResult.networkError) {
-          appLogger.i('Network error - waiting 5 seconds before processing next item');
-          await Future.delayed(const Duration(seconds: 5));
-        }
+        await _prepareAndEnqueueDownload(nextItem.mediaGlobalKey, client, nextItem);
       }
     } finally {
       _isProcessingQueue = false;
     }
   }
 
-  /// Setup connectivity listener to auto-resume downloads when WiFi becomes available
-  void _setupConnectivityListener() {
-    _connectivitySubscription?.cancel();
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) async {
-      // If WiFi becomes available, try to resume queue
-      if (results.contains(ConnectivityResult.wifi) || results.contains(ConnectivityResult.ethernet)) {
-        final hasQueuedItems = await _database.getNextQueueItem() != null;
-        if (hasQueuedItems && !_isProcessingQueue && _lastClient != null) {
-          appLogger.i('WiFi available - resuming downloads');
-          _processQueue(_lastClient!);
-        }
-      }
-    });
-  }
-
-  /// Start downloading a specific item
-  /// Returns the result of the download attempt for queue processing decisions
-  Future<_DownloadResult> _startDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
-    // Hoisted so catch blocks can clean up .part files
-    String? downloadFilePath;
+  /// Resolve metadata, video URL, and file path, then enqueue a background download task.
+  Future<void> _prepareAndEnqueueDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
     try {
-      appLogger.i('Starting download for $globalKey');
-
-      // Update status to downloading
+      appLogger.i('Preparing download for $globalKey');
       await _transitionStatus(globalKey, DownloadStatus.downloading);
-      appLogger.d('Status updated to downloading');
 
-      // Parse globalKey to get serverId and ratingKey
       final parsed = parseGlobalKey(globalKey);
-      if (parsed == null) {
-        throw Exception('Invalid globalKey format: $globalKey');
-      }
+      if (parsed == null) throw Exception('Invalid globalKey: $globalKey');
       final serverId = parsed.serverId;
       final ratingKey = parsed.ratingKey;
 
-      // Get metadata from cache
       final metadata = await _apiCache.getMetadata(serverId, ratingKey);
-      if (metadata == null) {
-        throw Exception('Metadata not found in cache for $globalKey');
-      }
+      if (metadata == null) throw Exception('Metadata not found in cache for $globalKey');
 
-      // Get video playback data (includes URL, streams, markers, etc.)
-      // This also caches the metadata with chapters/markers for offline use
       final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
-      if (playbackData.videoUrl == null) {
-        throw Exception('Could not get video URL');
-      }
+      if (playbackData.videoUrl == null) throw Exception('Could not get video URL');
 
-      // Determine file extension from URL or default to mp4
-      final extension = _getExtensionFromUrl(playbackData.videoUrl!) ?? 'mp4';
+      final ext = _getExtensionFromUrl(playbackData.videoUrl!) ?? 'mp4';
 
-      final metadataWithServer = metadata;
-
-      // For episodes, look up the show's year from cached show metadata
+      // Look up show year for episodes
       int? showYear;
-      if (metadataWithServer.type == 'episode' && metadataWithServer.grandparentRatingKey != null) {
-        final showCached = await _apiCache.get(
-          serverId,
-          '/library/metadata/${metadataWithServer.grandparentRatingKey}',
-        );
+      if (metadata.type == 'episode' && metadata.grandparentRatingKey != null) {
+        final showCached = await _apiCache.get(serverId, '/library/metadata/${metadata.grandparentRatingKey}');
         final showJson = PlexCacheParser.extractFirstMetadata(showCached);
-        if (showJson != null) {
-          final showMetadata = PlexMetadata.fromJson(showJson);
-          showYear = showMetadata.year;
-        }
+        if (showJson != null) showYear = PlexMetadata.fromJson(showJson).year;
       }
 
-      // Create cancel token
-      final cancelToken = CancelToken();
-      _activeDownloads[globalKey] = cancelToken;
+      // Build display name for notifications
+      final displayName =
+          metadata.type == 'episode' ? '${metadata.grandparentTitle ?? metadata.title} - ${metadata.title}' : metadata.title;
 
-      appLogger.d('Starting video download for $globalKey');
-
-      // Determine download path and handle SAF mode
-      final String storedPath;
+      // Get WiFi-only setting for native enforcement
+      final settings = await SettingsService.getInstance();
+      final requiresWiFi = settings.getDownloadOnWifiOnly();
 
       if (_storageService.isUsingSaf) {
-        // SAF mode: download to temp cache first, then copy to SAF
-        final tempFileName = '${globalKey.replaceAll(':', '_')}.$extension';
-        downloadFilePath = await _storageService.getTempDownloadPath(tempFileName);
-
-        // Download to temp path
-        await _downloadFile(
-          url: playbackData.videoUrl!,
-          filePath: downloadFilePath,
-          globalKey: globalKey,
-          cancelToken: cancelToken,
-        );
-
-        appLogger.d('Video downloaded to temp, copying to SAF for $globalKey');
-
-        // Copy to SAF
+        // SAF mode: use UriDownloadTask (writes directly to content:// URI, no pause/resume)
         final List<String> pathComponents;
         final String safFileName;
-        if (metadataWithServer.type == 'movie') {
-          pathComponents = _storageService.getMovieSafPathComponents(metadataWithServer);
-          safFileName = _storageService.getMovieSafFileName(metadataWithServer, extension);
-        } else if (metadataWithServer.type == 'episode') {
-          pathComponents = _storageService.getEpisodeSafPathComponents(metadataWithServer, showYear: showYear);
-          safFileName = _storageService.getEpisodeSafFileName(metadataWithServer, extension);
+        if (metadata.type == 'movie') {
+          pathComponents = _storageService.getMovieSafPathComponents(metadata);
+          safFileName = _storageService.getMovieSafFileName(metadata, ext);
+        } else if (metadata.type == 'episode') {
+          pathComponents = _storageService.getEpisodeSafPathComponents(metadata, showYear: showYear);
+          safFileName = _storageService.getEpisodeSafFileName(metadata, ext);
         } else {
-          pathComponents = [serverId, metadataWithServer.ratingKey];
-          safFileName = 'video.$extension';
+          pathComponents = [serverId, metadata.ratingKey];
+          safFileName = 'video.$ext';
         }
 
-        final safUri = await _storageService.copyToSaf(
-          downloadFilePath,
+        final safDirUri = await SafStorageService.instance.createNestedDirectories(
+          _storageService.safBaseUri!,
           pathComponents,
-          safFileName,
-          _storageService.getMimeType(extension),
         );
+        if (safDirUri == null) throw Exception('Failed to create SAF directory');
 
-        if (safUri == null) {
-          throw Exception('Failed to copy video to SAF storage');
-        }
-
-        storedPath = safUri;
-        appLogger.d('Video copied to SAF: $safUri');
-      } else {
-        // Normal mode: download directly to final path
-        if (metadataWithServer.type == 'movie') {
-          downloadFilePath = await _storageService.getMovieVideoPath(metadataWithServer, extension);
-        } else if (metadataWithServer.type == 'episode') {
-          downloadFilePath = await _storageService.getEpisodeVideoPath(
-            metadataWithServer,
-            extension,
-            showYear: showYear,
-          );
-        } else {
-          downloadFilePath = await _storageService.getVideoFilePath(serverId, metadataWithServer.ratingKey, extension);
-        }
-
-        await _downloadFile(
+        final task = UriDownloadTask(
           url: playbackData.videoUrl!,
-          filePath: downloadFilePath,
-          globalKey: globalKey,
-          cancelToken: cancelToken,
+          filename: safFileName,
+          directoryUri: Uri.parse(safDirUri),
+          group: _downloadGroup,
+          updates: Updates.statusAndProgress,
+          requiresWiFi: requiresWiFi,
+          retries: 3,
+          metaData: globalKey,
+          displayName: displayName,
         );
 
-        // Store relative path (survives iOS container UUID changes)
-        storedPath = await _storageService.toRelativePath(downloadFilePath);
-      }
+        _pendingDownloadContext[globalKey] = _DownloadContext(
+          metadata: metadata,
+          queueItem: queueItem,
+          filePath: safDirUri,
+          extension: ext,
+          client: client,
+          showYear: showYear,
+          isSafMode: true,
+          mediaInfo: playbackData.mediaInfo,
+        );
 
-      appLogger.d('Video download completed for $globalKey');
-
-      // Update database with stored path (SAF URI or relative path)
-      await _database.updateVideoFilePath(globalKey, storedPath);
-
-      // Download artwork if enabled (only episode-specific artwork, not show/season)
-      // Use the passed queueItem's settings (not getNextQueueItem which would return the NEXT item)
-      if (queueItem.downloadArtwork) {
-        await _downloadArtwork(globalKey, metadataWithServer, client, showYear: showYear);
-
-        // Download chapter thumbnails
-        await _downloadChapterThumbnails(metadataWithServer.serverId!, metadataWithServer.ratingKey, client);
-      }
-
-      // Download subtitles if enabled
-      if (queueItem.downloadSubtitles && playbackData.mediaInfo != null) {
-        await _downloadSubtitles(globalKey, metadataWithServer, playbackData.mediaInfo!, client, showYear: showYear);
-      }
-
-      // Mark as completed
-      await _transitionStatus(globalKey, DownloadStatus.completed);
-      await _database.removeFromQueue(globalKey);
-
-      _activeDownloads.remove(globalKey);
-
-      appLogger.i('Download completed for $globalKey');
-      return _DownloadResult.success;
-    } catch (e) {
-      // Check if this was a user-initiated cancel/pause (not a real failure)
-      if (e is DioException && e.type == DioExceptionType.cancel) {
-        // Status was already set by pauseDownload() or cancelDownload()
-        appLogger.d('Download cancelled/paused for $globalKey: ${e.message}');
-        _activeDownloads.remove(globalKey);
-
-        // Clean up .part file for cancel/delete, but preserve for pause
-        final reason = e.message ?? '';
-        if (reason.contains('Cancelled') || reason.contains('deleted')) {
-          if (downloadFilePath != null) {
-            await _cleanupPartFile(downloadFilePath);
-          }
+        await _database.updateBgTaskId(globalKey, task.taskId);
+        final success = await FileDownloader().enqueue(task);
+        if (!success) throw Exception('Failed to enqueue SAF download task');
+        appLogger.i('Enqueued SAF download task ${task.taskId} for $globalKey');
+      } else {
+        // Normal mode: use DownloadTask with pause/resume support
+        String downloadFilePath;
+        if (metadata.type == 'movie') {
+          downloadFilePath = await _storageService.getMovieVideoPath(metadata, ext);
+        } else if (metadata.type == 'episode') {
+          downloadFilePath = await _storageService.getEpisodeVideoPath(metadata, ext, showYear: showYear);
+        } else {
+          downloadFilePath = await _storageService.getVideoFilePath(serverId, metadata.ratingKey, ext);
         }
-        // Paused: .part file preserved for resume
 
-        return _DownloadResult.success; // User action, not a failure
+        await File(downloadFilePath).parent.create(recursive: true);
+
+        final task = DownloadTask(
+          url: playbackData.videoUrl!,
+          filename: path.basename(downloadFilePath),
+          directory: path.dirname(downloadFilePath),
+          baseDirectory: BaseDirectory.root,
+          group: _downloadGroup,
+          updates: Updates.statusAndProgress,
+          requiresWiFi: requiresWiFi,
+          retries: 3,
+          allowPause: true,
+          metaData: globalKey,
+          displayName: displayName,
+        );
+
+        _pendingDownloadContext[globalKey] = _DownloadContext(
+          metadata: metadata,
+          queueItem: queueItem,
+          filePath: downloadFilePath,
+          extension: ext,
+          client: client,
+          showYear: showYear,
+          mediaInfo: playbackData.mediaInfo,
+        );
+
+        await _database.updateBgTaskId(globalKey, task.taskId);
+        final success = await FileDownloader().enqueue(task);
+        if (!success) throw Exception('Failed to enqueue download task');
+        appLogger.i('Enqueued download task ${task.taskId} for $globalKey');
       }
-
-      // Check if this is a retriable network error
-      if (_isRetriableNetworkError(e)) {
-        // Network error - keep in queue for auto-retry when connectivity returns
-        // .part file is preserved for resume via Range header
-        appLogger.w('Download interrupted by network error for $globalKey, will retry on reconnect');
-        await _transitionStatus(globalKey, DownloadStatus.queued);
-        _activeDownloads.remove(globalKey);
-        return _DownloadResult.networkError; // Stay in queue - will auto-retry
-      }
-
-      // Permanent failure - remove from queue and clean up .part file
-      appLogger.e('Download failed for $globalKey', error: e);
+    } catch (e) {
+      appLogger.e('Failed to prepare download for $globalKey', error: e);
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: e.toString());
       await _database.updateDownloadError(globalKey, e.toString());
       await _database.removeFromQueue(globalKey);
-      _activeDownloads.remove(globalKey);
-      if (downloadFilePath != null) {
-        await _cleanupPartFile(downloadFilePath);
-      }
-      return _DownloadResult.permanentFailure;
+      _pendingDownloadContext.remove(globalKey);
     }
   }
 
-  /// Delete the .part file for a given download path
-  Future<void> _cleanupPartFile(String filePath) async {
-    final partFile = File('$filePath.part');
-    if (await partFile.exists()) {
-      await partFile.delete();
-      appLogger.d('Cleaned up partial file: ${partFile.path}');
-    }
-  }
+  /// Callback: background_downloader progress update
+  void _onTaskProgress(TaskProgressUpdate update) {
+    final globalKey = update.task.metaData;
+    if (globalKey.isEmpty || update.progress < 0) return;
 
-  Future<void> _downloadFile({
-    required String url,
-    required String filePath,
-    required String globalKey,
-    required CancelToken cancelToken,
-  }) async {
-    final partPath = '$filePath.part';
-    final partFile = File(partPath);
-    await partFile.parent.create(recursive: true);
-
-    // Determine resume offset from existing .part file
-    int offset = 0;
-    if (await partFile.exists()) {
-      final partSize = await partFile.length();
-      // Cross-validate with DB to detect corruption
-      final dbRecord = await _database.getDownloadedMedia(globalKey);
-      final dbBytes = dbRecord?.downloadedBytes ?? 0;
-      if (dbBytes > 0 && (partSize - dbBytes).abs() > 1024 * 1024) {
-        // More than 1MB discrepancy — likely corrupt, restart fresh
-        appLogger.w('Part file size ($partSize) differs from DB ($dbBytes) by >1MB, restarting');
-        await partFile.delete();
-      } else if (partSize > 0) {
-        offset = partSize;
-        appLogger.i('Resuming download from byte $offset for $globalKey');
-      }
+    // If this item is being paused, the holding queue promoted it — cancel it
+    if (_pausingKeys.contains(globalKey)) {
+      FileDownloader().cancelTaskWithId(update.task.taskId);
+      return;
     }
 
-    await _downloadFileWithRange(
-      url: url,
-      filePath: filePath,
-      partPath: partPath,
-      globalKey: globalKey,
-      cancelToken: cancelToken,
-      offset: offset,
-    );
-  }
+    final progress = (update.progress * 100).round().clamp(0, 100);
+    final speedBytesPerSec = update.hasNetworkSpeed ? update.networkSpeed * 1024 * 1024 : 0.0;
+    final totalBytes = update.hasExpectedFileSize ? update.expectedFileSize : 0;
+    final downloadedBytes = totalBytes > 0 ? (update.progress * totalBytes).round() : 0;
 
-  Future<void> _downloadFileWithRange({
-    required String url,
-    required String filePath,
-    required String partPath,
-    required String globalKey,
-    required CancelToken cancelToken,
-    required int offset,
-  }) async {
-    final headers = <String, dynamic>{};
-    if (offset > 0) {
-      headers['Range'] = 'bytes=$offset-';
-    }
-
-    final response = await _dio.get<ResponseBody>(
-      url,
-      options: Options(
-        responseType: ResponseType.stream,
-        headers: headers,
-        // Prevent Dio from throwing on 206/416
-        validateStatus: (status) => status != null && (status >= 200 && status < 300 || status == 416),
-      ),
-      cancelToken: cancelToken,
-    );
-
-    final statusCode = response.statusCode;
-
-    if (statusCode == 416) {
-      // Range not satisfiable — .part is stale/invalid, restart fresh
-      appLogger.w('416 Range Not Satisfiable — deleting .part and restarting for $globalKey');
-      final partFile = File(partPath);
-      if (await partFile.exists()) await partFile.delete();
-      return _downloadFileWithRange(
-        url: url,
-        filePath: filePath,
-        partPath: partPath,
+    _progressController.add(
+      DownloadProgress(
         globalKey: globalKey,
-        cancelToken: cancelToken,
-        offset: 0,
-      );
+        status: DownloadStatus.downloading,
+        progress: progress,
+        downloadedBytes: downloadedBytes,
+        totalBytes: totalBytes,
+        speed: speedBytesPerSec,
+        currentFile: 'video',
+      ),
+    );
+
+    _database.updateDownloadProgress(globalKey, progress, downloadedBytes, totalBytes).catchError((e) {
+      appLogger.w('Failed to update download progress in DB', error: e);
+    });
+  }
+
+  /// Callback: background_downloader status change
+  void _onTaskStatusChanged(TaskStatusUpdate update) {
+    final globalKey = update.task.metaData;
+    if (globalKey.isEmpty) return;
+
+    appLogger.d('Background task status: ${update.status} for $globalKey');
+
+    switch (update.status) {
+      case TaskStatus.complete:
+        _onDownloadComplete(globalKey, update.task);
+      case TaskStatus.failed:
+        _onDownloadFailed(globalKey, update.exception?.description ?? 'Download failed');
+      case TaskStatus.notFound:
+        _onDownloadFailed(globalKey, 'File not found (404)');
+      case TaskStatus.canceled:
+        if (_pausingKeys.contains(globalKey)) {
+          // Expected cancel from holding-queue promotion during pause — ignore
+          break;
+        }
+        final ctx = _pendingDownloadContext.remove(globalKey);
+        if (ctx != null) {
+          // Context still present → OS cancelled the task, not user code
+          // (user-initiated pause/cancel/delete removes context before cancellation completes)
+          appLogger.w('Download cancelled by system for $globalKey, re-queuing');
+          _database.updateBgTaskId(globalKey, null);
+          _transitionStatus(globalKey, DownloadStatus.queued);
+          _database.addToQueue(mediaGlobalKey: globalKey);
+          if (_lastClient != null) _processQueue(_lastClient!);
+        }
+      case TaskStatus.paused:
+        appLogger.d('Download paused by system for $globalKey');
+      case TaskStatus.waitingToRetry:
+        appLogger.d('Download waiting to retry for $globalKey');
+      case TaskStatus.enqueued:
+      case TaskStatus.running:
+        // If this item is being paused, the holding queue promoted it — cancel it
+        if (_pausingKeys.contains(globalKey)) {
+          FileDownloader().cancelTaskWithId(update.task.taskId);
+        }
+        break;
     }
+  }
 
-    // Determine write mode and total size based on response
-    int totalBytes;
-    FileMode fileMode;
-    int resumeOffset;
+  /// Handle a permanently failed download
+  Future<void> _onDownloadFailed(String globalKey, String errorMessage) async {
+    _pendingDownloadContext.remove(globalKey);
+    appLogger.e('Download failed for $globalKey: $errorMessage');
+    await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
+    await _database.updateDownloadError(globalKey, errorMessage);
+    await _database.removeFromQueue(globalKey);
 
-    if (statusCode == 206) {
-      // Server supports Range — append to .part file
-      fileMode = FileMode.append;
-      resumeOffset = offset;
-      // Parse total from Content-Range: bytes 1000-9999/10000
-      final contentRange = response.headers.value('content-range');
-      if (contentRange != null) {
-        final match = RegExp(r'/(\d+)').firstMatch(contentRange);
-        totalBytes = match != null ? int.parse(match.group(1)!) : -1;
-      } else {
-        final contentLength = response.headers.value('content-length');
-        totalBytes = contentLength != null ? int.parse(contentLength) + offset : -1;
-      }
-      appLogger.i('Resuming download at $offset/$totalBytes for $globalKey');
-    } else {
-      // 200 — fresh download (server may not support Range)
-      fileMode = FileMode.write;
-      resumeOffset = 0;
-      if (offset > 0) {
-        appLogger.w('Server returned 200 instead of 206 — restarting from scratch for $globalKey');
-      }
-      final contentLength = response.headers.value('content-length');
-      totalBytes = contentLength != null ? int.parse(contentLength) : -1;
-    }
+    // Try to enqueue more items from the queue
+    if (_lastClient != null) _processQueue(_lastClient!);
+  }
 
-    final partFile = File(partPath);
-    final sink = partFile.openWrite(mode: fileMode);
-
-    int receivedBytes = resumeOffset;
-    int lastReportedBytes = receivedBytes;
-    DateTime lastUpdate = DateTime.now();
-
+  /// Handle a completed video download — store path, download supplementary content, mark done.
+  Future<void> _onDownloadComplete(String globalKey, Task task) async {
     try {
-      await for (final chunk in response.data!.stream) {
-        sink.add(chunk);
-        receivedBytes += chunk.length;
+      final ctx = _pendingDownloadContext.remove(globalKey);
 
-        // Throttled progress reporting (every 500ms)
-        final now = DateTime.now();
-        if (now.difference(lastUpdate).inMilliseconds >= 500) {
-          final elapsed = now.difference(lastUpdate).inMilliseconds / 1000.0;
-          final bytesPerSecond = elapsed > 0 ? (receivedBytes - lastReportedBytes) / elapsed : 0.0;
-          lastUpdate = now;
-          lastReportedBytes = receivedBytes;
-
-          final progress = totalBytes > 0 ? ((receivedBytes / totalBytes) * 100).round() : 0;
-
-          _progressController.add(
-            DownloadProgress(
-              globalKey: globalKey,
-              status: DownloadStatus.downloading,
-              progress: progress,
-              downloadedBytes: receivedBytes,
-              totalBytes: totalBytes,
-              speed: bytesPerSecond,
-              currentFile: 'video',
-            ),
-          );
-
-          _database.updateDownloadProgress(globalKey, progress, receivedBytes, totalBytes).catchError((e) {
-            appLogger.w('Failed to update download progress in DB', error: e);
-          });
+      // ── Phase 1 (critical): resolve and store the video file path ──
+      final String storedPath;
+      if (ctx != null) {
+        // Happy path: context available from this session
+        if (ctx.isSafMode) {
+          // UriDownloadTask wrote directly to SAF — find the file URI
+          final child = await SafStorageService.instance.getChild(ctx.filePath, task.filename);
+          if (child != null) {
+            storedPath = child.uri;
+          } else {
+            storedPath = await _resolveSafStoredPath(ctx.metadata, ctx.extension, ctx.showYear) ?? '';
+            if (storedPath.isEmpty) throw Exception('Cannot determine SAF file URI');
+          }
+        } else {
+          storedPath = await _storageService.toRelativePath(ctx.filePath);
+        }
+      } else {
+        // Recovery path: context missing (app was restarted)
+        final existing = await _database.getDownloadedMedia(globalKey);
+        if (existing?.videoFilePath != null && existing?.status == DownloadStatus.completed.index) {
+          appLogger.d('Download already completed for $globalKey');
+          return;
+        }
+        if (existing?.videoFilePath != null) {
+          // Video path set but status not completed — just finish up
+          storedPath = existing!.videoFilePath!;
+        } else if (task is UriDownloadTask) {
+          // SAF mode recovery: re-derive path from metadata
+          final parsed = parseGlobalKey(globalKey);
+          if (parsed == null) throw Exception('Invalid globalKey for recovery: $globalKey');
+          final metadata = await _apiCache.getMetadata(parsed.serverId, parsed.ratingKey);
+          if (metadata == null) throw Exception('No metadata for SAF recovery of $globalKey');
+          final ext = _getExtensionFromUrl(task.url) ?? 'mp4';
+          storedPath = await _resolveSafStoredPath(metadata, ext, null) ?? '';
+          if (storedPath.isEmpty) throw Exception('Cannot resolve SAF path on recovery');
+        } else {
+          // Normal mode recovery: reconstruct from task
+          storedPath = await _storageService.toRelativePath('${task.directory}/${task.filename}');
         }
       }
 
-      // Stream completed successfully — flush and rename
-      await sink.flush();
-      await sink.close();
+      // Store video path in DB
+      await _database.updateVideoFilePath(globalKey, storedPath);
+      appLogger.d('Video download completed for $globalKey');
 
-      // Verify file size if we know the total
-      if (totalBytes > 0) {
-        final actualSize = await partFile.length();
-        if (actualSize != totalBytes) {
-          throw Exception('Download size mismatch: expected $totalBytes bytes but got $actualSize');
-        }
-      }
-
-      // Rename .part to final path
-      await partFile.rename(filePath);
-      appLogger.i('Download complete: $filePath ($receivedBytes bytes)');
-    } catch (e) {
-      // Flush what we have so far — preserves partial data for resume
+      // ── Phase 2 (best-effort): supplementary downloads ──
       try {
-        await sink.flush();
-        await sink.close();
-      } catch (_) {
-        // Ignore flush errors during error handling
+        final metadata = ctx?.metadata ?? await _resolveMetadata(globalKey);
+        final client = ctx?.client ?? _lastClient;
+        final showYear = ctx?.showYear;
+
+        // Get queue item settings (still in drift at this point)
+        final queueItem =
+            ctx?.queueItem ??
+            await (_database.select(_database.downloadQueue)..where((t) => t.mediaGlobalKey.equals(globalKey)))
+                .getSingleOrNull();
+        final downloadArtwork = queueItem?.downloadArtwork ?? true;
+        final downloadSubtitles = queueItem?.downloadSubtitles ?? true;
+
+        if (metadata != null && client != null) {
+          if (downloadArtwork) {
+            await _downloadArtwork(globalKey, metadata, client, showYear: showYear);
+            await _downloadChapterThumbnails(metadata.serverId!, metadata.ratingKey, client);
+          }
+          if (downloadSubtitles) {
+            PlexMediaInfo? mediaInfo = ctx?.mediaInfo;
+            if (mediaInfo == null) {
+              try {
+                final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+                mediaInfo = playbackData.mediaInfo;
+              } catch (e) {
+                appLogger.w('Could not re-fetch playback data for subtitles', error: e);
+              }
+            }
+            if (mediaInfo != null) {
+              await _downloadSubtitles(globalKey, metadata, mediaInfo, client, showYear: showYear);
+            }
+          }
+        }
+      } catch (e) {
+        appLogger.w('Supplementary downloads failed for $globalKey (video is saved)', error: e);
       }
-      // Persist current progress to DB for resume
-      final progress = totalBytes > 0 ? ((receivedBytes / totalBytes) * 100).round() : 0;
-      await _database.updateDownloadProgress(globalKey, progress, receivedBytes, totalBytes).catchError((dbErr) {
-        appLogger.w('Failed to persist progress on error', error: dbErr);
-      });
-      rethrow;
+
+      // Mark as completed — video is saved regardless of supplementary outcome
+      await _transitionStatus(globalKey, DownloadStatus.completed);
+      await _database.removeFromQueue(globalKey);
+      appLogger.i('Download completed for $globalKey');
+    } catch (e) {
+      appLogger.e('Post-download processing failed for $globalKey', error: e);
+      await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: 'Post-processing failed: $e');
+      await _database.updateDownloadError(globalKey, 'Post-processing failed: $e');
+      await _database.removeFromQueue(globalKey);
+    } finally {
+      // Always advance the queue, even after errors
+      if (_lastClient != null) _processQueue(_lastClient!);
     }
+  }
+
+  /// Resolve metadata from cache using a globalKey
+  Future<PlexMetadata?> _resolveMetadata(String globalKey) async {
+    final parsed = parseGlobalKey(globalKey);
+    if (parsed == null) return null;
+    return _apiCache.getMetadata(parsed.serverId, parsed.ratingKey);
+  }
+
+  /// Re-derive the SAF file URI from metadata (for recovery when context is lost)
+  Future<String?> _resolveSafStoredPath(PlexMetadata metadata, String ext, int? showYear) async {
+    final safBaseUri = _storageService.safBaseUri;
+    if (safBaseUri == null) return null;
+
+    final List<String> pathComponents;
+    final String safFileName;
+    if (metadata.type == 'movie') {
+      pathComponents = _storageService.getMovieSafPathComponents(metadata);
+      safFileName = _storageService.getMovieSafFileName(metadata, ext);
+    } else if (metadata.type == 'episode') {
+      pathComponents = _storageService.getEpisodeSafPathComponents(metadata, showYear: showYear);
+      safFileName = _storageService.getEpisodeSafFileName(metadata, ext);
+    } else {
+      pathComponents = [metadata.serverId!, metadata.ratingKey];
+      safFileName = 'video.$ext';
+    }
+
+    final dirUri = await SafStorageService.instance.createNestedDirectories(safBaseUri, pathComponents);
+    if (dirUri == null) return null;
+
+    final child = await SafStorageService.instance.getChild(dirUri, safFileName);
+    return child?.uri;
   }
 
   /// Download artwork for a media item using hash-based storage
@@ -1013,55 +1063,83 @@ class DownloadManagerService {
 
   /// Pause a download (works for both downloading and queued items)
   Future<void> pauseDownload(String globalKey) async {
-    // Cancel active download if exists
-    final cancelToken = _activeDownloads[globalKey];
-    if (cancelToken != null) {
-      cancelToken.cancel('Paused by user');
-      _activeDownloads.remove(globalKey);
+    // Mark as pausing synchronously so callbacks from holding-queue promotions
+    // can detect and cancel promoted tasks before any await yields.
+    _pausingKeys.add(globalKey);
+
+    try {
+      final bgTaskId = await _database.getBgTaskId(globalKey);
+      if (bgTaskId != null) {
+        final task = await FileDownloader().taskForId(bgTaskId);
+        if (task != null && task is DownloadTask) {
+          // Normal mode: native pause support
+          await FileDownloader().pause(task);
+        } else {
+          // SAF mode (UriDownloadTask) or task not found: cancel (re-download on resume)
+          await FileDownloader().cancelTaskWithId(bgTaskId);
+        }
+      }
+      _pendingDownloadContext.remove(globalKey);
+      await _transitionStatus(globalKey, DownloadStatus.paused);
+      await _database.removeFromQueue(globalKey);
+    } finally {
+      _pausingKeys.remove(globalKey);
     }
-    // Update status to paused and remove from queue so it doesn't restart
-    await _transitionStatus(globalKey, DownloadStatus.paused);
-    await _database.removeFromQueue(globalKey);
   }
 
   /// Resume a paused download
   Future<void> resumeDownload(String globalKey, PlexClient client) async {
+    final bgTaskId = await _database.getBgTaskId(globalKey);
+
+    // Try native resume first (only works for normal-mode DownloadTask that was paused)
+    if (bgTaskId != null) {
+      final task = await FileDownloader().taskForId(bgTaskId);
+      if (task != null && task is DownloadTask) {
+        final resumed = await FileDownloader().resume(task);
+        if (resumed) {
+          appLogger.i('Resumed download via background_downloader for $globalKey');
+          await _database.updateDownloadStatus(globalKey, DownloadStatus.downloading.index);
+          _emitProgress(globalKey, DownloadStatus.downloading, 0);
+          return;
+        }
+      }
+    }
+
+    // Native resume failed or not supported (SAF mode) — re-enqueue from scratch
+    await _database.updateBgTaskId(globalKey, null);
     await _transitionStatus(globalKey, DownloadStatus.queued);
-    // Re-add to queue (pauseDownload removes from queue)
     await _database.addToQueue(mediaGlobalKey: globalKey);
     _processQueue(client);
   }
 
   /// Retry a failed download
   Future<void> retryDownload(String globalKey, PlexClient client) async {
-    // Clear error and reset retry count
     await _database.clearDownloadError(globalKey);
-    // Reset status to queued
+    await _database.updateBgTaskId(globalKey, null);
     await _transitionStatus(globalKey, DownloadStatus.queued);
-    // Re-add to queue
     await _database.addToQueue(mediaGlobalKey: globalKey);
     _processQueue(client);
   }
 
   /// Cancel a download
   Future<void> cancelDownload(String globalKey) async {
-    final cancelToken = _activeDownloads[globalKey];
-    if (cancelToken != null) {
-      cancelToken.cancel('Cancelled by user');
-      _activeDownloads.remove(globalKey);
+    final bgTaskId = await _database.getBgTaskId(globalKey);
+    if (bgTaskId != null) {
+      await FileDownloader().cancelTaskWithId(bgTaskId);
     }
+    _pendingDownloadContext.remove(globalKey);
     await _transitionStatus(globalKey, DownloadStatus.cancelled);
     await _database.removeFromQueue(globalKey);
   }
 
   /// Delete a downloaded item and its files
   Future<void> deleteDownload(String globalKey) async {
-    // Cancel if actively downloading
-    final cancelToken = _activeDownloads[globalKey];
-    if (cancelToken != null) {
-      cancelToken.cancel('Download deleted');
-      _activeDownloads.remove(globalKey);
+    // Cancel if actively downloading via background_downloader
+    final bgTaskId = await _database.getBgTaskId(globalKey);
+    if (bgTaskId != null) {
+      await FileDownloader().cancelTaskWithId(bgTaskId);
     }
+    _pendingDownloadContext.remove(globalKey);
 
     // Delete files from storage
     final parsed = parseGlobalKey(globalKey);
@@ -1092,27 +1170,6 @@ class DownloadManagerService {
 
     // Delete files from storage (with progress updates)
     await _deleteMediaFilesWithMetadata(serverId, ratingKey);
-
-    // Clean up any .part file in SAF temp cache
-    if (_storageService.isUsingSaf) {
-      try {
-        final tempFileName = globalKey.replaceAll(':', '_');
-        // We don't know the extension, so search for any matching .part file
-        final tempDir = await _storageService.getTempDownloadPath('');
-        final tempDirObj = Directory(path.dirname(tempDir));
-        if (await tempDirObj.exists()) {
-          await for (final entity in tempDirObj.list()) {
-            if (entity is File &&
-                path.basename(entity.path).startsWith(tempFileName) &&
-                entity.path.endsWith('.part')) {
-              await _deleteFileIfExists(entity, 'SAF temp partial download');
-            }
-          }
-        }
-      } catch (e) {
-        appLogger.w('Failed to clean up SAF temp .part files', error: e);
-      }
-    }
 
     // Delete from API cache
     await _apiCache.deleteForItem(serverId, ratingKey);
@@ -1605,10 +1662,6 @@ class DownloadManagerService {
   }
 
   void dispose() {
-    _connectivitySubscription?.cancel();
-    for (final token in _activeDownloads.values) {
-      token.cancel('Service disposed');
-    }
     _progressController.close();
     _deletionProgressController.close();
   }

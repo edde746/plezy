@@ -654,8 +654,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                 ),
               ],
 
-              // Progress bar
-              if (widget.node.status == DownloadStatus.downloading || widget.node.status == DownloadStatus.queued) ...[
+              // Progress bar for active downloads
+              if (widget.node.status == DownloadStatus.downloading) ...[
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: widget.node.progress,
@@ -670,6 +670,17 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                     ),
                   ),
                 ],
+              ],
+
+              // Queued label
+              if (widget.node.status == DownloadStatus.queued) ...[
+                const SizedBox(height: 4),
+                Text(
+                  t.downloads.downloadQueued,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
               ],
             ],
           ),

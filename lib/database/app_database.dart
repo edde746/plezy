@@ -16,7 +16,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7; // Added OfflineWatchProgress table
+  int get schemaVersion => 8; // Added bgTaskId column to DownloadedMedia
 
   @override
   MigrationStrategy get migration {
@@ -25,10 +25,13 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // Additive migration for schema version 7
         if (from < 7) {
           appLogger.i('Adding OfflineWatchProgress table (v7 migration)');
           await m.createTable(offlineWatchProgress);
+        }
+        if (from < 8) {
+          appLogger.i('Adding bgTaskId column to DownloadedMedia (v8 migration)');
+          await m.addColumn(downloadedMedia, downloadedMedia.bgTaskId);
         }
       },
     );

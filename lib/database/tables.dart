@@ -47,6 +47,7 @@ class DownloadedMedia extends Table {
   IntColumn get downloadedAt => integer().nullable()();
   TextColumn get errorMessage => text().nullable()();
   IntColumn get retryCount => integer().withDefault(const Constant(0))();
+  TextColumn get bgTaskId => text().nullable()();
 }
 
 /// Queue for offline watch progress and manual watch actions.
