@@ -1063,6 +1063,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (context.mounted) {
         showSuccessSnackBar(context, t.downloads.downloadDeleted);
+        // Notify DeletionAware screens (e.g. offline season detail)
+        DeletionNotifier().notifyDeleted(metadata: metadata, isDownloadOnly: true);
         // Refresh the view if needed
         widget.onRefresh?.call(metadata.ratingKey);
       }

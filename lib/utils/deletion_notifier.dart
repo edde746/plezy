@@ -31,12 +31,17 @@ class DeletionEvent with HierarchicalEventMixin {
   /// For an episode: 1. For a season: its episode count. For a show: its total episode count.
   final int leafCount;
 
+  /// True if only the local download was deleted (not the server-side media).
+  /// Screens should only remove items for download deletions when in offline mode.
+  final bool isDownloadOnly;
+
   DeletionEvent({
     required this.ratingKey,
     required this.serverId,
     required this.parentChain,
     required this.mediaType,
     this.leafCount = 1,
+    this.isDownloadOnly = false,
   }) : globalKey = '$serverId:$ratingKey';
 
   @override
@@ -68,7 +73,7 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
   }
 
   /// Helper to emit a deletion event from metadata
-  void notifyDeleted({required PlexMetadata metadata}) {
+  void notifyDeleted({required PlexMetadata metadata, bool isDownloadOnly = false}) {
     notify(
       DeletionEvent(
         ratingKey: metadata.ratingKey,
@@ -76,6 +81,7 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
         parentChain: _buildParentChain(metadata),
         mediaType: metadata.type,
         leafCount: metadata.leafCount ?? 1,
+        isDownloadOnly: isDownloadOnly,
       ),
     );
   }

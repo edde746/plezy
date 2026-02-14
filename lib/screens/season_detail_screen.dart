@@ -102,6 +102,9 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
 
   @override
   void onDeletionEvent(DeletionEvent event) {
+    // Download-only deletions should only remove items when viewing offline content
+    if (event.isDownloadOnly && !widget.isOffline) return;
+
     // If we have an episode that matches the rating key exactly, then remove it from our list
     final index = _episodes.indexWhere((e) => e.ratingKey == event.ratingKey);
     if (index != -1) {
