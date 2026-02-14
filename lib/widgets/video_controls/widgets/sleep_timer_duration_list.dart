@@ -44,11 +44,6 @@ class SleepTimerDurationList extends StatelessWidget {
             sleepTimer.startTimer(Duration(minutes: minutes), () {
               // Pause playback when timer completes
               player.pause();
-
-              // Show a snackbar notification
-              if (context.mounted) {
-                showSuccessSnackBar(context, t.videoControls.sleepTimerCompleted);
-              }
             });
             Navigator.pop(context);
 

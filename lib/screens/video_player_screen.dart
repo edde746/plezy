@@ -33,6 +33,7 @@ import '../services/playback_initialization_service.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
+import '../services/sleep_timer_service.dart';
 import '../services/track_selection_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_pip_manager.dart';
@@ -106,6 +107,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<void>? _playbackRestartSubscription;
   StreamSubscription<void>? _backendSwitchedSubscription;
+  StreamSubscription<void>? _sleepTimerSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
@@ -218,6 +220,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Wire companion remote playback callbacks
     _setupCompanionRemoteCallbacks();
+
+    // Exit the player when the sleep timer completes so the device can auto-lock
+    _sleepTimerSubscription = SleepTimerService().onCompleted.listen((_) {
+      if (mounted) _handleBackButton();
+    });
 
     // Initialize player asynchronously with buffer size from settings
     _initializePlayer();
@@ -1374,6 +1381,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _positionSubscription?.cancel();
     _playbackRestartSubscription?.cancel();
     _backendSwitchedSubscription?.cancel();
+    _sleepTimerSubscription?.cancel();
 
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();

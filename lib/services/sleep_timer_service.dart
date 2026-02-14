@@ -13,6 +13,10 @@ class SleepTimerService extends ChangeNotifier {
   DateTime? _endTime;
   Duration? _duration;
   VoidCallback? _onTimerComplete;
+  final StreamController<void> _completedController = StreamController<void>.broadcast();
+
+  /// Emits when the sleep timer completes (not when cancelled)
+  Stream<void> get onCompleted => _completedController.stream;
 
   /// Whether a timer is currently active
   bool get isActive => _timer != null && _timer!.isActive;
@@ -91,6 +95,7 @@ class SleepTimerService extends ChangeNotifier {
         appLogger.e('Error executing sleep timer callback', error: e);
       }
     }
+    _completedController.add(null);
   }
 
   @override
