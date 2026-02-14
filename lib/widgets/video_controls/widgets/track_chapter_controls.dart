@@ -60,6 +60,9 @@ class TrackChapterControls extends StatelessWidget {
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
 
+  /// Whether this is a live TV stream (hides speed settings).
+  final bool isLive;
+
   const TrackChapterControls({
     super.key,
     required this.player,
@@ -89,6 +92,7 @@ class TrackChapterControls extends StatelessWidget {
     this.onFocusChange,
     this.onNavigateLeft,
     this.canControl = true,
+    this.isLive = false,
     this.shaderService,
     this.onShaderChanged,
   });
@@ -194,6 +198,7 @@ class TrackChapterControls extends StatelessWidget {
                     onOpen: onCancelAutoHide,
                     onClose: onStartAutoHide,
                     canControl: canControl,
+                    isLive: isLive,
                     shaderService: shaderService,
                     onShaderChanged: onShaderChanged,
                   );

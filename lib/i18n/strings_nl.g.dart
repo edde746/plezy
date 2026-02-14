@@ -65,6 +65,7 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLogsNl logs = _TranslationsLogsNl._(_root);
 	@override late final _TranslationsLicensesNl licenses = _TranslationsLicensesNl._(_root);
 	@override late final _TranslationsNavigationNl navigation = _TranslationsNavigationNl._(_root);
+	@override late final _TranslationsLiveTvNl liveTv = _TranslationsLiveTvNl._(_root);
 	@override late final _TranslationsDownloadsNl downloads = _TranslationsDownloadsNl._(_root);
 	@override late final _TranslationsPlaylistsNl playlists = _TranslationsPlaylistsNl._(_root);
 	@override late final _TranslationsCollectionsNl collections = _TranslationsCollectionsNl._(_root);
@@ -762,6 +763,53 @@ class _TranslationsNavigationNl implements TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Bibliotheken';
 	@override String get downloads => 'Downloads';
+	@override String get liveTv => 'Live TV';
+}
+
+// Path: liveTv
+class _TranslationsLiveTvNl implements TranslationsLiveTvEn {
+	_TranslationsLiveTvNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Live TV';
+	@override String get channels => 'Zenders';
+	@override String get guide => 'Gids';
+	@override String get recordings => 'Opnames';
+	@override String get subscriptions => 'Opnameregels';
+	@override String get scheduled => 'Gepland';
+	@override String get noChannels => 'Geen zenders beschikbaar';
+	@override String get noDvr => 'Geen DVR geconfigureerd op een server';
+	@override String get tuneFailed => 'Kan zender niet afstemmen';
+	@override String get loading => 'Zenders laden...';
+	@override String get nowPlaying => 'Nu aan het afspelen';
+	@override String get record => 'Opnemen';
+	@override String get recordSeries => 'Serie opnemen';
+	@override String get cancelRecording => 'Opname annuleren';
+	@override String get deleteSubscription => 'Opnameregel verwijderen';
+	@override String get deleteSubscriptionConfirm => 'Weet je zeker dat je deze opnameregel wilt verwijderen?';
+	@override String get subscriptionDeleted => 'Opnameregel verwijderd';
+	@override String get noPrograms => 'Geen programmagegevens beschikbaar';
+	@override String get noRecordings => 'Geen opnames gepland';
+	@override String get noSubscriptions => 'Geen opnameregels';
+	@override String channelNumber({required Object number}) => 'Kanaal ${number}';
+	@override String get live => 'LIVE';
+	@override String get hd => 'HD';
+	@override String get premiere => 'NIEUW';
+	@override String get reloadGuide => 'Gids herladen';
+	@override String get guideReloaded => 'Gidsgegevens herladen';
+	@override String get allChannels => 'Alle zenders';
+	@override String get now => 'Nu';
+	@override String get today => 'Vandaag';
+	@override String get midnight => 'Middernacht';
+	@override String get overnight => 'Nacht';
+	@override String get morning => 'Ochtend';
+	@override String get daytime => 'Overdag';
+	@override String get evening => 'Avond';
+	@override String get lateNight => 'Late avond';
+	@override String get whatsOn => 'Nu op TV';
+	@override String get watchChannel => 'Kanaal bekijken';
 }
 
 // Path: downloads
@@ -1636,6 +1684,44 @@ extension on TranslationsNl {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenties',
 			'navigation.libraries' => 'Bibliotheken',
 			'navigation.downloads' => 'Downloads',
+			'navigation.liveTv' => 'Live TV',
+			'liveTv.title' => 'Live TV',
+			'liveTv.channels' => 'Zenders',
+			'liveTv.guide' => 'Gids',
+			'liveTv.recordings' => 'Opnames',
+			'liveTv.subscriptions' => 'Opnameregels',
+			'liveTv.scheduled' => 'Gepland',
+			'liveTv.noChannels' => 'Geen zenders beschikbaar',
+			'liveTv.noDvr' => 'Geen DVR geconfigureerd op een server',
+			'liveTv.tuneFailed' => 'Kan zender niet afstemmen',
+			'liveTv.loading' => 'Zenders laden...',
+			'liveTv.nowPlaying' => 'Nu aan het afspelen',
+			'liveTv.record' => 'Opnemen',
+			'liveTv.recordSeries' => 'Serie opnemen',
+			'liveTv.cancelRecording' => 'Opname annuleren',
+			'liveTv.deleteSubscription' => 'Opnameregel verwijderen',
+			'liveTv.deleteSubscriptionConfirm' => 'Weet je zeker dat je deze opnameregel wilt verwijderen?',
+			'liveTv.subscriptionDeleted' => 'Opnameregel verwijderd',
+			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
+			'liveTv.noRecordings' => 'Geen opnames gepland',
+			'liveTv.noSubscriptions' => 'Geen opnameregels',
+			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
+			'liveTv.live' => 'LIVE',
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NIEUW',
+			'liveTv.reloadGuide' => 'Gids herladen',
+			'liveTv.guideReloaded' => 'Gidsgegevens herladen',
+			'liveTv.allChannels' => 'Alle zenders',
+			'liveTv.now' => 'Nu',
+			'liveTv.today' => 'Vandaag',
+			'liveTv.midnight' => 'Middernacht',
+			'liveTv.overnight' => 'Nacht',
+			'liveTv.morning' => 'Ochtend',
+			'liveTv.daytime' => 'Overdag',
+			'liveTv.evening' => 'Avond',
+			'liveTv.lateNight' => 'Late avond',
+			'liveTv.whatsOn' => 'Nu op TV',
+			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
@@ -1643,6 +1729,8 @@ extension on TranslationsNl {
 			'downloads.noDownloads' => 'Nog geen downloads',
 			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
 			'downloads.downloadNow' => 'Download',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.deleteDownload' => 'Download verwijderen',
 			'downloads.retryDownload' => 'Download opnieuw proberen',
 			'downloads.downloadQueued' => 'Download in wachtrij',
@@ -1681,8 +1769,6 @@ extension on TranslationsNl {
 			'playlists.errorRemoving' => 'Fout bij verwijderen uit afspeellijst',
 			'playlists.playlist' => 'Afspeellijst',
 			'collections.title' => 'Collecties',
-			_ => null,
-		} ?? switch (path) {
 			'collections.collection' => 'Collectie',
 			'collections.empty' => 'Collectie is leeg',
 			'collections.unknownLibrarySection' => 'Kan niet verwijderen: onbekende bibliotheeksectie',

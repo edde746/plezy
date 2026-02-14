@@ -175,6 +175,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         val headers = call.argument<Map<String, String>>("headers")
         val startPositionMs = call.argument<Number>("startPositionMs")?.toLong() ?: 0L
         val autoPlay = call.argument<Boolean>("autoPlay") ?: true
+        val isLive = call.argument<Boolean>("isLive") ?: false
 
         if (uri == null) {
             result.error("INVALID_ARGS", "Missing 'uri'", null)
@@ -196,7 +197,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 val mpvUri = openContentFd(uri)?.let { "fdclose://$it" } ?: uri
                 mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
             } else {
-                playerCore?.open(uri, headers, startPositionMs, autoPlay)
+                playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive)
             }
             result.success(null)
         } ?: result.error("NO_ACTIVITY", "Activity not available", null)

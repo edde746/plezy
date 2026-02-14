@@ -83,6 +83,12 @@ class DesktopVideoControls extends StatefulWidget {
   /// Optional callback that returns a thumbnail URL for a given timestamp.
   final String Function(Duration time)? thumbnailUrlBuilder;
 
+  /// Whether this is a live TV stream
+  final bool isLive;
+
+  /// Channel name for live TV display
+  final String? liveChannelName;
+
   const DesktopVideoControls({
     super.key,
     required this.player,
@@ -127,6 +133,8 @@ class DesktopVideoControls extends StatefulWidget {
     this.shaderService,
     this.onShaderChanged,
     this.thumbnailUrlBuilder,
+    this.isLive = false,
+    this.liveChannelName,
   });
 
   @override
@@ -411,10 +419,30 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   Widget _buildTopBarContent(BuildContext context, double leftPadding) {
     final topBar = Padding(
       padding: EdgeInsets.only(left: leftPadding, right: 16),
-      child: VideoControlsHeader(
-        metadata: widget.metadata,
-        style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
-        onBack: widget.onBack,
+      child: Row(
+        children: [
+          Expanded(
+            child: VideoControlsHeader(
+              metadata: widget.metadata,
+              style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
+              onBack: widget.onBack,
+            ),
+          ),
+          if (widget.isLive) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                t.liveTv.live,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+          ],
+        ],
       ),
     );
 
@@ -427,67 +455,71 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         children: [
-          // Row 1: Timeline with time indicators
-          VideoTimelineBar(
-            player: widget.player,
-            chapters: widget.chapters,
-            chaptersLoaded: widget.chaptersLoaded,
-            onSeek: widget.onSeek,
-            onSeekEnd: widget.onSeekEnd,
-            horizontalLayout: true,
-            focusNode: _timelineFocusNode,
-            onKeyEvent: _handleTimelineKeyEvent,
-            onFocusChange: _onFocusChange,
-            enabled: canInteract,
-            thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
-          ),
-          const SizedBox(height: 4),
+          // Row 1: Timeline with time indicators (hidden for live TV)
+          if (!widget.isLive) ...[
+            VideoTimelineBar(
+              player: widget.player,
+              chapters: widget.chapters,
+              chaptersLoaded: widget.chaptersLoaded,
+              onSeek: widget.onSeek,
+              onSeekEnd: widget.onSeekEnd,
+              horizontalLayout: true,
+              focusNode: _timelineFocusNode,
+              onKeyEvent: _handleTimelineKeyEvent,
+              onFocusChange: _onFocusChange,
+              enabled: canInteract,
+              thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+            ),
+            const SizedBox(height: 4),
+          ],
           // Row 2: Playback controls and options
           Row(
             children: [
-              // Previous item
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _prevItemFocusNode,
-                  index: 0,
-                  icon: Symbols.skip_previous_rounded,
-                  color: widget.onPrevious != null && widget.canControl ? Colors.white : Colors.white54,
-                  onPressed: widget.canControl ? widget.onPrevious : null,
-                  semanticLabel: t.videoControls.previousButton,
+              if (!widget.isLive) ...[
+                // Previous item
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _prevItemFocusNode,
+                    index: 0,
+                    icon: Symbols.skip_previous_rounded,
+                    color: widget.onPrevious != null && widget.canControl ? Colors.white : Colors.white54,
+                    onPressed: widget.canControl ? widget.onPrevious : null,
+                    semanticLabel: t.videoControls.previousButton,
+                  ),
                 ),
-              ),
-              // Previous chapter
-              StreamBuilder<Duration>(
-                stream: widget.player.streams.position,
-                initialData: widget.player.state.position,
-                builder: (context, posSnapshot) {
-                  final prevLabel = _getPreviousChapterLabel(posSnapshot.data ?? Duration.zero);
-                  return Opacity(
-                    opacity: widget.canControl ? 1.0 : 0.5,
-                    child: _buildFocusableButton(
-                      focusNode: _prevChapterFocusNode,
-                      index: 1,
-                      icon: Symbols.fast_rewind_rounded,
-                      color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
-                      onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
-                      semanticLabel: t.videoControls.previousChapterButton,
-                      tooltip: prevLabel,
-                    ),
-                  );
-                },
-              ),
-              // Skip backward
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _skipBackFocusNode,
-                  index: 2,
-                  icon: widget.getReplayIcon(widget.seekTimeSmall),
-                  onPressed: widget.canControl ? widget.onSeekBackward : null,
-                  semanticLabel: t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall),
+                // Previous chapter
+                StreamBuilder<Duration>(
+                  stream: widget.player.streams.position,
+                  initialData: widget.player.state.position,
+                  builder: (context, posSnapshot) {
+                    final prevLabel = _getPreviousChapterLabel(posSnapshot.data ?? Duration.zero);
+                    return Opacity(
+                      opacity: widget.canControl ? 1.0 : 0.5,
+                      child: _buildFocusableButton(
+                        focusNode: _prevChapterFocusNode,
+                        index: 1,
+                        icon: Symbols.fast_rewind_rounded,
+                        color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
+                        onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
+                        semanticLabel: t.videoControls.previousChapterButton,
+                        tooltip: prevLabel,
+                      ),
+                    );
+                  },
                 ),
-              ),
+                // Skip backward
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _skipBackFocusNode,
+                    index: 2,
+                    icon: widget.getReplayIcon(widget.seekTimeSmall),
+                    onPressed: widget.canControl ? widget.onSeekBackward : null,
+                    semanticLabel: t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall),
+                  ),
+                ),
+              ],
               // Play/Pause
               Opacity(
                 opacity: widget.canControl ? 1.0 : 0.5,
@@ -513,94 +545,99 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   },
                 ),
               ),
-              // Skip forward
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _skipForwardFocusNode,
-                  index: 4,
-                  icon: widget.getForwardIcon(widget.seekTimeSmall),
-                  onPressed: widget.canControl ? widget.onSeekForward : null,
-                  semanticLabel: t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall),
+              if (!widget.isLive) ...[
+                // Skip forward
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _skipForwardFocusNode,
+                    index: 4,
+                    icon: widget.getForwardIcon(widget.seekTimeSmall),
+                    onPressed: widget.canControl ? widget.onSeekForward : null,
+                    semanticLabel: t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall),
+                  ),
                 ),
-              ),
-              // Next chapter
-              StreamBuilder<Duration>(
-                stream: widget.player.streams.position,
-                initialData: widget.player.state.position,
-                builder: (context, posSnapshot) {
-                  final nextLabel = _getNextChapterLabel(posSnapshot.data ?? Duration.zero);
-                  return Opacity(
-                    opacity: widget.canControl ? 1.0 : 0.5,
-                    child: _buildFocusableButton(
-                      focusNode: _nextChapterFocusNode,
-                      index: 5,
-                      icon: Symbols.fast_forward_rounded,
-                      color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
-                      onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
-                      semanticLabel: t.videoControls.nextChapterButton,
-                      tooltip: nextLabel,
-                    ),
-                  );
-                },
-              ),
-              // Next item
-              Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
-                child: _buildFocusableButton(
-                  focusNode: _nextItemFocusNode,
-                  index: 6,
-                  icon: Symbols.skip_next_rounded,
-                  color: widget.onNext != null && widget.canControl ? Colors.white : Colors.white54,
-                  onPressed: widget.canControl ? widget.onNext : null,
-                  semanticLabel: t.videoControls.nextButton,
-                ),
-              ),
-              // Finish time (hidden when too narrow to fit)
-              Expanded(
-                child: StreamBuilder<Duration>(
+                // Next chapter
+                StreamBuilder<Duration>(
                   stream: widget.player.streams.position,
                   initialData: widget.player.state.position,
-                  builder: (context, posSnap) {
-                    return StreamBuilder<Duration>(
-                      stream: widget.player.streams.duration,
-                      initialData: widget.player.state.duration,
-                      builder: (context, durSnap) {
-                        return StreamBuilder<double>(
-                          stream: widget.player.streams.rate,
-                          initialData: widget.player.state.rate,
-                          builder: (context, rateSnap) {
-                            final position = posSnap.data ?? Duration.zero;
-                            final duration = durSnap.data ?? Duration.zero;
-                            final remaining = duration - position;
-                            final rate = rateSnap.data ?? 1.0;
-                            if (remaining.inSeconds <= 0) return const SizedBox.shrink();
-
-                            final text = t.videoControls.endsAt(time: formatFinishTime(remaining, rate: rate));
-                            const style = TextStyle(color: Colors.white70, fontSize: 13);
-
-                            return LayoutBuilder(
-                              builder: (context, constraints) {
-                                final tp = TextPainter(
-                                  text: TextSpan(text: text, style: style),
-                                  textDirection: TextDirection.ltr,
-                                )..layout();
-                                final textWidth = tp.width + 8;
-                                tp.dispose();
-                                if (textWidth > constraints.maxWidth) return const SizedBox.shrink();
-                                return Padding(
-                                  padding: const EdgeInsets.only(left: 8),
-                                  child: Text(text, style: style),
-                                );
-                              },
-                            );
-                          },
-                        );
-                      },
+                  builder: (context, posSnapshot) {
+                    final nextLabel = _getNextChapterLabel(posSnapshot.data ?? Duration.zero);
+                    return Opacity(
+                      opacity: widget.canControl ? 1.0 : 0.5,
+                      child: _buildFocusableButton(
+                        focusNode: _nextChapterFocusNode,
+                        index: 5,
+                        icon: Symbols.fast_forward_rounded,
+                        color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
+                        onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
+                        semanticLabel: t.videoControls.nextChapterButton,
+                        tooltip: nextLabel,
+                      ),
                     );
                   },
                 ),
-              ),
+                // Next item
+                Opacity(
+                  opacity: widget.canControl ? 1.0 : 0.5,
+                  child: _buildFocusableButton(
+                    focusNode: _nextItemFocusNode,
+                    index: 6,
+                    icon: Symbols.skip_next_rounded,
+                    color: widget.onNext != null && widget.canControl ? Colors.white : Colors.white54,
+                    onPressed: widget.canControl ? widget.onNext : null,
+                    semanticLabel: t.videoControls.nextButton,
+                  ),
+                ),
+              ],
+              // Finish time (hidden for live TV and when too narrow to fit)
+              if (widget.isLive)
+                const Spacer()
+              else
+                Expanded(
+                  child: StreamBuilder<Duration>(
+                    stream: widget.player.streams.position,
+                    initialData: widget.player.state.position,
+                    builder: (context, posSnap) {
+                      return StreamBuilder<Duration>(
+                        stream: widget.player.streams.duration,
+                        initialData: widget.player.state.duration,
+                        builder: (context, durSnap) {
+                          return StreamBuilder<double>(
+                            stream: widget.player.streams.rate,
+                            initialData: widget.player.state.rate,
+                            builder: (context, rateSnap) {
+                              final position = posSnap.data ?? Duration.zero;
+                              final duration = durSnap.data ?? Duration.zero;
+                              final remaining = duration - position;
+                              final rate = rateSnap.data ?? 1.0;
+                              if (remaining.inSeconds <= 0) return const SizedBox.shrink();
+
+                              final text = t.videoControls.endsAt(time: formatFinishTime(remaining, rate: rate));
+                              const style = TextStyle(color: Colors.white70, fontSize: 13);
+
+                              return LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final tp = TextPainter(
+                                    text: TextSpan(text: text, style: style),
+                                    textDirection: TextDirection.ltr,
+                                  )..layout();
+                                  final textWidth = tp.width + 8;
+                                  tp.dispose();
+                                  if (textWidth > constraints.maxWidth) return const SizedBox.shrink();
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 8),
+                                    child: Text(text, style: style),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
               // Volume control
               VolumeControl(
                 player: widget.player,
@@ -638,6 +675,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 onFocusChange: _onFocusChange,
                 onNavigateLeft: navigateFromTrackToVolume,
                 canControl: widget.canControl,
+                isLive: widget.isLive,
                 shaderService: widget.shaderService,
                 onShaderChanged: widget.onShaderChanged,
               ),

@@ -65,6 +65,7 @@ class TranslationsIt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLogsIt logs = _TranslationsLogsIt._(_root);
 	@override late final _TranslationsLicensesIt licenses = _TranslationsLicensesIt._(_root);
 	@override late final _TranslationsNavigationIt navigation = _TranslationsNavigationIt._(_root);
+	@override late final _TranslationsLiveTvIt liveTv = _TranslationsLiveTvIt._(_root);
 	@override late final _TranslationsDownloadsIt downloads = _TranslationsDownloadsIt._(_root);
 	@override late final _TranslationsPlaylistsIt playlists = _TranslationsPlaylistsIt._(_root);
 	@override late final _TranslationsCollectionsIt collections = _TranslationsCollectionsIt._(_root);
@@ -762,6 +763,53 @@ class _TranslationsNavigationIt implements TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Librerie';
 	@override String get downloads => 'Download';
+	@override String get liveTv => 'TV in diretta';
+}
+
+// Path: liveTv
+class _TranslationsLiveTvIt implements TranslationsLiveTvEn {
+	_TranslationsLiveTvIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'TV in diretta';
+	@override String get channels => 'Canali';
+	@override String get guide => 'Guida';
+	@override String get recordings => 'Registrazioni';
+	@override String get subscriptions => 'Regole di registrazione';
+	@override String get scheduled => 'Programmati';
+	@override String get noChannels => 'Nessun canale disponibile';
+	@override String get noDvr => 'Nessun DVR configurato su nessun server';
+	@override String get tuneFailed => 'Impossibile sintonizzare il canale';
+	@override String get loading => 'Caricamento canali...';
+	@override String get nowPlaying => 'In riproduzione';
+	@override String get record => 'Registra';
+	@override String get recordSeries => 'Registra serie';
+	@override String get cancelRecording => 'Annulla registrazione';
+	@override String get deleteSubscription => 'Elimina regola di registrazione';
+	@override String get deleteSubscriptionConfirm => 'Sei sicuro di voler eliminare questa regola di registrazione?';
+	@override String get subscriptionDeleted => 'Regola di registrazione eliminata';
+	@override String get noPrograms => 'Nessun dato di programma disponibile';
+	@override String get noRecordings => 'Nessuna registrazione programmata';
+	@override String get noSubscriptions => 'Nessuna regola di registrazione';
+	@override String channelNumber({required Object number}) => 'Canale ${number}';
+	@override String get live => 'IN DIRETTA';
+	@override String get hd => 'HD';
+	@override String get premiere => 'NUOVO';
+	@override String get reloadGuide => 'Ricarica guida';
+	@override String get guideReloaded => 'Dati della guida ricaricati';
+	@override String get allChannels => 'Tutti i canali';
+	@override String get now => 'Ora';
+	@override String get today => 'Oggi';
+	@override String get midnight => 'Mezzanotte';
+	@override String get overnight => 'Notte';
+	@override String get morning => 'Mattina';
+	@override String get daytime => 'Giorno';
+	@override String get evening => 'Sera';
+	@override String get lateNight => 'Notte tarda';
+	@override String get whatsOn => 'In onda ora';
+	@override String get watchChannel => 'Guarda canale';
 }
 
 // Path: downloads
@@ -1636,6 +1684,44 @@ extension on TranslationsIt {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenze',
 			'navigation.libraries' => 'Librerie',
 			'navigation.downloads' => 'Download',
+			'navigation.liveTv' => 'TV in diretta',
+			'liveTv.title' => 'TV in diretta',
+			'liveTv.channels' => 'Canali',
+			'liveTv.guide' => 'Guida',
+			'liveTv.recordings' => 'Registrazioni',
+			'liveTv.subscriptions' => 'Regole di registrazione',
+			'liveTv.scheduled' => 'Programmati',
+			'liveTv.noChannels' => 'Nessun canale disponibile',
+			'liveTv.noDvr' => 'Nessun DVR configurato su nessun server',
+			'liveTv.tuneFailed' => 'Impossibile sintonizzare il canale',
+			'liveTv.loading' => 'Caricamento canali...',
+			'liveTv.nowPlaying' => 'In riproduzione',
+			'liveTv.record' => 'Registra',
+			'liveTv.recordSeries' => 'Registra serie',
+			'liveTv.cancelRecording' => 'Annulla registrazione',
+			'liveTv.deleteSubscription' => 'Elimina regola di registrazione',
+			'liveTv.deleteSubscriptionConfirm' => 'Sei sicuro di voler eliminare questa regola di registrazione?',
+			'liveTv.subscriptionDeleted' => 'Regola di registrazione eliminata',
+			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
+			'liveTv.noRecordings' => 'Nessuna registrazione programmata',
+			'liveTv.noSubscriptions' => 'Nessuna regola di registrazione',
+			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
+			'liveTv.live' => 'IN DIRETTA',
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NUOVO',
+			'liveTv.reloadGuide' => 'Ricarica guida',
+			'liveTv.guideReloaded' => 'Dati della guida ricaricati',
+			'liveTv.allChannels' => 'Tutti i canali',
+			'liveTv.now' => 'Ora',
+			'liveTv.today' => 'Oggi',
+			'liveTv.midnight' => 'Mezzanotte',
+			'liveTv.overnight' => 'Notte',
+			'liveTv.morning' => 'Mattina',
+			'liveTv.daytime' => 'Giorno',
+			'liveTv.evening' => 'Sera',
+			'liveTv.lateNight' => 'Notte tarda',
+			'liveTv.whatsOn' => 'In onda ora',
+			'liveTv.watchChannel' => 'Guarda canale',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',
@@ -1643,6 +1729,8 @@ extension on TranslationsIt {
 			'downloads.noDownloads' => 'Nessun download',
 			'downloads.noDownloadsDescription' => 'I contenuti scaricati appariranno qui per la visualizzazione offline',
 			'downloads.downloadNow' => 'Scarica',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.deleteDownload' => 'Elimina download',
 			'downloads.retryDownload' => 'Riprova download',
 			'downloads.downloadQueued' => 'Download in coda',
@@ -1681,8 +1769,6 @@ extension on TranslationsIt {
 			'playlists.errorRemoving' => 'Errore durante la rimozione dalla playlist',
 			'playlists.playlist' => 'Playlist',
 			'collections.title' => 'Raccolte',
-			_ => null,
-		} ?? switch (path) {
 			'collections.collection' => 'Raccolta',
 			'collections.empty' => 'La raccolta è vuota',
 			'collections.unknownLibrarySection' => 'Impossibile eliminare: sezione libreria sconosciuta',

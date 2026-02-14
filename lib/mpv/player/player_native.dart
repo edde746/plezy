@@ -96,7 +96,7 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> open(Media media, {bool play = true}) async {
+  Future<void> open(Media media, {bool play = true, bool isLive = false}) async {
     checkDisposed();
     await _ensureInitialized();
 

@@ -37,6 +37,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
 import 'libraries/libraries_screen.dart';
+import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
@@ -93,6 +94,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   bool _autoSwitchedToDownloads = false;
 
   OfflineModeProvider? _offlineModeProvider;
+  MultiServerProvider? _multiServerProvider;
+  bool _lastHasLiveTv = false;
 
   /// Whether a reconnection attempt is in progress
   bool _isReconnecting = false;
@@ -103,6 +106,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   late List<Widget> _screens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
+  final GlobalKey<State<LiveTvScreen>> _liveTvKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
   final GlobalKey<State<DownloadsScreen>> _downloadsKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
@@ -388,6 +392,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       _offlineModeProvider!.addListener(_handleOfflineStatusChanged);
     }
 
+    // Listen for Live TV / DVR availability changes
+    final multiServer = context.read<MultiServerProvider>();
+    if (multiServer != _multiServerProvider) {
+      _multiServerProvider?.removeListener(_handleLiveTvChanged);
+      _multiServerProvider = multiServer;
+      _multiServerProvider!.addListener(_handleLiveTvChanged);
+    }
+
     // Wire up Companion Remote command routing (desktop only, once)
     if (!_companionRemoteSetup && PlatformDetector.isDesktop(context)) {
       _companionRemoteSetup = true;
@@ -406,40 +418,41 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     };
 
     final receiver = CompanionRemoteReceiver.instance;
-    final tabCount = _getVisibleTabs(_isOffline).length;
 
     receiver.onTabNext = () {
+      final tabCount = _getVisibleTabs(_isOffline).length;
       _selectTab((_currentIndex + 1) % tabCount);
     };
     receiver.onTabPrevious = () {
+      final tabCount = _getVisibleTabs(_isOffline).length;
       _selectTab((_currentIndex - 1 + tabCount) % tabCount);
     };
     receiver.onTabDiscover = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.discover, isOffline: _isOffline);
+      final idx = NavigationTab.indexFor(NavigationTabId.discover, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
       if (idx >= 0) _selectTab(idx);
     };
     receiver.onTabLibraries = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.libraries, isOffline: _isOffline);
+      final idx = NavigationTab.indexFor(NavigationTabId.libraries, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
       if (idx >= 0) _selectTab(idx);
     };
     receiver.onTabSearch = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.search, isOffline: _isOffline);
+      final idx = NavigationTab.indexFor(NavigationTabId.search, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
       if (idx >= 0) _selectTab(idx);
     };
     receiver.onTabDownloads = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.downloads, isOffline: _isOffline);
+      final idx = NavigationTab.indexFor(NavigationTabId.downloads, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
       if (idx >= 0) _selectTab(idx);
     };
     receiver.onTabSettings = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline);
+      final idx = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
       if (idx >= 0) _selectTab(idx);
     };
     receiver.onHome = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.discover, isOffline: _isOffline);
+      final idx = NavigationTab.indexFor(NavigationTabId.discover, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
       if (idx >= 0) _selectTab(idx);
     };
     receiver.onSearchAction = (query) {
-      final idx = NavigationTab.indexFor(NavigationTabId.search, isOffline: _isOffline);
+      final idx = NavigationTab.indexFor(NavigationTabId.search, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
       if (idx >= 0) {
         _selectTab(idx);
         if (query != null && query.isNotEmpty) {
@@ -462,6 +475,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       windowManager.setPreventClose(false);
     }
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
+    _multiServerProvider?.removeListener(_handleLiveTvChanged);
     _sidebarFocusScope.dispose();
     _contentFocusScope.dispose();
 
@@ -511,14 +525,16 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   List<Widget> _buildScreens(bool offline) {
     // In offline mode, only show Downloads and Settings
-    // In online mode, show all 5 screens
     if (offline) {
       return [DownloadsScreen(key: _downloadsKey), SettingsScreen(key: _settingsKey)];
     }
 
+    final hasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
+
     return [
       DiscoverScreen(key: _discoverKey, onBecameVisible: _onDiscoverBecameVisible),
       LibrariesScreen(key: _librariesKey, onLibraryOrderChanged: _onLibraryOrderChanged),
+      if (hasLiveTv) LiveTvScreen(key: _liveTvKey),
       SearchScreen(key: _searchKey),
       DownloadsScreen(key: _downloadsKey),
       SettingsScreen(key: _settingsKey),
@@ -557,6 +573,20 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     });
   }
 
+  void _handleLiveTvChanged() {
+    final hasLiveTv = _multiServerProvider?.hasLiveTv ?? false;
+    if (hasLiveTv == _lastHasLiveTv) return;
+    _lastHasLiveTv = hasLiveTv;
+
+    setState(() {
+      final currentTabId = _tabIdForIndex(_isOffline, _currentIndex);
+      _screens = _buildScreens(_isOffline);
+      // Restore the correct tab index after rebuilding
+      final newIndex = NavigationTab.indexFor(currentTabId, isOffline: _isOffline, hasLiveTv: hasLiveTv);
+      _currentIndex = newIndex >= 0 ? newIndex : 0;
+    });
+  }
+
   void _handleOfflineStatusChanged() {
     final newOffline = _offlineModeProvider?.isOffline ?? widget.isOfflineMode;
 
@@ -586,7 +616,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         // Coming back online: restore the last online tab if we forced a switch to Downloads.
         if (_autoSwitchedToDownloads) {
           final restoredTab = _lastOnlineTabId ?? NavigationTabId.discover;
-          final restoredIndex = NavigationTab.indexFor(restoredTab, isOffline: _isOffline);
+          final restoredIndex = NavigationTab.indexFor(restoredTab, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
           _currentIndex = restoredIndex >= 0 ? restoredIndex : 0;
         } else {
           _currentIndex = _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
@@ -641,7 +671,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       });
     }
     // When content regains focus while on Settings, restore focus to last focused setting
-    final settingsIndex = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline);
+    final settingsIndex = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
     if (_currentIndex == settingsIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_settingsKey.currentState case final FocusableTab focusable) {
@@ -795,7 +825,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     });
 
     // Handle screen-specific logic
-    final settingsIndex = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline);
+    final settingsIndex = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
 
     // Skip online-only screen logic in offline mode
     if (!_isOffline) {
@@ -821,7 +851,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         }
       }
       // Focus search input when selecting Search tab
-      if (index == 2) {
+      if (NavigationTab.isTabAtIndex(NavigationTabId.search, index, isOffline: _isOffline, hasLiveTv: _hasLiveTv)) {
         if (_searchKey.currentState case final SearchInputFocusable searchable) {
           searchable.focusSearchInput();
         }
@@ -854,9 +884,18 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
   }
 
+  /// Whether the Live TV tab is currently visible
+  bool get _hasLiveTv {
+    try {
+      return context.read<MultiServerProvider>().hasLiveTv;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Get navigation tabs filtered by offline mode
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
-    return NavigationTab.getVisibleTabs(isOffline: isOffline);
+    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv);
   }
 
   /// Get the tab ID for a given index, clamping to the available range.

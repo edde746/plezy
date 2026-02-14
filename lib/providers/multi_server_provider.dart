@@ -6,16 +6,35 @@ import '../services/multi_server_manager.dart';
 import '../services/plex_auth_service.dart';
 import '../utils/app_logger.dart';
 
+/// Cached info about a DVR-enabled server
+class LiveTvServerInfo {
+  final String serverId;
+  final String dvrKey;
+  final String? lineup;
+
+  LiveTvServerInfo({required this.serverId, required this.dvrKey, this.lineup});
+}
+
 /// Provider for multi-server Plex connections
 /// Manages multiple PlexClient instances and provides data aggregation
 class MultiServerProvider extends ChangeNotifier {
   final MultiServerManager _serverManager;
   final DataAggregationService _aggregationService;
 
+  /// Whether any connected server has Live TV / DVR
+  bool _hasLiveTv = false;
+  bool get hasLiveTv => _hasLiveTv;
+
+  /// Info about servers with DVR capability
+  final List<LiveTvServerInfo> _liveTvServers = [];
+  List<LiveTvServerInfo> get liveTvServers => List.unmodifiable(_liveTvServers);
+
   MultiServerProvider(this._serverManager, this._aggregationService) {
     // Listen to server status changes
     _serverManager.statusStream.listen((_) {
       notifyListeners();
+      // Re-check live TV availability when servers come online
+      checkLiveTvAvailability();
     });
   }
 
@@ -90,6 +109,42 @@ class MultiServerProvider extends ChangeNotifier {
   Future<void> checkServerHealth() async {
     await _serverManager.checkServerHealth();
     // notifyListeners() will be called automatically via status stream
+  }
+
+  /// Check all online servers for DVR/Live TV availability
+  Future<void> checkLiveTvAvailability() async {
+    final newLiveTvServers = <LiveTvServerInfo>[];
+
+    for (final serverId in onlineServerIds) {
+      final client = getClientForServer(serverId);
+      if (client == null) continue;
+
+      try {
+        final dvrs = await client.getDvrs();
+        for (final dvr in dvrs) {
+          newLiveTvServers.add(LiveTvServerInfo(
+            serverId: serverId,
+            dvrKey: dvr.key,
+            lineup: dvr.lineup,
+          ));
+        }
+      } catch (e) {
+        appLogger.d('LiveTV check failed for server $serverId', error: e);
+      }
+    }
+
+    final hadLiveTv = _hasLiveTv;
+    final oldServerIds = _liveTvServers.map((s) => s.serverId).toSet();
+    final newServerIds = newLiveTvServers.map((s) => s.serverId).toSet();
+    _liveTvServers
+      ..clear()
+      ..addAll(newLiveTvServers);
+    _hasLiveTv = newLiveTvServers.isNotEmpty;
+
+    // Notify when availability changes OR when the server set changes
+    if (hadLiveTv != _hasLiveTv || !oldServerIds.containsAll(newServerIds) || !newServerIds.containsAll(oldServerIds)) {
+      notifyListeners();
+    }
   }
 
   @override

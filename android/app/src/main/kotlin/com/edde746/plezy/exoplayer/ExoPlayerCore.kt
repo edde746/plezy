@@ -39,8 +39,10 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
 import io.github.peerless2012.ass.media.AssHandler
@@ -662,12 +664,41 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     // Public API
 
-    fun open(uri: String, headers: Map<String, String>?, startPositionMs: Long, autoPlay: Boolean) {
+    fun open(uri: String, headers: Map<String, String>?, startPositionMs: Long, autoPlay: Boolean, isLive: Boolean = false) {
         if (!isInitialized) return
 
         currentMediaUri = uri
         currentHeaders = headers
         externalSubtitles.clear()
+
+        if (isLive) {
+            // Live MKV streams lack Cues (seek index). FLAG_DISABLE_SEEK_FOR_CUES tells
+            // MatroskaExtractor to not seek for them, treating the stream as unseekable
+            // so data flows immediately without hanging.
+            val dataSourceFactory = if (!headers.isNullOrEmpty()) {
+                DefaultDataSource.Factory(activity,
+                    androidx.media3.datasource.DefaultHttpDataSource.Factory()
+                        .setDefaultRequestProperties(headers))
+            } else {
+                DefaultDataSource.Factory(activity)
+            }
+
+            val extractorsFactory = androidx.media3.extractor.ExtractorsFactory {
+                arrayOf(MatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
+            }
+
+            val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
+                .createMediaSource(MediaItem.fromUri(uri))
+
+            exoPlayer?.apply {
+                setMediaSource(mediaSource, startPositionMs)
+                prepare()
+                playWhenReady = autoPlay
+            }
+
+            Log.d(TAG, "Opened live: $uri, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay")
+            return
+        }
 
         val mediaItemBuilder = MediaItem.Builder()
             .setUri(uri)

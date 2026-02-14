@@ -143,9 +143,20 @@ class PlexImageHelper {
 
     final basePath = thumbPath;
 
-    // If we can't/shouldn't transcode (already a full URL), just return it.
+    // External URLs (e.g. EPG provider images) — proxy through the server's
+    // photo transcoder so the Plex server fetches them on our behalf.
     if (basePath.startsWith('http://') || basePath.startsWith('https://')) {
-      return basePath;
+      if (client == null) return basePath;
+      final (width, height) = calculateOptimalDimensions(
+        maxWidth: maxWidth,
+        maxHeight: maxHeight,
+        devicePixelRatio: devicePixelRatio,
+        imageType: imageType,
+      );
+      // Don't append Plex token to the inner URL — only on the outer request
+      final encodedUrl = Uri.encodeComponent(basePath);
+      final token = client.config.token;
+      return '${client.config.baseUrl}/photo/:/transcode?width=$width&height=$height&minSize=1&upscale=1&url=$encodedUrl&X-Plex-Token=$token';
     }
 
     // If no client (offline mode), we can't build URLs for relative paths
