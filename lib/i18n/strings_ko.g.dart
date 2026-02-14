@@ -143,6 +143,7 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get mute => '음소거';
 	@override String get ok => '확인';
 	@override String get loading => '로딩 중...';
+	@override String get reconnect => '다시 연결';
 }
 
 // Path: screens
@@ -1211,6 +1212,7 @@ extension on TranslationsKo {
 			'common.mute' => '음소거',
 			'common.ok' => '확인',
 			'common.loading' => '로딩 중...',
+			'common.reconnect' => '다시 연결',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -1679,9 +1681,9 @@ extension on TranslationsKo {
 			'playlists.errorCreating' => '재생 목록 생성 실패',
 			'playlists.errorDeleting' => '재생 목록 삭제 실패',
 			'playlists.errorLoading' => '재생 목록 로드 실패',
-			'playlists.errorAdding' => '재생 목록에 추가 실패',
 			_ => null,
 		} ?? switch (path) {
+			'playlists.errorAdding' => '재생 목록에 추가 실패',
 			'playlists.errorReordering' => '재생 목록 항목 재정렬 실패',
 			'playlists.errorRemoving' => '재생 목록에서 제거 실패',
 			'watchTogether.title' => '함께 보기',

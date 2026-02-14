@@ -46,7 +46,8 @@
     "settings": "Instellingen",
     "mute": "Dempen",
     "ok": "OK",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "reconnect": "Opnieuw verbinden"
   },
   "screens": {
     "licenses": "Licenties",

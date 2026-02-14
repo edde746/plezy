@@ -46,7 +46,8 @@
     "settings": "设置",
     "mute": "静音",
     "ok": "确定",
-    "loading": "加载中..."
+    "loading": "加载中...",
+    "reconnect": "重新连接"
   },
   "screens": {
     "licenses": "许可证",

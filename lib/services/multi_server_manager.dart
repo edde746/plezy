@@ -32,6 +32,12 @@ class MultiServerManager {
   /// Map of serverId to active optimization futures
   final Map<String, Future<void>> _activeOptimizations = {};
 
+  /// Cached client identifier for reconnection without async storage lookup
+  String? _clientIdentifier;
+
+  /// Debounce timers for endpoint-exhaustion-triggered reconnection (per server)
+  final Map<String, Timer> _reconnectDebounce = {};
+
   /// Get all registered server IDs
   List<String> get serverIds => _servers.keys.toList();
 
@@ -103,6 +109,7 @@ class MultiServerManager {
         await storage.saveServerEndpoint(serverId, newUrl);
         appLogger.i('Updated endpoint for ${server.name} after failover: $newUrl');
       },
+      onAllEndpointsExhausted: () => _onServerEndpointsExhausted(serverId),
     );
 
     // Save the initial endpoint
@@ -170,6 +177,7 @@ class MultiServerManager {
 
     // Use provided client ID or generate a unique one for this app instance
     final effectiveClientId = clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
+    _clientIdentifier = effectiveClientId;
 
     // Create connection tasks for all servers
     final connectionFutures = servers.map((server) async {
@@ -234,6 +242,7 @@ class MultiServerManager {
   Future<bool> addServer(PlexServer server, {String? clientIdentifier}) async {
     final serverId = server.clientIdentifier;
     final effectiveClientId = clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
+    _clientIdentifier ??= effectiveClientId;
 
     try {
       appLogger.d('Adding server: ${server.name}');
@@ -344,28 +353,30 @@ class MultiServerManager {
     appLogger.i('Stopped network monitoring');
   }
 
-  /// Re-optimize all connected servers
+  /// Re-optimize all connected servers and attempt reconnection for offline ones
   void _reoptimizeAllServers({required String reason}) {
     for (final entry in _servers.entries) {
       final serverId = entry.key;
       final server = entry.value;
 
-      // Skip if server is offline
-      if (!isServerOnline(serverId)) {
-        continue;
-      }
-
-      // Skip if optimization already running for this server
+      // Skip if optimization/reconnection already running for this server
       if (_activeOptimizations.containsKey(serverId)) {
         appLogger.d('Optimization already running for ${server.name}, skipping', error: {'reason': reason});
         continue;
       }
 
-      // Run optimization
-      _activeOptimizations[serverId] = _reoptimizeServer(serverId: serverId, server: server, reason: reason)
-          .whenComplete(() {
-            _activeOptimizations.remove(serverId);
-          });
+      if (!isServerOnline(serverId)) {
+        // Attempt reconnection for offline servers
+        _activeOptimizations[serverId] = _reconnectServer(serverId, server).whenComplete(() {
+          _activeOptimizations.remove(serverId);
+        });
+      } else {
+        // Re-optimize online servers
+        _activeOptimizations[serverId] = _reoptimizeServer(serverId: serverId, server: server, reason: reason)
+            .whenComplete(() {
+              _activeOptimizations.remove(serverId);
+            });
+      }
     }
   }
 
@@ -404,10 +415,86 @@ class MultiServerManager {
     }
   }
 
+  /// Attempt full reconnection for a single offline server
+  Future<void> _reconnectServer(String serverId, PlexServer server) async {
+    final clientId = _clientIdentifier;
+    if (clientId == null) {
+      appLogger.w('Cannot reconnect ${server.name}: no client identifier cached');
+      return;
+    }
+
+    try {
+      appLogger.d('Attempting reconnection for ${server.name}');
+      final client = await _createClientForServer(server: server, clientIdentifier: clientId);
+
+      _clients[serverId] = client;
+      updateServerStatus(serverId, true);
+      appLogger.i('Successfully reconnected to ${server.name}');
+    } catch (e) {
+      appLogger.d('Reconnection failed for ${server.name}: $e');
+      // Leave status as offline — will retry on next trigger
+    }
+  }
+
+  /// Attempt reconnection for all offline servers
+  Future<void> reconnectOfflineServers() async {
+    final offline = offlineServerIds;
+    if (offline.isEmpty) return;
+
+    appLogger.d('Attempting reconnection for ${offline.length} offline servers');
+
+    final futures = offline.map((serverId) {
+      final server = _servers[serverId];
+      if (server == null) return Future<void>.value();
+
+      // Skip if already running
+      if (_activeOptimizations.containsKey(serverId)) return Future<void>.value();
+
+      final future = _reconnectServer(serverId, server)
+          .timeout(const Duration(seconds: 15), onTimeout: () {
+            appLogger.d('Reconnection timed out for $serverId');
+          })
+          .whenComplete(() => _activeOptimizations.remove(serverId));
+
+      _activeOptimizations[serverId] = future;
+      return future;
+    });
+
+    await Future.wait(futures);
+  }
+
+  /// Called when all failover endpoints are exhausted for a server.
+  /// Debounced per-server to prevent cascading reconnections from parallel failures.
+  void _onServerEndpointsExhausted(String serverId) {
+    // Cancel any existing debounce timer for this server
+    _reconnectDebounce[serverId]?.cancel();
+
+    _reconnectDebounce[serverId] = Timer(const Duration(seconds: 5), () {
+      _reconnectDebounce.remove(serverId);
+
+      final server = _servers[serverId];
+      if (server == null) return;
+
+      appLogger.i('All endpoints exhausted for $serverId, triggering reconnection');
+      updateServerStatus(serverId, false);
+
+      // Guard with _activeOptimizations to prevent duplicate reconnections
+      if (_activeOptimizations.containsKey(serverId)) return;
+
+      _activeOptimizations[serverId] = _reconnectServer(serverId, server).whenComplete(() {
+        _activeOptimizations.remove(serverId);
+      });
+    });
+  }
+
   /// Disconnect all servers
   void disconnectAll() {
     appLogger.i('Disconnecting all servers');
     stopNetworkMonitoring();
+    for (final timer in _reconnectDebounce.values) {
+      timer.cancel();
+    }
+    _reconnectDebounce.clear();
     _clients.clear();
     _servers.clear();
     _serverStatus.clear();

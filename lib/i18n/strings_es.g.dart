@@ -143,6 +143,7 @@ class _TranslationsCommonEs implements TranslationsCommonEn {
 	@override String get mute => 'Silencio';
 	@override String get ok => 'OK';
 	@override String get loading => 'Cargando...';
+	@override String get reconnect => 'Reconectar';
 }
 
 // Path: screens
@@ -1211,6 +1212,7 @@ extension on TranslationsEs {
 			'common.mute' => 'Silencio',
 			'common.ok' => 'OK',
 			'common.loading' => 'Cargando...',
+			'common.reconnect' => 'Reconectar',
 			'screens.licenses' => 'Licencias',
 			'screens.switchProfile' => 'Cambiar Perfil',
 			'screens.subtitleStyling' => 'Estilo de Subtítulos',
@@ -1679,9 +1681,9 @@ extension on TranslationsEs {
 			'playlists.errorCreating' => 'Error al crear la lista',
 			'playlists.errorDeleting' => 'Error al eliminar la lista',
 			'playlists.errorLoading' => 'Error al cargar las listas',
-			'playlists.errorAdding' => 'Error al añadir a la lista',
 			_ => null,
 		} ?? switch (path) {
+			'playlists.errorAdding' => 'Error al añadir a la lista',
 			'playlists.errorReordering' => 'Error al reordenar los elementos de la lista',
 			'playlists.errorRemoving' => 'Error al eliminar de la lista',
 			'watchTogether.title' => 'Ver Juntos',

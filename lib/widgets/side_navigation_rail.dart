@@ -130,11 +130,15 @@ class SideNavigationRail extends StatefulWidget {
   final bool isOfflineMode;
   final bool isSidebarFocused;
   final bool alwaysExpanded;
+  final bool isReconnecting;
   final ValueChanged<int> onDestinationSelected;
   final ValueChanged<String> onLibrarySelected;
 
   /// Called when RIGHT arrow is pressed to navigate to content without selecting.
   final VoidCallback? onNavigateToContent;
+
+  /// Called when the user taps the reconnect button in offline mode.
+  final VoidCallback? onReconnect;
 
   const SideNavigationRail({
     super.key,
@@ -143,9 +147,11 @@ class SideNavigationRail extends StatefulWidget {
     this.isOfflineMode = false,
     this.isSidebarFocused = false,
     this.alwaysExpanded = false,
+    this.isReconnecting = false,
     required this.onDestinationSelected,
     required this.onLibrarySelected,
     this.onNavigateToContent,
+    this.onReconnect,
   });
 
   @override
@@ -168,6 +174,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   static const _kSearch = 'search';
   static const _kDownloads = 'downloads';
   static const _kSettings = 'settings';
+  static const _kReconnect = 'reconnect';
 
   // Unified focus state tracker for all nav items (main + libraries)
   late final FocusMemoryTracker _focusTracker;
@@ -237,7 +244,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
   /// Build the set of valid focus keys (main nav + current libraries)
   Set<String> _buildValidFocusKeys(List<PlexLibrary> libraries) {
-    return {_kHome, _kLibraries, _kSearch, _kDownloads, _kSettings, ...libraries.map((lib) => lib.globalKey)};
+    return {_kHome, _kLibraries, _kSearch, _kDownloads, _kSettings, _kReconnect, ...libraries.map((lib) => lib.globalKey)};
   }
 
   /// Reload libraries (called when servers change or profile switches)
@@ -317,7 +324,13 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     clipBehavior: Clip.hardEdge,
                     children: [
-                      // In offline mode, only show Downloads and Settings
+                      // Reconnect button when offline
+                      if (widget.isOfflineMode && widget.onReconnect != null) ...[
+                        _buildReconnectItem(isCollapsed: isCollapsed),
+                        const SizedBox(height: 8),
+                      ],
+
+                      // In online mode, show full navigation
                       if (!widget.isOfflineMode) ...[
                         // Home
                         _buildNavItem(
@@ -433,6 +446,33 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       onTap: onTap,
       focusNode: focusNode,
       autofocus: autofocus,
+      onNavigateRight: widget.onNavigateToContent,
+    );
+  }
+
+  Widget _buildReconnectItem({required bool isCollapsed}) {
+    final t = tokens(context);
+    final isFocused = _focusTracker.isFocused(_kReconnect);
+
+    return NavigationRailItem(
+      icon: widget.isReconnecting ? Symbols.sync_rounded : Symbols.wifi_rounded,
+      label: widget.isReconnecting
+          ? SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: t.text),
+            )
+          : Text(
+              Translations.of(context).common.reconnect,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: t.textMuted),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+      isSelected: false,
+      isFocused: isFocused,
+      isCollapsed: isCollapsed,
+      onTap: widget.isReconnecting ? () {} : () => widget.onReconnect?.call(),
+      focusNode: _focusTracker.get(_kReconnect),
       onNavigateRight: widget.onNavigateToContent,
     );
   }

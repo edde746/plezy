@@ -143,6 +143,7 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get mute => 'Dempen';
 	@override String get ok => 'OK';
 	@override String get loading => 'Laden...';
+	@override String get reconnect => 'Opnieuw verbinden';
 }
 
 // Path: screens
@@ -1211,6 +1212,7 @@ extension on TranslationsNl {
 			'common.mute' => 'Dempen',
 			'common.ok' => 'OK',
 			'common.loading' => 'Laden...',
+			'common.reconnect' => 'Opnieuw verbinden',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
@@ -1679,9 +1681,9 @@ extension on TranslationsNl {
 			'playlists.errorRemoving' => 'Fout bij verwijderen uit afspeellijst',
 			'playlists.playlist' => 'Afspeellijst',
 			'collections.title' => 'Collecties',
-			'collections.collection' => 'Collectie',
 			_ => null,
 		} ?? switch (path) {
+			'collections.collection' => 'Collectie',
 			'collections.empty' => 'Collectie is leeg',
 			'collections.unknownLibrarySection' => 'Kan niet verwijderen: onbekende bibliotheeksectie',
 			'collections.deleteCollection' => 'Collectie verwijderen',

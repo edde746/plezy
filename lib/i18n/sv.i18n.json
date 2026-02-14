@@ -46,7 +46,8 @@
     "settings": "Inställningar",
     "mute": "Ljud av",
     "ok": "OK",
-    "loading": "Laddar..."
+    "loading": "Laddar...",
+    "reconnect": "Återanslut"
   },
   "screens": {
     "licenses": "Licenser",

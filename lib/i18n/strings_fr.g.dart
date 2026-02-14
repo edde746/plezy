@@ -143,6 +143,7 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get mute => 'Muet';
 	@override String get ok => 'OK';
 	@override String get loading => 'Chargement...';
+	@override String get reconnect => 'Reconnecter';
 }
 
 // Path: screens
@@ -1211,6 +1212,7 @@ extension on TranslationsFr {
 			'common.mute' => 'Muet',
 			'common.ok' => 'OK',
 			'common.loading' => 'Chargement...',
+			'common.reconnect' => 'Reconnecter',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
@@ -1679,9 +1681,9 @@ extension on TranslationsFr {
 			'playlists.errorCreating' => 'Échec de la création de playlist',
 			'playlists.errorDeleting' => 'Échec de suppression de playlist',
 			'playlists.errorLoading' => 'Échec de chargement de playlists',
-			'playlists.errorAdding' => 'Échec d\'ajout dans la playlist',
 			_ => null,
 		} ?? switch (path) {
+			'playlists.errorAdding' => 'Échec d\'ajout dans la playlist',
 			'playlists.errorReordering' => 'Échec de réordonnacement d\'élément de playlist',
 			'playlists.errorRemoving' => 'Échec de suppression depuis la playlist',
 			'watchTogether.title' => 'Regarder ensemble',

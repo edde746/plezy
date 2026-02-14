@@ -46,7 +46,8 @@
     "settings": "설정",
     "mute": "음소거",
     "ok": "확인",
-    "loading": "로딩 중..."
+    "loading": "로딩 중...",
+    "reconnect": "다시 연결"
   },
   "screens": {
     "licenses": "라이선스",

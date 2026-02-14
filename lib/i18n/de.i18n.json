@@ -46,7 +46,8 @@
     "settings": "Einstellungen",
     "mute": "Stumm",
     "ok": "OK",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "reconnect": "Erneut verbinden"
   },
   "screens": {
     "licenses": "Lizenzen",

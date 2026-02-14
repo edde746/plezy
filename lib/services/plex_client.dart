@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' show VoidCallback;
 
 import 'package:dio/dio.dart';
 
@@ -46,6 +47,7 @@ class PlexClient {
   late final Dio _dio;
   final EndpointFailoverManager? _endpointManager;
   final Future<void> Function(String newBaseUrl)? _onEndpointChanged;
+  final VoidCallback? _onAllEndpointsExhausted;
 
   /// Server identifier - all PlexMetadata items created by this client are tagged with this
   final String serverId;
@@ -78,10 +80,12 @@ class PlexClient {
     this.serverName,
     List<String>? prioritizedEndpoints,
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
+    VoidCallback? onAllEndpointsExhausted,
   }) : _endpointManager = (prioritizedEndpoints != null && prioritizedEndpoints.isNotEmpty)
            ? EndpointFailoverManager(prioritizedEndpoints)
            : null,
-       _onEndpointChanged = onEndpointChanged {
+       _onEndpointChanged = onEndpointChanged,
+       _onAllEndpointsExhausted = onAllEndpointsExhausted {
     LogRedactionManager.registerServerUrl(config.baseUrl);
     LogRedactionManager.registerToken(config.token);
 
@@ -109,6 +113,7 @@ class PlexClient {
           dio: _dio,
           endpointManager: _endpointManager,
           onEndpointSwitch: _handleEndpointSwitch,
+          onAllEndpointsExhausted: _onAllEndpointsExhausted,
         ),
       );
     }

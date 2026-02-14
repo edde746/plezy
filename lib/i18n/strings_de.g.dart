@@ -143,6 +143,7 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get mute => 'Stumm';
 	@override String get ok => 'OK';
 	@override String get loading => 'Laden...';
+	@override String get reconnect => 'Erneut verbinden';
 }
 
 // Path: screens
@@ -1211,6 +1212,7 @@ extension on TranslationsDe {
 			'common.mute' => 'Stumm',
 			'common.ok' => 'OK',
 			'common.loading' => 'Laden...',
+			'common.reconnect' => 'Erneut verbinden',
 			'screens.licenses' => 'Lizenzen',
 			'screens.switchProfile' => 'Profil wechseln',
 			'screens.subtitleStyling' => 'Untertitel-Stil',
@@ -1679,9 +1681,9 @@ extension on TranslationsDe {
 			'playlists.errorRemoving' => 'Konnte nicht aus der Wiedergabeliste entfernt werden',
 			'playlists.playlist' => 'Wiedergabeliste',
 			'collections.title' => 'Sammlungen',
-			'collections.collection' => 'Sammlung',
 			_ => null,
 		} ?? switch (path) {
+			'collections.collection' => 'Sammlung',
 			'collections.empty' => 'Sammlung ist leer',
 			'collections.unknownLibrarySection' => 'Löschen nicht möglich: Unbekannte Bibliothekssektion',
 			'collections.deleteCollection' => 'Sammlung löschen',

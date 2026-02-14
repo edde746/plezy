@@ -236,6 +236,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // App came back to foreground - trigger sync check and start new session
         _offlineWatchSyncService.onAppResumed();
         InAppReviewService.instance.startSession();
+        // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep
+        _serverManager.checkServerHealth();
+        _serverManager.reconnectOfflineServers();
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
         // App went to background or is closing - end session

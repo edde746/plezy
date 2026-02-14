@@ -1,3 +1,5 @@
+import 'dart:ui' show VoidCallback;
+
 import 'package:dio/dio.dart';
 
 import '../utils/app_logger.dart';
@@ -77,12 +79,14 @@ class EndpointFailoverInterceptor extends Interceptor {
     required Dio dio,
     required this.endpointManager,
     required Future<void> Function(String newBaseUrl) onEndpointSwitch,
+    this.onAllEndpointsExhausted,
   }) : _dio = dio,
        _onEndpointSwitch = onEndpointSwitch;
 
   final Dio _dio;
   final EndpointFailoverManager endpointManager;
   final Future<void> Function(String newBaseUrl) _onEndpointSwitch;
+  final VoidCallback? onAllEndpointsExhausted;
   bool _isSwitching = false;
 
   @override
@@ -116,6 +120,7 @@ class EndpointFailoverInterceptor extends Interceptor {
       // All endpoints exhausted — reset to first so the next failure cycle
       // starts from the preferred endpoint (handles transient network outages).
       endpointManager.resetToFirst();
+      onAllEndpointsExhausted?.call();
       handler.next(err);
       return;
     }

@@ -232,6 +232,9 @@ class TranslationsCommonEn {
 
 	/// en: 'Loading...'
 	String get loading => 'Loading...';
+
+	/// en: 'Reconnect'
+	String get reconnect => 'Reconnect';
 }
 
 // Path: screens
@@ -2600,6 +2603,7 @@ extension on Translations {
 			'common.mute' => 'Mute',
 			'common.ok' => 'OK',
 			'common.loading' => 'Loading...',
+			'common.reconnect' => 'Reconnect',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -3068,9 +3072,9 @@ extension on Translations {
 			'playlists.errorCreating' => 'Failed to create playlist',
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
-			'playlists.errorAdding' => 'Failed to add to playlist',
 			_ => null,
 		} ?? switch (path) {
+			'playlists.errorAdding' => 'Failed to add to playlist',
 			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
 			'watchTogether.title' => 'Watch Together',

@@ -2,6 +2,7 @@ import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show KeyUpEvent, SystemNavigator;
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
@@ -92,6 +93,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   bool _autoSwitchedToDownloads = false;
 
   OfflineModeProvider? _offlineModeProvider;
+
+  /// Whether a reconnection attempt is in progress
+  bool _isReconnecting = false;
 
   /// Prevents double-pushing the profile selection screen
   bool _isShowingProfileSelection = false;
@@ -539,6 +543,20 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     return newIndex >= 0 ? newIndex : 0;
   }
 
+  void _triggerReconnect() {
+    if (_isReconnecting) return;
+    setState(() => _isReconnecting = true);
+
+    final serverManager = context.read<MultiServerProvider>().serverManager;
+    serverManager.checkServerHealth();
+    serverManager.reconnectOfflineServers().whenComplete(() {
+      // Give a moment for status updates to propagate
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) setState(() => _isReconnecting = false);
+      });
+    });
+  }
+
   void _handleOfflineStatusChanged() {
     final newOffline = _offlineModeProvider?.isOffline ?? widget.isOfflineMode;
 
@@ -547,6 +565,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     final previousTabId = _tabIdForIndex(_isOffline, _currentIndex);
     final wasOffline = _isOffline;
     setState(() {
+      _isReconnecting = false;
       _isOffline = newOffline;
       _screens = _buildScreens(_isOffline);
       _selectedLibraryGlobalKey = _isOffline ? null : _selectedLibraryGlobalKey;
@@ -909,6 +928,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                             isOfflineMode: _isOffline,
                             isSidebarFocused: _isSidebarFocused,
                             alwaysExpanded: alwaysExpanded,
+                            isReconnecting: _isReconnecting,
                             onDestinationSelected: (index) {
                               _selectTab(index);
                               _focusContent();
@@ -918,6 +938,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                               _focusContent();
                             },
                             onNavigateToContent: _focusContent,
+                            onReconnect: _triggerReconnect,
                           ),
                         ),
                       ),
@@ -933,10 +954,51 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: _selectTab,
-        destinations: _buildNavDestinations(_isOffline),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Reconnect bar when offline
+          if (_isOffline)
+            Material(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: InkWell(
+                onTap: _isReconnecting ? null : _triggerReconnect,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_isReconnecting)
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        )
+                      else
+                        Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        t.common.reconnect,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          NavigationBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: _selectTab,
+            destinations: _buildNavDestinations(_isOffline),
+          ),
+        ],
       ),
     );
   }

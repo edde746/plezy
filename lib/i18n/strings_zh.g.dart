@@ -143,6 +143,7 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get mute => '静音';
 	@override String get ok => '确定';
 	@override String get loading => '加载中...';
+	@override String get reconnect => '重新连接';
 }
 
 // Path: screens
@@ -1211,6 +1212,7 @@ extension on TranslationsZh {
 			'common.mute' => '静音',
 			'common.ok' => '确定',
 			'common.loading' => '加载中...',
+			'common.reconnect' => '重新连接',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -1679,9 +1681,9 @@ extension on TranslationsZh {
 			'playlists.errorRemoving' => '从播放列表中移除失败',
 			'playlists.playlist' => '播放列表',
 			'collections.title' => '合集',
-			'collections.collection' => '合集',
 			_ => null,
 		} ?? switch (path) {
+			'collections.collection' => '合集',
 			'collections.empty' => '合集为空',
 			'collections.unknownLibrarySection' => '无法删除：未知的媒体库分区',
 			'collections.deleteCollection' => '删除合集',

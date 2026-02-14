@@ -143,6 +143,7 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get mute => 'Ljud av';
 	@override String get ok => 'OK';
 	@override String get loading => 'Laddar...';
+	@override String get reconnect => 'Återanslut';
 }
 
 // Path: screens
@@ -1211,6 +1212,7 @@ extension on TranslationsSv {
 			'common.mute' => 'Ljud av',
 			'common.ok' => 'OK',
 			'common.loading' => 'Laddar...',
+			'common.reconnect' => 'Återanslut',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -1679,9 +1681,9 @@ extension on TranslationsSv {
 			'playlists.errorRemoving' => 'Det gick inte att ta bort från spellista',
 			'playlists.playlist' => 'Spellista',
 			'collections.title' => 'Samlingar',
-			'collections.collection' => 'Samling',
 			_ => null,
 		} ?? switch (path) {
+			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen är tom',
 			'collections.unknownLibrarySection' => 'Kan inte ta bort: okänd bibliotekssektion',
 			'collections.deleteCollection' => 'Ta bort samling',

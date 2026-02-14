@@ -46,7 +46,8 @@
     "settings": "Settings",
     "mute": "Mute",
     "ok": "OK",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "reconnect": "Reconnect"
   },
   "screens": {
     "licenses": "Licenses",

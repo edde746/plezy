@@ -46,7 +46,8 @@
     "settings": "Impostazioni",
     "mute": "Muto",
     "ok": "OK",
-    "loading": "Caricamento..."
+    "loading": "Caricamento...",
+    "reconnect": "Riconnetti"
   },
   "screens": {
     "licenses": "Licenze",
