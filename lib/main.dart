@@ -1,18 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'dart:io' show Platform;
-import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
-import 'services/macos_titlebar_service.dart';
-import 'services/fullscreen_state_manager.dart';
 import 'services/settings_service.dart';
-import 'utils/platform_detector.dart';
-import 'services/discord_rpc_service.dart';
-import 'services/gamepad_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/server_state_provider.dart';
@@ -34,16 +27,16 @@ import 'services/data_aggregation_service.dart';
 import 'services/in_app_review_service.dart';
 import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
-import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
 import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
-import 'utils/language_codes.dart';
+import 'utils/feature_flags.dart';
 import 'i18n/strings.g.dart';
 import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
+import 'init/platform_init.dart' as platform_init;
 import 'package:intl/date_symbol_data_local.dart';
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
@@ -77,53 +70,15 @@ void main() async {
   // Needed for formatting dates in different locales
   await initializeDateFormatting(savedLocale.languageCode, null);
 
-  // Configure image cache for large libraries
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20; // 200MB
+  // Configure image cache (platform-specific size)
+  platform_init.configureImageCache();
 
-  // Initialize services in parallel where possible
-  final futures = <Future<void>>[];
-
-  // Initialize window_manager for desktop platforms
-  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    futures.add(windowManager.ensureInitialized());
-  }
-
-  // Initialize TV detection and PiP service for Android
-  if (Platform.isAndroid) {
-    futures.add(TvDetectionService.getInstance().then((_) {}));
-    // Initialize PiP service to listen for PiP state changes
-    PipService();
-  }
-
-  // Configure macOS window with custom titlebar (depends on window manager)
-  futures.add(MacOSTitlebarService.setupCustomTitlebar());
-
-  // Initialize storage service
-  futures.add(StorageService.getInstance().then((_) {}));
-
-  // Initialize language codes for track selection
-  futures.add(LanguageCodes.initialize());
-
-  // Wait for all parallel services to complete
-  await Future.wait(futures);
+  // Initialize platform-specific services (native or web/webOS)
+  await platform_init.initializePlatform(settings);
 
   // Initialize logger level based on debug setting
   final debugEnabled = settings.getEnableDebugLogging();
   setLoggerLevel(debugEnabled);
-
-  // Initialize download storage service with settings
-  await DownloadStorageService.instance.initialize(settings);
-
-  // Start global fullscreen state monitoring
-  FullscreenStateManager().startMonitoring();
-
-  // Initialize gamepad service for desktop platforms
-  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    GamepadService.instance.start();
-    DiscordRPCService.instance.initialize();
-  }
-
-  // DTD service is available for MCP tooling connection if needed
 
   // Register bundled shader licenses
   _registerShaderLicenses();
@@ -199,7 +154,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final MultiServerManager _serverManager;
   late final DataAggregationService _aggregationService;
   late final AppDatabase _appDatabase;
-  late final DownloadManagerService _downloadManager;
+  DownloadManagerService? _downloadManager; // Nullable: not available on web/webOS
   late final OfflineWatchSyncService _offlineWatchSyncService;
 
   @override
@@ -214,13 +169,17 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // Initialize API cache with database
     PlexApiCache.initialize(_appDatabase);
 
-    _downloadManager = DownloadManagerService(database: _appDatabase, storageService: DownloadStorageService.instance);
-    _downloadManager.recoveryFuture = _downloadManager.recoverInterruptedDownloads();
+    if (FeatureFlags.downloadsAvailable) {
+      _downloadManager = DownloadManagerService(database: _appDatabase, storageService: DownloadStorageService.instance);
+      _downloadManager!.recoveryFuture = _downloadManager!.recoverInterruptedDownloads();
+    }
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
 
-    // Start in-app review session tracking
-    InAppReviewService.instance.startSession();
+    // Start in-app review session tracking (not on web)
+    if (FeatureFlags.inAppReviewAvailable) {
+      InAppReviewService.instance.startSession();
+    }
   }
 
   @override
@@ -235,11 +194,15 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         // App came back to foreground - trigger sync check and start new session
         _offlineWatchSyncService.onAppResumed();
-        InAppReviewService.instance.startSession();
+        if (FeatureFlags.inAppReviewAvailable) {
+          InAppReviewService.instance.startSession();
+        }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
         // App went to background or is closing - end session
-        InAppReviewService.instance.endSession();
+        if (FeatureFlags.inAppReviewAvailable) {
+          InAppReviewService.instance.endSession();
+        }
       case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
         // Transitional states - don't trigger session events
@@ -266,7 +229,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
         ),
-        // Download provider
+        // Download provider (uses null download manager on web/webOS)
         ChangeNotifierProvider(create: (context) => DownloadProvider(downloadManager: _downloadManager)),
         // Offline watch sync service
         ChangeNotifierProvider<OfflineWatchSyncService>(

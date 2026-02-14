@@ -1,12 +1,9 @@
-import 'dart:io' show Platform;
-
 import '../models.dart';
-import 'player_android.dart';
-import 'player_native.dart';
 import 'player_state.dart';
 import 'player_streams.dart';
-import 'platform/player_linux.dart';
-import 'platform/player_windows.dart';
+
+import 'player_factory_native.dart'
+    if (dart.library.js_interop) 'player_factory_web.dart' as factory_impl;
 
 export 'player_base.dart';
 
@@ -243,25 +240,15 @@ abstract class Player {
   /// On Android, pass [useExoPlayer] to override the default:
   /// - true: Use ExoPlayer (default, better hardware support)
   /// - false: Use MPV (more features, ASS subtitle rendering)
+  /// Creates a new player instance.
+  ///
+  /// Returns a platform-specific implementation:
+  /// - macOS/iOS: PlayerNative using MPVKit/libmpv
+  /// - Android: PlayerAndroid (ExoPlayer) or PlayerNative (MPV)
+  /// - Windows: PlayerWindows using libmpv
+  /// - Linux: PlayerLinux using libmpv
+  /// - Web/webOS: PlayerWeb using HTML5 <video>
   factory Player({bool? useExoPlayer}) {
-    if (Platform.isAndroid) {
-      // Default to ExoPlayer on Android, with MPV as fallback
-      // The caller should pass useExoPlayer based on SettingsService.getUseExoPlayer()
-      final useExo = useExoPlayer ?? true;
-      if (useExo) {
-        return PlayerAndroid(); // ExoPlayer (default)
-      }
-      return PlayerNative(); // MPV fallback
-    }
-    if (Platform.isMacOS || Platform.isIOS) {
-      return PlayerNative();
-    }
-    if (Platform.isWindows) {
-      return PlayerWindows();
-    }
-    if (Platform.isLinux) {
-      return PlayerLinux();
-    }
-    throw UnsupportedError('Player is not supported on this platform');
+    return factory_impl.createPlatformPlayer(useExoPlayer: useExoPlayer);
   }
 }

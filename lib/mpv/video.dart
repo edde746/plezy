@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'player/player.dart';
 import 'player/video_rect_support.dart';
+import 'video_native_surface.dart'
+    if (dart.library.js_interop) 'video_web_surface.dart' as video_surface;
 
 /// Video widget for displaying player output.
 ///
@@ -74,6 +77,11 @@ class _VideoState extends State<Video> {
   }
 
   Widget _buildVideoSurface() {
+    // On web, use HtmlElementView for video rendering
+    if (kIsWeb) {
+      return video_surface.buildVideoSurface(widget.player);
+    }
+
     // For players that support video rect positioning (Windows, Linux),
     // communicate layout changes to the native side.
     if (widget.player is VideoRectSupport) {
