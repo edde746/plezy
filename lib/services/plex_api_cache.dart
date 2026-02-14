@@ -119,7 +119,7 @@ class PlexApiCache {
     final cached = await get(serverId, '/library/metadata/$ratingKey');
     final json = PlexCacheParser.extractFirstMetadata(cached);
     if (json == null) return null;
-    return PlexMetadata.fromJson(json).copyWith(serverId: serverId);
+    return PlexMetadata.fromJsonWithImages(json).copyWith(serverId: serverId);
   }
 
   /// Clear all cached data (useful for debugging/testing)

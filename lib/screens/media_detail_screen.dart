@@ -21,6 +21,7 @@ import '../i18n/strings.g.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../utils/plex_image_helper.dart';
 import '../../services/plex_client.dart';
+import '../services/plex_api_cache.dart';
 import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
 import '../utils/rating_utils.dart';
@@ -768,10 +769,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       _isLoadingMetadata = true;
     });
 
-    // Offline mode: use passed metadata directly, load seasons from downloads
+    // Offline mode: try to load full metadata from cache (has clearLogo, summary, etc.)
     if (widget.isOffline) {
+      final cachedMetadata = await PlexApiCache.instance.getMetadata(
+        widget.metadata.serverId ?? '',
+        widget.metadata.ratingKey,
+      );
       setState(() {
-        _fullMetadata = widget.metadata;
+        _fullMetadata = cachedMetadata ?? widget.metadata;
         _isLoadingMetadata = false;
       });
 
