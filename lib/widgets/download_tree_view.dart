@@ -485,6 +485,17 @@ class _DownloadTreeItem extends StatefulWidget {
 }
 
 class _DownloadTreeItemState extends State<_DownloadTreeItem> {
+  /// Treat downloading items with no progress/speed as effectively queued
+  /// (they're waiting in background_downloader's HoldingQueue).
+  DownloadStatus get _effectiveStatus {
+    if (widget.node.status == DownloadStatus.downloading &&
+        widget.node.progress == 0 &&
+        (widget.node.downloadProgress?.speed ?? 0) == 0) {
+      return DownloadStatus.queued;
+    }
+    return widget.node.status;
+  }
+
   // Focus node for row content (only created if not provided externally)
   FocusNode? _ownedRowFocusNode;
   // Focus nodes for action buttons (up to 3 buttons max)
@@ -627,7 +638,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
         const SizedBox(width: 8),
 
         // Status icon
-        _buildStatusIcon(widget.node.status),
+        _buildStatusIcon(_effectiveStatus),
 
         const SizedBox(width: 12),
 
@@ -655,7 +666,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               ],
 
               // Progress bar for active downloads
-              if (widget.node.status == DownloadStatus.downloading) ...[
+              if (_effectiveStatus == DownloadStatus.downloading) ...[
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: widget.node.progress,
@@ -673,7 +684,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               ],
 
               // Queued label
-              if (widget.node.status == DownloadStatus.queued) ...[
+              if (_effectiveStatus == DownloadStatus.queued) ...[
                 const SizedBox(height: 4),
                 Text(
                   t.downloads.downloadQueued,
