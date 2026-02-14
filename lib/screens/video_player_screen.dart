@@ -139,6 +139,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   String? _liveSessionIdentifier;
   String? _liveSessionPath;
   Timer? _liveTimelineTimer;
+  DateTime? _livePlaybackStartTime;
+  String? _liveRatingKey;
+  int? _liveDurationMs;
 
   // Auto-play next episode
   Timer? _autoPlayTimer;
@@ -877,9 +880,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
           _liveSessionIdentifier = result.sessionIdentifier;
           _liveSessionPath = result.sessionPath;
+          _liveRatingKey = result.metadata.ratingKey;
+          _liveDurationMs = result.metadata.duration;
         }
 
-        await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true);
+        _livePlaybackStartTime = DateTime.now();
+        await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
 
         if (mounted) {
           setState(() {
@@ -1676,15 +1682,27 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (client == null) return;
 
     try {
-      final position = player?.state.position ?? Duration.zero;
-      final duration = player?.state.duration ?? Duration.zero;
+      // Use the program ratingKey from tune metadata, not the channel key
+      final ratingKey = _liveRatingKey ?? widget.metadata.ratingKey;
+
+      // playbackTime: wall-clock ms since playback started
+      final playbackTime = _livePlaybackStartTime != null
+          ? DateTime.now().difference(_livePlaybackStartTime!).inMilliseconds
+          : 0;
+
+      // For live TV, player position/duration are unreliable (often 0).
+      // Use playbackTime as time, and program duration from tune metadata.
+      final time = playbackTime;
+      final duration = _liveDurationMs ?? 0;
+
       await client.updateLiveTimeline(
-        ratingKey: widget.metadata.ratingKey,
+        ratingKey: ratingKey,
         sessionPath: sessionPath,
         sessionIdentifier: sessionId,
         state: state,
-        time: position.inMilliseconds,
-        duration: duration.inMilliseconds,
+        time: time,
+        duration: duration,
+        playbackTime: playbackTime,
       );
     } catch (e) {
       appLogger.d('Live timeline update failed', error: e);
@@ -1743,7 +1761,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final streamUrl = '${client.config.baseUrl}${result.streamPath}'.withPlexToken(client.config.token);
 
       await _setLiveStreamOptions();
-      await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true);
+      await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
+
+      _livePlaybackStartTime = DateTime.now();
+      _liveRatingKey = result.metadata.ratingKey;
+      _liveDurationMs = result.metadata.duration;
 
       setState(() {
         _liveChannelIndex = newIndex;

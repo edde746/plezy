@@ -1139,8 +1139,9 @@ class PlexClient {
     required String state,
     required int time,
     required int duration,
+    required int playbackTime,
   }) async {
-    await _dio.post(
+    final response = await _dio.get(
       '/:/timeline',
       queryParameters: {
         'ratingKey': ratingKey,
@@ -1149,9 +1150,13 @@ class PlexClient {
         'hasMDE': '1',
         'time': time,
         'duration': duration,
+        'playbackTime': playbackTime,
         'X-Plex-Session-Identifier': sessionIdentifier,
       },
     );
+    if (response.statusCode != null && response.statusCode != 200) {
+      appLogger.e('Live timeline returned ${response.statusCode}: ${response.data}');
+    }
   }
 
   /// Remove item from Continue Watching (On Deck) without affecting watch status or progress

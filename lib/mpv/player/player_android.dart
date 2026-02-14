@@ -62,7 +62,7 @@ class PlayerAndroid extends PlayerBase {
   // ============================================
 
   @override
-  Future<void> open(Media media, {bool play = true}) async {
+  Future<void> open(Media media, {bool play = true, bool isLive = false}) async {
     checkDisposed();
     await _ensureInitialized();
 
@@ -74,6 +74,7 @@ class PlayerAndroid extends PlayerBase {
       'headers': media.headers,
       'startPositionMs': media.start?.inMilliseconds ?? 0,
       'autoPlay': play,
+      'isLive': isLive,
     });
   }
 
