@@ -4,4 +4,11 @@
     <files-path name="app_files" path="." />
     <!-- External files directory (fallback) -->
     <external-files-path name="external_files" path="." />
+    <!-- External storage root (for custom download paths on shared storage) -->
+    <external-path name="external" path="." />
+    <!-- Cache directories -->
+    <cache-path name="cache" path="." />
+    <external-cache-path name="external_cache" path="." />
+    <!-- Filesystem root (ultimate fallback for any absolute path) -->
+    <root-path name="root" path="" />
 </paths>

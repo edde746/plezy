@@ -82,25 +82,37 @@ class MainActivity : FlutterActivity() {
                     }
 
                     try {
-                        val uri: Uri = if (filePath.startsWith("content://")) {
-                            Uri.parse(filePath)
+                        val uri: Uri
+                        val grantRead: Boolean
+
+                        if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+                            uri = Uri.parse(filePath)
+                            grantRead = false
+                        } else if (filePath.startsWith("content://")) {
+                            uri = Uri.parse(filePath)
+                            grantRead = true
                         } else {
-                            // Convert file path to content:// URI via FileProvider
                             val path = if (filePath.startsWith("file://")) filePath.removePrefix("file://") else filePath
-                            FileProvider.getUriForFile(this, "com.edde746.plezy.fileprovider", File(path))
+                            uri = FileProvider.getUriForFile(this, "com.edde746.plezy.fileprovider", File(path))
+                            grantRead = true
                         }
 
                         val intent = Intent(Intent.ACTION_VIEW).apply {
                             setDataAndType(uri, "video/*")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            if (grantRead) {
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
                             if (packageName != null) {
                                 setPackage(packageName)
                             }
                         }
                         startActivity(intent)
                         result.success(true)
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        result.error("APP_NOT_FOUND", "No app found for package: $packageName", null)
                     } catch (e: Exception) {
-                        result.success(false)
+                        result.error("LAUNCH_FAILED", e.message ?: e.javaClass.simpleName, null)
                     }
                 }
                 else -> result.notImplemented()

@@ -49,11 +49,9 @@ class ExternalPlayerService {
       final settings = await SettingsService.getInstance();
       final player = settings.getSelectedExternalPlayer();
 
-      appLogger.d('Launching external player: ${player.name} with URL: $resolvedUrl');
-
-      // On Android, use native intent for local files (file:// and content://)
-      if (Platform.isAndroid && _isLocalUrl(resolvedUrl)) {
-        return _launchAndroidLocalFile(resolvedUrl, player, context);
+      // On Android, always use native intent to avoid url_launcher opening in browser
+      if (Platform.isAndroid) {
+        return _launchAndroidNative(resolvedUrl, player, context);
       }
 
       final launched = await player.launch(resolvedUrl);
@@ -70,27 +68,22 @@ class ExternalPlayerService {
     }
   }
 
-  static bool _isLocalUrl(String url) {
-    return url.startsWith('file://') || url.startsWith('content://') || url.startsWith('/');
-  }
-
-  /// Launch a local video file on Android using native ACTION_VIEW intent
-  /// with FileProvider content:// URI and FLAG_GRANT_READ_URI_PERMISSION.
-  static Future<bool> _launchAndroidLocalFile(String url, ExternalPlayer player, BuildContext context) async {
+  /// Launch a video on Android using native ACTION_VIEW intent.
+  /// Handles local files (file://, content://, absolute paths) and remote URLs.
+  static Future<bool> _launchAndroidNative(String url, ExternalPlayer player, BuildContext context) async {
     try {
-      final filePath = url.startsWith('file://') ? url.substring(7) : url;
-      final result = await _externalPlayerChannel.invokeMethod<bool>('openVideo', {
-        'filePath': filePath,
+      await _externalPlayerChannel.invokeMethod<bool>('openVideo', {
+        'filePath': url,
         if (player.id != 'system_default') 'package': _getAndroidPackage(player),
       });
-      final launched = result ?? false;
-      if (!launched && context.mounted) {
+      return true;
+    } on PlatformException catch (e) {
+      if (e.code == 'APP_NOT_FOUND' && context.mounted) {
         showErrorSnackBar(context, t.externalPlayer.appNotInstalled(name: player.name));
+      } else if (context.mounted) {
+        showErrorSnackBar(context, t.externalPlayer.launchFailed);
       }
-      return launched;
-    } catch (e) {
-      appLogger.w('Android native intent failed, falling back to player.launch', error: e);
-      return player.launch(url);
+      return false;
     }
   }
 
