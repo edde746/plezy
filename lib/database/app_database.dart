@@ -1,9 +1,6 @@
-import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 
+import 'connection.dart';
 import 'tables.dart';
 import '../models/download_models.dart';
 import '../utils/app_logger.dart';
@@ -13,7 +10,7 @@ part 'app_database.g.dart';
 // Simplified database with API cache for offline support
 @DriftDatabase(tables: [DownloadedMedia, DownloadQueue, ApiCache, OfflineWatchProgress])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(openPlatformConnection());
 
   @override
   int get schemaVersion => 8; // Added bgTaskId column to DownloadedMedia
@@ -196,33 +193,4 @@ class AppDatabase extends _$AppDatabase {
   Future<List<DownloadedMediaItem>> getAllDownloadedMetadata() {
     return (select(downloadedMedia)..where((t) => t.status.equals(DownloadStatus.completed.index))).get();
   }
-}
-
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final Directory dbFolder;
-    if (Platform.isAndroid || Platform.isIOS) {
-      dbFolder = await getApplicationDocumentsDirectory();
-    } else {
-      dbFolder = await getApplicationSupportDirectory();
-    }
-
-    final file = File(p.join(dbFolder.path, 'plezy_downloads.db'));
-
-    // Ensure directory exists
-    if (!await file.parent.exists()) {
-      await file.parent.create(recursive: true);
-    }
-
-    // Migrate from old location on desktop (was in Documents subfolder)
-    if (!Platform.isAndroid && !Platform.isIOS && !await file.exists()) {
-      final oldFolder = await getApplicationDocumentsDirectory();
-      final oldFile = File(p.join(oldFolder.path, 'plezy_downloads.db'));
-      if (await oldFile.exists()) {
-        await oldFile.rename(file.path);
-      }
-    }
-
-    return NativeDatabase(file);
-  });
 }

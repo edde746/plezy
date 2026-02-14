@@ -1,0 +1,19 @@
+{
+  "id": "com.plezy.app",
+  "version": "1.16.1",
+  "vendor": "Plezy",
+  "type": "web",
+  "main": "index.html",
+  "title": "Plezy",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "iconColor": "#1a1a2e",
+  "resolution": "1920x1080",
+  "bgColor": "#000000",
+  "disableBackHistoryAPI": true,
+  "handlesRelaunch": true,
+  "transparent": false,
+  "requiredPermissions": [
+    "all"
+  ]
+}

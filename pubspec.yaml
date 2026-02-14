@@ -54,6 +54,8 @@ dependencies:
   mobile_scanner: ^6.0.2
   android_intent_plus: ^5.0.2
   background_downloader: ^9.5.2
+  # Web/webOS dependencies
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_test:
