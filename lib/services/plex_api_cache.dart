@@ -128,9 +128,7 @@ class PlexApiCache {
   /// Used by DownloadProvider to batch-load metadata on startup instead of
   /// issuing per-item DB queries.
   Future<Map<String, PlexMetadata>> getAllPinnedMetadata() async {
-    final rows = await (_db.select(_db.apiCache)
-          ..where((t) => t.pinned.equals(true)))
-        .get();
+    final rows = await (_db.select(_db.apiCache)..where((t) => t.pinned.equals(true))).get();
 
     final result = <String, PlexMetadata>{};
     for (final row in rows) {

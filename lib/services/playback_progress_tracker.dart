@@ -118,18 +118,20 @@ class PlaybackProgressTracker {
         _resetBackoff();
       } else {
         // Fire-and-forget for playing/paused — avoid blocking the Dart event loop
-        _sendOnlineProgress(state, position, duration).then((_) {
-          _resetBackoff();
-        }).catchError((Object e) {
-          _consecutiveFailures++;
-          // Exponential backoff: skip 1, 2, 4, 8... ticks (capped at 6 ≈ 60s)
-          _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
-          appLogger.d(
-            'Progress update failed ($_consecutiveFailures consecutive), '
-            'skipping next $_ticksToSkip tick(s)',
-            error: e,
-          );
-        });
+        _sendOnlineProgress(state, position, duration)
+            .then((_) {
+              _resetBackoff();
+            })
+            .catchError((Object e) {
+              _consecutiveFailures++;
+              // Exponential backoff: skip 1, 2, 4, 8... ticks (capped at 6 ≈ 60s)
+              _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
+              appLogger.d(
+                'Progress update failed ($_consecutiveFailures consecutive), '
+                'skipping next $_ticksToSkip tick(s)',
+                error: e,
+              );
+            });
       }
 
       // Emit watch state event on stop for UI updates across screens

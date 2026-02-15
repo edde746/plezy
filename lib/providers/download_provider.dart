@@ -200,7 +200,6 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
-
   void _onProgressUpdate(DownloadProgress progress) {
     appLogger.d('Progress update received: ${progress.globalKey} - ${progress.status} - ${progress.progress}%');
 

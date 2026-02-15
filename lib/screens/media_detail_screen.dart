@@ -1210,7 +1210,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, _extrasScrollController.position.maxScrollExtent);
 
     if (animate) {
-      _extrasScrollController.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
+      _extrasScrollController.animateTo(
+        desiredOffset,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+      );
     } else {
       _extrasScrollController.jumpTo(desiredOffset);
     }

@@ -1555,9 +1555,7 @@ class DownloadManagerService {
     final showEpisodes = await _database.getEpisodesByShow(showKey);
 
     // Check if any episodes belong to this show besides the current item
-    return showEpisodes.any(
-      (item) => item.globalKey != '${metadata.serverId}:${metadata.ratingKey}',
-    );
+    return showEpisodes.any((item) => item.globalKey != '${metadata.serverId}:${metadata.ratingKey}');
   }
 
   /// Find file with any extension
