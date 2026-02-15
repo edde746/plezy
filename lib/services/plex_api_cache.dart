@@ -122,6 +122,39 @@ class PlexApiCache {
     return PlexMetadata.fromJsonWithImages(json).copyWith(serverId: serverId);
   }
 
+  /// Load all pinned metadata in a single query.
+  ///
+  /// Returns a map keyed by `serverId:ratingKey` for O(1) lookups.
+  /// Used by DownloadProvider to batch-load metadata on startup instead of
+  /// issuing per-item DB queries.
+  Future<Map<String, PlexMetadata>> getAllPinnedMetadata() async {
+    final rows = await (_db.select(_db.apiCache)
+          ..where((t) => t.pinned.equals(true)))
+        .get();
+
+    final result = <String, PlexMetadata>{};
+    for (final row in rows) {
+      // Extract serverId and ratingKey from cache key like "serverId:/library/metadata/12345"
+      final colonIdx = row.cacheKey.indexOf(':');
+      if (colonIdx < 0) continue;
+      final serverId = row.cacheKey.substring(0, colonIdx);
+      final match = RegExp(r'/library/metadata/([^/]+)$').firstMatch(row.cacheKey);
+      if (match == null) continue;
+      final ratingKey = match.group(1)!;
+
+      try {
+        final data = jsonDecode(row.data) as Map<String, dynamic>;
+        final json = PlexCacheParser.extractFirstMetadata(data);
+        if (json == null) continue;
+        final metadata = PlexMetadata.fromJsonWithImages(json).copyWith(serverId: serverId);
+        result['$serverId:$ratingKey'] = metadata;
+      } catch (_) {
+        // Skip malformed entries
+      }
+    }
+    return result;
+  }
+
   /// Clear all cached data (useful for debugging/testing)
   Future<void> clearAll() async {
     await _db.delete(_db.apiCache).go();

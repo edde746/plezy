@@ -165,6 +165,11 @@ extension DownloadDatabaseOperations on AppDatabase {
     return (select(downloadedMedia)..where((t) => t.grandparentRatingKey.equals(showKey))).get();
   }
 
+  /// Get all downloaded items for a specific server
+  Future<List<DownloadedMediaItem>> getDownloadsByServerId(String serverId) {
+    return (select(downloadedMedia)..where((t) => t.serverId.equals(serverId))).get();
+  }
+
   /// Update the background_downloader task ID for a download
   Future<void> updateBgTaskId(String globalKey, String? taskId) async {
     await (update(
@@ -235,6 +240,10 @@ class DownloadManagerService {
 
   // Prevents concurrent _processQueue calls
   bool _isProcessingQueue = false;
+
+  // Debounce timers for DB progress writes (keyed by globalKey).
+  // UI progress streams are still real-time; only the DB write is debounced.
+  final Map<String, Timer> _progressDebounceTimers = {};
 
   /// Public method to check if downloads should be blocked due to cellular-only setting
   /// Can be used by DownloadProvider to show user-friendly error
@@ -643,8 +652,15 @@ class DownloadManagerService {
       ),
     );
 
-    _database.updateDownloadProgress(globalKey, progress, downloadedBytes, totalBytes).catchError((e) {
-      appLogger.w('Failed to update download progress in DB', error: e);
+    // Debounce DB writes — only the latest progress value is persisted after
+    // a 2-second settle period. The stream above provides real-time UI updates;
+    // the DB write is only for crash-recovery state.
+    _progressDebounceTimers[globalKey]?.cancel();
+    _progressDebounceTimers[globalKey] = Timer(const Duration(seconds: 2), () {
+      _progressDebounceTimers.remove(globalKey);
+      _database.updateDownloadProgress(globalKey, progress, downloadedBytes, totalBytes).catchError((e) {
+        appLogger.w('Failed to update download progress in DB', error: e);
+      });
     });
   }
 
@@ -706,6 +722,9 @@ class DownloadManagerService {
   /// Handle a completed video download — store path, download supplementary content, mark done.
   Future<void> _onDownloadComplete(String globalKey, Task task) async {
     try {
+      // Flush any pending debounced progress write before completing
+      _progressDebounceTimers.remove(globalKey)?.cancel();
+
       final ctx = _pendingDownloadContext.remove(globalKey);
 
       // ── Phase 1 (critical): resolve and store the video file path ──
@@ -1275,37 +1294,11 @@ class DownloadManagerService {
     }
   }
 
-  /// Check if a chapter thumbnail is used by any other downloaded items
-  Future<bool> _isChapterThumbnailInUse(String serverId, String thumbPath, String excludeRatingKey) async {
-    try {
-      // Get all downloaded items
-      final allItems = await _database.select(_database.downloadedMedia).get();
-
-      // Check if any other item uses this chapter thumbnail
-      for (final item in allItems) {
-        // Skip the item being deleted
-        if (item.ratingKey == excludeRatingKey) {
-          continue;
-        }
-
-        // Get chapter thumb paths for this item
-        final itemChapterPaths = await _getChapterThumbPaths(serverId, item.ratingKey);
-
-        // Check if this item has the same thumb path
-        if (itemChapterPaths.contains(thumbPath)) {
-          return true; // Thumbnail is in use
-        }
-      }
-
-      return false; // Thumbnail is not in use
-    } catch (e) {
-      appLogger.w('Error checking chapter thumbnail usage: $thumbPath', error: e);
-      // On error, assume in use to be safe (don't delete)
-      return true;
-    }
-  }
-
-  /// Delete chapter thumbnails for a media item (with reference counting)
+  /// Delete chapter thumbnails for a media item (with reference counting).
+  ///
+  /// Pre-loads all chapter paths for other items on the same server in one pass,
+  /// then checks membership in a Set — O(items * chapters) instead of
+  /// O(thumbs * items * chapters) with repeated DB queries.
   Future<void> _deleteChapterThumbnails(String serverId, String ratingKey) async {
     try {
       final thumbPaths = await _getChapterThumbPaths(serverId, ratingKey);
@@ -1315,15 +1308,21 @@ class DownloadManagerService {
         return;
       }
 
+      // Build a set of all chapter thumb paths used by OTHER items on this server
+      final otherItems = await _database.getDownloadsByServerId(serverId);
+      final inUseThumbPaths = <String>{};
+      for (final item in otherItems) {
+        if (item.ratingKey == ratingKey) continue;
+        final itemChapterPaths = await _getChapterThumbPaths(serverId, item.ratingKey);
+        inUseThumbPaths.addAll(itemChapterPaths);
+      }
+
       int deletedCount = 0;
       int preservedCount = 0;
 
       for (final thumbPath in thumbPaths) {
         try {
-          // Check if this thumbnail is used by other items
-          final inUse = await _isChapterThumbnailInUse(serverId, thumbPath, ratingKey);
-
-          if (inUse) {
+          if (inUseThumbPaths.contains(thumbPath)) {
             appLogger.d('Preserving chapter thumbnail (in use): $thumbPath');
             preservedCount++;
             continue;
@@ -1336,7 +1335,6 @@ class DownloadManagerService {
           }
         } catch (e) {
           appLogger.w('Failed to delete chapter thumbnail: $thumbPath', error: e);
-          // Continue with other chapters even if one fails
         }
       }
 
@@ -1345,7 +1343,6 @@ class DownloadManagerService {
       }
     } catch (e, stack) {
       appLogger.w('Error deleting chapter thumbnails for $ratingKey', error: e, stackTrace: stack);
-      // Don't throw - chapter deletion shouldn't block main deletion
     }
   }
 
@@ -1554,13 +1551,12 @@ class DownloadManagerService {
   Future<bool> _isShowArtworkInUse(PlexMetadata metadata, int? _) async {
     final showKey = metadata.grandparentRatingKey ?? metadata.parentRatingKey ?? metadata.ratingKey;
 
-    final allItems = await _database.select(_database.downloadedMedia).get();
+    // Use targeted query instead of full table scan
+    final showEpisodes = await _database.getEpisodesByShow(showKey);
 
-    // Check if any items belong to this show besides this one
-    return allItems.any(
-      (item) =>
-          (item.grandparentRatingKey == showKey || item.parentRatingKey == showKey) &&
-          item.globalKey != '${metadata.serverId}:${metadata.ratingKey}',
+    // Check if any episodes belong to this show besides the current item
+    return showEpisodes.any(
+      (item) => item.globalKey != '${metadata.serverId}:${metadata.ratingKey}',
     );
   }
 
@@ -1667,6 +1663,10 @@ class DownloadManagerService {
   }
 
   void dispose() {
+    for (final timer in _progressDebounceTimers.values) {
+      timer.cancel();
+    }
+    _progressDebounceTimers.clear();
     _progressController.close();
     _deletionProgressController.close();
   }

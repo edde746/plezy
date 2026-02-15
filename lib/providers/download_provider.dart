@@ -89,6 +89,10 @@ class DownloadProvider extends ChangeNotifier {
 
       // Load all downloads from database
       final downloads = await _downloadManager.getAllDownloads();
+
+      // Bulk-load all pinned metadata in a single query instead of per-item DB calls
+      final allMetadata = await apiCache.getAllPinnedMetadata();
+
       for (final item in downloads) {
         _downloads[item.globalKey] = DownloadProgress(
           globalKey: item.globalKey,
@@ -101,14 +105,15 @@ class DownloadProvider extends ChangeNotifier {
         // Store Plex thumb path reference (file path computed from hash when needed)
         _artworkPaths[item.globalKey] = DownloadedArtwork(thumbPath: item.thumbPath);
 
-        // Load metadata from API cache (base endpoint - chapters/markers included in data)
-        final metadata = await apiCache.getMetadata(item.serverId, item.ratingKey);
+        // Look up metadata from the bulk-loaded map (O(1) instead of DB query per item)
+        // Falls back to individual query for any unpinned entries (e.g., legacy data)
+        final metadata = allMetadata[item.globalKey] ?? await apiCache.getMetadata(item.serverId, item.ratingKey);
         if (metadata != null) {
           _metadata[item.globalKey] = metadata;
 
-          // For episodes, also load parent (show and season) metadata
+          // For episodes, also load parent (show and season) metadata from the same map
           if (metadata.isEpisode) {
-            await _loadParentMetadataFromCache(metadata, apiCache);
+            _loadParentMetadataFromMap(metadata, allMetadata);
           }
         }
       }
@@ -158,20 +163,20 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
-  /// Load parent (show and season) metadata from cache for an episode
-  Future<void> _loadParentMetadataFromCache(PlexMetadata episode, PlexApiCache apiCache) async {
+  /// Load parent (show and season) metadata from a pre-loaded map (no DB I/O).
+  /// Used during bulk initialization to avoid per-item DB queries.
+  void _loadParentMetadataFromMap(PlexMetadata episode, Map<String, PlexMetadata> allMetadata) {
     final serverId = episode.serverId;
     if (serverId == null) return;
 
-    // Load show metadata (base endpoint)
+    // Load show metadata
     final showRatingKey = episode.grandparentRatingKey;
     if (showRatingKey != null) {
       final showGlobalKey = '$serverId:$showRatingKey';
       if (!_metadata.containsKey(showGlobalKey)) {
-        final showMetadata = await apiCache.getMetadata(serverId, showRatingKey);
+        final showMetadata = allMetadata[showGlobalKey];
         if (showMetadata != null) {
           _metadata[showGlobalKey] = showMetadata;
-          // Store artwork reference for offline display
           if (showMetadata.thumb != null) {
             _artworkPaths[showGlobalKey] = DownloadedArtwork(thumbPath: showMetadata.thumb);
           }
@@ -179,15 +184,14 @@ class DownloadProvider extends ChangeNotifier {
       }
     }
 
-    // Load season metadata (base endpoint)
+    // Load season metadata
     final seasonRatingKey = episode.parentRatingKey;
     if (seasonRatingKey != null) {
       final seasonGlobalKey = '$serverId:$seasonRatingKey';
       if (!_metadata.containsKey(seasonGlobalKey)) {
-        final seasonMetadata = await apiCache.getMetadata(serverId, seasonRatingKey);
+        final seasonMetadata = allMetadata[seasonGlobalKey];
         if (seasonMetadata != null) {
           _metadata[seasonGlobalKey] = seasonMetadata;
-          // Store artwork reference for offline display
           if (seasonMetadata.thumb != null) {
             _artworkPaths[seasonGlobalKey] = DownloadedArtwork(thumbPath: seasonMetadata.thumb);
           }
@@ -195,6 +199,7 @@ class DownloadProvider extends ChangeNotifier {
       }
     }
   }
+
 
   void _onProgressUpdate(DownloadProgress progress) {
     appLogger.d('Progress update received: ${progress.globalKey} - ${progress.status} - ${progress.progress}%');
