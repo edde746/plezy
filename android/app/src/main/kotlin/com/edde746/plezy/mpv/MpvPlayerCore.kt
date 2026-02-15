@@ -723,8 +723,12 @@ class MpvPlayerCore(private val activity: Activity) :
             contentView.viewTreeObserver.removeOnGlobalLayoutListener(listener)
         }
 
+        // Post view removal to next frame to avoid SurfaceControl race on render thread
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-        surfaceContainer?.let { contentView.removeView(it) }
+        val container = surfaceContainer
+        contentView.post {
+            container?.let { contentView.removeView(it) }
+        }
         surfaceContainer = null
         surfaceView = null
 

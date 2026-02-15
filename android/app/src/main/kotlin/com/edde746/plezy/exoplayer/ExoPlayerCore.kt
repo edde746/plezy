@@ -1253,6 +1253,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         abandonAudioFocus()
         audioManager = null
 
+        exoPlayer?.clearVideoSurface()
         exoPlayer?.removeListener(this)
         exoPlayer?.release()
         exoPlayer = null
@@ -1265,9 +1266,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             contentView.viewTreeObserver.removeOnGlobalLayoutListener(listener)
         }
 
+        // Post view removal to next frame to avoid SurfaceControl race on render thread
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-        surfaceContainer?.let { contentView.removeView(it) }
-        subtitleView?.let { contentView.removeView(it) }
+        val container = surfaceContainer
+        val subtitle = subtitleView
+        contentView.post {
+            container?.let { contentView.removeView(it) }
+            subtitle?.let { contentView.removeView(it) }
+        }
         surfaceContainer = null
         surfaceView = null
         subtitleView = null
