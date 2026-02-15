@@ -364,9 +364,12 @@ class PlexMetadata with MultiServerFields {
 
   /// Returns true if this item should use 16:9 aspect ratio.
   /// Episodes use 16:9 when in episodeThumbnail mode.
+  /// Clips (trailers, extras) always use 16:9.
   /// Movies, shows, and seasons use 16:9 in mixed hub context with episodeThumbnail mode.
   bool usesWideAspectRatio(EpisodePosterMode mode, {bool mixedHubContext = false}) {
     final itemType = type.toLowerCase();
+    // Clips (trailers, extras) are always 16:9
+    if (itemType == 'clip') return true;
     if (itemType == 'episode' && mode == EpisodePosterMode.episodeThumbnail) {
       return true;
     }

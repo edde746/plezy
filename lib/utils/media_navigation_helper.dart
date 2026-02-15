@@ -74,8 +74,9 @@ Future<MediaNavigationResult> navigateToMediaItem(
       // Music types not supported
       return MediaNavigationResult.unsupported;
 
+    case PlexMediaType.clip:
     case PlexMediaType.episode:
-      // For episodes, start playback directly
+      // For episodes and clips (trailers/extras), start playback directly
       final result = await navigateToVideoPlayer(context, metadata: metadata, isOffline: isOffline);
       if (result == true) {
         onRefresh?.call(metadata.ratingKey);

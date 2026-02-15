@@ -66,6 +66,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   List<PlexMetadata>? _extras;
   late final ScrollController _scrollController;
   final ScrollController _seasonsScrollController = ScrollController();
+  final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
   double _scrollOffset = 0;
 
@@ -80,6 +81,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
 
   // GlobalKeys for season cards to access their context menu
   final Map<int, GlobalKey<MediaCardState>> _seasonCardKeys = {};
+
+  // Locked focus pattern for extras
+  int _focusedExtraIndex = 0;
+  late final FocusNode _extrasFocusNode;
+  final Map<int, GlobalKey<MediaCardState>> _extraCardKeys = {};
 
   String _toGlobalKey(String ratingKey, {String? serverId}) =>
       '${serverId ?? widget.metadata.serverId ?? ''}:$ratingKey';
@@ -235,6 +241,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     _seasonsFocusNode = FocusNode(debugLabel: 'seasons_row');
+    _extrasFocusNode = FocusNode(debugLabel: 'extras_row');
     _playButtonFocusNode = FocusNode(debugLabel: 'play_button');
     _loadFullMetadata();
   }
@@ -249,7 +256,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   void dispose() {
     _scrollController.dispose();
     _seasonsScrollController.dispose();
+    _extrasScrollController.dispose();
     _seasonsFocusNode.dispose();
+    _extrasFocusNode.dispose();
     _playButtonFocusNode.dispose();
     _selectKeyTimer?.cancel();
     super.dispose();
@@ -1097,8 +1106,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       return KeyEventResult.handled;
     }
 
-    // DOWN: consume (nothing below seasons to focus)
+    // DOWN: move to extras if available, otherwise consume
     if (key.isDownKey) {
+      if (_extras != null && _extras!.isNotEmpty) {
+        _extrasFocusNode.requestFocus();
+      }
       return KeyEventResult.handled;
     }
 
@@ -1174,6 +1186,111 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         ),
       ),
     );
+  }
+
+  /// Scroll the extras list to center the given index
+  void _scrollExtraToIndex(int index, {bool animate = true}) {
+    if (!_extrasScrollController.hasClients) return;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    double cardWidth;
+    if (screenWidth >= 1400) {
+      cardWidth = 220.0;
+    } else if (screenWidth >= 900) {
+      cardWidth = 200.0;
+    } else if (screenWidth >= 700) {
+      cardWidth = 190.0;
+    } else {
+      cardWidth = 160.0;
+    }
+    final itemExtent = cardWidth + 4; // card + padding
+
+    final viewport = _extrasScrollController.position.viewportDimension;
+    final targetCenter = 12 + (index * itemExtent) + (itemExtent / 2); // 12 = leading padding
+    final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, _extrasScrollController.position.maxScrollExtent);
+
+    if (animate) {
+      _extrasScrollController.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
+    } else {
+      _extrasScrollController.jumpTo(desiredOffset);
+    }
+  }
+
+  /// Handle key events for the extras row (locked focus pattern)
+  KeyEventResult _handleExtrasKeyEvent(FocusNode _, KeyEvent event) {
+    final key = event.logicalKey;
+
+    if (key.isBackKey) return KeyEventResult.ignored;
+
+    // Handle SELECT with long-press detection
+    if (key.isSelectKey) {
+      if (event is KeyDownEvent) {
+        _selectKeyTimer?.cancel();
+        _isSelectKeyDown = true;
+        _longPressTriggered = false;
+        _selectKeyTimer = Timer(_longPressDuration, () {
+          if (!mounted) return;
+          if (_isSelectKeyDown) {
+            _longPressTriggered = true;
+            SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+            _extraCardKeys[_focusedExtraIndex]?.currentState?.showContextMenu();
+          }
+        });
+        return KeyEventResult.handled;
+      } else if (event is KeyRepeatEvent) {
+        return KeyEventResult.handled;
+      } else if (event is KeyUpEvent) {
+        final timerWasActive = _selectKeyTimer?.isActive ?? false;
+        _selectKeyTimer?.cancel();
+        if (!_longPressTriggered && timerWasActive && _isSelectKeyDown) {
+          if (_focusedExtraIndex < _extras!.length) {
+            navigateToVideoPlayer(context, metadata: _extras![_focusedExtraIndex]);
+          }
+        }
+        _isSelectKeyDown = false;
+        _longPressTriggered = false;
+        return KeyEventResult.handled;
+      }
+    }
+
+    if (!event.isActionable) return KeyEventResult.ignored;
+    if (_extras == null || _extras!.isEmpty) return KeyEventResult.ignored;
+
+    // LEFT: previous extra
+    if (key.isLeftKey) {
+      if (_focusedExtraIndex > 0) {
+        setState(() => _focusedExtraIndex--);
+        _scrollExtraToIndex(_focusedExtraIndex);
+      }
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: next extra
+    if (key.isRightKey) {
+      if (_focusedExtraIndex < _extras!.length - 1) {
+        setState(() => _focusedExtraIndex++);
+        _scrollExtraToIndex(_focusedExtraIndex);
+      }
+      return KeyEventResult.handled;
+    }
+
+    // UP: move to seasons (if show) or play button
+    if (key.isUpKey) {
+      if (_seasons.isNotEmpty) {
+        _seasonsFocusNode.requestFocus();
+      } else {
+        _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+        _playButtonFocusNode.requestFocus();
+      }
+      return KeyEventResult.handled;
+    }
+
+    // DOWN: consume (nothing below extras to focus)
+    if (key.isDownKey) {
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   /// Build vertical seasons list for smaller screens (<600px)
@@ -1800,22 +1917,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 12),
-                          SizedBox(
-                            height: 160,
-                            child: HorizontalScrollWithArrows(
-                              builder: (scrollController) => ListView.separated(
-                                controller: scrollController,
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                itemCount: _extras!.length,
-                                separatorBuilder: (context, index) => const SizedBox(width: 12),
-                                itemBuilder: (context, index) {
-                                  final extra = _extras![index];
-                                  return _buildExtraCard(extra);
-                                },
-                              ),
-                            ),
-                          ),
+                          _buildExtrasSection(),
                           const SizedBox(height: 24),
                         ],
 
@@ -1918,51 +2020,59 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     }
   }
 
-  Widget _buildExtraCard(PlexMetadata extra) {
-    return InkWell(
-      onTap: () {
-        // Use the dedicated video player navigation utility
-        navigateToVideoPlayer(context, metadata: extra);
-      },
-      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+  /// Build horizontal extras list using the same locked focus pattern as seasons
+  Widget _buildExtrasSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double cardWidth;
+    if (screenWidth >= 1400) {
+      cardWidth = 220.0;
+    } else if (screenWidth >= 900) {
+      cardWidth = 200.0;
+    } else if (screenWidth >= 700) {
+      cardWidth = 190.0;
+    } else {
+      cardWidth = 160.0;
+    }
+    // 16:9 aspect ratio for clip thumbnails (cardWidth includes 8px padding on each side)
+    final posterHeight = (cardWidth - 16) * (9 / 16);
+    final containerHeight = posterHeight + 66;
+
+    final hasFocus = _extrasFocusNode.hasFocus;
+
+    return Focus(
+      focusNode: _extrasFocusNode,
+      onKeyEvent: _handleExtrasKeyEvent,
       child: SizedBox(
-        width: 160,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: PlexOptimizedImage(
-                  client: _getClientForMetadata(context),
-                  imagePath: extra.thumb,
-                  width: 160,
-                  height: 90,
-                  fit: BoxFit.cover,
-                  imageType: ImageType.thumb,
-                  fallbackIcon: Symbols.movie_rounded,
+        height: containerHeight,
+        child: HorizontalScrollWithArrows(
+          controller: _extrasScrollController,
+          builder: (scrollController) => ListView.builder(
+            controller: scrollController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            itemCount: _extras!.length,
+            itemBuilder: (context, index) {
+              final extra = _extras![index];
+              final isFocused = hasFocus && index == _focusedExtraIndex;
+              final cardKey = _extraCardKeys.putIfAbsent(index, () => GlobalKey<MediaCardState>());
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: FocusBuilders.buildLockedFocusWrapper(
+                  context: context,
+                  isFocused: isFocused,
+                  onTap: () => navigateToVideoPlayer(context, metadata: extra),
+                  child: MediaCard(
+                    key: cardKey,
+                    item: extra,
+                    width: cardWidth,
+                    height: posterHeight,
+                    forceGridMode: true,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              extra.title,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (extra.duration != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                formatDurationTextual(extra.duration!),
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ),
-            ],
-          ],
+              );
+            },
+          ),
         ),
       ),
     );
