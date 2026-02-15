@@ -1801,7 +1801,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                           ),
                           const SizedBox(height: 12),
                           SizedBox(
-                            height: 200,
+                            height: 160,
                             child: HorizontalScrollWithArrows(
                               builder: (scrollController) => ListView.separated(
                                 controller: scrollController,
@@ -1928,6 +1928,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       child: SizedBox(
         width: 160,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
