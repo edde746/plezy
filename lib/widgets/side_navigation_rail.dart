@@ -165,6 +165,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
   // Collapsed/expanded state
   bool _isHovered = false;
+  bool _isTouchExpanded = false;
   Timer? _collapseTimer;
   static const double collapsedWidth = 80.0;
   static const double expandedWidth = 220.0;
@@ -182,7 +183,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   late final FocusMemoryTracker _focusTracker;
 
   /// Whether the sidebar should be expanded (always, hover, or focus)
-  bool get _shouldExpand => widget.alwaysExpanded || _isHovered || widget.isSidebarFocused;
+  bool get _shouldExpand => widget.alwaysExpanded || _isHovered || _isTouchExpanded || widget.isSidebarFocused;
 
   @override
   void initState() {
@@ -203,8 +204,18 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant SideNavigationRail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Auto-collapse after navigation (selection changed)
+    if (oldWidget.selectedIndex != widget.selectedIndex || oldWidget.selectedLibraryKey != widget.selectedLibraryKey) {
+      _isTouchExpanded = false;
+    }
+  }
+
   void _onHoverEnter() {
     _collapseTimer?.cancel();
+    _isTouchExpanded = false; // Mouse takes over
     if (!_isHovered) {
       setState(() => _isHovered = true);
     }
@@ -247,6 +258,13 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       _kReconnect,
       ...libraries.map((lib) => lib.globalKey),
     };
+  }
+
+  /// Collapse the sidebar (resets touch-expand state).
+  void collapse() {
+    if (_isTouchExpanded) {
+      setState(() => _isTouchExpanded = false);
+    }
   }
 
   /// Reload libraries (called when servers change or profile switches)
@@ -306,167 +324,181 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     return ListenableBuilder(
       listenable: FullscreenStateManager(),
       builder: (context, _) {
-        return MouseRegion(
-          onEnter: (_) => _onHoverEnter(),
-          onExit: (_) => _onHoverExit(),
-          child: AnimatedContainer(
-            duration: t.normal,
-            curve: Curves.easeOutCubic,
-            width: isCollapsed ? collapsedWidth : expandedWidth,
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(color: t.surface),
-            child: Column(
-              children: [
-                // Safe area for status bar and macOS traffic lights
-                SizedBox(height: _getTopPadding(context)),
-
-                // Navigation content
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    clipBehavior: Clip.hardEdge,
+        return TapRegion(
+          onTapOutside: (_) {
+            if (_isTouchExpanded) {
+              setState(() => _isTouchExpanded = false);
+            }
+          },
+          child: MouseRegion(
+            onEnter: (_) => _onHoverEnter(),
+            onExit: (_) => _onHoverExit(),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: isCollapsed ? () => setState(() => _isTouchExpanded = true) : null,
+              child: AnimatedContainer(
+                duration: t.normal,
+                curve: Curves.easeOutCubic,
+                width: isCollapsed ? collapsedWidth : expandedWidth,
+                clipBehavior: Clip.hardEdge,
+                decoration: BoxDecoration(color: t.surface),
+                child: IgnorePointer(
+                  ignoring: isCollapsed,
+                  child: Column(
                     children: [
-                      // Reconnect button when offline
-                      if (widget.isOfflineMode && widget.onReconnect != null) ...[
-                        _buildReconnectItem(isCollapsed: isCollapsed),
-                        const SizedBox(height: 8),
-                      ],
+                      // Safe area for status bar and macOS traffic lights
+                      SizedBox(height: _getTopPadding(context)),
 
-                      // In online mode, show full navigation
-                      if (!widget.isOfflineMode) ...[
-                        // Home
-                        _buildNavItem(
-                          icon: Symbols.home_rounded,
-                          selectedIcon: Symbols.home_rounded,
-                          label: Translations.of(context).common.home,
-                          isSelected: widget.selectedIndex == 0,
-                          isFocused: _focusTracker.isFocused(_kHome),
-                          onTap: () => widget.onDestinationSelected(0),
-                          focusNode: _focusTracker.get(_kHome),
-                          isCollapsed: isCollapsed,
+                      // Navigation content
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          clipBehavior: Clip.hardEdge,
+                          children: [
+                            // Reconnect button when offline
+                            if (widget.isOfflineMode && widget.onReconnect != null) ...[
+                              _buildReconnectItem(isCollapsed: isCollapsed),
+                              const SizedBox(height: 8),
+                            ],
+
+                            // In online mode, show full navigation
+                            if (!widget.isOfflineMode) ...[
+                              // Home
+                              _buildNavItem(
+                                icon: Symbols.home_rounded,
+                                selectedIcon: Symbols.home_rounded,
+                                label: Translations.of(context).common.home,
+                                isSelected: widget.selectedIndex == 0,
+                                isFocused: _focusTracker.isFocused(_kHome),
+                                onTap: () => widget.onDestinationSelected(0),
+                                focusNode: _focusTracker.get(_kHome),
+                                isCollapsed: isCollapsed,
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              // Libraries section
+                              _buildLibrariesSection(visibleLibraries, t, isCollapsed: isCollapsed),
+
+                              const SizedBox(height: 8),
+
+                              // Live TV (only if DVR available)
+                              if (context.watch<MultiServerProvider>().hasLiveTv) ...[
+                                _buildNavItem(
+                                  icon: Symbols.live_tv_rounded,
+                                  selectedIcon: Symbols.live_tv_rounded,
+                                  label: Translations.of(context).navigation.liveTv,
+                                  isSelected: NavigationTab.isTabAtIndex(
+                                    NavigationTabId.liveTv,
+                                    widget.selectedIndex,
+                                    isOffline: widget.isOfflineMode,
+                                    hasLiveTv: true,
+                                  ),
+                                  isFocused: _focusTracker.isFocused('liveTv'),
+                                  onTap: () => widget.onDestinationSelected(
+                                    NavigationTab.indexFor(
+                                      NavigationTabId.liveTv,
+                                      isOffline: widget.isOfflineMode,
+                                      hasLiveTv: true,
+                                    ),
+                                  ),
+                                  focusNode: _focusTracker.get('liveTv'),
+                                  isCollapsed: isCollapsed,
+                                ),
+
+                                const SizedBox(height: 8),
+                              ],
+
+                              // Search
+                              _buildNavItem(
+                                icon: Symbols.search_rounded,
+                                selectedIcon: Symbols.search_rounded,
+                                label: Translations.of(context).common.search,
+                                isSelected: NavigationTab.isTabAtIndex(
+                                  NavigationTabId.search,
+                                  widget.selectedIndex,
+                                  isOffline: widget.isOfflineMode,
+                                  hasLiveTv: context.read<MultiServerProvider>().hasLiveTv,
+                                ),
+                                isFocused: _focusTracker.isFocused(_kSearch),
+                                onTap: () => widget.onDestinationSelected(
+                                  NavigationTab.indexFor(
+                                    NavigationTabId.search,
+                                    isOffline: widget.isOfflineMode,
+                                    hasLiveTv: context.read<MultiServerProvider>().hasLiveTv,
+                                  ),
+                                ),
+                                focusNode: _focusTracker.get(_kSearch),
+                                isCollapsed: isCollapsed,
+                              ),
+
+                              const SizedBox(height: 8),
+                            ],
+
+                            // Downloads
+                            Builder(
+                              builder: (context) {
+                                final hasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
+                                return _buildNavItem(
+                                  icon: Symbols.download_rounded,
+                                  selectedIcon: Symbols.download_rounded,
+                                  label: Translations.of(context).navigation.downloads,
+                                  isSelected: NavigationTab.isTabAtIndex(
+                                    NavigationTabId.downloads,
+                                    widget.selectedIndex,
+                                    isOffline: widget.isOfflineMode,
+                                    hasLiveTv: hasLiveTv,
+                                  ),
+                                  isFocused: _focusTracker.isFocused(_kDownloads),
+                                  onTap: () => widget.onDestinationSelected(
+                                    NavigationTab.indexFor(
+                                      NavigationTabId.downloads,
+                                      isOffline: widget.isOfflineMode,
+                                      hasLiveTv: hasLiveTv,
+                                    ),
+                                  ),
+                                  focusNode: _focusTracker.get(_kDownloads),
+                                  isCollapsed: isCollapsed,
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            // Settings
+                            Builder(
+                              builder: (context) {
+                                final hasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
+                                return _buildNavItem(
+                                  icon: Symbols.settings_rounded,
+                                  selectedIcon: Symbols.settings_rounded,
+                                  label: Translations.of(context).common.settings,
+                                  isSelected: NavigationTab.isTabAtIndex(
+                                    NavigationTabId.settings,
+                                    widget.selectedIndex,
+                                    isOffline: widget.isOfflineMode,
+                                    hasLiveTv: hasLiveTv,
+                                  ),
+                                  isFocused: _focusTracker.isFocused(_kSettings),
+                                  onTap: () => widget.onDestinationSelected(
+                                    NavigationTab.indexFor(
+                                      NavigationTabId.settings,
+                                      isOffline: widget.isOfflineMode,
+                                      hasLiveTv: hasLiveTv,
+                                    ),
+                                  ),
+                                  focusNode: _focusTracker.get(_kSettings),
+                                  isCollapsed: isCollapsed,
+                                );
+                              },
+                            ),
+                          ],
                         ),
-
-                        const SizedBox(height: 8),
-
-                        // Libraries section
-                        _buildLibrariesSection(visibleLibraries, t, isCollapsed: isCollapsed),
-
-                        const SizedBox(height: 8),
-
-                        // Live TV (only if DVR available)
-                        if (context.watch<MultiServerProvider>().hasLiveTv) ...[
-                          _buildNavItem(
-                            icon: Symbols.live_tv_rounded,
-                            selectedIcon: Symbols.live_tv_rounded,
-                            label: Translations.of(context).navigation.liveTv,
-                            isSelected: NavigationTab.isTabAtIndex(
-                              NavigationTabId.liveTv,
-                              widget.selectedIndex,
-                              isOffline: widget.isOfflineMode,
-                              hasLiveTv: true,
-                            ),
-                            isFocused: _focusTracker.isFocused('liveTv'),
-                            onTap: () => widget.onDestinationSelected(
-                              NavigationTab.indexFor(
-                                NavigationTabId.liveTv,
-                                isOffline: widget.isOfflineMode,
-                                hasLiveTv: true,
-                              ),
-                            ),
-                            focusNode: _focusTracker.get('liveTv'),
-                            isCollapsed: isCollapsed,
-                          ),
-
-                          const SizedBox(height: 8),
-                        ],
-
-                        // Search
-                        _buildNavItem(
-                          icon: Symbols.search_rounded,
-                          selectedIcon: Symbols.search_rounded,
-                          label: Translations.of(context).common.search,
-                          isSelected: NavigationTab.isTabAtIndex(
-                            NavigationTabId.search,
-                            widget.selectedIndex,
-                            isOffline: widget.isOfflineMode,
-                            hasLiveTv: context.read<MultiServerProvider>().hasLiveTv,
-                          ),
-                          isFocused: _focusTracker.isFocused(_kSearch),
-                          onTap: () => widget.onDestinationSelected(
-                            NavigationTab.indexFor(
-                              NavigationTabId.search,
-                              isOffline: widget.isOfflineMode,
-                              hasLiveTv: context.read<MultiServerProvider>().hasLiveTv,
-                            ),
-                          ),
-                          focusNode: _focusTracker.get(_kSearch),
-                          isCollapsed: isCollapsed,
-                        ),
-
-                        const SizedBox(height: 8),
-                      ],
-
-                      // Downloads
-                      Builder(
-                        builder: (context) {
-                          final hasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
-                          return _buildNavItem(
-                            icon: Symbols.download_rounded,
-                            selectedIcon: Symbols.download_rounded,
-                            label: Translations.of(context).navigation.downloads,
-                            isSelected: NavigationTab.isTabAtIndex(
-                              NavigationTabId.downloads,
-                              widget.selectedIndex,
-                              isOffline: widget.isOfflineMode,
-                              hasLiveTv: hasLiveTv,
-                            ),
-                            isFocused: _focusTracker.isFocused(_kDownloads),
-                            onTap: () => widget.onDestinationSelected(
-                              NavigationTab.indexFor(
-                                NavigationTabId.downloads,
-                                isOffline: widget.isOfflineMode,
-                                hasLiveTv: hasLiveTv,
-                              ),
-                            ),
-                            focusNode: _focusTracker.get(_kDownloads),
-                            isCollapsed: isCollapsed,
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Settings
-                      Builder(
-                        builder: (context) {
-                          final hasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
-                          return _buildNavItem(
-                            icon: Symbols.settings_rounded,
-                            selectedIcon: Symbols.settings_rounded,
-                            label: Translations.of(context).common.settings,
-                            isSelected: NavigationTab.isTabAtIndex(
-                              NavigationTabId.settings,
-                              widget.selectedIndex,
-                              isOffline: widget.isOfflineMode,
-                              hasLiveTv: hasLiveTv,
-                            ),
-                            isFocused: _focusTracker.isFocused(_kSettings),
-                            onTap: () => widget.onDestinationSelected(
-                              NavigationTab.indexFor(
-                                NavigationTabId.settings,
-                                isOffline: widget.isOfflineMode,
-                                hasLiveTv: hasLiveTv,
-                              ),
-                            ),
-                            focusNode: _focusTracker.get(_kSettings),
-                            isCollapsed: isCollapsed,
-                          );
-                        },
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         );
