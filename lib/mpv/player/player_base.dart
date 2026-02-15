@@ -37,6 +37,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   StreamSubscription? _eventSubscription;
   bool _disposed = false;
+  DateTime? _lastPositionEmit;
 
   /// Whether the player has been initialized.
   /// Subclasses should set this to true after initialization.
@@ -128,7 +129,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         if (value is num) {
           final position = Duration(milliseconds: (value * 1000).toInt());
           _state = _state.copyWith(position: position);
-          positionController.add(position);
+          // Throttle stream emissions to ~4Hz (250ms) to reduce listener/rebuild pressure.
+          // _state is always updated above so synchronous reads stay current.
+          final now = DateTime.now();
+          if (_lastPositionEmit == null || now.difference(_lastPositionEmit!).inMilliseconds >= 250) {
+            _lastPositionEmit = now;
+            positionController.add(position);
+          }
         }
         break;
 

@@ -403,7 +403,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (!shouldAutoSkip || _autoSkipDelay <= 0) return;
 
     _autoSkipProgress = 0.0;
-    const tickDuration = Duration(milliseconds: 50);
+    const tickDuration = Duration(milliseconds: 200);
     final totalTicks = (_autoSkipDelay * 1000) / tickDuration.inMilliseconds;
 
     if (totalTicks <= 0) return;

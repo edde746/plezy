@@ -112,17 +112,24 @@ class PlaybackProgressTracker {
       if (isOffline) {
         // Queue progress update for later sync
         await _sendOfflineProgress(position, duration);
-      } else {
-        // Send progress to server immediately
+      } else if (state == 'stopped') {
+        // Stopped must complete before disposal
         await _sendOnlineProgress(state, position, duration);
-        // Success — reset backoff state
-        if (_consecutiveFailures > 0) {
+        _resetBackoff();
+      } else {
+        // Fire-and-forget for playing/paused — avoid blocking the Dart event loop
+        _sendOnlineProgress(state, position, duration).then((_) {
+          _resetBackoff();
+        }).catchError((Object e) {
+          _consecutiveFailures++;
+          // Exponential backoff: skip 1, 2, 4, 8... ticks (capped at 6 ≈ 60s)
+          _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
           appLogger.d(
-            'Progress update succeeded after $_consecutiveFailures consecutive failure(s), resetting backoff',
+            'Progress update failed ($_consecutiveFailures consecutive), '
+            'skipping next $_ticksToSkip tick(s)',
+            error: e,
           );
-          _consecutiveFailures = 0;
-          _ticksToSkip = 0;
-        }
+        });
       }
 
       // Emit watch state event on stop for UI updates across screens
@@ -136,7 +143,6 @@ class PlaybackProgressTracker {
     } catch (e) {
       if (!isOffline) {
         _consecutiveFailures++;
-        // Exponential backoff: skip 1, 2, 4, 8... ticks (capped at 6 ≈ 60s)
         _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
         appLogger.d(
           'Progress update failed ($_consecutiveFailures consecutive), '
@@ -149,6 +155,13 @@ class PlaybackProgressTracker {
     }
   }
 
+  void _resetBackoff() {
+    if (_consecutiveFailures > 0) {
+      _consecutiveFailures = 0;
+      _ticksToSkip = 0;
+    }
+  }
+
   /// Send progress update to Plex server (online mode)
   Future<void> _sendOnlineProgress(String state, Duration position, Duration duration) async {
     await client!.updateProgress(
@@ -157,8 +170,6 @@ class PlaybackProgressTracker {
       state: state,
       duration: duration.inMilliseconds,
     );
-
-    appLogger.d('Progress update sent: $state at ${position.inSeconds}s / ${duration.inSeconds}s');
   }
 
   /// Queue progress update locally (offline mode)
