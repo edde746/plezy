@@ -31,7 +31,11 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 8) {
           appLogger.i('Adding bgTaskId column to DownloadedMedia (v8 migration)');
-          await m.addColumn(downloadedMedia, downloadedMedia.bgTaskId);
+          try {
+            await m.addColumn(downloadedMedia, downloadedMedia.bgTaskId);
+          } catch (e) {
+            appLogger.w('bgTaskId column may already exist: $e');
+          }
         }
       },
     );
