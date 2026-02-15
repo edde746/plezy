@@ -7,7 +7,7 @@ import '../utils/app_logger.dart';
 import '../i18n/strings.g.dart';
 import '../database/app_database.dart';
 import 'download_storage_service.dart';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:drift/drift.dart';
 
 /// Service responsible for fetching video playback data from the Plex server
@@ -54,10 +54,11 @@ class PlaybackInitializationService {
       // Get readable path (handles both SAF URIs and file paths)
       final readablePath = await storageService.getReadablePath(storedPath);
 
-      // For file paths (not SAF), verify the file exists
-      if (!storageService.isSafUri(storedPath)) {
-        final file = File(readablePath);
-        if (!await file.exists()) {
+      // For file paths (not SAF), verify the file exists (native only)
+      if (!kIsWeb && !storageService.isSafUri(storedPath)) {
+        // File existence check is native-only (no offline files on web)
+        final exists = await storageService.fileExists(readablePath);
+        if (!exists) {
           appLogger.w('Offline video file not found: $readablePath (stored as: $storedPath)');
           return null;
         }

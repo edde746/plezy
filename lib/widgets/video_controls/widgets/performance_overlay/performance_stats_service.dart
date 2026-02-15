@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'dart:io' show ProcessInfo;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/scheduler.dart';
 
 import '../../../../mpv/mpv.dart';
+import '../../../../utils/process_info_helper.dart';
 import '../../../../mpv/player/player_android.dart';
 import '../../../../utils/app_logger.dart';
 import 'performance_stats.dart';
@@ -129,7 +130,7 @@ class PerformanceStatsService {
     // Get app memory usage
     int? appMemory;
     try {
-      appMemory = ProcessInfo.currentRss;
+      appMemory = getProcessMemoryRss();
     } catch (_) {}
 
     if (playerType == 'mpv') {
@@ -253,7 +254,7 @@ class PerformanceStatsService {
     // Get app memory usage
     int? appMemory;
     try {
-      appMemory = ProcessInfo.currentRss;
+      appMemory = getProcessMemoryRss();
     } catch (_) {
       // ProcessInfo not available on all platforms
     }

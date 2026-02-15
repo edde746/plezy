@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import '../utils/platform_helper.dart';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -266,7 +266,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     double basePadding = MediaQuery.of(context).padding.top + 16;
 
     // On macOS, add extra padding for traffic lights (when not fullscreen)
-    if (Platform.isMacOS) {
+    if (AppPlatform.isMacOS) {
       final isFullscreen = FullscreenStateManager().isFullscreen;
       if (!isFullscreen) {
         // Traffic lights area is approximately 52 pixels high

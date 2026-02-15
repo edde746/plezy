@@ -1,5 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
+
+import '../utils/platform_helper.dart';
+import '../utils/io_helpers.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -135,9 +137,9 @@ Future<bool> _launchCustom(String value, String url, CustomPlayerType type) asyn
     return _launchUrlScheme(value, url);
   }
   // Command type
-  if (Platform.isAndroid) {
+  if (AppPlatform.isAndroid) {
     return _launchAndroidIntent(url, package: value);
-  } else if (Platform.isMacOS) {
+  } else if (AppPlatform.isMacOS) {
     // Try PATH first (e.g. mpv), fall back to open -a (e.g. VLC)
     if (await _launchCommand(value, url)) return true;
     return _launchMacApp(value, url);
@@ -157,11 +159,11 @@ class KnownPlayers {
       id: 'vlc',
       name: 'VLC',
       iconAsset: 'assets/player_icons/vlc.svg',
-      isAvailable: Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux || Platform.isWindows,
+      isAvailable: AppPlatform.isAndroid || AppPlatform.isIOS || AppPlatform.isMacOS || AppPlatform.isLinux || AppPlatform.isWindows,
       launch: (url) async {
-        if (Platform.isAndroid) return _launchAndroidIntent(url, package: 'org.videolan.vlc');
-        if (Platform.isIOS) return _launchUrlScheme('vlc://', url);
-        if (Platform.isMacOS) return _launchMacApp('VLC', url);
+        if (AppPlatform.isAndroid) return _launchAndroidIntent(url, package: 'org.videolan.vlc');
+        if (AppPlatform.isIOS) return _launchUrlScheme('vlc://', url);
+        if (AppPlatform.isMacOS) return _launchMacApp('VLC', url);
         return _launchCommand('vlc', url);
       },
     ),
@@ -169,9 +171,9 @@ class KnownPlayers {
       id: 'mpv',
       name: 'mpv',
       iconAsset: 'assets/player_icons/mpv.svg',
-      isAvailable: Platform.isAndroid || Platform.isMacOS || Platform.isLinux || Platform.isWindows,
+      isAvailable: AppPlatform.isAndroid || AppPlatform.isMacOS || AppPlatform.isLinux || AppPlatform.isWindows,
       launch: (url) async {
-        if (Platform.isAndroid) return _launchAndroidIntent(url, package: 'is.xyz.mpv');
+        if (AppPlatform.isAndroid) return _launchAndroidIntent(url, package: 'is.xyz.mpv');
         return _launchCommand('mpv', url);
       },
     ),
@@ -179,35 +181,35 @@ class KnownPlayers {
       id: 'iina',
       name: 'IINA',
       iconAsset: 'assets/player_icons/iina.png',
-      isAvailable: Platform.isMacOS,
+      isAvailable: AppPlatform.isMacOS,
       launch: (url) => _launchUrlScheme('iina://weblink?url=', url),
     ),
     ExternalPlayer(
       id: 'mx_player',
       name: 'MX Player',
       iconAsset: 'assets/player_icons/mx_player.svg',
-      isAvailable: Platform.isAndroid,
+      isAvailable: AppPlatform.isAndroid,
       launch: (url) => _launchAndroidIntent(url, package: 'com.mxtech.videoplayer.ad'),
     ),
     ExternalPlayer(
       id: 'just_player',
       name: 'Just Player',
       iconAsset: 'assets/player_icons/just_player.png',
-      isAvailable: Platform.isAndroid,
+      isAvailable: AppPlatform.isAndroid,
       launch: (url) => _launchAndroidIntent(url, package: 'com.brouken.player'),
     ),
     ExternalPlayer(
       id: 'infuse',
       name: 'Infuse',
       iconAsset: 'assets/player_icons/infuse.png',
-      isAvailable: Platform.isIOS,
+      isAvailable: AppPlatform.isIOS,
       launch: (url) => _launchUrlScheme('infuse://x-callback-url/play?url=', url),
     ),
     ExternalPlayer(
       id: 'potplayer',
       name: 'PotPlayer',
       iconAsset: 'assets/player_icons/potplayer.png',
-      isAvailable: Platform.isWindows,
+      isAvailable: AppPlatform.isWindows,
       launch: (url) async {
         if (await _launchUrlScheme('potplayer://', url)) return true;
         return _launchCommand('PotPlayerMini64', url);
@@ -217,7 +219,7 @@ class KnownPlayers {
       id: 'celluloid',
       name: 'Celluloid',
       iconAsset: 'assets/player_icons/celluloid.svg',
-      isAvailable: Platform.isLinux,
+      isAvailable: AppPlatform.isLinux,
       launch: (url) => _launchCommand('celluloid', url),
     ),
   ];

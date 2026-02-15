@@ -1,6 +1,6 @@
-import 'dart:io' show Platform;
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
+import '../utils/platform_helper.dart';
 
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
@@ -32,7 +32,7 @@ class WatchNextService {
 
   /// Get a pending deep link from cold start (consumed on first call).
   Future<String?> getInitialDeepLink() async {
-    if (!Platform.isAndroid) return null;
+    if (!AppPlatform.isAndroid) return null;
     try {
       return await _channel.invokeMethod<String>('getInitialDeepLink');
     } catch (e) {
@@ -43,7 +43,7 @@ class WatchNextService {
 
   /// Check if Watch Next is supported (Android TV only).
   Future<bool> isSupported() async {
-    if (!Platform.isAndroid) return false;
+    if (!AppPlatform.isAndroid) return false;
     try {
       return await _channel.invokeMethod<bool>('isSupported') ?? false;
     } catch (e) {
@@ -56,7 +56,7 @@ class WatchNextService {
     List<PlexMetadata> onDeckItems,
     PlexClient Function(String serverId) getClientForServerId,
   ) async {
-    if (!Platform.isAndroid) return false;
+    if (!AppPlatform.isAndroid) return false;
 
     try {
       final supported = await isSupported();
@@ -75,7 +75,7 @@ class WatchNextService {
 
   /// Clear all Watch Next entries.
   Future<bool> clear() async {
-    if (!Platform.isAndroid) return false;
+    if (!AppPlatform.isAndroid) return false;
     try {
       return await _channel.invokeMethod<bool>('clear') ?? false;
     } catch (e) {
@@ -86,7 +86,7 @@ class WatchNextService {
 
   /// Remove a single item from Watch Next.
   Future<bool> removeItem(String serverId, String ratingKey) async {
-    if (!Platform.isAndroid) return false;
+    if (!AppPlatform.isAndroid) return false;
     try {
       final contentId = _buildContentId(serverId, ratingKey);
       return await _channel.invokeMethod<bool>('remove', {'contentId': contentId}) ?? false;

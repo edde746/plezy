@@ -1,9 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+
+import '../utils/io_helpers.dart';
 
 import '../models/shader_preset.dart';
 
@@ -33,6 +33,7 @@ class ShaderAssetLoader {
 
   /// Get the shader cache directory path, creating it if necessary.
   static Future<String> _getShaderDirectory() async {
+    if (kIsWeb) throw UnsupportedError('Shaders not available on web');
     if (_cachedShaderDir != null) return _cachedShaderDir!;
 
     final cacheDir = await getTemporaryDirectory();

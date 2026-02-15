@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+
+import '../utils/platform_helper.dart';
 import 'package:saf_util/saf_util.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
 import 'package:saf_stream/saf_stream.dart';
@@ -16,7 +17,7 @@ class SafStorageService {
   final SafStream _safStream = SafStream();
 
   /// Check if SAF is available (Android only)
-  bool get isAvailable => Platform.isAndroid;
+  bool get isAvailable => AppPlatform.isAndroid;
 
   /// Pick a directory using SAF
   /// Returns the content:// URI or null if cancelled

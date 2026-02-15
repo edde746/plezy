@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../utils/platform_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -133,7 +133,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         metadata.viewedLeafCount! < widget.item.leafCount!;
 
     // Check if we should use bottom sheet (on iOS and Android)
-    final useBottomSheet = Platform.isIOS || Platform.isAndroid;
+    final useBottomSheet = AppPlatform.isIOS || AppPlatform.isAndroid;
 
     // Build menu actions
     final menuActions = <_MenuAction>[];
@@ -562,7 +562,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Show submenu for Add to... (Playlist or Collection)
   Future<void> _showAddToSubmenu(BuildContext context) async {
-    final useBottomSheet = Platform.isIOS || Platform.isAndroid;
+    final useBottomSheet = AppPlatform.isIOS || AppPlatform.isAndroid;
 
     final submenuActions = [
       _MenuAction(value: 'playlist', icon: Symbols.playlist_play_rounded, label: t.playlists.playlist),

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import '../utils/platform_helper.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -1382,7 +1382,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
           body: const Center(child: CircularProgressIndicator()),
         ),
       );
-      final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+      final blockSystemBack = AppPlatform.isAndroid && InputModeTracker.isKeyboardMode(context);
       if (!blockSystemBack) {
         return loading;
       }
@@ -1783,7 +1783,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       ),
     );
 
-    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+    final blockSystemBack = AppPlatform.isAndroid && InputModeTracker.isKeyboardMode(context);
     if (!blockSystemBack) {
       return content;
     }

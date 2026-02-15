@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+
+import '../utils/platform_helper.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -73,23 +74,23 @@ class CompanionRemoteProvider with ChangeNotifier {
     final deviceInfo = DeviceInfoPlugin();
 
     try {
-      if (Platform.isAndroid) {
+      if (AppPlatform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
         _deviceName = '${androidInfo.brand} ${androidInfo.model}';
         _platform = 'Android';
-      } else if (Platform.isIOS) {
+      } else if (AppPlatform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
         _deviceName = iosInfo.name;
         _platform = 'iOS';
-      } else if (Platform.isMacOS) {
+      } else if (AppPlatform.isMacOS) {
         final macInfo = await deviceInfo.macOsInfo;
         _deviceName = macInfo.computerName;
         _platform = 'macOS';
-      } else if (Platform.isWindows) {
+      } else if (AppPlatform.isWindows) {
         final windowsInfo = await deviceInfo.windowsInfo;
         _deviceName = windowsInfo.computerName;
         _platform = 'Windows';
-      } else if (Platform.isLinux) {
+      } else if (AppPlatform.isLinux) {
         final linuxInfo = await deviceInfo.linuxInfo;
         _deviceName = linuxInfo.name;
         _platform = 'Linux';
@@ -97,7 +98,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to get device info', error: e);
       _deviceName = 'Unknown Device';
-      _platform = Platform.operatingSystem;
+      _platform = AppPlatform.operatingSystem;
     }
 
     notifyListeners();

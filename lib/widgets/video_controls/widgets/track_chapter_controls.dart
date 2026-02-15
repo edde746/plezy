@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import '../../../utils/platform_helper.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -161,7 +161,7 @@ class TrackChapterControls extends StatelessWidget {
       builder: (context, snapshot) {
         final tracks = snapshot.data;
         final isMobile = PlatformDetector.isMobile(context);
-        final isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+        final isDesktop = AppPlatform.isWindows || AppPlatform.isLinux || AppPlatform.isMacOS;
 
         // Build list of buttons dynamically to track indices
         final buttons = <Widget>[];

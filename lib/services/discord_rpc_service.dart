@@ -1,6 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../utils/platform_helper.dart';
 
 import 'package:dart_discord_presence/dart_discord_presence.dart';
 import 'package:dio/dio.dart';
@@ -58,7 +60,7 @@ class DiscordRPCService {
 
   /// Check if Discord RPC is available on this platform
   static bool get isAvailable {
-    if (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux) {
+    if (kIsWeb || (!AppPlatform.isMacOS && !AppPlatform.isWindows && !AppPlatform.isLinux)) {
       return false;
     }
     return DiscordRPC.isAvailable;

@@ -1,5 +1,5 @@
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
+import '../utils/platform_helper.dart';
 import 'package:window_manager/window_manager.dart';
 import 'macos_window_service.dart';
 
@@ -29,7 +29,7 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   Future<void> toggleFullscreen() async {
     final isCurrentlyFullscreen = await windowManager.isFullScreen();
 
-    if (Platform.isMacOS) {
+    if (AppPlatform.isMacOS) {
       if (isCurrentlyFullscreen) {
         await MacOSWindowService.exitFullscreen();
       } else {
@@ -54,7 +54,7 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
 
   /// Exit fullscreen, restoring maximized state if needed
   Future<void> exitFullscreen() async {
-    if (Platform.isMacOS) {
+    if (AppPlatform.isMacOS) {
       await MacOSWindowService.exitFullscreen();
     } else {
       await windowManager.setFullScreen(false);
@@ -71,7 +71,7 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
 
     // Use window_manager listener for Windows/Linux
     // macOS uses NSWindowDelegate callbacks instead (see FullscreenWindowDelegate)
-    if (!Platform.isMacOS) {
+    if (!AppPlatform.isMacOS) {
       windowManager.addListener(this);
       _isListening = true;
     }
@@ -86,7 +86,7 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   }
 
   bool _shouldMonitor() {
-    return Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+    return AppPlatform.isMacOS || AppPlatform.isWindows || AppPlatform.isLinux;
   }
 
   // WindowListener callbacks for Windows/Linux

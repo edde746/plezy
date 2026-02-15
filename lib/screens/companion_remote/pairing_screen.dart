@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../../utils/platform_helper.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,7 +33,7 @@ class _PairingScreenState extends State<PairingScreen> {
   MobileScannerController? _scannerController;
   String? _lastScannedCode;
 
-  bool get _isMobile => Platform.isAndroid || Platform.isIOS;
+  bool get _isMobile => AppPlatform.isAndroid || AppPlatform.isIOS;
 
   // Tab indices shift when scan tab is present
   int get _scanTabIndex => _isMobile ? 1 : -1;

@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../../utils/platform_helper.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -173,12 +173,12 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
           if (isUrlScheme) {
             fieldLabel = t.externalPlayer.playerUrlScheme;
             fieldHint = 'myplayer://play?url=';
-          } else if (Platform.isAndroid) {
+          } else if (AppPlatform.isAndroid) {
             fieldLabel = t.externalPlayer.playerPackage;
             fieldHint = 'com.example.player';
           } else {
             fieldLabel = t.externalPlayer.playerCommand;
-            fieldHint = Platform.isMacOS ? 'mpv' : '/usr/bin/player';
+            fieldHint = AppPlatform.isMacOS ? 'mpv' : '/usr/bin/player';
           }
 
           return AlertDialog(
@@ -204,7 +204,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
                   segments: [
                     ButtonSegment(
                       value: CustomPlayerType.command,
-                      label: Text(Platform.isAndroid
+                      label: Text(AppPlatform.isAndroid
                           ? t.externalPlayer.playerPackage
                           : t.externalPlayer.playerCommand),
                     ),

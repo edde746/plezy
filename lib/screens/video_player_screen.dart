@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import '../utils/platform_helper.dart';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -367,12 +367,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await player!.setProperty('sub-pos', settingsService.getSubtitlePosition().toString());
 
       // Platform-specific settings
-      if (Platform.isIOS) {
+      if (AppPlatform.isIOS) {
         await player!.setProperty('audio-exclusive', 'yes');
       }
 
       // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
-      if (Platform.isIOS || Platform.isMacOS || Platform.isWindows) {
+      if (AppPlatform.isIOS || AppPlatform.isMacOS || AppPlatform.isWindows) {
         final enableHDR = settingsService.getEnableHDR();
         await player!.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
       }
@@ -454,7 +454,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _errorSubscription = player!.streams.error.listen(_onPlayerError);
 
       // Listen for backend switched event (ExoPlayer -> MPV fallback on Android)
-      if (Platform.isAndroid && useExoPlayer) {
+      if (AppPlatform.isAndroid && useExoPlayer) {
         _backendSwitchedSubscription = player!.streams.backendSwitched.listen((_) => _onBackendSwitched());
       }
 
@@ -469,7 +469,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _hasFirstFrame.value = true;
 
           // Apply frame rate matching on Android if enabled
-          if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
+          if (AppPlatform.isAndroid && settingsService.getMatchContentFrameRate()) {
             await _applyFrameRateMatching();
           }
         }
@@ -512,7 +512,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Apply frame rate matching on Android by setting the display refresh rate
   /// to match the video content's frame rate.
   Future<void> _applyFrameRateMatching() async {
-    if (player == null || !Platform.isAndroid) return;
+    if (player == null || !AppPlatform.isAndroid) return;
 
     try {
       final fpsStr = await player!.getProperty('container-fps');
@@ -536,7 +536,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Clear frame rate matching and restore default display mode
   Future<void> _clearFrameRateMatching() async {
-    if (player == null || !Platform.isAndroid) return;
+    if (player == null || !AppPlatform.isAndroid) return;
 
     try {
       await player!.clearVideoFrameRate();
@@ -1284,7 +1284,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// macOS is excluded because we can't distinguish native fullscreen
   /// from maximized state, so we leave the window state unchanged.
   Future<void> _exitFullscreenIfNeeded() async {
-    if (Platform.isWindows || Platform.isLinux) {
+    if (AppPlatform.isWindows || AppPlatform.isLinux) {
       final isFullscreen = await windowManager.isFullScreen();
       if (isFullscreen) {
         await FullscreenStateManager().exitFullscreen();
@@ -1402,7 +1402,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     DiscordRPCService.instance.stopPlayback();
 
     // Clear frame rate matching and abandon audio focus before disposing player (Android only)
-    if (Platform.isAndroid && player != null) {
+    if (AppPlatform.isAndroid && player != null) {
       player!.clearVideoFrameRate();
       player!.abandonAudioFocus();
     }
@@ -2299,9 +2299,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 String _getHwdecValue(bool enabled) {
   if (!enabled) return 'no';
 
-  if (Platform.isMacOS || Platform.isIOS) {
+  if (AppPlatform.isMacOS || AppPlatform.isIOS) {
     return 'videotoolbox';
-  } else if (Platform.isAndroid) {
+  } else if (AppPlatform.isAndroid) {
     return 'auto-safe';
   } else {
     return 'auto'; // Windows, Linux

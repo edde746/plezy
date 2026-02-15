@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import '../utils/platform_helper.dart';
 import 'fullscreen_window_delegate.dart';
 import 'macos_window_service.dart';
 
@@ -15,7 +15,7 @@ class MacOSTitlebarService {
   ///
   /// This method only sets up the Dart-side callbacks.
   static Future<void> setupCustomTitlebar() async {
-    if (!Platform.isMacOS || _initialized) return;
+    if (!AppPlatform.isMacOS || _initialized) return;
     _initialized = true;
 
     await MacOSWindowService.initialize(enableWindowDelegate: true);

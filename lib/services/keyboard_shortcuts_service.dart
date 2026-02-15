@@ -1,6 +1,6 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../utils/platform_helper.dart';
 import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
 import '../i18n/strings.g.dart';
@@ -29,7 +29,7 @@ class KeyboardShortcutsService {
 
   /// Keyboard shortcut customization is only supported on desktop platforms.
   static bool isPlatformSupported() {
-    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    return AppPlatform.isWindows || AppPlatform.isLinux || AppPlatform.isMacOS;
   }
 
   Future<void> _init() async {
@@ -92,7 +92,7 @@ class KeyboardShortcutsService {
   String formatHotkey(HotKey? hotKey) {
     if (hotKey == null) return 'No shortcut set';
 
-    final isMac = Platform.isMacOS;
+    final isMac = AppPlatform.isMacOS;
 
     // macOS standard modifier order: ⌃ ⌥ ⇧ ⌘
     const macModifierLabels = <HotKeyModifier, String>{

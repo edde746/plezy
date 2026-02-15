@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import '../../utils/platform_helper.dart';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -399,7 +399,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
         final isFullscreen = FullscreenStateManager().isFullscreen;
         // In fullscreen on macOS, use less left padding since traffic lights auto-hide
         // In normal mode on macOS, need more padding to avoid traffic lights
-        final leftPadding = Platform.isMacOS
+        final leftPadding = AppPlatform.isMacOS
             ? (isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft)
             : DesktopWindowPadding.macOSLeftFullscreen;
 
@@ -413,7 +413,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       padding: EdgeInsets.only(left: leftPadding, right: 16),
       child: VideoControlsHeader(
         metadata: widget.metadata,
-        style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
+        style: AppPlatform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
         onBack: widget.onBack,
       ),
     );

@@ -1,6 +1,5 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart';
+import '../utils/platform_helper.dart';
 
 import '../database/app_database.dart';
 import '../providers/offline_mode_provider.dart';
@@ -37,7 +36,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Mobile: no throttle (always sync on resume for cross-device updates)
   /// Desktop: 2 minutes (reduced from 10 min to handle tab-switching better)
   static Duration get minSyncInterval {
-    if (Platform.isIOS || Platform.isAndroid) {
+    if (AppPlatform.isIOS || AppPlatform.isAndroid) {
       return Duration.zero;
     }
     return const Duration(minutes: 2);
@@ -121,7 +120,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// On desktop, respects the throttle interval.
   void onAppResumed() {
     if (_offlineModeProvider?.isOffline != true) {
-      final isMobile = Platform.isIOS || Platform.isAndroid;
+      final isMobile = AppPlatform.isIOS || AppPlatform.isAndroid;
       appLogger.d('App resumed - ${isMobile ? "forcing" : "checking"} sync');
       _performBidirectionalSync(force: isMobile);
     }

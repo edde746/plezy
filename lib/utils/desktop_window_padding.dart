@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'platform_helper.dart';
 import 'package:flutter/material.dart';
 import '../services/fullscreen_state_manager.dart';
 
@@ -37,9 +37,9 @@ class DesktopAppBarHelper {
   static List<Widget>? buildAdjustedActions(List<Widget>? actions) {
     double? rightPadding;
 
-    if (Platform.isMacOS) {
+    if (AppPlatform.isMacOS) {
       rightPadding = DesktopWindowPadding.macOSRight;
-    } else if (Platform.isIOS || Platform.isAndroid) {
+    } else if (AppPlatform.isIOS || AppPlatform.isAndroid) {
       rightPadding = DesktopWindowPadding.mobileRight;
     }
 
@@ -61,7 +61,7 @@ class DesktopAppBarHelper {
   /// [includeGestureDetector] - If true, wraps in GestureDetector to prevent window dragging
   /// [context] - Required to check if side navigation is visible
   static Widget? buildAdjustedLeading(Widget? leading, {bool includeGestureDetector = false, BuildContext? context}) {
-    if (!Platform.isMacOS || leading == null) {
+    if (!AppPlatform.isMacOS || leading == null) {
       return leading;
     }
 
@@ -99,7 +99,7 @@ class DesktopAppBarHelper {
 
   /// Builds flexible space with gesture detector on macOS to prevent window dragging
   static Widget? buildAdjustedFlexibleSpace(Widget? flexibleSpace) {
-    if (!Platform.isMacOS || flexibleSpace == null) {
+    if (!AppPlatform.isMacOS || flexibleSpace == null) {
       return flexibleSpace;
     }
 
@@ -113,7 +113,7 @@ class DesktopAppBarHelper {
   /// Calculates the leading width for SliverAppBar to account for macOS traffic lights
   /// [context] - Required to check if side navigation is visible
   static double? calculateLeadingWidth(Widget? leading, {BuildContext? context}) {
-    if (!Platform.isMacOS || leading == null) {
+    if (!AppPlatform.isMacOS || leading == null) {
       return null;
     }
 
@@ -132,7 +132,7 @@ class DesktopAppBarHelper {
   /// [opaque] - If true, uses HitTestBehavior.opaque to fully consume gestures.
   ///            If false (default), uses HitTestBehavior.translucent.
   static Widget wrapWithGestureDetector(Widget child, {bool opaque = false}) {
-    if (!Platform.isMacOS) {
+    if (!AppPlatform.isMacOS) {
       return child;
     }
 
@@ -157,7 +157,7 @@ class DesktopTitleBarPadding extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!Platform.isMacOS) {
+    if (!AppPlatform.isMacOS) {
       return child;
     }
 

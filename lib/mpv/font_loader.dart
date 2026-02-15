@@ -1,8 +1,9 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+
+import '../utils/io_helpers.dart';
 
 /// Utility class for loading font assets for libass subtitle rendering.
 ///
@@ -15,6 +16,7 @@ class SubtitleFontLoader {
   /// Loads the subtitle font from assets to the cache directory.
   /// Returns the directory path containing the font file.
   static Future<String?> loadSubtitleFont() async {
+    if (kIsWeb) return null;
     try {
       // Get the app's cache directory
       final cacheDir = await getTemporaryDirectory();

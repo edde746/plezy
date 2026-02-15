@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'dart:io';
+
+import '../utils/io_helpers.dart';
+import '../utils/platform_helper.dart';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';

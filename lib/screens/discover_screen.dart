@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import '../utils/platform_helper.dart';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -524,7 +524,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Refresh continue watching when app resumes on mobile platforms
     // Skip on desktop to avoid excessive refreshes from window focus changes
-    if (state == AppLifecycleState.resumed && (Platform.isIOS || Platform.isAndroid)) {
+    if (state == AppLifecycleState.resumed && (AppPlatform.isIOS || AppPlatform.isAndroid)) {
       appLogger.d('App resumed on mobile - refreshing continue watching');
       _refreshContinueWatching();
     }
@@ -698,7 +698,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
 
       // Sync to Android TV Watch Next row
-      if (Platform.isAndroid) {
+      if (AppPlatform.isAndroid) {
         _syncWatchNext(onDeck);
       }
 
@@ -782,7 +782,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         });
 
         // Sync to Android TV Watch Next row
-        if (Platform.isAndroid) {
+        if (AppPlatform.isAndroid) {
           _syncWatchNext(onDeck);
         }
 

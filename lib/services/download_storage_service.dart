@@ -1,5 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
+
+import '../utils/io_helpers.dart';
+import '../utils/platform_helper.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -23,7 +25,7 @@ class DownloadStorageService {
   String _customPathType = 'file';
 
   /// Check if currently using SAF mode (Android only)
-  bool get isUsingSaf => Platform.isAndroid && _customPathType == 'saf' && _customDownloadPath != null;
+  bool get isUsingSaf => AppPlatform.isAndroid && _customPathType == 'saf' && _customDownloadPath != null;
 
   /// Get the SAF base URI (only valid when isUsingSaf is true)
   String? get safBaseUri => isUsingSaf ? _customDownloadPath : null;
@@ -54,7 +56,7 @@ class DownloadStorageService {
   /// Get the base app directory for storing data.
   /// Uses ApplicationDocumentsDirectory on mobile, ApplicationSupportDirectory on desktop.
   Future<Directory> _getBaseAppDir() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (AppPlatform.isAndroid || AppPlatform.isIOS) {
       return getApplicationDocumentsDirectory();
     }
     return getApplicationSupportDirectory();

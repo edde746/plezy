@@ -37,4 +37,16 @@ class AppPlatform {
 
   /// True if window management APIs are available.
   static bool get hasWindowManager => isDesktop;
+
+  /// Returns the operating system name string.
+  static String get operatingSystem {
+    if (isWebOS) return 'webos';
+    if (isAndroid) return 'android';
+    if (isIOS) return 'ios';
+    if (isMacOS) return 'macos';
+    if (isWindows) return 'windows';
+    if (isLinux) return 'linux';
+    if (isWeb) return 'web';
+    return 'unknown';
+  }
 }

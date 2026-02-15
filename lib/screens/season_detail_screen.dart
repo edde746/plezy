@@ -1,4 +1,7 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+import '../utils/platform_helper.dart';
+import '../utils/io_helpers.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -295,7 +298,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
       ),
     );
 
-    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+    final blockSystemBack = AppPlatform.isAndroid && InputModeTracker.isKeyboardMode(context);
     if (!blockSystemBack) {
       return content;
     }

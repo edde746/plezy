@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import '../utils/platform_helper.dart';
 import 'package:flutter/services.dart';
 import 'macos_window_delegate.dart';
 
@@ -20,7 +20,7 @@ class MacOSWindowService {
   // MARK: - Private Helpers
 
   static Future<void> _invoke(String method, [Map<String, dynamic>? args]) async {
-    if (!Platform.isMacOS) return;
+    if (!AppPlatform.isMacOS) return;
     await _channel.invokeMethod(method, args);
   }
 
@@ -49,7 +49,7 @@ class MacOSWindowService {
   /// Must be called before using other methods.
   /// Set [enableWindowDelegate] to true to receive fullscreen callbacks.
   static Future<void> initialize({bool enableWindowDelegate = false}) async {
-    if (!Platform.isMacOS) return;
+    if (!AppPlatform.isMacOS) return;
 
     if (!_initialized) {
       await _channel.invokeMethod('initialize', {'enableWindowDelegate': enableWindowDelegate});
@@ -90,7 +90,7 @@ class MacOSWindowService {
 
   /// Check if the window is in fullscreen mode.
   static Future<bool> isFullscreen() async {
-    if (!Platform.isMacOS) return false;
+    if (!AppPlatform.isMacOS) return false;
     return await _channel.invokeMethod<bool>('isFullscreen') ?? false;
   }
 }

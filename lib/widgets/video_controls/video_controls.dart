@@ -1,5 +1,5 @@
 import 'dart:async' show StreamSubscription, Timer;
-import 'dart:io' show Platform;
+import '../../utils/platform_helper.dart';
 
 import 'package:flutter/gestures.dart' show PointerSignalEvent, PointerScrollEvent;
 import 'package:flutter/material.dart';
@@ -255,7 +255,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Add lifecycle observer to reload settings when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    if (AppPlatform.isWindows || AppPlatform.isLinux || AppPlatform.isMacOS) {
       windowManager.addListener(this);
       _initAlwaysOnTopState();
     }
@@ -552,7 +552,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
     // Remove window listener
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    if (AppPlatform.isWindows || AppPlatform.isLinux || AppPlatform.isMacOS) {
       windowManager.removeListener(this);
     }
     super.dispose();
@@ -587,7 +587,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   @override
   void onWindowMaximize() {
     // On macOS, maximize is the same as fullscreen (green button)
-    if (mounted && Platform.isMacOS) {
+    if (mounted && AppPlatform.isMacOS) {
       setState(() {
         _isFullscreen = true;
       });
@@ -597,7 +597,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   @override
   void onWindowUnmaximize() {
     // On macOS, unmaximize means exiting fullscreen
-    if (mounted && Platform.isMacOS) {
+    if (mounted && AppPlatform.isMacOS) {
       setState(() {
         _isFullscreen = false;
       });
@@ -625,7 +625,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       _showControls = false;
     });
     widget.controlsVisible?.value = false;
-    if (Platform.isMacOS) {
+    if (AppPlatform.isMacOS) {
       _updateTrafficLightVisibility();
     }
     // Immediately try to reclaim focus (important for TV where global handler
@@ -704,7 +704,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       // Notify parent of visibility change (for popup positioning)
       widget.controlsVisible?.value = true;
       // On macOS, keep window controls in sync with the overlay
-      if (Platform.isMacOS) {
+      if (AppPlatform.isMacOS) {
         _updateTrafficLightVisibility();
       }
     }
@@ -729,7 +729,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
 
     // On macOS, hide/show traffic lights with controls
-    if (Platform.isMacOS) {
+    if (AppPlatform.isMacOS) {
       _updateTrafficLightVisibility();
     }
   }
@@ -763,7 +763,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   /// Check whether PiP is supported on this device
   Future<void> _checkPipSupport() async {
-    if (!Platform.isAndroid) {
+    if (!AppPlatform.isAndroid) {
       return;
     }
 
@@ -874,7 +874,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
-      onTogglePIPMode: (_isPipSupported && Platform.isAndroid) ? widget.onTogglePIPMode : null,
+      onTogglePIPMode: (_isPipSupported && AppPlatform.isAndroid) ? widget.onTogglePIPMode : null,
       onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
       onToggleRotationLock: _toggleRotationLock,
       onToggleFullscreen: _toggleFullscreen,
@@ -1381,7 +1381,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       });
       // Notify parent of visibility change (for popup positioning)
       widget.controlsVisible?.value = true;
-      if (Platform.isMacOS) {
+      if (AppPlatform.isMacOS) {
         _updateTrafficLightVisibility();
       }
     }
@@ -1411,7 +1411,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       });
       // Notify parent of visibility change (for popup positioning)
       widget.controlsVisible?.value = true;
-      if (Platform.isMacOS) {
+      if (AppPlatform.isMacOS) {
         _updateTrafficLightVisibility();
       }
     }
@@ -1446,7 +1446,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       widget.controlsVisible?.value = false;
       // Return focus to the main focus node
       _focusNode.requestFocus();
-      if (Platform.isMacOS) {
+      if (AppPlatform.isMacOS) {
         _updateTrafficLightVisibility();
       }
     }
@@ -1468,7 +1468,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           onKeyEvent: (node, event) {
             final backResult = handleBackKeyAction(event, () {
               // On Windows/Linux with navigation off, ESC first exits fullscreen
-              if (!_videoPlayerNavigationEnabled && _isFullscreen && (Platform.isWindows || Platform.isLinux)) {
+              if (!_videoPlayerNavigationEnabled && _isFullscreen && (AppPlatform.isWindows || AppPlatform.isLinux)) {
                 _toggleFullscreen();
                 return;
               }
@@ -1591,7 +1591,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                 children: [
                   // Keep-alive: 1px widget that continuously repaints to prevent
                   // Flutter animations from freezing when the frame clock goes idle
-                  if (Platform.isLinux || Platform.isWindows)
+                  if (AppPlatform.isLinux || AppPlatform.isWindows)
                     const Positioned(top: 0, left: 0, child: _LinuxKeepAlive()),
                   // Invisible tap detector that always covers the full area
                   // Also handles long-press for 2x speed
@@ -1784,7 +1784,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             subtitleSyncOffset: _subtitleSyncOffset,
                                             isFullscreen: _isFullscreen,
                                             isAlwaysOnTop: _isAlwaysOnTop,
-                                            onTogglePIPMode: (_isPipSupported && Platform.isAndroid)
+                                            onTogglePIPMode: (_isPipSupported && AppPlatform.isAndroid)
                                                 ? widget.onTogglePIPMode
                                                 : null,
                                             onCycleBoxFitMode: widget.player.playerType != 'exoplayer'

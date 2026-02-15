@@ -1,7 +1,7 @@
-import 'dart:io' show Platform, exit;
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show KeyUpEvent, SystemNavigator;
+import '../utils/platform_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
@@ -116,7 +116,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     WidgetsBinding.instance.addObserver(this);
 
-    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+    if (AppPlatform.isLinux || AppPlatform.isWindows || AppPlatform.isMacOS) {
       windowManager.addListener(this);
       windowManager.setPreventClose(true);
     }
@@ -284,7 +284,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   /// Set up Watch Next deep link handling for Android TV launcher taps
   void _setupWatchNextDeepLink() {
-    if (!Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
 
     final watchNext = WatchNextService();
 
@@ -453,7 +453,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     routeObserver.unsubscribe(this);
-    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+    if (AppPlatform.isLinux || AppPlatform.isWindows || AppPlatform.isMacOS) {
       windowManager.removeListener(this);
       windowManager.setPreventClose(false);
     }
@@ -480,7 +480,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   @override
   void onWindowClose() {
-    exit(0);
+    if (!kIsWeb) SystemNavigator.pop();
   }
 
   @override

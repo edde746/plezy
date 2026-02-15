@@ -1,4 +1,7 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+import '../../utils/platform_helper.dart';
+import '../../utils/io_helpers.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -212,8 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   const SizedBox(height: 24),
                   _buildVideoPlaybackSection(),
                   const SizedBox(height: 24),
-                  _buildDownloadsSection(),
-                  const SizedBox(height: 24),
+                  if (!kIsWeb) ...[_buildDownloadsSection(), const SizedBox(height: 24)],
                   if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection(), const SizedBox(height: 24)],
                   _buildCompanionRemoteSection(),
                   const SizedBox(height: 24),
@@ -407,7 +409,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
-          if (Platform.isAndroid)
+          if (AppPlatform.isAndroid)
             ListTile(
               focusNode: _focusTracker.get(_kPlayerBackend),
               leading: const AppIcon(Symbols.play_circle_rounded, fill: 1),
@@ -445,7 +447,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               await _settingsService.setEnableHardwareDecoding(value);
             },
           ),
-          if (Platform.isAndroid)
+          if (AppPlatform.isAndroid)
             SwitchListTile(
               focusNode: _focusTracker.get(_kMatchContentFrameRate),
               secondary: const AppIcon(Symbols.display_settings_rounded, fill: 1),
@@ -478,7 +480,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             },
           ),
           // MPV Config is only available when using MPV player backend
-          if (!Platform.isAndroid || !_useExoPlayer)
+          if (!AppPlatform.isAndroid || !_useExoPlayer)
             ListTile(
               focusNode: _focusTracker.get(_kMpvConfig),
               leading: const AppIcon(Symbols.tune_rounded, fill: 1),
@@ -627,7 +629,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ),
           ),
           // Download location picker - not available on iOS
-          if (!Platform.isIOS)
+          if (!AppPlatform.isIOS)
             FutureBuilder<String>(
               future: storageService.getCurrentDownloadPathDisplay(),
               builder: (context, snapshot) {
@@ -711,7 +713,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       String? selectedPath;
       String pathType = 'file';
 
-      if (Platform.isAndroid) {
+      if (AppPlatform.isAndroid) {
         // Use SAF on Android
         final safService = SafStorageService.instance;
         selectedPath = await safService.pickDirectory();

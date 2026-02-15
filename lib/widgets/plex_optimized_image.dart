@@ -1,4 +1,7 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+import '../utils/platform_helper.dart';
+import '../utils/io_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -226,12 +229,12 @@ class PlexOptimizedImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Check for local file first
-    if (localFilePath != null) {
+    // Check for local file first (not available on web)
+    if (!kIsWeb && localFilePath != null) {
       final file = File(localFilePath!);
       if (file.existsSync()) {
         return Image.file(
-          file,
+          file as dynamic,
           width: width,
           height: height,
           fit: fit,

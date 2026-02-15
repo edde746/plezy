@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../../../utils/platform_helper.dart';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -304,7 +304,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         ),
 
         // HDR Toggle (iOS, macOS, and Windows)
-        if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
+        if (AppPlatform.isIOS || AppPlatform.isMacOS || AppPlatform.isWindows)
           ListTile(
             leading: AppIcon(Symbols.hdr_strong_rounded, fill: 1, color: _enableHDR ? Colors.amber : Colors.white70),
             title: Text(t.videoSettings.hdr, style: const TextStyle(color: Colors.white)),

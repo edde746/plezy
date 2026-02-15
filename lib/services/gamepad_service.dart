@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'dart:io';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../utils/platform_helper.dart';
 
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -60,9 +62,9 @@ class GamepadService {
   /// Only active on desktop platforms (macOS, Windows, Linux).
   void start() async {
     // Only enable on desktop platforms
-    if (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux) return;
+    if (kIsWeb || (!AppPlatform.isMacOS && !AppPlatform.isWindows && !AppPlatform.isLinux)) return;
 
-    appLogger.i('GamepadService: Starting on ${Platform.operatingSystem}');
+    appLogger.i('GamepadService: Starting on desktop');
 
     // List connected gamepads
     try {
