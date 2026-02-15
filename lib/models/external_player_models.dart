@@ -81,7 +81,7 @@ class ExternalPlayer {
 
 // --- Launch helpers ---
 
-Future<bool> _launchWithUrl(String url) async {
+Future<bool> _launchWithUrl(String url) {
   return launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 }
 
@@ -158,7 +158,7 @@ class KnownPlayers {
       name: 'VLC',
       iconAsset: 'assets/player_icons/vlc.svg',
       isAvailable: Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux || Platform.isWindows,
-      launch: (url) async {
+      launch: (url) {
         if (Platform.isAndroid) return _launchAndroidIntent(url, package: 'org.videolan.vlc');
         if (Platform.isIOS) return _launchUrlScheme('vlc://', url);
         if (Platform.isMacOS) return _launchMacApp('VLC', url);
@@ -170,7 +170,7 @@ class KnownPlayers {
       name: 'mpv',
       iconAsset: 'assets/player_icons/mpv.svg',
       isAvailable: Platform.isAndroid || Platform.isMacOS || Platform.isLinux || Platform.isWindows,
-      launch: (url) async {
+      launch: (url) {
         if (Platform.isAndroid) return _launchAndroidIntent(url, package: 'is.xyz.mpv');
         return _launchCommand('mpv', url);
       },

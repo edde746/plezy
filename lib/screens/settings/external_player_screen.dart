@@ -33,6 +33,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
   Future<void> _loadSettings() async {
     _settingsService = await SettingsService.getInstance();
 
+    if (!mounted) return;
     setState(() {
       _useExternalPlayer = _settingsService.getUseExternalPlayer();
       _selectedPlayer = _settingsService.getSelectedExternalPlayer();
@@ -112,12 +113,17 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
     Widget leading;
     if (player.iconAsset != null) {
       leading = ClipRRect(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: const BorderRadius.all(Radius.circular(6)),
         child: player.iconAsset!.endsWith('.svg')
             ? SvgPicture.asset(player.iconAsset!, width: 32, height: 32)
-            : Image.asset(player.iconAsset!, width: 32, height: 32, errorBuilder: (_, _, _) {
-                return const AppIcon(Symbols.play_circle_rounded, fill: 1, size: 32);
-              }),
+            : Image.asset(
+                player.iconAsset!,
+                width: 32,
+                height: 32,
+                errorBuilder: (_, _, _) {
+                  return const AppIcon(Symbols.play_circle_rounded, fill: 1, size: 32);
+                },
+              ),
       );
     } else if (player.id == 'system_default') {
       leading = const AppIcon(Symbols.open_in_new_rounded, fill: 1, size: 32);
@@ -152,6 +158,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
 
   Future<void> _deleteCustomPlayer(ExternalPlayer player) async {
     await _settingsService.removeCustomExternalPlayer(player.id);
+    if (!mounted) return;
     setState(() {
       _customPlayers.removeWhere((p) => p.id == player.id);
       _selectedPlayer = _settingsService.getSelectedExternalPlayer();
@@ -186,50 +193,41 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
             content: SizedBox(
               width: 300,
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: t.externalPlayer.playerName,
-                    hintText: 'My Player',
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: t.externalPlayer.playerName, hintText: 'My Player'),
+                    autofocus: true,
+                    textInputAction: TextInputAction.next,
                   ),
-                  autofocus: true,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<CustomPlayerType>(
-                  segments: [
-                    ButtonSegment(
-                      value: CustomPlayerType.command,
-                      label: Text(Platform.isAndroid
-                          ? t.externalPlayer.playerPackage
-                          : t.externalPlayer.playerCommand),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<CustomPlayerType>(
+                      segments: [
+                        ButtonSegment(
+                          value: CustomPlayerType.command,
+                          label: Text(
+                            Platform.isAndroid ? t.externalPlayer.playerPackage : t.externalPlayer.playerCommand,
+                          ),
+                        ),
+                        ButtonSegment(value: CustomPlayerType.urlScheme, label: Text(t.externalPlayer.playerUrlScheme)),
+                      ],
+                      selected: {selectedType},
+                      onSelectionChanged: (value) {
+                        setDialogState(() => selectedType = value.first);
+                      },
                     ),
-                    ButtonSegment(
-                      value: CustomPlayerType.urlScheme,
-                      label: Text(t.externalPlayer.playerUrlScheme),
-                    ),
-                  ],
-                  selected: {selectedType},
-                  onSelectionChanged: (value) {
-                    setDialogState(() => selectedType = value.first);
-                  },
-                ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: valueController,
-                  decoration: InputDecoration(
-                    labelText: fieldLabel,
-                    hintText: fieldHint,
                   ),
-                  textInputAction: TextInputAction.done,
-                ),
-              ],
-            ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: valueController,
+                    decoration: InputDecoration(labelText: fieldLabel, hintText: fieldHint),
+                    textInputAction: TextInputAction.done,
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
@@ -258,6 +256,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
     );
 
     await _settingsService.addCustomExternalPlayer(newPlayer);
+    if (!mounted) return;
     setState(() {
       _customPlayers.add(newPlayer);
     });

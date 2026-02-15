@@ -48,7 +48,7 @@ class _LibraryPlaylistsTabState extends LibraryGridTabState<PlexPlaylist, Librar
     final client = getClientForLibrary();
 
     // Playlists are automatically tagged with server info by PlexClient
-    return await client.getLibraryPlaylists(sectionId: widget.library.key, playlistType: 'video');
+    return await client.getLibraryPlaylists(playlistType: 'video');
   }
 
   @override

@@ -260,7 +260,7 @@ class PerformanceStatsService {
 
     final stats = PerformanceStats(
       playerType: 'mpv',
-      videoCodec: _formatCodecName(results[0]),
+      videoCodec: _formatCodecName(results.first),
       videoWidth: _parseInt(results[1]),
       videoHeight: _parseInt(results[2]),
       videoFps: _parseDouble(results[3]),

@@ -122,11 +122,7 @@ class MultiServerProvider extends ChangeNotifier {
       try {
         final dvrs = await client.getDvrs();
         for (final dvr in dvrs) {
-          newLiveTvServers.add(LiveTvServerInfo(
-            serverId: serverId,
-            dvrKey: dvr.key,
-            lineup: dvr.lineup,
-          ));
+          newLiveTvServers.add(LiveTvServerInfo(serverId: serverId, dvrKey: dvr.key, lineup: dvr.lineup));
         }
       } catch (e) {
         appLogger.d('LiveTV check failed for server $serverId', error: e);

@@ -451,9 +451,12 @@ class MultiServerManager {
       if (_activeOptimizations.containsKey(serverId)) return Future<void>.value();
 
       final future = _reconnectServer(serverId, server)
-          .timeout(const Duration(seconds: 15), onTimeout: () {
-            appLogger.d('Reconnection timed out for $serverId');
-          })
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              appLogger.d('Reconnection timed out for $serverId');
+            },
+          )
           .whenComplete(() => _activeOptimizations.remove(serverId));
 
       _activeOptimizations[serverId] = future;

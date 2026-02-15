@@ -145,6 +145,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
                   _showProgramDetails(program, channel);
                 }
               }
+
               return FocusableWrapper(
                 autofocus: index == 0,
                 autoScroll: true,
@@ -209,12 +210,9 @@ class _ScheduleListTile extends StatelessWidget {
     final isLive = program.isCurrentlyAiring;
 
     // Title line: S#·E# — Episode Title, or just Title for non-episodes
-    String titleText;
-    if (program.parentIndex != null && program.index != null) {
-      titleText = 'S${program.parentIndex} · E${program.index} — ${program.title}';
-    } else {
-      titleText = program.title;
-    }
+    final titleText = (program.parentIndex != null && program.index != null)
+        ? 'S${program.parentIndex} · E${program.index} — ${program.title}'
+        : program.title;
 
     final timeInfo = _formatTimeInfo();
     final subtitle = [

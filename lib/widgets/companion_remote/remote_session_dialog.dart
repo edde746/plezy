@@ -45,12 +45,14 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
       final provider = context.read<CompanionRemoteProvider>();
       final result = await provider.createSession();
 
+      if (!mounted) return;
       setState(() {
         _isCreatingSession = false;
         _hostAddress = result.address;
       });
     } catch (e) {
       appLogger.e('Failed to create companion remote session', error: e);
+      if (!mounted) return;
       setState(() {
         _isCreatingSession = false;
         _errorMessage = e.toString();
@@ -60,9 +62,12 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
 
   void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(t.companionRemote.session.copiedToClipboard(label: label)), duration: const Duration(seconds: 2)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(t.companionRemote.session.copiedToClipboard(label: label)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -115,7 +120,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
 
         // Parse IP and port from hostAddress
         final addressParts = _hostAddress!.split(':');
-        final ip = addressParts[0];
+        final ip = addressParts.first;
         final port = addressParts[1];
 
         // New QR format: ip|port|sessionId|pin (using pipe separator)
@@ -158,12 +163,19 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                   ),
                   const SizedBox(height: 24),
                   if (session.connectedDevice == null) ...[
-                    Text(t.companionRemote.session.scanQrCode, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
+                    Text(
+                      t.companionRemote.session.scanQrCode,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 16),
                     Center(
                       child: Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
                         child: QrImageView(
                           data: qrData,
                           version: QrVersions.auto,
@@ -195,7 +207,12 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                       onCopy: () => _copyToClipboard(session.sessionId, t.companionRemote.session.sessionId),
                     ),
                     const SizedBox(height: 12),
-                    _buildCodeCard(context, t.companionRemote.session.pin, session.pin, onCopy: () => _copyToClipboard(session.pin, t.companionRemote.session.pin)),
+                    _buildCodeCard(
+                      context,
+                      t.companionRemote.session.pin,
+                      session.pin,
+                      onCopy: () => _copyToClipboard(session.pin, t.companionRemote.session.pin),
+                    ),
                   ] else ...[
                     Card(
                       child: Padding(
@@ -243,7 +260,10 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                         child: Text(t.common.disconnect),
                       ),
                       const SizedBox(width: 8),
-                      FilledButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.companionRemote.session.minimize)),
+                      FilledButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(t.companionRemote.session.minimize),
+                      ),
                     ],
                   ),
                 ],
@@ -274,7 +294,11 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                 ],
               ),
             ),
-            IconButton(icon: const Icon(Icons.copy), onPressed: onCopy, tooltip: t.companionRemote.session.copyToClipboard),
+            IconButton(
+              icon: const Icon(Icons.copy),
+              onPressed: onCopy,
+              tooltip: t.companionRemote.session.copyToClipboard,
+            ),
           ],
         ),
       ),

@@ -35,7 +35,7 @@ class SmartDeletionHandler {
   }
 
   /// Show progress dialog and listen to updates
-  static void _showProgressDialog(BuildContext context, DownloadProvider provider, String globalKey) {
+  static void _showProgressDialog(BuildContext context, DownloadProvider _, String globalKey) {
     showDialog(
       context: context,
       barrierDismissible: false,

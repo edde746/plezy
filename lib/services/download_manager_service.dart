@@ -145,7 +145,7 @@ extension DownloadDatabaseOperations on AppDatabase {
   }
 
   /// Get downloaded media item
-  Future<DownloadedMediaItem?> getDownloadedMedia(String globalKey) async {
+  Future<DownloadedMediaItem?> getDownloadedMedia(String globalKey) {
     return (select(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).getSingleOrNull();
   }
 
@@ -167,9 +167,9 @@ extension DownloadDatabaseOperations on AppDatabase {
 
   /// Update the background_downloader task ID for a download
   Future<void> updateBgTaskId(String globalKey, String? taskId) async {
-    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
-      DownloadedMediaCompanion(bgTaskId: Value(taskId)),
-    );
+    await (update(
+      downloadedMedia,
+    )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(bgTaskId: Value(taskId)));
   }
 
   /// Get the background_downloader task ID for a download
@@ -372,13 +372,16 @@ class DownloadManagerService {
         if (metadata.type == 'episode' && metadata.grandparentRatingKey != null) {
           final parsed = parseGlobalKey(globalKey);
           if (parsed != null) {
-            final showCached = await _apiCache.get(parsed.serverId, '/library/metadata/${metadata.grandparentRatingKey}');
+            final showCached = await _apiCache.get(
+              parsed.serverId,
+              '/library/metadata/${metadata.grandparentRatingKey}',
+            );
             final showJson = PlexCacheParser.extractFirstMetadata(showCached);
             if (showJson != null) showYear = PlexMetadata.fromJson(showJson).year;
           }
         }
 
-        await _downloadArtwork(globalKey, metadata, client, showYear: showYear);
+        await _downloadArtwork(globalKey, metadata, client);
         await _downloadChapterThumbnails(metadata.serverId!, metadata.ratingKey, client);
 
         // Attempt subtitles
@@ -505,8 +508,9 @@ class DownloadManagerService {
       }
 
       // Build display name for notifications
-      final displayName =
-          metadata.type == 'episode' ? '${metadata.grandparentTitle ?? metadata.title} - ${metadata.title}' : metadata.title;
+      final displayName = metadata.type == 'episode'
+          ? '${metadata.grandparentTitle ?? metadata.title} - ${metadata.title}'
+          : metadata.title;
 
       // Get WiFi-only setting for native enforcement
       final settings = await SettingsService.getInstance();
@@ -758,14 +762,15 @@ class DownloadManagerService {
         // Get queue item settings (still in drift at this point)
         final queueItem =
             ctx?.queueItem ??
-            await (_database.select(_database.downloadQueue)..where((t) => t.mediaGlobalKey.equals(globalKey)))
-                .getSingleOrNull();
+            await (_database.select(
+              _database.downloadQueue,
+            )..where((t) => t.mediaGlobalKey.equals(globalKey))).getSingleOrNull();
         final downloadArtwork = queueItem?.downloadArtwork ?? true;
         final downloadSubtitles = queueItem?.downloadSubtitles ?? true;
 
         if (metadata != null && client != null) {
           if (downloadArtwork) {
-            await _downloadArtwork(globalKey, metadata, client, showYear: showYear);
+            await _downloadArtwork(globalKey, metadata, client);
             await _downloadChapterThumbnails(metadata.serverId!, metadata.ratingKey, client);
           }
           if (downloadSubtitles) {
@@ -836,7 +841,7 @@ class DownloadManagerService {
 
   /// Download artwork for a media item using hash-based storage
   /// Downloads all artwork types: thumb/poster, clearLogo, and background art
-  Future<void> _downloadArtwork(String globalKey, PlexMetadata metadata, PlexClient client, {int? showYear}) async {
+  Future<void> _downloadArtwork(String globalKey, PlexMetadata metadata, PlexClient client) async {
     if (metadata.serverId == null) return;
 
     try {
@@ -1194,7 +1199,7 @@ class DownloadManagerService {
   }
 
   /// Calculate total items to delete (for progress tracking)
-  Future<int> _getTotalItemsToDelete(PlexMetadata metadata, String serverId) async {
+  Future<int> _getTotalItemsToDelete(PlexMetadata metadata, String _) async {
     switch (metadata.type.toLowerCase()) {
       case 'episode':
         return 1; // Single episode
@@ -1535,7 +1540,7 @@ class DownloadManagerService {
   }
 
   /// Check if season artwork is in use
-  Future<bool> _isSeasonArtworkInUse(PlexMetadata episode, int? showYear) async {
+  Future<bool> _isSeasonArtworkInUse(PlexMetadata episode, int? _) async {
     final seasonKey = episode.parentRatingKey;
     if (seasonKey == null) return false;
 
@@ -1546,7 +1551,7 @@ class DownloadManagerService {
   }
 
   /// Check if show artwork is in use
-  Future<bool> _isShowArtworkInUse(PlexMetadata metadata, int? showYear) async {
+  Future<bool> _isShowArtworkInUse(PlexMetadata metadata, int? _) async {
     final showKey = metadata.grandparentRatingKey ?? metadata.parentRatingKey ?? metadata.ratingKey;
 
     final allItems = await _database.select(_database.downloadedMedia).get();
@@ -1612,12 +1617,12 @@ class DownloadManagerService {
   }
 
   /// Get all downloaded media items (for loading persisted data)
-  Future<List<DownloadedMediaItem>> getAllDownloads() async {
+  Future<List<DownloadedMediaItem>> getAllDownloads() {
     return _database.select(_database.downloadedMedia).get();
   }
 
   /// Get a specific downloaded media item by globalKey
-  Future<DownloadedMediaItem?> getDownloadedMedia(String globalKey) async {
+  Future<DownloadedMediaItem?> getDownloadedMedia(String globalKey) {
     return _database.getDownloadedMedia(globalKey);
   }
 

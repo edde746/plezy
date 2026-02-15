@@ -119,9 +119,7 @@ class _InputModeTrackerState extends State<InputModeTracker> {
       onPointerHover: (_) => _setMode(InputMode.pointer),
       behavior: HitTestBehavior.translucent,
       child: MouseRegion(
-        cursor: _mode == InputMode.keyboard
-            ? SystemMouseCursors.none
-            : MouseCursor.defer,
+        cursor: _mode == InputMode.keyboard ? SystemMouseCursors.none : MouseCursor.defer,
         child: IgnorePointer(
           ignoring: _mode == InputMode.keyboard,
           child: _InputModeProvider(mode: _mode, child: widget.child),

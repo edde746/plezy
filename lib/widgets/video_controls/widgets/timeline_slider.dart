@@ -75,7 +75,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
     if (widget.thumbnailUrlBuilder != null && _dragValue == null) {
       final delta = (widget.position.inMilliseconds - oldWidget.position.inMilliseconds).abs();
       if (delta > 500) {
-        _onKeySeek();
+        _showKeySeekThumbnail = true;
+        _resetKeySeekTimer();
       }
     }
   }
@@ -86,12 +87,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
     super.dispose();
   }
 
-  // Show the thumbnail and then hide it after a delay
-  void _onKeySeek() {
+  void _resetKeySeekTimer() {
     _keySeekTimer?.cancel();
-    if (!_showKeySeekThumbnail) {
-      setState(() => _showKeySeekThumbnail = true);
-    }
     _keySeekTimer = Timer(_keySeekThumbnailTimeout, () {
       if (mounted) setState(() => _showKeySeekThumbnail = false);
     });
@@ -124,7 +121,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
                 height: _thumbHeight,
                 decoration: BoxDecoration(
                   color: Colors.black,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: const BorderRadius.all(Radius.circular(6)),
                   boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)],
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -143,7 +140,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: const BorderRadius.all(Radius.circular(4)),
               ),
               child: Text(
                 formatDurationTimestamp(time),

@@ -24,7 +24,6 @@ class FocusBuilders {
   static Widget buildFocusableChip({
     required BuildContext context,
     required FocusNode focusNode,
-    required bool isFocused,
     required KeyEventResult Function(FocusNode, KeyEvent) onKeyEvent,
     required VoidCallback onTap,
     required EdgeInsetsGeometry padding,

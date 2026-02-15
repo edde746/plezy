@@ -102,10 +102,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
         actions: [
           TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
           if (!isMobile)
-            FilledButton(
-              onPressed: () => _pinInputKey.currentState?._trySubmit(),
-              child: Text(t.common.submit),
-            ),
+            FilledButton(onPressed: () => _pinInputKey.currentState?._trySubmit(), child: Text(t.common.submit)),
         ],
       ),
     );
@@ -157,7 +154,7 @@ class _TvPinInputState extends State<_TvPinInput> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.hasError) _reset();
       if (widget.isMobile) {
-        _mobileFocusNodes[0].requestFocus();
+        _mobileFocusNodes.first.requestFocus();
       } else {
         _focusNode.requestFocus();
       }
@@ -186,7 +183,7 @@ class _TvPinInputState extends State<_TvPinInput> {
       _activeIndex = 0;
     });
     if (widget.isMobile) {
-      _mobileFocusNodes[0].requestFocus();
+      _mobileFocusNodes.first.requestFocus();
     }
   }
 
@@ -254,7 +251,7 @@ class _TvPinInputState extends State<_TvPinInput> {
     LogicalKeyboardKey.numpad9: 9,
   };
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     // Back / escape → cancel
@@ -394,7 +391,7 @@ class _TvPinInputState extends State<_TvPinInput> {
     );
   }
 
-  Widget _buildDigitRow(BuildContext context, {required bool showArrows}) {
+  Widget _buildDigitRow(BuildContext _, {required bool showArrows}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -431,7 +428,9 @@ class _TvPinInputState extends State<_TvPinInput> {
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 counterText: '',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius)),
+                border: OutlineInputBorder(
+                  borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
+                ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -478,10 +477,12 @@ class _DigitBox extends StatelessWidget {
           height: 56,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
-            border: Border.all(
-              color: isActive ? focusColor : theme.colorScheme.outlineVariant,
-              width: isActive ? FocusTheme.focusBorderWidth : 1.5,
+            borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
+            border: Border.fromBorderSide(
+              BorderSide(
+                color: isActive ? focusColor : theme.colorScheme.outlineVariant,
+                width: isActive ? FocusTheme.focusBorderWidth : 1.5,
+              ),
             ),
             color: isActive ? focusColor.withValues(alpha: 0.08) : Colors.transparent,
           ),
@@ -489,7 +490,9 @@ class _DigitBox extends StatelessWidget {
             digit != null ? digit.toString() : '–',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: digit != null ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              color: digit != null
+                  ? theme.colorScheme.onSurface
+                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
             ),
           ),
         ),

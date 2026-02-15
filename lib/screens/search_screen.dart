@@ -153,7 +153,7 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
     });
   }
 
-  void updateItem(String ratingKey) {
+  void updateItem(String _) {
     // Trigger a refresh of the search to get updated metadata
     if (_searchController.text.isNotEmpty) {
       _performSearch(_searchController.text);
@@ -166,7 +166,7 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
   }
 
   /// Handle key events on the search input for D-pad navigation
-  KeyEventResult _handleSearchInputKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleSearchInputKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
@@ -215,7 +215,7 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
                 DesktopSliverAppBar(title: Text(t.common.search), floating: true),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
                     child: Focus(
                       onKeyEvent: _handleSearchInputKeyEvent,
                       child: TextField(
@@ -236,15 +236,15 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
                           filled: true,
                           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(100),
+                            borderRadius: const BorderRadius.all(Radius.circular(100)),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(100),
+                            borderRadius: const BorderRadius.all(Radius.circular(100)),
                             borderSide: BorderSide.none,
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(100),
+                            borderRadius: const BorderRadius.all(Radius.circular(100)),
                             borderSide: BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

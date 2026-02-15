@@ -69,11 +69,9 @@ class VideoTimelineBar extends StatelessWidget {
             final duration = durationSnapshot.data ?? Duration.zero;
             final remaining = position - duration; // We want this to be negative
 
-            if (horizontalLayout) {
-              return _buildHorizontalLayout(position, duration, remaining);
-            } else {
-              return _buildVerticalLayout(position, duration, remaining);
-            }
+            return horizontalLayout
+                ? _buildHorizontalLayout(position, duration, remaining)
+                : _buildVerticalLayout(position, duration, remaining);
           },
         );
       },

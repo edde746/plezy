@@ -31,7 +31,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   VoidCallback? onWatchStatesRefreshed;
 
   /// Watch threshold - mark as watched when progress exceeds this percentage
-  static const double watchedThreshold = 0.90;
+  static const double watchedThreshold = 0.9;
 
   /// Minimum interval between syncs.
   /// Mobile: no throttle (always sync on resume for cross-device updates)
@@ -269,7 +269,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   }
 
   /// Get count of pending sync items.
-  Future<int> getPendingSyncCount() async {
+  Future<int> getPendingSyncCount() {
     return _database.getPendingSyncCount();
   }
 
@@ -405,6 +405,37 @@ class OfflineWatchSyncService extends ChangeNotifier {
     }
   }
 
+  /// Sync watch states for all episodes in a single season.
+  ///
+  /// Returns the number of episodes synced, or -1 on failure.
+  Future<int> _syncSeasonEpisodes(
+    PlexClient client,
+    String serverId,
+    String seasonRatingKey,
+    Set<String> downloadedEpisodeKeys,
+  ) async {
+    try {
+      final seasonEpisodes = await client.getChildren(seasonRatingKey);
+      int synced = 0;
+
+      for (final episode in seasonEpisodes) {
+        if (!downloadedEpisodeKeys.contains(episode.ratingKey)) continue;
+
+        await PlexApiCache.instance.put(serverId, '/library/metadata/${episode.ratingKey}', {
+          'MediaContainer': {
+            'Metadata': [episode.toJson()],
+          },
+        });
+        synced++;
+      }
+
+      return synced;
+    } catch (e) {
+      appLogger.d('Failed to sync watch states for season $seasonRatingKey: $e');
+      return -1;
+    }
+  }
+
   /// Fetch latest watch states from server and update local cache.
   ///
   /// Called when coming online or on app startup to pull any watch state
@@ -453,27 +484,10 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
         await _withOnlineClient(serverId, (client) async {
           for (final seasonEntry in seasonMap.entries) {
-            final seasonRatingKey = seasonEntry.key;
-            final downloadedEpisodeKeys = seasonEntry.value;
-
-            try {
-              // Fetch all episodes in this season with one API call
-              final seasonEpisodes = await client.getChildren(seasonRatingKey);
+            final result = await _syncSeasonEpisodes(client, serverId, seasonEntry.key, seasonEntry.value);
+            if (result >= 0) {
+              syncedCount += result;
               seasonCount++;
-
-              // Cache only the episodes we have downloaded
-              for (final episode in seasonEpisodes) {
-                if (downloadedEpisodeKeys.contains(episode.ratingKey)) {
-                  await PlexApiCache.instance.put(serverId, '/library/metadata/${episode.ratingKey}', {
-                    'MediaContainer': {
-                      'Metadata': [episode.toJson()],
-                    },
-                  });
-                  syncedCount++;
-                }
-              }
-            } catch (e) {
-              appLogger.d('Failed to sync watch states for season $seasonRatingKey: $e');
             }
           }
         });

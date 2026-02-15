@@ -121,7 +121,6 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
     return FocusBuilders.buildFocusableChip(
       context: context,
       focusNode: focusNode,
-      isFocused: isFocused,
       onKeyEvent: _handleKeyEvent,
       onTap: widget.onSelect,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

@@ -102,7 +102,6 @@ class _FocusableFilterChipState extends State<FocusableFilterChip> with Focusabl
     return FocusBuilders.buildFocusableChip(
       context: context,
       focusNode: focusNode,
-      isFocused: isFocused,
       onKeyEvent: _handleKeyEvent,
       onTap: widget.onPressed,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

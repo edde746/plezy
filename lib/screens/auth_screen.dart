@@ -44,6 +44,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
     // On Android TV, auto-start QR code flow
     if (PlatformDetector.isTV()) {
+      if (!mounted) return;
       setState(() {
         _useQrFlow = true;
       });
@@ -71,6 +72,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (servers.isEmpty) {
         await storage.clearCredentials();
+        if (!mounted) return;
         setState(() {
           _isAuthenticating = false;
           _errorMessage = t.serverSelection.noServersFoundForAccount(username: username, email: email);
@@ -96,6 +98,7 @@ class _AuthScreenState extends State<AuthScreen> {
       );
 
       if (!result.hasConnections) {
+        if (!mounted) return;
         setState(() {
           _isAuthenticating = false;
           _errorMessage = t.serverSelection.allServerConnectionsFailed;
@@ -141,6 +144,7 @@ class _AuthScreenState extends State<AuthScreen> {
       // Construct auth URL
       final authUrl = _authService.getAuthUrl(pinCode);
 
+      if (!mounted) return;
       if (_useQrFlow) {
         // Display QR instead of launching browser
         setState(() {
@@ -166,6 +170,7 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
 
+      if (!mounted) return;
       if (token == null) {
         setState(() {
           _isAuthenticating = false;
@@ -188,6 +193,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await storage.savePlexToken(token);
 
       // Clear QR URL after successful auth
+      if (!mounted) return;
       setState(() {
         _qrAuthUrl = null;
         _useQrFlow = false;
@@ -198,6 +204,7 @@ class _AuthScreenState extends State<AuthScreen> {
         await _connectToAllServersAndNavigate(token);
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isAuthenticating = false;
         _errorMessage = t.errors.authenticationFailed(error: e);

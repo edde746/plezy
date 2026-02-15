@@ -198,7 +198,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
               children: [
                 if (widget.posterUrl != null) ...[
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: const BorderRadius.all(Radius.circular(6)),
                     child: Image.network(
                       widget.posterUrl!,
                       width: 80,
@@ -219,7 +219,10 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                           if (program.isCurrentlyAiring)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.all(Radius.circular(4)),
+                              ),
                               child: Text(
                                 t.liveTv.live,
                                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),

@@ -319,7 +319,7 @@ class PlexOptimizedImage extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder(BuildContext context) {
+  Widget _buildPlaceholder(BuildContext _) {
     return SkeletonLoader(
       child: fallbackIcon != null
           ? Center(child: AppIcon(fallbackIcon!, fill: 1, size: 40, color: Colors.white54))
@@ -327,7 +327,7 @@ class PlexOptimizedImage extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorWidget(BuildContext context, dynamic error) {
+  Widget _buildErrorWidget(BuildContext context, dynamic _) {
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Center(

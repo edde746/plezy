@@ -112,7 +112,7 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
     _repeatTimer = null;
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     if (widget.onCancel != null) {
@@ -165,10 +165,12 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
         duration: tokens?.fast ?? const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
-          border: Border.all(
-            color: _isFocused && isKeyboardMode ? FocusTheme.getFocusBorderColor(context) : Colors.transparent,
-            width: FocusTheme.focusBorderWidth,
+          borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
+          border: Border.fromBorderSide(
+            BorderSide(
+              color: _isFocused && isKeyboardMode ? FocusTheme.getFocusBorderColor(context) : Colors.transparent,
+              width: FocusTheme.focusBorderWidth,
+            ),
           ),
         ),
         child: Row(
@@ -241,7 +243,7 @@ class _SpinnerButton extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onPressed,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: const BorderRadius.all(Radius.circular(24)),
             child: Container(
               width: 48,
               height: 48,

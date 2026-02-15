@@ -68,12 +68,7 @@ class ChannelMapping {
   final bool? enabled;
   final String? lineupIdentifier;
 
-  ChannelMapping({
-    this.channelKey,
-    this.deviceIdentifier,
-    this.enabled,
-    this.lineupIdentifier,
-  });
+  ChannelMapping({this.channelKey, this.deviceIdentifier, this.enabled, this.lineupIdentifier});
 
   factory ChannelMapping.fromJson(Map<String, dynamic> json) {
     return ChannelMapping(

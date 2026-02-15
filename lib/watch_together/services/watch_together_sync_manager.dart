@@ -115,9 +115,7 @@ class WatchTogetherSyncManager {
     // a mediaSwitch broadcast (e.g., host switched episodes while we were
     // popping out of the previous player).
     if (!_session.isHost) {
-      _peerService.broadcast(
-        SyncMessage.requestSessionConfig(peerId: _peerService.myPeerId),
-      );
+      _peerService.broadcast(SyncMessage.requestSessionConfig(peerId: _peerService.myPeerId));
     }
 
     appLogger.d('WatchTogether: Player attached, isHost: ${_session.isHost}');

@@ -216,12 +216,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return true;
     }
 
-    int targetIndex;
-    if (isUp) {
-      targetIndex = hubIndex - 1;
-    } else {
-      targetIndex = hubIndex + 1;
-    }
+    final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
 
     // Check if target is valid
     if (targetIndex < 0 || targetIndex >= keys.length) {
@@ -294,7 +289,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   /// Handle key events for the hero section
-  KeyEventResult _handleHeroKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleHeroKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
@@ -346,7 +341,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   /// Handle key events for the refresh button in app bar
-  KeyEventResult _handleRefreshKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleRefreshKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
@@ -386,7 +381,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   /// Handle key events for the watch together button in app bar
-  KeyEventResult _handleWatchTogetherKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleWatchTogetherKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
@@ -426,7 +421,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   /// Handle key events for the companion remote button in app bar
-  KeyEventResult _handleCompanionRemoteKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleCompanionRemoteKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
@@ -466,7 +461,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   /// Handle key events for the user button in app bar
-  KeyEventResult _handleUserKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleUserKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
@@ -679,6 +674,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Wait for OnDeck to complete and show it immediately
       final onDeck = await onDeckFuture;
 
+      if (!mounted) return;
       setState(() {
         _onDeck = onDeck;
         _isLoading = false; // Show content, but hubs still loading
@@ -1051,7 +1047,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 child: Container(
                   decoration: BoxDecoration(
                     color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: const BorderRadius.all(Radius.circular(20)),
                   ),
                   child: IconButton(
                     icon: const AppIcon(Symbols.refresh_rounded, fill: 1, color: Colors.white),
@@ -1068,7 +1064,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     child: Container(
                       decoration: BoxDecoration(
                         color: _isWatchTogetherFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: const BorderRadius.all(Radius.circular(20)),
                       ),
                       child: Stack(
                         children: [
@@ -1091,7 +1087,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                                 ),
                                 child: Text(
                                   '${watchTogether.participantCount}',
@@ -1123,7 +1119,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         color: hasDpadNav && _isCompanionRemoteFocused
                             ? Colors.white.withValues(alpha: 0.2)
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: const BorderRadius.all(Radius.circular(20)),
                       ),
                       child: Stack(
                         children: [
@@ -1153,7 +1149,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 decoration: BoxDecoration(
                                   color: Colors.green,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1),
+                                  border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 1)),
                                 ),
                               ),
                             ),
@@ -1171,7 +1167,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: _isUserFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: const BorderRadius.all(Radius.circular(20)),
                       ),
                       child: PopupMenuButton<String>(
                         icon: userProvider.currentUser?.thumb != null
@@ -1311,7 +1307,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 height: 24,
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius: const BorderRadius.all(Radius.circular(4)),
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -1456,50 +1452,48 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         final isActive = _currentHeroIndex == index;
                         final dotSize = _getDotSize(index, range.start, range.end);
 
-                        if (isActive) {
-                          // Progress indicator for active page (~5fps via Timer)
-                          return ValueListenableBuilder<double>(
-                            valueListenable: _indicatorProgress,
-                            builder: (context, progress, child) {
-                              final maxWidth = dotSize * 3; // 24px for normal, 15px for small
-                              final fillWidth = dotSize + ((maxWidth - dotSize) * progress);
-                              final onSurface = Theme.of(context).colorScheme.onSurface;
-                              return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: maxWidth,
-                                height: dotSize,
-                                decoration: BoxDecoration(
-                                  color: onSurface.withValues(alpha: 0.4),
-                                  borderRadius: BorderRadius.circular(dotSize / 2),
-                                ),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Container(
-                                    width: fillWidth,
+                        return isActive
+                            // Progress indicator for active page (~5fps via Timer)
+                            ? ValueListenableBuilder<double>(
+                                valueListenable: _indicatorProgress,
+                                builder: (context, progress, child) {
+                                  final maxWidth = dotSize * 3; // 24px for normal, 15px for small
+                                  final fillWidth = dotSize + ((maxWidth - dotSize) * progress);
+                                  final onSurface = Theme.of(context).colorScheme.onSurface;
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    width: maxWidth,
                                     height: dotSize,
                                     decoration: BoxDecoration(
-                                      color: onSurface,
+                                      color: onSurface.withValues(alpha: 0.4),
                                       borderRadius: BorderRadius.circular(dotSize / 2),
                                     ),
-                                  ),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Container(
+                                        width: fillWidth,
+                                        height: dotSize,
+                                        decoration: BoxDecoration(
+                                          color: onSurface,
+                                          borderRadius: BorderRadius.circular(dotSize / 2),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            // Static indicator for inactive pages
+                            : AnimatedContainer(
+                                duration: tokens(context).slow,
+                                curve: Curves.easeInOut,
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                width: dotSize,
+                                height: dotSize,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                                  borderRadius: BorderRadius.circular(dotSize / 2),
                                 ),
                               );
-                            },
-                          );
-                        } else {
-                          // Static indicator for inactive pages
-                          return AnimatedContainer(
-                            duration: tokens(context).slow,
-                            curve: Curves.easeInOut,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: dotSize,
-                            height: dotSize,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(dotSize / 2),
-                            ),
-                          );
-                        }
                       });
                     }(),
                   ],
@@ -1781,10 +1775,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         appLogger.d('Playing: ${heroItem.title}');
         navigateToVideoPlayer(context, metadata: heroItem);
       },
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: const BorderRadius.all(Radius.circular(24)),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(24))),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1795,12 +1789,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               Container(
                 width: 40,
                 height: 6,
-                decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(3)),
+                decoration: const BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.all(Radius.circular(3)),
+                ),
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
                   widthFactor: progress,
                   child: Container(
-                    decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(2)),
+                    decoration: const BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.all(Radius.circular(2)),
+                    ),
                   ),
                 ),
               ),

@@ -580,7 +580,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
 
   void _focusFirstButton() {
     if (_buttonFocusNodes.isNotEmpty) {
-      _buttonFocusNodes[0].requestFocus();
+      _buttonFocusNodes.first.requestFocus();
     }
   }
 
@@ -688,9 +688,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                 const SizedBox(height: 4),
                 Text(
                   t.downloads.downloadQueued,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                 ),
               ],
             ],

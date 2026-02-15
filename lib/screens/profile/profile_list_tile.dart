@@ -26,28 +26,33 @@ class ProfileListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    Widget? trailing;
+    if (isCurrentUser) {
+      trailing = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary,
+          borderRadius: BorderRadius.circular(tokens(context).radiusMd),
+        ),
+        child: Text(
+          t.userStatus.current,
+          style: TextStyle(
+            fontSize: 10,
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+      );
+    } else if (showTrailingIcon) {
+      trailing = const AppIcon(Symbols.chevron_right_rounded, fill: 1);
+    }
+
     return ListTile(
       leading: UserAvatarWidget(user: user, size: 40, showIndicators: false),
       title: Text(user.displayName),
       subtitle: _hasUserAttributes() ? Row(children: _buildUserAttributes(theme)) : null,
-      trailing: isCurrentUser
-          ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(tokens(context).radiusMd),
-              ),
-              child: Text(
-                t.userStatus.current,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            )
-          : (showTrailingIcon ? const AppIcon(Symbols.chevron_right_rounded, fill: 1) : null),
+      trailing: trailing,
       onTap: isCurrentUser ? null : onTap,
     );
   }

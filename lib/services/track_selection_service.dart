@@ -368,7 +368,7 @@ class TrackSelectionService {
   }
 
   /// Apply a filter to tracks, falling back to original if filter produces empty result
-  List<T> _applyFilterWithFallback<T>(List<T> tracks, List<T> Function(List<T>) filter, String filterDescription) {
+  List<T> _applyFilterWithFallback<T>(List<T> tracks, List<T> Function(List<T>) filter, String _) {
     final filtered = filter(tracks);
     return filtered.isNotEmpty ? filtered : tracks;
   }
@@ -569,11 +569,11 @@ class TrackSelectionService {
   /// Returns the first track whose language matches any variation of the preferred language
   T? _findTrackByLanguageVariations<T>(
     List<T> tracks,
-    String preferredLanguage,
+    String _,
     List<String> languageVariations,
     String? Function(T) getLanguage,
-    String Function(T) getTrackDescription,
-    String trackType,
+    String Function(T) _,
+    String _,
   ) {
     for (var track in tracks) {
       final trackLang = getLanguage(track)?.toLowerCase();
@@ -667,7 +667,7 @@ class TrackSelectionService {
     }
 
     // Priority 5: Use default or first track
-    trackToSelect = availableTracks.firstWhere((t) => t.isDefault == true, orElse: () => availableTracks.first);
+    trackToSelect = availableTracks.firstWhere((t) => t.isDefault, orElse: () => availableTracks.first);
     return TrackSelectionResult(trackToSelect, TrackSelectionPriority.defaultTrack);
   }
 
@@ -739,8 +739,8 @@ class TrackSelectionService {
 
     // Priority 5: Check for default subtitle
     if (availableTracks.isNotEmpty) {
-      final defaultTrack = availableTracks.firstWhere((t) => t.isDefault == true, orElse: () => availableTracks.first);
-      if (defaultTrack.isDefault == true) {
+      final defaultTrack = availableTracks.firstWhere((t) => t.isDefault, orElse: () => availableTracks.first);
+      if (defaultTrack.isDefault) {
         return TrackSelectionResult(defaultTrack, TrackSelectionPriority.defaultTrack);
       }
     }

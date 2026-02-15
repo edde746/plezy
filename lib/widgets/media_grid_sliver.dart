@@ -46,7 +46,7 @@ class MediaGridSliver extends StatelessWidget {
     this.onRefresh,
     this.collectionId,
     this.onListRefresh,
-    this.padding = const EdgeInsets.fromLTRB(8, 0, 8, 8),
+    this.padding = const EdgeInsets.only(left: 8, right: 8, bottom: 8),
     this.usePaddingAwareExtent = false,
     this.horizontalPadding = 16,
     this.useWideAspectRatio = false,

@@ -130,13 +130,9 @@ String formatDurationTimestamp(Duration duration) {
   final minutes = absoluteDuration.inMinutes.remainder(60);
   final seconds = absoluteDuration.inSeconds.remainder(60);
 
-  final String result;
-
-  if (hours > 0) {
-    result = '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  } else {
-    result = '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
+  final result = hours > 0
+      ? '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}'
+      : '$minutes:${seconds.toString().padLeft(2, '0')}';
 
   return isNegative ? '-$result' : result;
 }
@@ -213,11 +209,11 @@ String formatRelativeTime(DateTime date) {
       delimiter: ' ',
       spacer: '',
       tersity: DurationTersity.minute,
-      upperTersity: difference.inDays >= 1
-          ? DurationTersity.day
-          : difference.inHours >= 1
-              ? DurationTersity.hour
-              : DurationTersity.minute,
+      upperTersity: () {
+        if (difference.inDays >= 1) return DurationTersity.day;
+        if (difference.inHours >= 1) return DurationTersity.hour;
+        return DurationTersity.minute;
+      }(),
       maxUnits: 1,
     );
   } else {

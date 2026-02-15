@@ -97,6 +97,7 @@ class GuideTabState extends State<GuideTab> {
     _headerHorizontalController.addListener(_syncHeaderToGrid);
 
     _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      // ignore: no-empty-block - setState triggers rebuild to update time indicator
       if (mounted) setState(() {});
     });
   }
@@ -106,6 +107,7 @@ class GuideTabState extends State<GuideTab> {
   void resumeRefresh() {
     _timeIndicatorTimer?.cancel();
     _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      // ignore: no-empty-block - setState triggers rebuild to update time indicator
       if (mounted) setState(() {});
     });
   }
@@ -172,7 +174,6 @@ class GuideTabState extends State<GuideTab> {
     _loadPrograms();
   }
 
-
   Future<void> _loadPrograms() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
@@ -192,10 +193,7 @@ class GuideTabState extends State<GuideTab> {
           final startEpoch = _gridStart.millisecondsSinceEpoch ~/ 1000;
           final endEpoch = _gridEnd.millisecondsSinceEpoch ~/ 1000;
 
-          final programs = await client.getEpgGrid(
-            beginsAt: startEpoch,
-            endsAt: endEpoch,
-          );
+          final programs = await client.getEpgGrid(beginsAt: startEpoch, endsAt: endEpoch);
           allPrograms.addAll(programs);
         } catch (e) {
           appLogger.e('Failed to load programs from server ${serverInfo.serverId}', error: e);
@@ -233,8 +231,7 @@ class GuideTabState extends State<GuideTab> {
       final offset = (minutesSinceStart / _minutesPerSlot) * _slotWidth;
       if (_gridHorizontalController.hasClients) {
         _gridHorizontalController.jumpTo(
-          (offset - MediaQuery.of(context).size.width / 3)
-              .clamp(0, _gridHorizontalController.position.maxScrollExtent),
+          (offset - MediaQuery.of(context).size.width / 3).clamp(0, _gridHorizontalController.position.maxScrollExtent),
         );
       }
     });
@@ -253,9 +250,8 @@ class GuideTabState extends State<GuideTab> {
   Future<void> _tuneChannel(LiveTvChannel channel) async {
     final multiServer = context.read<MultiServerProvider>();
 
-    final serverInfo = multiServer.liveTvServers
-            .where((s) => s.serverId == channel.serverId)
-            .firstOrNull ??
+    final serverInfo =
+        multiServer.liveTvServers.where((s) => s.serverId == channel.serverId).firstOrNull ??
         multiServer.liveTvServers.firstOrNull;
 
     if (serverInfo == null) return;
@@ -276,7 +272,7 @@ class GuideTabState extends State<GuideTab> {
   // Focus key handling
   // ---------------------------------------------------------------------------
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     // Back key
@@ -298,11 +294,7 @@ class GuideTabState extends State<GuideTab> {
 
     if (!event.isActionable) return KeyEventResult.ignored;
 
-    if (_focusZone == _GuideZone.timeNav) {
-      return _handleTimeNavKey(key);
-    } else {
-      return _handleGridKey(key);
-    }
+    return _focusZone == _GuideZone.timeNav ? _handleTimeNavKey(key) : _handleGridKey(key);
   }
 
   KeyEventResult _handleTimeNavKey(LogicalKeyboardKey key) {
@@ -450,9 +442,7 @@ class GuideTabState extends State<GuideTab> {
       final clamped = newOffset.clamp(0.0, _gridVerticalController.position.maxScrollExtent);
       _gridVerticalController.jumpTo(clamped);
       if (_channelVerticalController.hasClients) {
-        _channelVerticalController.jumpTo(
-          clamped.clamp(0.0, _channelVerticalController.position.maxScrollExtent),
-        );
+        _channelVerticalController.jumpTo(clamped.clamp(0.0, _channelVerticalController.position.maxScrollExtent));
       }
     }
   }
@@ -503,12 +493,7 @@ class GuideTabState extends State<GuideTab> {
           child: ListenableBuilder(
             listenable: _gridHorizontalController,
             builder: (context, child) {
-              return Stack(
-                children: [
-                  child!,
-                  _buildNowIndicatorOverlay(theme),
-                ],
-              );
+              return Stack(children: [child!, _buildNowIndicatorOverlay(theme)]);
             },
             child: Column(
               children: [
@@ -549,8 +534,7 @@ class GuideTabState extends State<GuideTab> {
                             if (notification is ScrollUpdateNotification &&
                                 notification.metrics.axis == Axis.vertical) {
                               if (_channelVerticalController.hasClients) {
-                                _channelVerticalController
-                                    .jumpTo(notification.metrics.pixels);
+                                _channelVerticalController.jumpTo(notification.metrics.pixels);
                               }
                             }
                             return false;
@@ -586,16 +570,14 @@ class GuideTabState extends State<GuideTab> {
     );
   }
 
-  Widget _buildNowIndicatorOverlay(ThemeData theme) {
+  Widget _buildNowIndicatorOverlay(ThemeData _) {
     final now = DateTime.now();
     if (now.isBefore(_gridStart) || now.isAfter(_gridEnd)) {
       return const SizedBox.shrink();
     }
     final minutesSinceStart = now.difference(_gridStart).inMinutes.toDouble();
     final nowOffset = (minutesSinceStart / _minutesPerSlot) * _slotWidth;
-    final scrollOffset = _gridHorizontalController.hasClients
-        ? _gridHorizontalController.offset
-        : 0.0;
+    final scrollOffset = _gridHorizontalController.hasClients ? _gridHorizontalController.offset : 0.0;
     final left = _channelColumnWidth + nowOffset - scrollOffset;
 
     // Hide when scrolled behind the channel column
@@ -607,9 +589,7 @@ class GuideTabState extends State<GuideTab> {
       left: left,
       top: 0,
       height: gridHeight,
-      child: IgnorePointer(
-        child: Container(width: 2, color: Colors.red),
-      ),
+      child: IgnorePointer(child: Container(width: 2, color: Colors.red)),
     );
   }
 
@@ -635,21 +615,14 @@ class GuideTabState extends State<GuideTab> {
   ];
 
   RelativeRect _menuPosition() {
-    final renderBox =
-        _dayPickerKey.currentContext?.findRenderObject() as RenderBox?;
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    final renderBox = _dayPickerKey.currentContext?.findRenderObject() as RenderBox?;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (renderBox == null || overlay == null) return RelativeRect.fill;
 
     final buttonPos = renderBox.localToGlobal(Offset.zero);
     final buttonSize = renderBox.size;
     return RelativeRect.fromRect(
-      Rect.fromLTWH(
-        buttonPos.dx,
-        buttonPos.dy + buttonSize.height,
-        buttonSize.width,
-        0,
-      ),
+      Rect.fromLTWH(buttonPos.dx, buttonPos.dy + buttonSize.height, buttonSize.width, 0),
       Offset.zero & overlay.size,
     );
   }
@@ -683,14 +656,10 @@ class GuideTabState extends State<GuideTab> {
                 Expanded(
                   child: Text(
                     label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isSelected ? theme.colorScheme.primary : null,
-                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: isSelected ? theme.colorScheme.primary : null),
                   ),
                 ),
-                if (isSelected)
-                  AppIcon(Symbols.check_rounded,
-                      size: 18, color: theme.colorScheme.primary),
+                if (isSelected) AppIcon(Symbols.check_rounded, size: 18, color: theme.colorScheme.primary),
               ],
             ),
           );
@@ -722,12 +691,9 @@ class GuideTabState extends State<GuideTab> {
           value: -1,
           child: Row(
             children: [
-              AppIcon(Symbols.chevron_left_rounded,
-                  size: 20, color: theme.colorScheme.onSurface),
+              AppIcon(Symbols.chevron_left_rounded, size: 20, color: theme.colorScheme.onSurface),
               const SizedBox(width: 8),
-              Text(label,
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(label, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -767,7 +733,7 @@ class GuideTabState extends State<GuideTab> {
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: const BorderRadius.all(Radius.circular(8)),
       ),
       child: child,
     );
@@ -775,16 +741,13 @@ class GuideTabState extends State<GuideTab> {
 
   Widget _buildTimeNavigation(ThemeData theme) {
     final format = MaterialLocalizations.of(context);
-    final timeLabel =
-        format.formatTimeOfDay(TimeOfDay.fromDateTime(_gridStart));
+    final timeLabel = format.formatTimeOfDay(TimeOfDay.fromDateTime(_gridStart));
     final dayLabel = _dayLabel(_gridStart);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
-        ),
+        border: Border(bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3))),
       ),
       child: Row(
         children: [
@@ -813,23 +776,16 @@ class GuideTabState extends State<GuideTab> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            dayLabel,
-                            style: theme.textTheme.labelLarge,
-                          ),
+                          Text(dayLabel, style: theme.textTheme.labelLarge),
                           const SizedBox(width: 2),
-                          AppIcon(Symbols.arrow_drop_down_rounded,
-                              size: 18, color: theme.colorScheme.onSurface),
+                          AppIcon(Symbols.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurface),
                         ],
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  timeLabel,
-                  style: theme.textTheme.labelLarge,
-                ),
+                Text(timeLabel, style: theme.textTheme.labelLarge),
               ],
             ),
           ),
@@ -857,8 +813,7 @@ class GuideTabState extends State<GuideTab> {
     var current = _gridStart;
 
     while (current.isBefore(_gridEnd)) {
-      final timeStr =
-          '${current.hour.toString().padLeft(2, '0')}:${current.minute.toString().padLeft(2, '0')}';
+      final timeStr = '${current.hour.toString().padLeft(2, '0')}:${current.minute.toString().padLeft(2, '0')}';
       slots.add(
         SizedBox(
           width: _slotWidth,
@@ -868,9 +823,7 @@ class GuideTabState extends State<GuideTab> {
               alignment: Alignment.centerLeft,
               child: Text(
                 timeStr,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ),
           ),
@@ -881,7 +834,6 @@ class GuideTabState extends State<GuideTab> {
 
     return Row(children: slots);
   }
-
 
   // ---------------------------------------------------------------------------
   // Channel column
@@ -913,9 +865,7 @@ class GuideTabState extends State<GuideTab> {
         if (channel.number != null)
           Text(
             channel.number!,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             maxLines: 1,
           ),
         Text(
@@ -934,22 +884,21 @@ class GuideTabState extends State<GuideTab> {
   // ---------------------------------------------------------------------------
 
   Widget _buildProgramRow(
-      LiveTvChannel channel, List<LiveTvProgram> programs, ThemeData theme,
-      {required int channelIndex}) {
+    LiveTvChannel channel,
+    List<LiveTvProgram> programs,
+    ThemeData theme, {
+    required int channelIndex,
+  }) {
     if (programs.isEmpty) {
       return Container(
         height: _rowHeight,
         decoration: BoxDecoration(
-          border: Border(
-            bottom:
-                BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
-          ),
+          border: Border(bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3))),
         ),
         child: Center(
           child: Text(
             t.liveTv.noPrograms,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
       );
@@ -960,18 +909,14 @@ class GuideTabState extends State<GuideTab> {
     final gridEndEpoch = _gridEnd.millisecondsSinceEpoch ~/ 1000;
 
     // Determine which program is focused in this row
-    final focusProg = (_hasFocus &&
-            _focusZone == _GuideZone.grid &&
-            _gridColumn == 1 &&
-            _gridChannelIndex == channelIndex)
+    final focusProg =
+        (_hasFocus && _focusZone == _GuideZone.grid && _gridColumn == 1 && _gridChannelIndex == channelIndex)
         ? _focusedProgram
         : null;
 
     for (final program in programs) {
-      final progStart =
-          (program.beginsAt ?? gridStartEpoch).clamp(gridStartEpoch, gridEndEpoch);
-      final progEnd =
-          (program.endsAt ?? gridEndEpoch).clamp(gridStartEpoch, gridEndEpoch);
+      final progStart = (program.beginsAt ?? gridStartEpoch).clamp(gridStartEpoch, gridEndEpoch);
+      final progEnd = (program.endsAt ?? gridEndEpoch).clamp(gridStartEpoch, gridEndEpoch);
 
       if (progEnd <= progStart) continue;
 
@@ -987,7 +932,9 @@ class GuideTabState extends State<GuideTab> {
           top: 0,
           bottom: 0,
           child: _buildProgramBlock(
-            channel, program, theme,
+            channel,
+            program,
+            theme,
             isLast: program == programs.last,
             isFocused: identical(program, focusProg),
           ),
@@ -998,38 +945,60 @@ class GuideTabState extends State<GuideTab> {
     return Container(
       height: _rowHeight,
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
-        ),
+        border: Border(bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3))),
       ),
       child: Stack(children: blocks),
     );
   }
 
   Widget _buildProgramBlock(
-      LiveTvChannel channel, LiveTvProgram program, ThemeData theme,
-      {bool isLast = false, bool isFocused = false}) {
+    LiveTvChannel channel,
+    LiveTvProgram program,
+    ThemeData theme, {
+    bool isLast = false,
+    bool isFocused = false,
+  }) {
     final isCurrentlyAiring = program.isCurrentlyAiring;
-    final isPast = program.endsAt != null &&
-        program.endsAt! < DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final isPast = program.endsAt != null && program.endsAt! < DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    Color materialColor;
+    if (isFocused) {
+      materialColor = theme.colorScheme.primary.withValues(alpha: 0.25);
+    } else if (isCurrentlyAiring) {
+      materialColor = theme.colorScheme.primaryContainer;
+    } else {
+      materialColor = theme.colorScheme.surfaceContainerHigh;
+    }
+
+    Color titleColor;
+    if (isFocused) {
+      titleColor = theme.colorScheme.primary;
+    } else if (isCurrentlyAiring) {
+      titleColor = theme.colorScheme.onPrimaryContainer;
+    } else {
+      titleColor = theme.colorScheme.onSurface;
+    }
+
+    Color subtitleColor;
+    if (isFocused) {
+      subtitleColor = theme.colorScheme.primary.withValues(alpha: 0.7);
+    } else if (isCurrentlyAiring) {
+      subtitleColor = theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7);
+    } else {
+      subtitleColor = theme.colorScheme.onSurfaceVariant;
+    }
 
     return Opacity(
       opacity: isPast ? 0.5 : 1.0,
       child: Material(
-        color: isFocused
-            ? theme.colorScheme.primary.withValues(alpha: 0.25)
-            : isCurrentlyAiring
-                ? theme.colorScheme.primaryContainer
-                : theme.colorScheme.surfaceContainerHigh,
+        color: materialColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: isFocused
-              ? BorderSide(color: theme.colorScheme.primary, width: 2)
-              : BorderSide.none,
+          borderRadius: const BorderRadius.all(Radius.circular(4)),
+          side: isFocused ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
         ),
         child: InkWell(
           canRequestFocus: false,
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: const BorderRadius.all(Radius.circular(4)),
           onTap: () => _showProgramDetails(channel, program),
           child: Container(
             decoration: BoxDecoration(
@@ -1046,13 +1015,8 @@ class GuideTabState extends State<GuideTab> {
                 Text(
                   program.grandparentTitle ?? program.title,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight:
-                        isCurrentlyAiring ? FontWeight.w600 : FontWeight.normal,
-                    color: isFocused
-                        ? theme.colorScheme.primary
-                        : isCurrentlyAiring
-                            ? theme.colorScheme.onPrimaryContainer
-                            : theme.colorScheme.onSurface,
+                    fontWeight: isCurrentlyAiring ? FontWeight.w600 : FontWeight.normal,
+                    color: titleColor,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1060,28 +1024,14 @@ class GuideTabState extends State<GuideTab> {
                 if (program.grandparentTitle != null)
                   Text(
                     '${program.parentIndex != null && program.index != null ? 'S${program.parentIndex}E${program.index} · ' : ''}${program.title}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: isFocused
-                          ? theme.colorScheme.primary.withValues(alpha: 0.7)
-                          : isCurrentlyAiring
-                              ? theme.colorScheme.onPrimaryContainer
-                                  .withValues(alpha: 0.7)
-                              : theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 if (program.startTime != null)
                   Text(
                     '${program.startTime!.hour.toString().padLeft(2, '0')}:${program.startTime!.minute.toString().padLeft(2, '0')} · ${formatDurationTextual(program.durationMinutes * 60000)}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: isFocused
-                          ? theme.colorScheme.primary.withValues(alpha: 0.7)
-                          : isCurrentlyAiring
-                              ? theme.colorScheme.onPrimaryContainer
-                                  .withValues(alpha: 0.7)
-                              : theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
                     maxLines: 1,
                   ),
               ],
@@ -1156,9 +1106,7 @@ class _ChannelCellState extends State<_ChannelCell> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: Material(
-        color: widget.isFocused
-            ? theme.colorScheme.primary.withValues(alpha: 0.15)
-            : Colors.transparent,
+        color: widget.isFocused ? theme.colorScheme.primary.withValues(alpha: 0.15) : Colors.transparent,
         child: InkWell(
           canRequestFocus: false,
           onTap: widget.onTap,
@@ -1167,10 +1115,8 @@ class _ChannelCellState extends State<_ChannelCell> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(
-                    color: theme.dividerColor.withValues(alpha: 0.3)),
-                right: BorderSide(
-                    color: theme.dividerColor.withValues(alpha: 0.3)),
+                bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
+                right: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
               ),
             ),
             child: Stack(
@@ -1189,12 +1135,7 @@ class _ChannelCellState extends State<_ChannelCell> {
                         )
                       : widget.fallbackBuilder(),
                 ),
-                if (showAction)
-                  AppIcon(
-                    Symbols.play_arrow_rounded,
-                    size: 32,
-                    color: theme.colorScheme.onSurface,
-                  ),
+                if (showAction) AppIcon(Symbols.play_arrow_rounded, size: 32, color: theme.colorScheme.onSurface),
               ],
             ),
           ),

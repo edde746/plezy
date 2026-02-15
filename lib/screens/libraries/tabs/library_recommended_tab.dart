@@ -67,7 +67,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
       client.getLibraryHubs(widget.library.key, limit: 12),
     ]);
 
-    final continueWatchingItems = results[0] as List<PlexMetadata>;
+    final continueWatchingItems = results.first as List<PlexMetadata>;
     final hubs = results[1] as List<PlexHub>;
 
     // Filter out any existing Continue Watching hubs since we're adding our own
@@ -140,7 +140,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
   @override
   void focusFirstItem() {
     if (_hubKeys.isNotEmpty && items.isNotEmpty) {
-      _hubKeys[0].currentState?.requestFocusAt(0);
+      _hubKeys.first.currentState?.requestFocusAt(0);
     }
   }
 

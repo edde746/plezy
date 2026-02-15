@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../mpv/mpv.dart';
-import 'plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
@@ -34,11 +33,7 @@ class EpisodeNavigationService {
   /// - Not applicable (e.g., movie content)
   /// - Next episode doesn't exist (end of season/series)
   /// - Previous episode doesn't exist (first episode)
-  Future<AdjacentEpisodes> loadAdjacentEpisodes({
-    required BuildContext context,
-    required PlexClient client,
-    required PlexMetadata metadata,
-  }) async {
+  Future<AdjacentEpisodes> loadAdjacentEpisodes({required BuildContext context, required PlexMetadata metadata}) async {
     try {
       final playbackState = context.read<PlaybackStateProvider>();
 

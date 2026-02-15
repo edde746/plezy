@@ -90,7 +90,7 @@ void main() async {
 
   // Initialize TV detection and PiP service for Android
   if (Platform.isAndroid) {
-    futures.add(TvDetectionService.getInstance().then((_) {}));
+    futures.add(TvDetectionService.getInstance());
     // Initialize PiP service to listen for PiP state changes
     PipService();
   }
@@ -99,7 +99,7 @@ void main() async {
   futures.add(MacOSTitlebarService.setupCustomTitlebar());
 
   // Initialize storage service
-  futures.add(StorageService.getInstance().then((_) {}));
+  futures.add(StorageService.getInstance());
 
   // Initialize language codes for track selection
   futures.add(LanguageCodes.initialize());

@@ -124,6 +124,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
 
     if (success) {
       if (widget.requireSelection) {
+        if (!mounted) return;
         setState(() => _allowPop = true);
       }
       navigator.pop(true);

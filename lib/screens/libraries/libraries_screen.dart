@@ -83,10 +83,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   // GlobalKeys for tabs to enable refresh
-  final _recommendedTabKey = GlobalKey<State<LibraryRecommendedTab>>();
-  final _browseTabKey = GlobalKey<State<LibraryBrowseTab>>();
-  final _collectionsTabKey = GlobalKey<State<LibraryCollectionsTab>>();
-  final _playlistsTabKey = GlobalKey<State<LibraryPlaylistsTab>>();
+  final _recommendedTabKey = GlobalKey();
+  final _browseTabKey = GlobalKey();
+  final _collectionsTabKey = GlobalKey();
+  final _playlistsTabKey = GlobalKey();
 
   String? _errorMessage;
   String? _selectedLibraryGlobalKey;
@@ -349,7 +349,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Handle key events for the edit button in app bar
-  KeyEventResult _handleEditKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleEditKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) return KeyEventResult.ignored;
     final key = event.logicalKey;
 
@@ -377,7 +377,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Handle key events for the refresh button in app bar
-  KeyEventResult _handleRefreshKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleRefreshKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) return KeyEventResult.ignored;
     final key = event.logicalKey;
 
@@ -655,44 +655,26 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   // Refresh the currently active tab
   void _refreshCurrentTab() {
-    switch (tabController.index) {
-      case 0: // Recommended tab
-        final refreshable = _recommendedTabKey.currentState;
-        if (refreshable is Refreshable) {
-          (refreshable as Refreshable).refresh();
-        }
-        break;
-      case 1: // Browse tab
-        final refreshable = _browseTabKey.currentState;
-        if (refreshable is Refreshable) {
-          (refreshable as Refreshable).refresh();
-        }
-        break;
-      case 2: // Collections tab
-        final refreshable = _collectionsTabKey.currentState;
-        if (refreshable is Refreshable) {
-          (refreshable as Refreshable).refresh();
-        }
-        break;
-      case 3: // Playlists tab
-        final refreshable = _playlistsTabKey.currentState;
-        if (refreshable is Refreshable) {
-          (refreshable as Refreshable).refresh();
-        }
-        break;
-    }
+    final key = switch (tabController.index) {
+      0 => _recommendedTabKey,
+      1 => _browseTabKey,
+      2 => _collectionsTabKey,
+      3 => _playlistsTabKey,
+      _ => null,
+    };
+    (key?.currentState as dynamic)?.refresh();
   }
 
   // Public method to fully reload all content (for profile switches)
   @override
   void fullRefresh() {
     appLogger.d('LibrariesScreen.fullRefresh() called - reloading all content');
-    // Clear local state
-    _selectedLibraryGlobalKey = null;
-    _selectedFilters.clear();
-    _items.clear();
-    _errorMessage = null;
-    setState(() {});
+    setState(() {
+      _selectedLibraryGlobalKey = null;
+      _selectedFilters.clear();
+      _items.clear();
+      _errorMessage = null;
+    });
 
     // Reinitialize with current libraries from provider
     _initializeWithLibraries();
@@ -849,7 +831,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
   }
 
-  Future<void> _scanLibrary(PlexLibrary library) async {
+  Future<void> _scanLibrary(PlexLibrary library) {
     return _performLibraryAction(
       library: library,
       action: (client) => client.scanLibrary(library.key),
@@ -859,7 +841,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
-  Future<void> _refreshLibraryMetadata(PlexLibrary library) async {
+  Future<void> _refreshLibraryMetadata(PlexLibrary library) {
     return _performLibraryAction(
       library: library,
       action: (client) => client.refreshLibraryMetadata(library.key),
@@ -869,7 +851,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
-  Future<void> _emptyLibraryTrash(PlexLibrary library) async {
+  Future<void> _emptyLibraryTrash(PlexLibrary library) {
     return _performLibraryAction(
       library: library,
       action: (client) => client.emptyLibraryTrash(library.key),
@@ -879,7 +861,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
-  Future<void> _analyzeLibrary(PlexLibrary library) async {
+  Future<void> _analyzeLibrary(PlexLibrary library) {
     return _performLibraryAction(
       library: library,
       action: (client) => client.analyzeLibrary(library.key),
@@ -1105,7 +1087,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     child: Container(
                       decoration: BoxDecoration(
                         color: _isEditFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: const BorderRadius.all(Radius.circular(20)),
                       ),
                       child: IconButton(
                         icon: const AppIcon(Symbols.edit_rounded, fill: 1),
@@ -1120,7 +1102,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   child: Container(
                     decoration: BoxDecoration(
                       color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: const BorderRadius.all(Radius.circular(20)),
                     ),
                     child: IconButton(
                       icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
@@ -1298,7 +1280,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     _dialogScrollController.animateTo(destination, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     // Track back key down/up pairing. If focus was elsewhere during KeyDown
@@ -1508,6 +1490,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       return Dialog(
         child: PopScope(
           canPop: false, // Prevent system back from double-popping; handled by _handleKeyEvent
+          // ignore: no-empty-block - required callback, blocks system back on Android TV
           onPopInvokedWithResult: (didPop, result) {},
           child: Scaffold(
             appBar: AppBar(

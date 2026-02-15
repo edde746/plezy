@@ -274,7 +274,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   }
 
   /// Handle key events for horizontal button navigation
-  KeyEventResult _handleButtonKeyEvent(FocusNode node, KeyEvent event, int index) {
+  KeyEventResult _handleButtonKeyEvent(FocusNode _, KeyEvent event, int index) {
     final leftTarget = index > 0 ? _buttonFocusNodes[index - 1] : null;
     final rightTarget = index < _buttonFocusNodes.length - 1 ? _buttonFocusNodes[index + 1] : _volumeFocusNode;
 
@@ -282,11 +282,11 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   }
 
   /// Handle key events for volume control navigation
-  KeyEventResult _handleVolumeKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleVolumeKeyEvent(FocusNode _, KeyEvent event) {
     return _handleDirectionalNavigation(
       event,
       leftTarget: _nextItemFocusNode,
-      rightTarget: _trackControlFocusNodes.isNotEmpty ? _trackControlFocusNodes[0] : null,
+      rightTarget: _trackControlFocusNodes.isNotEmpty ? _trackControlFocusNodes.first : null,
     );
   }
 
@@ -310,7 +310,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   }
 
   /// Handle key events for timeline navigation
-  KeyEventResult _handleTimelineKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleTimelineKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     // Handle key release to reset progressive seek state
@@ -399,7 +399,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
+  Widget _buildTopBar(BuildContext _) {
     // Use global fullscreen state for padding
     return ListenableBuilder(
       listenable: FullscreenStateManager(),
@@ -407,16 +407,19 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
         final isFullscreen = FullscreenStateManager().isFullscreen;
         // In fullscreen on macOS, use less left padding since traffic lights auto-hide
         // In normal mode on macOS, need more padding to avoid traffic lights
-        final leftPadding = Platform.isMacOS
-            ? (isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft)
-            : DesktopWindowPadding.macOSLeftFullscreen;
+        double leftPadding;
+        if (Platform.isMacOS) {
+          leftPadding = isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft;
+        } else {
+          leftPadding = DesktopWindowPadding.macOSLeftFullscreen;
+        }
 
         return _buildTopBarContent(context, leftPadding);
       },
     );
   }
 
-  Widget _buildTopBarContent(BuildContext context, double leftPadding) {
+  Widget _buildTopBarContent(BuildContext _, double leftPadding) {
     final topBar = Padding(
       padding: EdgeInsets.only(left: leftPadding, right: 16),
       child: Row(
@@ -432,10 +435,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(4),
-              ),
+              decoration: BoxDecoration(color: Colors.red, borderRadius: const BorderRadius.all(Radius.circular(4))),
               child: Text(
                 t.liveTv.live,
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
@@ -449,7 +449,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     return DesktopAppBarHelper.wrapWithGestureDetector(topBar, opaque: true);
   }
 
-  Widget _buildBottomControlsContent(BuildContext context, {required bool hasFrame}) {
+  Widget _buildBottomControlsContent(BuildContext _, {required bool hasFrame}) {
     final canInteract = widget.canControl && hasFrame;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -501,7 +501,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                         index: 1,
                         icon: Symbols.fast_rewind_rounded,
                         color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
-                        onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
+                        onPressed: widget.canControl && widget.chapters.isNotEmpty
+                            ? widget.onSeekToPreviousChapter
+                            : null,
                         semanticLabel: t.videoControls.previousChapterButton,
                         tooltip: prevLabel,
                       ),

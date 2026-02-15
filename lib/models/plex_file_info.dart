@@ -75,11 +75,7 @@ class PlexFileInfo {
     final minutes = (seconds % 3600) ~/ 60;
     final secs = seconds % 60;
 
-    if (hours > 0) {
-      return '${hours}h ${minutes}m ${secs}s';
-    } else {
-      return '${minutes}m ${secs}s';
-    }
+    return hours > 0 ? '${hours}h ${minutes}m ${secs}s' : '${minutes}m ${secs}s';
   }
 
   /// Format bitrate in Mbps or Kbps

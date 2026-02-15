@@ -50,7 +50,7 @@ class ServerRegistry {
   }
 
   /// Update server status (called when server connection status changes)
-  Future<void> updateServerStatus(String serverId, {bool? online, DateTime? lastSeen}) async {
+  Future<void> updateServerStatus(String serverId) async {
     final servers = await getServers();
     final serverIndex = servers.indexWhere((s) => s.clientIdentifier == serverId);
 

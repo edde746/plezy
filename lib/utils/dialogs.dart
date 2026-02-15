@@ -59,7 +59,7 @@ Future<String?> showTextInputDialog(
   required String labelText,
   required String hintText,
   String? initialValue,
-}) async {
+}) {
   return showDialog<String>(
     context: context,
     builder: (context) =>

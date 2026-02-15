@@ -131,7 +131,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   }
 
   /// Handle key events when app bar is focused
-  KeyEventResult handleAppBarKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult handleAppBarKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
     final maxButton = appBarButtonCount - 1;
 
@@ -198,7 +198,10 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
         onKeyEvent: handleAppBarKeyEvent,
         child: Container(
           decoration: isFocused
-              ? BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(20))
+              ? BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: const BorderRadius.all(Radius.circular(20)),
+                )
               : null,
           child: IconButton(
             icon: AppIcon(config.icon, fill: 1),
@@ -239,7 +242,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
       builder: (context, settingsProvider, child) {
         final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
         return SliverPadding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+          padding: const EdgeInsets.all(8),
           sliver: SliverLayoutBuilder(
             builder: (context, constraints) {
               final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);

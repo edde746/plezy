@@ -188,9 +188,10 @@ class _VolumeControlState extends State<VolumeControl> {
                 autoScroll: false,
                 useBackgroundFocus: true,
                 disableScale: true,
-                semanticLabel: _isAdjustMode
-                    ? t.videoControls.volumeSlider
-                    : (isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton),
+                semanticLabel: () {
+                  if (_isAdjustMode) return t.videoControls.volumeSlider;
+                  return isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton;
+                }(),
                 child: muteButton,
               )
             else
@@ -237,7 +238,7 @@ class _VolumeControlState extends State<VolumeControl> {
                   height: 12,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(1),
+                    borderRadius: const BorderRadius.all(Radius.circular(1)),
                   ),
                 ),
               ),

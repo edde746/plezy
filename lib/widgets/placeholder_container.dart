@@ -18,7 +18,7 @@ class PlaceholderContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final container = Container(
+    return Container(
       color: borderRadius != null ? null : (color ?? Theme.of(context).colorScheme.surfaceContainerHighest),
       decoration: borderRadius != null
           ? BoxDecoration(
@@ -28,7 +28,5 @@ class PlaceholderContainer extends StatelessWidget {
           : null,
       child: child != null ? Center(child: child) : null,
     );
-
-    return container;
   }
 }

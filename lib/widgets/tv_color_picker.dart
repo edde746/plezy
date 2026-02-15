@@ -118,8 +118,8 @@ class _TvColorPickerState extends State<TvColorPicker> {
           width: double.infinity,
           decoration: BoxDecoration(
             color: currentColor,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey),
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
+            border: const Border.fromBorderSide(BorderSide(color: Colors.grey)),
           ),
         ),
         const SizedBox(height: 16),
@@ -263,7 +263,7 @@ class _ColorChannelRowState extends State<_ColorChannelRow> {
     _repeatTimer = null;
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     // Let UP/DOWN pass through for focus traversal between rows
@@ -320,10 +320,12 @@ class _ColorChannelRowState extends State<_ColorChannelRow> {
         duration: tokens?.fast ?? const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
-          border: Border.all(
-            color: _isFocused && isKeyboardMode ? FocusTheme.getFocusBorderColor(context) : Colors.transparent,
-            width: FocusTheme.focusBorderWidth,
+          borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
+          border: Border.fromBorderSide(
+            BorderSide(
+              color: _isFocused && isKeyboardMode ? FocusTheme.getFocusBorderColor(context) : Colors.transparent,
+              width: FocusTheme.focusBorderWidth,
+            ),
           ),
         ),
         child: Row(
@@ -382,7 +384,7 @@ class _ChannelButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
           child: Container(
             width: 36,
             height: 36,

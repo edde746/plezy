@@ -24,31 +24,29 @@ Widget buildAdaptiveMediaSliverBuilder<T>({
   final effectiveCrossAxisSpacing = crossAxisSpacing ?? GridLayoutConstants.crossAxisSpacing;
   final effectiveMainAxisSpacing = mainAxisSpacing ?? GridLayoutConstants.mainAxisSpacing;
 
-  if (viewMode == ViewMode.list) {
-    return SliverPadding(
-      padding: effectivePadding,
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final item = items[index];
-          return itemBuilder(context, item, index);
-        }, childCount: items.length),
-      ),
-    );
-  } else {
-    return SliverPadding(
-      padding: effectivePadding,
-      sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(context, density),
-          childAspectRatio: effectiveAspectRatio,
-          crossAxisSpacing: effectiveCrossAxisSpacing,
-          mainAxisSpacing: effectiveMainAxisSpacing,
-        ),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final item = items[index];
-          return itemBuilder(context, item, index);
-        }, childCount: items.length),
-      ),
-    );
-  }
+  return viewMode == ViewMode.list
+      ? SliverPadding(
+          padding: effectivePadding,
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final item = items[index];
+              return itemBuilder(context, item, index);
+            }, childCount: items.length),
+          ),
+        )
+      : SliverPadding(
+          padding: effectivePadding,
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(context, density),
+              childAspectRatio: effectiveAspectRatio,
+              crossAxisSpacing: effectiveCrossAxisSpacing,
+              mainAxisSpacing: effectiveMainAxisSpacing,
+            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final item = items[index];
+              return itemBuilder(context, item, index);
+            }, childCount: items.length),
+          ),
+        );
 }

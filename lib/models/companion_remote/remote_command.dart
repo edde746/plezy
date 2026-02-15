@@ -15,10 +15,7 @@ class RemoteCommand {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      't': type.index,
-      if (data != null) 'd': data,
-    };
+    return {'t': type.index, if (data != null) 'd': data};
   }
 
   @override

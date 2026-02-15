@@ -98,7 +98,7 @@ class TrackChapterControls extends StatelessWidget {
   });
 
   /// Handle key event for button navigation
-  KeyEventResult _handleButtonKeyEvent(FocusNode node, KeyEvent event, int index, int totalButtons) {
+  KeyEventResult _handleButtonKeyEvent(FocusNode _, KeyEvent event, int index, int totalButtons) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }

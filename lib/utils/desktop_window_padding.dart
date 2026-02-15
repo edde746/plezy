@@ -49,11 +49,7 @@ class DesktopAppBarHelper {
     }
 
     // Add padding to keep actions away from edge
-    if (actions != null) {
-      return [...actions, SizedBox(width: rightPadding)];
-    } else {
-      return [SizedBox(width: rightPadding)];
-    }
+    return actions != null ? [...actions, SizedBox(width: rightPadding)] : [SizedBox(width: rightPadding)];
   }
 
   /// Builds leading widget with appropriate left padding for macOS traffic lights
@@ -68,7 +64,12 @@ class DesktopAppBarHelper {
     // Skip left padding when side navigation scope is present in widget tree
     if (context != null && SideNavigationScope.isPresent(context)) {
       if (includeGestureDetector) {
-        return GestureDetector(behavior: HitTestBehavior.opaque, onPanDown: (_) {}, child: leading);
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          // ignore: no-empty-block - consumes gesture to prevent macOS window dragging
+          onPanDown: (_) {},
+          child: leading,
+        );
       }
       return leading;
     }
@@ -87,7 +88,8 @@ class DesktopAppBarHelper {
         if (includeGestureDetector) {
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
+            // ignore: no-empty-block - consumes gesture to prevent macOS window dragging
+            onPanDown: (_) {},
             child: paddedWidget,
           );
         }
@@ -105,7 +107,8 @@ class DesktopAppBarHelper {
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
+      // ignore: no-empty-block - consumes gesture to prevent macOS window dragging
+      onPanDown: (_) {},
       child: flexibleSpace,
     );
   }
@@ -138,7 +141,8 @@ class DesktopAppBarHelper {
 
     return GestureDetector(
       behavior: opaque ? HitTestBehavior.opaque : HitTestBehavior.translucent,
-      onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
+      // ignore: no-empty-block - consumes gesture to prevent macOS window dragging
+      onPanDown: (_) {},
       child: child,
     );
   }

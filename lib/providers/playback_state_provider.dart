@@ -82,12 +82,7 @@ class PlaybackStateProvider with ChangeNotifier {
 
   /// Initialize playback from a play queue
   /// Call this after creating a play queue via the API
-  Future<void> setPlaybackFromPlayQueue(
-    PlayQueueResponse playQueue,
-    String? contextKey, {
-    String? serverId,
-    String? serverName,
-  }) async {
+  Future<void> setPlaybackFromPlayQueue(PlayQueueResponse playQueue, String? contextKey) async {
     _playQueueId = playQueue.playQueueID;
     // Use size or items length as fallback if totalCount is null
     _playQueueTotalCount = playQueue.playQueueTotalCount ?? playQueue.size ?? (playQueue.items?.length ?? 0);
@@ -186,9 +181,8 @@ class PlaybackStateProvider with ChangeNotifier {
 
     // Check if there's a next item in the loaded window
     if (currentIndex + 1 < _loadedItems.length) {
-      final nextItem = _loadedItems[currentIndex + 1];
       // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
-      return nextItem;
+      return _loadedItems[currentIndex + 1];
     }
 
     // Check if we're at the end of the entire queue
@@ -200,9 +194,8 @@ class PlaybackStateProvider with ChangeNotifier {
           if (response != null && response.items != null && response.items!.isNotEmpty) {
             // Items are already tagged with server info by PlexClient
             _loadedItems = response.items!;
-            final firstItem = _loadedItems.first;
             // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
-            return firstItem;
+            return _loadedItems.first;
           }
         }
       }
@@ -239,9 +232,8 @@ class PlaybackStateProvider with ChangeNotifier {
 
     // Check if there's a previous item in the loaded window
     if (currentIndex > 0) {
-      final prevItem = _loadedItems[currentIndex - 1];
       // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
-      return prevItem;
+      return _loadedItems[currentIndex - 1];
     }
 
     // Check if we're at the beginning of the entire queue

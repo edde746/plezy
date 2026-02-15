@@ -106,7 +106,7 @@ class WhatsOnTabState extends State<WhatsOnTab> {
   /// Focus the first hub (called from parent when tab bar navigates down)
   void focusFirstHub() {
     if (_hubKeys.isNotEmpty) {
-      _hubKeys[0].currentState?.requestFocusFromMemory();
+      _hubKeys.first.currentState?.requestFocusFromMemory();
     }
   }
 
@@ -222,7 +222,7 @@ class WhatsOnTabState extends State<WhatsOnTab> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       clipBehavior: Clip.none,
       itemCount: _hubs.length,
       itemBuilder: (context, index) {
@@ -311,6 +311,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
       _isSelectKeyDown = false;
       _longPressTriggered = false;
     }
+    // ignore: no-empty-block - setState triggers rebuild to update focus styling
     if (mounted) setState(() {});
   }
 
@@ -322,6 +323,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
     HubFocusMemory.setForHub(widget.hub.hubKey, clamped);
     _scrollToIndex(clamped);
     _hubFocusNode.requestFocus();
+    // ignore: no-empty-block - setState triggers rebuild to update focus styling
     if (mounted) setState(() {});
     _scrollHubIntoView();
   }
@@ -357,7 +359,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
     }
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     if (key.isSelectKey) {
@@ -406,10 +408,11 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
 
     if (key.isLeftKey) {
       if (_focusedIndex > 0) {
-        _focusedIndex--;
+        setState(() {
+          _focusedIndex--;
+        });
         HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
         _scrollToIndex(_focusedIndex);
-        setState(() {});
       } else {
         widget.onBack?.call();
       }
@@ -418,10 +421,11 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
 
     if (key.isRightKey) {
       if (_focusedIndex < itemCount - 1) {
-        _focusedIndex++;
+        setState(() {
+          _focusedIndex++;
+        });
         HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
         _scrollToIndex(_focusedIndex);
-        setState(() {});
       }
       return KeyEventResult.handled;
     }
@@ -454,10 +458,11 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
   }
 
   void _onItemTapped(int index) {
-    _focusedIndex = index;
+    setState(() {
+      _focusedIndex = index;
+    });
     HubFocusMemory.setForHub(widget.hub.hubKey, index);
     _hubFocusNode.requestFocus();
-    setState(() {});
   }
 
   @override
@@ -502,15 +507,17 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final screenWidth = constraints.maxWidth;
-                final baseCardWidth =
-                    (ScreenBreakpoints.isLargeDesktop(screenWidth)
-                        ? 220.0
-                        : ScreenBreakpoints.isDesktop(screenWidth)
-                        ? 200.0
-                        : ScreenBreakpoints.isWideTablet(screenWidth)
-                        ? 190.0
-                        : 160.0) *
-                    densityScale;
+                double baseWidth;
+                if (ScreenBreakpoints.isLargeDesktop(screenWidth)) {
+                  baseWidth = 220.0;
+                } else if (ScreenBreakpoints.isDesktop(screenWidth)) {
+                  baseWidth = 200.0;
+                } else if (ScreenBreakpoints.isWideTablet(screenWidth)) {
+                  baseWidth = 190.0;
+                } else {
+                  baseWidth = 160.0;
+                }
+                final baseCardWidth = baseWidth * densityScale;
 
                 final cardWidth = baseCardWidth;
                 final posterWidth = cardWidth - 16;

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
+import '../../models/livetv_dvr.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
@@ -86,6 +87,22 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
     }
   }
 
+  /// Extracts enabled channel keys from DVR mappings, returning null if no DVR has mapping data.
+  Set<String>? _extractEnabledChannelKeys(List<LiveTvDvr> dvrs) {
+    final enabledKeys = <String>{};
+    bool hasMappings = false;
+    for (final dvr in dvrs) {
+      if (dvr.channelMappings.isEmpty) continue;
+      hasMappings = true;
+      for (final m in dvr.channelMappings) {
+        if (m.enabled == true && m.channelKey != null) {
+          enabledKeys.add(m.channelKey!);
+        }
+      }
+    }
+    return hasMappings ? enabledKeys : null;
+  }
+
   Future<void> _loadChannels() async {
     if (!mounted) return;
     setState(() {
@@ -108,7 +125,9 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
       final allChannels = <LiveTvChannel>[];
       final seenChannels = <String>{};
 
-      appLogger.d('Live TV DVRs: ${liveTvServers.map((s) => '${s.serverId}/${s.dvrKey} lineup=${s.lineup}').join(', ')}');
+      appLogger.d(
+        'Live TV DVRs: ${liveTvServers.map((s) => '${s.serverId}/${s.dvrKey} lineup=${s.lineup}').join(', ')}',
+      );
 
       // Build a set of enabled channel keys per server from DVR mappings
       final enabledKeysByServer = <String, Set<String>>{};
@@ -119,19 +138,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
           final client = multiServer.getClientForServer(serverInfo.serverId);
           if (client == null) continue;
           final dvrs = await client.getDvrs();
-          final enabledKeys = <String>{};
-          bool hasMappings = false;
-          for (final dvr in dvrs) {
-            if (dvr.channelMappings.isNotEmpty) {
-              hasMappings = true;
-              for (final m in dvr.channelMappings) {
-                if (m.enabled == true && m.channelKey != null) {
-                  enabledKeys.add(m.channelKey!);
-                }
-              }
-            }
-          }
-          if (hasMappings) {
+          final enabledKeys = _extractEnabledChannelKeys(dvrs);
+          if (enabledKeys != null) {
             enabledKeysByServer[serverInfo.serverId] = enabledKeys;
           }
         } catch (e) {
@@ -146,7 +154,9 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
 
           final channels = await client.getEpgChannels(lineup: serverInfo.lineup);
           final enabledKeys = enabledKeysByServer[serverInfo.serverId];
-          appLogger.d('Channels from DVR ${serverInfo.dvrKey}: ${channels.length} channels (${enabledKeys?.length ?? 'all'} enabled)');
+          appLogger.d(
+            'Channels from DVR ${serverInfo.dvrKey}: ${channels.length} channels (${enabledKeys?.length ?? 'all'} enabled)',
+          );
           for (final channel in channels) {
             // Skip disabled channels if DVR has mapping data
             if (enabledKeys != null && !enabledKeys.contains(channel.key)) continue;
@@ -210,7 +220,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
   // Action button key handlers
   // ---------------------------------------------------------------------------
 
-  KeyEventResult _handleRefreshKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleRefreshKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) return KeyEventResult.ignored;
     final key = event.logicalKey;
 
@@ -236,7 +246,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
     return KeyEventResult.ignored;
   }
 
-  KeyEventResult _handleDvrKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleDvrKeyEvent(FocusNode _, KeyEvent event) {
     if (!event.isActionable) return KeyEventResult.ignored;
     final key = event.logicalKey;
 
@@ -330,7 +340,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
             child: Container(
               decoration: BoxDecoration(
                 color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: const BorderRadius.all(Radius.circular(20)),
               ),
               child: IconButton(
                 icon: const AppIcon(Symbols.refresh_rounded),
@@ -345,7 +355,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
             child: Container(
               decoration: BoxDecoration(
                 color: _isDvrFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: const BorderRadius.all(Radius.circular(20)),
               ),
               child: IconButton(
                 icon: const AppIcon(Symbols.fiber_dvr_rounded),
@@ -356,65 +366,62 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+      body: _buildLiveTvBody(theme, useSideNav),
+    );
+  }
+
+  Widget _buildLiveTvBody(ThemeData theme, bool useSideNav) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(Symbols.error_rounded, size: 48, color: theme.colorScheme.error),
+            const SizedBox(height: 16),
+            Text(_error!, style: theme.textTheme.bodyLarge),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _loadChannels,
+              icon: const AppIcon(Symbols.refresh_rounded),
+              label: Text(t.common.retry),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_channels.isEmpty) {
+      return Center(child: Text(t.liveTv.noChannels));
+    }
+    return Column(
+      children: [
+        if (!useSideNav)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            alignment: Alignment.centerLeft,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
                 children: [
-                  AppIcon(Symbols.error_rounded, size: 48, color: theme.colorScheme.error),
-                  const SizedBox(height: 16),
-                  Text(_error!, style: theme.textTheme.bodyLarge),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    onPressed: _loadChannels,
-                    icon: const AppIcon(Symbols.refresh_rounded),
-                    label: Text(t.common.retry),
-                  ),
+                  _buildTabChip(t.liveTv.guide, 0),
+                  const SizedBox(width: 8),
+                  _buildTabChip(t.liveTv.whatsOn, 1),
                 ],
               ),
-            )
-          : _channels.isEmpty
-          ? Center(child: Text(t.liveTv.noChannels))
-          : Column(
-              children: [
-                if (!useSideNav)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    alignment: Alignment.centerLeft,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildTabChip(t.liveTv.guide, 0),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.liveTv.whatsOn, 1),
-                        ],
-                      ),
-                    ),
-                  ),
-                Expanded(
-                  child: TabBarView(
-                    controller: tabController,
-                    children: [
-                      GuideTab(
-                        key: _guideTabKey,
-                        channels: _channels,
-                        onNavigateUp: focusTabBar,
-                        onBack: onTabBarBack,
-                      ),
-                      WhatsOnTab(
-                        key: _whatsOnTabKey,
-                        channels: _channels,
-                        onNavigateUp: focusTabBar,
-                        onBack: onTabBarBack,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ),
+          ),
+        Expanded(
+          child: TabBarView(
+            controller: tabController,
+            children: [
+              GuideTab(key: _guideTabKey, channels: _channels, onNavigateUp: focusTabBar, onBack: onTabBarBack),
+              WhatsOnTab(key: _whatsOnTabKey, channels: _channels, onNavigateUp: focusTabBar, onBack: onTabBarBack),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

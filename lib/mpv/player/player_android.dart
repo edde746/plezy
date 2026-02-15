@@ -232,7 +232,7 @@ class PlayerAndroid extends PlayerBase {
     // Handle MPV commands by translating to ExoPlayer equivalents
     if (args.isEmpty) return;
 
-    switch (args[0]) {
+    switch (args.first) {
       case 'loadfile':
         if (args.length > 1) {
           await open(Media(args[1]));

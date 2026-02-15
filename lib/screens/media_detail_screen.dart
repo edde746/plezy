@@ -672,7 +672,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: const BorderRadius.all(Radius.circular(100)),
       ),
       child: hasLeading
           ? Row(
@@ -738,7 +738,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: const BorderRadius.all(Radius.circular(100)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -775,6 +775,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         widget.metadata.serverId ?? '',
         widget.metadata.ratingKey,
       );
+      if (!mounted) return;
       setState(() {
         _fullMetadata = cachedMetadata ?? widget.metadata;
         _isLoadingMetadata = false;
@@ -804,6 +805,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       final result = await client.getMetadataWithImagesAndOnDeck(widget.metadata.ratingKey);
       final metadata = result['metadata'] as PlexMetadata?;
       final onDeckEpisode = result['onDeckEpisode'] as PlexMetadata?;
+
+      if (!mounted) return;
 
       if (metadata != null) {
         // Preserve serverId from original metadata
@@ -840,6 +843,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       }
     } catch (e) {
       // Fallback to passed metadata on error
+      if (!mounted) return;
       setState(() {
         _fullMetadata = widget.metadata;
         _isLoadingMetadata = false;
@@ -865,11 +869,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       final seasonsWithServerId = seasons
           .map((season) => season.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
           .toList();
+      if (!mounted) return;
       setState(() {
         _seasons = seasonsWithServerId;
         _isLoadingSeasons = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoadingSeasons = false;
       });
@@ -933,13 +939,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     if (!_seasonsScrollController.hasClients) return;
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth >= 1400
-        ? 220.0
-        : screenWidth >= 900
-        ? 200.0
-        : screenWidth >= 700
-        ? 190.0
-        : 160.0;
+    double cardWidth;
+    if (screenWidth >= 1400) {
+      cardWidth = 220.0;
+    } else if (screenWidth >= 900) {
+      cardWidth = 200.0;
+    } else if (screenWidth >= 700) {
+      cardWidth = 190.0;
+    } else {
+      cardWidth = 160.0;
+    }
     final itemExtent = cardWidth + 4; // card + padding
 
     final viewport = _seasonsScrollController.position.viewportDimension;
@@ -958,7 +967,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   }
 
   /// Handle key events for the seasons row (locked focus pattern)
-  KeyEventResult _handleSeasonsKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleSeasonsKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     // Let back key propagate to parent Focus handler
@@ -1007,9 +1016,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     // LEFT: previous season
     if (key.isLeftKey) {
       if (_focusedSeasonIndex > 0) {
-        _focusedSeasonIndex--;
+        setState(() {
+          _focusedSeasonIndex--;
+        });
         _scrollSeasonToIndex(_focusedSeasonIndex);
-        setState(() {});
       }
       return KeyEventResult.handled;
     }
@@ -1017,9 +1027,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     // RIGHT: next season
     if (key.isRightKey) {
       if (_focusedSeasonIndex < _seasons.length - 1) {
-        _focusedSeasonIndex++;
+        setState(() {
+          _focusedSeasonIndex++;
+        });
         _scrollSeasonToIndex(_focusedSeasonIndex);
-        setState(() {});
       }
       return KeyEventResult.handled;
     }
@@ -1043,13 +1054,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   /// Uses locked focus pattern for D-pad centered scrolling
   Widget _buildHorizontalSeasons() {
     final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth >= 1400
-        ? 220.0
-        : screenWidth >= 900
-        ? 200.0
-        : screenWidth >= 700
-        ? 190.0
-        : 160.0;
+    double cardWidth;
+    if (screenWidth >= 1400) {
+      cardWidth = 220.0;
+    } else if (screenWidth >= 900) {
+      cardWidth = 200.0;
+    } else if (screenWidth >= 700) {
+      cardWidth = 190.0;
+    } else {
+      cardWidth = 160.0;
+    }
     final posterHeight = (cardWidth - 16) * 1.5;
     final containerHeight = posterHeight + 66;
 
@@ -1190,6 +1204,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         }
 
         // Single setState to minimize rebuilds - scroll position is preserved by controller
+        if (!mounted) return;
         setState(() {
           _fullMetadata = metadataWithServerId;
           if (updatedSeasons != null) {
@@ -1334,12 +1349,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       }
 
       // Initialize playback state with the play queue
-      await playbackState.setPlaybackFromPlayQueue(
-        playQueue,
-        showRatingKey,
-        serverId: metadata.serverId,
-        serverName: metadata.serverName,
-      );
+      await playbackState.setPlaybackFromPlayQueue(playQueue, showRatingKey);
 
       // Set the client for the playback state provider
       playbackState.setClient(client);
@@ -1393,6 +1403,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       }
       return PopScope(
         canPop: false, // Prevent system back from double-popping on Android keyboard/TV
+        // ignore: no-empty-block - required callback, blocks system back on Android TV
         onPopInvokedWithResult: (didPop, result) {},
         child: loading,
       );
@@ -1795,6 +1806,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
 
     return PopScope(
       canPop: false, // Prevent system back from double-popping on Android keyboard/TV
+      // ignore: no-empty-block - required callback, blocks system back on Android TV
       onPopInvokedWithResult: (didPop, result) {},
       child: content,
     );
@@ -1916,47 +1928,7 @@ class _SeasonCardState extends State<_SeasonCard> {
                 child: Row(
                   children: [
                     // Season poster
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: widget.isOffline && widget.localPosterPath != null
-                          ? Image.file(
-                              File(widget.localPosterPath!),
-                              width: 80,
-                              height: 120,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                width: 80,
-                                height: 120,
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
-                              ),
-                            )
-                          : widget.season.thumb != null
-                          ? PlexOptimizedImage.poster(
-                              client: widget.client,
-                              imagePath: widget.season.thumb,
-                              width: 80,
-                              height: 120,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                width: 80,
-                                height: 120,
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                width: 80,
-                                height: 120,
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
-                              ),
-                            )
-                          : Container(
-                              width: 80,
-                              height: 120,
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
-                            ),
-                    ),
+                    ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(6)), child: _buildSeasonPoster()),
                     const SizedBox(width: 16),
 
                     // Season info
@@ -1984,7 +1956,7 @@ class _SeasonCardState extends State<_SeasonCard> {
                                   SizedBox(
                                     width: 200,
                                     child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: const BorderRadius.all(Radius.circular(4)),
                                       child: LinearProgressIndicator(
                                         value: widget.season.viewedLeafCount! / widget.season.leafCount!,
                                         backgroundColor: tokens(context).outline,
@@ -2018,6 +1990,46 @@ class _SeasonCardState extends State<_SeasonCard> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSeasonPoster() {
+    if (widget.isOffline && widget.localPosterPath != null) {
+      return Image.file(
+        File(widget.localPosterPath!),
+        width: 80,
+        height: 120,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: 80,
+          height: 120,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+        ),
+      );
+    }
+    if (widget.season.thumb != null) {
+      return PlexOptimizedImage.poster(
+        client: widget.client,
+        imagePath: widget.season.thumb,
+        width: 80,
+        height: 120,
+        fit: BoxFit.cover,
+        placeholder: (context, url) =>
+            Container(width: 80, height: 120, color: Theme.of(context).colorScheme.surfaceContainerHighest),
+        errorWidget: (context, url, error) => Container(
+          width: 80,
+          height: 120,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+        ),
+      );
+    }
+    return Container(
+      width: 80,
+      height: 120,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
     );
   }
 }

@@ -25,12 +25,7 @@ Future<void> navigateToLiveTv(
 
   appLogger.d('Navigating to live channel: ${channel.displayName} (${channel.key})');
 
-  final placeholder = PlexMetadata(
-    ratingKey: channel.key,
-    key: channel.key,
-    type: 'clip',
-    title: channel.displayName,
-  );
+  final placeholder = PlexMetadata(ratingKey: channel.key, key: channel.key, type: 'clip', title: channel.displayName);
 
   final route = PageRouteBuilder<bool>(
     settings: const RouteSettings(name: kVideoPlayerRouteName),
@@ -40,9 +35,7 @@ Future<void> navigateToLiveTv(
       liveChannelName: channel.displayName,
       liveStreamUrl: null,
       liveChannels: channels,
-      liveCurrentChannelIndex: channels?.indexWhere(
-        (ch) => ch.key == channel.key,
-      ),
+      liveCurrentChannelIndex: channels?.indexWhere((ch) => ch.key == channel.key),
       liveDvrKey: dvrKey,
       liveClient: client,
     ),

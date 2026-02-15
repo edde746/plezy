@@ -93,7 +93,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
 
   /// Helper to emit a progress update event
   void notifyProgress({required PlexMetadata metadata, required int viewOffset, required int duration}) {
-    const threshold = 0.90;
+    const threshold = 0.9;
     final isNowWatched = duration > 0 && (viewOffset / duration) >= threshold;
 
     notify(

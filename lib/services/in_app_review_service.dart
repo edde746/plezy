@@ -32,8 +32,7 @@ class InAppReviewService {
     if (!Platform.isIOS && !Platform.isAndroid) {
       return false;
     }
-    const enabled = bool.fromEnvironment('ENABLE_IN_APP_REVIEW', defaultValue: false);
-    return enabled;
+    return const bool.fromEnvironment('ENABLE_IN_APP_REVIEW', defaultValue: false);
   }
 
   /// Start tracking a new session

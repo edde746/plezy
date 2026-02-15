@@ -129,6 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     super.initState();
     _focusTracker = FocusMemoryTracker(
       onFocusChanged: () {
+        // ignore: no-empty-block - setState triggers rebuild to update focus styling
         if (mounted) setState(() {});
       },
       debugLabelPrefix: 'settings',
@@ -153,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   }
 
   /// Handle key events for LEFT arrow → sidebar navigation
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowLeft) {
       _navigateToSidebar();
       return KeyEventResult.handled;
@@ -167,6 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _keyboardService = await KeyboardShortcutsService.getInstance();
     }
 
+    if (!mounted) return;
     setState(() {
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _enableHardwareDecoding = _settingsService.getEnableHardwareDecoding();
@@ -426,6 +428,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               await Navigator.push(context, MaterialPageRoute(builder: (context) => const ExternalPlayerScreen()));
               // Reload to reflect any changes
               final s = await settings.SettingsService.getInstance();
+              if (!mounted) return;
               setState(() {
                 _useExternalPlayer = s.getUseExternalPlayer();
                 _selectedExternalPlayerName = s.getSelectedExternalPlayer().name;
@@ -563,7 +566,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ),
           const Divider(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.only(left: 16, top: 8, right: 16),
             child: Text(
               t.settings.autoSkip,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -742,6 +745,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         await DownloadStorageService.instance.refreshCustomPath();
 
         if (mounted) {
+          // ignore: no-empty-block - setState triggers rebuild to reflect new download path
           setState(() {});
           showSuccessSnackBar(context, t.settings.downloadLocationChanged);
         }
@@ -758,6 +762,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     await DownloadStorageService.instance.refreshCustomPath();
 
     if (mounted) {
+      // ignore: no-empty-block - setState triggers rebuild to reflect reset path
       setState(() {});
       showAppSnackBar(context, t.settings.downloadLocationReset);
     }
@@ -1710,6 +1715,7 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
 
   Future<void> _loadHotkeys() async {
     await widget.keyboardService.refreshFromStorage();
+    if (!mounted) return;
     setState(() {
       _hotkeys = widget.keyboardService.hotkeys;
       _isLoading = false;
@@ -1757,8 +1763,8 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Theme.of(context).dividerColor),
-                        borderRadius: BorderRadius.circular(6),
+                        border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
+                        borderRadius: const BorderRadius.all(Radius.circular(6)),
                       ),
                       child: Text(
                         widget.keyboardService.formatHotkey(hotkey),

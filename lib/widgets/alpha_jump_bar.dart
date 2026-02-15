@@ -88,7 +88,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
     return index.clamp(0, AlphaJumpHelper.allLetters.length - 1);
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
@@ -159,7 +159,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
               width: 28,
               decoration: BoxDecoration(
                 color: colorScheme.surface.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: const BorderRadius.all(Radius.circular(14)),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -169,30 +169,41 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
                   final isCurrent = letter == currentLetter && !_hasFocus;
                   final isHighlighted = _hasFocus && i == _highlightedIndex;
 
+                  BoxDecoration? decoration;
+                  if (isHighlighted) {
+                    decoration = BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle);
+                  } else if (isCurrent) {
+                    decoration = BoxDecoration(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
+                    );
+                  }
+
+                  Color letterColor;
+                  if (isHighlighted) {
+                    letterColor = colorScheme.onPrimary;
+                  } else if (isCurrent) {
+                    letterColor = colorScheme.primary;
+                  } else if (isActive) {
+                    letterColor = colorScheme.onSurface;
+                  } else {
+                    letterColor = colorScheme.onSurface.withValues(alpha: 0.25);
+                  }
+
                   return SizedBox(
                     height: constraints.maxHeight / AlphaJumpHelper.allLetters.length,
                     child: Center(
                       child: Container(
                         width: 22,
                         height: 22,
-                        decoration: isHighlighted
-                            ? BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle)
-                            : isCurrent
-                            ? BoxDecoration(color: colorScheme.primary.withValues(alpha: 0.3), shape: BoxShape.circle)
-                            : null,
+                        decoration: decoration,
                         alignment: Alignment.center,
                         child: Text(
                           letter,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: (isCurrent || isHighlighted) ? FontWeight.bold : FontWeight.normal,
-                            color: isHighlighted
-                                ? colorScheme.onPrimary
-                                : isCurrent
-                                ? colorScheme.primary
-                                : isActive
-                                ? colorScheme.onSurface
-                                : colorScheme.onSurface.withValues(alpha: 0.25),
+                            color: letterColor,
                           ),
                         ),
                       ),

@@ -65,6 +65,7 @@ mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, SingleTickerProv
   /// Called when the tab index changes. Override to add custom behaviour
   /// (e.g. persisting the tab index), then call `super.onTabChanged()`.
   void onTabChanged() {
+    // ignore: no-empty-block - setState triggers rebuild to reflect new tab
     setState(() {});
   }
 

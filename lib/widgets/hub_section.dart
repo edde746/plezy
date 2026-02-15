@@ -121,7 +121,7 @@ class HubSectionState extends State<HubSection> {
       _isSelectKeyDown = false;
       _longPressTriggered = false;
     }
-    // Rebuild to update visual focus state
+    // ignore: no-empty-block - setState triggers rebuild to update focus styling
     if (mounted) setState(() {});
   }
 
@@ -135,6 +135,7 @@ class HubSectionState extends State<HubSection> {
     HubFocusMemory.setForHub(widget.hub.hubKey, clamped);
     _scrollToIndex(clamped);
     _hubFocusNode.requestFocus();
+    // ignore: no-empty-block - setState triggers rebuild to update focus styling
     if (mounted) setState(() {});
 
     // Scroll the hub into view in the parent scroll view
@@ -182,7 +183,7 @@ class HubSectionState extends State<HubSection> {
   }
 
   /// Handle ALL key events at the hub level
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     if (key.isSelectKey) {
@@ -233,10 +234,11 @@ class HubSectionState extends State<HubSection> {
     // Left: move to previous item, or navigate to sidebar at left edge
     if (key.isLeftKey) {
       if (_focusedIndex > 0) {
-        _focusedIndex--;
+        setState(() {
+          _focusedIndex--;
+        });
         HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
         _scrollToIndex(_focusedIndex);
-        setState(() {});
       } else if (widget.onNavigateToSidebar != null) {
         // At leftmost item: navigate to sidebar
         widget.onNavigateToSidebar!();
@@ -248,10 +250,11 @@ class HubSectionState extends State<HubSection> {
     // Right: move to next item, ALWAYS consume to prevent escape
     if (key.isRightKey) {
       if (_focusedIndex < itemCount - 1) {
-        _focusedIndex++;
+        setState(() {
+          _focusedIndex++;
+        });
         HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
         _scrollToIndex(_focusedIndex);
-        setState(() {});
       }
       return KeyEventResult.handled;
     }
@@ -376,13 +379,17 @@ class HubSectionState extends State<HubSection> {
                   LibraryDensity.normal => 1.0,
                   LibraryDensity.comfortable => 1.15,
                 };
-                final baseCardWidth = (ScreenBreakpoints.isLargeDesktop(screenWidth)
-                    ? 220.0
-                    : ScreenBreakpoints.isDesktop(screenWidth)
-                    ? 200.0
-                    : ScreenBreakpoints.isWideTablet(screenWidth)
-                    ? 190.0
-                    : 160.0) * densityScale;
+                double baseWidth;
+                if (ScreenBreakpoints.isLargeDesktop(screenWidth)) {
+                  baseWidth = 220.0;
+                } else if (ScreenBreakpoints.isDesktop(screenWidth)) {
+                  baseWidth = 200.0;
+                } else if (ScreenBreakpoints.isWideTablet(screenWidth)) {
+                  baseWidth = 190.0;
+                } else {
+                  baseWidth = 160.0;
+                }
+                final baseCardWidth = baseWidth * densityScale;
 
                 // Get episode poster mode setting
                 final episodePosterMode = settings.episodePosterMode;
@@ -466,11 +473,11 @@ class HubSectionState extends State<HubSection> {
 
   /// Called when an item is tapped (mouse/touch)
   void _onItemTapped(int index) {
-    // Update focus to tapped item and request hub focus
-    _focusedIndex = index;
+    setState(() {
+      _focusedIndex = index;
+    });
     HubFocusMemory.setForHub(widget.hub.hubKey, index);
     _hubFocusNode.requestFocus();
-    setState(() {});
   }
 }
 

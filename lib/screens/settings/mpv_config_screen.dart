@@ -31,6 +31,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
   Future<void> _loadSettings() async {
     _settingsService = await SettingsService.getInstance();
 
+    if (!mounted) return;
     setState(() {
       _entries = _settingsService.getMpvConfigEntries();
       _presets = _settingsService.getMpvPresets();
@@ -188,6 +189,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
     if (result == true) {
       await _settingsService.saveMpvPreset(nameController.text.trim(), _entries);
+      if (!mounted) return;
       setState(() {
         _presets = _settingsService.getMpvPresets();
       });
@@ -202,6 +204,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
   Future<void> _loadPreset(MpvPreset preset) async {
     await _settingsService.loadMpvPreset(preset.name);
+    if (!mounted) return;
     setState(() {
       _entries = _settingsService.getMpvConfigEntries();
     });
@@ -219,6 +222,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
     if (confirmed) {
       await _settingsService.deleteMpvPreset(preset.name);
+      if (!mounted) return;
       setState(() {
         _presets = _settingsService.getMpvPresets();
       });
@@ -298,7 +302,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
             ),
           ] else
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
               child: Text(
                 t.mpvConfig.noPresets,
                 style: Theme.of(
@@ -365,7 +369,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
             }),
           ] else
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
               child: Text(
                 t.mpvConfig.noProperties,
                 style: Theme.of(

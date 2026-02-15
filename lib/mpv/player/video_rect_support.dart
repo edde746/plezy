@@ -1,9 +1,11 @@
+import 'player.dart';
+
 /// Mixin for players that support video rect positioning.
 ///
 /// Players that render video behind the Flutter view (e.g., using
 /// native window embedding or GtkGLArea) implement this mixin to
 /// receive layout updates from the [Video] widget.
-mixin VideoRectSupport {
+mixin VideoRectSupport on Player {
   /// Updates the video rendering area.
   ///
   /// Called by the [Video] widget when the layout changes.

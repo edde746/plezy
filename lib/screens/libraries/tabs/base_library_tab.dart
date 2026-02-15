@@ -125,11 +125,9 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
       _hasFocused = false;
       _hasLoadedData = false;
       // Immediately clear stale data before async load
-      setState(() {
-        _items = [];
-        _isLoading = true;
-        _errorMessage = null;
-      });
+      _items = [];
+      _isLoading = true;
+      _errorMessage = null;
       loadItems();
     }
 
@@ -177,9 +175,8 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   }
 
   /// Focus the first item in the tab. Subclasses should override this.
-  void focusFirstItem() {
-    // Default implementation - subclasses should override
-  }
+  // ignore: no-empty-block - default no-op, subclasses override to focus their first item
+  void focusFirstItem() {}
 
   /// Load items with error handling and state management
   Future<void> loadItems() async {

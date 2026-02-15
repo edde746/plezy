@@ -24,7 +24,7 @@ class _LogsScreenState extends State<LogsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLogs();
+    _logs = MemoryLogOutput.getLogs();
   }
 
   void _loadLogs() {
@@ -237,7 +237,7 @@ class _LogEntryCardState extends State<_LogEntryCard> {
     final hasErrorOrStackTrace = widget.log.error != null || widget.log.stackTrace != null;
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       child: InkWell(
         onTap: hasErrorOrStackTrace ? () => setState(() => _isExpanded = !_isExpanded) : null,
         child: Padding(
@@ -315,7 +315,7 @@ class _LogEntryCardState extends State<_LogEntryCard> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[200],
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: const BorderRadius.all(Radius.circular(4)),
           ),
           child: SelectableText(
             content,

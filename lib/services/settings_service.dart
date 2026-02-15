@@ -77,7 +77,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   SettingsService._();
 
-  static Future<SettingsService> getInstance() async {
+  static Future<SettingsService> getInstance() {
     return BaseSharedPreferencesService.initializeInstance(() => SettingsService._());
   }
 
@@ -816,7 +816,7 @@ class SettingsService extends BaseSharedPreferencesService {
     final localeString = prefs.getString(_keyAppLocale);
     if (localeString == null) return AppLocaleUtils.findDeviceLocale();
 
-    return AppLocale.values.firstWhere((locale) => locale.languageCode == localeString, orElse: () => AppLocale.en);
+    return AppLocale.values.asNameMap()[localeString] ?? AppLocale.en;
   }
 
   // Track Selection Settings

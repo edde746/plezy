@@ -132,7 +132,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     // Start on Downloads tab when in offline mode
     // In offline mode: visual index 0 = Downloads (screen 3), 1 = Settings (screen 4)
     // In online mode: indices match directly
-    _currentIndex = _isOffline ? 0 : 0;
+    _currentIndex = 0;
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
     _autoSwitchedToDownloads = _isOffline;
 
@@ -671,7 +671,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       });
     }
     // When content regains focus while on Settings, restore focus to last focused setting
-    final settingsIndex = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
+    final settingsIndex = NavigationTab.indexFor(
+      NavigationTabId.settings,
+      isOffline: _isOffline,
+      hasLiveTv: _hasLiveTv,
+    );
     if (_currentIndex == settingsIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_settingsKey.currentState case final FocusableTab focusable) {
@@ -742,9 +746,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   void _onDiscoverBecameVisible() {
     appLogger.d('Navigated to home');
     // Refresh content when returning to discover page
-    final discoverState = _discoverKey.currentState;
-    if (discoverState != null && discoverState is Refreshable) {
-      (discoverState as Refreshable).refresh();
+    if (_discoverKey.currentState case final Refreshable refreshable) {
+      refreshable.refresh();
     }
   }
 
@@ -825,7 +828,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     });
 
     // Handle screen-specific logic
-    final settingsIndex = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
+    final settingsIndex = NavigationTab.indexFor(
+      NavigationTabId.settings,
+      isOffline: _isOffline,
+      hasLiveTv: _hasLiveTv,
+    );
 
     // Skip online-only screen logic in offline mode
     if (!_isOffline) {
@@ -925,11 +932,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
           return PopScope(
             canPop: false, // Prevent system back from popping on Android TV
-            onPopInvokedWithResult: (didPop, result) {
-              // No-op: back key events bubble through widget tree and are handled
-              // by content screens (e.g., LibrariesScreen) or MainScreen's _handleBackKey.
-              // We only use PopScope to prevent the system from popping the route.
-            },
+            // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
+            onPopInvokedWithResult: (didPop, result) {},
             child: Focus(
               onKeyEvent: (node, event) => _handleBackKey(event),
               child: MainScreenFocusScope(

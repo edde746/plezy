@@ -163,7 +163,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       message: t.playlists.deleteMessage(name: widget.playlist.title),
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed && mounted) {
       final success = await client.deletePlaylist(widget.playlist.ratingKey);
 
       if (mounted) {
@@ -379,7 +379,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   /// Handle key events for list navigation
-  KeyEventResult _handleListKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleListKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
     final backResult = handleBackKeyAction(event, () {
@@ -461,7 +461,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       }
       if (key.isLeftKey) {
         // Navigate left within columns
-        if (_focusedColumn == 0 && widget.playlist.smart == false) {
+        if (_focusedColumn == 0 && !widget.playlist.smart) {
           // Go to drag handle (column 1)
           setState(() => _focusedColumn = 1);
           return KeyEventResult.handled;
@@ -613,7 +613,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   /// Build a reorderable list for regular playlists with focus support
-  Widget _buildReorderableList(bool isKeyboardMode) {
+  Widget _buildReorderableList(bool _) {
     return SliverReorderableList(
       onReorder: _onReorder,
       itemCount: items.length,

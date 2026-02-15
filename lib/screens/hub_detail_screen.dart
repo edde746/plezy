@@ -82,6 +82,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
         appLogger.d('Loaded ${sorts.length} sorts');
 
+        if (!mounted) return;
         setState(() {
           _sortOptions = sorts.isNotEmpty ? sorts : _getDefaultSortOptions();
           // Don't set a default sort - let items stay in original order
@@ -89,6 +90,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       } else {
         appLogger.w('Could not extract section ID from hub key: $hubKey');
         // Provide default sort options even if we can't get library-specific ones
+        if (!mounted) return;
         setState(() {
           _sortOptions = _getDefaultSortOptions();
           // Don't set a default sort - let items stay in original order
@@ -97,6 +99,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
     } catch (e) {
       appLogger.e('Failed to load sorts', error: e);
       // Provide default sort options on error
+      if (!mounted) return;
       setState(() {
         _sortOptions = _getDefaultSortOptions();
         // Don't set a default sort - let items stay in original order
@@ -189,6 +192,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       // Fetch items from the hub, tagged with server info at the source
       final items = await client.getHubContent(widget.hub.hubKey);
 
+      if (!mounted) return;
       setState(() {
         _items = items;
         _filteredItems = items;
@@ -201,6 +205,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       appLogger.d('Loaded ${items.length} items for hub: ${widget.hub.title}');
     } catch (e) {
       appLogger.e('Failed to load hub content', error: e);
+      if (!mounted) return;
       setState(() {
         _errorMessage = t.messages.errorLoading(error: e.toString());
         _isLoading = false;

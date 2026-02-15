@@ -49,7 +49,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   StorageService._();
 
-  static Future<StorageService> getInstance() async {
+  static Future<StorageService> getInstance() {
     return BaseSharedPreferencesService.initializeInstance(() => StorageService._());
   }
 

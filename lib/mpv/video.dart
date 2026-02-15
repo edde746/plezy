@@ -89,7 +89,7 @@ class _VideoState extends State<Video> {
     return const SizedBox.expand();
   }
 
-  void _updateVideoRect(BuildContext context, BoxConstraints constraints) {
+  void _updateVideoRect(BuildContext context, BoxConstraints _) {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null || !renderBox.hasSize) return;
 

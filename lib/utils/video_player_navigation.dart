@@ -114,11 +114,7 @@ Future<bool?> navigateToVideoPlayer(
     reverseTransitionDuration: Duration.zero,
   );
 
-  if (usePushReplacement) {
-    return navigator.pushReplacement<bool, bool>(route);
-  } else {
-    return navigator.push<bool>(route);
-  }
+  return usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
 }
 
 /// Navigates to the video player and optionally refreshes content when returning.

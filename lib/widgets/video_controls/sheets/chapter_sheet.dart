@@ -130,7 +130,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                       ? Stack(
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: const BorderRadius.all(Radius.circular(4)),
                               child: PlexOptimizedImage.thumb(
                                 client: _tryGetClientForChapters(context),
                                 imagePath: chapter.thumb,
@@ -146,8 +146,8 @@ class _ChapterSheetState extends State<ChapterSheet> {
                               Positioned.fill(
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: Colors.blue, width: 2),
+                                    borderRadius: const BorderRadius.all(Radius.circular(4)),
+                                    border: const Border.fromBorderSide(BorderSide(color: Colors.blue, width: 2)),
                                   ),
                                 ),
                               ),
@@ -180,7 +180,11 @@ class _ChapterSheetState extends State<ChapterSheet> {
             );
           }
 
-          return BaseVideoControlSheet(title: t.videoControls.chapters, icon: Symbols.video_library_rounded, child: content);
+          return BaseVideoControlSheet(
+            title: t.videoControls.chapters,
+            icon: Symbols.video_library_rounded,
+            child: content,
+          );
         },
       ),
     );

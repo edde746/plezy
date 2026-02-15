@@ -53,7 +53,7 @@ class DownloadStorageService {
 
   /// Get the base app directory for storing data.
   /// Uses ApplicationDocumentsDirectory on mobile, ApplicationSupportDirectory on desktop.
-  Future<Directory> _getBaseAppDir() async {
+  Future<Directory> _getBaseAppDir() {
     if (Platform.isAndroid || Platform.isIOS) {
       return getApplicationDocumentsDirectory();
     }
@@ -472,9 +472,7 @@ class DownloadStorageService {
       }
 
       // Copy the file to SAF using native copy
-      final safUri = await safService.copyFileToSaf(tempFilePath, targetDirUri, fileName, mimeType);
-
-      return safUri;
+      return await safService.copyFileToSaf(tempFilePath, targetDirUri, fileName, mimeType);
     } finally {
       // Always clean up temp file regardless of success/failure
       try {

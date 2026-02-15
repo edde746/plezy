@@ -102,7 +102,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   ///
   /// Returns [KeyEventResult.handled] if the event was consumed,
   /// [KeyEventResult.ignored] otherwise.
-  KeyEventResult handleChipKeyEvent(FocusNode node, KeyEvent event, ChipKeyCallbacks callbacks) {
+  KeyEventResult handleChipKeyEvent(FocusNode _, KeyEvent event, ChipKeyCallbacks callbacks) {
     final key = event.logicalKey;
 
     if (callbacks.onBack != null) {

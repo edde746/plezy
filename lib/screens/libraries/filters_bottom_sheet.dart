@@ -78,11 +78,13 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       final client = context.getClientForServer(widget.serverId);
 
       final values = await client.getFilterValues(filter.key);
+      if (!mounted) return;
       setState(() {
         _filterValues = values;
         _isLoadingValues = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _filterValues = [];
         _isLoadingValues = false;

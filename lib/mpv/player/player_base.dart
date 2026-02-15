@@ -298,11 +298,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     final id = trackId?.toString();
     SubtitleTrack? selectedTrack;
 
-    if (id == null || id == 'no') {
-      selectedTrack = SubtitleTrack.off;
-    } else {
-      selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
-    }
+    selectedTrack = (id == null || id == 'no')
+        ? SubtitleTrack.off
+        : _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
 
     _state = _state.copyWith(track: _state.track.copyWith(subtitle: selectedTrack));
     trackController.add(_state.track);
@@ -347,19 +345,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<void> updateFrame() async {
-    // Default no-op, overridden by platforms that need it
-  }
+  // ignore: no-empty-block - base no-op, overridden by platform subclasses
+  Future<void> updateFrame() async {}
 
   @override
-  Future<void> setVideoFrameRate(double fps, int durationMs) async {
-    // Default no-op, overridden by platforms that support it
-  }
+  // ignore: no-empty-block - base no-op, overridden by platform subclasses
+  Future<void> setVideoFrameRate(double fps, int durationMs) async {}
 
   @override
-  Future<void> clearVideoFrameRate() async {
-    // Default no-op, overridden by platforms that support it
-  }
+  // ignore: no-empty-block - base no-op, overridden by platform subclasses
+  Future<void> clearVideoFrameRate() async {}
 
   @override
   Future<bool> requestAudioFocus() async {
@@ -368,19 +363,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<void> abandonAudioFocus() async {
-    // Default no-op, overridden by Android
-  }
+  // ignore: no-empty-block - base no-op, overridden by platform subclasses
+  Future<void> abandonAudioFocus() async {}
 
   @override
-  Future<void> setAudioDevice(AudioDevice device) async {
-    // Default no-op, overridden by platforms that support it
-  }
+  // ignore: no-empty-block - base no-op, overridden by platform subclasses
+  Future<void> setAudioDevice(AudioDevice device) async {}
 
   @override
-  Future<void> setAudioPassthrough(bool enabled) async {
-    // Default no-op, overridden by platforms that support it
-  }
+  // ignore: no-empty-block - base no-op, overridden by platform subclasses
+  Future<void> setAudioPassthrough(bool enabled) async {}
 
   // ============================================
   // Lifecycle

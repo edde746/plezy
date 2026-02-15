@@ -41,7 +41,7 @@ class CompanionRemoteReceiver {
   VoidCallback? onAudioTracks;
   VoidCallback? onFullscreen;
 
-  void handleCommand(RemoteCommand command, BuildContext? context) {
+  void handleCommand(RemoteCommand command, BuildContext? _) {
     appLogger.d('CompanionRemoteReceiver: Handling command: ${command.type}');
 
     // Switch to keyboard mode so focus visuals render

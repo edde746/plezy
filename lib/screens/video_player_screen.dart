@@ -769,12 +769,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (playQueue != null && playQueue.items != null && playQueue.items!.isNotEmpty) {
         // Initialize playback state with the play queue
-        await playbackState.setPlaybackFromPlayQueue(
-          playQueue,
-          showRatingKey,
-          serverId: widget.metadata.serverId,
-          serverName: widget.metadata.serverName,
-        );
+        await playbackState.setPlaybackFromPlayQueue(playQueue, showRatingKey);
 
         // Set the client for loading more items
         playbackState.setClient(client);
@@ -797,13 +792,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     try {
-      // Use server-specific client for this metadata
-      final client = _getClientForMetadata(context);
-
       // Load adjacent episodes using the service
       final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
         context: context,
-        client: client,
         metadata: widget.metadata,
       );
 
@@ -882,8 +873,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           final result = await client.tuneChannel(widget.liveDvrKey!, channel.key);
           if (result == null) throw Exception('Failed to tune channel');
 
-          streamUrl = '${client.config.baseUrl}${result.streamPath}'
-              .withPlexToken(client.config.token);
+          streamUrl = '${client.config.baseUrl}${result.streamPath}'.withPlexToken(client.config.token);
 
           _liveSessionIdentifier = result.sessionIdentifier;
           _liveSessionPath = result.sessionPath;
@@ -1044,23 +1034,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           try {
             await _addExternalSubtitles(result.externalSubtitles);
           } finally {
-            if (player != null && mounted) {
-              await player!.play();
-              final pos = player!.state.position;
-              try {
-                await player!.seek(pos.inMilliseconds > 0 ? pos : Duration.zero);
-              } catch (e) {
-                appLogger.w('Non-critical seek after subtitle load failed', error: e);
-              }
-
-              // Fallback if playbackRestart doesn't fire
-              Future.delayed(const Duration(seconds: 3), () {
-                if (_waitingForExternalSubsTrackSelection && mounted) {
-                  _waitingForExternalSubsTrackSelection = false;
-                  _applyTrackSelection();
-                }
-              });
-            }
+            await _resumeAfterSubtitleLoad();
           }
         } else {
           _trackLoadingSubscription?.cancel();
@@ -1082,6 +1056,27 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
+  }
+
+  /// Resume playback after external subtitles have been loaded (or failed to load).
+  Future<void> _resumeAfterSubtitleLoad() async {
+    if (player == null || !mounted) return;
+
+    await player!.play();
+    final pos = player!.state.position;
+    try {
+      await player!.seek(pos.inMilliseconds > 0 ? pos : Duration.zero);
+    } catch (e) {
+      appLogger.w('Non-critical seek after subtitle load failed', error: e);
+    }
+
+    // Fallback if playbackRestart doesn't fire
+    Future.delayed(const Duration(seconds: 3), () {
+      if (_waitingForExternalSubsTrackSelection && mounted) {
+        _waitingForExternalSubsTrackSelection = false;
+        _applyTrackSelection();
+      }
+    });
   }
 
   /// Start playback for offline/downloaded content
@@ -1586,6 +1581,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final settings = await SettingsService.getInstance();
       final autoPlayEnabled = settings.getAutoPlayNextEpisode();
 
+      if (!mounted) return;
       setState(() {
         _showPlayNextDialog = true;
         _autoPlayCountdown = autoPlayEnabled ? 5 : -1;
@@ -1749,6 +1745,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final channel = channels[newIndex];
     appLogger.d('Switching to channel: ${channel.displayName} (${channel.key})');
 
+    if (!mounted) return;
     setState(() => _hasFirstFrame.value = false);
 
     try {
@@ -1775,6 +1772,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _liveRatingKey = result.metadata.ratingKey;
       _liveDurationMs = result.metadata.duration;
 
+      if (!mounted) return;
       setState(() {
         _liveChannelIndex = newIndex;
         _liveChannelName = channel.displayName;
@@ -2231,17 +2229,27 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       // Watch Together not available, default to can control
                     }
 
+                    VoidCallback? onNext;
+                    if (widget.isLive) {
+                      onNext = _hasNextChannel ? () => _switchLiveChannel(1) : null;
+                    } else {
+                      onNext = (_nextEpisode != null && _canNavigateEpisodes()) ? _playNext : null;
+                    }
+
+                    VoidCallback? onPrevious;
+                    if (widget.isLive) {
+                      onPrevious = _hasPreviousChannel ? () => _switchLiveChannel(-1) : null;
+                    } else {
+                      onPrevious = (_previousEpisode != null && _canNavigateEpisodes()) ? _playPrevious : null;
+                    }
+
                     return Video(
                       player: player!,
                       controls: (context) => plexVideoControlsBuilder(
                         player!,
                         widget.metadata,
-                        onNext: widget.isLive
-                            ? (_hasNextChannel ? () => _switchLiveChannel(1) : null)
-                            : ((_nextEpisode != null && _canNavigateEpisodes()) ? _playNext : null),
-                        onPrevious: widget.isLive
-                            ? (_hasPreviousChannel ? () => _switchLiveChannel(-1) : null)
-                            : ((_previousEpisode != null && _canNavigateEpisodes()) ? _playPrevious : null),
+                        onNext: onNext,
+                        onPrevious: onPrevious,
                         availableVersions: _availableVersions,
                         selectedMediaIndex: widget.selectedMediaIndex,
                         onTogglePIPMode: _togglePIPMode,
@@ -2268,6 +2276,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
                         controlsVisible: _controlsVisible,
                         shaderService: _shaderService,
+                        // ignore: no-empty-block - setState triggers rebuild to reflect shader change
                         onShaderChanged: () => setState(() {}),
                         thumbnailUrlBuilder: _hasThumbnails && _currentMediaInfo?.partId != null
                             ? (Duration time) => _buildThumbnailUrl(context, time)!
@@ -2299,7 +2308,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: const BorderRadius.all(Radius.circular(12)),
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -2500,7 +2509,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                     child: Center(
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.all(Radius.circular(20)),
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

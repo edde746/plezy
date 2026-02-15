@@ -18,7 +18,7 @@ class PlexCacheParser {
   static Map<String, dynamic>? extractFirstMetadata(Map<String, dynamic>? cached) {
     final list = extractMetadataList(cached);
     if (list == null || list.isEmpty) return null;
-    return list[0] as Map<String, dynamic>;
+    return list.first as Map<String, dynamic>;
   }
 
   /// Check if a cached response has valid metadata

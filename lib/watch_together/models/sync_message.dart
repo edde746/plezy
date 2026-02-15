@@ -304,10 +304,8 @@ class SyncMessage {
     final map = jsonDecode(jsonString) as Map<String, dynamic>;
 
     final typeString = map['t'] as String;
-    final type = SyncMessageType.values.firstWhere(
-      (t) => t.name == typeString,
-      orElse: () => throw FormatException('Unknown message type: $typeString'),
-    );
+    final type =
+        SyncMessageType.values.asNameMap()[typeString] ?? (throw FormatException('Unknown message type: $typeString'));
 
     return SyncMessage(
       type: type,

@@ -63,11 +63,9 @@ class LiveTvProgram {
       parentIndex: (json['parentIndex'] as num?)?.toInt(),
       thumb: json['thumb'] as String? ?? json['grandparentThumb'] as String?,
       art: json['art'] as String?,
-      channelIdentifier: json['channelIdentifier'] as String?
-          ?? media?['channelIdentifier']?.toString()
-          ?? channel?['id']?.toString(),
-      channelCallSign: json['channelCallSign'] as String?
-          ?? media?['channelCallSign'] as String?,
+      channelIdentifier:
+          json['channelIdentifier'] as String? ?? media?['channelIdentifier']?.toString() ?? channel?['id']?.toString(),
+      channelCallSign: json['channelCallSign'] as String? ?? media?['channelCallSign'] as String?,
       live: json['live'] == true || json['live'] == 1 || json['live'] == '1',
       premiere: json['premiere'] == true || json['premiere'] == 1 || json['premiere'] == '1',
     );

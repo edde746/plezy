@@ -252,9 +252,13 @@ class CompanionRemotePeerService {
                 _failedAuthAttempts++;
                 if (_failedAuthAttempts >= _maxFailedAuthAttempts) {
                   _authLockoutUntil = DateTime.now().add(_authLockoutDuration);
-                  appLogger.w('CompanionRemote: Too many failed auth attempts, locked out for ${_authLockoutDuration.inSeconds}s');
+                  appLogger.w(
+                    'CompanionRemote: Too many failed auth attempts, locked out for ${_authLockoutDuration.inSeconds}s',
+                  );
                 }
-                appLogger.w('CompanionRemote: Invalid credentials (attempt $_failedAuthAttempts/$_maxFailedAuthAttempts)');
+                appLogger.w(
+                  'CompanionRemote: Invalid credentials (attempt $_failedAuthAttempts/$_maxFailedAuthAttempts)',
+                );
                 socket.add(jsonEncode({'type': 'authFailed', 'message': 'Invalid session ID or PIN'}));
                 socket.close(4003, 'Invalid credentials');
               }
@@ -458,7 +462,7 @@ class CompanionRemotePeerService {
         command.type != RemoteCommandType.deviceInfo;
   }
 
-  void _sendAck(RemoteCommand command) {
+  void _sendAck(RemoteCommand _) {
     sendCommand(const RemoteCommand(type: RemoteCommandType.ack));
   }
 

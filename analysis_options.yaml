@@ -8,8 +8,62 @@ analyzer:
     - dart_code_linter
 
 dart_code_linter:
+  extends:
+    - package:dart_code_linter/presets/recommended.yaml
+
   rules:
-    - avoid-unused-parameters
+    # --- Flutter rules (on top of recommended) ---
+    - avoid-border-all
+    - avoid-shrink-wrap-in-lists
+    - avoid-expanded-as-spacer
+    - avoid-wrapping-in-padding
+    - prefer-const-border-radius
+    - prefer-correct-edge-insets-constructor
+    - prefer-define-hero-tag
+    - use-setstate-synchronously
+
+    # --- Additional useful Dart rules ---
+    - avoid-cascade-after-if-null
+    - avoid-collection-methods-with-unrelated-types
+    - avoid-unnecessary-type-assertions
+    - avoid-unrelated-type-assertions
+    - double-literal-format
+    - prefer-first
+    - prefer-last
+    - prefer-enums-by-name
+    - prefer-commenting-analyzer-ignores
+
+    # --- Disable noisy rules from recommended preset ---
+    - no-magic-number: false
+    - avoid-dynamic: false
+    - format-comment: false
+    - newline-before-return: false
+    - prefer-moving-to-variable: false
+    - member-ordering: false
+    - prefer-extracting-callbacks: false
+    - avoid-returning-widgets: false
+    - no-equal-arguments: false
+    - avoid-passing-async-when-sync-expected: false
+    - avoid-redundant-async: false
+    - no-empty-block: false
+    - prefer-trailing-comma: false
+    - avoid-non-null-assertion: false
+    - prefer-conditional-expressions: false
+
+  metrics:
+    cyclomatic-complexity: 70
+    halstead-volume: 16000
+    maintainability-index: 8
+    maximum-nesting-level: 7
+    number-of-parameters: 25
+    number-of-methods: 150
+    source-lines-of-code: 500
+
+  anti-patterns:
+    - long-method:
+        lines-of-code: 500
+    - long-parameter-list:
+        number-of-parameters: 25
 
 formatter:
   page_width: 120

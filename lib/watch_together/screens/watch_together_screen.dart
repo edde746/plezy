@@ -347,7 +347,7 @@ class _ActiveSessionContent extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: Colors.amber.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: const BorderRadius.all(Radius.circular(12)),
                             ),
                             child: Text(
                               t.watchTogether.host,
@@ -419,7 +419,7 @@ class _SessionCodeRow extends StatelessWidget {
 
     return InkWell(
       onTap: () => _copySessionCode(context),
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: const BorderRadius.all(Radius.circular(4)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(

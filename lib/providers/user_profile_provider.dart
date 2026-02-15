@@ -306,8 +306,8 @@ class UserProfileProvider extends ChangeNotifier {
       if (e is DioException && e.response?.statusCode == 403) {
         final errors = e.response?.data['errors'] as List?;
         if (errors != null && errors.isNotEmpty) {
-          final errorCode = errors[0]['code'] as int?;
-          final errorMessage = errors[0]['message'] as String?;
+          final errorCode = errors.first['code'] as int?;
+          final errorMessage = errors.first['message'] as String?;
 
           // Error code 1041 means invalid PIN
           if (errorCode == 1041) {
@@ -425,7 +425,7 @@ class UserProfileProvider extends ChangeNotifier {
 
           // Perform full profile switch which includes API calls and token updates
           final userToSwitchTo = _currentUser!;
-          // ignore: use_build_context_synchronously
+          // ignore: use_build_context_synchronously - context is checked via mounted guard above
           final success = await switchToUser(userToSwitchTo, contextForSwitch);
 
           if (success) {

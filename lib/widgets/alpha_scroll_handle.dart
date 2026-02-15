@@ -103,7 +103,7 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
     });
   }
 
-  void _onDragStart(DragStartDetails details) {
+  void _onDragStart(DragStartDetails _) {
     final currentLetter = _helper.currentLetter(widget.currentFirstVisibleIndex);
     setState(() {
       _isDragging = true;
@@ -127,7 +127,7 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
     widget.onJump(_helper.indexForLetter(letter) ?? 0);
   }
 
-  void _onDragEnd(DragEndDetails details) {
+  void _onDragEnd(DragEndDetails _) {
     setState(() {
       _isDragging = false;
       _dragLetter = null;
@@ -183,15 +183,13 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
                       height: _handleHeight + _touchTargetVerticalPadding * 2,
                       child: Align(
                         alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 2),
-                          child: Container(
-                            width: _handleWidth,
-                            height: _handleHeight,
-                            decoration: BoxDecoration(
-                              color: colorScheme.onSurface.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(_handleRadius),
-                            ),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 2),
+                          width: _handleWidth,
+                          height: _handleHeight,
+                          decoration: BoxDecoration(
+                            color: colorScheme.onSurface.withValues(alpha: 0.5),
+                            borderRadius: const BorderRadius.all(Radius.circular(_handleRadius)),
                           ),
                         ),
                       ),

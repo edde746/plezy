@@ -58,7 +58,7 @@ class PlaylistItemCard extends StatelessWidget {
       // Row is focused - use visible border like FocusableWrapper
       cardColor = colorScheme.surfaceContainerHighest;
       cardShape = RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
         side: BorderSide(color: colorScheme.primary, width: 2.5),
       );
     }
@@ -81,6 +81,7 @@ class PlaylistItemCard extends StatelessWidget {
                 // Wrapped in GestureDetector to consume long-press and prevent context menu
                 if (canReorder)
                   GestureDetector(
+                    // ignore: no-empty-block - consumes long-press to prevent context menu on drag
                     onLongPress: () {},
                     child: ReorderableDragStartListener(
                       index: index,
@@ -94,7 +95,7 @@ class PlaylistItemCard extends StatelessWidget {
                           decoration: isDragHandleFocused
                               ? BoxDecoration(
                                   color: colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                                 )
                               : null,
                           child: AppIcon(
@@ -157,7 +158,10 @@ class PlaylistItemCard extends StatelessWidget {
                 // Remove button
                 Container(
                   decoration: isRemoveButtonFocused
-                      ? BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(20))
+                      ? BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: const BorderRadius.all(Radius.circular(20)),
+                        )
                       : null,
                   child: IconButton(
                     icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
@@ -182,7 +186,7 @@ class PlaylistItemCard extends StatelessWidget {
   Widget _buildPosterImage(BuildContext context) {
     final posterUrl = item.posterThumb();
     return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: const BorderRadius.all(Radius.circular(6)),
       child: PlexOptimizedImage.poster(
         client: _getClientForItem(context),
         imagePath: posterUrl,
@@ -199,7 +203,7 @@ class PlaylistItemCard extends StatelessWidget {
     return Container(
       width: 60,
       height: 90,
-      decoration: BoxDecoration(color: Colors.grey[850], borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: Colors.grey[850], borderRadius: const BorderRadius.all(Radius.circular(6))),
       child: const AppIcon(Symbols.movie_rounded, fill: 1, color: Colors.grey, size: 24),
     );
   }

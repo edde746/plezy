@@ -108,7 +108,7 @@ class MobileVideoControls extends StatelessWidget {
     return DesktopAppBarHelper.wrapWithGestureDetector(topBar, opaque: true);
   }
 
-  Widget _buildPlaybackControls(BuildContext context) {
+  Widget _buildPlaybackControls(BuildContext _) {
     // Hide all playback controls in host-only mode for non-host
     if (!canControl) {
       return const SizedBox.shrink();
@@ -117,7 +117,7 @@ class MobileVideoControls extends StatelessWidget {
     return FirstFrameGuard(hasFirstFrame: hasFirstFrame, builder: (context) => _buildPlaybackControlsContent(context));
   }
 
-  Widget _buildPlaybackControlsContent(BuildContext context) {
+  Widget _buildPlaybackControlsContent(BuildContext _) {
     return PlayPauseStreamBuilder(
       player: player,
       builder: (context, isPlaying) {
@@ -164,7 +164,7 @@ class MobileVideoControls extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomBar(BuildContext context) {
+  Widget _buildBottomBar(BuildContext _) {
     if (isLive) {
       // For live TV, show channel name instead of timeline
       return Padding(
@@ -173,10 +173,7 @@ class MobileVideoControls extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(4),
-              ),
+              decoration: BoxDecoration(color: Colors.red, borderRadius: const BorderRadius.all(Radius.circular(4))),
               child: Text(
                 t.liveTv.live,
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),

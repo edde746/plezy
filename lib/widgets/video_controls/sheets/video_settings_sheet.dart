@@ -155,6 +155,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   Future<void> _loadSettings() async {
     final settings = await SettingsService.getInstance();
+    if (!mounted) return;
     setState(() {
       _enableHDR = settings.getEnableHDR();
       _showPerformanceOverlay = settings.getShowPerformanceOverlay();
@@ -166,6 +167,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final newValue = !_enableHDR;
     final settings = await SettingsService.getInstance();
     await settings.setEnableHDR(newValue);
+    if (!mounted) return;
     setState(() {
       _enableHDR = newValue;
     });
@@ -177,6 +179,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final newValue = !_showPerformanceOverlay;
     final settings = await SettingsService.getInstance();
     await settings.setShowPerformanceOverlay(newValue);
+    if (!mounted) return;
     setState(() {
       _showPerformanceOverlay = newValue;
     });
@@ -186,6 +189,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final newValue = !_autoPlayNextEpisode;
     final settings = await SettingsService.getInstance();
     await settings.setAutoPlayNextEpisode(newValue);
+    if (!mounted) return;
     setState(() {
       _autoPlayNextEpisode = newValue;
     });
@@ -282,7 +286,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           builder: (context, _) {
             final isActive = sleepTimer.isActive;
             return _SettingsMenuItem(
-              icon: isActive ? Symbols.bedtime_rounded : Symbols.bedtime_rounded,
+              icon: Symbols.bedtime_rounded,
               title: t.videoSettings.sleepTimer,
               valueText: _formatSleepTimer(sleepTimer),
               isHighlighted: isActive,
@@ -433,6 +437,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       onOffsetChanged: (offset) async {
         final settings = await SettingsService.getInstance();
         await settings.setAudioSyncOffset(offset);
+        if (!mounted) return;
         setState(() {
           _audioSyncOffset = offset;
         });
@@ -449,6 +454,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       onOffsetChanged: (offset) async {
         final settings = await SettingsService.getInstance();
         await settings.setSubtitleSyncOffset(offset);
+        if (!mounted) return;
         setState(() {
           _subtitleSyncOffset = offset;
         });
@@ -556,9 +562,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       child: BaseVideoControlSheet(
         title: _getTitle(),
         icon: _getIcon(),
-        iconColor: isIconActive
-            ? Colors.amber
-            : (_currentView == _SettingsView.shader && isShaderActive ? Colors.amber : Colors.white),
+        iconColor: () {
+          if (isIconActive) return Colors.amber;
+          if (_currentView == _SettingsView.shader && isShaderActive) return Colors.amber;
+          return Colors.white;
+        }(),
         onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
         child: () {
           switch (_currentView) {

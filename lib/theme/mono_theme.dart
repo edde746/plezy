@@ -3,29 +3,32 @@ import 'mono_tokens.dart';
 
 ThemeData monoTheme({required bool dark, bool oled = false}) {
   // neutral greys tuned for crisp contrast
-  final c = oled
-      ? (
-          bg: const Color(0xFF000000), // Pure black for OLED
-          surface: const Color(0xFF0A0A0A), // Very dark gray
-          outline: const Color(0x1FFFFFFF),
-          text: const Color(0xFFEDEDED),
-          textMuted: const Color(0x99EDEDED),
-        )
-      : dark
-      ? (
-          bg: const Color(0xFF0E0F12),
-          surface: const Color(0xFF15171C),
-          outline: const Color(0x1FFFFFFF),
-          text: const Color(0xFFEDEDED),
-          textMuted: const Color(0x99EDEDED),
-        )
-      : (
-          bg: const Color(0xFFF7F7F8),
-          surface: const Color(0xFFFFFFFF),
-          outline: const Color(0x19000000),
-          text: const Color(0xFF111111),
-          textMuted: const Color(0x99111111),
-        );
+  final ({Color bg, Color surface, Color outline, Color text, Color textMuted}) c;
+  if (oled) {
+    c = (
+      bg: const Color(0xFF000000), // Pure black for OLED
+      surface: const Color(0xFF0A0A0A), // Very dark gray
+      outline: const Color(0x1FFFFFFF),
+      text: const Color(0xFFEDEDED),
+      textMuted: const Color(0x99EDEDED),
+    );
+  } else if (dark) {
+    c = (
+      bg: const Color(0xFF0E0F12),
+      surface: const Color(0xFF15171C),
+      outline: const Color(0x1FFFFFFF),
+      text: const Color(0xFFEDEDED),
+      textMuted: const Color(0x99EDEDED),
+    );
+  } else {
+    c = (
+      bg: const Color(0xFFF7F7F8),
+      surface: const Color(0xFFFFFFFF),
+      outline: const Color(0x19000000),
+      text: const Color(0xFF111111),
+      textMuted: const Color(0x99111111),
+    );
+  }
 
   final isDark = dark || oled;
 
@@ -92,7 +95,7 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       color: c.surface,
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(borderRadius: const BorderRadius.all(Radius.circular(14))),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -100,15 +103,15 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
         borderSide: BorderSide(color: c.outline),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
         borderSide: BorderSide(color: c.outline),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
         borderSide: BorderSide(color: c.text.withValues(alpha: 0.5)),
       ),
       hintStyle: TextStyle(color: c.textMuted),
@@ -130,7 +133,7 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       labelTextStyle: WidgetStatePropertyAll(TextStyle(color: c.textMuted, fontSize: 11)),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final active = states.contains(WidgetState.selected);
-        return IconThemeData(opacity: active ? 1 : .6, size: 22, color: c.text);
+        return IconThemeData(opacity: active ? 1 : 0.6, size: 22, color: c.text);
       }),
     ),
   );

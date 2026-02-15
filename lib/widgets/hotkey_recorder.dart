@@ -42,9 +42,10 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
         .where((m) => !m.physicalKeys.contains(key))
         .toList();
 
-    _hotKey = HotKey(key: key, modifiers: modifiers.isNotEmpty ? modifiers : null);
+    setState(() {
+      _hotKey = HotKey(key: key, modifiers: modifiers.isNotEmpty ? modifiers : null);
+    });
     widget.onHotKeyRecorded(_hotKey!);
-    setState(() {});
     return true;
   }
 
@@ -85,8 +86,8 @@ class _VirtualKeyView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
       decoration: BoxDecoration(
         color: Theme.of(context).canvasColor,
-        border: Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(3),
+        border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
+        borderRadius: const BorderRadius.all(Radius.circular(3)),
         boxShadow: <BoxShadow>[BoxShadow(color: Colors.black.withValues(alpha: 0.3), offset: const Offset(0.0, 1.0))],
       ),
       child: Text(keyLabel, style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 12)),

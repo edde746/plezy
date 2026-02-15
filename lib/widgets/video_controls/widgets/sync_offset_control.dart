@@ -52,9 +52,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   void didUpdateWidget(SyncOffsetControl oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.initialOffset != oldWidget.initialOffset) {
-      setState(() {
-        _currentOffset = widget.initialOffset.toDouble();
-      });
+      _currentOffset = widget.initialOffset.toDouble();
     }
   }
 
@@ -148,7 +146,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
       child: Container(
         width: 48,
         height: 48,
-        decoration: BoxDecoration(color: Colors.grey[800], borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(color: Colors.grey[800], borderRadius: const BorderRadius.all(Radius.circular(8))),
         child: Icon(icon, color: Colors.white, size: 28),
       ),
     );

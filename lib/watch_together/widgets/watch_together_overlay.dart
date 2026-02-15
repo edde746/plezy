@@ -74,10 +74,10 @@ class _SessionIndicator extends StatelessWidget {
 
     return Material(
       color: Colors.black54,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: const BorderRadius.all(Radius.circular(20)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
@@ -106,7 +106,10 @@ class _SessionIndicator extends StatelessWidget {
                 const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: const BorderRadius.all(Radius.circular(4)),
+                  ),
                   child: Text(
                     t.watchTogether.hostBadge,
                     style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
@@ -161,7 +164,7 @@ class _SessionMenuSheet extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: const BorderRadius.all(Radius.circular(12)),
                   ),
                   child: Text(
                     provider.controlMode == ControlMode.hostOnly
@@ -178,12 +181,12 @@ class _SessionMenuSheet extends StatelessWidget {
               const SizedBox(height: 12),
               InkWell(
                 onTap: () => _copySessionCode(context, provider.sessionId!),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: const BorderRadius.all(Radius.circular(8)),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -337,13 +340,14 @@ class _ParticipantNotificationOverlayState extends State<ParticipantNotification
             final text = n.event.type == ParticipantEventType.joined
                 ? t.watchTogether.participantJoined(name: n.event.displayName)
                 : t.watchTogether.participantLeft(name: n.event.displayName);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-                child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 12)),
+            return Container(
+              margin: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.all(Radius.circular(20)),
               ),
+              child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 12)),
             );
           }).toList(),
         ),
@@ -377,7 +381,10 @@ class SyncingIndicator extends StatelessWidget {
           child: Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

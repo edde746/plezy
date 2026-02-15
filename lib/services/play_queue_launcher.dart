@@ -195,7 +195,7 @@ class PlayQueueLauncher {
     // Set up playback state
     final playbackState = context.read<PlaybackStateProvider>();
     playbackState.setClient(client);
-    await playbackState.setPlaybackFromPlayQueue(playQueue, ratingKey, serverId: serverId, serverName: serverName);
+    await playbackState.setPlaybackFromPlayQueue(playQueue, ratingKey);
 
     if (!context.mounted) return const PlayQueueError('Context not mounted');
 

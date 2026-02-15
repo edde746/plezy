@@ -107,7 +107,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
       message: t.collections.deleteConfirm(title: widget.collection.title),
     );
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
     if (!mounted) return;
 
     try {

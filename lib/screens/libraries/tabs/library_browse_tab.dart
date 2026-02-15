@@ -298,6 +298,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       // Check if request was cancelled
       if (currentRequestId != _requestId) return;
 
+      if (!mounted) return;
       setState(() {
         _filters = filters;
         _sortOptions = sorts;
@@ -380,6 +381,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
       if (currentRequestId != _requestId) return;
 
+      if (!mounted) return;
       setState(() {
         if (loadMore) {
           items.addAll(loadedItems);
@@ -914,9 +916,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   /// Builds the chips bar widget
   Widget _buildChipsBar() {
+    VoidCallback? groupingNavigateRight;
+    if (_isFiltersChipVisible) {
+      groupingNavigateRight = () => _filtersChipFocusNode.requestFocus();
+    } else if (_isSortChipVisible) {
+      groupingNavigateRight = () => _sortChipFocusNode.requestFocus();
+    }
+
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       alignment: Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -930,11 +939,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             onNavigateDown: _navigateToGrid,
             onNavigateUp: widget.onBack,
             onNavigateLeft: _navigateToSidebar,
-            onNavigateRight: _isFiltersChipVisible
-                ? () => _filtersChipFocusNode.requestFocus()
-                : _isSortChipVisible
-                ? () => _sortChipFocusNode.requestFocus()
-                : null,
+            onNavigateRight: groupingNavigateRight,
             onBack: widget.onBack,
           ),
           const SizedBox(width: 8),

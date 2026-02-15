@@ -62,11 +62,13 @@ class _PairingScreenState extends State<PairingScreen> {
 
     try {
       await context.read<CompanionRemoteProvider>().loadRecentSessions();
+      if (!mounted) return;
       setState(() {
         _isDiscovering = false;
       });
     } catch (e) {
       appLogger.e('Failed to load recent sessions', error: e);
+      if (!mounted) return;
       setState(() {
         _isDiscovering = false;
         _errorMessage = t.companionRemote.pairing.failedToLoadRecent(error: e.toString());
@@ -144,7 +146,7 @@ class _PairingScreenState extends State<PairingScreen> {
     // New format: ip|port|sessionId|pin (4 parts separated by pipe)
     final parts = data.split('|');
     if (parts.length == 4) {
-      final ip = parts[0];
+      final ip = parts.first;
       final port = parts[1];
       final sessionId = parts[2];
       final pin = parts[3];
@@ -185,6 +187,7 @@ class _PairingScreenState extends State<PairingScreen> {
 
   Future<void> _pasteFromClipboard(TextEditingController controller) async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
     if (data?.text != null) {
       setState(() {
         controller.text = data!.text!;
@@ -212,8 +215,16 @@ class _PairingScreenState extends State<PairingScreen> {
             segments: [
               ButtonSegment(value: 0, label: Text(t.companionRemote.pairing.recent), icon: const Icon(Icons.history)),
               if (_isMobile)
-                ButtonSegment(value: _scanTabIndex, label: Text(t.companionRemote.pairing.scan), icon: const Icon(Icons.qr_code_scanner)),
-              ButtonSegment(value: _manualTabIndex, label: Text(t.companionRemote.pairing.manual), icon: const Icon(Icons.keyboard)),
+                ButtonSegment(
+                  value: _scanTabIndex,
+                  label: Text(t.companionRemote.pairing.scan),
+                  icon: const Icon(Icons.qr_code_scanner),
+                ),
+              ButtonSegment(
+                value: _manualTabIndex,
+                label: Text(t.companionRemote.pairing.manual),
+                icon: const Icon(Icons.keyboard),
+              ),
             ],
             selected: {_selectedTab},
             onSelectionChanged: (Set<int> selection) {
@@ -239,11 +250,11 @@ class _PairingScreenState extends State<PairingScreen> {
       children: [
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
                 child: MobileScanner(
                   controller: _scannerController ??= MobileScannerController(),
                   onDetect: (capture) {
@@ -264,7 +275,9 @@ class _PairingScreenState extends State<PairingScreen> {
                             Text(
                               error.errorCode == MobileScannerErrorCode.permissionDenied
                                   ? t.companionRemote.pairing.cameraPermissionRequired
-                                  : t.companionRemote.pairing.cameraError(error: error.errorDetails?.message ?? error.errorCode.name),
+                                  : t.companionRemote.pairing.cameraError(
+                                      error: error.errorDetails?.message ?? error.errorCode.name,
+                                    ),
                               textAlign: TextAlign.center,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
@@ -279,7 +292,7 @@ class _PairingScreenState extends State<PairingScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
           child: Column(
             children: [
               Text(
@@ -351,7 +364,10 @@ class _PairingScreenState extends State<PairingScreen> {
                       children: [
                         Icon(Icons.devices_other, size: 48, color: Theme.of(context).colorScheme.outline),
                         const SizedBox(height: 16),
-                        Text(t.companionRemote.pairing.noRecentConnections, style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          t.companionRemote.pairing.noRecentConnections,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           t.companionRemote.pairing.connectUsingManual,
@@ -445,7 +461,11 @@ class _PairingScreenState extends State<PairingScreen> {
           children: [
             const Icon(Icons.keyboard, size: 64, color: Colors.blue),
             const SizedBox(height: 24),
-            Text(t.companionRemote.pairing.pairWithDesktop, style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
+            Text(
+              t.companionRemote.pairing.pairWithDesktop,
+              style: Theme.of(context).textTheme.headlineMedium,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
             Text(
               t.companionRemote.pairing.enterSessionDetails,
@@ -573,18 +593,10 @@ class _PairingScreenState extends State<PairingScreen> {
             const SizedBox(height: 16),
             Text(t.companionRemote.pairing.tips, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            _buildTipCard(
-              context,
-              Icons.computer,
-              t.companionRemote.pairing.tipDesktop,
-            ),
+            _buildTipCard(context, Icons.computer, t.companionRemote.pairing.tipDesktop),
             if (_isMobile) ...[
               const SizedBox(height: 8),
-              _buildTipCard(
-                context,
-                Icons.qr_code,
-                t.companionRemote.pairing.tipScan,
-              ),
+              _buildTipCard(context, Icons.qr_code, t.companionRemote.pairing.tipScan),
             ],
             const SizedBox(height: 8),
             _buildTipCard(context, Icons.wifi, t.companionRemote.pairing.tipWifi),

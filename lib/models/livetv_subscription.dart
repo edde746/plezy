@@ -59,8 +59,7 @@ class LiveTvSubscription {
   }
 
   /// Creation time as DateTime
-  DateTime? get createdAtTime =>
-      createdAt != null ? DateTime.fromMillisecondsSinceEpoch(createdAt! * 1000) : null;
+  DateTime? get createdAtTime => createdAt != null ? DateTime.fromMillisecondsSinceEpoch(createdAt! * 1000) : null;
 }
 
 /// Represents a setting within a DVR subscription
@@ -93,10 +92,7 @@ class SubscriptionSetting {
       final parts = (json['enumValues'] as String).split('|');
       options = parts.map((part) {
         final kv = part.split(':');
-        return SubscriptionSettingOption(
-          value: kv[0],
-          label: kv.length > 1 ? kv[1] : kv[0],
-        );
+        return SubscriptionSettingOption(value: kv.first, label: kv.length > 1 ? kv[1] : kv.first);
       }).toList();
     }
 

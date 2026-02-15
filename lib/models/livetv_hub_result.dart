@@ -7,11 +7,7 @@ class LiveTvHubResult {
   final String hubKey;
   final List<LiveTvHubEntry> entries;
 
-  LiveTvHubResult({
-    required this.title,
-    required this.hubKey,
-    required this.entries,
-  });
+  LiveTvHubResult({required this.title, required this.hubKey, required this.entries});
 }
 
 /// A single item in a live TV hub, holding both display metadata and EPG timing.

@@ -106,7 +106,7 @@ class WatchNextService {
     if (!contentId.startsWith('plezy_')) return null;
     final parts = contentId.substring(6).split('_');
     if (parts.length < 2) return null;
-    return (parts[0], parts.sublist(1).join('_'));
+    return (parts.first, parts.sublist(1).join('_'));
   }
 
   Map<String, dynamic> _convertToWatchNextItem(

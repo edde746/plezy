@@ -59,6 +59,7 @@ class FolderTreeItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final indentation = depth * 24.0;
+    final expandIcon = isExpanded ? Symbols.keyboard_arrow_down_rounded : Symbols.keyboard_arrow_right_rounded;
 
     return InkWell(
       onTap: _handleTap,
@@ -72,11 +73,7 @@ class FolderTreeItem extends StatelessWidget {
                 width: 24,
                 child: isLoading
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : AppIcon(
-                        isExpanded ? Symbols.keyboard_arrow_down_rounded : Symbols.keyboard_arrow_right_rounded,
-                        fill: 1,
-                        size: 20,
-                      ),
+                    : AppIcon(expandIcon, fill: 1, size: 20),
               )
             else
               const SizedBox(width: 24),

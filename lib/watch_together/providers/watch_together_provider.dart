@@ -282,7 +282,9 @@ class WatchTogetherProvider with ChangeNotifier {
       if (!isHost && peerId == _session?.hostPeerId) {
         _startHostReconnectGracePeriod();
       } else if (disconnectedName != null) {
-        _participantEventController.add(ParticipantEvent(displayName: disconnectedName, type: ParticipantEventType.left));
+        _participantEventController.add(
+          ParticipantEvent(displayName: disconnectedName, type: ParticipantEventType.left),
+        );
       }
 
       notifyListeners();
@@ -344,10 +346,15 @@ class WatchTogetherProvider with ChangeNotifier {
 
       case SyncMessageType.leave:
         if (message.peerId != null) {
-          final leavingName = _participants.where((p) => p.peerId == message.peerId).map((p) => p.displayName).firstOrNull;
+          final leavingName = _participants
+              .where((p) => p.peerId == message.peerId)
+              .map((p) => p.displayName)
+              .firstOrNull;
           _participants.removeWhere((p) => p.peerId == message.peerId);
           if (leavingName != null) {
-            _participantEventController.add(ParticipantEvent(displayName: leavingName, type: ParticipantEventType.left));
+            _participantEventController.add(
+              ParticipantEvent(displayName: leavingName, type: ParticipantEventType.left),
+            );
           }
           notifyListeners();
         }
@@ -510,7 +517,7 @@ class WatchTogetherProvider with ChangeNotifier {
   }
 
   /// Handle host exited player message (guest only)
-  void _handleHostExitedPlayer(SyncMessage message) {
+  void _handleHostExitedPlayer(SyncMessage _) {
     if (isHost) return; // Host doesn't need to handle their own exit
 
     appLogger.d('WatchTogether: Host exited player, callback set: ${onHostExitedPlayer != null}');

@@ -112,11 +112,9 @@ class CompanionRemoteProvider with ChangeNotifier {
           _handleDeviceInfo(command);
         } else if (command.type == RemoteCommandType.syncState) {
           _handleSyncState(command);
-        } else if (command.type == RemoteCommandType.ping ||
-            command.type == RemoteCommandType.pong ||
-            command.type == RemoteCommandType.ack) {
-          // Don't call callback for these
-        } else {
+        } else if (command.type != RemoteCommandType.ping &&
+            command.type != RemoteCommandType.pong &&
+            command.type != RemoteCommandType.ack) {
           onCommandReceived?.call(command);
         }
       },
@@ -136,10 +134,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _deviceDisconnectedSubscription = _peerService!.onDeviceDisconnected.listen((_) {
       appLogger.d('CompanionRemote: Device disconnected (intentional: $_intentionalDisconnect)');
       if (_intentionalDisconnect) {
-        _session = _session?.copyWith(
-          status: RemoteSessionStatus.disconnected,
-          clearConnectedDevice: true,
-        );
+        _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, clearConnectedDevice: true);
         notifyListeners();
       } else if (isHost) {
         // Host keeps the server running — the client will reconnect on its own
@@ -354,10 +349,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   void cancelReconnect() {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
-    _session = _session?.copyWith(
-      status: RemoteSessionStatus.disconnected,
-      clearConnectedDevice: true,
-    );
+    _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, clearConnectedDevice: true);
     notifyListeners();
   }
 

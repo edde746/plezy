@@ -32,7 +32,7 @@ class RecentRemoteSession {
       throw FormatException('Invalid QR code format - expected ip|port|sessionId|pin');
     }
 
-    final ip = parts[0];
+    final ip = parts.first;
     final port = parts[1];
     final sessionId = parts[2];
     final pin = parts[3];

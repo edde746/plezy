@@ -193,19 +193,15 @@ class UserAvatarWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (useTextLabels) {
-      // Return avatar with text labels below
-      return GestureDetector(
-        onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [_buildAvatar(context, theme), ..._buildTextLabels(context, theme)],
-        ),
-      );
-    } else {
-      // Return just the avatar (original behavior)
-      return GestureDetector(onTap: onTap, child: _buildAvatar(context, theme));
-    }
+    return useTextLabels
+        ? GestureDetector(
+            onTap: onTap,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [_buildAvatar(context, theme), ..._buildTextLabels(context, theme)],
+            ),
+          )
+        : GestureDetector(onTap: onTap, child: _buildAvatar(context, theme));
   }
 }
 

@@ -52,8 +52,8 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  borderRadius: BorderRadius.circular(6),
+                  border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
+                  borderRadius: const BorderRadius.all(Radius.circular(6)),
                 ),
                 child: Row(
                   children: [

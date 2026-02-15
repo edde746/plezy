@@ -79,5 +79,5 @@ class GridLayoutConstants {
   static const double mainAxisSpacing = 0;
 
   /// Standard grid padding
-  static EdgeInsets get gridPadding => const EdgeInsets.fromLTRB(8, 0, 8, 8);
+  static EdgeInsets get gridPadding => const EdgeInsets.only(left: 8, right: 8, bottom: 8);
 }

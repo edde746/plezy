@@ -15,10 +15,10 @@ class LibraryRefreshNotifier extends BaseNotifier<LibraryRefreshType> {
   LibraryRefreshNotifier._internal();
 
   /// Stream for collections tab (backward compatible)
-  Stream<void> get collectionsStream => stream.where((t) => t == LibraryRefreshType.collections).map((_) {});
+  Stream<void> get collectionsStream => stream.where((t) => t == LibraryRefreshType.collections).cast<void>();
 
   /// Stream for playlists tab (backward compatible)
-  Stream<void> get playlistsStream => stream.where((t) => t == LibraryRefreshType.playlists).map((_) {});
+  Stream<void> get playlistsStream => stream.where((t) => t == LibraryRefreshType.playlists).cast<void>();
 
   /// Notify that collections have changed
   void notifyCollectionsChanged() {

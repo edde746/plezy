@@ -62,7 +62,7 @@ class _CollapsibleTextState extends State<CollapsibleText> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
       ),
       child: Text(
         '\u00B7\u00B7\u00B7',

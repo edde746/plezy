@@ -200,12 +200,9 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final Directory dbFolder;
-    if (Platform.isAndroid || Platform.isIOS) {
-      dbFolder = await getApplicationDocumentsDirectory();
-    } else {
-      dbFolder = await getApplicationSupportDirectory();
-    }
+    final dbFolder = (Platform.isAndroid || Platform.isIOS)
+        ? await getApplicationDocumentsDirectory()
+        : await getApplicationSupportDirectory();
 
     final file = File(p.join(dbFolder.path, 'plezy_downloads.db'));
 

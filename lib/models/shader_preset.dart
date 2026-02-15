@@ -51,8 +51,8 @@ class Anime4KConfig {
 
   factory Anime4KConfig.fromJson(Map<String, dynamic> json) {
     return Anime4KConfig(
-      quality: Anime4KQuality.values.firstWhere((e) => e.name == json['quality'], orElse: () => Anime4KQuality.fast),
-      mode: Anime4KMode.values.firstWhere((e) => e.name == json['mode'], orElse: () => Anime4KMode.modeA),
+      quality: Anime4KQuality.values.asNameMap()[json['quality']] ?? Anime4KQuality.fast,
+      mode: Anime4KMode.values.asNameMap()[json['mode']] ?? Anime4KMode.modeA,
     );
   }
 }
@@ -207,7 +207,7 @@ class ShaderPreset {
     return ShaderPreset(
       id: id ?? 'custom',
       name: json['name'] as String? ?? 'Custom',
-      type: ShaderPresetType.values.firstWhere((e) => e.name == json['type'], orElse: () => ShaderPresetType.none),
+      type: ShaderPresetType.values.asNameMap()[json['type']] ?? ShaderPresetType.none,
       anime4kConfig: json['anime4kConfig'] != null ? Anime4KConfig.fromJson(json['anime4kConfig']) : null,
       nvscalerConfig: json['nvscalerConfig'] != null ? NVScalerConfig.fromJson(json['nvscalerConfig']) : null,
     );

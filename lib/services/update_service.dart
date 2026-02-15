@@ -18,8 +18,7 @@ class UpdateService {
 
   /// Check if update checking is enabled via build flag
   static bool get isUpdateCheckEnabled {
-    const enabled = bool.fromEnvironment('ENABLE_UPDATE_CHECK', defaultValue: false);
-    return enabled;
+    return const bool.fromEnvironment('ENABLE_UPDATE_CHECK', defaultValue: false);
   }
 
   /// Skip a specific version
@@ -132,13 +131,13 @@ class UpdateService {
 
   /// Check for updates on GitHub (manual check, ignores cooldown)
   /// Returns a map with update info, or null if no update or error
-  static Future<Map<String, dynamic>?> checkForUpdates({bool silent = false}) async {
+  static Future<Map<String, dynamic>?> checkForUpdates() {
     return _performUpdateCheck(respectCooldown: false);
   }
 
   /// Check for updates on startup (respects cooldown and skipped versions)
   /// Returns update info if available, null otherwise
-  static Future<Map<String, dynamic>?> checkForUpdatesOnStartup() async {
+  static Future<Map<String, dynamic>?> checkForUpdatesOnStartup() {
     return _performUpdateCheck(respectCooldown: true);
   }
 

@@ -77,7 +77,7 @@ class PlexClient {
   bool get isOfflineMode => _offlineMode;
 
   /// Custom response decoder that handles malformed UTF-8 gracefully
-  static String _lenientUtf8Decoder(List<int> responseBytes, RequestOptions options, ResponseBody responseBody) {
+  static String _lenientUtf8Decoder(List<int> responseBytes, RequestOptions _, ResponseBody _) {
     return utf8.decode(responseBytes, allowMalformed: true);
   }
 
@@ -183,13 +183,12 @@ class PlexClient {
       stopwatch.stop();
       String error;
       if (e is DioException) {
-        error = e.type == DioExceptionType.connectionTimeout
-            ? 'Connection timeout'
-            : e.type == DioExceptionType.receiveTimeout
-            ? 'Receive timeout'
-            : e.type == DioExceptionType.connectionError
-            ? 'Connection error'
-            : e.type.name;
+        error = switch (e.type) {
+          DioExceptionType.connectionTimeout => 'Connection timeout',
+          DioExceptionType.receiveTimeout => 'Receive timeout',
+          DioExceptionType.connectionError => 'Connection error',
+          _ => e.type.name,
+        };
         if (e.response?.statusCode != null) {
           error += ' (HTTP ${e.response!.statusCode})';
         }
@@ -381,10 +380,7 @@ class PlexClient {
   /// Uses cache when offline or as fallback on network error
   /// Note: OnDeck data is not relevant for offline mode
   /// Always fetches with chapters/markers but caches at base endpoint
-  ///
-  /// When [forceRefresh] is true, bypasses cache to get fresh OnDeck data.
-  /// Use this when cross-device sync is needed (e.g., after app resume).
-  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(String ratingKey, {bool forceRefresh = false}) async {
+  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(String ratingKey) async {
     // Cache key is always the base endpoint (no query params)
     final cacheKey = '/library/metadata/$ratingKey';
 
@@ -425,7 +421,6 @@ class PlexClient {
 
             return {'metadata': metadata, 'onDeckEpisode': onDeckEpisode};
           },
-          forceRefresh: forceRefresh,
         ) ??
         {'metadata': null, 'onDeckEpisode': null};
   }
@@ -468,7 +463,6 @@ class PlexClient {
   /// 5. If no cached data available, rethrow the network error
   /// Fetch data with cache fallback for offline mode and network errors.
   ///
-  /// When [forceRefresh] is true, skips reading from cache (still writes to cache).
   /// Use this to get fresh data when cross-device sync is needed.
   Future<T?> _fetchWithCacheFallback<T>({
     required String cacheKey,
@@ -476,7 +470,6 @@ class PlexClient {
     required T? Function(dynamic cachedData) parseCache,
     required T? Function(Response response) parseResponse,
     bool cacheResponse = true,
-    bool forceRefresh = false,
   }) async {
     if (_offlineMode) {
       final cached = await _cache.get(serverId, cacheKey);
@@ -1173,7 +1166,7 @@ class PlexClient {
   /// Delete a media item from the library
   /// This permanently removes the item and its associated files from the server
   /// Returns true if deletion was successful, false otherwise
-  Future<bool> deleteMediaItem(String ratingKey) async {
+  Future<bool> deleteMediaItem(String ratingKey) {
     return _wrapBoolApiCall(() => _dio.delete('/library/metadata/$ratingKey'), 'Failed to delete media item');
   }
 
@@ -1391,7 +1384,7 @@ class PlexClient {
 
   /// Get playlist content by playlist ID
   /// Returns the list of metadata items in the playlist
-  Future<List<PlexMetadata>> getPlaylist(String playlistId) async {
+  Future<List<PlexMetadata>> getPlaylist(String playlistId) {
     return _wrapListApiCall<PlexMetadata>(
       () => _dio.get('/playlists/$playlistId/items'),
       _extractMetadataList,
@@ -1402,7 +1395,7 @@ class PlexClient {
   /// Get all playlists
   /// Filters by playlistType=video by default
   /// Set smart to true/false to filter smart playlists, or null for all
-  Future<List<PlexPlaylist>> getPlaylists({String playlistType = 'video', bool? smart}) async {
+  Future<List<PlexPlaylist>> getPlaylists({String playlistType = 'video', bool? smart}) {
     final queryParams = <String, dynamic>{'playlistType': playlistType};
     if (smart != null) {
       queryParams['smart'] = smart ? '1' : '0';
@@ -1475,7 +1468,7 @@ class PlexClient {
   }
 
   /// Delete a playlist
-  Future<bool> deletePlaylist(String playlistId) async {
+  Future<bool> deletePlaylist(String playlistId) {
     return _wrapBoolApiCall(() => _dio.delete('/playlists/$playlistId'), 'Failed to delete playlist');
   }
 
@@ -1499,7 +1492,7 @@ class PlexClient {
   /// Remove an item from a playlist
   /// [playlistId] - The playlist to remove from
   /// [playlistItemId] - The playlist item ID to remove (from the item's playlistItemID field)
-  Future<bool> removeFromPlaylist({required String playlistId, required String playlistItemId}) async {
+  Future<bool> removeFromPlaylist({required String playlistId, required String playlistItemId}) {
     return _wrapBoolApiCall(
       () => _dio.delete('/playlists/$playlistId/items/$playlistItemId'),
       'Failed to remove from playlist',
@@ -1531,13 +1524,13 @@ class PlexClient {
   }
 
   /// Clear all items from a playlist
-  Future<bool> clearPlaylist(String playlistId) async {
+  Future<bool> clearPlaylist(String playlistId) {
     return _wrapBoolApiCall(() => _dio.delete('/playlists/$playlistId/items'), 'Failed to clear playlist');
   }
 
   /// Update playlist metadata (e.g., title, summary)
   /// Uses the same metadata editing mechanism as other items
-  Future<bool> updatePlaylist({required String playlistId, String? title, String? summary}) async {
+  Future<bool> updatePlaylist({required String playlistId, String? title, String? summary}) {
     final queryParams = <String, dynamic>{'type': 'playlist', 'id': playlistId};
 
     if (title != null) {
@@ -1577,7 +1570,7 @@ class PlexClient {
 
   /// Get items in a collection
   /// Returns the list of metadata items in the collection
-  Future<List<PlexMetadata>> getCollectionItems(String collectionId) async {
+  Future<List<PlexMetadata>> getCollectionItems(String collectionId) {
     return _wrapListApiCall<PlexMetadata>(
       () => _dio.get('/library/collections/$collectionId/children'),
       _extractMetadataList,
@@ -1622,7 +1615,7 @@ class PlexClient {
       if (container != null) {
         final metadata = container['Metadata'];
         if (metadata != null && (metadata as List).isNotEmpty) {
-          final collectionId = metadata[0]['ratingKey']?.toString();
+          final collectionId = metadata.first['ratingKey']?.toString();
           appLogger.d('Created collection with ID: $collectionId');
           return collectionId;
         }
@@ -1747,7 +1740,7 @@ class PlexClient {
   }
 
   /// Clear all items from a play queue
-  Future<bool> clearPlayQueue(int playQueueId) async {
+  Future<bool> clearPlayQueue(int playQueueId) {
     return _wrapBoolApiCall(() => _dio.delete('/playQueues/$playQueueId/items'), 'Failed to clear play queue');
   }
 
@@ -1890,7 +1883,7 @@ class PlexClient {
   /// Get library-specific playlists
   /// Filters playlists by checking if they contain items from the specified library
   /// This is a client-side filter since the API doesn't support sectionId for playlists
-  Future<List<PlexPlaylist>> getLibraryPlaylists({required String sectionId, String playlistType = 'video'}) async {
+  Future<List<PlexPlaylist>> getLibraryPlaylists({String playlistType = 'video'}) {
     // For now, return all video playlists
     // Future enhancement: filter by checking playlist items' library
     return getPlaylists(playlistType: playlistType);
@@ -1982,19 +1975,13 @@ class PlexClient {
 
   /// Get all DVR devices configured on this server
   Future<List<LiveTvDvr>> getDvrs() async {
-    return _wrapListApiCall<LiveTvDvr>(
-      () => _dio.get('/livetv/dvrs'),
-      (response) {
-        final container = _getMediaContainer(response);
-        if (container != null && container['Dvr'] != null) {
-          return (container['Dvr'] as List)
-              .map((json) => LiveTvDvr.fromJson(json as Map<String, dynamic>))
-              .toList();
-        }
-        return [];
-      },
-      'Failed to get DVRs',
-    );
+    return _wrapListApiCall<LiveTvDvr>(() => _dio.get('/livetv/dvrs'), (response) {
+      final container = _getMediaContainer(response);
+      if (container != null && container['Dvr'] != null) {
+        return (container['Dvr'] as List).map((json) => LiveTvDvr.fromJson(json as Map<String, dynamic>)).toList();
+      }
+      return [];
+    }, 'Failed to get DVRs');
   }
 
   /// Check if this server has at least one DVR configured
@@ -2008,32 +1995,36 @@ class PlexClient {
     final queryParams = <String, dynamic>{};
     if (lineup != null) queryParams['lineup'] = lineup;
 
-    return _wrapListApiCall<LiveTvChannel>(
-      () => _dio.get('/livetv/epg/channels', queryParameters: queryParams),
-      (response) {
-        final container = _getMediaContainer(response);
-        if (container != null && container['Channel'] is List && (container['Channel'] as List).isNotEmpty) {
-          appLogger.d('EPG channel sample: ${(container['Channel'] as List).first}');
-        }
-        if (container != null && container['Channel'] != null) {
-          return (container['Channel'] as List)
-              .map((json) => LiveTvChannel.fromJson(json as Map<String, dynamic>)
-                  .copyWith(serverId: serverId, serverName: serverName))
-              .where((ch) => ch.key.isNotEmpty)
-              .toList();
-        }
-        // Also check for Metadata key (some endpoints return channels there)
-        if (container != null && container['Metadata'] != null) {
-          return (container['Metadata'] as List)
-              .map((json) => LiveTvChannel.fromJson(json as Map<String, dynamic>)
-                  .copyWith(serverId: serverId, serverName: serverName))
-              .where((ch) => ch.key.isNotEmpty)
-              .toList();
-        }
-        return [];
-      },
-      'Failed to get EPG channels',
-    );
+    return _wrapListApiCall<LiveTvChannel>(() => _dio.get('/livetv/epg/channels', queryParameters: queryParams), (
+      response,
+    ) {
+      final container = _getMediaContainer(response);
+      if (container != null && container['Channel'] is List && (container['Channel'] as List).isNotEmpty) {
+        appLogger.d('EPG channel sample: ${(container['Channel'] as List).first}');
+      }
+      if (container != null && container['Channel'] != null) {
+        return (container['Channel'] as List)
+            .map(
+              (json) => LiveTvChannel.fromJson(
+                json as Map<String, dynamic>,
+              ).copyWith(serverId: serverId, serverName: serverName),
+            )
+            .where((ch) => ch.key.isNotEmpty)
+            .toList();
+      }
+      // Also check for Metadata key (some endpoints return channels there)
+      if (container != null && container['Metadata'] != null) {
+        return (container['Metadata'] as List)
+            .map(
+              (json) => LiveTvChannel.fromJson(
+                json as Map<String, dynamic>,
+              ).copyWith(serverId: serverId, serverName: serverName),
+            )
+            .where((ch) => ch.key.isNotEmpty)
+            .toList();
+      }
+      return [];
+    }, 'Failed to get EPG channels');
   }
 
   /// Cached EPG providers (discovered from /media/providers)
@@ -2087,12 +2078,20 @@ class PlexClient {
     return [];
   }
 
+  /// Parse a list of JSON items into [LiveTvProgram] objects, skipping any that fail.
+  List<LiveTvProgram> _parseLiveTvPrograms(List items) {
+    final programs = <LiveTvProgram>[];
+    for (final item in items) {
+      try {
+        programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
+      } catch (_) {}
+    }
+    return programs;
+  }
+
   /// Get guide/program data for channels (EPG grid data)
   /// Discovers grid endpoints from /media/providers on first call and queries all providers
-  Future<List<LiveTvProgram>> getEpgGrid({
-    int? beginsAt,
-    int? endsAt,
-  }) async {
+  Future<List<LiveTvProgram>> getEpgGrid({int? beginsAt, int? endsAt}) async {
     final providers = await _discoverEpgProviders();
     if (providers.isEmpty) return [];
 
@@ -2106,33 +2105,7 @@ class PlexClient {
       try {
         final programs = await _wrapListApiCall<LiveTvProgram>(
           () => _dio.get(provider.gridEndpoint, queryParameters: queryParams),
-          (response) {
-            final container = _getMediaContainer(response);
-            if (container != null && container['Metadata'] is List && (container['Metadata'] as List).isNotEmpty) {
-              appLogger.d('EPG grid sample from ${provider.identifier}: ${(container['Metadata'] as List).first}');
-            }
-            final programs = <LiveTvProgram>[];
-            if (container != null && container['Metadata'] != null) {
-              for (final item in container['Metadata'] as List) {
-                try {
-                  programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
-                } catch (_) {}
-              }
-            }
-            // Some responses nest programs inside Hub entries
-            if (container != null && container['Hub'] != null) {
-              for (final hub in container['Hub'] as List) {
-                if (hub is Map && hub['Metadata'] != null) {
-                  for (final item in hub['Metadata'] as List) {
-                    try {
-                      programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
-                    } catch (_) {}
-                  }
-                }
-              }
-            }
-            return programs;
-          },
+          (response) => _parseEpgGridResponse(response, provider.identifier),
           'Failed to get EPG grid from ${provider.identifier}',
         );
         appLogger.d('EPG grid from ${provider.identifier}: ${programs.length} programs');
@@ -2143,6 +2116,27 @@ class PlexClient {
     }
 
     return allPrograms;
+  }
+
+  /// Parse an EPG grid response into a list of [LiveTvProgram] objects.
+  List<LiveTvProgram> _parseEpgGridResponse(Response response, String providerIdentifier) {
+    final container = _getMediaContainer(response);
+    if (container != null && container['Metadata'] is List && (container['Metadata'] as List).isNotEmpty) {
+      appLogger.d('EPG grid sample from $providerIdentifier: ${(container['Metadata'] as List).first}');
+    }
+    final programs = <LiveTvProgram>[];
+    if (container != null && container['Metadata'] != null) {
+      programs.addAll(_parseLiveTvPrograms(container['Metadata'] as List));
+    }
+    // Some responses nest programs inside Hub entries
+    if (container != null && container['Hub'] != null) {
+      for (final hub in container['Hub'] as List) {
+        if (hub is Map && hub['Metadata'] != null) {
+          programs.addAll(_parseLiveTvPrograms(hub['Metadata'] as List));
+        }
+      }
+    }
+    return programs;
   }
 
   /// Get live TV hubs (What's On Now, etc.) from all EPG providers' discover endpoints.
@@ -2167,38 +2161,11 @@ class PlexClient {
         );
 
         final container = _getMediaContainer(response);
-        if (container != null && container['Hub'] != null) {
-          for (final hubJson in container['Hub'] as List) {
-            try {
-              final metadataList = hubJson['Metadata'] as List?;
-              if (metadataList == null || metadataList.isEmpty) continue;
+        if (container == null || container['Hub'] == null) continue;
 
-              final entries = <LiveTvHubEntry>[];
-              for (final itemJson in metadataList) {
-                if (itemJson is! Map<String, dynamic>) continue;
-
-                // Extract poster/art from Image array before parsing
-                _extractLiveTvImages(itemJson);
-
-                try {
-                  final metadata = PlexMetadata.fromJson(itemJson)
-                      .copyWith(serverId: serverId, serverName: serverName);
-                  final program = LiveTvProgram.fromJson(itemJson);
-                  entries.add(LiveTvHubEntry(metadata: metadata, program: program));
-                } catch (_) {}
-              }
-
-              if (entries.isNotEmpty) {
-                allHubs.add(LiveTvHubResult(
-                  title: hubJson['title'] as String? ?? 'Unknown',
-                  hubKey: hubJson['key'] as String? ?? '',
-                  entries: entries,
-                ));
-              }
-            } catch (e) {
-              appLogger.w('Failed to parse live TV hub', error: e);
-            }
-          }
+        for (final hubJson in container['Hub'] as List) {
+          final hub = _parseLiveTvHub(hubJson);
+          if (hub != null) allHubs.add(hub);
         }
       } catch (e) {
         appLogger.e('Failed to get live TV hubs from provider ${provider.identifier}', error: e);
@@ -2206,6 +2173,43 @@ class PlexClient {
     }
 
     return allHubs;
+  }
+
+  /// Parse a single hub JSON object into a [LiveTvHubResult], or null if parsing fails.
+  LiveTvHubResult? _parseLiveTvHub(dynamic hubJson) {
+    try {
+      final metadataList = hubJson['Metadata'] as List?;
+      if (metadataList == null || metadataList.isEmpty) return null;
+
+      final entries = <LiveTvHubEntry>[];
+      for (final itemJson in metadataList) {
+        if (itemJson is! Map<String, dynamic>) continue;
+        _extractLiveTvImages(itemJson);
+        final entry = _parseLiveTvHubEntry(itemJson);
+        if (entry != null) entries.add(entry);
+      }
+
+      if (entries.isEmpty) return null;
+      return LiveTvHubResult(
+        title: hubJson['title'] as String? ?? 'Unknown',
+        hubKey: hubJson['key'] as String? ?? '',
+        entries: entries,
+      );
+    } catch (e) {
+      appLogger.w('Failed to parse live TV hub', error: e);
+      return null;
+    }
+  }
+
+  /// Parse a single metadata item into a [LiveTvHubEntry], or null if parsing fails.
+  LiveTvHubEntry? _parseLiveTvHubEntry(Map<String, dynamic> itemJson) {
+    try {
+      final metadata = PlexMetadata.fromJson(itemJson).copyWith(serverId: serverId, serverName: serverName);
+      final program = LiveTvProgram.fromJson(itemJson);
+      return LiveTvHubEntry(metadata: metadata, program: program);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Extract poster/art URLs from the Image array in EPG metadata items.
@@ -2246,7 +2250,10 @@ class PlexClient {
   /// Tune to a live TV channel and set up the transcode session.
   ///
   /// Flow: tune → decision → return /start path (MKV-over-HTTP).
-  Future<({PlexMetadata metadata, String streamPath, String sessionIdentifier, String sessionPath})?> tuneChannel(String dvrKey, String channelIdentifier) async {
+  Future<({PlexMetadata metadata, String streamPath, String sessionIdentifier, String sessionPath})?> tuneChannel(
+    String dvrKey,
+    String channelIdentifier,
+  ) async {
     try {
       final sessionIdentifier = _generateSessionIdentifier();
 
@@ -2267,10 +2274,10 @@ class PlexClient {
       Map<String, dynamic>? metadataJson;
       final subscriptions = container['MediaSubscription'] as List?;
       if (subscriptions != null && subscriptions.isNotEmpty) {
-        final sub = subscriptions[0] as Map<String, dynamic>;
+        final sub = subscriptions.first as Map<String, dynamic>;
         final ops = sub['MediaGrabOperation'] as List?;
         if (ops != null && ops.isNotEmpty) {
-          final op = ops[0] as Map<String, dynamic>;
+          final op = ops.first as Map<String, dynamic>;
           final nested = op['Metadata'];
           if (nested is Map<String, dynamic>) {
             metadataJson = nested;
@@ -2332,11 +2339,13 @@ class PlexClient {
           .join('&');
 
       // Decision — bare Dio so no default X-Plex-* HTTP headers leak through.
-      final decisionDio = Dio(BaseOptions(
-        headers: {'Accept-Language': 'en'},
-        connectTimeout: ConnectionTimeouts.connect,
-        receiveTimeout: ConnectionTimeouts.receive,
-      ));
+      final decisionDio = Dio(
+        BaseOptions(
+          headers: {'Accept-Language': 'en'},
+          connectTimeout: ConnectionTimeouts.connect,
+          receiveTimeout: ConnectionTimeouts.receive,
+        ),
+      );
       final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
       final decisionResponse = await decisionDio.getUri(Uri.parse(decisionUrl));
 
@@ -2364,15 +2373,12 @@ class PlexClient {
   }
 
   /// Reload the DVR guide data
-  Future<bool> reloadGuide(String dvrKey) async {
-    return _wrapBoolApiCall(
-      () => _dio.post('/livetv/dvrs/$dvrKey/reloadGuide'),
-      'Failed to reload guide',
-    );
+  Future<bool> reloadGuide(String dvrKey) {
+    return _wrapBoolApiCall(() => _dio.post('/livetv/dvrs/$dvrKey/reloadGuide'), 'Failed to reload guide');
   }
 
   /// Get active live TV sessions
-  Future<List<PlexMetadata>> getLiveTvSessions() async {
+  Future<List<PlexMetadata>> getLiveTvSessions() {
     return _wrapListApiCall<PlexMetadata>(
       () => _dio.get('/livetv/sessions'),
       _extractMetadataList,
@@ -2382,29 +2388,30 @@ class PlexClient {
 
   /// Get all DVR recording subscriptions
   Future<List<LiveTvSubscription>> getSubscriptions() async {
-    return _wrapListApiCall<LiveTvSubscription>(
-      () => _dio.get('/media/subscriptions'),
-      (response) {
-        final container = _getMediaContainer(response);
-        if (container != null && container['MediaSubscription'] != null) {
-          return (container['MediaSubscription'] as List)
-              .map((json) {
-                final sub = LiveTvSubscription.fromJson(json as Map<String, dynamic>);
-                return LiveTvSubscription(
-                  key: sub.key, ratingKey: sub.ratingKey, guid: sub.guid,
-                  title: sub.title, summary: sub.summary, type: sub.type,
-                  thumb: sub.thumb, art: sub.art,
-                  targetLibrarySectionID: sub.targetLibrarySectionID,
-                  targetSectionID: sub.targetSectionID, createdAt: sub.createdAt,
-                  settings: sub.settings, serverId: serverId,
-                );
-              })
-              .toList();
-        }
-        return [];
-      },
-      'Failed to get subscriptions',
-    );
+    return _wrapListApiCall<LiveTvSubscription>(() => _dio.get('/media/subscriptions'), (response) {
+      final container = _getMediaContainer(response);
+      if (container != null && container['MediaSubscription'] != null) {
+        return (container['MediaSubscription'] as List).map((json) {
+          final sub = LiveTvSubscription.fromJson(json as Map<String, dynamic>);
+          return LiveTvSubscription(
+            key: sub.key,
+            ratingKey: sub.ratingKey,
+            guid: sub.guid,
+            title: sub.title,
+            summary: sub.summary,
+            type: sub.type,
+            thumb: sub.thumb,
+            art: sub.art,
+            targetLibrarySectionID: sub.targetLibrarySectionID,
+            targetSectionID: sub.targetSectionID,
+            createdAt: sub.createdAt,
+            settings: sub.settings,
+            serverId: serverId,
+          );
+        }).toList();
+      }
+      return [];
+    }, 'Failed to get subscriptions');
   }
 
   /// Create a DVR recording subscription
@@ -2446,15 +2453,12 @@ class PlexClient {
   }
 
   /// Delete a DVR recording subscription
-  Future<bool> deleteSubscription(String subscriptionId) async {
-    return _wrapBoolApiCall(
-      () => _dio.delete('/media/subscriptions/$subscriptionId'),
-      'Failed to delete subscription',
-    );
+  Future<bool> deleteSubscription(String subscriptionId) {
+    return _wrapBoolApiCall(() => _dio.delete('/media/subscriptions/$subscriptionId'), 'Failed to delete subscription');
   }
 
   /// Edit a DVR recording subscription's preferences
-  Future<bool> editSubscription(String subscriptionId, Map<String, String> prefs) async {
+  Future<bool> editSubscription(String subscriptionId, Map<String, String> prefs) {
     final queryParams = <String, dynamic>{};
     for (final entry in prefs.entries) {
       queryParams['prefs[${entry.key}]'] = entry.value;
@@ -2467,28 +2471,21 @@ class PlexClient {
 
   /// Get scheduled DVR recordings
   Future<List<ScheduledRecording>> getScheduledRecordings() async {
-    return _wrapListApiCall<ScheduledRecording>(
-      () => _dio.get('/media/subscriptions/scheduled'),
-      (response) {
-        final container = _getMediaContainer(response);
-        if (container != null && container['Metadata'] != null) {
-          return (container['Metadata'] as List)
-              .map((json) => ScheduledRecording.fromJson(json as Map<String, dynamic>))
-              .toList();
-        }
-        return [];
-      },
-      'Failed to get scheduled recordings',
-    );
+    return _wrapListApiCall<ScheduledRecording>(() => _dio.get('/media/subscriptions/scheduled'), (response) {
+      final container = _getMediaContainer(response);
+      if (container != null && container['Metadata'] != null) {
+        return (container['Metadata'] as List)
+            .map((json) => ScheduledRecording.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    }, 'Failed to get scheduled recordings');
   }
 
   /// Get subscription template for a program (used for recording setup)
   Future<Map<String, dynamic>?> getSubscriptionTemplate(String guid) async {
     try {
-      final response = await _dio.get(
-        '/media/subscriptions/template',
-        queryParameters: {'guid': guid},
-      );
+      final response = await _dio.get('/media/subscriptions/template', queryParameters: {'guid': guid});
       return _getMediaContainer(response);
     } catch (e) {
       appLogger.e('Failed to get subscription template', error: e);

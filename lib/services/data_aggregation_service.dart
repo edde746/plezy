@@ -15,10 +15,8 @@ class DataAggregationService {
   DataAggregationService(this._serverManager);
 
   /// Clear any cached data (for compatibility with existing callers)
-  void clearCache() {
-    // Cache is now managed by LibrariesProvider
-    // This method is kept for compatibility
-  }
+  // ignore: no-empty-block - stub, no cache to clear in current implementation
+  void clearCache() {}
 
   /// Fetch libraries from all online servers
   /// Libraries are automatically tagged with server info by PlexClient
@@ -85,16 +83,14 @@ class DataAggregationService {
       return [];
     }
 
-    if (useGlobalHubs) {
-      return _fetchGlobalHubs(clients, limit: limit, hiddenLibraryKeys: hiddenLibraryKeys);
-    } else {
-      return _fetchLibraryHubs(
-        clients,
-        limit: limit,
-        hiddenLibraryKeys: hiddenLibraryKeys,
-        librariesByServer: librariesByServer,
-      );
-    }
+    return useGlobalHubs
+        ? _fetchGlobalHubs(clients, limit: limit, hiddenLibraryKeys: hiddenLibraryKeys)
+        : _fetchLibraryHubs(
+            clients,
+            limit: limit,
+            hiddenLibraryKeys: hiddenLibraryKeys,
+            librariesByServer: librariesByServer,
+          );
   }
 
   /// Fetch global hubs using /hubs endpoint (matches official Plex client)

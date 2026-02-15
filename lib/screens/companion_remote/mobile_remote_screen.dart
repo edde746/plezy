@@ -75,7 +75,10 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                     children: [
                       OutlinedButton(onPressed: () => provider.cancelReconnect(), child: Text(t.common.cancel)),
                       const SizedBox(width: 16),
-                      FilledButton(onPressed: () => provider.retryReconnectNow(), child: Text(t.companionRemote.remote.retryNow)),
+                      FilledButton(
+                        onPressed: () => provider.retryReconnectNow(),
+                        child: Text(t.companionRemote.remote.retryNow),
+                      ),
                     ],
                   ),
                 ],
@@ -207,30 +210,40 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           },
         ),
         Expanded(
-          child: SingleChildScrollView(
+          child: ListView(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                SegmentedButton<int>(
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(value: 0, label: Text(t.companionRemote.remote.tabRemote), icon: const Icon(Icons.navigation)),
-                    ButtonSegment(value: 1, label: Text(t.companionRemote.remote.tabPlay), icon: const Icon(Icons.play_arrow)),
-                    ButtonSegment(value: 2, label: Text(t.companionRemote.remote.tabMore), icon: const Icon(Icons.flash_on)),
-                  ],
-                  selected: {_selectedTab},
-                  onSelectionChanged: (Set<int> selection) {
-                    setState(() {
-                      _selectedTab = selection.first;
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-                if (_selectedTab == 0) _buildNavigationTab(),
-                if (_selectedTab == 1) _buildPlaybackTab(),
-                if (_selectedTab == 2) _buildQuickActionsTab(),
-              ],
-            ),
+            children: [
+              SegmentedButton<int>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: 0,
+                    label: Text(t.companionRemote.remote.tabRemote),
+                    icon: const Icon(Icons.navigation),
+                  ),
+                  ButtonSegment(
+                    value: 1,
+                    label: Text(t.companionRemote.remote.tabPlay),
+                    icon: const Icon(Icons.play_arrow),
+                  ),
+                  ButtonSegment(
+                    value: 2,
+                    label: Text(t.companionRemote.remote.tabMore),
+                    icon: const Icon(Icons.flash_on),
+                  ),
+                ],
+                selected: {_selectedTab},
+                onSelectionChanged: (Set<int> selection) {
+                  setState(() {
+                    _selectedTab = selection.first;
+                  });
+                },
+              ),
+              const SizedBox(height: 24),
+              if (_selectedTab == 0) _buildNavigationTab(),
+              if (_selectedTab == 1) _buildPlaybackTab(),
+              if (_selectedTab == 2) _buildQuickActionsTab(),
+            ],
           ),
         ),
       ],
@@ -246,8 +259,16 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _RemoteButton(icon: Icons.home, label: t.common.home, onPressed: () => _sendCommand(RemoteCommandType.home)),
-            _RemoteButton(icon: Icons.arrow_back, label: t.common.back, onPressed: () => _sendCommand(RemoteCommandType.back)),
+            _RemoteButton(
+              icon: Icons.home,
+              label: t.common.home,
+              onPressed: () => _sendCommand(RemoteCommandType.home),
+            ),
+            _RemoteButton(
+              icon: Icons.arrow_back,
+              label: t.common.back,
+              onPressed: () => _sendCommand(RemoteCommandType.back),
+            ),
             _RemoteButton(
               icon: Icons.menu,
               label: t.companionRemote.remote.menu,
@@ -336,7 +357,11 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
               onPressed: () => _sendCommand(RemoteCommandType.seekBackward),
             ),
             const SizedBox(width: 16),
-            _RemoteButton(icon: Icons.stop, label: t.companionRemote.remote.stop, onPressed: () => _sendCommand(RemoteCommandType.stop)),
+            _RemoteButton(
+              icon: Icons.stop,
+              label: t.companionRemote.remote.stop,
+              onPressed: () => _sendCommand(RemoteCommandType.stop),
+            ),
             const SizedBox(width: 16),
             _RemoteButton(
               icon: Icons.forward_10,
@@ -385,8 +410,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           runSpacing: 12,
           alignment: WrapAlignment.center,
           children: [
-            if (!isPlayerActive)
-              _RemoteCard(icon: Icons.search, label: t.common.search, onPressed: _showSearchSheet),
+            if (!isPlayerActive) _RemoteCard(icon: Icons.search, label: t.common.search, onPressed: _showSearchSheet),
             if (isPlayerActive) ...[
               _RemoteCard(
                 icon: Icons.fullscreen,
@@ -625,7 +649,7 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
               hintText: t.companionRemote.remote.searchHint,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: IconButton(icon: const Icon(Icons.send), onPressed: () => _submit(_controller.text)),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(100)),
+              border: OutlineInputBorder(borderRadius: const BorderRadius.all(Radius.circular(100))),
             ),
             onSubmitted: _submit,
           ),
@@ -654,7 +678,7 @@ class _RemoteCard extends StatelessWidget {
             HapticFeedback.lightImpact();
             onPressed();
           },
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

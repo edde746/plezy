@@ -175,30 +175,33 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
               ),
             ),
           ],
-          body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!, style: theme.textTheme.bodyLarge),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: _loadData,
-                        icon: const AppIcon(Symbols.refresh_rounded),
-                        label: Text(t.common.retry),
-                      ),
-                    ],
-                  ),
-                )
-              : TabBarView(
-                  controller: _tabController,
-                  children: [_buildSubscriptionsTab(theme), _buildScheduledTab(theme)],
-                ),
+          body: _buildRecordingsBody(theme),
         ),
       ),
     );
+  }
+
+  Widget _buildRecordingsBody(ThemeData theme) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!, style: theme.textTheme.bodyLarge),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _loadData,
+              icon: const AppIcon(Symbols.refresh_rounded),
+              label: Text(t.common.retry),
+            ),
+          ],
+        ),
+      );
+    }
+    return TabBarView(controller: _tabController, children: [_buildSubscriptionsTab(theme), _buildScheduledTab(theme)]);
   }
 
   Widget _buildSubscriptionsTab(ThemeData theme) {
