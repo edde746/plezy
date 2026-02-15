@@ -63,6 +63,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   PlexMetadata? _fullMetadata;
   PlexMetadata? _onDeckEpisode;
   bool _isLoadingMetadata = true;
+  List<PlexMetadata>? _extras;
   late final ScrollController _scrollController;
   final ScrollController _seasonsScrollController = ScrollController();
   bool _watchStateChanged = false;
@@ -331,6 +332,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       }
     }
 
+    final primaryTrailer = _getPrimaryTrailer();
+
     return Row(
       children: [
         SizedBox(
@@ -353,6 +356,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
           ),
         ),
         const SizedBox(width: 12),
+        // Trailer button (only if trailer is available)
+        if (primaryTrailer != null) ...[
+          IconButton.filledTonal(
+            onPressed: () async {
+              await navigateToVideoPlayer(context, metadata: primaryTrailer);
+            },
+            icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
+            tooltip: t.tooltips.playTrailer,
+            iconSize: 20,
+            style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
+          ),
+          const SizedBox(width: 12),
+        ],
         // Shuffle button (only for shows and seasons)
         if (metadata.isShow || metadata.isSeason) ...[
           IconButton.filledTonal(
@@ -829,6 +845,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         if (metadata.isShow) {
           _loadSeasons();
         }
+
+        // Load extras (trailers, behind-the-scenes, etc.)
+        _loadExtras();
+
         return;
       }
 
@@ -918,6 +938,41 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       _seasons = seasons;
       _isLoadingSeasons = false;
     });
+  }
+
+  /// Load extras (trailers, behind-the-scenes, etc.)
+  Future<void> _loadExtras() async {
+    // Only load extras for movies and shows
+    if (!widget.metadata.isMovie && !widget.metadata.isShow) {
+      return;
+    }
+
+    // Skip in offline mode (no server available)
+    if (widget.isOffline) {
+      return;
+    }
+
+    try {
+      final client = _getClientForMetadata(context);
+      if (client == null) {
+        return;
+      }
+
+      final extras = await client.getExtras(widget.metadata.ratingKey);
+
+      // Preserve serverId for each extra (needed for multi-server setups)
+      final extrasWithServerId = extras
+          .map((extra) => extra.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          _extras = extrasWithServerId;
+        });
+      }
+    } catch (e) {
+      // Silently fail - extras section won't appear if fetch fails
+    }
   }
 
   /// Navigate to a season detail screen
@@ -1738,6 +1793,32 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                           const SizedBox(height: 24),
                         ],
 
+                        // Trailers & Extras Section
+                        if (!widget.isOffline && _extras != null && _extras!.isNotEmpty) ...[
+                          Text(
+                            t.discover.extras,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 200,
+                            child: HorizontalScrollWithArrows(
+                              builder: (scrollController) => ListView.separated(
+                                controller: scrollController,
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                itemCount: _extras!.length,
+                                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                                itemBuilder: (context, index) {
+                                  final extra = _extras![index];
+                                  return _buildExtraCard(extra);
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+
                         // Additional info
                         if (metadata.studio != null) ...[
                           _buildInfoRow(t.discover.studio, metadata.studio!),
@@ -1809,6 +1890,80 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       // ignore: no-empty-block - required callback, blocks system back on Android TV
       onPopInvokedWithResult: (didPop, result) {},
       child: content,
+    );
+  }
+
+  /// Get the primary trailer from the extras list
+  PlexMetadata? _getPrimaryTrailer() {
+    if (_extras == null || _extras!.isEmpty) return null;
+
+    // If there's a primaryExtraKey, try to find that specific trailer
+    final metadata = _fullMetadata ?? widget.metadata;
+    if (metadata.primaryExtraKey != null) {
+      // Extract rating key from primaryExtraKey (e.g., "/library/metadata/52601" -> "52601")
+      final primaryKey = metadata.primaryExtraKey!.split('/').last;
+      try {
+        return _extras!.firstWhere((extra) => extra.ratingKey == primaryKey);
+      } catch (_) {
+        // Primary key not found, fall through to find any trailer
+      }
+    }
+
+    // Otherwise, find the first item with subtype 'trailer'
+    try {
+      return _extras!.firstWhere((extra) => extra.subtype == 'trailer');
+    } catch (_) {
+      // No trailer found, return null (button won't appear)
+      return null;
+    }
+  }
+
+  Widget _buildExtraCard(PlexMetadata extra) {
+    return InkWell(
+      onTap: () {
+        // Use the dedicated video player navigation utility
+        navigateToVideoPlayer(context, metadata: extra);
+      },
+      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+      child: SizedBox(
+        width: 160,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: PlexOptimizedImage(
+                  client: _getClientForMetadata(context),
+                  imagePath: extra.thumb,
+                  width: 160,
+                  height: 90,
+                  fit: BoxFit.cover,
+                  imageType: ImageType.thumb,
+                  fallbackIcon: Symbols.movie_rounded,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              extra.title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (extra.duration != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                formatDurationTextual(extra.duration!),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

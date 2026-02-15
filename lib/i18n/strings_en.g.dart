@@ -884,6 +884,9 @@ class TranslationsTooltipsEn {
 	/// en: 'Shuffle play'
 	String get shufflePlay => 'Shuffle play';
 
+	/// en: 'Play trailer'
+	String get playTrailer => 'Play trailer';
+
 	/// en: 'Mark as watched'
 	String get markAsWatched => 'Mark as watched';
 
@@ -1323,6 +1326,9 @@ class TranslationsDiscoverEn {
 
 	/// en: 'Cast'
 	String get cast => 'Cast';
+
+	/// en: 'Trailers & Extras'
+	String get extras => 'Trailers & Extras';
 
 	/// en: 'Seasons'
 	String get seasons => 'Seasons';
@@ -2932,6 +2938,7 @@ extension on Translations {
 			'accessibility.mediaCardUnwatched' => 'unwatched',
 			'accessibility.tapToPlay' => 'Tap to play',
 			'tooltips.shufflePlay' => 'Shuffle play',
+			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',
 			'videoControls.audioLabel' => 'Audio',
@@ -3062,6 +3069,7 @@ extension on Translations {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overview',
 			'discover.cast' => 'Cast',
+			'discover.extras' => 'Trailers & Extras',
 			'discover.seasons' => 'Seasons',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
@@ -3194,10 +3202,10 @@ extension on Translations {
 			'collections.empty' => 'Collection is empty',
 			'collections.unknownLibrarySection' => 'Cannot delete: Unknown library section',
 			'collections.deleteCollection' => 'Delete Collection',
-			'collections.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.',
-			'collections.deleted' => 'Collection deleted',
 			_ => null,
 		} ?? switch (path) {
+			'collections.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.',
+			'collections.deleted' => 'Collection deleted',
 			'collections.deleteFailed' => 'Failed to delete collection',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Failed to delete collection: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Failed to load collection items: ${error}',

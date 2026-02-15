@@ -274,6 +274,7 @@
   },
   "tooltips": {
     "shufflePlay": "Lecture aléatoire",
+    "playTrailer": "Lire la bande-annonce",
     "markAsWatched": "Marqué comme vu",
     "markAsUnwatched": "Marqué comme non vu"
   },
@@ -420,6 +421,7 @@
     "playEpisode": "S${season}E${episode}",
     "overview": "Aperçu",
     "cast": "Cast",
+    "extras": "Bandes-annonces et Extras",
     "seasons": "Saisons",
     "studio": "Studio",
     "rating": "Évaluation",

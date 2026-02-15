@@ -274,6 +274,7 @@
   },
   "tooltips": {
     "shufflePlay": "随机播放",
+    "playTrailer": "播放预告片",
     "markAsWatched": "标记为已观看",
     "markAsUnwatched": "标记为未观看"
   },
@@ -420,6 +421,7 @@
     "playEpisode": "S${season}E${episode}",
     "overview": "概述",
     "cast": "演员表",
+    "extras": "预告片与花絮",
     "seasons": "季数",
     "studio": "制作公司",
     "rating": "年龄分级",

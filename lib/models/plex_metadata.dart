@@ -79,6 +79,9 @@ class PlexMetadata with MultiServerFields {
   final int? librarySectionID; // Library section ID this item belongs to
   final String? ratingImage; // Rating source URI (e.g. rottentomatoes://image.rating.ripe)
   final String? audienceRatingImage; // Audience rating source URI
+  final String? subtype; // Clip subtype: "trailer", "behindTheScenes", "deleted", etc.
+  final int? extraType; // Numeric extra type identifier
+  final String? primaryExtraKey; // Points to main trailer (e.g., "/library/metadata/52601")
 
   // Multi-server support fields (from MultiServerFields mixin)
   @override
@@ -155,6 +158,9 @@ class PlexMetadata with MultiServerFields {
     this.librarySectionID,
     this.ratingImage,
     this.audienceRatingImage,
+    this.subtype,
+    this.extraType,
+    this.primaryExtraKey,
     this.serverId,
     this.serverName,
     this.clearLogo,
@@ -204,6 +210,9 @@ class PlexMetadata with MultiServerFields {
     int? librarySectionID,
     String? ratingImage,
     String? audienceRatingImage,
+    String? subtype,
+    int? extraType,
+    String? primaryExtraKey,
     String? serverId,
     String? serverName,
     String? clearLogo,
@@ -251,6 +260,9 @@ class PlexMetadata with MultiServerFields {
       librarySectionID: librarySectionID ?? this.librarySectionID,
       ratingImage: ratingImage ?? this.ratingImage,
       audienceRatingImage: audienceRatingImage ?? this.audienceRatingImage,
+      subtype: subtype ?? this.subtype,
+      extraType: extraType ?? this.extraType,
+      primaryExtraKey: primaryExtraKey ?? this.primaryExtraKey,
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
       clearLogo: clearLogo ?? this.clearLogo,

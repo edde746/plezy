@@ -274,6 +274,7 @@
   },
   "tooltips": {
     "shufflePlay": "Zufallswiedergabe",
+    "playTrailer": "Trailer abspielen",
     "markAsWatched": "Als gesehen markieren",
     "markAsUnwatched": "Als ungesehen markieren"
   },
@@ -420,6 +421,7 @@
     "playEpisode": "S${season}E${episode}",
     "overview": "Übersicht",
     "cast": "Besetzung",
+    "extras": "Trailer & Extras",
     "seasons": "Staffeln",
     "studio": "Studio",
     "rating": "Altersfreigabe",

@@ -421,6 +421,7 @@ class _TranslationsTooltipsFr implements TranslationsTooltipsEn {
 
 	// Translations
 	@override String get shufflePlay => 'Lecture aléatoire';
+	@override String get playTrailer => 'Lire la bande-annonce';
 	@override String get markAsWatched => 'Marqué comme vu';
 	@override String get markAsUnwatched => 'Marqué comme non vu';
 }
@@ -610,6 +611,7 @@ class _TranslationsDiscoverFr implements TranslationsDiscoverEn {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Aperçu';
 	@override String get cast => 'Cast';
+	@override String get extras => 'Bandes-annonces et Extras';
 	@override String get seasons => 'Saisons';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Évaluation';
@@ -1465,6 +1467,7 @@ extension on TranslationsFr {
 			'accessibility.mediaCardUnwatched' => 'non visionné',
 			'accessibility.tapToPlay' => 'Appuyez pour lire',
 			'tooltips.shufflePlay' => 'Lecture aléatoire',
+			'tooltips.playTrailer' => 'Lire la bande-annonce',
 			'tooltips.markAsWatched' => 'Marqué comme vu',
 			'tooltips.markAsUnwatched' => 'Marqué comme non vu',
 			'videoControls.audioLabel' => 'Audio',
@@ -1595,6 +1598,7 @@ extension on TranslationsFr {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Aperçu',
 			'discover.cast' => 'Cast',
+			'discover.extras' => 'Bandes-annonces et Extras',
 			'discover.seasons' => 'Saisons',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Évaluation',
@@ -1727,10 +1731,10 @@ extension on TranslationsFr {
 			'collections.empty' => 'La collection est vide',
 			'collections.unknownLibrarySection' => 'Impossible de supprimer : section de bibliothèque inconnue',
 			'collections.deleteCollection' => 'Supprimer la collection',
-			'collections.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cette action ne peut pas être annulée.',
-			'collections.deleted' => 'Collection supprimée',
 			_ => null,
 		} ?? switch (path) {
+			'collections.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cette action ne peut pas être annulée.',
+			'collections.deleted' => 'Collection supprimée',
 			'collections.deleteFailed' => 'Échec de la suppression de la collection',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Échec de la suppression de la collection: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Échec du chargement des éléments de la collection: ${error}',

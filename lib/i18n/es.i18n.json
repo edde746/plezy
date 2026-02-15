@@ -274,6 +274,7 @@
   },
   "tooltips": {
     "shufflePlay": "Reproducción aleatoria",
+    "playTrailer": "Reproducir tráiler",
     "markAsWatched": "Marcar como visto",
     "markAsUnwatched": "Marcar como no visto"
   },
@@ -420,6 +421,7 @@
     "playEpisode": "T${season}E${episode}",
     "overview": "Resumen",
     "cast": "Reparto",
+    "extras": "Tráilers y Extras",
     "seasons": "Temporadas",
     "studio": "Estudio",
     "rating": "Calificación",

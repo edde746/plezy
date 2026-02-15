@@ -49,6 +49,9 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   librarySectionID: (json['librarySectionID'] as num?)?.toInt(),
   ratingImage: json['ratingImage'] as String?,
   audienceRatingImage: json['audienceRatingImage'] as String?,
+  subtype: json['subtype'] as String?,
+  extraType: (json['extraType'] as num?)?.toInt(),
+  primaryExtraKey: json['primaryExtraKey'] as String?,
   clearLogo: json['clearLogo'] as String?,
 );
 
@@ -95,5 +98,8 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) => <String, dyn
   'librarySectionID': instance.librarySectionID,
   'ratingImage': instance.ratingImage,
   'audienceRatingImage': instance.audienceRatingImage,
+  'subtype': instance.subtype,
+  'extraType': instance.extraType,
+  'primaryExtraKey': instance.primaryExtraKey,
   'clearLogo': instance.clearLogo,
 };

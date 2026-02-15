@@ -274,6 +274,7 @@
   },
   "tooltips": {
     "shufflePlay": "무작위 재생",
+    "playTrailer": "예고편 재생",
     "markAsWatched": "시청 완료로 표시",
     "markAsUnwatched": "시청 안 함으로 표시"
   },
@@ -420,6 +421,7 @@
     "playEpisode": "S${season}E${episode}",
     "overview": "개요",
     "cast": "출연진",
+    "extras": "예고편 및 부가영상",
     "seasons": "시즌 수",
     "studio": "제작사",
     "rating": "연령 등급",

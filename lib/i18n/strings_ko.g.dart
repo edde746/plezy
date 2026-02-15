@@ -421,6 +421,7 @@ class _TranslationsTooltipsKo implements TranslationsTooltipsEn {
 
 	// Translations
 	@override String get shufflePlay => '무작위 재생';
+	@override String get playTrailer => '예고편 재생';
 	@override String get markAsWatched => '시청 완료로 표시';
 	@override String get markAsUnwatched => '시청 안 함으로 표시';
 }
@@ -610,6 +611,7 @@ class _TranslationsDiscoverKo implements TranslationsDiscoverEn {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '개요';
 	@override String get cast => '출연진';
+	@override String get extras => '예고편 및 부가영상';
 	@override String get seasons => '시즌 수';
 	@override String get studio => '제작사';
 	@override String get rating => '연령 등급';
@@ -1465,6 +1467,7 @@ extension on TranslationsKo {
 			'accessibility.mediaCardUnwatched' => '미시청',
 			'accessibility.tapToPlay' => '터치 하여 재생',
 			'tooltips.shufflePlay' => '무작위 재생',
+			'tooltips.playTrailer' => '예고편 재생',
 			'tooltips.markAsWatched' => '시청 완료로 표시',
 			'tooltips.markAsUnwatched' => '시청 안 함으로 표시',
 			'videoControls.audioLabel' => '오디오',
@@ -1595,6 +1598,7 @@ extension on TranslationsKo {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '개요',
 			'discover.cast' => '출연진',
+			'discover.extras' => '예고편 및 부가영상',
 			'discover.seasons' => '시즌 수',
 			'discover.studio' => '제작사',
 			'discover.rating' => '연령 등급',
@@ -1727,10 +1731,10 @@ extension on TranslationsKo {
 			'collections.empty' => '컬렉션이 비어 있습니다',
 			'collections.unknownLibrarySection' => '삭제할 수 없습니다: 알 수 없는 미디어 라이브러리 섹션입니다',
 			'collections.deleteCollection' => '컬렉션 삭제',
-			'collections.deleteConfirm' => ({required Object title}) => '"${title}"을(를) 삭제 하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
-			'collections.deleted' => '컬렉션 삭제됨',
 			_ => null,
 		} ?? switch (path) {
+			'collections.deleteConfirm' => ({required Object title}) => '"${title}"을(를) 삭제 하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+			'collections.deleted' => '컬렉션 삭제됨',
 			'collections.deleteFailed' => '컬렉션 삭제 실패',
 			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => '컬렉션 항목 로드 실패: ${error}',

@@ -421,6 +421,7 @@ class _TranslationsTooltipsSv implements TranslationsTooltipsEn {
 
 	// Translations
 	@override String get shufflePlay => 'Blanda uppspelning';
+	@override String get playTrailer => 'Spela trailer';
 	@override String get markAsWatched => 'Markera som sedd';
 	@override String get markAsUnwatched => 'Markera som osedd';
 }
@@ -610,6 +611,7 @@ class _TranslationsDiscoverSv implements TranslationsDiscoverEn {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Översikt';
 	@override String get cast => 'Rollbesättning';
+	@override String get extras => 'Trailers och Extra';
 	@override String get seasons => 'Säsonger';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Åldersgräns';
@@ -1465,6 +1467,7 @@ extension on TranslationsSv {
 			'accessibility.mediaCardUnwatched' => 'osedd',
 			'accessibility.tapToPlay' => 'Tryck för att spela',
 			'tooltips.shufflePlay' => 'Blanda uppspelning',
+			'tooltips.playTrailer' => 'Spela trailer',
 			'tooltips.markAsWatched' => 'Markera som sedd',
 			'tooltips.markAsUnwatched' => 'Markera som osedd',
 			'videoControls.audioLabel' => 'Ljud',
@@ -1595,6 +1598,7 @@ extension on TranslationsSv {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Översikt',
 			'discover.cast' => 'Rollbesättning',
+			'discover.extras' => 'Trailers och Extra',
 			'discover.seasons' => 'Säsonger',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Åldersgräns',
@@ -1727,10 +1731,10 @@ extension on TranslationsSv {
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Filmer',
 			'downloads.noDownloads' => 'Inga nedladdningar ännu',
-			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
-			'downloads.downloadNow' => 'Ladda ner',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
+			'downloads.downloadNow' => 'Ladda ner',
 			'downloads.deleteDownload' => 'Ta bort nedladdning',
 			'downloads.retryDownload' => 'Försök igen',
 			'downloads.downloadQueued' => 'Nedladdning köad',

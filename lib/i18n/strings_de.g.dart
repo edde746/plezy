@@ -421,6 +421,7 @@ class _TranslationsTooltipsDe implements TranslationsTooltipsEn {
 
 	// Translations
 	@override String get shufflePlay => 'Zufallswiedergabe';
+	@override String get playTrailer => 'Trailer abspielen';
 	@override String get markAsWatched => 'Als gesehen markieren';
 	@override String get markAsUnwatched => 'Als ungesehen markieren';
 }
@@ -610,6 +611,7 @@ class _TranslationsDiscoverDe implements TranslationsDiscoverEn {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Übersicht';
 	@override String get cast => 'Besetzung';
+	@override String get extras => 'Trailer & Extras';
 	@override String get seasons => 'Staffeln';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Altersfreigabe';
@@ -1465,6 +1467,7 @@ extension on TranslationsDe {
 			'accessibility.mediaCardUnwatched' => 'ungeschaut',
 			'accessibility.tapToPlay' => 'Zum Abspielen tippen',
 			'tooltips.shufflePlay' => 'Zufallswiedergabe',
+			'tooltips.playTrailer' => 'Trailer abspielen',
 			'tooltips.markAsWatched' => 'Als gesehen markieren',
 			'tooltips.markAsUnwatched' => 'Als ungesehen markieren',
 			'videoControls.audioLabel' => 'Audio',
@@ -1595,6 +1598,7 @@ extension on TranslationsDe {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Übersicht',
 			'discover.cast' => 'Besetzung',
+			'discover.extras' => 'Trailer & Extras',
 			'discover.seasons' => 'Staffeln',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Altersfreigabe',
@@ -1727,10 +1731,10 @@ extension on TranslationsDe {
 			'downloads.tvShows' => 'Serien',
 			'downloads.movies' => 'Filme',
 			'downloads.noDownloads' => 'Noch keine Downloads',
-			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
-			'downloads.downloadNow' => 'Herunterladen',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
+			'downloads.downloadNow' => 'Herunterladen',
 			'downloads.deleteDownload' => 'Download löschen',
 			'downloads.retryDownload' => 'Download wiederholen',
 			'downloads.downloadQueued' => 'Download in Warteschlange',
