@@ -274,6 +274,7 @@
   },
   "tooltips": {
     "shufflePlay": "Willekeurig afspelen",
+    "playTrailer": "Trailer afspelen",
     "markAsWatched": "Markeer als gekeken",
     "markAsUnwatched": "Markeer als ongekeken"
   },
@@ -420,6 +421,7 @@
     "playEpisode": "S${season}E${episode}",
     "overview": "Overzicht",
     "cast": "Acteurs",
+    "extras": "Trailers & Extra's",
     "seasons": "Seizoenen",
     "studio": "Studio",
     "rating": "Leeftijd",

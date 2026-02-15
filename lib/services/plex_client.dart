@@ -739,6 +739,20 @@ class PlexClient {
         [];
   }
 
+  /// Get extras for a metadata item (trailers, behind-the-scenes, etc.)
+  /// Uses cache when offline or as fallback on network error
+  Future<List<PlexMetadata>> getExtras(String ratingKey) async {
+    final endpoint = '/library/metadata/$ratingKey/extras';
+
+    return await _fetchWithCacheFallback<List<PlexMetadata>>(
+          cacheKey: endpoint,
+          networkCall: () => _dio.get(endpoint),
+          parseCache: (cachedData) => _parseMetadataListFromCachedResponse(cachedData),
+          parseResponse: (response) => _extractMetadataList(response),
+        ) ??
+        [];
+  }
+
   /// Get all unwatched episodes for a TV show across all seasons
   Future<List<PlexMetadata>> getAllUnwatchedEpisodes(String showRatingKey) async {
     final allEpisodes = <PlexMetadata>[];

@@ -421,6 +421,7 @@ class _TranslationsTooltipsIt implements TranslationsTooltipsEn {
 
 	// Translations
 	@override String get shufflePlay => 'Riproduzione casuale';
+	@override String get playTrailer => 'Riproduci trailer';
 	@override String get markAsWatched => 'Segna come visto';
 	@override String get markAsUnwatched => 'Segna come non visto';
 }
@@ -610,6 +611,7 @@ class _TranslationsDiscoverIt implements TranslationsDiscoverEn {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Panoramica';
 	@override String get cast => 'Attori';
+	@override String get extras => 'Trailer ed Extra';
 	@override String get seasons => 'Stagioni';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Classificazione';
@@ -1465,6 +1467,7 @@ extension on TranslationsIt {
 			'accessibility.mediaCardUnwatched' => 'non visto',
 			'accessibility.tapToPlay' => 'Tocca per riprodurre',
 			'tooltips.shufflePlay' => 'Riproduzione casuale',
+			'tooltips.playTrailer' => 'Riproduci trailer',
 			'tooltips.markAsWatched' => 'Segna come visto',
 			'tooltips.markAsUnwatched' => 'Segna come non visto',
 			'videoControls.audioLabel' => 'Audio',
@@ -1595,6 +1598,7 @@ extension on TranslationsIt {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Panoramica',
 			'discover.cast' => 'Attori',
+			'discover.extras' => 'Trailer ed Extra',
 			'discover.seasons' => 'Stagioni',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Classificazione',
@@ -1727,10 +1731,10 @@ extension on TranslationsIt {
 			'downloads.tvShows' => 'Serie TV',
 			'downloads.movies' => 'Film',
 			'downloads.noDownloads' => 'Nessun download',
-			'downloads.noDownloadsDescription' => 'I contenuti scaricati appariranno qui per la visualizzazione offline',
-			'downloads.downloadNow' => 'Scarica',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.noDownloadsDescription' => 'I contenuti scaricati appariranno qui per la visualizzazione offline',
+			'downloads.downloadNow' => 'Scarica',
 			'downloads.deleteDownload' => 'Elimina download',
 			'downloads.retryDownload' => 'Riprova download',
 			'downloads.downloadQueued' => 'Download in coda',

@@ -421,6 +421,7 @@ class _TranslationsTooltipsNl implements TranslationsTooltipsEn {
 
 	// Translations
 	@override String get shufflePlay => 'Willekeurig afspelen';
+	@override String get playTrailer => 'Trailer afspelen';
 	@override String get markAsWatched => 'Markeer als gekeken';
 	@override String get markAsUnwatched => 'Markeer als ongekeken';
 }
@@ -610,6 +611,7 @@ class _TranslationsDiscoverNl implements TranslationsDiscoverEn {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Overzicht';
 	@override String get cast => 'Acteurs';
+	@override String get extras => 'Trailers & Extra\'s';
 	@override String get seasons => 'Seizoenen';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Leeftijd';
@@ -1465,6 +1467,7 @@ extension on TranslationsNl {
 			'accessibility.mediaCardUnwatched' => 'niet bekeken',
 			'accessibility.tapToPlay' => 'Tik om af te spelen',
 			'tooltips.shufflePlay' => 'Willekeurig afspelen',
+			'tooltips.playTrailer' => 'Trailer afspelen',
 			'tooltips.markAsWatched' => 'Markeer als gekeken',
 			'tooltips.markAsUnwatched' => 'Markeer als ongekeken',
 			'videoControls.audioLabel' => 'Audio',
@@ -1595,6 +1598,7 @@ extension on TranslationsNl {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overzicht',
 			'discover.cast' => 'Acteurs',
+			'discover.extras' => 'Trailers & Extra\'s',
 			'discover.seasons' => 'Seizoenen',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Leeftijd',
@@ -1727,10 +1731,10 @@ extension on TranslationsNl {
 			'downloads.tvShows' => 'Series',
 			'downloads.movies' => 'Films',
 			'downloads.noDownloads' => 'Nog geen downloads',
-			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
-			'downloads.downloadNow' => 'Download',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
+			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Download verwijderen',
 			'downloads.retryDownload' => 'Download opnieuw proberen',
 			'downloads.downloadQueued' => 'Download in wachtrij',

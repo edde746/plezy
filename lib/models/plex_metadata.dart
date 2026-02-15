@@ -79,6 +79,9 @@ class PlexMetadata with MultiServerFields {
   final int? librarySectionID; // Library section ID this item belongs to
   final String? ratingImage; // Rating source URI (e.g. rottentomatoes://image.rating.ripe)
   final String? audienceRatingImage; // Audience rating source URI
+  final String? subtype; // Clip subtype: "trailer", "behindTheScenes", "deleted", etc.
+  final int? extraType; // Numeric extra type identifier
+  final String? primaryExtraKey; // Points to main trailer (e.g., "/library/metadata/52601")
 
   // Multi-server support fields (from MultiServerFields mixin)
   @override
@@ -155,6 +158,9 @@ class PlexMetadata with MultiServerFields {
     this.librarySectionID,
     this.ratingImage,
     this.audienceRatingImage,
+    this.subtype,
+    this.extraType,
+    this.primaryExtraKey,
     this.serverId,
     this.serverName,
     this.clearLogo,
@@ -204,6 +210,9 @@ class PlexMetadata with MultiServerFields {
     int? librarySectionID,
     String? ratingImage,
     String? audienceRatingImage,
+    String? subtype,
+    int? extraType,
+    String? primaryExtraKey,
     String? serverId,
     String? serverName,
     String? clearLogo,
@@ -251,6 +260,9 @@ class PlexMetadata with MultiServerFields {
       librarySectionID: librarySectionID ?? this.librarySectionID,
       ratingImage: ratingImage ?? this.ratingImage,
       audienceRatingImage: audienceRatingImage ?? this.audienceRatingImage,
+      subtype: subtype ?? this.subtype,
+      extraType: extraType ?? this.extraType,
+      primaryExtraKey: primaryExtraKey ?? this.primaryExtraKey,
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
       clearLogo: clearLogo ?? this.clearLogo,
@@ -352,9 +364,12 @@ class PlexMetadata with MultiServerFields {
 
   /// Returns true if this item should use 16:9 aspect ratio.
   /// Episodes use 16:9 when in episodeThumbnail mode.
+  /// Clips (trailers, extras) always use 16:9.
   /// Movies, shows, and seasons use 16:9 in mixed hub context with episodeThumbnail mode.
   bool usesWideAspectRatio(EpisodePosterMode mode, {bool mixedHubContext = false}) {
     final itemType = type.toLowerCase();
+    // Clips (trailers, extras) are always 16:9
+    if (itemType == 'clip') return true;
     if (itemType == 'episode' && mode == EpisodePosterMode.episodeThumbnail) {
       return true;
     }

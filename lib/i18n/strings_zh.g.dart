@@ -421,6 +421,7 @@ class _TranslationsTooltipsZh implements TranslationsTooltipsEn {
 
 	// Translations
 	@override String get shufflePlay => '随机播放';
+	@override String get playTrailer => '播放预告片';
 	@override String get markAsWatched => '标记为已观看';
 	@override String get markAsUnwatched => '标记为未观看';
 }
@@ -610,6 +611,7 @@ class _TranslationsDiscoverZh implements TranslationsDiscoverEn {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '概述';
 	@override String get cast => '演员表';
+	@override String get extras => '预告片与花絮';
 	@override String get seasons => '季数';
 	@override String get studio => '制作公司';
 	@override String get rating => '年龄分级';
@@ -1465,6 +1467,7 @@ extension on TranslationsZh {
 			'accessibility.mediaCardUnwatched' => '未观看',
 			'accessibility.tapToPlay' => '点击播放',
 			'tooltips.shufflePlay' => '随机播放',
+			'tooltips.playTrailer' => '播放预告片',
 			'tooltips.markAsWatched' => '标记为已观看',
 			'tooltips.markAsUnwatched' => '标记为未观看',
 			'videoControls.audioLabel' => '音频',
@@ -1595,6 +1598,7 @@ extension on TranslationsZh {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '概述',
 			'discover.cast' => '演员表',
+			'discover.extras' => '预告片与花絮',
 			'discover.seasons' => '季数',
 			'discover.studio' => '制作公司',
 			'discover.rating' => '年龄分级',
@@ -1727,10 +1731,10 @@ extension on TranslationsZh {
 			'downloads.tvShows' => '电视剧',
 			'downloads.movies' => '电影',
 			'downloads.noDownloads' => '暂无下载',
-			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',
-			'downloads.downloadNow' => '下载',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',
+			'downloads.downloadNow' => '下载',
 			'downloads.deleteDownload' => '删除下载',
 			'downloads.retryDownload' => '重试下载',
 			'downloads.downloadQueued' => '下载已排队',

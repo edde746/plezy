@@ -421,6 +421,7 @@ class _TranslationsTooltipsEs implements TranslationsTooltipsEn {
 
 	// Translations
 	@override String get shufflePlay => 'Reproducción aleatoria';
+	@override String get playTrailer => 'Reproducir tráiler';
 	@override String get markAsWatched => 'Marcar como visto';
 	@override String get markAsUnwatched => 'Marcar como no visto';
 }
@@ -610,6 +611,7 @@ class _TranslationsDiscoverEs implements TranslationsDiscoverEn {
 	@override String playEpisode({required Object season, required Object episode}) => 'T${season}E${episode}';
 	@override String get overview => 'Resumen';
 	@override String get cast => 'Reparto';
+	@override String get extras => 'Tráilers y Extras';
 	@override String get seasons => 'Temporadas';
 	@override String get studio => 'Estudio';
 	@override String get rating => 'Calificación';
@@ -1465,6 +1467,7 @@ extension on TranslationsEs {
 			'accessibility.mediaCardUnwatched' => 'no visto',
 			'accessibility.tapToPlay' => 'Toca para reproducir',
 			'tooltips.shufflePlay' => 'Reproducción aleatoria',
+			'tooltips.playTrailer' => 'Reproducir tráiler',
 			'tooltips.markAsWatched' => 'Marcar como visto',
 			'tooltips.markAsUnwatched' => 'Marcar como no visto',
 			'videoControls.audioLabel' => 'Audio',
@@ -1595,6 +1598,7 @@ extension on TranslationsEs {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'T${season}E${episode}',
 			'discover.overview' => 'Resumen',
 			'discover.cast' => 'Reparto',
+			'discover.extras' => 'Tráilers y Extras',
 			'discover.seasons' => 'Temporadas',
 			'discover.studio' => 'Estudio',
 			'discover.rating' => 'Calificación',
@@ -1727,10 +1731,10 @@ extension on TranslationsEs {
 			'collections.empty' => 'La colección está vacía',
 			'collections.unknownLibrarySection' => 'No se puede eliminar: Sección de biblioteca desconocida',
 			'collections.deleteCollection' => 'Eliminar Colección',
-			'collections.deleteConfirm' => ({required Object title}) => '¿Estás seguro de que quieres eliminar "${title}"? Esta acción no se puede deshacer.',
-			'collections.deleted' => 'Colección eliminada',
 			_ => null,
 		} ?? switch (path) {
+			'collections.deleteConfirm' => ({required Object title}) => '¿Estás seguro de que quieres eliminar "${title}"? Esta acción no se puede deshacer.',
+			'collections.deleted' => 'Colección eliminada',
 			'collections.deleteFailed' => 'Error al eliminar la colección',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Error al eliminar la colección: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Error al cargar los elementos de la colección: ${error}',

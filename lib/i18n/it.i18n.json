@@ -274,6 +274,7 @@
   },
   "tooltips": {
     "shufflePlay": "Riproduzione casuale",
+    "playTrailer": "Riproduci trailer",
     "markAsWatched": "Segna come visto",
     "markAsUnwatched": "Segna come non visto"
   },
@@ -420,6 +421,7 @@
     "playEpisode": "S${season}E${episode}",
     "overview": "Panoramica",
     "cast": "Attori",
+    "extras": "Trailer ed Extra",
     "seasons": "Stagioni",
     "studio": "Studio",
     "rating": "Classificazione",
