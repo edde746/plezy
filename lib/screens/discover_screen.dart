@@ -78,6 +78,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Timer? _indicatorTimer;
   final ValueNotifier<double> _indicatorProgress = ValueNotifier(0.0);
   bool _isAutoScrollPaused = false;
+  HiddenLibrariesProvider? _hiddenLibrariesProvider;
 
   String _toGlobalKey(String ratingKey, String serverId) => '$serverId:$ratingKey';
 
@@ -254,6 +255,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _userButtonFocusNode.addListener(_onUserFocusChange);
     _loadContent();
     _startAutoScroll();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final provider = context.read<HiddenLibrariesProvider>();
+    if (provider != _hiddenLibrariesProvider) {
+      _hiddenLibrariesProvider?.removeListener(_onHiddenLibrariesChanged);
+      _hiddenLibrariesProvider = provider;
+      _hiddenLibrariesProvider!.addListener(_onHiddenLibrariesChanged);
+    }
+  }
+
+  void _onHiddenLibrariesChanged() {
+    _loadContent();
   }
 
   void _onRefreshFocusChange() {
@@ -497,6 +513,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void dispose() {
+    _hiddenLibrariesProvider?.removeListener(_onHiddenLibrariesChanged);
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _indicatorTimer?.cancel();
