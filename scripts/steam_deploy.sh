@@ -26,10 +26,14 @@ else
 fi
 mv "$WORK"/plezy-windows-x64-portable "$WORK/windows"
 
-echo "Downloading Linux build..."
-gh release download "$TAG" --repo "$REPO" -p "plezy-linux-x64.tar.gz" -D "$WORK"
+echo "Extracting Linux Steam build..."
+STEAM_TARBALL="$SCRIPT_DIR/../plezy-steam-linux-x64.tar.gz"
+if [[ ! -f "$STEAM_TARBALL" ]]; then
+    echo "Error: $STEAM_TARBALL not found. Run build_steam.sh first." >&2
+    exit 1
+fi
 mkdir -p "$WORK/linux"
-tar xzf "$WORK/plezy-linux-x64.tar.gz" -C "$WORK/linux"
+tar xzf "$STEAM_TARBALL" -C "$WORK/linux"
 
 # Generate VDF files
 cat > "$WORK/app_build.vdf" <<EOF
