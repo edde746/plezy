@@ -236,6 +236,18 @@ class TranslationsCommonEn {
 
 	/// en: 'Reconnect'
 	String get reconnect => 'Reconnect';
+
+	/// en: 'Exit app?'
+	String get exitConfirmTitle => 'Exit app?';
+
+	/// en: 'Are you sure you want to exit?'
+	String get exitConfirmMessage => 'Are you sure you want to exit?';
+
+	/// en: 'Don't ask again'
+	String get dontAskAgain => 'Don\'t ask again';
+
+	/// en: 'Exit'
+	String get exit => 'Exit';
 }
 
 // Path: screens
@@ -662,6 +674,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Show profile selection every time the app is opened'
 	String get requireProfileSelectionOnOpenDescription => 'Show profile selection every time the app is opened';
+
+	/// en: 'Confirm before exiting'
+	String get confirmExitOnBack => 'Confirm before exiting';
+
+	/// en: 'Show a confirmation dialog when pressing back to exit the app'
+	String get confirmExitOnBackDescription => 'Show a confirmation dialog when pressing back to exit the app';
 }
 
 // Path: search
@@ -2734,6 +2752,10 @@ extension on Translations {
 			'common.ok' => 'OK',
 			'common.loading' => 'Loading...',
 			'common.reconnect' => 'Reconnect',
+			'common.exitConfirmTitle' => 'Exit app?',
+			'common.exitConfirmMessage' => 'Are you sure you want to exit?',
+			'common.dontAskAgain' => 'Don\'t ask again',
+			'common.exit' => 'Exit',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -2867,6 +2889,8 @@ extension on Translations {
 			'settings.matchContentFrameRateDescription' => 'Adjust display refresh rate to match video content, reducing judder and saving battery',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
+			'settings.confirmExitOnBack' => 'Confirm before exiting',
+			'settings.confirmExitOnBackDescription' => 'Show a confirmation dialog when pressing back to exit the app',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -3196,14 +3220,14 @@ extension on Translations {
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
 			'collections.unknownLibrarySection' => 'Cannot delete: Unknown library section',
 			'collections.deleteCollection' => 'Delete Collection',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.',
 			'collections.deleted' => 'Collection deleted',
 			'collections.deleteFailed' => 'Failed to delete collection',

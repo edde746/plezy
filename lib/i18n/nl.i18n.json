@@ -47,7 +47,11 @@
     "mute": "Dempen",
     "ok": "OK",
     "loading": "Laden...",
-    "reconnect": "Opnieuw verbinden"
+    "reconnect": "Opnieuw verbinden",
+    "exitConfirmTitle": "App afsluiten?",
+    "exitConfirmMessage": "Weet je zeker dat je wilt afsluiten?",
+    "dontAskAgain": "Niet meer vragen",
+    "exit": "Afsluiten"
   },
   "screens": {
     "licenses": "Licenties",
@@ -186,7 +190,9 @@
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
     "matchContentFrameRateDescription": "Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij",
     "requireProfileSelectionOnOpen": "Vraag om profiel bij openen",
-    "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend"
+    "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
+    "confirmExitOnBack": "Bevestigen voor afsluiten",
+    "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",

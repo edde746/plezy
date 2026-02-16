@@ -68,6 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const _kShowUnwatchedCount = 'show_unwatched_count';
   static const _kRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
+  static const _kConfirmExitOnBack = 'confirm_exit_on_back';
   static const _kPlayerBackend = 'player_backend';
   static const _kExternalPlayer = 'external_player';
   static const _kHardwareDecoding = 'hardware_decoding';
@@ -118,6 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _useExoPlayer = true; // Android only: ExoPlayer vs MPV
   bool _requireProfileSelectionOnOpen = false;
   bool _useExternalPlayer = false;
+  bool _confirmExitOnBack = true;
   String _selectedExternalPlayerName = '';
 
   // Update checking state
@@ -190,6 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _requireProfileSelectionOnOpen = _settingsService.getRequireProfileSelectionOnOpen();
       _useExternalPlayer = _settingsService.getUseExternalPlayer();
       _selectedExternalPlayerName = _settingsService.getSelectedExternalPlayer().name;
+      _confirmExitOnBack = _settingsService.getConfirmExitOnBack();
       _isLoading = false;
     });
   }
@@ -390,6 +393,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               );
             },
           ),
+          if (PlatformDetector.isTV())
+            SwitchListTile(
+              focusNode: _focusTracker.get(_kConfirmExitOnBack),
+              secondary: const AppIcon(Symbols.exit_to_app_rounded, fill: 1),
+              title: Text(t.settings.confirmExitOnBack),
+              subtitle: Text(t.settings.confirmExitOnBackDescription),
+              value: _confirmExitOnBack,
+              onChanged: (value) async {
+                setState(() => _confirmExitOnBack = value);
+                await _settingsService.setConfirmExitOnBack(value);
+              },
+            ),
         ],
       ),
     );

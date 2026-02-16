@@ -145,6 +145,10 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get loading => 'Chargement...';
 	@override String get reconnect => 'Reconnecter';
+	@override String get exitConfirmTitle => 'Quitter l\'application ?';
+	@override String get exitConfirmMessage => 'Êtes-vous sûr de vouloir quitter ?';
+	@override String get dontAskAgain => 'Ne plus demander';
+	@override String get exit => 'Quitter';
 }
 
 // Path: screens
@@ -305,6 +309,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get matchContentFrameRateDescription => 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie';
 	@override String get requireProfileSelectionOnOpen => 'Demander le profil à l\'ouverture';
 	@override String get requireProfileSelectionOnOpenDescription => 'Afficher la sélection de profil à chaque ouverture de l\'application';
+	@override String get confirmExitOnBack => 'Confirmer avant de quitter';
+	@override String get confirmExitOnBackDescription => 'Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter';
 }
 
 // Path: search
@@ -1263,6 +1269,10 @@ extension on TranslationsFr {
 			'common.ok' => 'OK',
 			'common.loading' => 'Chargement...',
 			'common.reconnect' => 'Reconnecter',
+			'common.exitConfirmTitle' => 'Quitter l\'application ?',
+			'common.exitConfirmMessage' => 'Êtes-vous sûr de vouloir quitter ?',
+			'common.dontAskAgain' => 'Ne plus demander',
+			'common.exit' => 'Quitter',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
@@ -1396,6 +1406,8 @@ extension on TranslationsFr {
 			'settings.matchContentFrameRateDescription' => 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie',
 			'settings.requireProfileSelectionOnOpen' => 'Demander le profil à l\'ouverture',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Afficher la sélection de profil à chaque ouverture de l\'application',
+			'settings.confirmExitOnBack' => 'Confirmer avant de quitter',
+			'settings.confirmExitOnBackDescription' => 'Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter',
 			'search.hint' => 'Rechercher des films, des séries, de la musique...',
 			'search.tryDifferentTerm' => 'Essayez un autre terme de recherche',
 			'search.searchYourMedia' => 'Rechercher dans vos médias',
@@ -1725,14 +1737,14 @@ extension on TranslationsFr {
 			'liveTv.evening' => 'Soirée',
 			'liveTv.lateNight' => 'Nuit tardive',
 			'liveTv.whatsOn' => 'En ce moment',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Regarder la chaîne',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'La collection est vide',
 			'collections.unknownLibrarySection' => 'Impossible de supprimer : section de bibliothèque inconnue',
 			'collections.deleteCollection' => 'Supprimer la collection',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cette action ne peut pas être annulée.',
 			'collections.deleted' => 'Collection supprimée',
 			'collections.deleteFailed' => 'Échec de la suppression de la collection',

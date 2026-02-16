@@ -47,7 +47,11 @@
     "mute": "Silencio",
     "ok": "OK",
     "loading": "Cargando...",
-    "reconnect": "Reconectar"
+    "reconnect": "Reconectar",
+    "exitConfirmTitle": "¿Salir de la app?",
+    "exitConfirmMessage": "¿Estás seguro de que quieres salir?",
+    "dontAskAgain": "No volver a preguntar",
+    "exit": "Salir"
   },
   "screens": {
     "licenses": "Licencias",
@@ -186,7 +190,9 @@
     "matchContentFrameRate": "Ajustar frecuencia de actualización",
     "matchContentFrameRateDescription": "Ajustar la frecuencia de actualización de la pantalla para que coincida con el video, reduciendo tirones y ahorrando batería",
     "requireProfileSelectionOnOpen": "Pedir perfil al abrir la app",
-    "requireProfileSelectionOnOpenDescription": "Mostrar selección de perfil cada vez que se abre la aplicación"
+    "requireProfileSelectionOnOpenDescription": "Mostrar selección de perfil cada vez que se abre la aplicación",
+    "confirmExitOnBack": "Confirmar antes de salir",
+    "confirmExitOnBackDescription": "Mostrar un diálogo de confirmación al presionar atrás para salir de la app"
   },
   "search": {
     "hint": "Buscar películas, series, música...",

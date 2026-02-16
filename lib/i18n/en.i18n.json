@@ -47,7 +47,11 @@
     "mute": "Mute",
     "ok": "OK",
     "loading": "Loading...",
-    "reconnect": "Reconnect"
+    "reconnect": "Reconnect",
+    "exitConfirmTitle": "Exit app?",
+    "exitConfirmMessage": "Are you sure you want to exit?",
+    "dontAskAgain": "Don't ask again",
+    "exit": "Exit"
   },
   "screens": {
     "licenses": "Licenses",
@@ -186,7 +190,9 @@
     "matchContentFrameRate": "Match Content Frame Rate",
     "matchContentFrameRateDescription": "Adjust display refresh rate to match video content, reducing judder and saving battery",
     "requireProfileSelectionOnOpen": "Ask for profile on app open",
-    "requireProfileSelectionOnOpenDescription": "Show profile selection every time the app is opened"
+    "requireProfileSelectionOnOpenDescription": "Show profile selection every time the app is opened",
+    "confirmExitOnBack": "Confirm before exiting",
+    "confirmExitOnBackDescription": "Show a confirmation dialog when pressing back to exit the app"
   },
   "search": {
     "hint": "Search movies, shows, music...",

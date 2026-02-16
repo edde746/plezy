@@ -47,7 +47,11 @@
     "mute": "Ljud av",
     "ok": "OK",
     "loading": "Laddar...",
-    "reconnect": "Återanslut"
+    "reconnect": "Återanslut",
+    "exitConfirmTitle": "Avsluta appen?",
+    "exitConfirmMessage": "Är du säker på att du vill avsluta?",
+    "dontAskAgain": "Fråga inte igen",
+    "exit": "Avsluta"
   },
   "screens": {
     "licenses": "Licenser",
@@ -186,7 +190,9 @@
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
     "matchContentFrameRateDescription": "Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri",
     "requireProfileSelectionOnOpen": "Fråga efter profil vid appstart",
-    "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas"
+    "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas",
+    "confirmExitOnBack": "Bekräfta innan avslut",
+    "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",

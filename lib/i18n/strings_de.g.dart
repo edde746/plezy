@@ -145,6 +145,10 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get loading => 'Laden...';
 	@override String get reconnect => 'Erneut verbinden';
+	@override String get exitConfirmTitle => 'App beenden?';
+	@override String get exitConfirmMessage => 'Möchtest du die App wirklich beenden?';
+	@override String get dontAskAgain => 'Nicht erneut fragen';
+	@override String get exit => 'Beenden';
 }
 
 // Path: screens
@@ -305,6 +309,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get matchContentFrameRateDescription => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku';
 	@override String get requireProfileSelectionOnOpen => 'Profil beim Öffnen abfragen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Profilauswahl bei jedem Öffnen der App anzeigen';
+	@override String get confirmExitOnBack => 'Vor dem Beenden bestätigen';
+	@override String get confirmExitOnBackDescription => 'Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird';
 }
 
 // Path: search
@@ -1263,6 +1269,10 @@ extension on TranslationsDe {
 			'common.ok' => 'OK',
 			'common.loading' => 'Laden...',
 			'common.reconnect' => 'Erneut verbinden',
+			'common.exitConfirmTitle' => 'App beenden?',
+			'common.exitConfirmMessage' => 'Möchtest du die App wirklich beenden?',
+			'common.dontAskAgain' => 'Nicht erneut fragen',
+			'common.exit' => 'Beenden',
 			'screens.licenses' => 'Lizenzen',
 			'screens.switchProfile' => 'Profil wechseln',
 			'screens.subtitleStyling' => 'Untertitel-Stil',
@@ -1396,6 +1406,8 @@ extension on TranslationsDe {
 			'settings.matchContentFrameRateDescription' => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku',
 			'settings.requireProfileSelectionOnOpen' => 'Profil beim Öffnen abfragen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Profilauswahl bei jedem Öffnen der App anzeigen',
+			'settings.confirmExitOnBack' => 'Vor dem Beenden bestätigen',
+			'settings.confirmExitOnBackDescription' => 'Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird',
 			'search.hint' => 'Filme, Serien, Musik suchen...',
 			'search.tryDifferentTerm' => 'Anderen Suchbegriff versuchen',
 			'search.searchYourMedia' => 'In den eigenen Medien suchen',
@@ -1725,14 +1737,14 @@ extension on TranslationsDe {
 			'liveTv.evening' => 'Abend',
 			'liveTv.lateNight' => 'Spätnacht',
 			'liveTv.whatsOn' => 'Jetzt im TV',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Kanal ansehen',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
 			'downloads.movies' => 'Filme',
 			'downloads.noDownloads' => 'Noch keine Downloads',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
 			'downloads.downloadNow' => 'Herunterladen',
 			'downloads.deleteDownload' => 'Download löschen',

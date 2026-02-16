@@ -145,6 +145,10 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get loading => 'Caricamento...';
 	@override String get reconnect => 'Riconnetti';
+	@override String get exitConfirmTitle => 'Uscire dall\'app?';
+	@override String get exitConfirmMessage => 'Sei sicuro di voler uscire?';
+	@override String get dontAskAgain => 'Non chiedere più';
+	@override String get exit => 'Esci';
 }
 
 // Path: screens
@@ -305,6 +309,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get matchContentFrameRateDescription => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria';
 	@override String get requireProfileSelectionOnOpen => 'Chiedi profilo all\'apertura';
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostra la selezione del profilo ogni volta che l\'app viene aperta';
+	@override String get confirmExitOnBack => 'Conferma prima di uscire';
+	@override String get confirmExitOnBackDescription => 'Mostra una finestra di conferma quando si preme indietro per uscire dall\'app';
 }
 
 // Path: search
@@ -1263,6 +1269,10 @@ extension on TranslationsIt {
 			'common.ok' => 'OK',
 			'common.loading' => 'Caricamento...',
 			'common.reconnect' => 'Riconnetti',
+			'common.exitConfirmTitle' => 'Uscire dall\'app?',
+			'common.exitConfirmMessage' => 'Sei sicuro di voler uscire?',
+			'common.dontAskAgain' => 'Non chiedere più',
+			'common.exit' => 'Esci',
 			'screens.licenses' => 'Licenze',
 			'screens.switchProfile' => 'Cambia profilo',
 			'screens.subtitleStyling' => 'Stile sottotitoli',
@@ -1396,6 +1406,8 @@ extension on TranslationsIt {
 			'settings.matchContentFrameRateDescription' => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria',
 			'settings.requireProfileSelectionOnOpen' => 'Chiedi profilo all\'apertura',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostra la selezione del profilo ogni volta che l\'app viene aperta',
+			'settings.confirmExitOnBack' => 'Conferma prima di uscire',
+			'settings.confirmExitOnBackDescription' => 'Mostra una finestra di conferma quando si preme indietro per uscire dall\'app',
 			'search.hint' => 'Cerca film. spettacoli, musica...',
 			'search.tryDifferentTerm' => 'Prova altri termini di ricerca',
 			'search.searchYourMedia' => 'Cerca nei tuoi media',
@@ -1725,14 +1737,14 @@ extension on TranslationsIt {
 			'liveTv.evening' => 'Sera',
 			'liveTv.lateNight' => 'Notte tarda',
 			'liveTv.whatsOn' => 'In onda ora',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Guarda canale',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',
 			'downloads.movies' => 'Film',
 			'downloads.noDownloads' => 'Nessun download',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'I contenuti scaricati appariranno qui per la visualizzazione offline',
 			'downloads.downloadNow' => 'Scarica',
 			'downloads.deleteDownload' => 'Elimina download',

@@ -145,6 +145,10 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get ok => '确定';
 	@override String get loading => '加载中...';
 	@override String get reconnect => '重新连接';
+	@override String get exitConfirmTitle => '退出应用？';
+	@override String get exitConfirmMessage => '确定要退出吗？';
+	@override String get dontAskAgain => '不再询问';
+	@override String get exit => '退出';
 }
 
 // Path: screens
@@ -305,6 +309,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get matchContentFrameRateDescription => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量';
 	@override String get requireProfileSelectionOnOpen => '打开应用时询问配置文件';
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
+	@override String get confirmExitOnBack => '退出前确认';
+	@override String get confirmExitOnBackDescription => '按返回键退出应用时显示确认对话框';
 }
 
 // Path: search
@@ -1263,6 +1269,10 @@ extension on TranslationsZh {
 			'common.ok' => '确定',
 			'common.loading' => '加载中...',
 			'common.reconnect' => '重新连接',
+			'common.exitConfirmTitle' => '退出应用？',
+			'common.exitConfirmMessage' => '确定要退出吗？',
+			'common.dontAskAgain' => '不再询问',
+			'common.exit' => '退出',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -1396,6 +1406,8 @@ extension on TranslationsZh {
 			'settings.matchContentFrameRateDescription' => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量',
 			'settings.requireProfileSelectionOnOpen' => '打开应用时询问配置文件',
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
+			'settings.confirmExitOnBack' => '退出前确认',
+			'settings.confirmExitOnBackDescription' => '按返回键退出应用时显示确认对话框',
 			'search.hint' => '搜索电影、系列、音乐...',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -1725,14 +1737,14 @@ extension on TranslationsZh {
 			'liveTv.evening' => '晚上',
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '正在播出',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => '观看频道',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
 			'downloads.movies' => '电影',
 			'downloads.noDownloads' => '暂无下载',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',
 			'downloads.downloadNow' => '下载',
 			'downloads.deleteDownload' => '删除下载',

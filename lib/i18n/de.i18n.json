@@ -47,7 +47,11 @@
     "mute": "Stumm",
     "ok": "OK",
     "loading": "Laden...",
-    "reconnect": "Erneut verbinden"
+    "reconnect": "Erneut verbinden",
+    "exitConfirmTitle": "App beenden?",
+    "exitConfirmMessage": "Möchtest du die App wirklich beenden?",
+    "dontAskAgain": "Nicht erneut fragen",
+    "exit": "Beenden"
   },
   "screens": {
     "licenses": "Lizenzen",
@@ -186,7 +190,9 @@
     "matchContentFrameRate": "Inhalts-Bildrate anpassen",
     "matchContentFrameRateDescription": "Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku",
     "requireProfileSelectionOnOpen": "Profil beim Öffnen abfragen",
-    "requireProfileSelectionOnOpenDescription": "Profilauswahl bei jedem Öffnen der App anzeigen"
+    "requireProfileSelectionOnOpenDescription": "Profilauswahl bei jedem Öffnen der App anzeigen",
+    "confirmExitOnBack": "Vor dem Beenden bestätigen",
+    "confirmExitOnBackDescription": "Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",

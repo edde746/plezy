@@ -145,6 +145,10 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get loading => 'Laden...';
 	@override String get reconnect => 'Opnieuw verbinden';
+	@override String get exitConfirmTitle => 'App afsluiten?';
+	@override String get exitConfirmMessage => 'Weet je zeker dat je wilt afsluiten?';
+	@override String get dontAskAgain => 'Niet meer vragen';
+	@override String get exit => 'Afsluiten';
 }
 
 // Path: screens
@@ -305,6 +309,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get matchContentFrameRateDescription => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
+	@override String get confirmExitOnBack => 'Bevestigen voor afsluiten';
+	@override String get confirmExitOnBackDescription => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten';
 }
 
 // Path: search
@@ -1263,6 +1269,10 @@ extension on TranslationsNl {
 			'common.ok' => 'OK',
 			'common.loading' => 'Laden...',
 			'common.reconnect' => 'Opnieuw verbinden',
+			'common.exitConfirmTitle' => 'App afsluiten?',
+			'common.exitConfirmMessage' => 'Weet je zeker dat je wilt afsluiten?',
+			'common.dontAskAgain' => 'Niet meer vragen',
+			'common.exit' => 'Afsluiten',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
@@ -1396,6 +1406,8 @@ extension on TranslationsNl {
 			'settings.matchContentFrameRateDescription' => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
+			'settings.confirmExitOnBack' => 'Bevestigen voor afsluiten',
+			'settings.confirmExitOnBackDescription' => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -1725,14 +1737,14 @@ extension on TranslationsNl {
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
 			'downloads.movies' => 'Films',
 			'downloads.noDownloads' => 'Nog geen downloads',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
 			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Download verwijderen',

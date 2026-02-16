@@ -10,6 +10,7 @@ import '../../services/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
@@ -702,7 +703,25 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
 
     // Sidebar focused → exit app
-    return handleBackKeyAction(event, () => SystemNavigator.pop());
+    return handleBackKeyAction(event, () async {
+      if (PlatformDetector.isTV()) {
+        final settings = await SettingsService.getInstance();
+        if (settings.getConfirmExitOnBack() && mounted) {
+          final result = await showConfirmDialogWithCheckbox(
+            context,
+            title: t.common.exitConfirmTitle,
+            message: t.common.exitConfirmMessage,
+            confirmText: t.common.exit,
+            checkboxLabel: t.common.dontAskAgain,
+          );
+          if (result.checked) {
+            await settings.setConfirmExitOnBack(false);
+          }
+          if (!result.confirmed) return;
+        }
+      }
+      SystemNavigator.pop();
+    });
   }
 
   @override

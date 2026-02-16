@@ -145,6 +145,10 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get ok => '확인';
 	@override String get loading => '로딩 중...';
 	@override String get reconnect => '다시 연결';
+	@override String get exitConfirmTitle => '앱을 종료하시겠습니까?';
+	@override String get exitConfirmMessage => '정말 종료하시겠습니까?';
+	@override String get dontAskAgain => '다시 묻지 않기';
+	@override String get exit => '종료';
 }
 
 // Path: screens
@@ -305,6 +309,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get matchContentFrameRateDescription => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
+	@override String get confirmExitOnBack => '종료 전 확인';
+	@override String get confirmExitOnBackDescription => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다';
 }
 
 // Path: search
@@ -1263,6 +1269,10 @@ extension on TranslationsKo {
 			'common.ok' => '확인',
 			'common.loading' => '로딩 중...',
 			'common.reconnect' => '다시 연결',
+			'common.exitConfirmTitle' => '앱을 종료하시겠습니까?',
+			'common.exitConfirmMessage' => '정말 종료하시겠습니까?',
+			'common.dontAskAgain' => '다시 묻지 않기',
+			'common.exit' => '종료',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -1396,6 +1406,8 @@ extension on TranslationsKo {
 			'settings.matchContentFrameRateDescription' => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
+			'settings.confirmExitOnBack' => '종료 전 확인',
+			'settings.confirmExitOnBackDescription' => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -1725,14 +1737,14 @@ extension on TranslationsKo {
 			'liveTv.evening' => '저녁',
 			'liveTv.lateNight' => '심야 방송',
 			'liveTv.whatsOn' => '지금 방송 중',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => '채널 시청',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',
 			'collections.unknownLibrarySection' => '삭제할 수 없습니다: 알 수 없는 미디어 라이브러리 섹션입니다',
 			'collections.deleteCollection' => '컬렉션 삭제',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => '"${title}"을(를) 삭제 하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
 			'collections.deleted' => '컬렉션 삭제됨',
 			'collections.deleteFailed' => '컬렉션 삭제 실패',

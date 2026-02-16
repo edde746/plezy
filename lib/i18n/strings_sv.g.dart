@@ -145,6 +145,10 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get loading => 'Laddar...';
 	@override String get reconnect => 'Återanslut';
+	@override String get exitConfirmTitle => 'Avsluta appen?';
+	@override String get exitConfirmMessage => 'Är du säker på att du vill avsluta?';
+	@override String get dontAskAgain => 'Fråga inte igen';
+	@override String get exit => 'Avsluta';
 }
 
 // Path: screens
@@ -305,6 +309,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get matchContentFrameRateDescription => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri';
 	@override String get requireProfileSelectionOnOpen => 'Fråga efter profil vid appstart';
 	@override String get requireProfileSelectionOnOpenDescription => 'Visa profilval varje gång appen öppnas';
+	@override String get confirmExitOnBack => 'Bekräfta innan avslut';
+	@override String get confirmExitOnBackDescription => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen';
 }
 
 // Path: search
@@ -1263,6 +1269,10 @@ extension on TranslationsSv {
 			'common.ok' => 'OK',
 			'common.loading' => 'Laddar...',
 			'common.reconnect' => 'Återanslut',
+			'common.exitConfirmTitle' => 'Avsluta appen?',
+			'common.exitConfirmMessage' => 'Är du säker på att du vill avsluta?',
+			'common.dontAskAgain' => 'Fråga inte igen',
+			'common.exit' => 'Avsluta',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -1396,6 +1406,8 @@ extension on TranslationsSv {
 			'settings.matchContentFrameRateDescription' => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri',
 			'settings.requireProfileSelectionOnOpen' => 'Fråga efter profil vid appstart',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Visa profilval varje gång appen öppnas',
+			'settings.confirmExitOnBack' => 'Bekräfta innan avslut',
+			'settings.confirmExitOnBackDescription' => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -1725,14 +1737,14 @@ extension on TranslationsSv {
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Filmer',
 			'downloads.noDownloads' => 'Inga nedladdningar ännu',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
 			'downloads.downloadNow' => 'Ladda ner',
 			'downloads.deleteDownload' => 'Ta bort nedladdning',

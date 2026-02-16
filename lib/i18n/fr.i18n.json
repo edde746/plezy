@@ -47,7 +47,11 @@
     "mute": "Muet",
     "ok": "OK",
     "loading": "Chargement...",
-    "reconnect": "Reconnecter"
+    "reconnect": "Reconnecter",
+    "exitConfirmTitle": "Quitter l'application ?",
+    "exitConfirmMessage": "Êtes-vous sûr de vouloir quitter ?",
+    "dontAskAgain": "Ne plus demander",
+    "exit": "Quitter"
   },
   "screens": {
     "licenses": "Licenses",
@@ -186,7 +190,9 @@
     "matchContentFrameRate": "Fréquence d'images du contenu correspondant",
     "matchContentFrameRateDescription": "Ajustez la fréquence de rafraîchissement de l'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie",
     "requireProfileSelectionOnOpen": "Demander le profil à l'ouverture",
-    "requireProfileSelectionOnOpenDescription": "Afficher la sélection de profil à chaque ouverture de l'application"
+    "requireProfileSelectionOnOpenDescription": "Afficher la sélection de profil à chaque ouverture de l'application",
+    "confirmExitOnBack": "Confirmer avant de quitter",
+    "confirmExitOnBackDescription": "Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter"
   },
   "search": {
     "hint": "Rechercher des films, des séries, de la musique...",
