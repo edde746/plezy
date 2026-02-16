@@ -29,6 +29,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var usingMpvFallback: Boolean = false
     private var activity: Activity? = null
     private var activityBinding: ActivityPluginBinding? = null
+    private val nameToId = mutableMapOf<String, Int>()
 
     // FlutterPlugin
 
@@ -119,6 +120,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "getStats" -> handleGetStats(result)
             "getPlayerType" -> result.success(if (usingMpvFallback) "mpv" else "exoplayer")
             "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
+            "observeProperty" -> handleObserveProperty(call, result)
             else -> result.notImplemented()
         }
     }
@@ -413,6 +415,19 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         result.success(null)
     }
 
+    private fun handleObserveProperty(call: MethodCall, result: MethodChannel.Result) {
+        val name = call.argument<String>("name")
+        val id = call.argument<Int>("id")
+
+        if (name == null || id == null) {
+            result.error("INVALID_ARGS", "Missing 'name' or 'id'", null)
+            return
+        }
+
+        nameToId[name] = id
+        result.success(null)
+    }
+
     private fun handleSetSubtitleStyle(call: MethodCall, result: MethodChannel.Result) {
         val fontSize = call.argument<Number>("fontSize")?.toFloat() ?: 55f
         val textColor = call.argument<String>("textColor") ?: "#FFFFFF"
@@ -508,13 +523,8 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     // ExoPlayerDelegate
 
     override fun onPropertyChange(name: String, value: Any?) {
-        eventSink?.success(
-            mapOf(
-                "type" to "property",
-                "name" to name,
-                "value" to value
-            )
-        )
+        val propId = nameToId[name] ?: return
+        eventSink?.success(listOf(propId, value))
     }
 
     override fun onEvent(name: String, data: Map<String, Any>?) {

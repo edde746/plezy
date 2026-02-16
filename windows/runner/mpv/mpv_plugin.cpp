@@ -150,7 +150,7 @@ void MpvPlayerPlugin::HandleMethodCall(
     if (success) {
       LogToFile("MPV Plugin: Player initialized successfully");
       // Set up event callback.
-      player_->SetEventCallback([this](const flutter::EncodableMap& event) {
+      player_->SetEventCallback([this](const flutter::EncodableValue& event) {
         SendEvent(event);
       });
 
@@ -291,6 +291,7 @@ void MpvPlayerPlugin::HandleMethodCall(
     const auto& map = std::get<flutter::EncodableMap>(*args);
     auto name_it = map.find(flutter::EncodableValue("name"));
     auto format_it = map.find(flutter::EncodableValue("format"));
+    auto id_it = map.find(flutter::EncodableValue("id"));
 
     if (name_it == map.end() ||
         !std::holds_alternative<std::string>(name_it->second)) {
@@ -302,9 +303,15 @@ void MpvPlayerPlugin::HandleMethodCall(
       result->Error("INVALID_ARGS", "Missing 'format'");
       return;
     }
+    if (id_it == map.end() ||
+        !std::holds_alternative<int32_t>(id_it->second)) {
+      result->Error("INVALID_ARGS", "Missing 'id'");
+      return;
+    }
 
     player_->ObserveProperty(std::get<std::string>(name_it->second),
-                             std::get<std::string>(format_it->second));
+                             std::get<std::string>(format_it->second),
+                             std::get<int32_t>(id_it->second));
     result->Success();
   } else if (method == "setVisible") {
     const auto* args = method_call.arguments();
@@ -382,9 +389,9 @@ void MpvPlayerPlugin::HandleMethodCall(
   }
 }
 
-void MpvPlayerPlugin::SendEvent(const flutter::EncodableMap& event) {
+void MpvPlayerPlugin::SendEvent(const flutter::EncodableValue& event) {
   if (event_sink_) {
-    event_sink_->Success(flutter::EncodableValue(event));
+    event_sink_->Success(event);
   }
 }
 

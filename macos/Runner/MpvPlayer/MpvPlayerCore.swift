@@ -98,9 +98,46 @@ class MpvPlayerCore: NSObject {
             return false
         }
 
+        // Register for fullscreen notifications to avoid MoltenVK swapchain crash
+        let nc = NotificationCenter.default
+        nc.addObserver(self, selector: #selector(windowWillEnterFullScreen),
+                       name: NSWindow.willEnterFullScreenNotification, object: window)
+        nc.addObserver(self, selector: #selector(windowDidEnterFullScreen),
+                       name: NSWindow.didEnterFullScreenNotification, object: window)
+        nc.addObserver(self, selector: #selector(windowWillExitFullScreen),
+                       name: NSWindow.willExitFullScreenNotification, object: window)
+        nc.addObserver(self, selector: #selector(windowDidExitFullScreen),
+                       name: NSWindow.didExitFullScreenNotification, object: window)
+
         isInitialized = true
         print("[MpvPlayerCore] Initialized successfully with MPV")
         return true
+    }
+
+    // MARK: - Fullscreen Transition Handling
+
+    @objc private func windowWillEnterFullScreen(_ notification: Notification) {
+        guard mpv != nil else { return }
+        print("[MpvPlayerCore] willEnterFullScreen — disabling video output")
+        mpv_set_property_string(mpv, "vid", "no")
+    }
+
+    @objc private func windowDidEnterFullScreen(_ notification: Notification) {
+        guard mpv != nil else { return }
+        print("[MpvPlayerCore] didEnterFullScreen — re-enabling video output")
+        mpv_set_property_string(mpv, "vid", "auto")
+    }
+
+    @objc private func windowWillExitFullScreen(_ notification: Notification) {
+        guard mpv != nil else { return }
+        print("[MpvPlayerCore] willExitFullScreen — disabling video output")
+        mpv_set_property_string(mpv, "vid", "no")
+    }
+
+    @objc private func windowDidExitFullScreen(_ notification: Notification) {
+        guard mpv != nil else { return }
+        print("[MpvPlayerCore] didExitFullScreen — re-enabling video output")
+        mpv_set_property_string(mpv, "vid", "auto")
     }
 
     private func setupMpv() -> Bool {
@@ -508,6 +545,8 @@ class MpvPlayerCore: NSObject {
     // MARK: - Cleanup
 
     func dispose() {
+        NotificationCenter.default.removeObserver(self)
+
         // Cancel any pending async commands
         pendingCommandsLock.lock()
         let pending = pendingCommands

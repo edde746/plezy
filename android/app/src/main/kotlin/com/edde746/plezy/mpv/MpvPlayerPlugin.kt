@@ -25,6 +25,7 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var playerCore: MpvPlayerCore? = null
     private var activity: Activity? = null
     private var activityBinding: ActivityPluginBinding? = null
+    private val nameToId = mutableMapOf<String, Int>()
 
     // FlutterPlugin
 
@@ -175,12 +176,14 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun handleObserveProperty(call: MethodCall, result: MethodChannel.Result) {
         val name = call.argument<String>("name")
         val format = call.argument<String>("format")
+        val id = call.argument<Int>("id")
 
-        if (name == null || format == null) {
-            result.error("INVALID_ARGS", "Missing 'name' or 'format'", null)
+        if (name == null || format == null || id == null) {
+            result.error("INVALID_ARGS", "Missing 'name', 'format', or 'id'", null)
             return
         }
 
+        nameToId[name] = id
         playerCore?.observeProperty(name, format)
         result.success(null)
     }
@@ -272,13 +275,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     // MpvPlayerDelegate
 
     override fun onPropertyChange(name: String, value: Any?) {
-        eventSink?.success(
-            mapOf(
-                "type" to "property",
-                "name" to name,
-                "value" to value
-            )
-        )
+        val propId = nameToId[name] ?: return
+        eventSink?.success(listOf(propId, value))
     }
 
     override fun onEvent(name: String, data: Map<String, Any>?) {

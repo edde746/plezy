@@ -32,7 +32,7 @@ class MpvPlayerPlugin : public flutter::Plugin {
       const flutter::MethodCall<flutter::EncodableValue>& method_call,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
-  void SendEvent(const flutter::EncodableMap& event);
+  void SendEvent(const flutter::EncodableValue& event);
 
   HWND GetWindow();
   HWND GetChildWindow();

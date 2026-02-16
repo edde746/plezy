@@ -37,7 +37,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   StreamSubscription? _eventSubscription;
   bool _disposed = false;
-  DateTime? _lastPositionEmit;
+  final _throttleSw = Stopwatch()..start();
+  int _lastEmitMs = 0;
+  int _positionMs = 0;
+  int _nextPropId = 0;
+  final Map<int, String> _propIdToName = {};
 
   /// Whether the player has been initialized.
   /// Subclasses should set this to true after initialization.
@@ -90,16 +94,31 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     );
   }
 
+  /// Observes a property on the native player and assigns it a compact propId
+  /// for efficient event channel communication.
+  @protected
+  Future<void> observeProperty(String name, String format) async {
+    final propId = _nextPropId++;
+    _propIdToName[propId] = name;
+    await methodChannel.invokeMethod('observeProperty', {
+      'name': name,
+      'format': format,
+      'id': propId,
+    });
+  }
+
   void _handleEvent(dynamic event) {
-    if (event is! Map) return;
-
-    final type = event['type'] as String?;
-    final name = event['name'] as String?;
-
-    if (type == 'property' && name != null) {
-      handlePropertyChange(name, event['value']);
-    } else if (type == 'event' && name != null) {
-      handlePlayerEvent(name, event['data'] as Map?);
+    if (event is List && event.length == 2) {
+      final name = _propIdToName[event[0]];
+      if (name != null) {
+        handlePropertyChange(name, event[1]);
+      }
+    } else if (event is Map) {
+      final type = event['type'] as String?;
+      final name = event['name'] as String?;
+      if (type == 'event' && name != null) {
+        handlePlayerEvent(name, event['data'] as Map?);
+      }
     }
   }
 
@@ -127,14 +146,15 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'time-pos':
         if (value is num) {
-          final position = Duration(milliseconds: (value * 1000).toInt());
-          _state = _state.copyWith(position: position);
-          // Throttle stream emissions to ~4Hz (250ms) to reduce listener/rebuild pressure.
-          // _state is always updated above so synchronous reads stay current.
-          final now = DateTime.now();
-          if (_lastPositionEmit == null || now.difference(_lastPositionEmit!).inMilliseconds >= 250) {
-            _lastPositionEmit = now;
-            positionController.add(position);
+          _positionMs = (value * 1000).round();
+          // Only allocate Duration + copyWith + emit at ~4Hz (250ms).
+          // Raw int is stored every tick so synchronous reads via _positionMs stay current.
+          final nowMs = _throttleSw.elapsedMilliseconds;
+          if (nowMs - _lastEmitMs >= 250) {
+            _lastEmitMs = nowMs;
+            final pos = Duration(milliseconds: _positionMs);
+            _state = _state.copyWith(position: pos);
+            positionController.add(pos);
           }
         }
         break;

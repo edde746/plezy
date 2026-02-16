@@ -42,24 +42,20 @@ class PlayerNative extends PlayerBase {
       await _configureSubtitleFonts();
 
       // Subscribe to MPV properties
-      await _observeProperty('time-pos', 'double');
-      await _observeProperty('duration', 'double');
-      await _observeProperty('pause', 'flag');
-      await _observeProperty('paused-for-cache', 'flag');
-      await _observeProperty('track-list', (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node');
-      await _observeProperty('eof-reached', 'flag');
-      await _observeProperty('volume', 'double');
-      await _observeProperty('speed', 'double');
-      await _observeProperty('aid', 'string');
-      await _observeProperty('sid', 'string');
+      await observeProperty('time-pos', 'double');
+      await observeProperty('duration', 'double');
+      await observeProperty('pause', 'flag');
+      await observeProperty('paused-for-cache', 'flag');
+      await observeProperty('track-list', (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node');
+      await observeProperty('eof-reached', 'flag');
+      await observeProperty('volume', 'double');
+      await observeProperty('speed', 'double');
+      await observeProperty('aid', 'string');
+      await observeProperty('sid', 'string');
     } catch (e) {
       errorController.add('Initialization failed: $e');
       rethrow;
     }
-  }
-
-  Future<void> _observeProperty(String name, String format) async {
-    await methodChannel.invokeMethod('observeProperty', {'name': name, 'format': format});
   }
 
   /// Configures subtitle fonts for libass support.

@@ -51,6 +51,19 @@ class PlayerAndroid extends PlayerBase {
       if (!initialized) {
         throw Exception('Failed to initialize ExoPlayer');
       }
+
+      // Register property observers so the plugin knows propId mappings
+      await observeProperty('time-pos', 'double');
+      await observeProperty('duration', 'double');
+      await observeProperty('pause', 'flag');
+      await observeProperty('paused-for-cache', 'flag');
+      await observeProperty('track-list', 'string');
+      await observeProperty('eof-reached', 'flag');
+      await observeProperty('volume', 'double');
+      await observeProperty('speed', 'double');
+      await observeProperty('aid', 'string');
+      await observeProperty('sid', 'string');
+      await observeProperty('demuxer-cache-time', 'double');
     } catch (e) {
       errorController.add('Initialization failed: $e');
       rethrow;

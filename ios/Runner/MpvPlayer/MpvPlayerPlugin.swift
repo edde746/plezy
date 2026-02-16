@@ -9,6 +9,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
     private var playerCore: MpvPlayerCore?
     private var eventSink: FlutterEventSink?
     private weak var registrar: FlutterPluginRegistrar?
+    private var nameToId: [String: Int] = [:]
 
     // MARK: - FlutterPlugin Registration
 
@@ -162,11 +163,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
     private func handleObserveProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
               let name = args["name"] as? String,
-              let format = args["format"] as? String else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'name' or 'format' argument", details: nil))
+              let format = args["format"] as? String,
+              let id = args["id"] as? Int else {
+            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'name', 'format', or 'id' argument", details: nil))
             return
         }
 
+        nameToId[name] = id
         playerCore?.observeProperty(name, format: format)
         result(nil)
     }
@@ -220,13 +223,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
     func onPropertyChange(name: String, value: Any?) {
         guard let eventSink = eventSink else { return }
 
-        var event: [String: Any] = ["type": "property", "name": name]
-
-        if let value = value {
-            event["value"] = value
+        if let propId = nameToId[name] {
+            eventSink([propId, value as Any])
         }
-
-        eventSink(event)
     }
 
     func onEvent(name: String, data: [String: Any]?) {

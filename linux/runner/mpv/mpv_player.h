@@ -71,7 +71,9 @@ class MpvPlayer {
   /// Changes will be reported via the event callback.
   /// @param name Property name to observe.
   /// @param format Format type ("string", "flag", "int64", "double", "node").
-  void ObserveProperty(const std::string& name, const std::string& format);
+  /// @param id Property ID assigned by Dart for compact event encoding.
+  void ObserveProperty(const std::string& name, const std::string& format,
+                       int id);
 
   /// Renders a frame to the current OpenGL context.
   /// Must be called from the GTK render callback.
@@ -133,6 +135,7 @@ class MpvPlayer {
 
   uint64_t next_reply_userdata_ = 1;
   std::map<std::string, uint64_t> observed_properties_;
+  std::map<std::string, int> name_to_id_;
 
   // Pending async commands: request_id -> callback
   std::map<uint64_t, CommandCallback> pending_commands_;

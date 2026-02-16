@@ -411,6 +411,7 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
     } else {
       FlValue* name_value = fl_value_lookup_string(args, "name");
       FlValue* format_value = fl_value_lookup_string(args, "format");
+      FlValue* id_value = fl_value_lookup_string(args, "id");
 
       if (name_value == nullptr ||
           fl_value_get_type(name_value) != FL_VALUE_TYPE_STRING) {
@@ -420,9 +421,14 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
                  fl_value_get_type(format_value) != FL_VALUE_TYPE_STRING) {
         response = FL_METHOD_RESPONSE(fl_method_error_response_new(
             "INVALID_ARGS", "Missing 'format'", nullptr));
+      } else if (id_value == nullptr ||
+                 fl_value_get_type(id_value) != FL_VALUE_TYPE_INT) {
+        response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+            "INVALID_ARGS", "Missing 'id'", nullptr));
       } else {
         self->player->ObserveProperty(fl_value_get_string(name_value),
-                                      fl_value_get_string(format_value));
+                                      fl_value_get_string(format_value),
+                                      static_cast<int>(fl_value_get_int(id_value)));
         response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
       }
     }

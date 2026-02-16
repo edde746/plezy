@@ -249,13 +249,16 @@ std::string MpvPlayer::GetProperty(const std::string& name) {
 }
 
 void MpvPlayer::ObserveProperty(const std::string& name,
-                                const std::string& format) {
+                                const std::string& format,
+                                int id) {
   if (disposed_ || !mpv_) return;
 
   // Check if already observing.
   if (observed_properties_.find(name) != observed_properties_.end()) {
     return;
   }
+
+  name_to_id_[name] = id;
 
   mpv_format mpv_fmt = MPV_FORMAT_NONE;
   if (format == "string") {
@@ -515,22 +518,24 @@ FlValue* MpvPlayer::NodeToFlValue(mpv_node* node) {
 }
 
 void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
-  FlValue* event_map = fl_value_new_map();
-  fl_value_set_string_take(event_map, "type", fl_value_new_string("property"));
-  fl_value_set_string_take(event_map, "name",
-                           fl_value_new_string(name ? name : ""));
+  if (!name) return;
 
+  auto it = name_to_id_.find(name);
+  if (it == name_to_id_.end()) return;
+
+  FlValue* list = fl_value_new_list();
+  fl_value_append_take(list, fl_value_new_int(it->second));
   if (data) {
-    fl_value_set_string_take(event_map, "value", NodeToFlValue(data));
+    fl_value_append_take(list, NodeToFlValue(data));
   } else {
-    fl_value_set_string_take(event_map, "value", fl_value_new_null());
+    fl_value_append_take(list, fl_value_new_null());
   }
 
   std::lock_guard<std::mutex> lock(callback_mutex_);
   if (event_callback_) {
-    event_callback_(event_map);
+    event_callback_(list);
   }
-  fl_value_unref(event_map);
+  fl_value_unref(list);
 }
 
 void MpvPlayer::SendEvent(const std::string& name, FlValue* data) {

@@ -212,13 +212,16 @@ std::string MpvPlayer::GetProperty(const std::string& name) {
 }
 
 void MpvPlayer::ObserveProperty(const std::string& name,
-                                const std::string& format) {
+                                const std::string& format,
+                                int id) {
   if (!mpv_) return;
 
   // Check if already observing.
   if (observed_properties_.find(name) != observed_properties_.end()) {
     return;
   }
+
+  name_to_id_[name] = id;
 
   mpv_format mpv_fmt = MPV_FORMAT_NONE;
   if (format == "string") {
@@ -418,11 +421,10 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
 }
 
 void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
-  flutter::EncodableMap event;
-  event[flutter::EncodableValue("type")] =
-      flutter::EncodableValue("property");
-  event[flutter::EncodableValue("name")] =
-      flutter::EncodableValue(name ? name : "");
+  if (!name) return;
+
+  auto it = name_to_id_.find(name);
+  if (it == name_to_id_.end()) return;
 
   flutter::EncodableValue value;
   if (data) {
@@ -445,11 +447,14 @@ void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
         break;
     }
   }
-  event[flutter::EncodableValue("value")] = value;
+
+  flutter::EncodableList list;
+  list.push_back(flutter::EncodableValue(it->second));
+  list.push_back(value);
 
   std::lock_guard<std::mutex> lock(callback_mutex_);
   if (event_callback_) {
-    event_callback_(event);
+    event_callback_(flutter::EncodableValue(list));
   }
 }
 
@@ -464,7 +469,7 @@ void MpvPlayer::SendEvent(const std::string& name,
 
   std::lock_guard<std::mutex> lock(callback_mutex_);
   if (event_callback_) {
-    event_callback_(event);
+    event_callback_(flutter::EncodableValue(event));
   }
 }
 
