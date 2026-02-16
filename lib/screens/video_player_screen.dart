@@ -2150,7 +2150,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             }
           }
         }
-        return KeyEventResult.handled;
+        return event.logicalKey.isNavigationKey
+            ? KeyEventResult.handled
+            : KeyEventResult.ignored;
       },
       child: _isPlayerInitialized && player != null ? _buildVideoPlayer(context) : _buildLoadingSpinner(),
     );
