@@ -109,7 +109,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   void _handleEvent(dynamic event) {
     if (event is List && event.length == 2) {
-      final name = _propIdToName[event[0]];
+      final name = _propIdToName[event[0] as int];
       if (name != null) {
         handlePropertyChange(name, event[1]);
       }
@@ -216,6 +216,41 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'sid':
         updateSelectedSubtitleTrack(value);
+        break;
+
+      case 'audio-device-list':
+        List? deviceList;
+        if (value is List) {
+          deviceList = value;
+        } else if (value is String && value.isNotEmpty) {
+          try {
+            final parsed = jsonDecode(value);
+            if (parsed is List) deviceList = parsed;
+          } catch (_) {}
+        }
+        if (deviceList != null) {
+          final devices = deviceList
+              .whereType<Map>()
+              .map((d) => AudioDevice(
+                    name: d['name'] as String? ?? '',
+                    description: d['description'] as String? ?? '',
+                  ))
+              .toList();
+          _state = _state.copyWith(audioDevices: devices);
+          audioDevicesController.add(devices);
+        }
+        break;
+
+      case 'audio-device':
+        if (value is String && value.isNotEmpty) {
+          final device = _state.audioDevices.cast<AudioDevice?>().firstWhere(
+                (d) => d?.name == value,
+                orElse: () => AudioDevice(name: value),
+              ) ??
+              AudioDevice(name: value);
+          _state = _state.copyWith(audioDevice: device);
+          audioDeviceController.add(device);
+        }
         break;
     }
   }

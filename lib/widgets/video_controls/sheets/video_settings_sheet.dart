@@ -347,7 +347,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               final currentDevice = snapshot.data ?? widget.player.state.audioDevice;
               final deviceLabel = currentDevice.description.isEmpty
                   ? currentDevice.name
-                  : '${currentDevice.name} · ${currentDevice.description}';
+                  : currentDevice.description;
 
               return _SettingsMenuItem(
                 icon: Symbols.speaker_rounded,
@@ -462,6 +462,27 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     );
   }
 
+  /// Extract the audio backend name from a device name (e.g. "coreaudio" from "coreaudio/BuiltIn").
+  static String _audioBackend(String name) {
+    final slash = name.indexOf('/');
+    return slash > 0 ? name.substring(0, slash) : name;
+  }
+
+  /// Pretty-print a backend identifier.
+  static String _formatBackend(String backend) {
+    const labels = {
+      'coreaudio': 'CoreAudio',
+      'avfoundation': 'AVFoundation',
+      'wasapi': 'WASAPI',
+      'pulse': 'PulseAudio',
+      'pipewire': 'PipeWire',
+      'alsa': 'ALSA',
+      'jack': 'JACK',
+      'oss': 'OSS',
+    };
+    return labels[backend] ?? backend;
+  }
+
   Widget _buildAudioDeviceView() {
     return StreamBuilder<List<AudioDevice>>(
       stream: widget.player.streams.audioDevices,
@@ -475,25 +496,68 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           builder: (context, selectedSnapshot) {
             final currentDevice = selectedSnapshot.data ?? widget.player.state.audioDevice;
 
-            return ListView.builder(
-              itemCount: devices.length,
-              itemBuilder: (context, index) {
-                final device = devices[index];
-                final isSelected = device.name == currentDevice.name;
-                final label = device.description.isEmpty ? device.name : device.description;
+            // Check for duplicate descriptions (same physical device across multiple backends).
+            final descCounts = <String, int>{};
+            for (final d in devices) {
+              final desc = d.description.isEmpty ? d.name : d.description;
+              descCounts[desc] = (descCounts[desc] ?? 0) + 1;
+            }
+            final hasDuplicates = descCounts.values.any((c) => c > 1);
 
-                return ListTile(
-                  title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
-                  trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
-                  onTap: () {
-                    widget.player.setAudioDevice(device);
-                    Navigator.pop(context); // Close sheet after selection
-                  },
-                );
-              },
+            if (!hasDuplicates) {
+              return _buildFlatDeviceList(devices, currentDevice);
+            }
+
+            // Group devices by backend, keeping "auto" at the top ungrouped.
+            final ungrouped = <AudioDevice>[];
+            final groups = <String, List<AudioDevice>>{};
+            for (final d in devices) {
+              final backend = _audioBackend(d.name);
+              if (!d.name.contains('/')) {
+                ungrouped.add(d);
+              } else {
+                (groups[backend] ??= []).add(d);
+              }
+            }
+
+            return ListView(
+              children: [
+                for (final d in ungrouped) _buildDeviceTile(d, currentDevice),
+                for (final entry in groups.entries) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: Text(
+                      _formatBackend(entry.key),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  for (final d in entry.value) _buildDeviceTile(d, currentDevice),
+                ],
+              ],
             );
           },
         );
+      },
+    );
+  }
+
+  Widget _buildFlatDeviceList(List<AudioDevice> devices, AudioDevice currentDevice) {
+    return ListView.builder(
+      itemCount: devices.length,
+      itemBuilder: (context, index) => _buildDeviceTile(devices[index], currentDevice),
+    );
+  }
+
+  Widget _buildDeviceTile(AudioDevice device, AudioDevice currentDevice) {
+    final isSelected = device.name == currentDevice.name;
+    final label = device.description.isEmpty ? device.name : device.description;
+
+    return ListTile(
+      title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
+      trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
+      onTap: () {
+        widget.player.setAudioDevice(device);
+        Navigator.pop(context);
       },
     );
   }
