@@ -22,6 +22,7 @@ import '../../../utils/plex_image_helper.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focus_builders.dart';
+import '../../../utils/scroll_utils.dart';
 import '../../../widgets/horizontal_scroll_with_arrows.dart';
 import '../../../widgets/plex_optimized_image.dart';
 import '../live_tv_show_schedule_screen.dart';
@@ -346,17 +347,13 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
   }
 
   void _scrollToIndex(int index, {bool animate = true}) {
-    if (!_scrollController.hasClients || _itemExtent <= 0) return;
-
-    final viewport = _scrollController.position.viewportDimension;
-    final targetCenter = _leadingPadding + (index * _itemExtent) + (_itemExtent / 2);
-    final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, _scrollController.position.maxScrollExtent);
-
-    if (animate) {
-      _scrollController.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
-    } else {
-      _scrollController.jumpTo(desiredOffset);
-    }
+    scrollListToIndex(
+      _scrollController,
+      index,
+      itemExtent: _itemExtent,
+      leadingPadding: _leadingPadding,
+      animate: animate,
+    );
   }
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {

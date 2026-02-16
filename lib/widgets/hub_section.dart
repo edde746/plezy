@@ -17,6 +17,7 @@ import '../screens/hub_detail_screen.dart';
 import '../utils/media_navigation_helper.dart';
 import 'focus_builders.dart';
 import 'media_card.dart';
+import '../utils/scroll_utils.dart';
 import 'horizontal_scroll_with_arrows.dart';
 import '../i18n/strings.g.dart';
 
@@ -169,17 +170,13 @@ class HubSectionState extends State<HubSection> {
 
   /// Scroll to center the item at the given index
   void _scrollToIndex(int index, {bool animate = true}) {
-    if (!_scrollController.hasClients || _itemExtent <= 0) return;
-
-    final viewport = _scrollController.position.viewportDimension;
-    final targetCenter = _leadingPadding + (index * _itemExtent) + (_itemExtent / 2);
-    final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, _scrollController.position.maxScrollExtent);
-
-    if (animate) {
-      _scrollController.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
-    } else {
-      _scrollController.jumpTo(desiredOffset);
-    }
+    scrollListToIndex(
+      _scrollController,
+      index,
+      itemExtent: _itemExtent,
+      leadingPadding: _leadingPadding,
+      animate: animate,
+    );
   }
 
   /// Handle ALL key events at the hub level
