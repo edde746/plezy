@@ -156,7 +156,13 @@ class _AuthScreenState extends State<AuthScreen> {
         if (await canLaunchUrl(uri)) {
           // On TV, use inAppWebView (simpler WebView) instead of Chrome Custom Tabs
           final mode = PlatformDetector.isTV() ? LaunchMode.inAppWebView : LaunchMode.inAppBrowserView;
-          await launchUrl(uri, mode: mode);
+          try {
+            await launchUrl(uri, mode: mode);
+          } catch (_) {
+            // Chrome Custom Tabs may not be available (e.g. no Chrome installed).
+            // Fall back to opening in the default external browser.
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
         } else {
           throw Exception(t.errors.couldNotLaunchUrl);
         }
