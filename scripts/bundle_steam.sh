@@ -10,31 +10,37 @@ LIBMPV_DIR=$(dirname "$(find /build/libmpv-prefix -name libmpv.so | head -1)")
 cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
 cp -a /build/libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
 
-# Bundle libmpv's runtime deps that the Steam Runtime doesn't ship.
+# Bundle runtime deps that the Steam Runtime doesn't ship.
 # /steam-rt-libs.txt was snapshot before we built anything (see Dockerfile).
+# Iteratively resolve the main binary + all bundled .so files until no new deps appear.
 echo ""
-echo "==> Bundling libmpv runtime dependencies..."
+echo "==> Bundling runtime dependencies..."
 RT_LIBS="/steam-rt-libs.txt"
-ldd "$LIBMPV_DIR/libmpv.so" 2>/dev/null | grep "=> /" | awk '{print $3}' | while read dep; do
-  dep_name=$(basename "$dep")
-  if ! grep -qF "$dep_name" "$RT_LIBS"; then
-    if [ ! -f "$BUNDLE_LIB/$dep_name" ]; then
-      echo "  Bundling $dep_name"
-      cp -a "$dep" "$BUNDLE_LIB/"
-      # Also copy any symlink variants
-      dep_dir=$(dirname "$dep")
-      dep_base=$(echo "$dep_name" | sed 's/\.so.*//')
-      cp -a "$dep_dir"/${dep_base}.so* "$BUNDLE_LIB/" 2>/dev/null || true
+while true; do
+  new_count=0
+  while read dep; do
+    dep_name=$(basename "$dep")
+    if ! grep -qF "$dep_name" "$RT_LIBS"; then
+      if [ ! -f "$BUNDLE_LIB/$dep_name" ]; then
+        echo "  Bundling $dep_name"
+        cp -a "$dep" "$BUNDLE_LIB/"
+        dep_dir=$(dirname "$dep")
+        dep_base=$(echo "$dep_name" | sed 's/\.so.*//')
+        cp -a "$dep_dir"/${dep_base}.so* "$BUNDLE_LIB/" 2>/dev/null || true
+        new_count=$((new_count + 1))
+      fi
     fi
+  done < <({ ldd "$BUNDLE/plezy" 2>/dev/null; find "$BUNDLE_LIB" -name '*.so*' -type f -exec ldd {} \; 2>/dev/null; } | grep "=> /" | awk '{print $3}' | sort -u)
+  if [ "$new_count" -eq 0 ]; then
+    break
   fi
+  echo "  Bundled $new_count new libraries, re-scanning..."
 done
 
 # Verify all deps resolve
 echo ""
 echo "==> Checking dependencies..."
-MISSING=$(LD_LIBRARY_PATH="$BUNDLE_LIB" ldd "$BUNDLE/plezy" 2>&1 | grep "not found" || true)
-MISSING_MPV=$(LD_LIBRARY_PATH="$BUNDLE_LIB" ldd "$BUNDLE_LIB/libmpv.so" 2>&1 | grep "not found" || true)
-MISSING="$MISSING$MISSING_MPV"
+MISSING=$({ LD_LIBRARY_PATH="$BUNDLE_LIB" ldd "$BUNDLE/plezy" 2>&1; find "$BUNDLE_LIB" -name '*.so*' -type f -exec env LD_LIBRARY_PATH="$BUNDLE_LIB" ldd {} \; 2>&1; } | grep "not found" | sort -u || true)
 if [[ -n "$MISSING" ]]; then
   echo "WARNING: Unresolved dependencies (will need Steam runtime):"
   echo "$MISSING"

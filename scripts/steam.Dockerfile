@@ -8,7 +8,7 @@ COPY --from=runtime-snapshot /steam-rt-libs.txt /steam-rt-libs.txt
 # ─── Layer 1: apt deps (cached unless this block changes) ─────────────────────
 RUN apt-get update -qq && apt-get install -y -qq \
   clang cmake meson ninja-build pkg-config nasm git curl unzip xz-utils \
-  libgtk-3-dev liblzma-dev \
+  libgtk-3-dev libevdev-dev liblzma-dev \
   libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev \
   libepoxy-dev libegl-dev libgl-dev libgnutls28-dev \
   libpipewire-0.3-dev libva-dev libvdpau-dev \
