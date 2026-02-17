@@ -1263,10 +1263,10 @@ packages:
     dependency: "direct main"
     description:
       name: universal_gamepad
-      sha256: ab16fd55ad164101cd36ff5ea2252006aa2ba2a4929c63e6e68206795ef16084
+      sha256: "571461c8c1861b03c9ae4a160fb2cb5576b46fbbcd27f67a4f7a4bf5231c28ce"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.1"
+    version: "1.2.1"
   url_launcher:
     dependency: "direct main"
     description:
