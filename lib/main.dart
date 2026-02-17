@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:plezy/utils/mouse_back_recognizer.dart';
 import 'dart:io' show Platform;
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
@@ -187,6 +188,9 @@ void _registerShaderLicenses() {
 // Global RouteObserver for tracking navigation
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
+// Global navigator key for accessing navigator from anywhere
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
@@ -317,14 +321,25 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         builder: (context, themeProvider, child) {
           return TranslationProvider(
             child: InputModeTracker(
-              child: MaterialApp(
-                title: t.app.title,
-                debugShowCheckedModeBanner: false,
-                theme: themeProvider.lightTheme,
-                darkTheme: themeProvider.darkTheme,
-                themeMode: themeProvider.materialThemeMode,
-                navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
-                home: const OrientationAwareSetup(),
+              child: RawGestureDetector(
+                gestures: <Type, GestureRecognizerFactory>{
+                  MouseBackRecognizer: GestureRecognizerFactoryWithHandlers<MouseBackRecognizer>(
+                    () => MouseBackRecognizer(),
+                    (instance) => instance.onTapDown = (details) {
+                      navigatorKey.currentState?.maybePop();
+                    },
+                  ),
+                },
+                child: MaterialApp(
+                  navigatorKey: navigatorKey,
+                  title: t.app.title,
+                  debugShowCheckedModeBanner: false,
+                  theme: themeProvider.lightTheme,
+                  darkTheme: themeProvider.darkTheme,
+                  themeMode: themeProvider.materialThemeMode,
+                  navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
+                  home: const OrientationAwareSetup(),
+                ),
               ),
             ),
           );

@@ -10,31 +10,41 @@ LIBMPV_DIR=$(dirname "$(find /build/libmpv-prefix -name libmpv.so | head -1)")
 cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
 cp -a /build/libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
 
-# Bundle libmpv's runtime deps that the Steam Runtime doesn't ship.
+# Bundle runtime deps that the Steam Runtime doesn't ship.
 # /steam-rt-libs.txt was snapshot before we built anything (see Dockerfile).
 echo ""
-echo "==> Bundling libmpv runtime dependencies..."
+echo "==> Bundling runtime dependencies not in Steam Runtime..."
 RT_LIBS="/steam-rt-libs.txt"
-ldd "$LIBMPV_DIR/libmpv.so" 2>/dev/null | grep "=> /" | awk '{print $3}' | while read dep; do
-  dep_name=$(basename "$dep")
-  if ! grep -qF "$dep_name" "$RT_LIBS"; then
-    if [ ! -f "$BUNDLE_LIB/$dep_name" ]; then
-      echo "  Bundling $dep_name"
-      cp -a "$dep" "$BUNDLE_LIB/"
-      # Also copy any symlink variants
-      dep_dir=$(dirname "$dep")
-      dep_base=$(echo "$dep_name" | sed 's/\.so.*//')
-      cp -a "$dep_dir"/${dep_base}.so* "$BUNDLE_LIB/" 2>/dev/null || true
+
+# Collect all binaries to scan: main binary, libmpv, and all plugin .so files.
+SCAN_BINS=("$BUNDLE/plezy" "$LIBMPV_DIR/libmpv.so")
+for so in "$BUNDLE_LIB"/*.so; do
+  [ -f "$so" ] && SCAN_BINS+=("$so")
+done
+
+for bin in "${SCAN_BINS[@]}"; do
+  ldd "$bin" 2>/dev/null | grep "=> /" | awk '{print $3}' | while read dep; do
+    dep_name=$(basename "$dep")
+    if ! grep -qF "$dep_name" "$RT_LIBS"; then
+      if [ ! -f "$BUNDLE_LIB/$dep_name" ]; then
+        echo "  Bundling $dep_name (needed by $(basename "$bin"))"
+        cp -a "$dep" "$BUNDLE_LIB/"
+        dep_dir=$(dirname "$dep")
+        dep_base=$(echo "$dep_name" | sed 's/\.so.*//')
+        cp -a "$dep_dir"/${dep_base}.so* "$BUNDLE_LIB/" 2>/dev/null || true
+      fi
     fi
-  fi
+  done
 done
 
 # Verify all deps resolve
 echo ""
 echo "==> Checking dependencies..."
-MISSING=$(LD_LIBRARY_PATH="$BUNDLE_LIB" ldd "$BUNDLE/plezy" 2>&1 | grep "not found" || true)
-MISSING_MPV=$(LD_LIBRARY_PATH="$BUNDLE_LIB" ldd "$BUNDLE_LIB/libmpv.so" 2>&1 | grep "not found" || true)
-MISSING="$MISSING$MISSING_MPV"
+MISSING=""
+for bin in "$BUNDLE/plezy" "$BUNDLE_LIB"/*.so*; do
+  [ -f "$bin" ] || continue
+  MISSING+=$(LD_LIBRARY_PATH="$BUNDLE_LIB" ldd "$bin" 2>&1 | grep "not found" || true)
+done
 if [[ -n "$MISSING" ]]; then
   echo "WARNING: Unresolved dependencies (will need Steam runtime):"
   echo "$MISSING"
