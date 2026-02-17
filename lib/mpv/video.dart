@@ -74,7 +74,14 @@ class _VideoState extends State<Video> {
   }
 
   Widget _buildVideoSurface() {
-    // For players that support video rect positioning (Windows, Linux),
+    // For players that use Flutter's texture pipeline (Linux FlTextureGL),
+    // render directly via the Texture widget.
+    final textureId = widget.player.textureId;
+    if (textureId != null) {
+      return Texture(textureId: textureId);
+    }
+
+    // For players that support video rect positioning (Windows),
     // communicate layout changes to the native side.
     if (widget.player is VideoRectSupport) {
       return LayoutBuilder(

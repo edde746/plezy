@@ -43,17 +43,9 @@ MpvPlayer::~MpvPlayer() {
   Dispose();
 }
 
-bool MpvPlayer::Initialize(GtkGLArea* gl_area) {
+bool MpvPlayer::Initialize() {
   if (mpv_) {
     return true;  // Already initialized.
-  }
-
-  gl_area_ = gl_area;
-
-  // Check if GL area is realized
-  if (!gtk_widget_get_realized(GTK_WIDGET(gl_area))) {
-    g_warning("MPV: GL area not realized yet");
-    return false;
   }
 
   // MPV requires C locale for numeric formatting
@@ -67,11 +59,11 @@ bool MpvPlayer::Initialize(GtkGLArea* gl_area) {
   }
 
   // Configure mpv for embedded playback.
-  mpv_set_option_string(mpv_, "vo", "libmpv");  // Render via mpv_render_context_render()
+  mpv_set_option_string(mpv_, "vo", "libmpv");
   mpv_set_option_string(mpv_, "hwdec", "auto");
   mpv_set_option_string(mpv_, "keep-open", "yes");
 
-  // HDR tone mapping - ensures HDR content is properly converted to SDR
+  // HDR tone mapping
   mpv_set_option_string(mpv_, "tone-mapping", "auto");
   mpv_set_option_string(mpv_, "target-colorspace-hint", "no");
   mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
@@ -81,7 +73,7 @@ bool MpvPlayer::Initialize(GtkGLArea* gl_area) {
   mpv_set_option_string(mpv_, "osc", "no");
   mpv_set_option_string(mpv_, "terminal", "no");
 
-  // Default to warn-level logging; Dart side can raise to "v" if debug logging is enabled.
+  // Default to warn-level logging
   mpv_request_log_messages(mpv_, "warn");
 
   // Initialize mpv.
@@ -93,12 +85,20 @@ bool MpvPlayer::Initialize(GtkGLArea* gl_area) {
     return false;
   }
 
-  // Make the GL context current.
-  gtk_gl_area_make_current(gl_area_);
-  if (gtk_gl_area_get_error(gl_area_) != nullptr) {
-    g_warning("MPV: Failed to make GL context current");
-    mpv_terminate_destroy(mpv_);
-    mpv_ = nullptr;
+  // Set up event wakeup callback.
+  mpv_set_wakeup_callback(mpv_, OnMpvWakeup, this);
+
+  g_message("MPV: Initialization successful (render context deferred)");
+  return true;
+}
+
+bool MpvPlayer::InitRenderContext() {
+  if (mpv_gl_) {
+    return true;  // Already created.
+  }
+
+  if (!mpv_) {
+    g_warning("MPV: Cannot create render context - mpv not initialized");
     return false;
   }
 
@@ -115,45 +115,37 @@ bool MpvPlayer::Initialize(GtkGLArea* gl_area) {
       {MPV_RENDER_PARAM_INVALID, nullptr},
   };
 
-  err = mpv_render_context_create(&mpv_gl_, mpv_, params);
+  int err = mpv_render_context_create(&mpv_gl_, mpv_, params);
   if (err < 0) {
     g_warning("MPV: mpv_render_context_create() failed: %s",
               mpv_error_string(err));
-    mpv_terminate_destroy(mpv_);
-    mpv_ = nullptr;
     return false;
   }
-
-  // Set up event wakeup callback.
-  mpv_set_wakeup_callback(mpv_, OnMpvWakeup, this);
 
   // Set up render update callback.
   mpv_render_context_set_update_callback(mpv_gl_, OnMpvRenderUpdate, this);
 
-  g_message("MPV: Initialization successful");
+  g_message("MPV: Render context created successfully");
   return true;
 }
 
 void MpvPlayer::Dispose() {
-  // Lock mutex to prevent race with OnMpvWakeup callbacks.
-  // This ensures no new event processing starts during dispose.
   std::lock_guard<std::mutex> lock(callback_mutex_);
 
-  // Guard against multiple dispose calls (double-free protection)
   if (disposed_.exchange(true)) {
-    return;  // Already disposed
+    return;
   }
 
   // Cancel pending async commands
   {
     std::lock_guard<std::mutex> cmd_lock(pending_commands_mutex_);
     for (auto& pair : pending_commands_) {
-      if (pair.second) pair.second(-1);  // Call with error
+      if (pair.second) pair.second(-1);
     }
     pending_commands_.clear();
   }
 
-  // Clear mpv callbacks BEFORE freeing to prevent new callbacks being scheduled
+  // Clear mpv callbacks BEFORE freeing
   if (mpv_gl_) {
     mpv_render_context_set_update_callback(mpv_gl_, nullptr, nullptr);
   }
@@ -167,20 +159,18 @@ void MpvPlayer::Dispose() {
     event_source_id_ = 0;
   }
 
-  // Now safe to free render context
   if (mpv_gl_) {
     mpv_render_context_free(mpv_gl_);
     mpv_gl_ = nullptr;
   }
 
-  // And terminate mpv
   if (mpv_) {
     mpv_terminate_destroy(mpv_);
     mpv_ = nullptr;
   }
 
   observed_properties_.clear();
-  gl_area_ = nullptr;
+  redraw_callback_ = nullptr;
 }
 
 void MpvPlayer::Command(const std::vector<std::string>& args) {
@@ -210,7 +200,6 @@ void MpvPlayer::CommandAsync(const std::vector<std::string>& args,
   }
   c_args.push_back(nullptr);
 
-  // Generate unique request ID and store callback
   uint64_t request_id;
   {
     std::lock_guard<std::mutex> lock(pending_commands_mutex_);
@@ -218,10 +207,8 @@ void MpvPlayer::CommandAsync(const std::vector<std::string>& args,
     pending_commands_[request_id] = std::move(callback);
   }
 
-  // mpv_command_async returns immediately
   int result = mpv_command_async(mpv_, request_id, c_args.data());
   if (result < 0) {
-    // Submission failed, complete immediately with error
     std::lock_guard<std::mutex> lock(pending_commands_mutex_);
     auto it = pending_commands_.find(request_id);
     if (it != pending_commands_.end()) {
@@ -253,7 +240,6 @@ void MpvPlayer::ObserveProperty(const std::string& name,
                                 int id) {
   if (disposed_ || !mpv_) return;
 
-  // Check if already observing.
   if (observed_properties_.find(name) != observed_properties_.end()) {
     return;
   }
@@ -288,7 +274,7 @@ void MpvPlayer::Render(int width, int height, int fbo) {
       .internal_format = 0,
   };
 
-  int flip_y = 1;
+  int flip_y = 0;
 
   mpv_render_param params[] = {
       {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
@@ -312,29 +298,9 @@ void MpvPlayer::SetEventCallback(EventCallback callback) {
   event_callback_ = std::move(callback);
 }
 
-void MpvPlayer::RequestRedraw() {
-  if (disposed_) return;
-
-  // Only queue one idle handler at a time
-  bool expected = false;
-  if (!needs_redraw_.compare_exchange_strong(expected, true)) {
-    return;  // Already have a pending redraw
-  }
-
-  if (gl_area_) {
-    GtkGLArea* area = gl_area_;
-    g_idle_add_full(
-        GDK_PRIORITY_REDRAW,
-        [](gpointer data) -> gboolean {
-          GtkGLArea* area = static_cast<GtkGLArea*>(data);
-          if (GTK_IS_GL_AREA(area)) {
-            gtk_gl_area_queue_render(area);
-          }
-          return G_SOURCE_REMOVE;
-        },
-        area,
-        nullptr);
-  }
+void MpvPlayer::SetRedrawCallback(RedrawCallback callback) {
+  std::lock_guard<std::mutex> lock(callback_mutex_);
+  redraw_callback_ = std::move(callback);
 }
 
 void MpvPlayer::SetLogLevel(const std::string& level) {
@@ -345,18 +311,13 @@ void MpvPlayer::SetLogLevel(const std::string& level) {
 void MpvPlayer::OnMpvWakeup(void* ctx) {
   auto* player = static_cast<MpvPlayer*>(ctx);
 
-  // Don't schedule if already disposed (atomic check for early exit)
   if (player->disposed_) return;
 
-  // Schedule event processing on the main thread.
   g_idle_add_full(
       G_PRIORITY_HIGH_IDLE,
       [](gpointer data) -> gboolean {
         auto* player = static_cast<MpvPlayer*>(data);
 
-        // Check disposed - atomic ensures we see updated value.
-        // Don't lock mutex here - ProcessEvents() calls SendPropertyChange/SendEvent
-        // which lock callback_mutex_, causing deadlock if we hold it here.
         if (!player->disposed_ && player->mpv_) {
           player->ProcessEvents();
         }
@@ -368,8 +329,18 @@ void MpvPlayer::OnMpvWakeup(void* ctx) {
 
 void MpvPlayer::OnMpvRenderUpdate(void* ctx) {
   auto* player = static_cast<MpvPlayer*>(ctx);
-  // RequestRedraw already checks disposed_
-  player->RequestRedraw();
+  if (player->disposed_) return;
+
+  bool expected = false;
+  if (!player->needs_redraw_.compare_exchange_strong(expected, true)) {
+    return;
+  }
+
+  // Call the redraw callback to notify MpvTexture via the registrar
+  std::lock_guard<std::mutex> lock(player->callback_mutex_);
+  if (player->redraw_callback_) {
+    player->redraw_callback_();
+  }
 }
 
 bool MpvPlayer::ProcessEvents() {
@@ -391,7 +362,6 @@ bool MpvPlayer::ProcessEvents() {
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {
   switch (event->event_id) {
     case MPV_EVENT_COMMAND_REPLY: {
-      // Handle async command completion
       uint64_t request_id = event->reply_userdata;
       CommandCallback callback;
       {
@@ -403,7 +373,6 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
         }
       }
       if (callback) {
-        // Call callback on main thread
         int error = event->error;
         g_idle_add(
             [](gpointer data) -> gboolean {

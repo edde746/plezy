@@ -1,21 +1,18 @@
 #include "mpv_plugin.h"
+#include "mpv_texture.h"
 
 #include <cstring>
 
-/// Plugin structure definition.
 struct _MpvPlugin {
   GObject parent_instance;
 
   FlPluginRegistrar* registrar;
   FlMethodChannel* method_channel;
   FlEventChannel* event_channel;
-  FlBasicMessageChannel* event_message_channel;
-
-  GtkOverlay* overlay;
-  GtkGLArea* gl_area;
-  GtkWidget* flutter_view;
+  FlTextureRegistrar* texture_registrar;
 
   std::unique_ptr<mpv::MpvPlayer> player;
+  MpvTexture* texture;      // owned via GObject ref
   gboolean visible;
   gboolean initialized;
 };
@@ -26,12 +23,17 @@ G_DEFINE_TYPE(MpvPlugin, mpv_plugin, G_TYPE_OBJECT)
 static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
                                           FlMethodCall* method_call,
                                           gpointer user_data);
-static gboolean on_gl_render(GtkGLArea* area,
-                             GdkGLContext* context,
-                             gpointer user_data);
-static void on_gl_realize(GtkGLArea* area, gpointer user_data);
-static void on_gl_unrealize(GtkGLArea* area, gpointer user_data);
-static void on_gl_resize(GtkGLArea* area, gint width, gint height, gpointer user_data);
+
+static void send_event(MpvPlugin* self, FlValue* event) {
+  if (self->event_channel) {
+    g_autoptr(GError) error = nullptr;
+    if (!fl_event_channel_send(self->event_channel, event, nullptr, &error)) {
+      if (error != nullptr) {
+        g_warning("Failed to send event: %s", error->message);
+      }
+    }
+  }
+}
 
 static void mpv_plugin_dispose(GObject* object) {
   MpvPlugin* self = MPV_PLUGIN(object);
@@ -39,6 +41,16 @@ static void mpv_plugin_dispose(GObject* object) {
   if (self->player) {
     self->player->Dispose();
     self->player.reset();
+  }
+
+  if (self->texture) {
+    mpv_texture_dispose(self->texture);
+    if (self->texture_registrar) {
+      fl_texture_registrar_unregister_texture(self->texture_registrar,
+                                              FL_TEXTURE(self->texture));
+    }
+    g_object_unref(self->texture);
+    self->texture = nullptr;
   }
 
   g_clear_object(&self->method_channel);
@@ -55,33 +67,18 @@ static void mpv_plugin_class_init(MpvPluginClass* klass) {
 static void mpv_plugin_init(MpvPlugin* self) {
   self->visible = FALSE;
   self->initialized = FALSE;
+  self->texture = nullptr;
+  self->texture_registrar = nullptr;
 }
 
-/// Send an event through the event channel.
-static void send_event(MpvPlugin* self, FlValue* event) {
-  if (self->event_channel) {
-    g_autoptr(GError) error = nullptr;
-    if (!fl_event_channel_send(self->event_channel, event, nullptr, &error)) {
-      if (error != nullptr) {
-        g_warning("Failed to send event: %s", error->message);
-      }
-    }
-  }
-}
-
-MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar,
-                          GtkOverlay* overlay,
-                          GtkGLArea* gl_area,
-                          GtkWidget* flutter_view) {
+MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar) {
   MpvPlugin* self = MPV_PLUGIN(g_object_new(MPV_PLUGIN_TYPE, nullptr));
 
   self->registrar = FL_PLUGIN_REGISTRAR(g_object_ref(registrar));
-  self->overlay = overlay;
-  self->gl_area = gl_area;
-  self->flutter_view = flutter_view;
+  self->texture_registrar =
+      fl_plugin_registrar_get_texture_registrar(registrar);
   self->player = std::make_unique<mpv::MpvPlayer>();
 
-  // Create method channel.
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   self->method_channel = fl_method_channel_new(
       fl_plugin_registrar_get_messenger(registrar),
@@ -94,167 +91,19 @@ MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar,
       self,
       nullptr);
 
-  // Create event channel.
   self->event_channel = fl_event_channel_new(
       fl_plugin_registrar_get_messenger(registrar),
       "com.plezy/mpv_player/events",
       FL_METHOD_CODEC(codec));
 
-  // Connect GtkGLArea signals.
-  g_signal_connect(gl_area, "render", G_CALLBACK(on_gl_render), self);
-  g_signal_connect(gl_area, "realize", G_CALLBACK(on_gl_realize), self);
-  g_signal_connect(gl_area, "unrealize", G_CALLBACK(on_gl_unrealize), self);
-  g_signal_connect(gl_area, "resize", G_CALLBACK(on_gl_resize), self);
-
-  // Set up auto-render to false - we control when to render.
-  gtk_gl_area_set_auto_render(gl_area, FALSE);
-
-  // Use OpenGL 3.3 core profile.
-  gtk_gl_area_set_required_version(gl_area, 3, 3);
-
   return self;
 }
 
-// Static reference to keep the plugin alive for the lifetime of the app.
-// The plugin will be disposed when the GL area is unrealized.
+// Static reference to keep the plugin alive.
 static MpvPlugin* g_mpv_plugin = nullptr;
 
-void mpv_plugin_register_with_registrar(FlPluginRegistrar* registrar,
-                                        GtkOverlay* overlay,
-                                        GtkGLArea* gl_area,
-                                        GtkWidget* flutter_view) {
-  g_mpv_plugin = mpv_plugin_new(registrar, overlay, gl_area, flutter_view);
-  // Keep a reference - the plugin will be cleaned up when the app exits
-}
-
-/// GtkGLArea render callback.
-static gboolean on_gl_render(GtkGLArea* area,
-                             GdkGLContext* context,
-                             gpointer user_data) {
-  (void)context;
-  MpvPlugin* self = MPV_PLUGIN(user_data);
-
-  // Ensure GL context is current before any GL operations.
-  // Critical during fullscreen transitions and workspace switches (issue #202).
-  gtk_gl_area_make_current(area);
-
-  // Check for GL context errors (can happen during window state changes)
-  GError* error = gtk_gl_area_get_error(area);
-  if (error != nullptr) {
-    g_warning("MPV Plugin: GL context error in render: %s", error->message);
-    return FALSE;  // Signal failure to GTK
-  }
-
-  if (!self->player || !self->player->IsInitialized() || !self->visible) {
-    // Clear to transparent when not showing video.
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    return TRUE;
-  }
-
-  int width = gtk_widget_get_allocated_width(GTK_WIDGET(area));
-  int height = gtk_widget_get_allocated_height(GTK_WIDGET(area));
-
-  // Get the scale factor for HiDPI support.
-  int scale = gtk_widget_get_scale_factor(GTK_WIDGET(area));
-  width *= scale;
-  height *= scale;
-
-  // Get the FBO that GtkGLArea is rendering to.
-  // GtkGLArea uses its own FBO, not the default framebuffer (0).
-  GLint fbo = 0;
-  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo);
-
-  // Save GL state before MPV render (MPV modifies these and doesn't restore them)
-  // This prevents GL state pollution that corrupts Flutter's rendering.
-  GLint prev_viewport[4];
-  GLint prev_scissor_box[4];
-  GLboolean prev_blend, prev_scissor_test;
-  GLint prev_blend_src, prev_blend_dst;
-
-  glGetIntegerv(GL_VIEWPORT, prev_viewport);
-  glGetIntegerv(GL_SCISSOR_BOX, prev_scissor_box);
-  glGetBooleanv(GL_BLEND, &prev_blend);
-  glGetBooleanv(GL_SCISSOR_TEST, &prev_scissor_test);
-  glGetIntegerv(GL_BLEND_SRC_ALPHA, &prev_blend_src);
-  glGetIntegerv(GL_BLEND_DST_ALPHA, &prev_blend_dst);
-
-  // Set viewport and render the video frame.
-  glViewport(0, 0, width, height);
-  self->player->ClearRedrawFlag();
-  self->player->Render(width, height, fbo);
-
-  // Restore GL state after MPV render to prevent Flutter corruption.
-  glViewport(prev_viewport[0], prev_viewport[1], prev_viewport[2], prev_viewport[3]);
-  glScissor(prev_scissor_box[0], prev_scissor_box[1], prev_scissor_box[2], prev_scissor_box[3]);
-  if (prev_blend) {
-    glEnable(GL_BLEND);
-  } else {
-    glDisable(GL_BLEND);
-  }
-  if (prev_scissor_test) {
-    glEnable(GL_SCISSOR_TEST);
-  } else {
-    glDisable(GL_SCISSOR_TEST);
-  }
-  glBlendFunc(prev_blend_src, prev_blend_dst);
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-  return TRUE;
-}
-
-/// GtkGLArea realize callback.
-static void on_gl_realize(GtkGLArea* area, gpointer user_data) {
-  (void)user_data;
-  gtk_gl_area_make_current(area);
-
-  // Check for GL errors.
-  GError* error = gtk_gl_area_get_error(area);
-  if (error != nullptr) {
-    g_warning("MPV Plugin: GL area error: %s", error->message);
-    return;
-  }
-
-  // Enable blending for transparency support.
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  g_message("MPV Plugin: GL area realized");
-}
-
-/// GtkGLArea unrealize callback.
-static void on_gl_unrealize(GtkGLArea* area, gpointer user_data) {
-  MpvPlugin* self = MPV_PLUGIN(user_data);
-
-  gtk_gl_area_make_current(area);
-
-  // Check if context is valid before disposing GL resources (issue #202)
-  GError* error = gtk_gl_area_get_error(area);
-  if (error != nullptr) {
-    g_warning("MPV Plugin: GL context error in unrealize: %s", error->message);
-  }
-
-  // Always try to dispose - Dispose() handles its own safety checks
-  if (self->player) {
-    self->player->Dispose();
-  }
-
-  g_message("MPV Plugin: GL area unrealized");
-}
-
-/// GtkGLArea resize callback.
-static void on_gl_resize(GtkGLArea* area,
-                         gint width,
-                         gint height,
-                         gpointer user_data) {
-  MpvPlugin* self = MPV_PLUGIN(user_data);
-  (void)width;
-  (void)height;
-
-  // Force a redraw when size changes to prevent lag during resize.
-  if (self->visible && self->player && self->player->IsInitialized()) {
-    gtk_gl_area_queue_render(area);
-  }
+void mpv_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
+  g_mpv_plugin = mpv_plugin_new(registrar);
 }
 
 /// Method call handler.
@@ -269,40 +118,41 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
   g_autoptr(FlMethodResponse) response = nullptr;
 
   if (strcmp(method, "initialize") == 0) {
-    if (self->initialized) {
-      response = FL_METHOD_RESPONSE(
-          fl_method_success_response_new(fl_value_new_bool(TRUE)));
+    if (self->initialized && self->texture) {
+      // Already initialized — return existing texture ID
+      response = FL_METHOD_RESPONSE(fl_method_success_response_new(
+          fl_value_new_int(mpv_texture_get_id(self->texture))));
     } else {
       // Create player if it was disposed
       if (!self->player) {
         self->player = std::make_unique<mpv::MpvPlayer>();
       }
 
-      // Check if GL area is realized before trying to use it
-      if (!gtk_widget_get_realized(GTK_WIDGET(self->gl_area))) {
-        // Force realization of the GL area
-        gtk_widget_realize(GTK_WIDGET(self->gl_area));
-      }
+      if (self->player->Initialize()) {
+        // Create the FlTextureGL and register it
+        FlView* view = fl_plugin_registrar_get_view(self->registrar);
+        self->texture = mpv_texture_new(
+            self->player.get(), self->texture_registrar, view);
 
-      // Initialize the player with the GL area.
-      gtk_gl_area_make_current(self->gl_area);
+        fl_texture_registrar_register_texture(
+            self->texture_registrar, FL_TEXTURE(self->texture));
 
-      GError* error = gtk_gl_area_get_error(self->gl_area);
-      if (error != nullptr) {
-        response = FL_METHOD_RESPONSE(fl_method_error_response_new(
-            "GL_ERROR", error->message, nullptr));
-      } else if (self->player->Initialize(self->gl_area)) {
+        // Set redraw callback: when mpv has a frame, mark texture available
+        MpvTexture* tex = self->texture;
+        self->player->SetRedrawCallback([tex]() {
+          mpv_texture_mark_frame_available(tex);
+        });
+
         self->initialized = TRUE;
 
-        // Set up event callback.
+        // Set up event callback
         self->player->SetEventCallback([self](FlValue* event) {
-          // Send event - must be called from main thread
-          // The event is already created on the main thread via g_idle_add in mpv_player.cc
           send_event(self, event);
         });
 
-        response = FL_METHOD_RESPONSE(
-            fl_method_success_response_new(fl_value_new_bool(TRUE)));
+        // Return the texture ID for the Dart Texture widget
+        response = FL_METHOD_RESPONSE(fl_method_success_response_new(
+            fl_value_new_int(mpv_texture_get_id(self->texture))));
       } else {
         response = FL_METHOD_RESPONSE(fl_method_error_response_new(
             "INIT_FAILED", "Failed to initialize MPV player", nullptr));
@@ -310,18 +160,18 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
     }
   } else if (strcmp(method, "dispose") == 0) {
     if (self->player) {
-      // Make GL context current before disposing mpv GL resources
-      gtk_gl_area_make_current(self->gl_area);
       self->player->Dispose();
       self->player.reset();
     }
+    if (self->texture) {
+      mpv_texture_dispose(self->texture);
+      fl_texture_registrar_unregister_texture(self->texture_registrar,
+                                              FL_TEXTURE(self->texture));
+      g_object_unref(self->texture);
+      self->texture = nullptr;
+    }
     self->initialized = FALSE;
     self->visible = FALSE;
-    gtk_widget_set_visible(GTK_WIDGET(self->gl_area), FALSE);
-    if (self->flutter_view != nullptr) {
-      // Force Flutter view to redraw
-      gtk_widget_queue_draw(self->flutter_view);
-    }
     response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   } else if (strcmp(method, "command") == 0) {
     if (!self->player || !self->initialized) {
@@ -342,8 +192,6 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
             command_args.push_back(fl_value_get_string(item));
           }
         }
-        // Use async command to prevent UI blocking during network operations
-        // Take ownership of method_call to respond asynchronously
         g_object_ref(method_call);
         self->player->CommandAsync(command_args, [method_call](int error) {
           g_autoptr(FlMethodResponse) async_response = nullptr;
@@ -356,7 +204,7 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
           fl_method_call_respond(method_call, async_response, nullptr);
           g_object_unref(method_call);
         });
-        return;  // Response will be sent asynchronously
+        return;  // Response sent asynchronously
       }
     }
   } else if (strcmp(method, "setProperty") == 0) {
@@ -456,14 +304,11 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
       response = FL_METHOD_RESPONSE(fl_method_error_response_new(
           "INVALID_ARGS", "Missing 'visible'", nullptr));
     } else {
-      gboolean visible = fl_value_get_bool(visible_value);
-      self->visible = visible;
+      self->visible = fl_value_get_bool(visible_value);
 
-      // Show/hide the GL area.
-      gtk_widget_set_visible(GTK_WIDGET(self->gl_area), visible);
-
-      if (visible) {
-        gtk_gl_area_queue_render(self->gl_area);
+      if (self->visible && self->texture) {
+        // Trigger a frame render when becoming visible
+        mpv_texture_mark_frame_available(self->texture);
       }
 
       response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));

@@ -25,6 +25,9 @@ namespace mpv {
 /// Note: FlValue* is passed from the global namespace, not mpv namespace.
 using EventCallback = std::function<void(::_FlValue*)>;
 
+/// Callback for requesting a redraw (called from mpv render update thread).
+using RedrawCallback = std::function<void()>;
+
 /// Wrapper for libmpv that handles initialization, OpenGL rendering,
 /// commands, properties, and event dispatching.
 class MpvPlayer {
@@ -32,74 +35,65 @@ class MpvPlayer {
   MpvPlayer();
   ~MpvPlayer();
 
-  /// Initializes mpv with OpenGL rendering context.
-  /// Must be called from the GTK main thread after GL context is available.
-  /// @param gl_area The GtkGLArea widget for rendering.
+  /// Initializes the mpv instance and configures options.
+  /// Does NOT create the render context — call InitRenderContext() later
+  /// when an OpenGL context is available.
   /// @return true if initialization succeeded.
-  bool Initialize(GtkGLArea* gl_area);
+  bool Initialize();
+
+  /// Creates the mpv OpenGL render context.
+  /// Must be called with a valid GL context current (e.g., from FlTextureGL::populate).
+  /// @return true if render context creation succeeded.
+  bool InitRenderContext();
+
+  /// Returns true if the render context has been created.
+  bool HasRenderContext() const { return mpv_gl_ != nullptr; }
 
   /// Disposes mpv and releases resources.
   void Dispose();
 
-  /// Returns true if mpv is initialized.
+  /// Returns true if mpv is initialized (has both mpv handle and render context).
   bool IsInitialized() const { return mpv_ != nullptr && mpv_gl_ != nullptr; }
 
+  /// Returns true if mpv handle exists (even without render context).
+  bool HasMpvHandle() const { return mpv_ != nullptr; }
+
   /// Executes an mpv command.
-  /// @param args Command arguments (e.g., ["loadfile", "url", "replace"]).
   void Command(const std::vector<std::string>& args);
 
   /// Callback type for async command completion.
   using CommandCallback = std::function<void(int error)>;
 
   /// Executes an mpv command asynchronously to prevent UI blocking.
-  /// The callback is called on the main thread when the command completes.
-  /// @param args Command arguments.
-  /// @param callback Callback called with error code (0 = success).
   void CommandAsync(const std::vector<std::string>& args, CommandCallback callback);
 
   /// Sets an mpv property by name.
-  /// @param name Property name.
-  /// @param value Property value as string.
   void SetProperty(const std::string& name, const std::string& value);
 
   /// Gets an mpv property value by name.
-  /// @param name Property name.
-  /// @return Property value as string, or empty if not found.
   std::string GetProperty(const std::string& name);
 
   /// Observes an mpv property for changes.
-  /// Changes will be reported via the event callback.
-  /// @param name Property name to observe.
-  /// @param format Format type ("string", "flag", "int64", "double", "node").
-  /// @param id Property ID assigned by Dart for compact event encoding.
   void ObserveProperty(const std::string& name, const std::string& format,
                        int id);
 
-  /// Renders a frame to the current OpenGL context.
-  /// Must be called from the GTK render callback.
-  /// @param width Viewport width.
-  /// @param height Viewport height.
-  /// @param fbo Framebuffer object to render into (0 for default).
+  /// Renders a frame to the specified FBO.
   void Render(int width, int height, int fbo = 0);
 
   /// Reports that the mouse has moved.
-  /// This is used to show/hide the cursor.
   void ReportMouseMove(int x, int y);
 
   /// Sets the event callback for property changes and events.
   void SetEventCallback(EventCallback callback);
 
-  /// Returns the GtkGLArea widget.
-  GtkGLArea* GetGLArea() const { return gl_area_; }
+  /// Sets the redraw callback (called when mpv has a new frame ready).
+  void SetRedrawCallback(RedrawCallback callback);
 
   /// Returns true if a redraw is needed.
   bool NeedsRedraw() const { return needs_redraw_.load(); }
 
   /// Clears the redraw flag.
   void ClearRedrawFlag() { needs_redraw_.store(false); }
-
-  /// Request a redraw.
-  void RequestRedraw();
 
   /// Sets the MPV log message level (e.g., "warn", "v", "debug").
   void SetLogLevel(const std::string& level);
@@ -112,7 +106,6 @@ class MpvPlayer {
   static void OnMpvRenderUpdate(void* ctx);
 
   /// Processes pending mpv events.
-  /// @return true to keep processing, false if shutdown.
   bool ProcessEvents();
 
   /// Handles a single mpv event.
@@ -129,11 +122,11 @@ class MpvPlayer {
 
   mpv_handle* mpv_ = nullptr;
   mpv_render_context* mpv_gl_ = nullptr;
-  GtkGLArea* gl_area_ = nullptr;
 
   std::atomic<bool> needs_redraw_{false};
   std::atomic<bool> disposed_{false};
   EventCallback event_callback_;
+  RedrawCallback redraw_callback_;
   std::mutex callback_mutex_;
 
   uint64_t next_reply_userdata_ = 1;

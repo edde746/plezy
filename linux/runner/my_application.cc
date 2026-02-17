@@ -11,28 +11,10 @@
 struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
-
-  // MPV-related widgets
-  GtkOverlay* overlay;
-  GtkGLArea* gl_area;
   FlView* flutter_view;
 };
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
-
-/// Sets up an RGBA visual for transparency support.
-static void setup_rgba_visual(GtkWidget* widget) {
-  GdkScreen* screen = gtk_widget_get_screen(widget);
-  if (!gdk_screen_is_composited(screen)) {
-    g_warning("Screen is not composited - transparency may not work");
-  }
-  GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
-  if (visual != nullptr) {
-    gtk_widget_set_visual(widget, visual);
-  } else {
-    g_warning("No RGBA visual available");
-  }
-}
 
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
@@ -69,72 +51,23 @@ static void my_application_activate(GApplication* application) {
 
   gtk_window_set_default_size(window, 1280, 720);
 
-  // Set up RGBA visual for transparency support.
-  gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
-  setup_rgba_visual(GTK_WIDGET(window));
-
-  // Create the overlay container.
-  // The overlay allows us to layer widgets on top of each other:
-  // - Bottom layer: GtkGLArea for mpv video rendering
-  // - Top layer: FlView (Flutter) with transparent background
-  self->overlay = GTK_OVERLAY(gtk_overlay_new());
-  gtk_widget_show(GTK_WIDGET(self->overlay));
-
-  // Create the GtkGLArea for mpv video rendering.
-  // This will be the bottom layer (behind Flutter).
-  self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
-  gtk_widget_set_hexpand(GTK_WIDGET(self->gl_area), TRUE);
-  gtk_widget_set_vexpand(GTK_WIDGET(self->gl_area), TRUE);
-
-  // Configure GL area for transparency and proper rendering.
-  gtk_gl_area_set_has_alpha(self->gl_area, TRUE);
-  gtk_gl_area_set_has_depth_buffer(self->gl_area, FALSE);
-  gtk_gl_area_set_has_stencil_buffer(self->gl_area, FALSE);
-
-  // Make GL area non-interactive so mouse events pass through to Flutter.
-  gtk_widget_set_can_focus(GTK_WIDGET(self->gl_area), FALSE);
-  gtk_widget_set_sensitive(GTK_WIDGET(self->gl_area), FALSE);
-
-  // Set the GL area as the base widget of the overlay.
-  // Initially hidden - will be shown when video playback starts.
-  gtk_widget_set_visible(GTK_WIDGET(self->gl_area), FALSE);
-  gtk_container_add(GTK_CONTAINER(self->overlay), GTK_WIDGET(self->gl_area));
-
-  // Create the Flutter view.
+  // Create the Flutter view (opaque — no overlay needed).
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(project,
                                                 self->dart_entrypoint_arguments);
 
   self->flutter_view = fl_view_new(project);
-  gtk_widget_set_hexpand(GTK_WIDGET(self->flutter_view), TRUE);
-  gtk_widget_set_vexpand(GTK_WIDGET(self->flutter_view), TRUE);
-
-  // Set up RGBA visual for transparency support.
-  // Note: app_paintable is only set on the window (line 73), not on child widgets,
-  // to avoid redundant composition passes.
-  setup_rgba_visual(GTK_WIDGET(self->flutter_view));
-
-  // Enable transparent background for the Flutter view.
-  // This allows the mpv video to show through transparent areas.
-  GdkRGBA transparent = {0.0, 0.0, 0.0, 0.0};
-  fl_view_set_background_color(self->flutter_view, &transparent);
-
-  // Add the Flutter view as an overlay on top of the GL area.
   gtk_widget_show(GTK_WIDGET(self->flutter_view));
-  gtk_overlay_add_overlay(self->overlay, GTK_WIDGET(self->flutter_view));
-
-  // Add the overlay to the window.
-  gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(self->overlay));
+  gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(self->flutter_view));
 
   // Register Flutter plugins.
   fl_register_plugins(FL_PLUGIN_REGISTRY(self->flutter_view));
 
-  // Register the MPV plugin with the GL area and Flutter view for video rendering.
+  // Register the MPV plugin (uses FlTextureGL — no overlay/GtkGLArea needed).
   FlPluginRegistrar* registrar =
       fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view),
                                                   "MpvPlugin");
-  mpv_plugin_register_with_registrar(registrar, self->overlay, self->gl_area,
-                                     GTK_WIDGET(self->flutter_view));
+  mpv_plugin_register_with_registrar(registrar);
 
   gtk_widget_show(GTK_WIDGET(window));
   gtk_widget_grab_focus(GTK_WIDGET(self->flutter_view));
@@ -163,19 +96,11 @@ static gboolean my_application_local_command_line(GApplication* application,
 
 // Implements GApplication::startup.
 static void my_application_startup(GApplication* application) {
-  // MyApplication* self = MY_APPLICATION(object);
-
-  // Perform any actions required at application startup.
-
   G_APPLICATION_CLASS(my_application_parent_class)->startup(application);
 }
 
 // Implements GApplication::shutdown.
 static void my_application_shutdown(GApplication* application) {
-  // MyApplication* self = MY_APPLICATION(object);
-
-  // Perform any actions required at application shutdown.
-
   G_APPLICATION_CLASS(my_application_parent_class)->shutdown(application);
 }
 
@@ -196,16 +121,10 @@ static void my_application_class_init(MyApplicationClass* klass) {
 }
 
 static void my_application_init(MyApplication* self) {
-  self->overlay = nullptr;
-  self->gl_area = nullptr;
   self->flutter_view = nullptr;
 }
 
 MyApplication* my_application_new() {
-  // Set the program name to the application ID, which helps various systems
-  // like GTK and desktop environments map this running application to its
-  // corresponding .desktop file. This ensures better integration by allowing
-  // the application to be recognized beyond its binary name.
   g_set_prgname(APPLICATION_ID);
 
   return MY_APPLICATION(g_object_new(my_application_get_type(),

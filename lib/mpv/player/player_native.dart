@@ -6,9 +6,15 @@ import '../font_loader.dart';
 import '../models.dart';
 import 'player_base.dart';
 
-/// Shared native implementation of [Player] for iOS, macOS, and Android (MPV fallback).
-/// Uses MPVKit via platform channels with Metal rendering (Apple) or native window (Android).
+/// Shared native implementation of [Player] for iOS, macOS, Android (MPV fallback), and Linux.
+/// Uses MPVKit via platform channels with Metal rendering (Apple), native window (Android),
+/// or FlTextureGL (Linux).
 class PlayerNative extends PlayerBase {
+  int? _textureIdValue;
+
+  @override
+  int? get textureId => _textureIdValue;
+
   static const _methodChannel = MethodChannel('com.plezy/mpv_player');
   static const _eventChannel = EventChannel('com.plezy/mpv_player/events');
 
@@ -32,8 +38,14 @@ class PlayerNative extends PlayerBase {
     if (initialized) return;
 
     try {
-      final result = await methodChannel.invokeMethod<bool>('initialize');
-      initialized = result == true;
+      final result = await methodChannel.invokeMethod<Object>('initialize');
+      if (result is int) {
+        // Linux: initialize returns the texture ID
+        _textureIdValue = result;
+        initialized = true;
+      } else {
+        initialized = result == true;
+      }
       if (!initialized) {
         throw Exception('Failed to initialize player');
       }
