@@ -14,6 +14,8 @@ import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/focusable_media_card.dart';
 import '../../widgets/media_grid_delegate.dart';
 import '../../widgets/download_tree_view.dart';
+import '../../widgets/download_settings_dialog.dart';
+import '../../services/auto_download_service.dart';
 import '../main_screen.dart';
 import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
@@ -198,6 +200,29 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                             },
                             onCancel: downloadProvider.cancelDownload,
                             onDelete: downloadProvider.deleteDownload,
+                            onRefresh: (globalKey) async {
+                              final meta = downloadProvider.getMetadata(globalKey);
+                              if (meta == null) return;
+                              final client = getClient(globalKey);
+                              if (client == null) return;
+                              final autoDownload = context.read<AutoDownloadService>();
+                              final count = await autoDownload.refreshShow(meta, client, downloadProvider);
+                              if (context.mounted) {
+                                if (count > 0) {
+                                  showSuccessSnackBar(context, t.downloads.episodesQueued(count: count));
+                                } else {
+                                  showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+                                }
+                              }
+                            },
+                            onSettings: (ratingKey, title, isSeries) {
+                              showDownloadSettingsDialog(
+                                context,
+                                ratingKey: ratingKey,
+                                title: title,
+                                isSeries: isSeries,
+                              );
+                            },
                             onNavigateLeft: () => MainScreenFocusScope.of(context)?.focusSidebar(),
                             onBack: focusTabBar,
                             suppressAutoFocus: suppressAutoFocus,

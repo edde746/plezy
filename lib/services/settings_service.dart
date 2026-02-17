@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import '../models/download_settings.dart';
 import '../models/hotkey_model.dart';
 import 'package:plezy/utils/app_logger.dart';
 import '../i18n/strings.g.dart';
@@ -75,6 +76,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySelectedExternalPlayer = 'selected_external_player';
   static const String _keyCustomExternalPlayers = 'custom_external_players';
   static const String _keyConfirmExitOnBack = 'confirm_exit_on_back';
+  static const String _keyPerItemDownloadSettings = 'per_item_download_settings';
+  static const String _keyLastUsedDownloadSettings = 'last_used_download_settings';
+  static const String _keyWatchedTimestamps = 'watched_timestamps';
 
   SettingsService._();
 
@@ -1117,6 +1121,75 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyConfirmExitOnBack) ?? true; // Default: enabled
   }
 
+  // Per-Item Download Settings
+  Future<void> setDownloadSettings(String ratingKey, DownloadSettings settings) async {
+    final all = _getPerItemDownloadSettings();
+    all[ratingKey] = settings.toJson();
+    await prefs.setString(_keyPerItemDownloadSettings, json.encode(all));
+    // Also save as last-used defaults for new items
+    await setLastUsedDownloadSettings(settings);
+  }
+
+  DownloadSettings? getDownloadSettings(String ratingKey) {
+    final all = _getPerItemDownloadSettings();
+    final data = all[ratingKey];
+    if (data == null) return null;
+    return DownloadSettings.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<void> clearDownloadSettings(String ratingKey) async {
+    final all = _getPerItemDownloadSettings();
+    all.remove(ratingKey);
+    await prefs.setString(_keyPerItemDownloadSettings, json.encode(all));
+  }
+
+  Map<String, dynamic> _getPerItemDownloadSettings() {
+    final jsonString = prefs.getString(_keyPerItemDownloadSettings);
+    if (jsonString == null) return {};
+    return _decodeJsonStringToMap(jsonString);
+  }
+
+  Future<void> setLastUsedDownloadSettings(DownloadSettings settings) async {
+    await prefs.setString(_keyLastUsedDownloadSettings, json.encode(settings.toJson()));
+  }
+
+  DownloadSettings? getLastUsedDownloadSettings() {
+    final jsonString = prefs.getString(_keyLastUsedDownloadSettings);
+    if (jsonString == null) return null;
+    return DownloadSettings.fromJson(_decodeJsonStringToMap(jsonString));
+  }
+
+  /// Returns per-item settings if available, otherwise last-used defaults, otherwise hardcoded defaults.
+  DownloadSettings getEffectiveDownloadSettings(String ratingKey) {
+    return getDownloadSettings(ratingKey) ?? getLastUsedDownloadSettings() ?? const DownloadSettings();
+  }
+
+  // Watched Episode Timestamps
+  Future<void> setWatchedDetectedAt(String globalKey, DateTime timestamp) async {
+    final all = _getWatchedTimestamps();
+    all[globalKey] = timestamp.toIso8601String();
+    await prefs.setString(_keyWatchedTimestamps, json.encode(all));
+  }
+
+  DateTime? getWatchedDetectedAt(String globalKey) {
+    final all = _getWatchedTimestamps();
+    final ts = all[globalKey] as String?;
+    if (ts == null) return null;
+    return DateTime.tryParse(ts);
+  }
+
+  Future<void> clearWatchedDetectedAt(String globalKey) async {
+    final all = _getWatchedTimestamps();
+    all.remove(globalKey);
+    await prefs.setString(_keyWatchedTimestamps, json.encode(all));
+  }
+
+  Map<String, dynamic> _getWatchedTimestamps() {
+    final jsonString = prefs.getString(_keyWatchedTimestamps);
+    if (jsonString == null) return {};
+    return _decodeJsonStringToMap(jsonString);
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1171,6 +1244,9 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keySelectedExternalPlayer),
       prefs.remove(_keyCustomExternalPlayers),
       prefs.remove(_keyConfirmExitOnBack),
+      prefs.remove(_keyPerItemDownloadSettings),
+      prefs.remove(_keyLastUsedDownloadSettings),
+      prefs.remove(_keyWatchedTimestamps),
     ]);
   }
 

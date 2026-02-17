@@ -845,6 +845,20 @@ class _TranslationsDownloadsIt implements TranslationsDownloadsEn {
 	@override String get pauseAll => 'Metti tutto in pausa';
 	@override String get resumeAll => 'Riprendi tutto';
 	@override String get deleteAll => 'Elimina tutto';
+	@override String get checkForNewEpisodes => 'Check for new episodes';
+	@override String get noNewEpisodesFound => 'No new episodes found';
+	@override String get downloadSettings => 'Download Settings';
+	@override String get episodes => 'Episodes';
+	@override String get downloadAllEpisodes => 'Download all episodes';
+	@override String keepLastNUnwatched({required Object count}) => 'Keep last ${count} unwatched episodes';
+	@override String get retention => 'Retention';
+	@override String get retentionDescription => 'How long to keep watched episodes';
+	@override String get onNextRefresh => 'On next refresh';
+	@override String afterDays({required Object count}) => 'After ${count} days';
+	@override String afterWeeks({required Object count}) => 'After ${count} weeks';
+	@override String get quality => 'Quality';
+	@override String get original => 'Original';
+	@override String get settingsSaved => 'Download settings saved';
 }
 
 // Path: playlists
@@ -1758,6 +1772,20 @@ extension on TranslationsIt {
 			'downloads.pauseAll' => 'Metti tutto in pausa',
 			'downloads.resumeAll' => 'Riprendi tutto',
 			'downloads.deleteAll' => 'Elimina tutto',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
+			'downloads.downloadSettings' => 'Download Settings',
+			'downloads.episodes' => 'Episodes',
+			'downloads.downloadAllEpisodes' => 'Download all episodes',
+			'downloads.keepLastNUnwatched' => ({required Object count}) => 'Keep last ${count} unwatched episodes',
+			'downloads.retention' => 'Retention',
+			'downloads.retentionDescription' => 'How long to keep watched episodes',
+			'downloads.onNextRefresh' => 'On next refresh',
+			'downloads.afterDays' => ({required Object count}) => 'After ${count} days',
+			'downloads.afterWeeks' => ({required Object count}) => 'After ${count} weeks',
+			'downloads.quality' => 'Quality',
+			'downloads.original' => 'Original',
+			'downloads.settingsSaved' => 'Download settings saved',
 			'playlists.title' => 'Playlist',
 			'playlists.noPlaylists' => 'Nessuna playlist trovata',
 			'playlists.create' => 'Crea playlist',

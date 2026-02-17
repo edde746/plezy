@@ -58,6 +58,8 @@ class DownloadTreeView extends StatefulWidget {
   final void Function(String globalKey)? onRetry;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
+  final void Function(String globalKey)? onRefresh;
+  final void Function(String ratingKey, String title, bool isSeries)? onSettings;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
   final bool suppressAutoFocus;
@@ -71,6 +73,8 @@ class DownloadTreeView extends StatefulWidget {
     this.onRetry,
     this.onCancel,
     this.onDelete,
+    this.onRefresh,
+    this.onSettings,
     this.onNavigateLeft,
     this.onBack,
     this.suppressAutoFocus = false,
@@ -358,6 +362,8 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       onRetry: widget.onRetry,
       onCancel: widget.onCancel,
       onDelete: widget.onDelete,
+      onRefresh: widget.onRefresh,
+      onSettings: widget.onSettings,
       onNavigateLeft: widget.onNavigateLeft,
       onBack: widget.onBack,
       rowFocusNode: isFirst ? _firstItemFocusNode : null,
@@ -453,6 +459,8 @@ class _DownloadTreeItem extends StatefulWidget {
   final void Function(String globalKey)? onRetry;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
+  final void Function(String globalKey)? onRefresh;
+  final void Function(String ratingKey, String title, bool isSeries)? onSettings;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
   final FocusNode? rowFocusNode;
@@ -471,6 +479,8 @@ class _DownloadTreeItem extends StatefulWidget {
     this.onRetry,
     this.onCancel,
     this.onDelete,
+    this.onRefresh,
+    this.onSettings,
     this.onNavigateLeft,
     this.onBack,
     this.rowFocusNode,
@@ -574,6 +584,11 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final status = widget.node.status;
     if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onPause != null) count++;
     if (status == DownloadStatus.paused && widget.onResume != null) count++;
+    if (widget.onSettings != null &&
+        (widget.node.type == DownloadNodeType.show || widget.node.type == DownloadNodeType.movie)) {
+      count++;
+    }
+    if (widget.onRefresh != null && widget.node.refreshKey != null) count++;
     if (widget.onDelete != null) count++;
     return count;
   }
@@ -851,6 +866,35 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
           icon: Symbols.play_arrow_rounded,
           tooltip: t.downloads.resumeAll,
           onPressed: () => widget.resumeAllChildren(widget.node),
+          buttonIndex: buttonIndex++,
+        ),
+      );
+    }
+
+    // Settings button (show and movie nodes only, not seasons)
+    if (widget.onSettings != null &&
+        (widget.node.type == DownloadNodeType.show || widget.node.type == DownloadNodeType.movie)) {
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.settings_rounded,
+          tooltip: t.downloads.downloadSettings,
+          onPressed: () => widget.onSettings!(
+            widget.node.key,
+            widget.node.title,
+            widget.node.type == DownloadNodeType.show,
+          ),
+          buttonIndex: buttonIndex++,
+        ),
+      );
+    }
+
+    // Refresh button (check for new episodes)
+    if (widget.onRefresh != null && widget.node.refreshKey != null) {
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.refresh_rounded,
+          tooltip: t.downloads.checkForNewEpisodes,
+          onPressed: () => widget.onRefresh!(widget.node.refreshKey!),
           buttonIndex: buttonIndex++,
         ),
       );

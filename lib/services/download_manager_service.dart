@@ -53,6 +53,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     int priority = 0,
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
+    String? transcodeQuality,
   }) async {
     await into(downloadQueue).insert(
       DownloadQueueCompanion.insert(
@@ -61,6 +62,7 @@ extension DownloadDatabaseOperations on AppDatabase {
         addedAt: DateTime.now().millisecondsSinceEpoch,
         downloadSubtitles: Value(downloadSubtitles),
         downloadArtwork: Value(downloadArtwork),
+        transcodeQuality: Value(transcodeQuality),
       ),
       mode: InsertMode.insertOrReplace,
     );
@@ -195,6 +197,7 @@ class _DownloadContext {
   final int? showYear;
   final bool isSafMode;
   final PlexMediaInfo? mediaInfo;
+  final String? transcodeSessionId;
 
   _DownloadContext({
     required this.metadata,
@@ -205,6 +208,7 @@ class _DownloadContext {
     this.showYear,
     this.isSafMode = false,
     this.mediaInfo,
+    this.transcodeSessionId,
   });
 }
 
@@ -428,6 +432,7 @@ class DownloadManagerService {
     int priority = 0,
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
+    String? transcodeQuality,
   }) async {
     final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
 
@@ -460,6 +465,7 @@ class DownloadManagerService {
       priority: priority,
       downloadSubtitles: downloadSubtitles,
       downloadArtwork: downloadArtwork,
+      transcodeQuality: transcodeQuality,
     );
 
     _emitProgress(globalKey, DownloadStatus.queued, 0);
@@ -506,7 +512,23 @@ class DownloadManagerService {
       final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
       if (playbackData.videoUrl == null) throw Exception('Could not get video URL');
 
-      final ext = _getExtensionFromUrl(playbackData.videoUrl!) ?? 'mp4';
+      // Determine download URL and extension based on transcode settings
+      String downloadUrl;
+      String? transcodeSessionId;
+      String ext;
+
+      if (queueItem.transcodeQuality != null) {
+        final transcode = await client.getTranscodeDownloadUrl(
+          metadata.ratingKey,
+          queueItem.transcodeQuality!,
+        );
+        downloadUrl = transcode.url;
+        transcodeSessionId = transcode.sessionId;
+        ext = 'mkv'; // HTTP protocol returns MKV container
+      } else {
+        downloadUrl = playbackData.videoUrl!;
+        ext = _getExtensionFromUrl(playbackData.videoUrl!) ?? 'mp4';
+      }
 
       // Look up show year for episodes
       int? showYear;
@@ -547,13 +569,13 @@ class DownloadManagerService {
         if (safDirUri == null) throw Exception('Failed to create SAF directory');
 
         final task = UriDownloadTask(
-          url: playbackData.videoUrl!,
+          url: downloadUrl,
           filename: safFileName,
           directoryUri: Uri.parse(safDirUri),
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: 3,
+          retries: transcodeSessionId != null ? 0 : 3,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -567,6 +589,7 @@ class DownloadManagerService {
           showYear: showYear,
           isSafMode: true,
           mediaInfo: playbackData.mediaInfo,
+          transcodeSessionId: transcodeSessionId,
         );
 
         await _database.updateBgTaskId(globalKey, task.taskId);
@@ -587,15 +610,15 @@ class DownloadManagerService {
         await File(downloadFilePath).parent.create(recursive: true);
 
         final task = DownloadTask(
-          url: playbackData.videoUrl!,
+          url: downloadUrl,
           filename: path.basename(downloadFilePath),
           directory: path.dirname(downloadFilePath),
           baseDirectory: BaseDirectory.root,
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: 3,
-          allowPause: true,
+          retries: transcodeSessionId != null ? 0 : 3,
+          allowPause: transcodeSessionId == null,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -608,6 +631,7 @@ class DownloadManagerService {
           client: client,
           showYear: showYear,
           mediaInfo: playbackData.mediaInfo,
+          transcodeSessionId: transcodeSessionId,
         );
 
         await _database.updateBgTaskId(globalKey, task.taskId);
@@ -709,7 +733,10 @@ class DownloadManagerService {
 
   /// Handle a permanently failed download
   Future<void> _onDownloadFailed(String globalKey, String errorMessage) async {
-    _pendingDownloadContext.remove(globalKey);
+    final failedCtx = _pendingDownloadContext.remove(globalKey);
+    if (failedCtx?.transcodeSessionId != null) {
+      failedCtx!.client.stopTranscodeSession(failedCtx.transcodeSessionId!);
+    }
     appLogger.e('Download failed for $globalKey: $errorMessage');
     await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
     await _database.updateDownloadError(globalKey, errorMessage);
@@ -726,6 +753,9 @@ class DownloadManagerService {
       _progressDebounceTimers.remove(globalKey)?.cancel();
 
       final ctx = _pendingDownloadContext.remove(globalKey);
+      if (ctx?.transcodeSessionId != null) {
+        ctx!.client.stopTranscodeSession(ctx.transcodeSessionId!);
+      }
 
       // ── Phase 1 (critical): resolve and store the video file path ──
       final String storedPath;
@@ -1151,7 +1181,10 @@ class DownloadManagerService {
     if (bgTaskId != null) {
       await FileDownloader().cancelTaskWithId(bgTaskId);
     }
-    _pendingDownloadContext.remove(globalKey);
+    final cancelCtx = _pendingDownloadContext.remove(globalKey);
+    if (cancelCtx?.transcodeSessionId != null) {
+      cancelCtx!.client.stopTranscodeSession(cancelCtx.transcodeSessionId!);
+    }
     await _transitionStatus(globalKey, DownloadStatus.cancelled);
     await _database.removeFromQueue(globalKey);
   }
@@ -1163,7 +1196,10 @@ class DownloadManagerService {
     if (bgTaskId != null) {
       await FileDownloader().cancelTaskWithId(bgTaskId);
     }
-    _pendingDownloadContext.remove(globalKey);
+    final deleteCtx = _pendingDownloadContext.remove(globalKey);
+    if (deleteCtx?.transcodeSessionId != null) {
+      deleteCtx!.client.stopTranscodeSession(deleteCtx.transcodeSessionId!);
+    }
 
     // Delete files from storage
     final parsed = parseGlobalKey(globalKey);

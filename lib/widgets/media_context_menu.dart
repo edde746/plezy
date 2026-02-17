@@ -26,6 +26,9 @@ import '../theme/mono_tokens.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/focusable_bottom_sheet.dart';
 import '../widgets/focusable_list_tile.dart';
+import '../services/settings_service.dart';
+import '../utils/content_utils.dart';
+import '../widgets/download_settings_dialog.dart';
 import '../i18n/strings.g.dart';
 
 /// Helper class to store menu action data
@@ -1021,6 +1024,30 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final metadata = widget.item as PlexMetadata;
     final client = _getClientForItem();
+
+    // For shows/seasons/movies: show settings dialog on first download
+    if (metadata.isShow || metadata.isSeason || metadata.isMovie) {
+      final settingsService = await SettingsService.getInstance();
+      // For seasons, use the parent show's rating key
+      final settingsKey = metadata.isSeason
+          ? (metadata.parentRatingKey ?? metadata.ratingKey)
+          : metadata.ratingKey;
+      final existing = settingsService.getDownloadSettings(settingsKey);
+      if (existing == null) {
+        if (!context.mounted) return;
+        final settings = await showDownloadSettingsDialog(
+          context,
+          ratingKey: settingsKey,
+          title: metadata.isSeason
+              ? (metadata.parentTitle ?? metadata.title)
+              : metadata.title,
+          isSeries: metadata.isShow || metadata.isSeason,
+        );
+        if (settings == null) return; // Cancelled
+      }
+    }
+
+    if (!context.mounted) return;
 
     try {
       final count = await downloadProvider.queueDownload(metadata, client);

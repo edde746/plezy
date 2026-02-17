@@ -10,6 +10,7 @@ import '../services/download_manager_service.dart';
 import '../services/download_storage_service.dart';
 import '../services/plex_api_cache.dart';
 import '../services/plex_client.dart';
+import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 
@@ -680,8 +681,24 @@ class DownloadProvider extends ChangeNotifier {
     _downloads[globalKey] = DownloadProgress(globalKey: globalKey, status: DownloadStatus.queued);
     notifyListeners();
 
+    // Resolve transcodeQuality from per-item download settings
+    final settingsService = await SettingsService.getInstance();
+    String? transcodeQuality;
+    if (metadataToStore.type == 'episode') {
+      final showKey = metadataToStore.grandparentRatingKey;
+      if (showKey != null) {
+        transcodeQuality = settingsService.getDownloadSettings(showKey)?.transcodeQuality;
+      }
+    } else if (metadataToStore.type == 'movie') {
+      transcodeQuality = settingsService.getDownloadSettings(metadataToStore.ratingKey)?.transcodeQuality;
+    }
+
     // Actually trigger download via DownloadManagerService
-    await _downloadManager.queueDownload(metadata: metadataToStore, client: client);
+    await _downloadManager.queueDownload(
+      metadata: metadataToStore,
+      client: client,
+      transcodeQuality: transcodeQuality,
+    );
   }
 
   /// Fetch and store show and season metadata for an episode

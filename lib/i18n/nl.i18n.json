@@ -596,7 +596,21 @@
     "noDownloadsTree": "Geen downloads",
     "pauseAll": "Alles pauzeren",
     "resumeAll": "Alles hervatten",
-    "deleteAll": "Alles verwijderen"
+    "deleteAll": "Alles verwijderen",
+    "checkForNewEpisodes": "Check for new episodes",
+    "noNewEpisodesFound": "No new episodes found",
+    "downloadSettings": "Download Settings",
+    "episodes": "Episodes",
+    "downloadAllEpisodes": "Download all episodes",
+    "keepLastNUnwatched": "Keep last ${count} unwatched episodes",
+    "retention": "Retention",
+    "retentionDescription": "How long to keep watched episodes",
+    "onNextRefresh": "On next refresh",
+    "afterDays": "After ${count} days",
+    "afterWeeks": "After ${count} weeks",
+    "quality": "Quality",
+    "original": "Original",
+    "settingsSaved": "Download settings saved"
   },
   "playlists": {
     "title": "Afspeellijsten",
