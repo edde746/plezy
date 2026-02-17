@@ -16,8 +16,8 @@ class DownloadTreeNode {
   final double progress; // 0.0-1.0
   final DownloadStatus status;
   final List<DownloadTreeNode> children;
-  final PlexMetadata? metadata;
   final DownloadProgress? downloadProgress;
+  final String? refreshKey;
 
   const DownloadTreeNode({
     required this.key,
@@ -26,8 +26,8 @@ class DownloadTreeNode {
     this.progress = 0.0,
     required this.status,
     this.children = const [],
-    this.metadata,
     this.downloadProgress,
+    this.refreshKey,
   });
 
   /// Check if this node has children
@@ -151,7 +151,6 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             type: DownloadNodeType.movie,
             progress: download.progressPercent,
             status: download.status,
-            metadata: meta,
             downloadProgress: download,
           ),
         );
@@ -214,7 +213,6 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
               type: DownloadNodeType.episode,
               progress: download.progressPercent,
               status: download.status,
-              metadata: meta,
               downloadProgress: download,
             ),
           );
@@ -222,8 +220,8 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         // Sort episodes by episode number only (not by status)
         episodeNodes.sort((a, b) {
-          final aIndex = a.metadata?.index ?? 0;
-          final bIndex = b.metadata?.index ?? 0;
+          final aIndex = widget.metadata[a.key]?.index ?? 0;
+          final bIndex = widget.metadata[b.key]?.index ?? 0;
           return aIndex.compareTo(bIndex);
         });
 
@@ -235,9 +233,8 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         final displayTitle = seasonNumber != null ? 'Season $seasonNumber' : seasonTitle;
 
-        // Look up season metadata using globalKey pattern for refresh support
+        // Compute season refreshKey from data already available
         final seasonGlobalKey = showServerId != null ? '$showServerId:$seasonKey' : null;
-        final seasonMeta = seasonGlobalKey != null ? widget.metadata[seasonGlobalKey] : null;
 
         seasons.add(
           DownloadTreeNode(
@@ -247,7 +244,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             progress: seasonProgress,
             status: seasonStatus,
             children: episodeNodes,
-            metadata: seasonMeta,
+            refreshKey: seasonGlobalKey,
           ),
         );
       }
@@ -265,9 +262,8 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           : seasons.map((s) => s.progress).reduce((a, b) => a + b) / seasons.length;
       final showStatus = _determineAggregateStatus(seasons.map((s) => s.status).toList());
 
-      // Look up show metadata using globalKey pattern for refresh support
+      // Compute show refreshKey from data already available
       final showGlobalKey = showServerId != null ? '$showServerId:$showKey' : null;
-      final showMeta = showGlobalKey != null ? widget.metadata[showGlobalKey] : null;
 
       shows.add(
         DownloadTreeNode(
@@ -277,7 +273,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           progress: showProgress,
           status: showStatus,
           children: seasons,
-          metadata: showMeta,
+          refreshKey: showGlobalKey,
         ),
       );
     }
@@ -593,7 +589,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final status = widget.node.status;
     if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onPause != null) count++;
     if (status == DownloadStatus.paused && widget.onResume != null) count++;
-    if (widget.onRefresh != null && widget.node.metadata != null) count++;
+    if (widget.onRefresh != null && widget.node.refreshKey != null) count++;
     if (widget.onDelete != null) count++;
     return count;
   }
@@ -877,13 +873,12 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     }
 
     // Refresh button (check for new episodes)
-    if (widget.onRefresh != null && widget.node.metadata != null) {
-      final globalKey = '${widget.node.metadata!.serverId}:${widget.node.metadata!.ratingKey}';
+    if (widget.onRefresh != null && widget.node.refreshKey != null) {
       actions.add(
         _buildActionButton(
           icon: Symbols.refresh_rounded,
           tooltip: t.downloads.checkForNewEpisodes,
-          onPressed: () => widget.onRefresh!(globalKey),
+          onPressed: () => widget.onRefresh!(widget.node.refreshKey!),
           buttonIndex: buttonIndex++,
         ),
       );
