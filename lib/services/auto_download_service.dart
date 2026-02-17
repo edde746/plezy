@@ -19,10 +19,7 @@ class AutoDownloadService {
   /// 1. Throttles checks to prevent excessive API calls
   /// 2. Silently skips if storage is unavailable (for removable storage)
   /// 3. Gets subscribed shows and queues missing episodes
-  Future<void> checkForNewEpisodes(
-    PlexClient client,
-    DownloadProvider downloadProvider,
-  ) async {
+  Future<void> checkForNewEpisodes(PlexClient client, DownloadProvider downloadProvider) async {
     // Throttle: Skip if already checking
     if (_isChecking) {
       appLogger.d('Auto-download: Already checking, skipping');
