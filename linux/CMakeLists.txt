@@ -70,10 +70,6 @@ set_target_properties(${BINARY_NAME}
 )
 
 
-# Bundle libmanette from source so the build works on systems without
-# libmanette-0.2-dev (e.g. SteamOS where the rootfs is read-only).
-set(BUNDLE_MANETTE ON CACHE BOOL "" FORCE)
-
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)
