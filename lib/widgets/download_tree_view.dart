@@ -506,7 +506,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   DownloadStatus get _effectiveStatus {
     if (widget.node.status == DownloadStatus.downloading &&
         widget.node.progress == 0 &&
-        (widget.node.downloadProgress?.speed ?? 0) == 0) {
+        (widget.node.downloadProgress?.speed ?? 0) == 0 &&
+        widget.node.downloadProgress?.currentFile == null) {
       return DownloadStatus.queued;
     }
     return widget.node.status;
