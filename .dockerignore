@@ -1,0 +1,19 @@
+.git
+build/
+.dart_tool/
+.idea/
+*.tar.gz
+nul
+libmpv-prefix/
+steamfiles/
+pubspec_overrides.yaml
+
+# Flutter ephemeral / generated plugin symlinks
+linux/flutter/ephemeral/
+windows/flutter/
+macos/Flutter/
+ios/Flutter/
+android/.gradle/
+android/app/build/
+.flutter-plugins
+.flutter-plugins-dependencies

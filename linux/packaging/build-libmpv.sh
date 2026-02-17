@@ -131,7 +131,7 @@ meson setup build \
   -Dalsa=enabled \
   -Dpulse=enabled \
   -Dpipewire=enabled \
-  -Dwayland=enabled \
+  -Dwayland=disabled \
   -Dx11=enabled
 
 ninja -C build -j"$JOBS"
