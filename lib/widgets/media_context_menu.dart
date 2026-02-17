@@ -130,7 +130,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         metadata!.viewedLeafCount != null &&
         metadata.leafCount != null &&
         metadata.viewedLeafCount! > 0 &&
-        metadata.viewedLeafCount! < widget.item.leafCount!;
+        metadata.viewedLeafCount! < metadata.leafCount!;
+
+    final hasActiveProgress =
+        mediaType != null &&
+        (mediaType == PlexMediaType.movie || mediaType == PlexMediaType.episode) &&
+        metadata?.hasActiveProgress == true;
 
     // Check if we should use bottom sheet (on iOS and Android)
     final useBottomSheet = Platform.isIOS || Platform.isAndroid;
@@ -154,14 +159,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Regular menu items for other types
 
       // Mark as Watched
-      if (!metadata!.isWatched || isPartiallyWatched) {
+      if (!metadata!.isWatched || isPartiallyWatched || hasActiveProgress) {
         menuActions.add(
           _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
         );
       }
 
       // Mark as Unwatched
-      if (metadata.isWatched || isPartiallyWatched) {
+      if (metadata.isWatched || isPartiallyWatched || hasActiveProgress) {
         menuActions.add(
           _MenuAction(
             value: 'unwatch',
