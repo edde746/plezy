@@ -98,6 +98,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   late final FocusNode _castFocusNode;
   final ScrollController _castScrollController = ScrollController();
   final _castSectionKey = GlobalKey();
+  final _seasonsSectionKey = GlobalKey();
 
   String _toGlobalKey(String ratingKey, {String? serverId}) =>
       '${serverId ?? widget.metadata.serverId ?? ''}:$ratingKey';
@@ -1039,16 +1040,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
 
     final metadata = _fullMetadata ?? widget.metadata;
 
-    // For shows, go to seasons first
-    if (metadata.isShow && _seasons.isNotEmpty) {
-      _seasonsFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // For movies (or shows with no seasons): overview → cast → extras
+    // DOWN order: overview → seasons → cast → extras
     if (metadata.summary != null) {
       _overviewFocusNode.requestFocus();
       _scrollSectionIntoView(_overviewSectionKey);
+      return KeyEventResult.handled;
+    }
+
+    if (metadata.isShow && _seasons.isNotEmpty) {
+      _seasonsFocusNode.requestFocus();
+      _scrollSectionIntoView(_seasonsSectionKey);
       return KeyEventResult.handled;
     }
 
@@ -1145,20 +1146,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       return KeyEventResult.handled;
     }
 
-    // UP: scroll to top and focus play button
+    // UP: overview → play button
     if (key.isUpKey) {
-      _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-      _playButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // DOWN: overview → cast → extras (first that exists)
-    if (key.isDownKey) {
       final metadata = _fullMetadata ?? widget.metadata;
       if (metadata.summary != null) {
         _overviewFocusNode.requestFocus();
         _scrollSectionIntoView(_overviewSectionKey);
-      } else if (metadata.role != null && metadata.role!.isNotEmpty) {
+      } else {
+        _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+        _playButtonFocusNode.requestFocus();
+      }
+      return KeyEventResult.handled;
+    }
+
+    // DOWN: cast → extras
+    if (key.isDownKey) {
+      final metadata = _fullMetadata ?? widget.metadata;
+      if (metadata.role != null && metadata.role!.isNotEmpty) {
         _castFocusNode.requestFocus();
         _scrollSectionIntoView(_castSectionKey);
       } else if (_extras != null && _extras!.isNotEmpty) {
@@ -1179,20 +1183,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
 
     final metadata = _fullMetadata ?? widget.metadata;
 
-    // UP: seasons (if show) or play button
+    // UP: always play button (overview is directly below play)
     if (key.isUpKey) {
-      if (metadata.isShow && _seasons.isNotEmpty) {
-        _seasonsFocusNode.requestFocus();
-      } else {
-        _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-        _playButtonFocusNode.requestFocus();
-      }
+      _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+      _playButtonFocusNode.requestFocus();
       return KeyEventResult.handled;
     }
 
-    // DOWN: cast → extras → consume
+    // DOWN: seasons (if show) → cast → extras
     if (key.isDownKey) {
-      if (metadata.role != null && metadata.role!.isNotEmpty) {
+      if (metadata.isShow && _seasons.isNotEmpty) {
+        _seasonsFocusNode.requestFocus();
+        _scrollSectionIntoView(_seasonsSectionKey);
+      } else if (metadata.role != null && metadata.role!.isNotEmpty) {
         _castFocusNode.requestFocus();
         _scrollSectionIntoView(_castSectionKey);
       } else if (_extras != null && _extras!.isNotEmpty) {
@@ -1330,17 +1333,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       return KeyEventResult.handled;
     }
 
-    // UP: cast → overview → seasons → play button (first that exists)
+    // UP: cast → seasons (if show) → overview → play button
     if (key.isUpKey) {
       final metadata = _fullMetadata ?? widget.metadata;
       if (metadata.role != null && metadata.role!.isNotEmpty) {
         _castFocusNode.requestFocus();
         _scrollSectionIntoView(_castSectionKey);
+      } else if (metadata.isShow && _seasons.isNotEmpty) {
+        _seasonsFocusNode.requestFocus();
+        _scrollSectionIntoView(_seasonsSectionKey);
       } else if (metadata.summary != null) {
         _overviewFocusNode.requestFocus();
         _scrollSectionIntoView(_overviewSectionKey);
-      } else if (_seasons.isNotEmpty) {
-        _seasonsFocusNode.requestFocus();
       } else {
         _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
         _playButtonFocusNode.requestFocus();
@@ -1383,13 +1387,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       return KeyEventResult.handled;
     }
 
-    // UP: overview → seasons (if show) → play button
+    // UP: seasons (if show) → overview → play button
     if (key.isUpKey) {
-      if (metadata.summary != null) {
+      if (metadata.isShow && _seasons.isNotEmpty) {
+        _seasonsFocusNode.requestFocus();
+        _scrollSectionIntoView(_seasonsSectionKey);
+      } else if (metadata.summary != null) {
         _overviewFocusNode.requestFocus();
         _scrollSectionIntoView(_overviewSectionKey);
-      } else if (metadata.isShow && _seasons.isNotEmpty) {
-        _seasonsFocusNode.requestFocus();
       } else {
         _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
         _playButtonFocusNode.requestFocus();
@@ -1960,6 +1965,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                         // Seasons (for TV shows)
                         if (isShow) ...[
                           Text(
+                            key: _seasonsSectionKey,
                             t.discover.seasons,
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                           ),
