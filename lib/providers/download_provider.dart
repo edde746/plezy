@@ -256,6 +256,36 @@ class DownloadProvider extends ChangeNotifier {
         .toList();
   }
 
+  /// Get all shows that are "subscribed" for auto-download.
+  /// A show is subscribed if any episode is completed, downloading, or queued.
+  /// This is used by AutoDownloadService to check for new episodes.
+  List<PlexMetadata> getSubscribedShows() {
+    final Map<String, PlexMetadata> shows = {};
+
+    for (final entry in _metadata.entries) {
+      final meta = entry.value;
+      final progress = _downloads[entry.key];
+
+      if (meta.type == 'episode' &&
+          progress != null &&
+          (progress.status == DownloadStatus.completed ||
+              progress.status == DownloadStatus.downloading ||
+              progress.status == DownloadStatus.queued ||
+              progress.status == DownloadStatus.partial)) {
+        final showRatingKey = meta.grandparentRatingKey;
+        if (showRatingKey != null && !shows.containsKey(showRatingKey)) {
+          final showGlobalKey = '${meta.serverId}:$showRatingKey';
+          final storedShow = _metadata[showGlobalKey];
+          if (storedShow != null && storedShow.type == 'show') {
+            shows[showRatingKey] = storedShow;
+          }
+        }
+      }
+    }
+
+    return shows.values.toList();
+  }
+
   /// Get unique TV shows that have downloaded episodes
   /// Returns stored show metadata, or synthesizes from episode metadata as fallback
   List<PlexMetadata> get downloadedShows {

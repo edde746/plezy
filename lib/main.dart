@@ -38,6 +38,7 @@ import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
+import 'services/auto_download_service.dart';
 import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/language_codes.dart';
@@ -201,6 +202,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final AppDatabase _appDatabase;
   late final DownloadManagerService _downloadManager;
   late final OfflineWatchSyncService _offlineWatchSyncService;
+  late final AutoDownloadService _autoDownloadService;
 
   @override
   void initState() {
@@ -218,6 +220,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _downloadManager.recoveryFuture = _downloadManager.recoverInterruptedDownloads();
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
+    _autoDownloadService = AutoDownloadService();
 
     // Start in-app review session tracking
     InAppReviewService.instance.startSession();
@@ -239,6 +242,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep
         _serverManager.checkServerHealth();
         _serverManager.reconnectOfflineServers();
+        // Check for new episodes to auto-download
+        _checkForNewEpisodesToDownload();
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
         // App went to background or is closing - end session
@@ -248,6 +253,28 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Transitional states - don't trigger session events
         break;
     }
+  }
+
+  /// Check for new episodes to auto-download for subscribed shows.
+  /// Only runs if there's at least one connected server.
+  void _checkForNewEpisodesToDownload() {
+    final clients = _serverManager.onlineClients;
+    if (clients.isEmpty) return;
+
+    // Use the first available client for checking
+    final client = clients.values.first;
+
+    // We can't access context here since this might be called before build(),
+    // so we need to schedule this to run after the frame when providers are available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+        _autoDownloadService.checkForNewEpisodes(client, downloadProvider);
+      } catch (e) {
+        // Provider not available yet, skip this check
+      }
+    });
   }
 
   @override
@@ -271,6 +298,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ),
         // Download provider
         ChangeNotifierProvider(create: (context) => DownloadProvider(downloadManager: _downloadManager)),
+        // Auto-download service for checking new episodes of subscribed shows
+        Provider<AutoDownloadService>.value(value: _autoDownloadService),
         // Offline watch sync service
         ChangeNotifierProvider<OfflineWatchSyncService>(
           create: (context) {
@@ -405,8 +434,11 @@ class _SetupScreenState extends State<SetupScreen> {
       if (result.hasConnections) {
         // Resume any downloads that were interrupted by app kill
         final downloadProvider = context.read<DownloadProvider>();
+        final autoDownloadService = context.read<AutoDownloadService>();
         downloadProvider.ensureInitialized().then((_) {
           downloadProvider.resumeQueuedDownloads(result.firstClient!);
+          // Check for new episodes of subscribed shows
+          autoDownloadService.checkForNewEpisodes(result.firstClient!, downloadProvider);
         });
 
         Navigator.pushReplacement(
