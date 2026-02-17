@@ -88,6 +88,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kAutoSkipDelay = 'auto_skip_delay';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
+  static const _kAutoDownloadNewEpisodes = 'auto_download_new_episodes';
+  static const _kAutoDownloadNewSeasons = 'auto_download_new_seasons';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
   static const _kDebugLogging = 'debug_logging';
@@ -112,6 +114,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _autoSkipCredits = false;
   int _autoSkipDelay = 5;
   bool _downloadOnWifiOnly = false;
+  bool _autoDownloadNewEpisodes = true;
+  bool _autoDownloadNewSeasons = false;
   bool _videoPlayerNavigationEnabled = false;
   int _maxVolume = 100;
   bool _enableDiscordRPC = false;
@@ -184,6 +188,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _autoSkipCredits = _settingsService.getAutoSkipCredits();
       _autoSkipDelay = _settingsService.getAutoSkipDelay();
       _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
+      _autoDownloadNewEpisodes = _settingsService.getAutoDownloadNewEpisodes();
+      _autoDownloadNewSeasons = _settingsService.getAutoDownloadNewSeasons();
       _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
       _maxVolume = _settingsService.getMaxVolume();
       _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
@@ -670,6 +676,34 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             onChanged: (value) async {
               setState(() => _downloadOnWifiOnly = value);
               await _settingsService.setDownloadOnWifiOnly(value);
+            },
+          ),
+          SwitchListTile(
+            focusNode: _focusTracker.get(_kAutoDownloadNewEpisodes),
+            secondary: const AppIcon(Symbols.download_rounded, fill: 1),
+            title: Text(t.settings.autoDownloadNewEpisodes),
+            subtitle: Text(t.settings.autoDownloadNewEpisodesDescription),
+            value: _autoDownloadNewEpisodes || _autoDownloadNewSeasons,
+            onChanged: _autoDownloadNewSeasons
+                ? null
+                : (value) async {
+                    setState(() => _autoDownloadNewEpisodes = value);
+                    await _settingsService.setAutoDownloadNewEpisodes(value);
+                  },
+          ),
+          SwitchListTile(
+            focusNode: _focusTracker.get(_kAutoDownloadNewSeasons),
+            secondary: const AppIcon(Symbols.create_new_folder_rounded, fill: 1),
+            title: Text(t.settings.autoDownloadNewSeasons),
+            subtitle: Text(t.settings.autoDownloadNewSeasonsDescription),
+            value: _autoDownloadNewSeasons,
+            onChanged: (value) async {
+              setState(() {
+                _autoDownloadNewSeasons = value;
+                if (value) _autoDownloadNewEpisodes = true;
+              });
+              if (value) await _settingsService.setAutoDownloadNewEpisodes(true);
+              await _settingsService.setAutoDownloadNewSeasons(value);
             },
           ),
         ],

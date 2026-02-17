@@ -181,6 +181,10 @@
     "downloadLocationSelectError": "Kan map niet selecteren",
     "downloadOnWifiOnly": "Alleen via WiFi downloaden",
     "downloadOnWifiOnlyDescription": "Voorkom downloads bij gebruik van mobiele data",
+    "autoDownloadNewEpisodes": "Download new episodes automatically",
+    "autoDownloadNewEpisodesDescription": "Automatically download new episodes in your downloaded seasons",
+    "autoDownloadNewSeasons": "Download new seasons automatically",
+    "autoDownloadNewSeasonsDescription": "Automatically download new seasons for your downloaded shows",
     "cellularDownloadBlocked": "Downloads zijn uitgeschakeld bij mobiele data. Maak verbinding met WiFi of wijzig de instelling.",
     "maxVolume": "Maximaal volume",
     "maxVolumeDescription": "Volume boven 100% toestaan voor stille media",
@@ -596,7 +600,9 @@
     "noDownloadsTree": "Geen downloads",
     "pauseAll": "Alles pauzeren",
     "resumeAll": "Alles hervatten",
-    "deleteAll": "Alles verwijderen"
+    "deleteAll": "Alles verwijderen",
+    "checkForNewEpisodes": "Check for new episodes",
+    "noNewEpisodesFound": "No new episodes found"
   },
   "playlists": {
     "title": "Afspeellijsten",

@@ -181,6 +181,10 @@
     "downloadLocationSelectError": "Kunde inte välja mapp",
     "downloadOnWifiOnly": "Ladda ner endast på WiFi",
     "downloadOnWifiOnlyDescription": "Förhindra nedladdningar vid användning av mobildata",
+    "autoDownloadNewEpisodes": "Download new episodes automatically",
+    "autoDownloadNewEpisodesDescription": "Automatically download new episodes in your downloaded seasons",
+    "autoDownloadNewSeasons": "Download new seasons automatically",
+    "autoDownloadNewSeasonsDescription": "Automatically download new seasons for your downloaded shows",
     "cellularDownloadBlocked": "Nedladdningar är inaktiverade på mobildata. Anslut till WiFi eller ändra inställningen.",
     "maxVolume": "Maximal volym",
     "maxVolumeDescription": "Tillåt volym över 100% för tyst media",
@@ -596,7 +600,9 @@
     "noDownloadsTree": "Inga nedladdningar",
     "pauseAll": "Pausa alla",
     "resumeAll": "Återuppta alla",
-    "deleteAll": "Ta bort alla"
+    "deleteAll": "Ta bort alla",
+    "checkForNewEpisodes": "Check for new episodes",
+    "noNewEpisodesFound": "No new episodes found"
   },
   "playlists": {
     "title": "Spellistor",

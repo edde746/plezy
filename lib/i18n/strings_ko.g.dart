@@ -299,6 +299,10 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => '폴더 선택 실패';
 	@override String get downloadOnWifiOnly => 'WiFi 연결 시에만 다운로드';
 	@override String get downloadOnWifiOnlyDescription => '셀룰러 데이터 사용 시 다운로드 불가';
+	@override String get autoDownloadNewEpisodes => 'Download new episodes automatically';
+	@override String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes in your downloaded seasons';
+	@override String get autoDownloadNewSeasons => 'Download new seasons automatically';
+	@override String get autoDownloadNewSeasonsDescription => 'Automatically download new seasons for your downloaded shows';
 	@override String get cellularDownloadBlocked => '셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요.';
 	@override String get maxVolume => '최대 볼륨';
 	@override String get maxVolumeDescription => '조용한 미디어를 위해 100% 이상의 볼륨 허용';
@@ -966,6 +970,8 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String get pauseAll => '모두 일시정지';
 	@override String get resumeAll => '모두 재개';
 	@override String get deleteAll => '모두 삭제';
+	@override String get checkForNewEpisodes => 'Check for new episodes';
+	@override String get noNewEpisodesFound => 'No new episodes found';
 }
 
 // Path: shaders
@@ -1396,6 +1402,10 @@ extension on TranslationsKo {
 			'settings.downloadLocationSelectError' => '폴더 선택 실패',
 			'settings.downloadOnWifiOnly' => 'WiFi 연결 시에만 다운로드',
 			'settings.downloadOnWifiOnlyDescription' => '셀룰러 데이터 사용 시 다운로드 불가',
+			'settings.autoDownloadNewEpisodes' => 'Download new episodes automatically',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes in your downloaded seasons',
+			'settings.autoDownloadNewSeasons' => 'Download new seasons automatically',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download new seasons for your downloaded shows',
 			'settings.cellularDownloadBlocked' => '셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요.',
 			'settings.maxVolume' => '최대 볼륨',
 			'settings.maxVolumeDescription' => '조용한 미디어를 위해 100% 이상의 볼륨 허용',
@@ -1733,12 +1743,12 @@ extension on TranslationsKo {
 			'liveTv.midnight' => '자정',
 			'liveTv.overnight' => '심야',
 			'liveTv.morning' => '아침',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.daytime' => '낮',
 			'liveTv.evening' => '저녁',
 			'liveTv.lateNight' => '심야 방송',
 			'liveTv.whatsOn' => '지금 방송 중',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => '채널 시청',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
@@ -1852,6 +1862,8 @@ extension on TranslationsKo {
 			'downloads.pauseAll' => '모두 일시정지',
 			'downloads.resumeAll' => '모두 재개',
 			'downloads.deleteAll' => '모두 삭제',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
 			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',

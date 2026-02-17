@@ -181,6 +181,10 @@
     "downloadLocationSelectError": "Failed to select folder",
     "downloadOnWifiOnly": "Download on WiFi only",
     "downloadOnWifiOnlyDescription": "Prevent downloads when on cellular data",
+    "autoDownloadNewEpisodes": "Download new episodes automatically",
+    "autoDownloadNewEpisodesDescription": "Automatically download new episodes in your downloaded seasons",
+    "autoDownloadNewSeasons": "Download new seasons automatically",
+    "autoDownloadNewSeasonsDescription": "Automatically download new seasons for your downloaded shows",
     "cellularDownloadBlocked": "Downloads are disabled on cellular data. Connect to WiFi or change the setting.",
     "maxVolume": "Maximum Volume",
     "maxVolumeDescription": "Allow volume boost above 100% for quiet media",
@@ -696,7 +700,9 @@
     "noDownloadsTree": "No downloads",
     "pauseAll": "Pause all",
     "resumeAll": "Resume all",
-    "deleteAll": "Delete all"
+    "deleteAll": "Delete all",
+    "checkForNewEpisodes": "Check for new episodes",
+    "noNewEpisodesFound": "No new episodes found"
   },
   "shaders": {
     "title": "Shaders",

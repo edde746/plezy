@@ -256,6 +256,33 @@ class DownloadProvider extends ChangeNotifier {
         .toList();
   }
 
+  /// Returns season metadata for seasons that have at least one downloaded episode.
+  /// Used by auto-download to scope new-episode checks to only the seasons the user chose.
+  List<PlexMetadata> getDownloadedSeasonsForShow(String showRatingKey) {
+    final Map<String, PlexMetadata> seasons = {};
+    for (final entry in _metadata.entries) {
+      final meta = entry.value;
+      final progress = _downloads[entry.key];
+      if (meta.type == 'episode' &&
+          meta.grandparentRatingKey == showRatingKey &&
+          progress != null &&
+          (progress.status == DownloadStatus.completed ||
+           progress.status == DownloadStatus.downloading ||
+           progress.status == DownloadStatus.queued ||
+           progress.status == DownloadStatus.partial)) {
+        final seasonRatingKey = meta.parentRatingKey;
+        if (seasonRatingKey != null && !seasons.containsKey(seasonRatingKey)) {
+          final seasonGlobalKey = '${meta.serverId}:$seasonRatingKey';
+          final storedSeason = _metadata[seasonGlobalKey];
+          if (storedSeason != null && storedSeason.type == 'season') {
+            seasons[seasonRatingKey] = storedSeason;
+          }
+        }
+      }
+    }
+    return seasons.values.toList();
+  }
+
   /// Get all shows that are "subscribed" for auto-download.
   /// A show is subscribed if any episode is completed, downloading, or queued.
   /// This is used by AutoDownloadService to check for new episodes.

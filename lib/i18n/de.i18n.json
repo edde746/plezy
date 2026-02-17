@@ -181,6 +181,10 @@
     "downloadLocationSelectError": "Ordnerauswahl fehlgeschlagen",
     "downloadOnWifiOnly": "Nur über WLAN herunterladen",
     "downloadOnWifiOnlyDescription": "Downloads über mobile Daten verhindern",
+    "autoDownloadNewEpisodes": "Download new episodes automatically",
+    "autoDownloadNewEpisodesDescription": "Automatically download new episodes in your downloaded seasons",
+    "autoDownloadNewSeasons": "Download new seasons automatically",
+    "autoDownloadNewSeasonsDescription": "Automatically download new seasons for your downloaded shows",
     "cellularDownloadBlocked": "Downloads sind über mobile Daten deaktiviert. Verbinde dich mit einem WLAN oder ändere die Einstellung.",
     "maxVolume": "Maximale Lautstärke",
     "maxVolumeDescription": "Lautstärke über 100% für leise Medien erlauben",
@@ -596,7 +600,9 @@
     "noDownloadsTree": "Keine Downloads",
     "pauseAll": "Alle pausieren",
     "resumeAll": "Alle fortsetzen",
-    "deleteAll": "Alle löschen"
+    "deleteAll": "Alle löschen",
+    "checkForNewEpisodes": "Check for new episodes",
+    "noNewEpisodesFound": "No new episodes found"
   },
   "playlists": {
     "title": "Wiedergabelisten",

@@ -299,6 +299,10 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Kan map niet selecteren';
 	@override String get downloadOnWifiOnly => 'Alleen via WiFi downloaden';
 	@override String get downloadOnWifiOnlyDescription => 'Voorkom downloads bij gebruik van mobiele data';
+	@override String get autoDownloadNewEpisodes => 'Download new episodes automatically';
+	@override String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes in your downloaded seasons';
+	@override String get autoDownloadNewSeasons => 'Download new seasons automatically';
+	@override String get autoDownloadNewSeasonsDescription => 'Automatically download new seasons for your downloaded shows';
 	@override String get cellularDownloadBlocked => 'Downloads zijn uitgeschakeld bij mobiele data. Maak verbinding met WiFi of wijzig de instelling.';
 	@override String get maxVolume => 'Maximaal volume';
 	@override String get maxVolumeDescription => 'Volume boven 100% toestaan voor stille media';
@@ -845,6 +849,8 @@ class _TranslationsDownloadsNl implements TranslationsDownloadsEn {
 	@override String get pauseAll => 'Alles pauzeren';
 	@override String get resumeAll => 'Alles hervatten';
 	@override String get deleteAll => 'Alles verwijderen';
+	@override String get checkForNewEpisodes => 'Check for new episodes';
+	@override String get noNewEpisodesFound => 'No new episodes found';
 }
 
 // Path: playlists
@@ -1396,6 +1402,10 @@ extension on TranslationsNl {
 			'settings.downloadLocationSelectError' => 'Kan map niet selecteren',
 			'settings.downloadOnWifiOnly' => 'Alleen via WiFi downloaden',
 			'settings.downloadOnWifiOnlyDescription' => 'Voorkom downloads bij gebruik van mobiele data',
+			'settings.autoDownloadNewEpisodes' => 'Download new episodes automatically',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes in your downloaded seasons',
+			'settings.autoDownloadNewSeasons' => 'Download new seasons automatically',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download new seasons for your downloaded shows',
 			'settings.cellularDownloadBlocked' => 'Downloads zijn uitgeschakeld bij mobiele data. Maak verbinding met WiFi of wijzig de instelling.',
 			'settings.maxVolume' => 'Maximaal volume',
 			'settings.maxVolumeDescription' => 'Volume boven 100% toestaan voor stille media',
@@ -1733,12 +1743,12 @@ extension on TranslationsNl {
 			'liveTv.midnight' => 'Middernacht',
 			'liveTv.overnight' => 'Nacht',
 			'liveTv.morning' => 'Ochtend',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.daytime' => 'Overdag',
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
@@ -1758,6 +1768,8 @@ extension on TranslationsNl {
 			'downloads.pauseAll' => 'Alles pauzeren',
 			'downloads.resumeAll' => 'Alles hervatten',
 			'downloads.deleteAll' => 'Alles verwijderen',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
 			'playlists.title' => 'Afspeellijsten',
 			'playlists.noPlaylists' => 'Geen afspeellijsten gevonden',
 			'playlists.create' => 'Afspeellijst maken',

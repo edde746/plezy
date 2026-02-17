@@ -645,6 +645,18 @@ class TranslationsSettingsEn {
 	/// en: 'Prevent downloads when on cellular data'
 	String get downloadOnWifiOnlyDescription => 'Prevent downloads when on cellular data';
 
+	/// en: 'Download new episodes automatically'
+	String get autoDownloadNewEpisodes => 'Download new episodes automatically';
+
+	/// en: 'Automatically download new episodes in your downloaded seasons'
+	String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes in your downloaded seasons';
+
+	/// en: 'Download new seasons automatically'
+	String get autoDownloadNewSeasons => 'Download new seasons automatically';
+
+	/// en: 'Automatically download new seasons for your downloaded shows'
+	String get autoDownloadNewSeasonsDescription => 'Automatically download new seasons for your downloaded shows';
+
 	/// en: 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.'
 	String get cellularDownloadBlocked => 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.';
 
@@ -2154,6 +2166,12 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Delete all'
 	String get deleteAll => 'Delete all';
+
+	/// en: 'Check for new episodes'
+	String get checkForNewEpisodes => 'Check for new episodes';
+
+	/// en: 'No new episodes found'
+	String get noNewEpisodesFound => 'No new episodes found';
 }
 
 // Path: shaders
@@ -2879,6 +2897,10 @@ extension on Translations {
 			'settings.downloadLocationSelectError' => 'Failed to select folder',
 			'settings.downloadOnWifiOnly' => 'Download on WiFi only',
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
+			'settings.autoDownloadNewEpisodes' => 'Download new episodes automatically',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes in your downloaded seasons',
+			'settings.autoDownloadNewSeasons' => 'Download new seasons automatically',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download new seasons for your downloaded shows',
 			'settings.cellularDownloadBlocked' => 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
@@ -3216,12 +3238,12 @@ extension on Translations {
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
 			'liveTv.morning' => 'Morning',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
@@ -3335,6 +3357,8 @@ extension on Translations {
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',

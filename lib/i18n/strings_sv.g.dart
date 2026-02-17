@@ -299,6 +299,10 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Kunde inte välja mapp';
 	@override String get downloadOnWifiOnly => 'Ladda ner endast på WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Förhindra nedladdningar vid användning av mobildata';
+	@override String get autoDownloadNewEpisodes => 'Download new episodes automatically';
+	@override String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes in your downloaded seasons';
+	@override String get autoDownloadNewSeasons => 'Download new seasons automatically';
+	@override String get autoDownloadNewSeasonsDescription => 'Automatically download new seasons for your downloaded shows';
 	@override String get cellularDownloadBlocked => 'Nedladdningar är inaktiverade på mobildata. Anslut till WiFi eller ändra inställningen.';
 	@override String get maxVolume => 'Maximal volym';
 	@override String get maxVolumeDescription => 'Tillåt volym över 100% för tyst media';
@@ -845,6 +849,8 @@ class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
 	@override String get pauseAll => 'Pausa alla';
 	@override String get resumeAll => 'Återuppta alla';
 	@override String get deleteAll => 'Ta bort alla';
+	@override String get checkForNewEpisodes => 'Check for new episodes';
+	@override String get noNewEpisodesFound => 'No new episodes found';
 }
 
 // Path: playlists
@@ -1396,6 +1402,10 @@ extension on TranslationsSv {
 			'settings.downloadLocationSelectError' => 'Kunde inte välja mapp',
 			'settings.downloadOnWifiOnly' => 'Ladda ner endast på WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Förhindra nedladdningar vid användning av mobildata',
+			'settings.autoDownloadNewEpisodes' => 'Download new episodes automatically',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes in your downloaded seasons',
+			'settings.autoDownloadNewSeasons' => 'Download new seasons automatically',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download new seasons for your downloaded shows',
 			'settings.cellularDownloadBlocked' => 'Nedladdningar är inaktiverade på mobildata. Anslut till WiFi eller ändra inställningen.',
 			'settings.maxVolume' => 'Maximal volym',
 			'settings.maxVolumeDescription' => 'Tillåt volym över 100% för tyst media',
@@ -1733,12 +1743,12 @@ extension on TranslationsSv {
 			'liveTv.midnight' => 'Midnatt',
 			'liveTv.overnight' => 'Natt',
 			'liveTv.morning' => 'Morgon',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.daytime' => 'Dagtid',
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
@@ -1758,6 +1768,8 @@ extension on TranslationsSv {
 			'downloads.pauseAll' => 'Pausa alla',
 			'downloads.resumeAll' => 'Återuppta alla',
 			'downloads.deleteAll' => 'Ta bort alla',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
 			'playlists.title' => 'Spellistor',
 			'playlists.noPlaylists' => 'Inga spellistor hittades',
 			'playlists.create' => 'Skapa spellista',

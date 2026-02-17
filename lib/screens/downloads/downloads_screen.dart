@@ -6,6 +6,7 @@ import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/global_key_utils.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/platform_detector.dart';
@@ -198,6 +199,20 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                             },
                             onCancel: downloadProvider.cancelDownload,
                             onDelete: downloadProvider.deleteDownload,
+                            onRefresh: (globalKey) async {
+                              final meta = downloadProvider.getMetadata(globalKey);
+                              if (meta == null) return;
+                              final client = getClient(globalKey);
+                              if (client == null) return;
+                              final count = await downloadProvider.queueMissingEpisodes(meta, client);
+                              if (context.mounted) {
+                                if (count > 0) {
+                                  showSuccessSnackBar(context, t.downloads.episodesQueued(count: count));
+                                } else {
+                                  showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+                                }
+                              }
+                            },
                             onNavigateLeft: () => MainScreenFocusScope.of(context)?.focusSidebar(),
                             onBack: focusTabBar,
                             suppressAutoFocus: suppressAutoFocus,

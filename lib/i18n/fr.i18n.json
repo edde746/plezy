@@ -181,6 +181,10 @@
     "downloadLocationSelectError": "Échec de la sélection du dossier",
     "downloadOnWifiOnly": "Télécharger uniquement via WiFi",
     "downloadOnWifiOnlyDescription": "Empêcher les téléchargements lorsque vous utilisez les données cellulaires",
+    "autoDownloadNewEpisodes": "Download new episodes automatically",
+    "autoDownloadNewEpisodesDescription": "Automatically download new episodes in your downloaded seasons",
+    "autoDownloadNewSeasons": "Download new seasons automatically",
+    "autoDownloadNewSeasonsDescription": "Automatically download new seasons for your downloaded shows",
     "cellularDownloadBlocked": "Les téléchargements sont désactivés sur les données cellulaires. Connectez-vous au Wi-Fi ou modifiez le paramètre.",
     "maxVolume": "Volume maximal",
     "maxVolumeDescription": "Autoriser l'augmentation du volume au-delà de 100 % pour les médias silencieux",
@@ -696,7 +700,9 @@
     "noDownloadsTree": "Aucun téléchargement",
     "pauseAll": "Tout mettre en pause",
     "resumeAll": "Tout reprendre",
-    "deleteAll": "Tout supprimer"
+    "deleteAll": "Tout supprimer",
+    "checkForNewEpisodes": "Check for new episodes",
+    "noNewEpisodesFound": "No new episodes found"
   },
   "shaders": {
     "title": "Shaders",

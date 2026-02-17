@@ -57,6 +57,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyCustomDownloadPath = 'custom_download_path';
   static const String _keyCustomDownloadPathType = 'custom_download_path_type';
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
+  static const String _keyAutoDownloadNewEpisodes = 'auto_download_new_episodes';
+  static const String _keyAutoDownloadNewSeasons = 'auto_download_new_seasons';
   static const String _keyVideoPlayerNavigationEnabled = 'video_player_navigation_enabled';
   static const String _keyShowPerformanceOverlay = 'show_performance_overlay';
   static const String _keyMpvConfigEntries = 'mpv_config_entries';
@@ -899,6 +901,24 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyDownloadOnWifiOnly) ?? false;
   }
 
+  // Auto-Download New Episodes (within downloaded seasons)
+  Future<void> setAutoDownloadNewEpisodes(bool value) async {
+    await prefs.setBool(_keyAutoDownloadNewEpisodes, value);
+  }
+
+  bool getAutoDownloadNewEpisodes() {
+    return prefs.getBool(_keyAutoDownloadNewEpisodes) ?? true; // Default: enabled
+  }
+
+  // Auto-Download New Seasons (all seasons for downloaded shows)
+  Future<void> setAutoDownloadNewSeasons(bool value) async {
+    await prefs.setBool(_keyAutoDownloadNewSeasons, value);
+  }
+
+  bool getAutoDownloadNewSeasons() {
+    return prefs.getBool(_keyAutoDownloadNewSeasons) ?? false; // Default: disabled
+  }
+
   // MPV Config Entries
 
   /// Get all MPV config entries
@@ -1154,6 +1174,8 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyCustomDownloadPath),
       prefs.remove(_keyCustomDownloadPathType),
       prefs.remove(_keyDownloadOnWifiOnly),
+      prefs.remove(_keyAutoDownloadNewEpisodes),
+      prefs.remove(_keyAutoDownloadNewSeasons),
       prefs.remove(_keyVideoPlayerNavigationEnabled),
       prefs.remove(_keyShowPerformanceOverlay),
       prefs.remove(_keyMpvConfigEntries),

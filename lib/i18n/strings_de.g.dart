@@ -299,6 +299,10 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Ordnerauswahl fehlgeschlagen';
 	@override String get downloadOnWifiOnly => 'Nur über WLAN herunterladen';
 	@override String get downloadOnWifiOnlyDescription => 'Downloads über mobile Daten verhindern';
+	@override String get autoDownloadNewEpisodes => 'Download new episodes automatically';
+	@override String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes in your downloaded seasons';
+	@override String get autoDownloadNewSeasons => 'Download new seasons automatically';
+	@override String get autoDownloadNewSeasonsDescription => 'Automatically download new seasons for your downloaded shows';
 	@override String get cellularDownloadBlocked => 'Downloads sind über mobile Daten deaktiviert. Verbinde dich mit einem WLAN oder ändere die Einstellung.';
 	@override String get maxVolume => 'Maximale Lautstärke';
 	@override String get maxVolumeDescription => 'Lautstärke über 100% für leise Medien erlauben';
@@ -845,6 +849,8 @@ class _TranslationsDownloadsDe implements TranslationsDownloadsEn {
 	@override String get pauseAll => 'Alle pausieren';
 	@override String get resumeAll => 'Alle fortsetzen';
 	@override String get deleteAll => 'Alle löschen';
+	@override String get checkForNewEpisodes => 'Check for new episodes';
+	@override String get noNewEpisodesFound => 'No new episodes found';
 }
 
 // Path: playlists
@@ -1396,6 +1402,10 @@ extension on TranslationsDe {
 			'settings.downloadLocationSelectError' => 'Ordnerauswahl fehlgeschlagen',
 			'settings.downloadOnWifiOnly' => 'Nur über WLAN herunterladen',
 			'settings.downloadOnWifiOnlyDescription' => 'Downloads über mobile Daten verhindern',
+			'settings.autoDownloadNewEpisodes' => 'Download new episodes automatically',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes in your downloaded seasons',
+			'settings.autoDownloadNewSeasons' => 'Download new seasons automatically',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download new seasons for your downloaded shows',
 			'settings.cellularDownloadBlocked' => 'Downloads sind über mobile Daten deaktiviert. Verbinde dich mit einem WLAN oder ändere die Einstellung.',
 			'settings.maxVolume' => 'Maximale Lautstärke',
 			'settings.maxVolumeDescription' => 'Lautstärke über 100% für leise Medien erlauben',
@@ -1733,12 +1743,12 @@ extension on TranslationsDe {
 			'liveTv.midnight' => 'Mitternacht',
 			'liveTv.overnight' => 'Nacht',
 			'liveTv.morning' => 'Morgen',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.daytime' => 'Tagsüber',
 			'liveTv.evening' => 'Abend',
 			'liveTv.lateNight' => 'Spätnacht',
 			'liveTv.whatsOn' => 'Jetzt im TV',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Kanal ansehen',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
@@ -1758,6 +1768,8 @@ extension on TranslationsDe {
 			'downloads.pauseAll' => 'Alle pausieren',
 			'downloads.resumeAll' => 'Alle fortsetzen',
 			'downloads.deleteAll' => 'Alle löschen',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
 			'playlists.title' => 'Wiedergabelisten',
 			'playlists.noPlaylists' => 'Keine Wiedergabelisten gefunden',
 			'playlists.create' => 'Wiedergabeliste erstellen',

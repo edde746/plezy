@@ -299,6 +299,10 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => '选择文件夹失败';
 	@override String get downloadOnWifiOnly => '仅在 WiFi 时下载';
 	@override String get downloadOnWifiOnlyDescription => '使用蜂窝数据时禁止下载';
+	@override String get autoDownloadNewEpisodes => 'Download new episodes automatically';
+	@override String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes in your downloaded seasons';
+	@override String get autoDownloadNewSeasons => 'Download new seasons automatically';
+	@override String get autoDownloadNewSeasonsDescription => 'Automatically download new seasons for your downloaded shows';
 	@override String get cellularDownloadBlocked => '蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。';
 	@override String get maxVolume => '最大音量';
 	@override String get maxVolumeDescription => '允许音量超过 100% 以适应安静的媒体';
@@ -845,6 +849,8 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String get pauseAll => '全部暂停';
 	@override String get resumeAll => '全部继续';
 	@override String get deleteAll => '全部删除';
+	@override String get checkForNewEpisodes => 'Check for new episodes';
+	@override String get noNewEpisodesFound => 'No new episodes found';
 }
 
 // Path: playlists
@@ -1396,6 +1402,10 @@ extension on TranslationsZh {
 			'settings.downloadLocationSelectError' => '选择文件夹失败',
 			'settings.downloadOnWifiOnly' => '仅在 WiFi 时下载',
 			'settings.downloadOnWifiOnlyDescription' => '使用蜂窝数据时禁止下载',
+			'settings.autoDownloadNewEpisodes' => 'Download new episodes automatically',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes in your downloaded seasons',
+			'settings.autoDownloadNewSeasons' => 'Download new seasons automatically',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download new seasons for your downloaded shows',
 			'settings.cellularDownloadBlocked' => '蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。',
 			'settings.maxVolume' => '最大音量',
 			'settings.maxVolumeDescription' => '允许音量超过 100% 以适应安静的媒体',
@@ -1733,12 +1743,12 @@ extension on TranslationsZh {
 			'liveTv.midnight' => '午夜',
 			'liveTv.overnight' => '凌晨',
 			'liveTv.morning' => '上午',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.daytime' => '白天',
 			'liveTv.evening' => '晚上',
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '正在播出',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => '观看频道',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
@@ -1758,6 +1768,8 @@ extension on TranslationsZh {
 			'downloads.pauseAll' => '全部暂停',
 			'downloads.resumeAll' => '全部继续',
 			'downloads.deleteAll' => '全部删除',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
 			'playlists.title' => '播放列表',
 			'playlists.noPlaylists' => '未找到播放列表',
 			'playlists.create' => '创建播放列表',

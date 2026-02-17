@@ -1,6 +1,7 @@
 import '../providers/download_provider.dart';
 import '../services/download_storage_service.dart';
 import '../services/plex_client.dart';
+import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
 
 /// Service that automatically checks for and downloads new episodes
@@ -41,6 +42,17 @@ class AutoDownloadService {
     _lastCheckTime = DateTime.now();
 
     try {
+      // Read settings to determine behavior
+      final settingsService = await SettingsService.getInstance();
+      final autoDownloadNewEpisodes = settingsService.getAutoDownloadNewEpisodes();
+      final autoDownloadNewSeasons = settingsService.getAutoDownloadNewSeasons();
+
+      // If both settings are off, skip all checks
+      if (!autoDownloadNewEpisodes && !autoDownloadNewSeasons) {
+        appLogger.d('Auto-download: Disabled by settings, skipping');
+        return;
+      }
+
       // Check if storage is available (for removable storage support)
       final storageService = DownloadStorageService.instance;
       final storageAvailable = await storageService.isStorageAvailable();
@@ -69,10 +81,25 @@ class AutoDownloadService {
         }
 
         try {
-          final queued = await downloadProvider.queueMissingEpisodes(show, client);
-          if (queued > 0) {
-            appLogger.i('Auto-download: Queued $queued new episodes for "${show.title}"');
-            totalQueued += queued;
+          if (autoDownloadNewSeasons) {
+            // Download all seasons including new ones
+            final queued = await downloadProvider.queueMissingEpisodes(show, client);
+            if (queued > 0) {
+              appLogger.i('Auto-download: Queued $queued new episodes for "${show.title}" (all seasons)');
+              totalQueued += queued;
+            }
+          } else {
+            // Only auto-download within seasons the user actually has episodes for.
+            // This prevents downloading unwanted seasons (e.g., user downloaded S2 only,
+            // we should not auto-download S1).
+            final seasons = downloadProvider.getDownloadedSeasonsForShow(show.ratingKey);
+            for (final season in seasons) {
+              final queued = await downloadProvider.queueMissingEpisodes(season, client);
+              if (queued > 0) {
+                appLogger.i('Auto-download: Queued $queued new episodes for "${show.title}" ${season.title}');
+                totalQueued += queued;
+              }
+            }
           }
         } catch (e) {
           // Log error but continue with other shows

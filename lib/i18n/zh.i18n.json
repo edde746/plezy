@@ -181,6 +181,10 @@
     "downloadLocationSelectError": "选择文件夹失败",
     "downloadOnWifiOnly": "仅在 WiFi 时下载",
     "downloadOnWifiOnlyDescription": "使用蜂窝数据时禁止下载",
+    "autoDownloadNewEpisodes": "Download new episodes automatically",
+    "autoDownloadNewEpisodesDescription": "Automatically download new episodes in your downloaded seasons",
+    "autoDownloadNewSeasons": "Download new seasons automatically",
+    "autoDownloadNewSeasonsDescription": "Automatically download new seasons for your downloaded shows",
     "cellularDownloadBlocked": "蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。",
     "maxVolume": "最大音量",
     "maxVolumeDescription": "允许音量超过 100% 以适应安静的媒体",
@@ -596,7 +600,9 @@
     "noDownloadsTree": "暂无下载",
     "pauseAll": "全部暂停",
     "resumeAll": "全部继续",
-    "deleteAll": "全部删除"
+    "deleteAll": "全部删除",
+    "checkForNewEpisodes": "Check for new episodes",
+    "noNewEpisodesFound": "No new episodes found"
   },
   "playlists": {
     "title": "播放列表",

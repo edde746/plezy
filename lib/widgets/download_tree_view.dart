@@ -58,6 +58,7 @@ class DownloadTreeView extends StatefulWidget {
   final void Function(String globalKey)? onRetry;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
+  final void Function(String globalKey)? onRefresh;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
   final bool suppressAutoFocus;
@@ -71,6 +72,7 @@ class DownloadTreeView extends StatefulWidget {
     this.onRetry,
     this.onCancel,
     this.onDelete,
+    this.onRefresh,
     this.onNavigateLeft,
     this.onBack,
     this.suppressAutoFocus = false,
@@ -167,6 +169,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       // Get show metadata from first episode
       final firstEpisode = widget.metadata[episodes.first.key];
       final showTitle = firstEpisode?.grandparentTitle ?? 'Unknown Show';
+      final showServerId = firstEpisode?.serverId;
 
       // Group episodes by season
       final Map<String, List<MapEntry<String, DownloadProgress>>> seasonGroups = {};
@@ -232,6 +235,10 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         final displayTitle = seasonNumber != null ? 'Season $seasonNumber' : seasonTitle;
 
+        // Look up season metadata using globalKey pattern for refresh support
+        final seasonGlobalKey = showServerId != null ? '$showServerId:$seasonKey' : null;
+        final seasonMeta = seasonGlobalKey != null ? widget.metadata[seasonGlobalKey] : null;
+
         seasons.add(
           DownloadTreeNode(
             key: '$showKey:$seasonKey',
@@ -240,6 +247,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             progress: seasonProgress,
             status: seasonStatus,
             children: episodeNodes,
+            metadata: seasonMeta,
           ),
         );
       }
@@ -257,6 +265,10 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           : seasons.map((s) => s.progress).reduce((a, b) => a + b) / seasons.length;
       final showStatus = _determineAggregateStatus(seasons.map((s) => s.status).toList());
 
+      // Look up show metadata using globalKey pattern for refresh support
+      final showGlobalKey = showServerId != null ? '$showServerId:$showKey' : null;
+      final showMeta = showGlobalKey != null ? widget.metadata[showGlobalKey] : null;
+
       shows.add(
         DownloadTreeNode(
           key: showKey,
@@ -265,6 +277,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           progress: showProgress,
           status: showStatus,
           children: seasons,
+          metadata: showMeta,
         ),
       );
     }
@@ -358,6 +371,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       onRetry: widget.onRetry,
       onCancel: widget.onCancel,
       onDelete: widget.onDelete,
+      onRefresh: widget.onRefresh,
       onNavigateLeft: widget.onNavigateLeft,
       onBack: widget.onBack,
       rowFocusNode: isFirst ? _firstItemFocusNode : null,
@@ -453,6 +467,7 @@ class _DownloadTreeItem extends StatefulWidget {
   final void Function(String globalKey)? onRetry;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
+  final void Function(String globalKey)? onRefresh;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
   final FocusNode? rowFocusNode;
@@ -471,6 +486,7 @@ class _DownloadTreeItem extends StatefulWidget {
     this.onRetry,
     this.onCancel,
     this.onDelete,
+    this.onRefresh,
     this.onNavigateLeft,
     this.onBack,
     this.rowFocusNode,
@@ -574,6 +590,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final status = widget.node.status;
     if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onPause != null) count++;
     if (status == DownloadStatus.paused && widget.onResume != null) count++;
+    if (widget.onRefresh != null && widget.node.metadata != null) count++;
     if (widget.onDelete != null) count++;
     return count;
   }
@@ -851,6 +868,19 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
           icon: Symbols.play_arrow_rounded,
           tooltip: t.downloads.resumeAll,
           onPressed: () => widget.resumeAllChildren(widget.node),
+          buttonIndex: buttonIndex++,
+        ),
+      );
+    }
+
+    // Refresh button (check for new episodes)
+    if (widget.onRefresh != null && widget.node.metadata != null) {
+      final globalKey = '${widget.node.metadata!.serverId}:${widget.node.metadata!.ratingKey}';
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.refresh_rounded,
+          tooltip: t.downloads.checkForNewEpisodes,
+          onPressed: () => widget.onRefresh!(globalKey),
           buttonIndex: buttonIndex++,
         ),
       );
