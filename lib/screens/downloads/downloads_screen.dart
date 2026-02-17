@@ -6,6 +6,7 @@ import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/global_key_utils.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/platform_detector.dart';
@@ -205,8 +206,7 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                               if (meta == null) return;
                               final client = getClient(globalKey);
                               if (client == null) return;
-                              final autoDownload = context.read<AutoDownloadService>();
-                              final count = await autoDownload.refreshShow(meta, client, downloadProvider);
+                              final count = await downloadProvider.queueMissingEpisodes(meta, client);
                               if (context.mounted) {
                                 if (count > 0) {
                                   showSuccessSnackBar(context, t.downloads.episodesQueued(count: count));
@@ -214,14 +214,6 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                                   showAppSnackBar(context, t.downloads.noNewEpisodesFound);
                                 }
                               }
-                            },
-                            onSettings: (ratingKey, title, isSeries) {
-                              showDownloadSettingsDialog(
-                                context,
-                                ratingKey: ratingKey,
-                                title: title,
-                                isSeries: isSeries,
-                              );
                             },
                             onNavigateLeft: () => MainScreenFocusScope.of(context)?.focusSidebar(),
                             onBack: focusTabBar,

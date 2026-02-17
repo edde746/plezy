@@ -76,6 +76,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySelectedExternalPlayer = 'selected_external_player';
   static const String _keyCustomExternalPlayers = 'custom_external_players';
   static const String _keyConfirmExitOnBack = 'confirm_exit_on_back';
+  static const String _keyAutoDownloadNewEpisodes = 'auto_download_new_episodes';
+  static const String _keyAutoDownloadNewSeasons = 'auto_download_new_seasons';
   static const String _keyPerItemDownloadSettings = 'per_item_download_settings';
   static const String _keyLastUsedDownloadSettings = 'last_used_download_settings';
   static const String _keyWatchedTimestamps = 'watched_timestamps';
@@ -901,6 +903,24 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getDownloadOnWifiOnly() {
     return prefs.getBool(_keyDownloadOnWifiOnly) ?? false;
+  }
+
+  // Auto-Download New Episodes
+  Future<void> setAutoDownloadNewEpisodes(bool value) async {
+    await prefs.setBool(_keyAutoDownloadNewEpisodes, value);
+  }
+
+  bool getAutoDownloadNewEpisodes() {
+    return prefs.getBool(_keyAutoDownloadNewEpisodes) ?? true; // Default: enabled
+  }
+
+  // Auto-Download New Seasons (all seasons for downloaded shows)
+  Future<void> setAutoDownloadNewSeasons(bool value) async {
+    await prefs.setBool(_keyAutoDownloadNewSeasons, value);
+  }
+
+  bool getAutoDownloadNewSeasons() {
+    return prefs.getBool(_keyAutoDownloadNewSeasons) ?? false; // Default: disabled
   }
 
   // MPV Config Entries

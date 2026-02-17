@@ -71,6 +71,25 @@ class DownloadStorageService {
   /// Check if using custom download path
   bool isUsingCustomPath() => _customDownloadPath != null;
 
+  /// Check if download storage is currently available and writable.
+  /// For removable disks that may not always be present.
+  /// Returns false silently on any error (no crash, no user-facing error).
+  Future<bool> isStorageAvailable() async {
+    try {
+      if (isUsingSaf) {
+        // SAF mode: check if URI is still accessible
+        return await SafStorageService.instance.hasPersistedPermission(safBaseUri!);
+      } else {
+        // File mode: check if downloads directory is writable
+        final downloadsDir = await getDownloadsDirectory();
+        return await isDirectoryWritable(downloadsDir);
+      }
+    } catch (e) {
+      // Silently return false on any error
+      return false;
+    }
+  }
+
   /// Get current download path for display in settings
   Future<String> getCurrentDownloadPathDisplay() async {
     if (_customDownloadPath != null) {

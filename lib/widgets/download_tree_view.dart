@@ -16,8 +16,8 @@ class DownloadTreeNode {
   final double progress; // 0.0-1.0
   final DownloadStatus status;
   final List<DownloadTreeNode> children;
-  final PlexMetadata? metadata;
   final DownloadProgress? downloadProgress;
+  final String? refreshKey;
 
   const DownloadTreeNode({
     required this.key,
@@ -26,8 +26,8 @@ class DownloadTreeNode {
     this.progress = 0.0,
     required this.status,
     this.children = const [],
-    this.metadata,
     this.downloadProgress,
+    this.refreshKey,
   });
 
   /// Check if this node has children
@@ -59,7 +59,6 @@ class DownloadTreeView extends StatefulWidget {
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
   final void Function(String globalKey)? onRefresh;
-  final void Function(String ratingKey, String title, bool isSeries)? onSettings;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
   final bool suppressAutoFocus;
@@ -74,7 +73,6 @@ class DownloadTreeView extends StatefulWidget {
     this.onCancel,
     this.onDelete,
     this.onRefresh,
-    this.onSettings,
     this.onNavigateLeft,
     this.onBack,
     this.suppressAutoFocus = false,
@@ -153,7 +151,6 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             type: DownloadNodeType.movie,
             progress: download.progressPercent,
             status: download.status,
-            metadata: meta,
             downloadProgress: download,
           ),
         );
@@ -171,6 +168,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       // Get show metadata from first episode
       final firstEpisode = widget.metadata[episodes.first.key];
       final showTitle = firstEpisode?.grandparentTitle ?? 'Unknown Show';
+      final showServerId = firstEpisode?.serverId;
 
       // Group episodes by season
       final Map<String, List<MapEntry<String, DownloadProgress>>> seasonGroups = {};
@@ -215,7 +213,6 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
               type: DownloadNodeType.episode,
               progress: download.progressPercent,
               status: download.status,
-              metadata: meta,
               downloadProgress: download,
             ),
           );
@@ -223,8 +220,8 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         // Sort episodes by episode number only (not by status)
         episodeNodes.sort((a, b) {
-          final aIndex = a.metadata?.index ?? 0;
-          final bIndex = b.metadata?.index ?? 0;
+          final aIndex = widget.metadata[a.key]?.index ?? 0;
+          final bIndex = widget.metadata[b.key]?.index ?? 0;
           return aIndex.compareTo(bIndex);
         });
 
@@ -236,6 +233,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         final displayTitle = seasonNumber != null ? 'Season $seasonNumber' : seasonTitle;
 
+        // Compute season refreshKey from data already available
+        final seasonGlobalKey = showServerId != null ? '$showServerId:$seasonKey' : null;
+
         seasons.add(
           DownloadTreeNode(
             key: '$showKey:$seasonKey',
@@ -244,6 +244,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             progress: seasonProgress,
             status: seasonStatus,
             children: episodeNodes,
+            refreshKey: seasonGlobalKey,
           ),
         );
       }
@@ -261,6 +262,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           : seasons.map((s) => s.progress).reduce((a, b) => a + b) / seasons.length;
       final showStatus = _determineAggregateStatus(seasons.map((s) => s.status).toList());
 
+      // Compute show refreshKey from data already available
+      final showGlobalKey = showServerId != null ? '$showServerId:$showKey' : null;
+
       shows.add(
         DownloadTreeNode(
           key: showKey,
@@ -269,6 +273,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           progress: showProgress,
           status: showStatus,
           children: seasons,
+          refreshKey: showGlobalKey,
         ),
       );
     }
@@ -363,7 +368,6 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       onCancel: widget.onCancel,
       onDelete: widget.onDelete,
       onRefresh: widget.onRefresh,
-      onSettings: widget.onSettings,
       onNavigateLeft: widget.onNavigateLeft,
       onBack: widget.onBack,
       rowFocusNode: isFirst ? _firstItemFocusNode : null,
@@ -460,7 +464,6 @@ class _DownloadTreeItem extends StatefulWidget {
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
   final void Function(String globalKey)? onRefresh;
-  final void Function(String ratingKey, String title, bool isSeries)? onSettings;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
   final FocusNode? rowFocusNode;
@@ -480,7 +483,6 @@ class _DownloadTreeItem extends StatefulWidget {
     this.onCancel,
     this.onDelete,
     this.onRefresh,
-    this.onSettings,
     this.onNavigateLeft,
     this.onBack,
     this.rowFocusNode,
@@ -500,7 +502,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   DownloadStatus get _effectiveStatus {
     if (widget.node.status == DownloadStatus.downloading &&
         widget.node.progress == 0 &&
-        (widget.node.downloadProgress?.speed ?? 0) == 0) {
+        (widget.node.downloadProgress?.speed ?? 0) == 0 &&
+        widget.node.downloadProgress?.currentFile == null) {
       return DownloadStatus.queued;
     }
     return widget.node.status;
@@ -523,8 +526,10 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   @override
   void didUpdateWidget(_DownloadTreeItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reinitialize focus nodes if action count might have changed
-    if (oldWidget.node.status != widget.node.status) {
+    // Reinitialize focus nodes if action count changed
+    // (status, metadata, or node identity can all affect the count)
+    final newActionCount = _getActionCount();
+    if (_buttonFocusNodes.length != newActionCount) {
       _disposeButtonFocusNodes();
       _initButtonFocusNodes();
     }
@@ -584,10 +589,6 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final status = widget.node.status;
     if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onPause != null) count++;
     if (status == DownloadStatus.paused && widget.onResume != null) count++;
-    if (widget.onSettings != null &&
-        (widget.node.type == DownloadNodeType.show || widget.node.type == DownloadNodeType.movie)) {
-      count++;
-    }
     if (widget.onRefresh != null && widget.node.refreshKey != null) count++;
     if (widget.onDelete != null) count++;
     return count;
@@ -866,23 +867,6 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
           icon: Symbols.play_arrow_rounded,
           tooltip: t.downloads.resumeAll,
           onPressed: () => widget.resumeAllChildren(widget.node),
-          buttonIndex: buttonIndex++,
-        ),
-      );
-    }
-
-    // Settings button (show and movie nodes only, not seasons)
-    if (widget.onSettings != null &&
-        (widget.node.type == DownloadNodeType.show || widget.node.type == DownloadNodeType.movie)) {
-      actions.add(
-        _buildActionButton(
-          icon: Symbols.settings_rounded,
-          tooltip: t.downloads.downloadSettings,
-          onPressed: () => widget.onSettings!(
-            widget.node.key,
-            widget.node.title,
-            widget.node.type == DownloadNodeType.show,
-          ),
           buttonIndex: buttonIndex++,
         ),
       );
