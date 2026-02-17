@@ -387,6 +387,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
       await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
       await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
+      await player!.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
       await player!.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
       // Subtitle styling

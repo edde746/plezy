@@ -101,6 +101,9 @@ class MpvPlayer {
   /// Request a redraw.
   void RequestRedraw();
 
+  /// Sets the MPV log message level (e.g., "warn", "v", "debug").
+  void SetLogLevel(const std::string& level);
+
  private:
   /// MPV event wakeup callback (called from mpv thread).
   static void OnMpvWakeup(void* ctx);

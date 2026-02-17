@@ -231,6 +231,17 @@ class PlayerNative extends PlayerBase {
   }
 
   // ============================================
+  // Log Level
+  // ============================================
+
+  @override
+  Future<void> setLogLevel(String level) async {
+    checkDisposed();
+    await _ensureInitialized();
+    await methodChannel.invokeMethod('setLogLevel', {'level': level});
+  }
+
+  // ============================================
   // Passthrough
   // ============================================
 

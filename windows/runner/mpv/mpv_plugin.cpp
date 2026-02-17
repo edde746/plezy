@@ -248,6 +248,29 @@ void MpvPlayerPlugin::HandleMethodCall(
     player_->SetProperty(std::get<std::string>(name_it->second),
                          std::get<std::string>(value_it->second));
     result->Success();
+  } else if (method == "setLogLevel") {
+    if (!player_ || !player_->IsInitialized()) {
+      result->Error("NOT_INITIALIZED", "Player not initialized");
+      return;
+    }
+
+    const auto* args = method_call.arguments();
+    if (!args || !std::holds_alternative<flutter::EncodableMap>(*args)) {
+      result->Error("INVALID_ARGS", "Expected map argument");
+      return;
+    }
+
+    const auto& map = std::get<flutter::EncodableMap>(*args);
+    auto level_it = map.find(flutter::EncodableValue("level"));
+
+    if (level_it == map.end() ||
+        !std::holds_alternative<std::string>(level_it->second)) {
+      result->Error("INVALID_ARGS", "Missing 'level'");
+      return;
+    }
+
+    player_->SetLogLevel(std::get<std::string>(level_it->second));
+    result->Success();
   } else if (method == "getProperty") {
     if (!player_ || !player_->IsInitialized()) {
       result->Error("NOT_INITIALIZED", "Player not initialized");

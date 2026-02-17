@@ -84,8 +84,8 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
   mpv_set_option_string(mpv_, "tone-mapping", "auto");
   mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
 
-  // Enable logging
-  mpv_request_log_messages(mpv_, "v");
+  // Default to warn-level logging; Dart side can raise to "v" if debug logging is enabled.
+  mpv_request_log_messages(mpv_, "warn");
 
   // Initialize mpv.
   LogToFile("MpvPlayer::Initialize - calling mpv_initialize()");
@@ -280,6 +280,11 @@ void MpvPlayer::SetVisible(bool visible) {
   if (hwnd_) {
     ::ShowWindow(hwnd_, visible ? SW_SHOW : SW_HIDE);
   }
+}
+
+void MpvPlayer::SetLogLevel(const std::string& level) {
+  if (!mpv_) return;
+  mpv_request_log_messages(mpv_, level.c_str());
 }
 
 void MpvPlayer::SetEventCallback(EventCallback callback) {

@@ -65,6 +65,9 @@ class MpvPlayer {
   // Shows or hides the video window.
   void SetVisible(bool visible);
 
+  // Sets the MPV log message level (e.g., "warn", "v", "debug").
+  void SetLogLevel(const std::string& level);
+
   // Sets the event callback for property changes and events.
   void SetEventCallback(EventCallback callback);
 

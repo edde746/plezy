@@ -181,8 +181,8 @@ static gboolean on_gl_render(GtkGLArea* area,
 
   // Set viewport and render the video frame.
   glViewport(0, 0, width, height);
-  self->player->Render(width, height, fbo);
   self->player->ClearRedrawFlag();
+  self->player->Render(width, height, fbo);
 
   // Restore GL state after MPV render to prevent Flutter corruption.
   glViewport(prev_viewport[0], prev_viewport[1], prev_viewport[2], prev_viewport[3]);
@@ -378,6 +378,22 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
       } else {
         self->player->SetProperty(fl_value_get_string(name_value),
                                   fl_value_get_string(value_value));
+        response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+      }
+    }
+  } else if (strcmp(method, "setLogLevel") == 0) {
+    if (!self->player || !self->initialized) {
+      response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+          "NOT_INITIALIZED", "Player not initialized", nullptr));
+    } else {
+      FlValue* level_value = fl_value_lookup_string(args, "level");
+
+      if (level_value == nullptr ||
+          fl_value_get_type(level_value) != FL_VALUE_TYPE_STRING) {
+        response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+            "INVALID_ARGS", "Missing 'level'", nullptr));
+      } else {
+        self->player->SetLogLevel(fl_value_get_string(level_value));
         response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
       }
     }

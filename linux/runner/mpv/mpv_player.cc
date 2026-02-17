@@ -81,8 +81,8 @@ bool MpvPlayer::Initialize(GtkGLArea* gl_area) {
   mpv_set_option_string(mpv_, "osc", "no");
   mpv_set_option_string(mpv_, "terminal", "no");
 
-  // Enable verbose logging for debugging.
-  mpv_request_log_messages(mpv_, "v");
+  // Default to warn-level logging; Dart side can raise to "v" if debug logging is enabled.
+  mpv_request_log_messages(mpv_, "warn");
 
   // Initialize mpv.
   int err = mpv_initialize(mpv_);
@@ -315,9 +315,13 @@ void MpvPlayer::SetEventCallback(EventCallback callback) {
 void MpvPlayer::RequestRedraw() {
   if (disposed_) return;
 
-  needs_redraw_.store(true);
+  // Only queue one idle handler at a time
+  bool expected = false;
+  if (!needs_redraw_.compare_exchange_strong(expected, true)) {
+    return;  // Already have a pending redraw
+  }
+
   if (gl_area_) {
-    // Queue redraw on main thread
     GtkGLArea* area = gl_area_;
     g_idle_add_full(
         GDK_PRIORITY_REDRAW,
@@ -331,6 +335,11 @@ void MpvPlayer::RequestRedraw() {
         area,
         nullptr);
   }
+}
+
+void MpvPlayer::SetLogLevel(const std::string& level) {
+  if (disposed_ || !mpv_) return;
+  mpv_request_log_messages(mpv_, level.c_str());
 }
 
 void MpvPlayer::OnMpvWakeup(void* ctx) {

@@ -436,6 +436,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setAudioPassthrough(bool enabled) async {}
 
+  @override
+  // ignore: no-empty-block - base no-op, overridden by platform subclasses
+  Future<void> setLogLevel(String level) async {}
+
   // ============================================
   // Lifecycle
   // ============================================

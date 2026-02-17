@@ -142,6 +142,12 @@ abstract class Player {
   /// Get an MPV property value by name.
   Future<String?> getProperty(String name);
 
+  /// Set the native MPV log message level (e.g., "warn", "v", "debug").
+  ///
+  /// This controls the volume of log messages sent from the native player
+  /// over the event channel. Use "warn" in production and "v" for debugging.
+  Future<void> setLogLevel(String level);
+
   /// Execute a raw MPV command.
   ///
   /// [args] - Command and arguments as a list of strings.
