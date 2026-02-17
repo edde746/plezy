@@ -382,6 +382,13 @@ class PlexMetadata with MultiServerFields {
     return false;
   }
 
+  /// Returns true if this item has started but not finished playback
+  /// Only applicable for individual items (movies, episodes)
+  bool get hasActiveProgress {
+    if (duration == null || viewOffset == null) return false;
+    return viewOffset! > 0 && viewOffset! < duration!;
+  }
+
   // Helper to determine if content is watched
   bool get isWatched {
     // For series/seasons, check if all episodes are watched
