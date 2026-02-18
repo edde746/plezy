@@ -80,6 +80,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         case "updateFrame":
             handleUpdateFrame(result: result)
 
+        case "setLogLevel":
+            handleSetLogLevel(call: call, result: result)
+
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -216,6 +219,20 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             self?.playerCore?.updateFrame()
             result(nil)
         }
+    }
+
+    private func handleSetLogLevel(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let playerCore = playerCore else {
+            result(FlutterError(code: "NOT_INITIALIZED", message: "Player not initialized", details: nil))
+            return
+        }
+        guard let args = call.arguments as? [String: Any],
+              let level = args["level"] as? String else {
+            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'level'", details: nil))
+            return
+        }
+        playerCore.setLogLevel(level)
+        result(nil)
     }
 
     // MARK: - MpvPlayerDelegate
