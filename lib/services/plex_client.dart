@@ -1120,6 +1120,60 @@ class PlexClient {
     }
   }
 
+  /// Get transcode session progress from the server.
+  /// Returns progress (0-100) and whether the transcode is complete, or null if not found.
+  ///
+  /// Plex assigns its own session key (different from our `session` parameter),
+  /// so we match by protocol=http (download transcodes use HTTP, not HLS/DASH).
+  /// If multiple HTTP sessions exist, falls back to the first one.
+  Future<({double progress, bool complete})?> getTranscodeSessionProgress(String sessionId) async {
+    try {
+      final response = await _dio.get('/transcode/sessions');
+      final data = response.data;
+      if (data is! Map<String, dynamic>) return null;
+
+      final container = data['MediaContainer'] as Map<String, dynamic>?;
+      if (container == null) return null;
+
+      // Plex returns a single object when there's one session, or a list for multiple
+      final raw = container['TranscodeSession'];
+      if (raw == null) return null;
+
+      final List<Map<String, dynamic>> sessions;
+      if (raw is List) {
+        sessions = raw.cast<Map<String, dynamic>>();
+      } else if (raw is Map<String, dynamic>) {
+        sessions = [raw];
+      } else {
+        return null;
+      }
+
+      if (sessions.isEmpty) return null;
+
+      // Prefer HTTP-protocol sessions (download transcodes use protocol=http)
+      final httpSessions = sessions.where((s) => s['protocol'] == 'http').toList();
+      if (httpSessions.isNotEmpty) {
+        return _extractTranscodeProgress(httpSessions.first);
+      }
+
+      // Fallback: use the only session if there's just one
+      if (sessions.length == 1) {
+        return _extractTranscodeProgress(sessions.first);
+      }
+
+      return null;
+    } catch (e) {
+      appLogger.d('Failed to get transcode session progress: $e');
+      return null;
+    }
+  }
+
+  ({double progress, bool complete}) _extractTranscodeProgress(Map<String, dynamic> session) {
+    final progress = (session['progress'] as num?)?.toDouble() ?? 0.0;
+    final complete = session['complete'] == true || session['complete'] == 1;
+    return (progress: progress.clamp(0.0, 100.0), complete: complete);
+  }
+
   /// Get file information for a media item
   /// Uses cache for offline mode support and network fallback.
   Future<PlexFileInfo?> getFileInfo(String ratingKey) async {

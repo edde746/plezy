@@ -249,6 +249,10 @@ class DownloadManagerService {
   // UI progress streams are still real-time; only the DB write is debounced.
   final Map<String, Timer> _progressDebounceTimers = {};
 
+  // Transcode polling timers (keyed by globalKey).
+  // Active while the server is transcoding; stopped when real download bytes flow.
+  final Map<String, Timer> _transcodePollingTimers = {};
+
   /// Public method to check if downloads should be blocked due to cellular-only setting
   /// Can be used by DownloadProvider to show user-friendly error
   static Future<bool> shouldBlockDownloadOnCellular() async {
@@ -596,6 +600,9 @@ class DownloadManagerService {
         final success = await FileDownloader().enqueue(task);
         if (!success) throw Exception('Failed to enqueue SAF download task');
         appLogger.i('Enqueued SAF download task ${task.taskId} for $globalKey');
+        if (transcodeSessionId != null) {
+          _startTranscodePolling(globalKey, client, transcodeSessionId);
+        }
       } else {
         // Normal mode: use DownloadTask with pause/resume support
         String downloadFilePath;
@@ -638,6 +645,9 @@ class DownloadManagerService {
         final success = await FileDownloader().enqueue(task);
         if (!success) throw Exception('Failed to enqueue download task');
         appLogger.i('Enqueued download task ${task.taskId} for $globalKey');
+        if (transcodeSessionId != null) {
+          _startTranscodePolling(globalKey, client, transcodeSessionId);
+        }
       }
     } catch (e) {
       appLogger.e('Failed to prepare download for $globalKey', error: e);
@@ -648,10 +658,79 @@ class DownloadManagerService {
     }
   }
 
+  /// Start polling the Plex transcode session for progress.
+  void _startTranscodePolling(String globalKey, PlexClient client, String sessionId) {
+    _stopTranscodePolling(globalKey);
+    appLogger.i('Starting transcode polling for $globalKey (session: $sessionId)');
+
+    int consecutiveNulls = 0;
+
+    Future<void> poll() async {
+      if (!_pendingDownloadContext.containsKey(globalKey)) {
+        _stopTranscodePolling(globalKey);
+        return;
+      }
+
+      final result = await client.getTranscodeSessionProgress(sessionId);
+
+      if (result != null) {
+        consecutiveNulls = 0;
+        _progressController.add(DownloadProgress(
+          globalKey: globalKey,
+          status: DownloadStatus.downloading,
+          progress: result.progress.round().clamp(0, 100),
+          currentFile: 'video',
+          isTranscoding: true,
+        ));
+
+        if (result.complete) {
+          appLogger.i('Transcode complete for $globalKey');
+          _stopTranscodePolling(globalKey);
+        }
+      } else if (++consecutiveNulls >= 15) {
+        appLogger.i('Transcode polling: no session data after 30s for $globalKey, stopping');
+        _stopTranscodePolling(globalKey);
+      }
+    }
+
+    // Fire immediately, then every 3 seconds
+    poll();
+    _transcodePollingTimers[globalKey] = Timer.periodic(const Duration(seconds: 3), (_) => poll());
+  }
+
+  /// Stop transcode polling for a given key.
+  void _stopTranscodePolling(String globalKey) {
+    _transcodePollingTimers.remove(globalKey)?.cancel();
+  }
+
   /// Callback: background_downloader progress update
   void _onTaskProgress(TaskProgressUpdate update) {
     final globalKey = update.task.metaData;
-    if (globalKey.isEmpty || update.progress < 0) return;
+    if (globalKey.isEmpty) return;
+
+    // When transcode polling is active, let it be the source of truth for
+    // progress — don't emit from here (the polling provides transcode % which
+    // is more useful than download % during transcoding).
+    if (_transcodePollingTimers.containsKey(globalKey)) {
+      return;
+    }
+
+    if (update.progress < 0) {
+      // Indeterminate progress (no Content-Length).
+      // Mark as transcoding if this download has a transcode session.
+      final ctx = _pendingDownloadContext[globalKey];
+      final isTranscode = ctx?.transcodeSessionId != null;
+      final speedBytesPerSec = update.hasNetworkSpeed ? update.networkSpeed * 1024 * 1024 : 0.0;
+      _progressController.add(DownloadProgress(
+        globalKey: globalKey,
+        status: DownloadStatus.downloading,
+        progress: 0,
+        currentFile: 'video',
+        speed: speedBytesPerSec,
+        isTranscoding: isTranscode,
+      ));
+      return;
+    }
 
     // If this item is being paused, the holding queue promoted it — cancel it
     if (_pausingKeys.contains(globalKey)) {
@@ -733,6 +812,7 @@ class DownloadManagerService {
 
   /// Handle a permanently failed download
   Future<void> _onDownloadFailed(String globalKey, String errorMessage) async {
+    _stopTranscodePolling(globalKey);
     final failedCtx = _pendingDownloadContext.remove(globalKey);
     if (failedCtx?.transcodeSessionId != null) {
       failedCtx!.client.stopTranscodeSession(failedCtx.transcodeSessionId!);
@@ -749,6 +829,7 @@ class DownloadManagerService {
   /// Handle a completed video download — store path, download supplementary content, mark done.
   Future<void> _onDownloadComplete(String globalKey, Task task) async {
     try {
+      _stopTranscodePolling(globalKey);
       // Flush any pending debounced progress write before completing
       _progressDebounceTimers.remove(globalKey)?.cancel();
 
@@ -1117,6 +1198,7 @@ class DownloadManagerService {
 
   /// Pause a download (works for both downloading and queued items)
   Future<void> pauseDownload(String globalKey) async {
+    _stopTranscodePolling(globalKey);
     // Mark as pausing synchronously so callbacks from holding-queue promotions
     // can detect and cancel promoted tasks before any await yields.
     _pausingKeys.add(globalKey);
@@ -1177,6 +1259,7 @@ class DownloadManagerService {
 
   /// Cancel a download
   Future<void> cancelDownload(String globalKey) async {
+    _stopTranscodePolling(globalKey);
     // Remove context BEFORE cancelling the bg task so the
     // _onTaskStatusChanged callback sees no context and skips re-queuing.
     final cancelCtx = _pendingDownloadContext.remove(globalKey);
@@ -1210,6 +1293,7 @@ class DownloadManagerService {
 
   /// Delete a downloaded item and its files
   Future<void> deleteDownload(String globalKey) async {
+    _stopTranscodePolling(globalKey);
     // Remove context BEFORE cancelling the bg task so the
     // _onTaskStatusChanged callback sees no context and skips re-queuing.
     final deleteCtx = _pendingDownloadContext.remove(globalKey);
@@ -1723,6 +1807,10 @@ class DownloadManagerService {
       timer.cancel();
     }
     _progressDebounceTimers.clear();
+    for (final timer in _transcodePollingTimers.values) {
+      timer.cancel();
+    }
+    _transcodePollingTimers.clear();
     _progressController.close();
     _deletionProgressController.close();
   }

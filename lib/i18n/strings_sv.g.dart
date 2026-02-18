@@ -860,6 +860,8 @@ class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
 	@override String get original => 'Original';
 	@override String get settingsSaved => 'Download settings saved';
 	@override String get qualityChangeWarning => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.';
+	@override String get transcoding => 'Transkoderar';
+	@override String get downloading => 'Laddar ner';
 }
 
 // Path: playlists
@@ -1788,6 +1790,8 @@ extension on TranslationsSv {
 			'downloads.original' => 'Original',
 			'downloads.settingsSaved' => 'Download settings saved',
 			'downloads.qualityChangeWarning' => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.',
+			'downloads.transcoding' => 'Transkoderar',
+			'downloads.downloading' => 'Laddar ner',
 			'playlists.title' => 'Spellistor',
 			'playlists.noPlaylists' => 'Inga spellistor hittades',
 			'playlists.create' => 'Skapa spellista',

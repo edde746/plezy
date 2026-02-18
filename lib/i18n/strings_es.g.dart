@@ -981,6 +981,8 @@ class _TranslationsDownloadsEs implements TranslationsDownloadsEn {
 	@override String get original => 'Original';
 	@override String get settingsSaved => 'Download settings saved';
 	@override String get qualityChangeWarning => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.';
+	@override String get transcoding => 'Transcodificando';
+	@override String get downloading => 'Descargando';
 }
 
 // Path: shaders
@@ -1882,6 +1884,8 @@ extension on TranslationsEs {
 			'downloads.original' => 'Original',
 			'downloads.settingsSaved' => 'Download settings saved',
 			'downloads.qualityChangeWarning' => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.',
+			'downloads.transcoding' => 'Transcodificando',
+			'downloads.downloading' => 'Descargando',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Sin mejora de video',
 			'shaders.nvscalerDescription' => 'Escalado de imagen NVIDIA para un video más nítido',

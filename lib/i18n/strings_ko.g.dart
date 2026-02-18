@@ -981,6 +981,8 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String get original => 'Original';
 	@override String get settingsSaved => 'Download settings saved';
 	@override String get qualityChangeWarning => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.';
+	@override String get transcoding => '트랜스코딩';
+	@override String get downloading => '다운로드 중';
 }
 
 // Path: shaders
@@ -1882,6 +1884,8 @@ extension on TranslationsKo {
 			'downloads.original' => 'Original',
 			'downloads.settingsSaved' => 'Download settings saved',
 			'downloads.qualityChangeWarning' => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.',
+			'downloads.transcoding' => '트랜스코딩',
+			'downloads.downloading' => '다운로드 중',
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
 			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',

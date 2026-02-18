@@ -512,11 +512,13 @@ class _DownloadTreeItem extends StatefulWidget {
 class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   /// Treat downloading items with no progress/speed as effectively queued
   /// (they're waiting in background_downloader's HoldingQueue).
+  /// Exception: transcoding downloads show progress from server polling.
   DownloadStatus get _effectiveStatus {
     if (widget.node.status == DownloadStatus.downloading &&
         widget.node.progress == 0 &&
         (widget.node.downloadProgress?.speed ?? 0) == 0 &&
-        widget.node.downloadProgress?.currentFile == null) {
+        widget.node.downloadProgress?.currentFile == null &&
+        !(widget.node.downloadProgress?.isTranscoding ?? false)) {
       return DownloadStatus.queued;
     }
     return widget.node.status;
@@ -704,13 +706,17 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               if (_effectiveStatus == DownloadStatus.downloading) ...[
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
-                  value: widget.node.progress,
+                  // Use indeterminate bar when progress is 0 (unknown real progress)
+                  value: widget.node.progress > 0 ? widget.node.progress : null,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    (widget.node.downloadProgress?.isTranscoding ?? false) ? Colors.purple : Colors.blue,
+                  ),
                 ),
                 if (widget.node.downloadProgress != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
+                    _buildProgressText(widget.node.downloadProgress!),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
@@ -733,14 +739,36 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     );
   }
 
+  String _buildProgressText(DownloadProgress dp) {
+    final pct = (dp.progress).toStringAsFixed(1);
+    if (dp.isTranscoding) {
+      // "Transcoding" or "Transcoding 45.5%"
+      return dp.progress > 0
+          ? '${t.downloads.transcoding} $pct%'
+          : t.downloads.transcoding;
+    }
+    // "Downloading" or "Downloading 45.5% - 12.3 MB/s"
+    if (dp.progress > 0) {
+      return '${t.downloads.downloading} $pct% - ${dp.speedFormatted}';
+    }
+    return dp.speed > 0
+        ? '${t.downloads.downloading} - ${dp.speedFormatted}'
+        : t.downloads.downloading;
+  }
+
   Widget _buildStatusIcon(DownloadStatus status) {
     IconData iconData;
     Color? color;
 
     switch (status) {
       case DownloadStatus.downloading:
-        iconData = Symbols.downloading_rounded;
-        color = Colors.blue;
+        if (widget.node.downloadProgress?.isTranscoding ?? false) {
+          iconData = Symbols.dns_rounded;
+          color = Colors.purple;
+        } else {
+          iconData = Symbols.downloading_rounded;
+          color = Colors.blue;
+        }
         break;
       case DownloadStatus.queued:
         iconData = Symbols.schedule_rounded;

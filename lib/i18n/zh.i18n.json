@@ -611,7 +611,9 @@
     "quality": "Quality",
     "original": "Original",
     "settingsSaved": "Download settings saved",
-    "qualityChangeWarning": "Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while."
+    "qualityChangeWarning": "Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.",
+    "transcoding": "转码中",
+    "downloading": "下载中"
   },
   "playlists": {
     "title": "播放列表",

@@ -2199,6 +2199,12 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.'
 	String get qualityChangeWarning => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.';
+
+	/// en: 'Transcoding'
+	String get transcoding => 'Transcoding';
+
+	/// en: 'Downloading'
+	String get downloading => 'Downloading';
 }
 
 // Path: shaders
@@ -3395,6 +3401,8 @@ extension on Translations {
 			'downloads.original' => 'Original',
 			'downloads.settingsSaved' => 'Download settings saved',
 			'downloads.qualityChangeWarning' => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.',
+			'downloads.transcoding' => 'Transcoding',
+			'downloads.downloading' => 'Downloading',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
