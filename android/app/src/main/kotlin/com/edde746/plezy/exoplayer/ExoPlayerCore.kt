@@ -36,6 +36,7 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -202,7 +203,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
     }
 
-    fun initialize(): Boolean {
+    fun initialize(bufferSizeBytes: Int? = null): Boolean {
         if (isInitialized) {
             Log.d(TAG, "Already initialized")
             return true
@@ -337,8 +338,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
             val wrappedRenderersFactory = AssRenderersFactory(handler, renderersFactory)
 
+            val loadControl = DefaultLoadControl.Builder().apply {
+                if (bufferSizeBytes != null && bufferSizeBytes > 0) {
+                    setTargetBufferBytes(bufferSizeBytes)
+                    setPrioritizeTimeOverSizeThresholds(false)
+                    Log.d(TAG, "Buffer byte limit set to ${bufferSizeBytes / 1024 / 1024}MB")
+                }
+            }.build()
+
             exoPlayer = ExoPlayer.Builder(activity)
                 .setTrackSelector(trackSelector!!)
+                .setLoadControl(loadControl)
                 .setAudioAttributes(audioAttributes, false) // We handle audio focus manually
                 .setMediaSourceFactory(mediaSourceFactory)
                 .setRenderersFactory(wrappedRenderersFactory)

@@ -96,7 +96,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "initialize" -> handleInitialize(result)
+            "initialize" -> handleInitialize(call, result)
             "dispose" -> handleDispose(result)
             "open" -> handleOpen(call, result)
             "play" -> handlePlay(result)
@@ -125,7 +125,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
     }
 
-    private fun handleInitialize(result: MethodChannel.Result) {
+    private fun handleInitialize(call: MethodCall, result: MethodChannel.Result) {
         val currentActivity = activity
         if (currentActivity == null) {
             result.error("NO_ACTIVITY", "Activity not available", null)
@@ -138,12 +138,14 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
+        val bufferSizeBytes = call.argument<Int>("bufferSizeBytes")
+
         currentActivity.runOnUiThread {
             try {
                 playerCore = ExoPlayerCore(currentActivity).apply {
                     delegate = this@ExoPlayerPlugin
                 }
-                val success = playerCore?.initialize() ?: false
+                val success = playerCore?.initialize(bufferSizeBytes = bufferSizeBytes) ?: false
 
                 // Start hidden
                 playerCore?.setVisible(false)
