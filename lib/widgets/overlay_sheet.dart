@@ -244,6 +244,12 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         _dragOffset = 0;
         _isDragging = false;
       });
+      // Clear stale back-key flags. handleBackKeyAction sets
+      // markClosedViaBackKey() expecting a route pop, but the overlay
+      // doesn't pop a route. Without clearing, the flag leaks into the
+      // next real route pop and disables KeyUp suppression, causing a
+      // double-pop on the underlying screen.
+      BackKeyUpSuppressor.clearSuppression();
     });
   }
 
