@@ -101,6 +101,7 @@ class SleepTimerService extends ChangeNotifier {
   @override
   void dispose() {
     _timer?.cancel();
+    _completedController.close();
     super.dispose();
   }
 }

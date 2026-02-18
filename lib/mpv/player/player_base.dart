@@ -36,6 +36,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   int? get textureId => null;
 
   StreamSubscription? _eventSubscription;
+  StreamSubscription? _logSubscription;
   bool _disposed = false;
   final _throttleSw = Stopwatch()..start();
   int _lastEmitMs = 0;
@@ -63,7 +64,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   PlayerBase() {
     _streams = createStreams();
     _setupEventListener();
-    logController.stream.listen(_forwardToAppLogger);
+    _logSubscription = logController.stream.listen(_forwardToAppLogger);
   }
 
   void _forwardToAppLogger(PlayerLog log) {
@@ -89,6 +90,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     _eventSubscription = eventChannel.receiveBroadcastStream().listen(
       _handleEvent,
       onError: (error) {
+        if (_disposed) return;
         errorController.add(error.toString());
       },
     );
@@ -108,6 +110,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   void _handleEvent(dynamic event) {
+    if (_disposed) return;
     if (event is List && event.length == 2) {
       final name = _propIdToName[event[0] as int];
       if (name != null) {
@@ -125,6 +128,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// Handle a property change event from the platform.
   /// Subclasses can override this to handle platform-specific properties.
   void handlePropertyChange(String name, dynamic value) {
+    if (_disposed) return;
     switch (name) {
       case 'pause':
         final playing = value == false;
@@ -258,6 +262,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// Handle a player event from the platform.
   /// Subclasses can override this to handle platform-specific events.
   void handlePlayerEvent(String name, Map? data) {
+    if (_disposed) return;
     switch (name) {
       case 'end-file':
         final reason = data?['reason'] as String?;
@@ -450,6 +455,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     _disposed = true;
 
     await _eventSubscription?.cancel();
+    await _logSubscription?.cancel();
     await methodChannel.invokeMethod('dispose');
     await closeStreamControllers();
   }

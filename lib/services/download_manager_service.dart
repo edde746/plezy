@@ -240,6 +240,7 @@ class DownloadManagerService {
 
   // Prevents concurrent _processQueue calls
   bool _isProcessingQueue = false;
+  bool _disposed = false;
 
   // Debounce timers for DB progress writes (keyed by globalKey).
   // UI progress streams are still real-time; only the DB write is debounced.
@@ -626,6 +627,7 @@ class DownloadManagerService {
 
   /// Callback: background_downloader progress update
   void _onTaskProgress(TaskProgressUpdate update) {
+    if (_disposed) return;
     final globalKey = update.task.metaData;
     if (globalKey.isEmpty || update.progress < 0) return;
 
@@ -666,44 +668,49 @@ class DownloadManagerService {
 
   /// Callback: background_downloader status change
   void _onTaskStatusChanged(TaskStatusUpdate update) {
+    if (_disposed) return;
     final globalKey = update.task.metaData;
     if (globalKey.isEmpty) return;
 
     appLogger.d('Background task status: ${update.status} for $globalKey');
 
-    switch (update.status) {
-      case TaskStatus.complete:
-        _onDownloadComplete(globalKey, update.task);
-      case TaskStatus.failed:
-        _onDownloadFailed(globalKey, update.exception?.description ?? 'Download failed');
-      case TaskStatus.notFound:
-        _onDownloadFailed(globalKey, 'File not found (404)');
-      case TaskStatus.canceled:
-        if (_pausingKeys.contains(globalKey)) {
-          // Expected cancel from holding-queue promotion during pause — ignore
+    try {
+      switch (update.status) {
+        case TaskStatus.complete:
+          _onDownloadComplete(globalKey, update.task);
+        case TaskStatus.failed:
+          _onDownloadFailed(globalKey, update.exception?.description ?? 'Download failed');
+        case TaskStatus.notFound:
+          _onDownloadFailed(globalKey, 'File not found (404)');
+        case TaskStatus.canceled:
+          if (_pausingKeys.contains(globalKey)) {
+            // Expected cancel from holding-queue promotion during pause — ignore
+            break;
+          }
+          final ctx = _pendingDownloadContext.remove(globalKey);
+          if (ctx != null) {
+            // Context still present → OS cancelled the task, not user code
+            // (user-initiated pause/cancel/delete removes context before cancellation completes)
+            appLogger.w('Download cancelled by system for $globalKey, re-queuing');
+            _database.updateBgTaskId(globalKey, null);
+            _transitionStatus(globalKey, DownloadStatus.queued);
+            _database.addToQueue(mediaGlobalKey: globalKey);
+            if (_lastClient != null) _processQueue(_lastClient!);
+          }
+        case TaskStatus.paused:
+          appLogger.d('Download paused by system for $globalKey');
+        case TaskStatus.waitingToRetry:
+          appLogger.d('Download waiting to retry for $globalKey');
+        case TaskStatus.enqueued:
+        case TaskStatus.running:
+          // If this item is being paused, the holding queue promoted it — cancel it
+          if (_pausingKeys.contains(globalKey)) {
+            FileDownloader().cancelTaskWithId(update.task.taskId);
+          }
           break;
-        }
-        final ctx = _pendingDownloadContext.remove(globalKey);
-        if (ctx != null) {
-          // Context still present → OS cancelled the task, not user code
-          // (user-initiated pause/cancel/delete removes context before cancellation completes)
-          appLogger.w('Download cancelled by system for $globalKey, re-queuing');
-          _database.updateBgTaskId(globalKey, null);
-          _transitionStatus(globalKey, DownloadStatus.queued);
-          _database.addToQueue(mediaGlobalKey: globalKey);
-          if (_lastClient != null) _processQueue(_lastClient!);
-        }
-      case TaskStatus.paused:
-        appLogger.d('Download paused by system for $globalKey');
-      case TaskStatus.waitingToRetry:
-        appLogger.d('Download waiting to retry for $globalKey');
-      case TaskStatus.enqueued:
-      case TaskStatus.running:
-        // If this item is being paused, the holding queue promoted it — cancel it
-        if (_pausingKeys.contains(globalKey)) {
-          FileDownloader().cancelTaskWithId(update.task.taskId);
-        }
-        break;
+      }
+    } catch (e) {
+      appLogger.e('Error handling download status change for $globalKey', error: e);
     }
   }
 
@@ -1661,6 +1668,7 @@ class DownloadManagerService {
   }
 
   void dispose() {
+    _disposed = true;
     for (final timer in _progressDebounceTimers.values) {
       timer.cancel();
     }
