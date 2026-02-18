@@ -86,6 +86,12 @@ class VideoSettingsSheet extends StatefulWidget {
   /// Called when shader preset changes
   final VoidCallback? onShaderChanged;
 
+  /// Whether ambient lighting is currently enabled
+  final bool isAmbientLightingEnabled;
+
+  /// Called to toggle ambient lighting on/off (null if unsupported)
+  final VoidCallback? onToggleAmbientLighting;
+
   const VideoSettingsSheet({
     super.key,
     required this.player,
@@ -95,6 +101,8 @@ class VideoSettingsSheet extends StatefulWidget {
     this.isLive = false,
     this.shaderService,
     this.onShaderChanged,
+    this.isAmbientLightingEnabled = false,
+    this.onToggleAmbientLighting,
   });
 
   static Future<void> show(
@@ -108,6 +116,8 @@ class VideoSettingsSheet extends StatefulWidget {
     bool isLive = false,
     ShaderService? shaderService,
     VoidCallback? onShaderChanged,
+    bool isAmbientLightingEnabled = false,
+    VoidCallback? onToggleAmbientLighting,
   }) {
     return BaseVideoControlSheet.showSheet(
       context: context,
@@ -121,6 +131,8 @@ class VideoSettingsSheet extends StatefulWidget {
         isLive: isLive,
         shaderService: shaderService,
         onShaderChanged: onShaderChanged,
+        isAmbientLightingEnabled: isAmbientLightingEnabled,
+        onToggleAmbientLighting: onToggleAmbientLighting,
       ),
     );
   }
@@ -367,6 +379,29 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             valueText: widget.shaderService!.currentPreset.name,
             isHighlighted: widget.shaderService!.currentPreset.isEnabled,
             onTap: () => _navigateTo(_SettingsView.shader),
+          ),
+
+        // Ambient Lighting (MPV only)
+        if (widget.onToggleAmbientLighting != null)
+          ListTile(
+            leading: AppIcon(
+              Symbols.blur_on,
+              fill: 1,
+              color: widget.isAmbientLightingEnabled ? Colors.amber : Colors.white70,
+            ),
+            title: Text(t.videoControls.ambientLighting, style: const TextStyle(color: Colors.white)),
+            trailing: Switch(
+              value: widget.isAmbientLightingEnabled,
+              onChanged: (_) {
+                widget.onToggleAmbientLighting?.call();
+                Navigator.pop(context);
+              },
+              activeThumbColor: Colors.amber,
+            ),
+            onTap: () {
+              widget.onToggleAmbientLighting?.call();
+              Navigator.pop(context);
+            },
           ),
 
         // Performance Overlay Toggle

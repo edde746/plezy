@@ -474,6 +474,9 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get versionsButton => 'Versions vidéo';
 	@override String get pipButton => 'Mode PiP (Picture-in-Picture)';
 	@override String get aspectRatioButton => 'Format d\'image';
+	@override String get ambientLighting => 'Éclairage ambiant';
+	@override String get ambientLightingOn => 'Activer l\'éclairage ambiant';
+	@override String get ambientLightingOff => 'Désactiver l\'éclairage ambiant';
 	@override String get fullscreenButton => 'Passer en mode plein écran';
 	@override String get exitFullscreenButton => 'Quitter le mode plein écran';
 	@override String get alwaysOnTopButton => 'Always on top';
@@ -1517,6 +1520,9 @@ extension on TranslationsFr {
 			'videoControls.versionsButton' => 'Versions vidéo',
 			'videoControls.pipButton' => 'Mode PiP (Picture-in-Picture)',
 			'videoControls.aspectRatioButton' => 'Format d\'image',
+			'videoControls.ambientLighting' => 'Éclairage ambiant',
+			'videoControls.ambientLightingOn' => 'Activer l\'éclairage ambiant',
+			'videoControls.ambientLightingOff' => 'Désactiver l\'éclairage ambiant',
 			'videoControls.fullscreenButton' => 'Passer en mode plein écran',
 			'videoControls.exitFullscreenButton' => 'Quitter le mode plein écran',
 			'videoControls.alwaysOnTopButton' => 'Always on top',
@@ -1734,11 +1740,11 @@ extension on TranslationsFr {
 			'liveTv.overnight' => 'Nuit',
 			'liveTv.morning' => 'Matin',
 			'liveTv.daytime' => 'Journée',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.evening' => 'Soirée',
 			'liveTv.lateNight' => 'Nuit tardive',
 			'liveTv.whatsOn' => 'En ce moment',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Regarder la chaîne',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',

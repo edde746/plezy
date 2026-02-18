@@ -474,6 +474,9 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get versionsButton => '视频版本';
 	@override String get pipButton => '画中画模式';
 	@override String get aspectRatioButton => '宽高比';
+	@override String get ambientLighting => '氛围灯光';
+	@override String get ambientLightingOn => '开启氛围灯光';
+	@override String get ambientLightingOff => '关闭氛围灯光';
 	@override String get fullscreenButton => '进入全屏';
 	@override String get exitFullscreenButton => '退出全屏';
 	@override String get alwaysOnTopButton => '置顶窗口';
@@ -1517,6 +1520,9 @@ extension on TranslationsZh {
 			'videoControls.versionsButton' => '视频版本',
 			'videoControls.pipButton' => '画中画模式',
 			'videoControls.aspectRatioButton' => '宽高比',
+			'videoControls.ambientLighting' => '氛围灯光',
+			'videoControls.ambientLightingOn' => '开启氛围灯光',
+			'videoControls.ambientLightingOff' => '关闭氛围灯光',
 			'videoControls.fullscreenButton' => '进入全屏',
 			'videoControls.exitFullscreenButton' => '退出全屏',
 			'videoControls.alwaysOnTopButton' => '置顶窗口',
@@ -1734,11 +1740,11 @@ extension on TranslationsZh {
 			'liveTv.overnight' => '凌晨',
 			'liveTv.morning' => '上午',
 			'liveTv.daytime' => '白天',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.evening' => '晚上',
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '正在播出',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => '观看频道',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',

@@ -474,6 +474,9 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get versionsButton => 'Videoversies';
 	@override String get pipButton => 'Beeld-in-beeld modus';
 	@override String get aspectRatioButton => 'Beeldverhouding';
+	@override String get ambientLighting => 'Omgevingsverlichting';
+	@override String get ambientLightingOn => 'Omgevingsverlichting inschakelen';
+	@override String get ambientLightingOff => 'Omgevingsverlichting uitschakelen';
 	@override String get fullscreenButton => 'Volledig scherm activeren';
 	@override String get exitFullscreenButton => 'Volledig scherm verlaten';
 	@override String get alwaysOnTopButton => 'Altijd bovenop';
@@ -1517,6 +1520,9 @@ extension on TranslationsNl {
 			'videoControls.versionsButton' => 'Videoversies',
 			'videoControls.pipButton' => 'Beeld-in-beeld modus',
 			'videoControls.aspectRatioButton' => 'Beeldverhouding',
+			'videoControls.ambientLighting' => 'Omgevingsverlichting',
+			'videoControls.ambientLightingOn' => 'Omgevingsverlichting inschakelen',
+			'videoControls.ambientLightingOff' => 'Omgevingsverlichting uitschakelen',
 			'videoControls.fullscreenButton' => 'Volledig scherm activeren',
 			'videoControls.exitFullscreenButton' => 'Volledig scherm verlaten',
 			'videoControls.alwaysOnTopButton' => 'Altijd bovenop',
@@ -1734,11 +1740,11 @@ extension on TranslationsNl {
 			'liveTv.overnight' => 'Nacht',
 			'liveTv.morning' => 'Ochtend',
 			'liveTv.daytime' => 'Overdag',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',

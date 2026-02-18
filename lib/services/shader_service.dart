@@ -2,14 +2,20 @@ import 'package:flutter/foundation.dart';
 
 import '../models/shader_preset.dart';
 import '../mpv/player/player.dart';
+import 'ambient_lighting_service.dart';
 import 'shader_asset_loader.dart';
 
 /// Service for applying GLSL shaders to the MPV video player.
 ///
 /// Handles shader chain building, HDR detection, and runtime switching.
+/// When ambient lighting is active, the ambient lighting shader is always appended last
+/// in the chain after any upscaling/processing shaders.
 class ShaderService {
   final Player _player;
   ShaderPreset _currentPreset = ShaderPreset.none;
+
+  /// Reference to ambient lighting service for re-appending its shader after chain rebuilds.
+  AmbientLightingService? ambientLightingService;
 
   ShaderService(this._player);
 
@@ -41,6 +47,7 @@ class ShaderService {
           }
           await _clearShaders();
           _currentPreset = ShaderPreset.none;
+          await _reappendAmbientLighting();
           return;
         }
       }
@@ -52,6 +59,7 @@ class ShaderService {
         // No shaders - clear any existing ones
         await _clearShaders();
         _currentPreset = preset;
+        await _reappendAmbientLighting();
         return;
       }
 
@@ -64,6 +72,9 @@ class ShaderService {
       }
 
       _currentPreset = preset;
+
+      // Re-append ambient lighting shader at end of chain
+      await _reappendAmbientLighting();
 
       if (kDebugMode) {
         debugPrint('ShaderService: Applied ${preset.name} with ${shaderPaths.length} shaders');
@@ -83,6 +94,21 @@ class ShaderService {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ShaderService: Failed to clear shaders: $e');
+      }
+    }
+  }
+
+  /// Re-append the ambient lighting shader if it's active.
+  /// Called after shader chain rebuilds to keep ambient lighting last.
+  Future<void> _reappendAmbientLighting() async {
+    final service = ambientLightingService;
+    if (service == null || !service.isEnabled) return;
+
+    try {
+      await service.reappendShader();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ShaderService: Failed to re-append ambient lighting: $e');
       }
     }
   }

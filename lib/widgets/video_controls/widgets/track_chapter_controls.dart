@@ -48,6 +48,12 @@ class TrackChapterControls extends StatelessWidget {
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
 
+  /// Whether ambient lighting is enabled (passed to settings sheet)
+  final bool isAmbientLightingEnabled;
+
+  /// Called to toggle ambient lighting (passed to settings sheet)
+  final VoidCallback? onToggleAmbientLighting;
+
   /// List of FocusNodes for the buttons (passed from parent for navigation)
   final List<FocusNode>? focusNodes;
 
@@ -95,6 +101,8 @@ class TrackChapterControls extends StatelessWidget {
     this.isLive = false,
     this.shaderService,
     this.onShaderChanged,
+    this.isAmbientLightingEnabled = false,
+    this.onToggleAmbientLighting,
   });
 
   /// Handle key event for button navigation
@@ -201,6 +209,8 @@ class TrackChapterControls extends StatelessWidget {
                     isLive: isLive,
                     shaderService: shaderService,
                     onShaderChanged: onShaderChanged,
+                    isAmbientLightingEnabled: isAmbientLightingEnabled,
+                    onToggleAmbientLighting: onToggleAmbientLighting,
                   );
                   onLoadSeekTimes?.call();
                 },

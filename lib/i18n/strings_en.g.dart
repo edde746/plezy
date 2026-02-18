@@ -1025,6 +1025,15 @@ class TranslationsVideoControlsEn {
 	/// en: 'Aspect ratio'
 	String get aspectRatioButton => 'Aspect ratio';
 
+	/// en: 'Ambient lighting'
+	String get ambientLighting => 'Ambient lighting';
+
+	/// en: 'Enable ambient lighting'
+	String get ambientLightingOn => 'Enable ambient lighting';
+
+	/// en: 'Disable ambient lighting'
+	String get ambientLightingOff => 'Disable ambient lighting';
+
 	/// en: 'Enter fullscreen'
 	String get fullscreenButton => 'Enter fullscreen';
 
@@ -3000,6 +3009,9 @@ extension on Translations {
 			'videoControls.versionsButton' => 'Video versions',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
+			'videoControls.ambientLighting' => 'Ambient lighting',
+			'videoControls.ambientLightingOn' => 'Enable ambient lighting',
+			'videoControls.ambientLightingOff' => 'Disable ambient lighting',
 			'videoControls.fullscreenButton' => 'Enter fullscreen',
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Always on top',
@@ -3217,11 +3229,11 @@ extension on Translations {
 			'liveTv.overnight' => 'Overnight',
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',

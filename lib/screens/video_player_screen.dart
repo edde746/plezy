@@ -36,6 +36,7 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/track_selection_service.dart';
+import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_pip_manager.dart';
 import '../services/pip_service.dart';
@@ -167,6 +168,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   VideoFilterManager? _videoFilterManager;
   VideoPIPManager? _videoPIPManager;
   ShaderService? _shaderService;
+  AmbientLightingService? _ambientLightingService;
   final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
   // Watch Together provider reference (stored early to use in dispose)
@@ -1023,6 +1025,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           // Shader Service (MPV only)
           _shaderService = ShaderService(player!);
           if (_shaderService!.isSupported) {
+            // Ambient Lighting Service
+            _ambientLightingService = AmbientLightingService(player!);
+            _shaderService!.ambientLightingService = _ambientLightingService;
+            _videoFilterManager?.ambientLightingService = _ambientLightingService;
+
             await _applySavedShaderPreset();
           }
         }
@@ -1141,9 +1148,54 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void _cycleBoxFitMode() {
+    // Disable ambient lighting when switching boxfit modes
+    // (cover/fill change the video rect, making the baked-in shader incorrect)
+    _ambientLightingService?.disable();
     setState(() {
       _videoFilterManager?.cycleBoxFitMode();
     });
+  }
+
+  /// Update video-aspect-override when player size changes.
+  /// The shader adapts automatically via built-in target_size uniform.
+  void _updateAmbientLightingOnResize(Size newSize) {
+    final ambientLighting = _ambientLightingService;
+    if (ambientLighting == null || !ambientLighting.isEnabled) return;
+    if (newSize.height == 0) return;
+
+    ambientLighting.updateOutputAspect(newSize.width / newSize.height);
+  }
+
+  /// Toggle ambient lighting effect on/off
+  Future<void> _toggleAmbientLighting() async {
+    final ambientLighting = _ambientLightingService;
+    if (ambientLighting == null || !ambientLighting.isSupported) return;
+
+    if (ambientLighting.isEnabled) {
+      await ambientLighting.disable();
+      _videoFilterManager?.updateVideoFilter();
+    } else {
+      // Get video display aspect ratio
+      final dwidth = await player?.getProperty('dwidth');
+      final dheight = await player?.getProperty('dheight');
+      if (dwidth == null || dheight == null) return;
+      final w = double.tryParse(dwidth);
+      final h = double.tryParse(dheight);
+      if (w == null || h == null || h == 0) return;
+      final videoAspect = w / h;
+
+      // Get player widget aspect ratio
+      final playerSize = _videoFilterManager?.playerSize;
+      if (playerSize == null || playerSize.height == 0) return;
+      final outputAspect = playerSize.width / playerSize.height;
+
+      // Force contain mode when enabling ambient lighting
+      _videoFilterManager?.resetToContain();
+
+      await ambientLighting.enable(videoAspect, outputAspect);
+    }
+
+    setState(() {});
   }
 
   /// Toggle between contain and cover modes only (for pinch gesture)
@@ -2151,9 +2203,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             }
           }
         }
-        return event.logicalKey.isNavigationKey
-            ? KeyEventResult.handled
-            : KeyEventResult.ignored;
+        return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
       },
       child: _isPlayerInitialized && player != null ? _buildVideoPlayer(context) : _buildLoadingSpinner(),
     );
@@ -2217,6 +2267,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       if (mounted && player != null) {
                         _videoFilterManager?.updatePlayerSize(newSize);
                         _videoPIPManager?.updatePlayerSize(newSize);
+                        // Update ambient lighting shader if active (output aspect changed)
+                        _updateAmbientLightingOnResize(newSize);
                         // Update Metal layer frame on iOS/macOS for rotation
                         player!.updateFrame();
                       }
@@ -2286,6 +2338,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                             : null,
                         isLive: widget.isLive,
                         liveChannelName: _liveChannelName,
+                        isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
+                        onToggleAmbientLighting: _toggleAmbientLighting,
                       ),
                     );
                   },

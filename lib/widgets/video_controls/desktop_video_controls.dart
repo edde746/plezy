@@ -89,6 +89,12 @@ class DesktopVideoControls extends StatefulWidget {
   /// Channel name for live TV display
   final String? liveChannelName;
 
+  /// Whether ambient lighting is enabled (passed to settings sheet)
+  final bool isAmbientLightingEnabled;
+
+  /// Called to toggle ambient lighting (passed to settings sheet)
+  final VoidCallback? onToggleAmbientLighting;
+
   const DesktopVideoControls({
     super.key,
     required this.player,
@@ -135,6 +141,8 @@ class DesktopVideoControls extends StatefulWidget {
     this.thumbnailUrlBuilder,
     this.isLive = false,
     this.liveChannelName,
+    this.isAmbientLightingEnabled = false,
+    this.onToggleAmbientLighting,
   });
 
   @override
@@ -680,6 +688,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 isLive: widget.isLive,
                 shaderService: widget.shaderService,
                 onShaderChanged: widget.onShaderChanged,
+                isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
+                onToggleAmbientLighting: widget.onToggleAmbientLighting,
               ),
             ],
           ),

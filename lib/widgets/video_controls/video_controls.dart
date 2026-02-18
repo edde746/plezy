@@ -77,6 +77,8 @@ Widget plexVideoControlsBuilder(
   String Function(Duration time)? thumbnailUrlBuilder,
   bool isLive = false,
   String? liveChannelName,
+  bool isAmbientLightingEnabled = false,
+  VoidCallback? onToggleAmbientLighting,
 }) {
   return PlexVideoControls(
     player: player,
@@ -101,6 +103,8 @@ Widget plexVideoControlsBuilder(
     thumbnailUrlBuilder: thumbnailUrlBuilder,
     isLive: isLive,
     liveChannelName: liveChannelName,
+    isAmbientLightingEnabled: isAmbientLightingEnabled,
+    onToggleAmbientLighting: onToggleAmbientLighting,
   );
 }
 
@@ -150,6 +154,12 @@ class PlexVideoControls extends StatefulWidget {
   /// Channel name for live TV display
   final String? liveChannelName;
 
+  /// Whether ambient lighting is enabled (passed to settings sheet)
+  final bool isAmbientLightingEnabled;
+
+  /// Called to toggle ambient lighting (passed to settings sheet)
+  final VoidCallback? onToggleAmbientLighting;
+
   const PlexVideoControls({
     super.key,
     required this.player,
@@ -174,6 +184,8 @@ class PlexVideoControls extends StatefulWidget {
     this.thumbnailUrlBuilder,
     this.isLive = false,
     this.liveChannelName,
+    this.isAmbientLightingEnabled = false,
+    this.onToggleAmbientLighting,
   });
 
   @override
@@ -905,6 +917,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       isLive: widget.isLive,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
+      isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
+      onToggleAmbientLighting: widget.player.playerType != 'exoplayer' ? widget.onToggleAmbientLighting : null,
     );
   }
 
@@ -1895,6 +1909,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
         isLive: widget.isLive,
         liveChannelName: widget.liveChannelName,
+        isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
+        onToggleAmbientLighting: widget.player.playerType != 'exoplayer' ? widget.onToggleAmbientLighting : null,
       ),
     );
   }

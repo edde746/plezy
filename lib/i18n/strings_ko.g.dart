@@ -474,6 +474,9 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get versionsButton => '동영상 버전';
 	@override String get pipButton => '픽처 인 픽처 모드';
 	@override String get aspectRatioButton => '화면비율';
+	@override String get ambientLighting => '주변 조명';
+	@override String get ambientLightingOn => '주변 조명 켜기';
+	@override String get ambientLightingOff => '주변 조명 끄기';
 	@override String get fullscreenButton => '전체화면';
 	@override String get exitFullscreenButton => '전체화면 종료';
 	@override String get alwaysOnTopButton => '창 최상위 고정';
@@ -1517,6 +1520,9 @@ extension on TranslationsKo {
 			'videoControls.versionsButton' => '동영상 버전',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
 			'videoControls.aspectRatioButton' => '화면비율',
+			'videoControls.ambientLighting' => '주변 조명',
+			'videoControls.ambientLightingOn' => '주변 조명 켜기',
+			'videoControls.ambientLightingOff' => '주변 조명 끄기',
 			'videoControls.fullscreenButton' => '전체화면',
 			'videoControls.exitFullscreenButton' => '전체화면 종료',
 			'videoControls.alwaysOnTopButton' => '창 최상위 고정',
@@ -1734,11 +1740,11 @@ extension on TranslationsKo {
 			'liveTv.overnight' => '심야',
 			'liveTv.morning' => '아침',
 			'liveTv.daytime' => '낮',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.evening' => '저녁',
 			'liveTv.lateNight' => '심야 방송',
 			'liveTv.whatsOn' => '지금 방송 중',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => '채널 시청',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',

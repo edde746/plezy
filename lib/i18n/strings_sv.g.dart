@@ -474,6 +474,9 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get versionsButton => 'Videoversioner';
 	@override String get pipButton => 'Bild-i-bild läge';
 	@override String get aspectRatioButton => 'Bildförhållande';
+	@override String get ambientLighting => 'Ambientbelysning';
+	@override String get ambientLightingOn => 'Aktivera ambientbelysning';
+	@override String get ambientLightingOff => 'Inaktivera ambientbelysning';
 	@override String get fullscreenButton => 'Aktivera helskärm';
 	@override String get exitFullscreenButton => 'Avsluta helskärm';
 	@override String get alwaysOnTopButton => 'Alltid överst';
@@ -1517,6 +1520,9 @@ extension on TranslationsSv {
 			'videoControls.versionsButton' => 'Videoversioner',
 			'videoControls.pipButton' => 'Bild-i-bild läge',
 			'videoControls.aspectRatioButton' => 'Bildförhållande',
+			'videoControls.ambientLighting' => 'Ambientbelysning',
+			'videoControls.ambientLightingOn' => 'Aktivera ambientbelysning',
+			'videoControls.ambientLightingOff' => 'Inaktivera ambientbelysning',
 			'videoControls.fullscreenButton' => 'Aktivera helskärm',
 			'videoControls.exitFullscreenButton' => 'Avsluta helskärm',
 			'videoControls.alwaysOnTopButton' => 'Alltid överst',
@@ -1734,11 +1740,11 @@ extension on TranslationsSv {
 			'liveTv.overnight' => 'Natt',
 			'liveTv.morning' => 'Morgon',
 			'liveTv.daytime' => 'Dagtid',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',

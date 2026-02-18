@@ -474,6 +474,9 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get versionsButton => 'Versioni video';
 	@override String get pipButton => 'Modalità Picture-in-Picture';
 	@override String get aspectRatioButton => 'Proporzioni';
+	@override String get ambientLighting => 'Illuminazione ambientale';
+	@override String get ambientLightingOn => 'Attiva illuminazione ambientale';
+	@override String get ambientLightingOff => 'Disattiva illuminazione ambientale';
 	@override String get fullscreenButton => 'Attiva schermo intero';
 	@override String get exitFullscreenButton => 'Esci da schermo intero';
 	@override String get alwaysOnTopButton => 'Sempre in primo piano';
@@ -1517,6 +1520,9 @@ extension on TranslationsIt {
 			'videoControls.versionsButton' => 'Versioni video',
 			'videoControls.pipButton' => 'Modalità Picture-in-Picture',
 			'videoControls.aspectRatioButton' => 'Proporzioni',
+			'videoControls.ambientLighting' => 'Illuminazione ambientale',
+			'videoControls.ambientLightingOn' => 'Attiva illuminazione ambientale',
+			'videoControls.ambientLightingOff' => 'Disattiva illuminazione ambientale',
 			'videoControls.fullscreenButton' => 'Attiva schermo intero',
 			'videoControls.exitFullscreenButton' => 'Esci da schermo intero',
 			'videoControls.alwaysOnTopButton' => 'Sempre in primo piano',
@@ -1734,11 +1740,11 @@ extension on TranslationsIt {
 			'liveTv.overnight' => 'Notte',
 			'liveTv.morning' => 'Mattina',
 			'liveTv.daytime' => 'Giorno',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.evening' => 'Sera',
 			'liveTv.lateNight' => 'Notte tarda',
 			'liveTv.whatsOn' => 'In onda ora',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Guarda canale',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
