@@ -191,6 +191,11 @@ class MpvPlayerCore: NSObject {
 
     // MARK: - MPV Properties and Commands
 
+    func setLogLevel(_ level: String) {
+        guard mpv != nil else { return }
+        mpv_request_log_messages(mpv, level)
+    }
+
     func setProperty(_ name: String, value: String) {
         guard mpv != nil else { return }
 
