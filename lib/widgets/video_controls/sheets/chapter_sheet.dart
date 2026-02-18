@@ -9,10 +9,9 @@ import '../../../services/download_storage_service.dart';
 import '../../../models/plex_media_info.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/provider_extensions.dart';
-import '../../../widgets/focusable_bottom_sheet.dart';
 import '../../../widgets/focusable_list_tile.dart';
+import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
-import 'video_control_sheet_launcher.dart';
 import '../../plex_optimized_image.dart';
 
 /// Bottom sheet for selecting chapters
@@ -30,42 +29,11 @@ class ChapterSheet extends StatefulWidget {
     this.serverId,
   });
 
-  static void show(
-    BuildContext context,
-    Player player,
-    List<PlexChapter> chapters,
-    bool chaptersLoaded, {
-    String? serverId,
-    VoidCallback? onOpen,
-    VoidCallback? onClose,
-  }) {
-    VideoControlSheetLauncher.show(
-      context: context,
-      onOpen: onOpen,
-      onClose: onClose,
-      builder: (context) =>
-          ChapterSheet(player: player, chapters: chapters, chaptersLoaded: chaptersLoaded, serverId: serverId),
-    );
-  }
-
   @override
   State<ChapterSheet> createState() => _ChapterSheetState();
 }
 
 class _ChapterSheetState extends State<ChapterSheet> {
-  late final FocusNode _initialFocusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialFocusNode = FocusNode(debugLabel: 'ChapterSheetInitialFocus');
-  }
-
-  @override
-  void dispose() {
-    _initialFocusNode.dispose();
-    super.dispose();
-  }
 
   /// Get the PlexClient for chapters, or null if unavailable (offline mode)
   PlexClient? _tryGetClientForChapters(BuildContext context) {
@@ -79,9 +47,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusableBottomSheet(
-      initialFocusNode: _initialFocusNode,
-      child: StreamBuilder<Duration>(
+    return StreamBuilder<Duration>(
         stream: widget.player.streams.position,
         initialData: widget.player.state.position,
         builder: (context, positionSnapshot) {
@@ -125,7 +91,6 @@ class _ChapterSheetState extends State<ChapterSheet> {
                     : null;
 
                 return FocusableListTile(
-                  focusNode: index == 0 ? _initialFocusNode : null,
                   leading: chapter.thumb != null
                       ? Stack(
                           children: [
@@ -173,7 +138,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                       : null,
                   onTap: () {
                     widget.player.seek(chapter.startTime);
-                    Navigator.pop(context);
+                    OverlaySheetController.of(context).close();
                   },
                 );
               },
@@ -186,7 +151,6 @@ class _ChapterSheetState extends State<ChapterSheet> {
             child: content,
           );
         },
-      ),
-    );
+      );
   }
 }

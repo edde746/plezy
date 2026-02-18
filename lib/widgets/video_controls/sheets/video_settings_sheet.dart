@@ -14,8 +14,8 @@ import '../../../services/shader_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
-import '../../../widgets/focusable_bottom_sheet.dart';
 import '../../../widgets/focusable_list_tile.dart';
+import '../../../widgets/overlay_sheet.dart';
 import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
@@ -31,7 +31,6 @@ class _SettingsMenuItem extends StatelessWidget {
   final VoidCallback onTap;
   final bool isHighlighted;
   final bool allowValueOverflow;
-  final FocusNode? focusNode;
 
   const _SettingsMenuItem({
     required this.icon,
@@ -40,7 +39,6 @@ class _SettingsMenuItem extends StatelessWidget {
     required this.onTap,
     this.isHighlighted = false,
     this.allowValueOverflow = false,
-    this.focusNode,
   });
 
   @override
@@ -52,7 +50,6 @@ class _SettingsMenuItem extends StatelessWidget {
     );
 
     return FocusableListTile(
-      focusNode: focusNode,
       leading: AppIcon(icon, fill: 1, color: isHighlighted ? Colors.amber : Colors.white70),
       title: Text(title, style: const TextStyle(color: Colors.white)),
       trailing: Row(
@@ -105,38 +102,6 @@ class VideoSettingsSheet extends StatefulWidget {
     this.onToggleAmbientLighting,
   });
 
-  static Future<void> show(
-    BuildContext context,
-    Player player,
-    int audioSyncOffset,
-    int subtitleSyncOffset, {
-    VoidCallback? onOpen,
-    VoidCallback? onClose,
-    bool canControl = true,
-    bool isLive = false,
-    ShaderService? shaderService,
-    VoidCallback? onShaderChanged,
-    bool isAmbientLightingEnabled = false,
-    VoidCallback? onToggleAmbientLighting,
-  }) {
-    return BaseVideoControlSheet.showSheet(
-      context: context,
-      onOpen: onOpen,
-      onClose: onClose,
-      builder: (context) => VideoSettingsSheet(
-        player: player,
-        audioSyncOffset: audioSyncOffset,
-        subtitleSyncOffset: subtitleSyncOffset,
-        canControl: canControl,
-        isLive: isLive,
-        shaderService: shaderService,
-        onShaderChanged: onShaderChanged,
-        isAmbientLightingEnabled: isAmbientLightingEnabled,
-        onToggleAmbientLighting: onToggleAmbientLighting,
-      ),
-    );
-  }
-
   @override
   State<VideoSettingsSheet> createState() => _VideoSettingsSheetState();
 }
@@ -148,21 +113,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   bool _enableHDR = true;
   bool _showPerformanceOverlay = false;
   bool _autoPlayNextEpisode = true;
-  late final FocusNode _initialFocusNode;
 
   @override
   void initState() {
     super.initState();
     _audioSyncOffset = widget.audioSyncOffset;
     _subtitleSyncOffset = widget.subtitleSyncOffset;
-    _initialFocusNode = FocusNode(debugLabel: 'VideoSettingsInitialFocus');
     _loadSettings();
-  }
-
-  @override
-  void dispose() {
-    _initialFocusNode.dispose();
-    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -211,12 +168,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     setState(() {
       _currentView = view;
     });
+    OverlaySheetController.maybeOf(context)?.refocus();
   }
 
   void _navigateBack() {
     setState(() {
       _currentView = _SettingsView.menu;
     });
+    OverlaySheetController.maybeOf(context)?.refocus();
   }
 
   String _getTitle() {
@@ -283,7 +242,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             builder: (context, snapshot) {
               final currentRate = snapshot.data ?? 1.0;
               return _SettingsMenuItem(
-                focusNode: _initialFocusNode,
                 icon: Symbols.speed_rounded,
                 title: t.videoSettings.playbackSpeed,
                 valueText: _formatSpeed(currentRate),
@@ -394,13 +352,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               value: widget.isAmbientLightingEnabled,
               onChanged: (_) {
                 widget.onToggleAmbientLighting?.call();
-                Navigator.pop(context);
+                OverlaySheetController.of(context).close();
               },
               activeThumbColor: Colors.amber,
             ),
             onTap: () {
               widget.onToggleAmbientLighting?.call();
-              Navigator.pop(context);
+              OverlaySheetController.of(context).close();
             },
           ),
 
@@ -447,7 +405,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 final settings = await SettingsService.getInstance();
                 await settings.setDefaultPlaybackSpeed(speed);
                 if (context.mounted) {
-                  Navigator.pop(context); // Close sheet after selection
+                  OverlaySheetController.of(context).close(); // Close sheet after selection
                 }
               },
             );
@@ -460,7 +418,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget _buildSleepView() {
     final sleepTimer = SleepTimerService();
 
-    return SleepTimerContent(player: widget.player, sleepTimer: sleepTimer, onCancel: () => Navigator.pop(context));
+    return SleepTimerContent(player: widget.player, sleepTimer: sleepTimer, onCancel: () => OverlaySheetController.of(context).close());
   }
 
   Widget _buildAudioSyncView() {
@@ -592,7 +550,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
       onTap: () {
         widget.player.setAudioDevice(device);
-        Navigator.pop(context);
+        OverlaySheetController.of(context).close();
       },
     );
   }
@@ -621,7 +579,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 await widget.shaderService!.applyPreset(preset);
                 await shaderProvider.setPreset(preset);
                 widget.onShaderChanged?.call();
-                if (context.mounted) Navigator.pop(context);
+                if (context.mounted) OverlaySheetController.of(context).close();
               },
             );
           },
@@ -656,36 +614,33 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         _currentView == _SettingsView.menu &&
         (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive);
 
-    return FocusableBottomSheet(
-      initialFocusNode: _initialFocusNode,
-      child: BaseVideoControlSheet(
-        title: _getTitle(),
-        icon: _getIcon(),
-        iconColor: () {
-          if (isIconActive) return Colors.amber;
-          if (_currentView == _SettingsView.shader && isShaderActive) return Colors.amber;
-          return Colors.white;
-        }(),
-        onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
-        child: () {
-          switch (_currentView) {
-            case _SettingsView.menu:
-              return _buildMenuView();
-            case _SettingsView.speed:
-              return _buildSpeedView();
-            case _SettingsView.sleep:
-              return _buildSleepView();
-            case _SettingsView.audioSync:
-              return _buildAudioSyncView();
-            case _SettingsView.subtitleSync:
-              return _buildSubtitleSyncView();
-            case _SettingsView.audioDevice:
-              return _buildAudioDeviceView();
-            case _SettingsView.shader:
-              return _buildShaderView();
-          }
-        }(),
-      ),
+    return BaseVideoControlSheet(
+      title: _getTitle(),
+      icon: _getIcon(),
+      iconColor: () {
+        if (isIconActive) return Colors.amber;
+        if (_currentView == _SettingsView.shader && isShaderActive) return Colors.amber;
+        return Colors.white;
+      }(),
+      onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
+      child: () {
+        switch (_currentView) {
+          case _SettingsView.menu:
+            return _buildMenuView();
+          case _SettingsView.speed:
+            return _buildSpeedView();
+          case _SettingsView.sleep:
+            return _buildSleepView();
+          case _SettingsView.audioSync:
+            return _buildAudioSyncView();
+          case _SettingsView.subtitleSync:
+            return _buildSubtitleSyncView();
+          case _SettingsView.audioDevice:
+            return _buildAudioDeviceView();
+          case _SettingsView.shader:
+            return _buildShaderView();
+        }
+      }(),
     );
   }
 }

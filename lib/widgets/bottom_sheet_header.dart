@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'overlay_sheet.dart';
+
 /// A reusable header widget for bottom sheets
 /// Provides consistent styling with title, optional leading widget, optional action, and close button
 class BottomSheetHeader extends StatelessWidget {
@@ -68,9 +70,11 @@ class BottomSheetHeader extends StatelessWidget {
     if (leading != null) {
       resolvedLeading = leading;
     } else if (onBack != null) {
-      resolvedLeading = IconButton(
-        icon: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: iconColor),
-        onPressed: onBack,
+      resolvedLeading = ExcludeFocusTraversal(
+        child: IconButton(
+          icon: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: iconColor),
+          onPressed: onBack,
+        ),
       );
     } else if (icon != null) {
       resolvedLeading = AppIcon(icon!, fill: 1, color: iconColor);
@@ -91,10 +95,19 @@ class BottomSheetHeader extends StatelessWidget {
           if (resolvedLeading != null) ...[resolvedLeading, const SizedBox(width: 8)],
           Expanded(child: Text(title, style: effectiveTitleStyle)),
           ?action,
-          IconButton(
-            focusNode: closeFocusNode,
-            icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),
-            onPressed: onClose ?? () => Navigator.pop(context),
+          ExcludeFocusTraversal(
+            child: IconButton(
+              focusNode: closeFocusNode,
+              icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),
+              onPressed: onClose ?? () {
+                final sheetController = OverlaySheetController.maybeOf(context);
+                if (sheetController != null) {
+                  sheetController.close();
+                } else {
+                  Navigator.pop(context);
+                }
+              },
+            ),
           ),
         ],
       ),

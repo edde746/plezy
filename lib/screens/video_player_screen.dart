@@ -54,6 +54,7 @@ import '../utils/snackbar_helper.dart';
 import '../utils/track_label_builder.dart' as tlb;
 import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
+import '../widgets/overlay_sheet.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/input_mode_tracker.dart';
@@ -2178,23 +2179,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
     // Screen-level Focus wraps ALL phases (loading + initialized).
     // - autofocus: grabs focus when no deeper child claims it.
-    // - onKeyEvent: catch-all that consumes any event children didn't handle,
-    //   preventing leaks to previous routes.
+    // - onKeyEvent: self-heals when this node has primary focus (no descendant
+    //   focused). Nav keys are only consumed in that case; otherwise they pass
+    //   through so DirectionalFocusAction can drive dpad nav in overlay sheets.
     return Focus(
       focusNode: _screenFocusNode,
       autofocus: isCurrentRoute,
       canRequestFocus: isCurrentRoute,
       onKeyEvent: (node, event) {
         if (!isCurrentRoute) return KeyEventResult.ignored;
-        // Safety net: if this screen-level node itself has primary focus
-        // (no descendant focused, e.g. after controls auto-hide), self-heal.
-        // BACK is excluded: on Android TV the BACK button fires both a key event
-        // and a system back gesture. Handling it here would double-pop because
-        // PopScope.onPopInvokedWithResult also processes the system back gesture.
-        // PopScope handles BACK navigation exclusively.
-        if (node.hasPrimaryFocus && !event.logicalKey.isBackKey) {
-          // Redirect focus to the first traversable descendant (video controls)
-          // and show controls immediately so the first key press isn't swallowed.
+        // Back keys always pass through — handled by PopScope (system back
+        // gesture) or overlay sheet's onKeyEvent.
+        if (event.logicalKey.isBackKey) return KeyEventResult.ignored;
+        // Self-heal: if this node itself has primary focus (no descendant
+        // focused, e.g. after controls auto-hide), redirect to first descendant.
+        if (node.hasPrimaryFocus) {
           if (event.isActionable) {
             _controlsVisible.value = true;
             final descendants = node.traversalDescendants;
@@ -2202,10 +2201,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               descendants.first.requestFocus();
             }
           }
+          return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
         }
-        return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
+        // A descendant has focus — let events pass through so
+        // DirectionalFocusAction / ActivateAction can process them.
+        return KeyEventResult.ignored;
       },
-      child: _isPlayerInitialized && player != null ? _buildVideoPlayer(context) : _buildLoadingSpinner(),
+      child: OverlaySheetHost(
+        child: Builder(
+          builder: (sheetContext) => _isPlayerInitialized && player != null
+              ? _buildVideoPlayer(sheetContext)
+              : _buildLoadingSpinner(),
+        ),
+      ),
     );
   }
 
@@ -2216,11 +2224,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return PopScope(
       canPop: false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
       onPopInvokedWithResult: (didPop, result) {
-        // Only process system-initiated back gestures (didPop: false).
-        // Programmatic Navigator.pop() triggers didPop: true — ignore it here
-        // to avoid consuming the BackKeyCoordinator flag before the system back
-        // gesture arrives (which would cause a double-pop on Android TV).
         if (!didPop) {
+          // If an overlay sheet is open, delegate back to it instead of
+          // exiting the player. This prevents the double-pop on Android TV
+          // where the system back gesture would otherwise reach both the
+          // sheet and the player's PopScope.
+          final sheetController = OverlaySheetController.maybeOf(context);
+          if (sheetController != null && sheetController.isOpen) {
+            sheetController.pop();
+            return;
+          }
           if (BackKeyCoordinator.consumeIfHandled()) return;
           BackKeyCoordinator.markHandled();
           _handleBackButton();

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../mpv/mpv.dart';
-import '../../../widgets/focusable_bottom_sheet.dart';
+import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
-import 'video_control_sheet_launcher.dart';
 import '../helpers/track_filter_helper.dart';
 import '../helpers/track_selection_helper.dart';
 
@@ -38,79 +37,26 @@ class TrackSelectionSheet<T> extends StatefulWidget {
     this.isOffTrack,
   });
 
-  static void show<T>({
-    required BuildContext context,
-    required Player player,
-    required String title,
-    required IconData icon,
-    required List<T> Function(Tracks?) extractTracks,
-    required T? Function(TrackSelection) getCurrentTrack,
-    required String Function(T track, int index) buildLabel,
-    required void Function(T track) setTrack,
-    Function(T)? onTrackChanged,
-    bool showOffOption = false,
-    T Function()? createOffTrack,
-    bool Function(T track)? isOffTrack,
-    VoidCallback? onOpen,
-    VoidCallback? onClose,
-  }) {
-    VideoControlSheetLauncher.show(
-      context: context,
-      onOpen: onOpen,
-      onClose: onClose,
-      builder: (context) => TrackSelectionSheet<T>(
-        player: player,
-        title: title,
-        icon: icon,
-        extractTracks: extractTracks,
-        getCurrentTrack: getCurrentTrack,
-        buildLabel: buildLabel,
-        setTrack: setTrack,
-        onTrackChanged: onTrackChanged,
-        showOffOption: showOffOption,
-        createOffTrack: createOffTrack,
-        isOffTrack: isOffTrack,
-      ),
-    );
-  }
-
   @override
   State<TrackSelectionSheet<T>> createState() => _TrackSelectionSheetState<T>();
 }
 
 class _TrackSelectionSheetState<T> extends State<TrackSelectionSheet<T>> {
-  late final FocusNode _initialFocusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialFocusNode = FocusNode(debugLabel: 'TrackSelectionInitialFocus');
-  }
-
-  @override
-  void dispose() {
-    _initialFocusNode.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return FocusableBottomSheet(
-      initialFocusNode: _initialFocusNode,
-      child: StreamBuilder<Tracks>(
-        stream: widget.player.streams.tracks,
-        initialData: widget.player.state.tracks,
-        builder: (context, snapshot) {
-          final tracks = snapshot.data;
-          final availableTracks = TrackFilterHelper.extractAndFilterTracks<T>(tracks, widget.extractTracks);
+    return StreamBuilder<Tracks>(
+      stream: widget.player.streams.tracks,
+      initialData: widget.player.state.tracks,
+      builder: (context, snapshot) {
+        final tracks = snapshot.data;
+        final availableTracks = TrackFilterHelper.extractAndFilterTracks<T>(tracks, widget.extractTracks);
 
-          final sheetChild = availableTracks.isEmpty
-              ? TrackSelectionHelper.buildEmptyState<T>()
-              : _buildTrackList(availableTracks);
+        final sheetChild = availableTracks.isEmpty
+            ? TrackSelectionHelper.buildEmptyState<T>()
+            : _buildTrackList(availableTracks);
 
-          return BaseVideoControlSheet(title: widget.title, icon: widget.icon, child: sheetChild);
-        },
-      ),
+        return BaseVideoControlSheet(title: widget.title, icon: widget.icon, child: sheetChild);
+      },
     );
   }
 
@@ -135,16 +81,13 @@ class _TrackSelectionSheetState<T> extends State<TrackSelectionSheet<T>> {
             final track = availableTracks[trackIndex];
             final trackId = TrackSelectionHelper.getTrackId(track);
             final selectedId = selectedTrack == null ? '' : TrackSelectionHelper.getTrackId(selectedTrack);
-            final shouldFocus = !widget.showOffOption && index == 0;
-
             return TrackSelectionHelper.buildTrackTile<T>(
               label: widget.buildLabel(track, trackIndex),
               isSelected: trackId == selectedId,
-              focusNode: shouldFocus ? _initialFocusNode : null,
               onTap: () {
                 widget.setTrack(track);
                 widget.onTrackChanged?.call(track);
-                Navigator.pop(context);
+                OverlaySheetController.of(context).close();
               },
             );
           },
@@ -156,14 +99,13 @@ class _TrackSelectionSheetState<T> extends State<TrackSelectionSheet<T>> {
   Widget _buildOffTile(bool isOffSelected) {
     return TrackSelectionHelper.buildOffTile<T>(
       isSelected: isOffSelected,
-      focusNode: _initialFocusNode,
       onTap: () {
         if (widget.createOffTrack != null) {
           final offTrack = widget.createOffTrack!();
           widget.setTrack(offTrack);
           widget.onTrackChanged?.call(offTrack);
         }
-        Navigator.pop(context);
+        OverlaySheetController.of(context).close();
       },
     );
   }
