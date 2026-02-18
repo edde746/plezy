@@ -55,6 +55,9 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             // If key.properties doesn't exist, it will use debug signing for CI builds
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
         }
     }
 
