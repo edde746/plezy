@@ -43,6 +43,7 @@
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/tv_banner"
         android:appCategory="video"
+        android:largeHeap="true"
         android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
