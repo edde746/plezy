@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:plezy/utils/content_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/download_models.dart';
+import '../models/download_settings.dart';
 import '../models/plex_metadata.dart';
 import '../services/download_manager_service.dart';
 import '../services/download_storage_service.dart';
@@ -122,6 +123,9 @@ class DownloadProvider extends ChangeNotifier {
       // Load total episode counts from SharedPreferences
       await _loadTotalEpisodeCounts();
 
+      // Backfill default download settings for items that predate the settings feature
+      await _backfillDefaultDownloadSettings();
+
       appLogger.i(
         'Loaded ${_downloads.length} downloads, ${_metadata.length} metadata entries, '
         'and ${_totalEpisodeCounts.length} episode counts',
@@ -150,6 +154,37 @@ class DownloadProvider extends ChangeNotifier {
       appLogger.i('📚 Loaded ${_totalEpisodeCounts.length} episode counts from SharedPreferences');
     } catch (e) {
       appLogger.w('Failed to load episode counts', error: e);
+    }
+  }
+
+  /// Backfill default download settings for shows/movies that were downloaded
+  /// before the per-item settings feature existed.
+  Future<void> _backfillDefaultDownloadSettings() async {
+    try {
+      final settings = await SettingsService.getInstance();
+      final ratingKeys = <String>{};
+
+      for (final meta in _metadata.values) {
+        if (meta.isEpisode && meta.grandparentRatingKey != null) {
+          ratingKeys.add(meta.grandparentRatingKey!);
+        } else if (meta.isMovie) {
+          ratingKeys.add(meta.ratingKey);
+        }
+      }
+
+      int backfilled = 0;
+      for (final ratingKey in ratingKeys) {
+        if (settings.getDownloadSettings(ratingKey) == null) {
+          await settings.setDownloadSettings(ratingKey, const DownloadSettings());
+          backfilled++;
+        }
+      }
+
+      if (backfilled > 0) {
+        appLogger.i('Backfilled default download settings for $backfilled items');
+      }
+    } catch (e) {
+      appLogger.w('Failed to backfill download settings', error: e);
     }
   }
 
