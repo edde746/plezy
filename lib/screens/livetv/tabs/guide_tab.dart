@@ -375,15 +375,21 @@ class GuideTabState extends State<GuideTab> {
           });
           _scrollToProgramTime(program);
         }
+      } else {
+        // Already in program column — move to next program
+        _navigateToAdjacentProgram(_gridChannelIndex, forward: true);
       }
       return KeyEventResult.handled;
     }
     if (key.isLeftKey) {
       if (_gridColumn == 1) {
-        setState(() {
-          _gridColumn = 0;
-          _focusedProgram = null;
-        });
+        // Try moving to previous program; if at first program, go back to channel column
+        if (!_navigateToAdjacentProgram(_gridChannelIndex, forward: false)) {
+          setState(() {
+            _gridColumn = 0;
+            _focusedProgram = null;
+          });
+        }
       } else {
         widget.onBack?.call();
       }
@@ -424,6 +430,27 @@ class GuideTabState extends State<GuideTab> {
     return programs.firstOrNull;
   }
 
+  /// Navigate to the next or previous program on the same channel.
+  /// Returns true if navigation succeeded, false if at the boundary.
+  bool _navigateToAdjacentProgram(int channelIndex, {required bool forward}) {
+    if (channelIndex < 0 || channelIndex >= widget.channels.length) return false;
+    final channel = widget.channels[channelIndex];
+    final programs = _getProgramsForChannel(channel);
+    if (programs.isEmpty || _focusedProgram == null) return false;
+
+    final currentIndex = programs.indexWhere((p) => identical(p, _focusedProgram));
+    if (currentIndex < 0) return false;
+
+    final nextIndex = forward ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex < 0 || nextIndex >= programs.length) return false;
+
+    setState(() {
+      _focusedProgram = programs[nextIndex];
+    });
+    _scrollToProgramTime(_focusedProgram);
+    return true;
+  }
+
   void _scrollToChannel(int index) {
     if (!_gridVerticalController.hasClients) return;
     final targetTop = index * _rowHeight;
@@ -440,9 +467,13 @@ class GuideTabState extends State<GuideTab> {
 
     if (newOffset != null) {
       final clamped = newOffset.clamp(0.0, _gridVerticalController.position.maxScrollExtent);
-      _gridVerticalController.jumpTo(clamped);
+      _gridVerticalController.animateTo(clamped, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
       if (_channelVerticalController.hasClients) {
-        _channelVerticalController.jumpTo(clamped.clamp(0.0, _channelVerticalController.position.maxScrollExtent));
+        _channelVerticalController.animateTo(
+          clamped.clamp(0.0, _channelVerticalController.position.maxScrollExtent),
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+        );
       }
     }
   }

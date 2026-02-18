@@ -671,6 +671,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         }
       });
     }
+    // When content regains focus while on Live TV, focus the active guide/whats-on tab
+    final liveTvIndex = NavigationTab.indexFor(NavigationTabId.liveTv, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
+    if (_currentIndex == liveTvIndex && liveTvIndex >= 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_liveTvKey.currentState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
+        }
+      });
+    }
     // When content regains focus while on Settings, restore focus to last focused setting
     final settingsIndex = NavigationTab.indexFor(
       NavigationTabId.settings,
@@ -873,6 +882,13 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       // Ensure the libraries screen applies focus when brought into view
       if (index == 1 && previousIndex != 1) {
         if (_librariesKey.currentState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
+        }
+      }
+      // Ensure the Live TV screen applies focus when brought into view
+      final liveTvIdx = NavigationTab.indexFor(NavigationTabId.liveTv, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
+      if (index == liveTvIdx && liveTvIdx >= 0 && previousIndex != liveTvIdx) {
+        if (_liveTvKey.currentState case final FocusableTab focusable) {
           focusable.focusActiveTabIfReady();
         }
       }

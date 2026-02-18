@@ -6,6 +6,7 @@ import '../../focus/dpad_navigator.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_dvr.dart';
+import '../../mixins/refreshable.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
@@ -23,7 +24,9 @@ class LiveTvScreen extends StatefulWidget {
   State<LiveTvScreen> createState() => _LiveTvScreenState();
 }
 
-class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderStateMixin, TabNavigationMixin {
+class _LiveTvScreenState extends State<LiveTvScreen>
+    with SingleTickerProviderStateMixin, TabNavigationMixin
+    implements FocusableTab {
   final _guideTabFocusNode = FocusNode(debugLabel: 'tab_chip_guide');
   final _whatsOnTabFocusNode = FocusNode(debugLabel: 'tab_chip_whats_on');
   final _guideTabKey = GlobalKey<GuideTabState>();
@@ -215,6 +218,9 @@ class _LiveTvScreenState extends State<LiveTvScreen> with SingleTickerProviderSt
       suppressAutoFocus = false;
     });
   }
+
+  @override
+  void focusActiveTabIfReady() => _focusCurrentTab();
 
   // ---------------------------------------------------------------------------
   // Action button key handlers
