@@ -37,6 +37,7 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
@@ -111,6 +112,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private val externalSubtitles = mutableListOf<MediaItem.SubtitleConfiguration>()
     private var currentMediaUri: String? = null
     private var currentHeaders: Map<String, String>? = null
+
+    // Audio track retry state
+    private var failedAudioGroupIndices = mutableSetOf<Int>()
+    private var isRetryingAudioTrack = false
+    private var lastOpenStartPositionMs: Long = 0L
+    private var lastOpenAutoPlay: Boolean = true
 
     private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         when (focusChange) {
@@ -465,6 +472,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 delegate?.onPropertyChange("paused-for-cache", true)
             }
             Player.STATE_READY -> {
+                if (isRetryingAudioTrack) {
+                    isRetryingAudioTrack = false
+                    Log.i(TAG, "Audio track retry succeeded")
+                }
                 delegate?.onPropertyChange("paused-for-cache", false)
                 delegate?.onEvent("playback-restart", null)
                 emitTrackList()
@@ -483,6 +494,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     override fun onPlayerError(error: PlaybackException) {
         Log.e(TAG, "Player error: ${error.message} (code: ${error.errorCode})", error)
+
+        // Try switching to a different audio track before falling back to mpv
+        if (isAudioRelatedError(error) && tryNextAudioTrack()) {
+            return
+        }
 
         if (currentMediaUri != null) {
             Log.w(TAG, "ExoPlayer error (code ${error.errorCode}) - attempting fallback to MPV")
@@ -662,6 +678,67 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         delegate?.onPropertyChange("track-list", trackList)
     }
 
+    // Audio track retry helpers
+
+    private fun isAudioRelatedError(error: PlaybackException): Boolean {
+        val cause = error.cause
+        if (cause is ExoPlaybackException) {
+            // Check if the failed renderer is an audio renderer
+            if (cause.type == ExoPlaybackException.TYPE_RENDERER) {
+                val player = exoPlayer ?: return false
+                val rendererIndex = cause.rendererIndex
+                if (rendererIndex >= 0 && rendererIndex < player.rendererCount) {
+                    return player.getRendererType(rendererIndex) == C.TRACK_TYPE_AUDIO
+                }
+            }
+        }
+        // Fallback: check error codes commonly associated with audio failures
+        return error.errorCode == PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED ||
+               error.errorCode == PlaybackException.ERROR_CODE_AUDIO_TRACK_WRITE_FAILED ||
+               error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED ||
+               error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED
+    }
+
+    private fun tryNextAudioTrack(): Boolean {
+        val player = exoPlayer ?: return false
+        val selector = trackSelector ?: return false
+        val audioGroups = player.currentTracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
+
+        if (audioGroups.size <= 1) {
+            Log.d(TAG, "Only ${audioGroups.size} audio track(s), nothing to retry")
+            return false
+        }
+
+        // Find the currently selected audio group index and mark it as failed
+        val currentIndex = audioGroups.indexOfFirst { it.isSelected }
+        if (currentIndex >= 0) {
+            failedAudioGroupIndices.add(currentIndex)
+        }
+
+        // Find the next untried audio group
+        val nextIndex = audioGroups.indices.firstOrNull { it !in failedAudioGroupIndices }
+        if (nextIndex == null) {
+            Log.w(TAG, "All ${audioGroups.size} audio tracks exhausted, falling through to mpv")
+            return false
+        }
+
+        val nextGroup = audioGroups[nextIndex]
+        val format = nextGroup.mediaTrackGroup.getFormat(0)
+        Log.i(TAG, "Retrying with audio track $nextIndex: codec=${format.codecs}, lang=${format.language}")
+
+        isRetryingAudioTrack = true
+        selector.parameters = selector.buildUponParameters()
+            .setOverrideForType(TrackSelectionOverride(nextGroup.mediaTrackGroup, 0))
+            .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+            .build()
+
+        player.seekTo(lastPosition)
+        player.prepare()
+        player.playWhenReady = lastOpenAutoPlay
+
+        return true
+    }
+
     // Public API
 
     fun open(uri: String, headers: Map<String, String>?, startPositionMs: Long, autoPlay: Boolean, isLive: Boolean = false) {
@@ -670,6 +747,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         currentMediaUri = uri
         currentHeaders = headers
         externalSubtitles.clear()
+        failedAudioGroupIndices.clear()
+        isRetryingAudioTrack = false
+        lastOpenStartPositionMs = startPositionMs
+        lastOpenAutoPlay = autoPlay
 
         if (isLive) {
             // Live MKV streams lack Cues (seek index). FLAG_DISABLE_SEEK_FOR_CUES tells
