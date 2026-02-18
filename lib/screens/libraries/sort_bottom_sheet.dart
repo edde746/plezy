@@ -4,8 +4,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../models/plex_sort.dart';
 import '../../widgets/bottom_sheet_header.dart';
-import '../../widgets/focusable_bottom_sheet.dart';
 import '../../widgets/focusable_list_tile.dart';
+import '../../widgets/overlay_sheet.dart';
 import '../../i18n/strings.g.dart';
 
 class SortBottomSheet extends StatefulWidget {
@@ -45,6 +45,11 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
       if (ctx != null) {
         Scrollable.ensureVisible(ctx, alignment: 0.5);
       }
+      // Schedule after overlay's _autoFocus second callback so we override it.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _initialFocusNode.requestFocus();
+      });
     });
   }
 
@@ -68,7 +73,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
       _currentDescending = descending;
     });
     widget.onSortChanged(sort, descending);
-    Navigator.pop(context);
+    OverlaySheetController.of(context).close();
   }
 
   void _handleClear() {
@@ -77,89 +82,73 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
       _currentDescending = false;
     });
     widget.onClear?.call();
+    OverlaySheetController.of(context).close();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FocusableBottomSheet(
-      initialFocusNode: _initialFocusNode,
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) {
-          return Column(
-            children: [
-              BottomSheetHeader(
-                title: t.libraries.sortBy,
-                action: widget.onClear != null
-                    ? TextButton(onPressed: _handleClear, child: Text(t.common.clear))
-                    : null,
-              ),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: widget.sortOptions.length,
-                  itemBuilder: (context, index) {
-                    final sort = widget.sortOptions[index];
-                    final isSelected = _currentSort?.key == sort.key;
+    return Column(
+      children: [
+        BottomSheetHeader(
+          title: t.libraries.sortBy,
+          action: widget.onClear != null ? TextButton(onPressed: _handleClear, child: Text(t.common.clear)) : null,
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: widget.sortOptions.length,
+            itemBuilder: (context, index) {
+              final sort = widget.sortOptions[index];
+              final isSelected = _currentSort?.key == sort.key;
 
-                    return Focus(
-                      canRequestFocus: false,
-                      skipTraversal: true,
-                      onKeyEvent: (node, event) {
-                        if (!event.isActionable) return KeyEventResult.ignored;
-                        if (!isSelected) return KeyEventResult.ignored;
-                        if (event.logicalKey.isLeftKey) {
-                          _handleDirectionChange(sort, false);
-                          return KeyEventResult.handled;
-                        }
-                        if (event.logicalKey.isRightKey) {
-                          _handleDirectionChange(sort, true);
-                          return KeyEventResult.handled;
-                        }
-                        return KeyEventResult.ignored;
-                      },
-                      child: FocusableRadioListTile<PlexSort>(
-                        focusNode: (widget.selectedSort?.key == sort.key || (widget.selectedSort == null && index == 0))
-                            ? _initialFocusNode
-                            : null,
-                        title: Text(sort.title),
-                        value: sort,
-                        groupValue: _currentSort,
-                        onChanged: (value) {
-                          if (value != null) _handleSortSelect(value);
-                        },
-                        secondary: isSelected
-                            ? SegmentedButton<bool>(
-                                showSelectedIcon: false,
-                                segments: const [
-                                  ButtonSegment(
-                                    value: false,
-                                    icon: AppIcon(Symbols.arrow_upward_rounded, fill: 1, size: 16),
-                                  ),
-                                  ButtonSegment(
-                                    value: true,
-                                    icon: AppIcon(Symbols.arrow_downward_rounded, fill: 1, size: 16),
-                                  ),
-                                ],
-                                selected: {_currentDescending},
-                                onSelectionChanged: (Set<bool> newSelection) {
-                                  _handleDirectionChange(sort, newSelection.first);
-                                },
-                              )
-                            : null,
-                      ),
-                    );
+              return Focus(
+                canRequestFocus: false,
+                skipTraversal: true,
+                onKeyEvent: (node, event) {
+                  if (!event.isActionable) return KeyEventResult.ignored;
+                  if (!isSelected) return KeyEventResult.ignored;
+                  if (event.logicalKey.isLeftKey) {
+                    _handleDirectionChange(sort, false);
+                    return KeyEventResult.handled;
+                  }
+                  if (event.logicalKey.isRightKey) {
+                    _handleDirectionChange(sort, true);
+                    return KeyEventResult.handled;
+                  }
+                  return KeyEventResult.ignored;
+                },
+                child: FocusableRadioListTile<PlexSort>(
+                  focusNode: (widget.selectedSort?.key == sort.key || (widget.selectedSort == null && index == 0))
+                      ? _initialFocusNode
+                      : null,
+                  title: Text(sort.title),
+                  value: sort,
+                  groupValue: _currentSort,
+                  onChanged: (value) {
+                    if (value != null) _handleSortSelect(value);
                   },
+                  secondary: isSelected
+                      ? SegmentedButton<bool>(
+                          showSelectedIcon: false,
+                          segments: const [
+                            ButtonSegment(value: false, icon: AppIcon(Symbols.arrow_upward_rounded, fill: 1, size: 16)),
+                            ButtonSegment(
+                              value: true,
+                              icon: AppIcon(Symbols.arrow_downward_rounded, fill: 1, size: 16),
+                            ),
+                          ],
+                          selected: {_currentDescending},
+                          onSelectionChanged: (Set<bool> newSelection) {
+                            _handleDirectionChange(sort, newSelection.first);
+                          },
+                        )
+                      : null,
                 ),
-              ),
-            ],
-          );
-        },
-      ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

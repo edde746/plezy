@@ -12,6 +12,7 @@ import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../widgets/media_grid_sliver.dart';
 import '../widgets/focused_scroll_scaffold.dart';
+import '../widgets/overlay_sheet.dart';
 import 'libraries/sort_bottom_sheet.dart';
 import 'libraries/state_messages.dart';
 import '../mixins/refreshable.dart';
@@ -152,9 +153,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
   }
 
   void _showSortBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
+    OverlaySheetController.of(context).show(
       builder: (context) => SortBottomSheet(
         sortOptions: _sortOptions,
         selectedSort: _selectedSort,
@@ -231,57 +230,59 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   @override
   Widget build(BuildContext context) {
-    return FocusedScrollScaffold(
-      title: Text(widget.hub.title),
-      actions: [
-        IconButton(
-          icon: AppIcon(Symbols.swap_vert_rounded, fill: 1, semanticLabel: t.libraries.sort),
-          onPressed: _showSortBottomSheet,
-        ),
-      ],
-      slivers: [
-        if (_errorMessage != null)
-          SliverFillRemaining(
-            child: ErrorStateWidget(
-              message: _errorMessage!,
-              icon: Symbols.error_outline_rounded,
-              onRetry: _loadMoreItems,
-            ),
-          )
-        else if (_filteredItems.isEmpty && _isLoading)
-          const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-        else if (_filteredItems.isEmpty)
-          SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
-        else
-          Builder(
-            builder: (context) {
-              final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
-
-              // Determine hub content type for layout decisions
-              final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
-              final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
-
-              // Mixed hub = has both episodes AND non-episodes
-              final isMixedHub = hasEpisodes && hasNonEpisodes;
-
-              // Episode-only = all items are episodes with thumbnails
-              final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
-
-              // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
-              final useWideLayout =
-                  episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
-
-              return MediaGridSliver(
-                items: _filteredItems,
-                onRefresh: _handleItemRefresh,
-                usePaddingAwareExtent: true,
-                horizontalPadding: 16,
-                useWideAspectRatio: useWideLayout,
-                mixedHubContext: isMixedHub,
-              );
-            },
+    return OverlaySheetHost(
+      child: FocusedScrollScaffold(
+        title: Text(widget.hub.title),
+        actions: [
+          IconButton(
+            icon: AppIcon(Symbols.swap_vert_rounded, fill: 1, semanticLabel: t.libraries.sort),
+            onPressed: _showSortBottomSheet,
           ),
-      ],
+        ],
+        slivers: [
+          if (_errorMessage != null)
+            SliverFillRemaining(
+              child: ErrorStateWidget(
+                message: _errorMessage!,
+                icon: Symbols.error_outline_rounded,
+                onRetry: _loadMoreItems,
+              ),
+            )
+          else if (_filteredItems.isEmpty && _isLoading)
+            const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+          else if (_filteredItems.isEmpty)
+            SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
+          else
+            Builder(
+              builder: (context) {
+                final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
+
+                // Determine hub content type for layout decisions
+                final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
+                final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
+
+                // Mixed hub = has both episodes AND non-episodes
+                final isMixedHub = hasEpisodes && hasNonEpisodes;
+
+                // Episode-only = all items are episodes with thumbnails
+                final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
+
+                // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
+                final useWideLayout =
+                    episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
+
+                return MediaGridSliver(
+                  items: _filteredItems,
+                  onRefresh: _handleItemRefresh,
+                  usePaddingAwareExtent: true,
+                  horizontalPadding: 16,
+                  useWideAspectRatio: useWideLayout,
+                  mixedHubContext: isMixedHub,
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 }

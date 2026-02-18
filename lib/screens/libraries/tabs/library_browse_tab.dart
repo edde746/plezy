@@ -20,6 +20,7 @@ import '../../../widgets/alpha_scroll_handle.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
 import '../../../widgets/media_grid_delegate.dart';
+import '../../../widgets/overlay_sheet.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
 import '../folder_tree_view.dart';
 import '../filters_bottom_sheet.dart';
@@ -482,52 +483,51 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   void _showGroupingBottomSheet() {
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     var pendingGrouping = _selectedGrouping;
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) {
-        final options = _getGroupingOptions();
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return ListView.builder(
-              shrinkWrap: true,
-              itemCount: options.length,
-              itemBuilder: (context, index) {
-                final grouping = options[index];
-                return RadioListTile<String>(
-                  title: Text(_getGroupingLabel(grouping)),
-                  value: grouping,
-                  groupValue: pendingGrouping,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setSheetState(() {
-                      pendingGrouping = value;
-                    });
+    OverlaySheetController.of(context)
+        .show(
+          builder: (sheetContext) {
+            final options = _getGroupingOptions();
+            return StatefulBuilder(
+              builder: (context, setSheetState) {
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: options.length,
+                  itemBuilder: (context, index) {
+                    final grouping = options[index];
+                    return RadioListTile<String>(
+                      title: Text(_getGroupingLabel(grouping)),
+                      value: grouping,
+                      groupValue: pendingGrouping,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setSheetState(() {
+                          pendingGrouping = value;
+                        });
+                      },
+                    );
                   },
                 );
               },
             );
           },
-        );
-      },
-    ).then((_) {
-      if (!mounted) return;
-      if (pendingGrouping == _selectedGrouping) return;
-      setState(() {
-        _selectedGrouping = pendingGrouping;
-      });
-      StorageService.getInstance().then((storage) {
-        storage.saveLibraryGrouping(widget.library.globalKey, pendingGrouping);
-      });
-      _loadItems();
-      _loadFirstCharacters();
-    });
+        )
+        .then((_) {
+          if (!mounted) return;
+          if (pendingGrouping == _selectedGrouping) return;
+          setState(() {
+            _selectedGrouping = pendingGrouping;
+          });
+          StorageService.getInstance().then((storage) {
+            storage.saveLibraryGrouping(widget.library.globalKey, pendingGrouping);
+          });
+          _loadItems();
+          _loadFirstCharacters();
+        });
   }
 
   void _showFiltersBottomSheet() {
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
+    OverlaySheetController.of(context).show(
       builder: (context) => FiltersBottomSheet(
         filters: _filters,
         selectedFilters: _selectedFilters,
@@ -557,46 +557,46 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     PlexSort? pendingSort = _selectedSort;
     bool pendingDescending = _isSortDescending;
     bool pendingCleared = false;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => SortBottomSheet(
-        sortOptions: _sortOptions,
-        selectedSort: _selectedSort,
-        isSortDescending: _isSortDescending,
-        onSortChanged: (sort, descending) {
-          pendingSort = sort;
-          pendingDescending = descending;
-          pendingCleared = false;
-        },
-        onClear: () {
-          pendingSort = null;
-          pendingDescending = false;
-          pendingCleared = true;
-        },
-      ),
-    ).then((_) {
-      if (!mounted) return;
-      if (pendingCleared) {
-        setState(() {
-          _selectedSort = null;
-          _isSortDescending = false;
+    OverlaySheetController.of(context)
+        .show(
+          builder: (context) => SortBottomSheet(
+            sortOptions: _sortOptions,
+            selectedSort: _selectedSort,
+            isSortDescending: _isSortDescending,
+            onSortChanged: (sort, descending) {
+              pendingSort = sort;
+              pendingDescending = descending;
+              pendingCleared = false;
+            },
+            onClear: () {
+              pendingSort = null;
+              pendingDescending = false;
+              pendingCleared = true;
+            },
+          ),
+        )
+        .then((_) {
+          if (!mounted) return;
+          if (pendingCleared) {
+            setState(() {
+              _selectedSort = null;
+              _isSortDescending = false;
+            });
+            _loadItems();
+            _loadFirstCharacters();
+          } else if (pendingSort != null &&
+              (pendingSort!.key != _selectedSort?.key || pendingDescending != _isSortDescending)) {
+            setState(() {
+              _selectedSort = pendingSort;
+              _isSortDescending = pendingDescending;
+            });
+            StorageService.getInstance().then((storage) {
+              storage.saveLibrarySort(widget.library.globalKey, pendingSort!.key, descending: pendingDescending);
+            });
+            _loadItems();
+            _loadFirstCharacters();
+          }
         });
-        _loadItems();
-        _loadFirstCharacters();
-      } else if (pendingSort != null &&
-          (pendingSort!.key != _selectedSort?.key || pendingDescending != _isSortDescending)) {
-        setState(() {
-          _selectedSort = pendingSort;
-          _isSortDescending = pendingDescending;
-        });
-        StorageService.getInstance().then((storage) {
-          storage.saveLibrarySort(widget.library.globalKey, pendingSort!.key, descending: pendingDescending);
-        });
-        _loadItems();
-        _loadFirstCharacters();
-      }
-    });
   }
 
   /// Navigate focus from chips down to the grid item.
@@ -831,52 +831,56 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     // For folders mode, use FolderTreeView instead of grid/list
     if (_selectedGrouping == 'folders') {
-      return Column(
-        children: [
-          _buildChipsBar(),
-          Expanded(
-            child: FolderTreeView(
-              libraryKey: widget.library.key,
-              serverId: widget.library.serverId,
-              onRefresh: updateItem,
+      return OverlaySheetHost(
+        child: Column(
+          children: [
+            _buildChipsBar(),
+            Expanded(
+              child: FolderTreeView(
+                libraryKey: widget.library.key,
+                serverId: widget.library.serverId,
+                onRefresh: updateItem,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
     // For list/grid modes, use Stack with chips layered on top of grid.
     // This allows the grid to use Clip.none for focus decorations while
     // the chips bar (with background) covers any overflow at the top.
-    return Stack(
-      children: [
-        // Grid fills the entire area, with top padding for chips bar
-        Positioned.fill(child: _buildScrollableContent()),
-        // Chips bar on top with solid background
-        Positioned(top: 0, left: 0, right: 0, child: _buildChipsBar()),
-        // Alpha jump bar / scroll handle on the right edge
-        if (_shouldShowAlphaJumpBar)
-          Positioned(
-            top: _chipsBarHeight,
-            right: 0,
-            bottom: 0,
-            child: _isPhone(context)
-                ? AlphaScrollHandle(
-                    firstCharacters: _firstCharacters,
-                    onJump: _jumpToIndex,
-                    currentFirstVisibleIndex: _currentFirstVisibleIndex,
-                    isScrolling: _isScrollActive,
-                  )
-                : AlphaJumpBar(
-                    firstCharacters: _firstCharacters,
-                    onJump: _jumpToIndex,
-                    currentFirstVisibleIndex: _currentFirstVisibleIndex,
-                    focusNode: _alphaJumpBarFocusNode,
-                    onNavigateLeft: _navigateToGridNearScroll,
-                    onBack: _navigateToGridNearScroll,
-                  ),
-          ),
-      ],
+    return OverlaySheetHost(
+      child: Stack(
+        children: [
+          // Grid fills the entire area, with top padding for chips bar
+          Positioned.fill(child: _buildScrollableContent()),
+          // Chips bar on top with solid background
+          Positioned(top: 0, left: 0, right: 0, child: _buildChipsBar()),
+          // Alpha jump bar / scroll handle on the right edge
+          if (_shouldShowAlphaJumpBar)
+            Positioned(
+              top: _chipsBarHeight,
+              right: 0,
+              bottom: 0,
+              child: _isPhone(context)
+                  ? AlphaScrollHandle(
+                      firstCharacters: _firstCharacters,
+                      onJump: _jumpToIndex,
+                      currentFirstVisibleIndex: _currentFirstVisibleIndex,
+                      isScrolling: _isScrollActive,
+                    )
+                  : AlphaJumpBar(
+                      firstCharacters: _firstCharacters,
+                      onJump: _jumpToIndex,
+                      currentFirstVisibleIndex: _currentFirstVisibleIndex,
+                      focusNode: _alphaJumpBarFocusNode,
+                      onNavigateLeft: _navigateToGridNearScroll,
+                      onBack: _navigateToGridNearScroll,
+                    ),
+            ),
+        ],
+      ),
     );
   }
 

@@ -17,6 +17,7 @@ import '../../../utils/formatters.dart';
 import '../../../utils/plex_image_helper.dart';
 import '../../../utils/live_tv_player_navigation.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/plex_optimized_image.dart';
 import '../program_details_sheet.dart';
 
@@ -508,11 +509,13 @@ class GuideTabState extends State<GuideTab> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Focus(
-      focusNode: _guideFocusNode,
-      onFocusChange: (hasFocus) => setState(() => _hasFocus = hasFocus),
-      onKeyEvent: _handleKeyEvent,
-      child: _buildGuideGrid(theme),
+    return OverlaySheetHost(
+      child: Focus(
+        focusNode: _guideFocusNode,
+        onFocusChange: (hasFocus) => setState(() => _hasFocus = hasFocus),
+        onKeyEvent: _handleKeyEvent,
+        child: _buildGuideGrid(theme),
+      ),
     );
   }
 

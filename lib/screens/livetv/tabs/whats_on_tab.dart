@@ -22,6 +22,7 @@ import '../../../utils/plex_image_helper.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focus_builders.dart';
+import '../../../widgets/overlay_sheet.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../widgets/horizontal_scroll_with_arrows.dart';
 import '../../../widgets/plex_optimized_image.dart';
@@ -222,20 +223,22 @@ class WhatsOnTabState extends State<WhatsOnTab> {
       return Center(child: Text(t.liveTv.noPrograms));
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      clipBehavior: Clip.none,
-      itemCount: _hubs.length,
-      itemBuilder: (context, index) {
-        return _LiveTvHubSection(
-          key: _hubKeys[index],
-          hub: _hubs[index],
-          onTap: _onItemTap,
-          onLongPress: (entry) => _showProgramDetails(entry, _findChannel(entry.program.channelIdentifier)),
-          onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
-          onBack: widget.onBack,
-        );
-      },
+    return OverlaySheetHost(
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        clipBehavior: Clip.none,
+        itemCount: _hubs.length,
+        itemBuilder: (context, index) {
+          return _LiveTvHubSection(
+            key: _hubKeys[index],
+            hub: _hubs[index],
+            onTap: _onItemTap,
+            onLongPress: (entry) => _showProgramDetails(entry, _findChannel(entry.program.channelIdentifier)),
+            onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
+            onBack: widget.onBack,
+          );
+        },
+      ),
     );
   }
 }

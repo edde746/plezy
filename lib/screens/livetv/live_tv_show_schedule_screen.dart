@@ -12,6 +12,7 @@ import '../../utils/live_tv_player_navigation.dart';
 import '../../utils/plex_image_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/overlay_sheet.dart';
 import 'program_details_sheet.dart';
 
 /// Shows all upcoming airings of a show, matching the Plex "upcoming episodes" view.
@@ -126,39 +127,41 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusedScrollScaffold(
-      title: Text(widget.showTitle),
-      slivers: [
-        if (_isLoading)
-          const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-        else if (_programs.isEmpty)
-          SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
-        else
-          SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final program = _programs[index];
-              final channel = _findChannel(program.channelIdentifier);
-              void onTap() {
-                if (program.isCurrentlyAiring && channel != null) {
-                  _tuneChannel(channel);
-                } else {
-                  _showProgramDetails(program, channel);
+    return OverlaySheetHost(
+      child: FocusedScrollScaffold(
+        title: Text(widget.showTitle),
+        slivers: [
+          if (_isLoading)
+            const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+          else if (_programs.isEmpty)
+            SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final program = _programs[index];
+                final channel = _findChannel(program.channelIdentifier);
+                void onTap() {
+                  if (program.isCurrentlyAiring && channel != null) {
+                    _tuneChannel(channel);
+                  } else {
+                    _showProgramDetails(program, channel);
+                  }
                 }
-              }
 
-              return FocusableWrapper(
-                autofocus: index == 0,
-                autoScroll: true,
-                useComfortableZone: true,
-                useBackgroundFocus: true,
-                disableScale: true,
-                onSelect: onTap,
-                onBack: () => Navigator.pop(context),
-                child: _ScheduleListTile(program: program, channel: channel, onTap: onTap),
-              );
-            }, childCount: _programs.length),
-          ),
-      ],
+                return FocusableWrapper(
+                  autofocus: index == 0,
+                  autoScroll: true,
+                  useComfortableZone: true,
+                  useBackgroundFocus: true,
+                  disableScale: true,
+                  onSelect: onTap,
+                  onBack: () => Navigator.pop(context),
+                  child: _ScheduleListTile(program: program, channel: channel, onTap: onTap),
+                );
+              }, childCount: _programs.length),
+            ),
+        ],
+      ),
     );
   }
 }

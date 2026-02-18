@@ -21,37 +21,6 @@ class BaseVideoControlSheet extends StatelessWidget {
     this.onBack,
   });
 
-  /// Get consistent bottom sheet constraints across all video control sheets
-  static BoxConstraints getBottomSheetConstraints(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 600;
-
-    return BoxConstraints(
-      maxWidth: isDesktop ? 700 : double.infinity,
-      maxHeight: isDesktop ? 400 : size.height * 0.75,
-      minHeight: isDesktop ? 300 : size.height * 0.5,
-    );
-  }
-
-  /// Helper method to show a modal bottom sheet with consistent styling
-  static Future<T?> showSheet<T>({
-    required BuildContext context,
-    required WidgetBuilder builder,
-    VoidCallback? onOpen,
-    VoidCallback? onClose,
-  }) {
-    onOpen?.call();
-    return showModalBottomSheet<T>(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: getBottomSheetConstraints(context),
-      builder: builder,
-    ).whenComplete(() {
-      onClose?.call();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     Widget content = Column(
@@ -79,10 +48,7 @@ class BaseVideoControlSheet extends StatelessWidget {
     }
 
     return SafeArea(
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.75,
-        child: content,
-      ),
+      child: SizedBox(height: MediaQuery.of(context).size.height * 0.75, child: content),
     );
   }
 }

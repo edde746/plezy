@@ -8,6 +8,7 @@ import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/app_logger.dart';
+import '../../widgets/overlay_sheet.dart';
 import 'pairing_screen.dart';
 
 class MobileRemoteScreen extends StatefulWidget {
@@ -20,101 +21,103 @@ class MobileRemoteScreen extends StatefulWidget {
 class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t.companionRemote.title),
-        actions: [
-          Consumer<CompanionRemoteProvider>(
-            builder: (context, provider, child) {
-              if (provider.isConnected) {
-                return IconButton(
-                  icon: const Icon(Icons.link_off),
-                  onPressed: () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text(t.common.disconnect),
-                        content: Text(t.companionRemote.remote.disconnectConfirm),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-                          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.disconnect)),
-                        ],
-                      ),
-                    );
+    return OverlaySheetHost(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(t.companionRemote.title),
+          actions: [
+            Consumer<CompanionRemoteProvider>(
+              builder: (context, provider, child) {
+                if (provider.isConnected) {
+                  return IconButton(
+                    icon: const Icon(Icons.link_off),
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(t.common.disconnect),
+                          content: Text(t.companionRemote.remote.disconnectConfirm),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
+                            TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.disconnect)),
+                          ],
+                        ),
+                      );
 
-                    if (confirmed == true && context.mounted) {
-                      await context.read<CompanionRemoteProvider>().leaveSession();
-                    }
-                  },
-                  tooltip: t.common.disconnect,
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
-      ),
-      body: Consumer<CompanionRemoteProvider>(
-        builder: (context, provider, child) {
-          if (provider.status == RemoteSessionStatus.reconnecting) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 24),
-                  Text(t.companionRemote.remote.reconnecting, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  Text(
-                    t.companionRemote.remote.attemptOf(current: provider.reconnectAttempts),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      OutlinedButton(onPressed: () => provider.cancelReconnect(), child: Text(t.common.cancel)),
-                      const SizedBox(width: 16),
-                      FilledButton(
-                        onPressed: () => provider.retryReconnectNow(),
-                        child: Text(t.companionRemote.remote.retryNow),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (!provider.isConnected) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.phonelink_off, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    provider.status == RemoteSessionStatus.error
-                        ? provider.session?.errorMessage ?? t.companionRemote.remote.connectionError
-                        : t.companionRemote.remote.notConnected,
-                    style: const TextStyle(fontSize: 20, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  FilledButton.icon(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const PairingScreen()));
+                      if (confirmed == true && context.mounted) {
+                        await context.read<CompanionRemoteProvider>().leaveSession();
+                      }
                     },
-                    icon: const Icon(Icons.link),
-                    label: Text(t.companionRemote.connectToDevice),
-                  ),
-                ],
-              ),
-            );
-          }
+                    tooltip: t.common.disconnect,
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
+        body: Consumer<CompanionRemoteProvider>(
+          builder: (context, provider, child) {
+            if (provider.status == RemoteSessionStatus.reconnecting) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 24),
+                    Text(t.companionRemote.remote.reconnecting, style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 8),
+                    Text(
+                      t.companionRemote.remote.attemptOf(current: provider.reconnectAttempts),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        OutlinedButton(onPressed: () => provider.cancelReconnect(), child: Text(t.common.cancel)),
+                        const SizedBox(width: 16),
+                        FilledButton(
+                          onPressed: () => provider.retryReconnectNow(),
+                          child: Text(t.companionRemote.remote.retryNow),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          return const _RemoteControlLayout();
-        },
+            if (!provider.isConnected) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.phonelink_off, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    Text(
+                      provider.status == RemoteSessionStatus.error
+                          ? provider.session?.errorMessage ?? t.companionRemote.remote.connectionError
+                          : t.companionRemote.remote.notConnected,
+                      style: const TextStyle(fontSize: 20, color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    FilledButton.icon(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const PairingScreen()));
+                      },
+                      icon: const Icon(Icons.link),
+                      label: Text(t.companionRemote.connectToDevice),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return const _RemoteControlLayout();
+          },
+        ),
       ),
     );
   }
@@ -150,11 +153,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
       _sendCommand(RemoteCommandType.tabSearch);
     }
     final provider = context.read<CompanionRemoteProvider>();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => _SearchBottomSheet(provider: provider),
-    );
+    OverlaySheetController.of(context).show(builder: (_) => _SearchBottomSheet(provider: provider));
   }
 
   void _sendCommand(RemoteCommandType type) {
@@ -632,7 +631,7 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
     if (trimmed.isNotEmpty) {
       widget.provider.sendCommand(RemoteCommandType.search, data: {'query': trimmed});
     }
-    Navigator.pop(context);
+    OverlaySheetController.of(context).close();
   }
 
   @override

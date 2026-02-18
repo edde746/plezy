@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
@@ -10,8 +11,9 @@ import '../utils/platform_detector.dart';
 class _OverlaySheetEntry {
   final WidgetBuilder builder;
   final Completer<dynamic> completer;
+  final FocusNode? initialFocusNode;
 
-  _OverlaySheetEntry({required this.builder, required this.completer});
+  _OverlaySheetEntry({required this.builder, required this.completer, this.initialFocusNode});
 }
 
 /// Provides [OverlaySheetController] to descendants via [of] / [maybeOf].
@@ -21,8 +23,7 @@ class _OverlaySheetScope extends InheritedWidget {
   const _OverlaySheetScope({required this.controller, required super.child});
 
   @override
-  bool updateShouldNotify(_OverlaySheetScope oldWidget) =>
-      controller != oldWidget.controller;
+  bool updateShouldNotify(_OverlaySheetScope oldWidget) => controller != oldWidget.controller;
 }
 
 /// Controller for the overlay-based bottom sheet system.
@@ -53,18 +54,21 @@ class OverlaySheetController {
     BoxConstraints? constraints,
     Color? backgroundColor,
     bool barrierDismissible = true,
+    FocusNode? initialFocusNode,
   }) {
     return _state._show<T>(
       builder: builder,
       constraints: constraints,
       backgroundColor: backgroundColor,
       barrierDismissible: barrierDismissible,
+      initialFocusNode: initialFocusNode,
     );
   }
 
-  /// Push a sub-page within the open sheet.
-  void push({required WidgetBuilder builder}) {
-    _state._push(builder: builder);
+  /// Push a sub-page within the open sheet. Returns a Future that completes
+  /// when the pushed page is popped (with an optional result).
+  Future<T?> push<T>({required WidgetBuilder builder, FocusNode? initialFocusNode}) {
+    return _state._push<T>(builder: builder, initialFocusNode: initialFocusNode);
   }
 
   /// Pop the top sub-page, or close the sheet if on the last page.
@@ -102,8 +106,7 @@ class OverlaySheetHost extends StatefulWidget {
   State<OverlaySheetHost> createState() => _OverlaySheetHostState();
 }
 
-class _OverlaySheetHostState extends State<OverlaySheetHost>
-    with SingleTickerProviderStateMixin {
+class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
   late final Animation<Offset> _slideAnimation;
   late final Animation<double> _barrierAnimation;
@@ -127,23 +130,16 @@ class _OverlaySheetHostState extends State<OverlaySheetHost>
     super.initState();
     _controller = OverlaySheetController._(this);
 
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 250),
-      vsync: this,
+    _animationController = AnimationController(duration: const Duration(milliseconds: 250), vsync: this);
+
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ));
-
-    _barrierAnimation = Tween<double>(begin: 0, end: 0.5).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
-    );
+    _barrierAnimation = Tween<double>(
+      begin: 0,
+      end: 0.5,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -163,6 +159,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost>
     BoxConstraints? constraints,
     Color? backgroundColor,
     bool barrierDismissible = true,
+    FocusNode? initialFocusNode,
   }) {
     // If already open, close first (instant)
     if (_isOpen) {
@@ -176,7 +173,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost>
     }
 
     final completer = Completer<T?>();
-    final entry = _OverlaySheetEntry(builder: builder, completer: completer);
+    final entry = _OverlaySheetEntry(builder: builder, completer: completer, initialFocusNode: initialFocusNode);
 
     setState(() {
       _pageStack.add(entry);
@@ -196,17 +193,20 @@ class _OverlaySheetHostState extends State<OverlaySheetHost>
     return completer.future;
   }
 
-  void _push({required WidgetBuilder builder}) {
-    if (!_isOpen || _isClosing) return;
+  Future<T?> _push<T>({required WidgetBuilder builder, FocusNode? initialFocusNode}) {
+    if (!_isOpen || _isClosing) {
+      return Future.value(null);
+    }
 
-    final completer = Completer<dynamic>();
-    final entry = _OverlaySheetEntry(builder: builder, completer: completer);
+    final completer = Completer<T?>();
+    final entry = _OverlaySheetEntry(builder: builder, completer: completer, initialFocusNode: initialFocusNode);
 
     setState(() {
       _pageStack.add(entry);
     });
 
     _autoFocus();
+    return completer.future;
   }
 
   void _pop([dynamic result]) {
@@ -257,7 +257,25 @@ class _OverlaySheetHostState extends State<OverlaySheetHost>
       _sheetFocusScopeNode.requestFocus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isOpen) return;
-        _focusFirstDescendant();
+        // If the current top entry has an initialFocusNode that is attached,
+        // focus that instead of the first descendant.
+        final topEntry = _pageStack.isNotEmpty ? _pageStack.last : null;
+        final initialNode = topEntry?.initialFocusNode;
+        if (initialNode != null && initialNode.context != null) {
+          initialNode.requestFocus();
+        } else {
+          _focusFirstDescendant();
+        }
+
+        // Clear stale select suppression from the press that opened this sheet,
+        // but only if no select key is currently held down. This handles:
+        // - Short press: key already released → clear flag (prevents first
+        //   select inside the sheet from being eaten).
+        // - Long press: key still held → keep flag so KeyRepeat/KeyUp events
+        //   from the long press are correctly suppressed.
+        if (!HardwareKeyboard.instance.logicalKeysPressed.any((k) => k.isSelectKey)) {
+          SelectKeyUpSuppressor.clearSuppression();
+        }
       });
     });
   }
@@ -268,7 +286,13 @@ class _OverlaySheetHostState extends State<OverlaySheetHost>
       _sheetFocusScopeNode.requestFocus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isOpen) return;
-        _focusFirstDescendant();
+        final topEntry = _pageStack.isNotEmpty ? _pageStack.last : null;
+        final initialNode = topEntry?.initialFocusNode;
+        if (initialNode != null && initialNode.context != null) {
+          initialNode.requestFocus();
+        } else {
+          _focusFirstDescendant();
+        }
       });
     });
   }
@@ -331,9 +355,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost>
               builder: (context, child) {
                 return GestureDetector(
                   onTap: _barrierDismissible ? () => _close() : null,
-                  child: Container(
-                    color: Colors.black.withValues(alpha: _barrierAnimation.value),
-                  ),
+                  child: Container(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
                 );
               },
             ),
@@ -349,7 +371,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost>
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width > 600;
 
-    final effectiveConstraints = _constraints ??
+    final effectiveConstraints =
+        _constraints ??
         BoxConstraints(
           maxWidth: isDesktop ? 700 : double.infinity,
           maxHeight: isDesktop ? 400 : size.height * 0.75,
@@ -376,9 +399,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost>
                   top: false,
                   child: ConstrainedBox(
                     constraints: effectiveConstraints,
-                    child: _pageStack.isNotEmpty
-                        ? _pageStack.last.builder(context)
-                        : const SizedBox.shrink(),
+                    child: _pageStack.isNotEmpty ? _pageStack.last.builder(context) : const SizedBox.shrink(),
                   ),
                 ),
               ),

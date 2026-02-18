@@ -23,6 +23,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../utils/content_utils.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
+import '../../widgets/overlay_sheet.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/item_updatable.dart';
@@ -786,9 +787,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         ),
       );
     } else {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
+      OverlaySheetController.of(context).show(
         builder: (context) => _LibraryManagementSheet(
           allLibraries: List.from(allLibraries),
           hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
@@ -1066,140 +1065,142 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // Compute visible libraries (filtered from all libraries)
     final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
-    return Scaffold(
-      body: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: CustomScrollView(
-          controller: _outerScrollController,
-          slivers: [
-            DesktopSliverAppBar(
-              title: _buildAppBarTitle(visibleLibraries),
-              pinned: true,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              surfaceTintColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              actions: [
-                if (allLibraries.isNotEmpty)
+    return OverlaySheetHost(
+      child: Scaffold(
+        body: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: CustomScrollView(
+            controller: _outerScrollController,
+            slivers: [
+              DesktopSliverAppBar(
+                title: _buildAppBarTitle(visibleLibraries),
+                pinned: true,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                surfaceTintColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                scrolledUnderElevation: 0,
+                actions: [
+                  if (allLibraries.isNotEmpty)
+                    Focus(
+                      focusNode: _editButtonFocusNode,
+                      onKeyEvent: _handleEditKeyEvent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _isEditFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                          borderRadius: const BorderRadius.all(Radius.circular(20)),
+                        ),
+                        child: IconButton(
+                          icon: const AppIcon(Symbols.edit_rounded, fill: 1),
+                          tooltip: t.libraries.manageLibraries,
+                          onPressed: _showLibraryManagementSheet,
+                        ),
+                      ),
+                    ),
                   Focus(
-                    focusNode: _editButtonFocusNode,
-                    onKeyEvent: _handleEditKeyEvent,
+                    focusNode: _refreshButtonFocusNode,
+                    onKeyEvent: _handleRefreshKeyEvent,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: _isEditFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                        color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
                         borderRadius: const BorderRadius.all(Radius.circular(20)),
                       ),
                       child: IconButton(
-                        icon: const AppIcon(Symbols.edit_rounded, fill: 1),
-                        tooltip: t.libraries.manageLibraries,
-                        onPressed: _showLibraryManagementSheet,
+                        icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
+                        tooltip: t.common.refresh,
+                        onPressed: _refreshCurrentTab,
                       ),
                     ),
                   ),
-                Focus(
-                  focusNode: _refreshButtonFocusNode,
-                  onKeyEvent: _handleRefreshKeyEvent,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                      borderRadius: const BorderRadius.all(Radius.circular(20)),
-                    ),
-                    child: IconButton(
-                      icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
-                      tooltip: t.common.refresh,
-                      onPressed: _refreshCurrentTab,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (isLoadingLibraries)
-              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-            else if (_errorMessage != null && visibleLibraries.isEmpty)
-              SliverFillRemaining(
-                child: ErrorStateWidget(
-                  message: _errorMessage!,
-                  icon: Symbols.error_outline_rounded,
-                  onRetry: () {
-                    final librariesProvider = context.read<LibrariesProvider>();
-                    librariesProvider.refresh();
-                  },
-                ),
-              )
-            else if (visibleLibraries.isEmpty)
-              SliverFillRemaining(
-                child: EmptyStateWidget(message: t.libraries.noLibrariesFound, icon: Symbols.video_library_rounded),
-              )
-            else ...[
-              // Tab selector chips (only on mobile - desktop has them in app bar)
-              if (_selectedLibraryGlobalKey != null && !PlatformDetector.shouldUseSideNavigation(context))
-                SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildTabChip(t.libraries.tabs.recommended, 0),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.libraries.tabs.browse, 1),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.libraries.tabs.collections, 2),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.libraries.tabs.playlists, 3),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-              // Tab content
-              if (_selectedLibraryGlobalKey != null)
+                ],
+              ),
+              if (isLoadingLibraries)
+                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              else if (_errorMessage != null && visibleLibraries.isEmpty)
                 SliverFillRemaining(
-                  child: TabBarView(
-                    key: ValueKey(_selectedLibraryGlobalKey),
-                    controller: tabController,
-                    // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
-                    // See: https://github.com/flutter/flutter/issues/11132
-                    physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
-                    children: [
-                      LibraryRecommendedTab(
-                        key: _recommendedTabKey,
-                        library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                        isActive: tabController.index == 0,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onDataLoaded: () => _handleTabDataLoaded(0),
-                        onBack: focusTabBar,
-                      ),
-                      LibraryBrowseTab(
-                        key: _browseTabKey,
-                        library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                        isActive: tabController.index == 1,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onDataLoaded: () => _handleTabDataLoaded(1),
-                        onBack: focusTabBar,
-                      ),
-                      LibraryCollectionsTab(
-                        key: _collectionsTabKey,
-                        library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                        isActive: tabController.index == 2,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onDataLoaded: () => _handleTabDataLoaded(2),
-                        onBack: focusTabBar,
-                      ),
-                      LibraryPlaylistsTab(
-                        key: _playlistsTabKey,
-                        library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                        isActive: tabController.index == 3,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onDataLoaded: () => _handleTabDataLoaded(3),
-                        onBack: focusTabBar,
-                      ),
-                    ],
+                  child: ErrorStateWidget(
+                    message: _errorMessage!,
+                    icon: Symbols.error_outline_rounded,
+                    onRetry: () {
+                      final librariesProvider = context.read<LibrariesProvider>();
+                      librariesProvider.refresh();
+                    },
                   ),
-                ),
+                )
+              else if (visibleLibraries.isEmpty)
+                SliverFillRemaining(
+                  child: EmptyStateWidget(message: t.libraries.noLibrariesFound, icon: Symbols.video_library_rounded),
+                )
+              else ...[
+                // Tab selector chips (only on mobile - desktop has them in app bar)
+                if (_selectedLibraryGlobalKey != null && !PlatformDetector.shouldUseSideNavigation(context))
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildTabChip(t.libraries.tabs.recommended, 0),
+                            const SizedBox(width: 8),
+                            _buildTabChip(t.libraries.tabs.browse, 1),
+                            const SizedBox(width: 8),
+                            _buildTabChip(t.libraries.tabs.collections, 2),
+                            const SizedBox(width: 8),
+                            _buildTabChip(t.libraries.tabs.playlists, 3),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Tab content
+                if (_selectedLibraryGlobalKey != null)
+                  SliverFillRemaining(
+                    child: TabBarView(
+                      key: ValueKey(_selectedLibraryGlobalKey),
+                      controller: tabController,
+                      // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
+                      // See: https://github.com/flutter/flutter/issues/11132
+                      physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
+                      children: [
+                        LibraryRecommendedTab(
+                          key: _recommendedTabKey,
+                          library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                          isActive: tabController.index == 0,
+                          suppressAutoFocus: suppressAutoFocus,
+                          onDataLoaded: () => _handleTabDataLoaded(0),
+                          onBack: focusTabBar,
+                        ),
+                        LibraryBrowseTab(
+                          key: _browseTabKey,
+                          library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                          isActive: tabController.index == 1,
+                          suppressAutoFocus: suppressAutoFocus,
+                          onDataLoaded: () => _handleTabDataLoaded(1),
+                          onBack: focusTabBar,
+                        ),
+                        LibraryCollectionsTab(
+                          key: _collectionsTabKey,
+                          library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                          isActive: tabController.index == 2,
+                          suppressAutoFocus: suppressAutoFocus,
+                          onDataLoaded: () => _handleTabDataLoaded(2),
+                          onBack: focusTabBar,
+                        ),
+                        LibraryPlaylistsTab(
+                          key: _playlistsTabKey,
+                          library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                          isActive: tabController.index == 3,
+                          suppressAutoFocus: suppressAutoFocus,
+                          onDataLoaded: () => _handleTabDataLoaded(3),
+                          onBack: focusTabBar,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -1420,27 +1421,52 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
   Future<void> _showLibraryMenuBottomSheet(BuildContext outerContext, PlexLibrary library) async {
     final menuItems = widget.getLibraryMenuItems(library);
-    final selected = await showModalBottomSheet<String>(
-      context: outerContext,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            ),
-            ...menuItems.indexed.map(
-              (entry) => ListTile(
-                leading: AppIcon(entry.$2.icon, fill: 1),
-                title: Text(entry.$2.label),
-                onTap: () => Navigator.pop(context, entry.$2.value),
+    final controller = OverlaySheetController.maybeOf(outerContext);
+    final String? selected;
+    if (controller != null) {
+      selected = await controller.push<String>(
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ),
-            ),
-          ],
+              ...menuItems.indexed.map(
+                (entry) => ListTile(
+                  leading: AppIcon(entry.$2.icon, fill: 1),
+                  title: Text(entry.$2.label),
+                  onTap: () => controller.pop(entry.$2.value),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      selected = await showModalBottomSheet<String>(
+        context: outerContext,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
+              ...menuItems.indexed.map(
+                (entry) => ListTile(
+                  leading: AppIcon(entry.$2.icon, fill: 1),
+                  title: Text(entry.$2.label),
+                  onTap: () => Navigator.pop(context, entry.$2.value),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     if (selected != null && mounted) {
       // Find the selected item to check if confirmation is needed

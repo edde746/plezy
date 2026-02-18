@@ -71,6 +71,10 @@ class SelectKeyUpSuppressor {
     _suppressSelectUntilKeyUp = true;
   }
 
+  static void clearSuppression() {
+    _suppressSelectUntilKeyUp = false;
+  }
+
   static bool consumeIfSuppressed(KeyEvent event) {
     if (!_suppressSelectUntilKeyUp) return false;
     if (event.logicalKey.isSelectKey) {
