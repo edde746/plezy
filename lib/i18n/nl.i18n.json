@@ -610,7 +610,8 @@
     "afterWeeks": "After ${count} weeks",
     "quality": "Quality",
     "original": "Original",
-    "settingsSaved": "Download settings saved"
+    "settingsSaved": "Download settings saved",
+    "qualityChangeWarning": "Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while."
   },
   "playlists": {
     "title": "Afspeellijsten",

@@ -26,8 +26,8 @@ import '../theme/mono_tokens.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/focusable_bottom_sheet.dart';
 import '../widgets/focusable_list_tile.dart';
-import '../services/settings_service.dart';
 import '../utils/content_utils.dart';
+import '../services/auto_download_service.dart';
 import '../widgets/download_settings_dialog.dart';
 import '../i18n/strings.g.dart';
 
@@ -257,6 +257,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             _MenuAction(value: 'download', icon: Symbols.download_rounded, label: t.downloads.downloadNow),
           );
         }
+
+        // Download Settings (for shows and movies)
+        if (metadata!.isShow || metadata.isMovie) {
+          menuActions.add(
+            _MenuAction(
+              value: 'download_settings',
+              icon: Symbols.settings_rounded,
+              label: t.downloads.downloadSettings,
+            ),
+          );
+        }
       }
 
       // Add to... (for episodes, movies, shows, and seasons)
@@ -447,6 +458,20 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'delete_download':
           await _handleDeleteDownload(context);
+          break;
+
+        case 'download_settings':
+          if (metadata != null) {
+            final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+            showDownloadSettingsDialog(
+              context,
+              ratingKey: metadata.ratingKey,
+              title: metadata.title,
+              isSeries: metadata.isShow,
+              downloadProvider: downloadProvider,
+              client: client,
+            );
+          }
           break;
 
         case 'delete_media':
@@ -1025,36 +1050,43 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final metadata = widget.item as PlexMetadata;
     final client = _getClientForItem();
 
-    // For shows/seasons/movies: show settings dialog on first download
+    // For shows/seasons/movies: always show settings dialog before download
     if (metadata.isShow || metadata.isSeason || metadata.isMovie) {
-      final settingsService = await SettingsService.getInstance();
       // For seasons, use the parent show's rating key
       final settingsKey = metadata.isSeason
           ? (metadata.parentRatingKey ?? metadata.ratingKey)
           : metadata.ratingKey;
-      final existing = settingsService.getDownloadSettings(settingsKey);
-      if (existing == null) {
-        if (!context.mounted) return;
-        final settings = await showDownloadSettingsDialog(
-          context,
-          ratingKey: settingsKey,
-          title: metadata.isSeason
-              ? (metadata.parentTitle ?? metadata.title)
-              : metadata.title,
-          isSeries: metadata.isShow || metadata.isSeason,
-        );
-        if (settings == null) return; // Cancelled
-      }
+      if (!context.mounted) return;
+      final settings = await showDownloadSettingsDialog(
+        context,
+        ratingKey: settingsKey,
+        title: metadata.isSeason
+            ? (metadata.parentTitle ?? metadata.title)
+            : metadata.title,
+        isSeries: metadata.isShow || metadata.isSeason,
+      );
+      if (settings == null) return; // Cancelled
     }
 
     if (!context.mounted) return;
 
     try {
-      final count = await downloadProvider.queueDownload(metadata, client);
-      if (context.mounted) {
-        // Show appropriate message based on count
-        final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
-        showSuccessSnackBar(context, message);
+      // Use settings-aware refresh for shows/seasons, direct queue for others
+      if (metadata.isShow || metadata.isSeason) {
+        final result = await AutoDownloadService().refreshShow(metadata, client, downloadProvider);
+        if (context.mounted) {
+          if (result.queued > 0) {
+            showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
+          } else {
+            showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+          }
+        }
+      } else {
+        final count = await downloadProvider.queueDownload(metadata, client);
+        if (context.mounted) {
+          final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
+          showSuccessSnackBar(context, message);
+        }
       }
     } on CellularDownloadBlockedException {
       if (context.mounted) {

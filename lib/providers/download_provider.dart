@@ -1003,6 +1003,7 @@ class DownloadProvider extends ChangeNotifier {
       await _downloadManager.cancelDownload(globalKey);
       _downloads.remove(globalKey);
       _metadata.remove(globalKey);
+      _artworkPaths.remove(globalKey);
       notifyListeners();
     }
   }

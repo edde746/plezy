@@ -1177,28 +1177,50 @@ class DownloadManagerService {
 
   /// Cancel a download
   Future<void> cancelDownload(String globalKey) async {
-    final bgTaskId = await _database.getBgTaskId(globalKey);
-    if (bgTaskId != null) {
-      await FileDownloader().cancelTaskWithId(bgTaskId);
-    }
+    // Remove context BEFORE cancelling the bg task so the
+    // _onTaskStatusChanged callback sees no context and skips re-queuing.
     final cancelCtx = _pendingDownloadContext.remove(globalKey);
     if (cancelCtx?.transcodeSessionId != null) {
       cancelCtx!.client.stopTranscodeSession(cancelCtx.transcodeSessionId!);
     }
-    await _transitionStatus(globalKey, DownloadStatus.cancelled);
-    await _database.removeFromQueue(globalKey);
-  }
 
-  /// Delete a downloaded item and its files
-  Future<void> deleteDownload(String globalKey) async {
-    // Cancel if actively downloading via background_downloader
+    // Cancel the background task
     final bgTaskId = await _database.getBgTaskId(globalKey);
     if (bgTaskId != null) {
       await FileDownloader().cancelTaskWithId(bgTaskId);
     }
+
+    // Delete partial files from storage
+    final parsed = parseGlobalKey(globalKey);
+    if (parsed != null) {
+      await _deleteMediaFilesWithMetadata(parsed.serverId, parsed.ratingKey);
+      await _apiCache.deleteForItem(parsed.serverId, parsed.ratingKey);
+    }
+
+    // Delete from database (row + queue)
+    await _database.deleteDownload(globalKey);
+    await _database.removeFromQueue(globalKey);
+
+    // Emit cancelled status so the provider stream listener knows
+    _emitProgress(globalKey, DownloadStatus.cancelled, 0);
+
+    // Advance the queue in case there are remaining items
+    if (_lastClient != null) _processQueue(_lastClient!);
+  }
+
+  /// Delete a downloaded item and its files
+  Future<void> deleteDownload(String globalKey) async {
+    // Remove context BEFORE cancelling the bg task so the
+    // _onTaskStatusChanged callback sees no context and skips re-queuing.
     final deleteCtx = _pendingDownloadContext.remove(globalKey);
     if (deleteCtx?.transcodeSessionId != null) {
       deleteCtx!.client.stopTranscodeSession(deleteCtx.transcodeSessionId!);
+    }
+
+    // Cancel if actively downloading via background_downloader
+    final bgTaskId = await _database.getBgTaskId(globalKey);
+    if (bgTaskId != null) {
+      await FileDownloader().cancelTaskWithId(bgTaskId);
     }
 
     // Delete files from storage

@@ -32,6 +32,19 @@ class DownloadSettings {
     );
   }
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DownloadSettings &&
+          downloadAllEpisodes == other.downloadAllEpisodes &&
+          episodeCount == other.episodeCount &&
+          deleteMode == other.deleteMode &&
+          retentionValue == other.retentionValue &&
+          transcodeQuality == other.transcodeQuality;
+
+  @override
+  int get hashCode => Object.hash(downloadAllEpisodes, episodeCount, deleteMode, retentionValue, transcodeQuality);
+
   Map<String, dynamic> toJson() => {
         'downloadAllEpisodes': downloadAllEpisodes,
         'episodeCount': episodeCount,

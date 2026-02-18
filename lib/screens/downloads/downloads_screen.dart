@@ -206,14 +206,32 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                               if (meta == null) return;
                               final client = getClient(globalKey);
                               if (client == null) return;
-                              final count = await downloadProvider.queueMissingEpisodes(meta, client);
+                              final autoDownload = AutoDownloadService();
+                              final result = await autoDownload.refreshShow(meta, client, downloadProvider);
                               if (context.mounted) {
-                                if (count > 0) {
-                                  showSuccessSnackBar(context, t.downloads.episodesQueued(count: count));
+                                if (result.queued > 0) {
+                                  showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
+                                } else if (result.trimmed > 0) {
+                                  showSuccessSnackBar(context, t.downloads.downloadDeleted);
                                 } else {
                                   showAppSnackBar(context, t.downloads.noNewEpisodesFound);
                                 }
                               }
+                            },
+                            onSettings: (ratingKey, title, isSeries) {
+                              final globalKey = downloadProvider.metadata.keys.firstWhere(
+                                (k) => k.endsWith(':$ratingKey'),
+                                orElse: () => '',
+                              );
+                              final client = globalKey.isNotEmpty ? getClient(globalKey) : null;
+                              showDownloadSettingsDialog(
+                                context,
+                                ratingKey: ratingKey,
+                                title: title,
+                                isSeries: isSeries,
+                                downloadProvider: downloadProvider,
+                                client: client,
+                              );
                             },
                             onNavigateLeft: () => MainScreenFocusScope.of(context)?.focusSidebar(),
                             onBack: focusTabBar,

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../i18n/strings.g.dart';
 import '../models/download_settings.dart';
+import '../providers/download_provider.dart';
+import '../services/auto_download_service.dart';
+import '../services/plex_client.dart';
 import '../services/settings_service.dart';
+import '../utils/dialogs.dart';
 import '../utils/platform_detector.dart';
-import '../utils/snackbar_helper.dart';
 import 'tv_number_spinner.dart';
 
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
@@ -20,11 +23,16 @@ const _qualityPresets = [
 
 /// Shows the download settings dialog for a series or movie.
 /// Returns the saved [DownloadSettings] or null if cancelled.
+///
+/// If [downloadProvider] and [client] are provided, changing the transcode
+/// quality will prompt the user to confirm re-downloading existing content.
 Future<DownloadSettings?> showDownloadSettingsDialog(
   BuildContext context, {
   required String ratingKey,
   required String title,
   required bool isSeries,
+  DownloadProvider? downloadProvider,
+  PlexClient? client,
 }) async {
   final settingsService = await SettingsService.getInstance();
   final existing = settingsService.getDownloadSettings(ratingKey);
@@ -42,13 +50,97 @@ Future<DownloadSettings?> showDownloadSettingsDialog(
   );
 
   if (result != null) {
+    final settingsChanged = existing != null && result != existing;
+    final qualityChanged = existing != null && result.transcodeQuality != existing.transcodeQuality;
+
+    // Check if there are downloads that need re-encoding
+    bool hasDownloads = false;
+    if (qualityChanged && downloadProvider != null) {
+      if (isSeries) {
+        hasDownloads = downloadProvider.getDownloadedEpisodesForShow(ratingKey).isNotEmpty;
+      } else {
+        final movieGlobalKey = downloadProvider.metadata.keys.firstWhere(
+          (k) => k.endsWith(':$ratingKey'),
+          orElse: () => '',
+        );
+        hasDownloads = movieGlobalKey.isNotEmpty && downloadProvider.isDownloaded(movieGlobalKey);
+      }
+    }
+
+    if (qualityChanged && hasDownloads) {
+      if (!context.mounted) return null;
+      final confirmed = await showConfirmDialog(
+        context,
+        title: t.downloads.quality,
+        message: t.downloads.qualityChangeWarning,
+        confirmText: t.common.confirm,
+        isDestructive: true,
+      );
+      if (!confirmed || !context.mounted) return null;
+    }
+
+    // Save settings BEFORE re-queueing so queueDownload reads the new quality
     await settingsService.setDownloadSettings(ratingKey, result);
-    if (context.mounted) {
-      showSuccessSnackBar(context, t.downloads.settingsSaved);
+
+    if (qualityChanged && hasDownloads && downloadProvider != null) {
+      await _redownloadAtNewQuality(ratingKey, isSeries, downloadProvider, client);
+    } else if (settingsChanged && isSeries && downloadProvider != null && client != null) {
+      // Any setting changed (episode count, retention, etc.) — refresh to apply
+      final showGlobalKey = downloadProvider.metadata.keys.firstWhere(
+        (k) => k.endsWith(':$ratingKey'),
+        orElse: () => '',
+      );
+      if (showGlobalKey.isNotEmpty) {
+        final showMeta = downloadProvider.getMetadata(showGlobalKey);
+        if (showMeta != null) {
+          await AutoDownloadService().refreshShow(showMeta, client, downloadProvider);
+        }
+      }
     }
   }
 
   return result;
+}
+
+Future<void> _redownloadAtNewQuality(
+  String ratingKey,
+  bool isSeries,
+  DownloadProvider downloadProvider,
+  PlexClient? client,
+) async {
+  if (client == null) return;
+
+  if (isSeries) {
+    final episodes = downloadProvider.getDownloadedEpisodesForShow(ratingKey);
+    for (final ep in episodes) {
+      final epGlobalKey = '${ep.serverId}:${ep.ratingKey}';
+      await downloadProvider.deleteDownload(epGlobalKey);
+    }
+    // Re-queue using refreshShow which respects episode count/retention settings
+    final showGlobalKey = downloadProvider.metadata.keys.firstWhere(
+      (k) => k.endsWith(':$ratingKey'),
+      orElse: () => '',
+    );
+    if (showGlobalKey.isNotEmpty) {
+      final showMeta = downloadProvider.getMetadata(showGlobalKey);
+      if (showMeta != null) {
+        await AutoDownloadService().refreshShow(showMeta, client, downloadProvider);
+      }
+    }
+  } else {
+    // Movie
+    final movieGlobalKey = downloadProvider.metadata.keys.firstWhere(
+      (k) => k.endsWith(':$ratingKey'),
+      orElse: () => '',
+    );
+    if (movieGlobalKey.isNotEmpty) {
+      final meta = downloadProvider.getMetadata(movieGlobalKey);
+      await downloadProvider.deleteDownload(movieGlobalKey);
+      if (meta != null) {
+        await downloadProvider.queueDownload(meta, client);
+      }
+    }
+  }
 }
 
 class _DownloadSettingsDialog extends StatefulWidget {

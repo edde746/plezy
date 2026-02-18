@@ -38,7 +38,6 @@ import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/download_settings_dialog.dart';
 import '../services/auto_download_service.dart';
-import '../services/settings_service.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../utils/desktop_window_padding.dart';
@@ -588,6 +587,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                             ratingKey: metadata.ratingKey,
                             title: metadata.title,
                             isSeries: metadata.isShow,
+                            downloadProvider: downloadProvider,
+                            client: _getClientForMetadata(context),
                           ),
                           icon: const AppIcon(Symbols.settings_rounded, fill: 1),
                           tooltip: t.downloads.downloadSettings,
@@ -605,19 +606,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                           if (client == null) return;
 
                           // Use settings-aware refresh for shows, direct queue for others
-                          final int count;
                           if (metadata.isShow) {
-                            final autoDownload = context.read<AutoDownloadService>();
-                            count = await autoDownload.refreshShow(metadata, client, downloadProvider);
+                            final autoDownload = AutoDownloadService();
+                            final result = await autoDownload.refreshShow(metadata, client, downloadProvider);
+                            if (context.mounted) {
+                              if (result.queued > 0) {
+                                showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
+                              } else if (result.trimmed > 0) {
+                                showSuccessSnackBar(context, t.downloads.downloadDeleted);
+                              } else {
+                                showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+                              }
+                            }
                           } else {
-                            count = await downloadProvider.queueMissingEpisodes(metadata, client);
-                          }
-
-                          if (context.mounted) {
-                            final message = count > 0
-                                ? t.downloads.episodesQueued(count: count)
-                                : 'All episodes already downloaded';
-                            showAppSnackBar(context, message);
+                            final count = await downloadProvider.queueMissingEpisodes(metadata, client);
+                            if (context.mounted) {
+                              final message = count > 0
+                                  ? t.downloads.episodesQueued(count: count)
+                                  : t.downloads.noNewEpisodesFound;
+                              showAppSnackBar(context, message);
+                            }
                           }
                         },
                         tooltip: tooltip,
@@ -645,6 +653,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                             ratingKey: metadata.ratingKey,
                             title: metadata.title,
                             isSeries: metadata.isShow,
+                            downloadProvider: downloadProvider,
+                            client: _getClientForMetadata(context),
                           ),
                           icon: const AppIcon(Symbols.settings_rounded, fill: 1),
                           tooltip: t.downloads.downloadSettings,
@@ -691,27 +701,35 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                     final client = _getClientForMetadata(context);
                     if (client == null) return;
 
-                    // For shows/movies: show settings dialog on first download
+                    // For shows/movies: always show settings dialog before download
                     if (metadata.isShow || metadata.isMovie) {
-                      final settingsService = await SettingsService.getInstance();
-                      final existing = settingsService.getDownloadSettings(metadata.ratingKey);
-                      if (existing == null) {
-                        if (!context.mounted) return;
-                        final settings = await showDownloadSettingsDialog(
-                          context,
-                          ratingKey: metadata.ratingKey,
-                          title: metadata.title,
-                          isSeries: metadata.isShow,
-                        );
-                        if (settings == null) return; // Cancelled
-                      }
+                      if (!context.mounted) return;
+                      final settings = await showDownloadSettingsDialog(
+                        context,
+                        ratingKey: metadata.ratingKey,
+                        title: metadata.title,
+                        isSeries: metadata.isShow,
+                      );
+                      if (settings == null) return; // Cancelled
                     }
 
                     if (!context.mounted) return;
-                    final count = await downloadProvider.queueDownload(metadata, client);
-                    if (context.mounted) {
-                      final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
-                      showSuccessSnackBar(context, message);
+                    // Use settings-aware refresh for shows, direct queue for others
+                    if (metadata.isShow) {
+                      final result = await AutoDownloadService().refreshShow(metadata, client, downloadProvider);
+                      if (context.mounted) {
+                        if (result.queued > 0) {
+                          showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
+                        } else {
+                          showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+                        }
+                      }
+                    } else {
+                      final count = await downloadProvider.queueDownload(metadata, client);
+                      if (context.mounted) {
+                        final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
+                        showSuccessSnackBar(context, message);
+                      }
                     }
                   },
                   icon: const AppIcon(Symbols.download_rounded, fill: 1),

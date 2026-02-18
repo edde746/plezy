@@ -19,8 +19,12 @@ class AutoDownloadService {
 
   /// Refresh a show or season respecting per-series download settings.
   /// Called by the manual refresh button and detail page.
-  /// Returns the number of newly queued episodes.
-  Future<int> refreshShow(PlexMetadata metadata, PlexClient client, DownloadProvider downloadProvider) async {
+  /// Returns ({int queued, int trimmed}) — episodes newly queued and excess episodes removed.
+  Future<({int queued, int trimmed})> refreshShow(
+    PlexMetadata metadata,
+    PlexClient client,
+    DownloadProvider downloadProvider,
+  ) async {
     final settingsService = await SettingsService.getInstance();
 
     // For seasons, look up the parent show's settings
@@ -34,14 +38,16 @@ class AutoDownloadService {
 
     // Only apply per-series logic for shows/seasons
     if (showRatingKey == null) {
-      return await downloadProvider.queueMissingEpisodes(metadata, client);
+      final q = await downloadProvider.queueMissingEpisodes(metadata, client);
+      return (queued: q, trimmed: 0);
     }
 
     final perShowSettings = settingsService.getDownloadSettings(showRatingKey);
 
     if (perShowSettings == null) {
       // No per-series settings — use legacy behavior (queue all missing)
-      return await downloadProvider.queueMissingEpisodes(metadata, client);
+      final q = await downloadProvider.queueMissingEpisodes(metadata, client);
+      return (queued: q, trimmed: 0);
     }
 
     // For seasons: if per-show settings exist, operate on the whole show
@@ -53,7 +59,8 @@ class AutoDownloadService {
       // Fetch the show metadata
       final showMeta = await client.getMetadataWithImages(showRatingKey);
       if (showMeta == null) {
-        return await downloadProvider.queueMissingEpisodes(metadata, client);
+        final q = await downloadProvider.queueMissingEpisodes(metadata, client);
+        return (queued: q, trimmed: 0);
       }
       show = showMeta.serverId != null ? showMeta : showMeta.copyWith(serverId: metadata.serverId);
     }
@@ -65,6 +72,7 @@ class AutoDownloadService {
     await _cleanupWatchedEpisodes(show, allEpisodes, client, downloadProvider, settingsService, perShowSettings);
 
     int queued = 0;
+    int trimmed = 0;
     if (perShowSettings.downloadAllEpisodes) {
       queued = await downloadProvider.queueMissingEpisodes(show, client);
     } else {
@@ -72,10 +80,10 @@ class AutoDownloadService {
       final targetKeys = _computeTargetEpisodeKeys(allEpisodes, perShowSettings.episodeCount);
       queued = await _queueSmartEpisodes(allEpisodes, targetKeys, downloadProvider, client);
       // Trim: delete downloaded episodes outside the target window
-      await _trimExcessEpisodes(show, targetKeys, downloadProvider);
+      trimmed = await _trimExcessEpisodes(show, targetKeys, downloadProvider);
     }
 
-    return queued;
+    return (queued: queued, trimmed: trimmed);
   }
 
   /// Check for new episodes of subscribed shows and queue them for download.
@@ -130,8 +138,8 @@ class AutoDownloadService {
 
           if (perShowSettings != null) {
             // PER-SERIES: use refreshShow which handles queue + cleanup + trim
-            final queued = await refreshShow(show, client, downloadProvider);
-            totalQueued += queued;
+            final result = await refreshShow(show, client, downloadProvider);
+            totalQueued += result.queued;
           } else {
             // EXISTING GLOBAL BEHAVIOR (unchanged)
             if (!autoDownloadNewEpisodes && !autoDownloadNewSeasons) {
@@ -240,12 +248,14 @@ class AutoDownloadService {
 
   /// Delete downloaded episodes that are outside the target "keep last N" window.
   /// Only removes completed downloads — never touches in-progress ones.
-  Future<void> _trimExcessEpisodes(
+  /// Returns the number of episodes trimmed.
+  Future<int> _trimExcessEpisodes(
     PlexMetadata show,
     Set<String> targetKeys,
     DownloadProvider downloadProvider,
   ) async {
     final downloadedEpisodes = downloadProvider.getDownloadedEpisodesForShow(show.ratingKey);
+    int trimmed = 0;
 
     for (final meta in downloadedEpisodes) {
       final globalKey = meta.globalKey;
@@ -253,8 +263,11 @@ class AutoDownloadService {
 
       // This episode is downloaded but outside the keep window — delete it
       await downloadProvider.deleteDownload(globalKey);
+      trimmed++;
       appLogger.i('Auto-download: Trimmed episode outside keep window: ${meta.title} ($globalKey)');
     }
+
+    return trimmed;
   }
 
   /// Clean up watched episodes based on retention settings.

@@ -859,6 +859,7 @@ class _TranslationsDownloadsIt implements TranslationsDownloadsEn {
 	@override String get quality => 'Quality';
 	@override String get original => 'Original';
 	@override String get settingsSaved => 'Download settings saved';
+	@override String get qualityChangeWarning => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.';
 }
 
 // Path: playlists
@@ -1786,6 +1787,7 @@ extension on TranslationsIt {
 			'downloads.quality' => 'Quality',
 			'downloads.original' => 'Original',
 			'downloads.settingsSaved' => 'Download settings saved',
+			'downloads.qualityChangeWarning' => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.',
 			'playlists.title' => 'Playlist',
 			'playlists.noPlaylists' => 'Nessuna playlist trovata',
 			'playlists.create' => 'Crea playlist',
