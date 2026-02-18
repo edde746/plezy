@@ -6,6 +6,7 @@ import '../../models/mpv_config_models.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../services/settings_service.dart';
+import '../../focus/key_event_utils.dart';
 import '../../widgets/desktop_app_bar.dart';
 
 class MpvConfigScreen extends StatefulWidget {
@@ -236,25 +237,33 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Focus(
+        autofocus: true,
+        onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+        child: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
     }
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(title: Text(t.screens.mpvConfig), pinned: true),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildPresetsCard(),
-                const SizedBox(height: 16),
-                _buildEntriesCard(),
-                const SizedBox(height: 24),
-              ]),
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+      child: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            CustomAppBar(title: Text(t.screens.mpvConfig), pinned: true),
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _buildPresetsCard(),
+                  const SizedBox(height: 16),
+                  _buildEntriesCard(),
+                  const SizedBox(height: 24),
+                ]),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

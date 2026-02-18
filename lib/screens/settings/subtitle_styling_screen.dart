@@ -5,6 +5,7 @@ import 'package:flex_color_picker/flex_color_picker.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
+import '../../focus/key_event_utils.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/tv_color_picker.dart';
 import '../../widgets/tv_number_spinner.dart';
@@ -282,18 +283,26 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Focus(
+        autofocus: true,
+        onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+        child: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
     }
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(title: Text(t.screens.subtitleStyling), pinned: true),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(delegate: SliverChildListDelegate([_buildStylingCard(), const SizedBox(height: 24)])),
-          ),
-        ],
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+      child: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            CustomAppBar(title: Text(t.screens.subtitleStyling), pinned: true),
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(delegate: SliverChildListDelegate([_buildStylingCard(), const SizedBox(height: 24)])),
+            ),
+          ],
+        ),
       ),
     );
   }

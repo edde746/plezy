@@ -9,6 +9,7 @@ import 'package:logger/logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../focus/key_event_utils.dart';
 import '../../widgets/desktop_app_bar.dart';
 
 class LogsScreen extends StatefulWidget {
@@ -165,53 +166,57 @@ class _LogsScreenState extends State<LogsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(
-            title: Text(t.screens.logs),
-            pinned: true,
-            actions: [
-              IconButton(
-                icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
-                onPressed: _loadLogs,
-                tooltip: t.common.refresh,
-              ),
-              IconButton(
-                icon: const AppIcon(Symbols.upload_rounded, fill: 1),
-                onPressed: _logs.isNotEmpty ? _uploadLogs : null,
-                tooltip: t.logs.uploadLogs,
-              ),
-              IconButton(
-                icon: const AppIcon(Symbols.content_copy_rounded, fill: 1),
-                onPressed: _logs.isNotEmpty ? _copyAllLogs : null,
-                tooltip: t.logs.copyLogs,
-              ),
-              IconButton(
-                icon: const AppIcon(Symbols.delete_outline_rounded, fill: 1),
-                onPressed: _logs.isNotEmpty ? _clearLogs : null,
-                tooltip: t.logs.clearLogs,
-              ),
-            ],
-          ),
-          if (_logs.isEmpty)
-            SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
-          else
-            SliverPadding(
-              padding: const EdgeInsets.all(8),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final log = _logs[index];
-                  return _LogEntryCard(
-                    log: log,
-                    formatTime: _formatTime,
-                    levelColor: _getLevelColor(log.level),
-                    levelIcon: _getLevelIcon(log.level),
-                  );
-                }, childCount: _logs.length),
-              ),
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+      child: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            CustomAppBar(
+              title: Text(t.screens.logs),
+              pinned: true,
+              actions: [
+                IconButton(
+                  icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
+                  onPressed: _loadLogs,
+                  tooltip: t.common.refresh,
+                ),
+                IconButton(
+                  icon: const AppIcon(Symbols.upload_rounded, fill: 1),
+                  onPressed: _logs.isNotEmpty ? _uploadLogs : null,
+                  tooltip: t.logs.uploadLogs,
+                ),
+                IconButton(
+                  icon: const AppIcon(Symbols.content_copy_rounded, fill: 1),
+                  onPressed: _logs.isNotEmpty ? _copyAllLogs : null,
+                  tooltip: t.logs.copyLogs,
+                ),
+                IconButton(
+                  icon: const AppIcon(Symbols.delete_outline_rounded, fill: 1),
+                  onPressed: _logs.isNotEmpty ? _clearLogs : null,
+                  tooltip: t.logs.clearLogs,
+                ),
+              ],
             ),
-        ],
+            if (_logs.isEmpty)
+              SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
+            else
+              SliverPadding(
+                padding: const EdgeInsets.all(8),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final log = _logs[index];
+                    return _LogEntryCard(
+                      log: log,
+                      formatTime: _formatTime,
+                      levelColor: _getLevelColor(log.level),
+                      levelIcon: _getLevelIcon(log.level),
+                    );
+                  }, childCount: _logs.length),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
