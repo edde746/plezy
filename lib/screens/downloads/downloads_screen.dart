@@ -6,6 +6,7 @@ import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/global_key_utils.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/platform_detector.dart';
@@ -14,6 +15,8 @@ import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/focusable_media_card.dart';
 import '../../widgets/media_grid_delegate.dart';
 import '../../widgets/download_tree_view.dart';
+import '../../widgets/download_settings_dialog.dart';
+import '../../services/auto_download_service.dart';
 import '../main_screen.dart';
 import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
@@ -198,6 +201,38 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                             },
                             onCancel: downloadProvider.cancelDownload,
                             onDelete: downloadProvider.deleteDownload,
+                            onRefresh: (globalKey) async {
+                              final meta = downloadProvider.getMetadata(globalKey);
+                              if (meta == null) return;
+                              final client = getClient(globalKey);
+                              if (client == null) return;
+                              final autoDownload = AutoDownloadService();
+                              final result = await autoDownload.refreshShow(meta, client, downloadProvider);
+                              if (context.mounted) {
+                                if (result.queued > 0) {
+                                  showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
+                                } else if (result.trimmed > 0) {
+                                  showSuccessSnackBar(context, t.downloads.downloadDeleted);
+                                } else {
+                                  showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+                                }
+                              }
+                            },
+                            onSettings: (ratingKey, title, isSeries) {
+                              final globalKey = downloadProvider.metadata.keys.firstWhere(
+                                (k) => k.endsWith(':$ratingKey'),
+                                orElse: () => '',
+                              );
+                              final client = globalKey.isNotEmpty ? getClient(globalKey) : null;
+                              showDownloadSettingsDialog(
+                                context,
+                                ratingKey: ratingKey,
+                                title: title,
+                                isSeries: isSeries,
+                                downloadProvider: downloadProvider,
+                                client: client,
+                              );
+                            },
                             onNavigateLeft: () => MainScreenFocusScope.of(context)?.focusSidebar(),
                             onBack: focusTabBar,
                             suppressAutoFocus: suppressAutoFocus,

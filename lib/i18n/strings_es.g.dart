@@ -966,6 +966,23 @@ class _TranslationsDownloadsEs implements TranslationsDownloadsEn {
 	@override String get pauseAll => 'Pausar todo';
 	@override String get resumeAll => 'Reanudar todo';
 	@override String get deleteAll => 'Eliminar todo';
+	@override String get checkForNewEpisodes => 'Check for new episodes';
+	@override String get noNewEpisodesFound => 'No new episodes found';
+	@override String get downloadSettings => 'Download Settings';
+	@override String get episodes => 'Episodes';
+	@override String get downloadAllEpisodes => 'Download all episodes';
+	@override String keepLastNUnwatched({required Object count}) => 'Keep last ${count} unwatched episodes';
+	@override String get retention => 'Retention';
+	@override String get retentionDescription => 'How long to keep watched episodes';
+	@override String get onNextRefresh => 'On next refresh';
+	@override String afterDays({required Object count}) => 'After ${count} days';
+	@override String afterWeeks({required Object count}) => 'After ${count} weeks';
+	@override String get quality => 'Quality';
+	@override String get original => 'Original';
+	@override String get settingsSaved => 'Download settings saved';
+	@override String get qualityChangeWarning => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.';
+	@override String get transcoding => 'Transcodificando';
+	@override String get downloading => 'Descargando';
 }
 
 // Path: shaders
@@ -1852,6 +1869,23 @@ extension on TranslationsEs {
 			'downloads.pauseAll' => 'Pausar todo',
 			'downloads.resumeAll' => 'Reanudar todo',
 			'downloads.deleteAll' => 'Eliminar todo',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
+			'downloads.downloadSettings' => 'Download Settings',
+			'downloads.episodes' => 'Episodes',
+			'downloads.downloadAllEpisodes' => 'Download all episodes',
+			'downloads.keepLastNUnwatched' => ({required Object count}) => 'Keep last ${count} unwatched episodes',
+			'downloads.retention' => 'Retention',
+			'downloads.retentionDescription' => 'How long to keep watched episodes',
+			'downloads.onNextRefresh' => 'On next refresh',
+			'downloads.afterDays' => ({required Object count}) => 'After ${count} days',
+			'downloads.afterWeeks' => ({required Object count}) => 'After ${count} weeks',
+			'downloads.quality' => 'Quality',
+			'downloads.original' => 'Original',
+			'downloads.settingsSaved' => 'Download settings saved',
+			'downloads.qualityChangeWarning' => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.',
+			'downloads.transcoding' => 'Transcodificando',
+			'downloads.downloading' => 'Descargando',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Sin mejora de video',
 			'shaders.nvscalerDescription' => 'Escalado de imagen NVIDIA para un video más nítido',

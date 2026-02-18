@@ -16,8 +16,10 @@ class DownloadTreeNode {
   final double progress; // 0.0-1.0
   final DownloadStatus status;
   final List<DownloadTreeNode> children;
-  final PlexMetadata? metadata;
   final DownloadProgress? downloadProgress;
+  final String? refreshKey;
+  final String? settingsRatingKey; // ratingKey (not globalKey) for settings lookup
+  final bool isSeries; // true for shows, false for movies
 
   const DownloadTreeNode({
     required this.key,
@@ -26,8 +28,10 @@ class DownloadTreeNode {
     this.progress = 0.0,
     required this.status,
     this.children = const [],
-    this.metadata,
     this.downloadProgress,
+    this.refreshKey,
+    this.settingsRatingKey,
+    this.isSeries = false,
   });
 
   /// Check if this node has children
@@ -58,6 +62,8 @@ class DownloadTreeView extends StatefulWidget {
   final void Function(String globalKey)? onRetry;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
+  final void Function(String globalKey)? onRefresh;
+  final void Function(String ratingKey, String title, bool isSeries)? onSettings;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
   final bool suppressAutoFocus;
@@ -71,6 +77,8 @@ class DownloadTreeView extends StatefulWidget {
     this.onRetry,
     this.onCancel,
     this.onDelete,
+    this.onRefresh,
+    this.onSettings,
     this.onNavigateLeft,
     this.onBack,
     this.suppressAutoFocus = false,
@@ -149,8 +157,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             type: DownloadNodeType.movie,
             progress: download.progressPercent,
             status: download.status,
-            metadata: meta,
             downloadProgress: download,
+            settingsRatingKey: meta.ratingKey,
+            isSeries: false,
           ),
         );
       }
@@ -167,6 +176,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       // Get show metadata from first episode
       final firstEpisode = widget.metadata[episodes.first.key];
       final showTitle = firstEpisode?.grandparentTitle ?? 'Unknown Show';
+      final showServerId = firstEpisode?.serverId;
 
       // Group episodes by season
       final Map<String, List<MapEntry<String, DownloadProgress>>> seasonGroups = {};
@@ -211,7 +221,6 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
               type: DownloadNodeType.episode,
               progress: download.progressPercent,
               status: download.status,
-              metadata: meta,
               downloadProgress: download,
             ),
           );
@@ -219,8 +228,8 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         // Sort episodes by episode number only (not by status)
         episodeNodes.sort((a, b) {
-          final aIndex = a.metadata?.index ?? 0;
-          final bIndex = b.metadata?.index ?? 0;
+          final aIndex = widget.metadata[a.key]?.index ?? 0;
+          final bIndex = widget.metadata[b.key]?.index ?? 0;
           return aIndex.compareTo(bIndex);
         });
 
@@ -232,6 +241,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         final displayTitle = seasonNumber != null ? 'Season $seasonNumber' : seasonTitle;
 
+        // Compute season refreshKey from data already available
+        final seasonGlobalKey = showServerId != null ? '$showServerId:$seasonKey' : null;
+
         seasons.add(
           DownloadTreeNode(
             key: '$showKey:$seasonKey',
@@ -240,6 +252,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             progress: seasonProgress,
             status: seasonStatus,
             children: episodeNodes,
+            refreshKey: seasonGlobalKey,
           ),
         );
       }
@@ -257,6 +270,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           : seasons.map((s) => s.progress).reduce((a, b) => a + b) / seasons.length;
       final showStatus = _determineAggregateStatus(seasons.map((s) => s.status).toList());
 
+      // Compute show refreshKey from data already available
+      final showGlobalKey = showServerId != null ? '$showServerId:$showKey' : null;
+
       shows.add(
         DownloadTreeNode(
           key: showKey,
@@ -265,6 +281,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           progress: showProgress,
           status: showStatus,
           children: seasons,
+          refreshKey: showGlobalKey,
+          settingsRatingKey: showKey,
+          isSeries: true,
         ),
       );
     }
@@ -358,6 +377,8 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       onRetry: widget.onRetry,
       onCancel: widget.onCancel,
       onDelete: widget.onDelete,
+      onRefresh: widget.onRefresh,
+      onSettings: widget.onSettings,
       onNavigateLeft: widget.onNavigateLeft,
       onBack: widget.onBack,
       rowFocusNode: isFirst ? _firstItemFocusNode : null,
@@ -453,6 +474,8 @@ class _DownloadTreeItem extends StatefulWidget {
   final void Function(String globalKey)? onRetry;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
+  final void Function(String globalKey)? onRefresh;
+  final void Function(String ratingKey, String title, bool isSeries)? onSettings;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
   final FocusNode? rowFocusNode;
@@ -471,6 +494,8 @@ class _DownloadTreeItem extends StatefulWidget {
     this.onRetry,
     this.onCancel,
     this.onDelete,
+    this.onRefresh,
+    this.onSettings,
     this.onNavigateLeft,
     this.onBack,
     this.rowFocusNode,
@@ -487,10 +512,13 @@ class _DownloadTreeItem extends StatefulWidget {
 class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   /// Treat downloading items with no progress/speed as effectively queued
   /// (they're waiting in background_downloader's HoldingQueue).
+  /// Exception: transcoding downloads show progress from server polling.
   DownloadStatus get _effectiveStatus {
     if (widget.node.status == DownloadStatus.downloading &&
         widget.node.progress == 0 &&
-        (widget.node.downloadProgress?.speed ?? 0) == 0) {
+        (widget.node.downloadProgress?.speed ?? 0) == 0 &&
+        widget.node.downloadProgress?.currentFile == null &&
+        !(widget.node.downloadProgress?.isTranscoding ?? false)) {
       return DownloadStatus.queued;
     }
     return widget.node.status;
@@ -513,8 +541,10 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   @override
   void didUpdateWidget(_DownloadTreeItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reinitialize focus nodes if action count might have changed
-    if (oldWidget.node.status != widget.node.status) {
+    // Reinitialize focus nodes if action count changed
+    // (status, metadata, or node identity can all affect the count)
+    final newActionCount = _getActionCount();
+    if (_buttonFocusNodes.length != newActionCount) {
       _disposeButtonFocusNodes();
       _initButtonFocusNodes();
     }
@@ -562,6 +592,11 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     if (status == DownloadStatus.paused && widget.onResume != null) count++;
     if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onCancel != null) count++;
     if (status == DownloadStatus.failed && widget.onRetry != null) count++;
+    if (widget.node.type == DownloadNodeType.movie &&
+        widget.onSettings != null &&
+        widget.node.settingsRatingKey != null) {
+      count++;
+    }
     if ((status == DownloadStatus.completed || status == DownloadStatus.failed || status == DownloadStatus.cancelled) &&
         widget.onDelete != null) {
       count++;
@@ -574,6 +609,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final status = widget.node.status;
     if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onPause != null) count++;
     if (status == DownloadStatus.paused && widget.onResume != null) count++;
+    if (widget.onSettings != null && widget.node.settingsRatingKey != null) count++;
+    if (widget.onRefresh != null && widget.node.refreshKey != null) count++;
     if (widget.onDelete != null) count++;
     return count;
   }
@@ -669,13 +706,17 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               if (_effectiveStatus == DownloadStatus.downloading) ...[
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
-                  value: widget.node.progress,
+                  // Use indeterminate bar when progress is 0 (unknown real progress)
+                  value: widget.node.progress > 0 ? widget.node.progress : null,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    (widget.node.downloadProgress?.isTranscoding ?? false) ? Colors.purple : Colors.blue,
+                  ),
                 ),
                 if (widget.node.downloadProgress != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
+                    _buildProgressText(widget.node.downloadProgress!),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
@@ -698,14 +739,36 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     );
   }
 
+  String _buildProgressText(DownloadProgress dp) {
+    final pct = (dp.progress).toStringAsFixed(1);
+    if (dp.isTranscoding) {
+      // "Transcoding" or "Transcoding 45.5%"
+      return dp.progress > 0
+          ? '${t.downloads.transcoding} $pct%'
+          : t.downloads.transcoding;
+    }
+    // "Downloading" or "Downloading 45.5% - 12.3 MB/s"
+    if (dp.progress > 0) {
+      return '${t.downloads.downloading} $pct% - ${dp.speedFormatted}';
+    }
+    return dp.speed > 0
+        ? '${t.downloads.downloading} - ${dp.speedFormatted}'
+        : t.downloads.downloading;
+  }
+
   Widget _buildStatusIcon(DownloadStatus status) {
     IconData iconData;
     Color? color;
 
     switch (status) {
       case DownloadStatus.downloading:
-        iconData = Symbols.downloading_rounded;
-        color = Colors.blue;
+        if (widget.node.downloadProgress?.isTranscoding ?? false) {
+          iconData = Symbols.dns_rounded;
+          color = Colors.purple;
+        } else {
+          iconData = Symbols.downloading_rounded;
+          color = Colors.blue;
+        }
         break;
       case DownloadStatus.queued:
         iconData = Symbols.schedule_rounded;
@@ -804,6 +867,24 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
       );
     }
 
+    // Settings button for movies (leaf nodes)
+    if (widget.node.type == DownloadNodeType.movie &&
+        widget.onSettings != null &&
+        widget.node.settingsRatingKey != null) {
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.settings_rounded,
+          tooltip: t.downloads.downloadSettings,
+          onPressed: () => widget.onSettings!(
+            widget.node.settingsRatingKey!,
+            widget.node.title,
+            widget.node.isSeries,
+          ),
+          buttonIndex: buttonIndex++,
+        ),
+      );
+    }
+
     // Delete button for completed/failed/cancelled items
     if ((status == DownloadStatus.completed || status == DownloadStatus.failed || status == DownloadStatus.cancelled) &&
         widget.onDelete != null) {
@@ -851,6 +932,34 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
           icon: Symbols.play_arrow_rounded,
           tooltip: t.downloads.resumeAll,
           onPressed: () => widget.resumeAllChildren(widget.node),
+          buttonIndex: buttonIndex++,
+        ),
+      );
+    }
+
+    // Settings button (show-level only, not seasons)
+    if (widget.onSettings != null && widget.node.settingsRatingKey != null) {
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.settings_rounded,
+          tooltip: t.downloads.downloadSettings,
+          onPressed: () => widget.onSettings!(
+            widget.node.settingsRatingKey!,
+            widget.node.title,
+            widget.node.isSeries,
+          ),
+          buttonIndex: buttonIndex++,
+        ),
+      );
+    }
+
+    // Refresh button (check for new episodes)
+    if (widget.onRefresh != null && widget.node.refreshKey != null) {
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.refresh_rounded,
+          tooltip: t.downloads.checkForNewEpisodes,
+          onPressed: () => widget.onRefresh!(widget.node.refreshKey!),
           buttonIndex: buttonIndex++,
         ),
       );

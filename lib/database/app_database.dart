@@ -16,7 +16,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8; // Added bgTaskId column to DownloadedMedia
+  int get schemaVersion => 9; // Added transcodeQuality column to DownloadQueue
 
   @override
   MigrationStrategy get migration {
@@ -35,6 +35,14 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(downloadedMedia, downloadedMedia.bgTaskId);
           } catch (e) {
             appLogger.w('bgTaskId column may already exist: $e');
+          }
+        }
+        if (from < 9) {
+          appLogger.i('Adding transcodeQuality column to DownloadQueue (v9 migration)');
+          try {
+            await m.addColumn(downloadQueue, downloadQueue.transcodeQuality);
+          } catch (e) {
+            appLogger.w('transcodeQuality column may already exist: $e');
           }
         }
       },

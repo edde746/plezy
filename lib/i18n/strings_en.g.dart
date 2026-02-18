@@ -2154,6 +2154,57 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Delete all'
 	String get deleteAll => 'Delete all';
+
+	/// en: 'Check for new episodes'
+	String get checkForNewEpisodes => 'Check for new episodes';
+
+	/// en: 'No new episodes found'
+	String get noNewEpisodesFound => 'No new episodes found';
+
+	/// en: 'Download Settings'
+	String get downloadSettings => 'Download Settings';
+
+	/// en: 'Episodes'
+	String get episodes => 'Episodes';
+
+	/// en: 'Download all episodes'
+	String get downloadAllEpisodes => 'Download all episodes';
+
+	/// en: 'Keep last ${count} unwatched episodes'
+	String keepLastNUnwatched({required Object count}) => 'Keep last ${count} unwatched episodes';
+
+	/// en: 'Retention'
+	String get retention => 'Retention';
+
+	/// en: 'How long to keep watched episodes'
+	String get retentionDescription => 'How long to keep watched episodes';
+
+	/// en: 'On next refresh'
+	String get onNextRefresh => 'On next refresh';
+
+	/// en: 'After ${count} days'
+	String afterDays({required Object count}) => 'After ${count} days';
+
+	/// en: 'After ${count} weeks'
+	String afterWeeks({required Object count}) => 'After ${count} weeks';
+
+	/// en: 'Quality'
+	String get quality => 'Quality';
+
+	/// en: 'Original'
+	String get original => 'Original';
+
+	/// en: 'Download settings saved'
+	String get settingsSaved => 'Download settings saved';
+
+	/// en: 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.'
+	String get qualityChangeWarning => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.';
+
+	/// en: 'Transcoding'
+	String get transcoding => 'Transcoding';
+
+	/// en: 'Downloading'
+	String get downloading => 'Downloading';
 }
 
 // Path: shaders
@@ -3335,6 +3386,23 @@ extension on Translations {
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
+			'downloads.downloadSettings' => 'Download Settings',
+			'downloads.episodes' => 'Episodes',
+			'downloads.downloadAllEpisodes' => 'Download all episodes',
+			'downloads.keepLastNUnwatched' => ({required Object count}) => 'Keep last ${count} unwatched episodes',
+			'downloads.retention' => 'Retention',
+			'downloads.retentionDescription' => 'How long to keep watched episodes',
+			'downloads.onNextRefresh' => 'On next refresh',
+			'downloads.afterDays' => ({required Object count}) => 'After ${count} days',
+			'downloads.afterWeeks' => ({required Object count}) => 'After ${count} weeks',
+			'downloads.quality' => 'Quality',
+			'downloads.original' => 'Original',
+			'downloads.settingsSaved' => 'Download settings saved',
+			'downloads.qualityChangeWarning' => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.',
+			'downloads.transcoding' => 'Transcoding',
+			'downloads.downloading' => 'Downloading',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',

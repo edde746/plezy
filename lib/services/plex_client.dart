@@ -1033,6 +1033,147 @@ class PlexClient {
     );
   }
 
+  /// Quality presets for transcode downloads (resolution + max video bitrate in kbps).
+  static const transcodePresets = {
+    '1080p': (resolution: '1920x1080', bitrate: 12000),
+    '720p': (resolution: '1280x720', bitrate: 5000),
+    '480p': (resolution: '854x480', bitrate: 2500),
+    '360p': (resolution: '640x360', bitrate: 1500),
+  };
+
+  /// Build a transcode download URL for the given quality preset.
+  /// Calls the /decision endpoint first to initialize the transcode session,
+  /// then returns the /start URL for the actual download.
+  Future<({String url, String sessionId})> getTranscodeDownloadUrl(
+    String ratingKey,
+    String quality,
+  ) async {
+    final preset = transcodePresets[quality];
+    if (preset == null) throw ArgumentError('Unknown quality preset: $quality');
+
+    final sessionIdentifier = _generateSessionIdentifier();
+    final sessionId = _generateSessionIdentifier();
+
+    // Full parameter set matching tuneChannel() pattern — Plex requires these
+    // for the /decision endpoint to accept the request.
+    final params = {
+      'hasMDE': '1',
+      'path': '/library/metadata/$ratingKey',
+      'mediaIndex': '0',
+      'partIndex': '0',
+      'protocol': 'http',
+      'fastSeek': '1',
+      'directPlay': '0',
+      'directStream': '0',
+      'subtitleSize': '100',
+      'audioBoost': '100',
+      'location': 'lan',
+      'addDebugOverlay': '0',
+      'autoAdjustQuality': '0',
+      'directStreamAudio': '1',
+      'advancedSubtitles': 'text',
+      'mediaBufferSize': '157286',
+      'session': sessionId,
+      'subtitles': 'auto',
+      'copyts': '1',
+      'Accept-Language': 'en',
+      'X-Plex-Session-Identifier': sessionIdentifier,
+      'X-Plex-Product': config.product,
+      'X-Plex-Version': config.version,
+      'X-Plex-Client-Identifier': config.clientIdentifier,
+      'X-Plex-Platform': config.platform,
+      'X-Plex-Client-Profile-Name': 'Plex Desktop',
+      'maxVideoBitrate': preset.bitrate.toString(),
+      'videoResolution': preset.resolution,
+      if (config.token != null) 'X-Plex-Token': config.token!,
+    };
+
+    // Manual URI encoding (Plex needs %20, not +)
+    final query = params.entries
+        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+
+    // Decision call — initializes the transcode session on the server.
+    // Uses bare Dio (no default X-Plex-* HTTP headers) matching tuneChannel pattern.
+    final decisionDio = Dio(BaseOptions(
+      headers: {'Accept-Language': 'en'},
+      connectTimeout: ConnectionTimeouts.connect,
+      receiveTimeout: ConnectionTimeouts.receive,
+    ));
+    final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$query';
+    appLogger.d('Transcode decision URL: $decisionUrl');
+    final decisionResponse = await decisionDio.getUri(Uri.parse(decisionUrl));
+    appLogger.d('Transcode decision for $ratingKey ($quality): ${decisionResponse.statusCode}');
+
+    return (
+      url: '${config.baseUrl}/video/:/transcode/universal/start?$query',
+      sessionId: sessionId,
+    );
+  }
+
+  /// Stop a transcode session on the server (cleanup).
+  Future<void> stopTranscodeSession(String sessionId) async {
+    try {
+      await _dio.get('/video/:/transcode/universal/stop', queryParameters: {'session': sessionId});
+    } catch (e) {
+      appLogger.d('Failed to stop transcode session $sessionId: $e');
+    }
+  }
+
+  /// Get transcode session progress from the server.
+  /// Returns progress (0-100) and whether the transcode is complete, or null if not found.
+  ///
+  /// Plex assigns its own session key (different from our `session` parameter),
+  /// so we match by protocol=http (download transcodes use HTTP, not HLS/DASH).
+  /// If multiple HTTP sessions exist, falls back to the first one.
+  Future<({double progress, bool complete})?> getTranscodeSessionProgress(String sessionId) async {
+    try {
+      final response = await _dio.get('/transcode/sessions');
+      final data = response.data;
+      if (data is! Map<String, dynamic>) return null;
+
+      final container = data['MediaContainer'] as Map<String, dynamic>?;
+      if (container == null) return null;
+
+      // Plex returns a single object when there's one session, or a list for multiple
+      final raw = container['TranscodeSession'];
+      if (raw == null) return null;
+
+      final List<Map<String, dynamic>> sessions;
+      if (raw is List) {
+        sessions = raw.cast<Map<String, dynamic>>();
+      } else if (raw is Map<String, dynamic>) {
+        sessions = [raw];
+      } else {
+        return null;
+      }
+
+      if (sessions.isEmpty) return null;
+
+      // Prefer HTTP-protocol sessions (download transcodes use protocol=http)
+      final httpSessions = sessions.where((s) => s['protocol'] == 'http').toList();
+      if (httpSessions.isNotEmpty) {
+        return _extractTranscodeProgress(httpSessions.first);
+      }
+
+      // Fallback: use the only session if there's just one
+      if (sessions.length == 1) {
+        return _extractTranscodeProgress(sessions.first);
+      }
+
+      return null;
+    } catch (e) {
+      appLogger.d('Failed to get transcode session progress: $e');
+      return null;
+    }
+  }
+
+  ({double progress, bool complete}) _extractTranscodeProgress(Map<String, dynamic> session) {
+    final progress = (session['progress'] as num?)?.toDouble() ?? 0.0;
+    final complete = session['complete'] == true || session['complete'] == 1;
+    return (progress: progress.clamp(0.0, 100.0), complete: complete);
+  }
+
   /// Get file information for a media item
   /// Uses cache for offline mode support and network fallback.
   Future<PlexFileInfo?> getFileInfo(String ratingKey) async {

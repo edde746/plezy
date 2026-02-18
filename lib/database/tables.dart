@@ -27,6 +27,7 @@ class DownloadQueue extends Table {
   IntColumn get addedAt => integer()();
   BoolColumn get downloadSubtitles => boolean().withDefault(const Constant(true))();
   BoolColumn get downloadArtwork => boolean().withDefault(const Constant(true))();
+  TextColumn get transcodeQuality => text().nullable()();
 }
 
 @DataClassName('DownloadedMediaItem')

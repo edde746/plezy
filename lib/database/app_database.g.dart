@@ -873,8 +873,17 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
     defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("download_artwork" IN (0, 1))'),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _transcodeQualityMeta = const VerificationMeta('transcodeQuality');
   @override
-  List<GeneratedColumn> get $columns => [id, mediaGlobalKey, priority, addedAt, downloadSubtitles, downloadArtwork];
+  late final GeneratedColumn<String> transcodeQuality = GeneratedColumn<String>(
+    'transcode_quality',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, mediaGlobalKey, priority, addedAt, downloadSubtitles, downloadArtwork, transcodeQuality];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -915,6 +924,12 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
         downloadArtwork.isAcceptableOrUnknown(data['download_artwork']!, _downloadArtworkMeta),
       );
     }
+    if (data.containsKey('transcode_quality')) {
+      context.handle(
+        _transcodeQualityMeta,
+        transcodeQuality.isAcceptableOrUnknown(data['transcode_quality']!, _transcodeQualityMeta),
+      );
+    }
     return context;
   }
 
@@ -939,6 +954,10 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
         DriftSqlType.bool,
         data['${effectivePrefix}download_artwork'],
       )!,
+      transcodeQuality: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}transcode_quality'],
+      ),
     );
   }
 
@@ -955,6 +974,7 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
   final int addedAt;
   final bool downloadSubtitles;
   final bool downloadArtwork;
+  final String? transcodeQuality;
   const DownloadQueueItem({
     required this.id,
     required this.mediaGlobalKey,
@@ -962,6 +982,7 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
     required this.addedAt,
     required this.downloadSubtitles,
     required this.downloadArtwork,
+    this.transcodeQuality,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -972,6 +993,9 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
     map['added_at'] = Variable<int>(addedAt);
     map['download_subtitles'] = Variable<bool>(downloadSubtitles);
     map['download_artwork'] = Variable<bool>(downloadArtwork);
+    if (!nullToAbsent || transcodeQuality != null) {
+      map['transcode_quality'] = Variable<String>(transcodeQuality);
+    }
     return map;
   }
 
@@ -983,6 +1007,7 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
       addedAt: Value(addedAt),
       downloadSubtitles: Value(downloadSubtitles),
       downloadArtwork: Value(downloadArtwork),
+      transcodeQuality: transcodeQuality == null && nullToAbsent ? const Value.absent() : Value(transcodeQuality),
     );
   }
 
@@ -995,6 +1020,7 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
       addedAt: serializer.fromJson<int>(json['addedAt']),
       downloadSubtitles: serializer.fromJson<bool>(json['downloadSubtitles']),
       downloadArtwork: serializer.fromJson<bool>(json['downloadArtwork']),
+      transcodeQuality: serializer.fromJson<String?>(json['transcodeQuality']),
     );
   }
   @override
@@ -1007,6 +1033,7 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
       'addedAt': serializer.toJson<int>(addedAt),
       'downloadSubtitles': serializer.toJson<bool>(downloadSubtitles),
       'downloadArtwork': serializer.toJson<bool>(downloadArtwork),
+      'transcodeQuality': serializer.toJson<String?>(transcodeQuality),
     };
   }
 
@@ -1017,6 +1044,7 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
     int? addedAt,
     bool? downloadSubtitles,
     bool? downloadArtwork,
+    Value<String?> transcodeQuality = const Value.absent(),
   }) => DownloadQueueItem(
     id: id ?? this.id,
     mediaGlobalKey: mediaGlobalKey ?? this.mediaGlobalKey,
@@ -1024,6 +1052,7 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
     addedAt: addedAt ?? this.addedAt,
     downloadSubtitles: downloadSubtitles ?? this.downloadSubtitles,
     downloadArtwork: downloadArtwork ?? this.downloadArtwork,
+    transcodeQuality: transcodeQuality.present ? transcodeQuality.value : this.transcodeQuality,
   );
   DownloadQueueItem copyWithCompanion(DownloadQueueCompanion data) {
     return DownloadQueueItem(
@@ -1033,6 +1062,7 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
       addedAt: data.addedAt.present ? data.addedAt.value : this.addedAt,
       downloadSubtitles: data.downloadSubtitles.present ? data.downloadSubtitles.value : this.downloadSubtitles,
       downloadArtwork: data.downloadArtwork.present ? data.downloadArtwork.value : this.downloadArtwork,
+      transcodeQuality: data.transcodeQuality.present ? data.transcodeQuality.value : this.transcodeQuality,
     );
   }
 
@@ -1044,13 +1074,14 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
           ..write('priority: $priority, ')
           ..write('addedAt: $addedAt, ')
           ..write('downloadSubtitles: $downloadSubtitles, ')
-          ..write('downloadArtwork: $downloadArtwork')
+          ..write('downloadArtwork: $downloadArtwork, ')
+          ..write('transcodeQuality: $transcodeQuality')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, mediaGlobalKey, priority, addedAt, downloadSubtitles, downloadArtwork);
+  int get hashCode => Object.hash(id, mediaGlobalKey, priority, addedAt, downloadSubtitles, downloadArtwork, transcodeQuality);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1060,7 +1091,8 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
           other.priority == this.priority &&
           other.addedAt == this.addedAt &&
           other.downloadSubtitles == this.downloadSubtitles &&
-          other.downloadArtwork == this.downloadArtwork);
+          other.downloadArtwork == this.downloadArtwork &&
+          other.transcodeQuality == this.transcodeQuality);
 }
 
 class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
@@ -1070,6 +1102,7 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
   final Value<int> addedAt;
   final Value<bool> downloadSubtitles;
   final Value<bool> downloadArtwork;
+  final Value<String?> transcodeQuality;
   const DownloadQueueCompanion({
     this.id = const Value.absent(),
     this.mediaGlobalKey = const Value.absent(),
@@ -1077,6 +1110,7 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
     this.addedAt = const Value.absent(),
     this.downloadSubtitles = const Value.absent(),
     this.downloadArtwork = const Value.absent(),
+    this.transcodeQuality = const Value.absent(),
   });
   DownloadQueueCompanion.insert({
     this.id = const Value.absent(),
@@ -1085,6 +1119,7 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
     required int addedAt,
     this.downloadSubtitles = const Value.absent(),
     this.downloadArtwork = const Value.absent(),
+    this.transcodeQuality = const Value.absent(),
   }) : mediaGlobalKey = Value(mediaGlobalKey),
        addedAt = Value(addedAt);
   static Insertable<DownloadQueueItem> custom({
@@ -1094,6 +1129,7 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
     Expression<int>? addedAt,
     Expression<bool>? downloadSubtitles,
     Expression<bool>? downloadArtwork,
+    Expression<String>? transcodeQuality,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1102,6 +1138,7 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
       if (addedAt != null) 'added_at': addedAt,
       if (downloadSubtitles != null) 'download_subtitles': downloadSubtitles,
       if (downloadArtwork != null) 'download_artwork': downloadArtwork,
+      if (transcodeQuality != null) 'transcode_quality': transcodeQuality,
     });
   }
 
@@ -1112,6 +1149,7 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
     Value<int>? addedAt,
     Value<bool>? downloadSubtitles,
     Value<bool>? downloadArtwork,
+    Value<String?>? transcodeQuality,
   }) {
     return DownloadQueueCompanion(
       id: id ?? this.id,
@@ -1120,6 +1158,7 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
       addedAt: addedAt ?? this.addedAt,
       downloadSubtitles: downloadSubtitles ?? this.downloadSubtitles,
       downloadArtwork: downloadArtwork ?? this.downloadArtwork,
+      transcodeQuality: transcodeQuality ?? this.transcodeQuality,
     );
   }
 
@@ -1144,6 +1183,9 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
     if (downloadArtwork.present) {
       map['download_artwork'] = Variable<bool>(downloadArtwork.value);
     }
+    if (transcodeQuality.present) {
+      map['transcode_quality'] = Variable<String>(transcodeQuality.value);
+    }
     return map;
   }
 
@@ -1155,7 +1197,8 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
           ..write('priority: $priority, ')
           ..write('addedAt: $addedAt, ')
           ..write('downloadSubtitles: $downloadSubtitles, ')
-          ..write('downloadArtwork: $downloadArtwork')
+          ..write('downloadArtwork: $downloadArtwork, ')
+          ..write('transcodeQuality: $transcodeQuality')
           ..write(')'))
         .toString();
   }

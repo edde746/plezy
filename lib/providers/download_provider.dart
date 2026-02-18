@@ -5,11 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:plezy/utils/content_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/download_models.dart';
+import '../models/download_settings.dart';
 import '../models/plex_metadata.dart';
 import '../services/download_manager_service.dart';
 import '../services/download_storage_service.dart';
 import '../services/plex_api_cache.dart';
 import '../services/plex_client.dart';
+import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 
@@ -121,6 +123,9 @@ class DownloadProvider extends ChangeNotifier {
       // Load total episode counts from SharedPreferences
       await _loadTotalEpisodeCounts();
 
+      // Backfill default download settings for items that predate the settings feature
+      await _backfillDefaultDownloadSettings();
+
       appLogger.i(
         'Loaded ${_downloads.length} downloads, ${_metadata.length} metadata entries, '
         'and ${_totalEpisodeCounts.length} episode counts',
@@ -149,6 +154,37 @@ class DownloadProvider extends ChangeNotifier {
       appLogger.i('📚 Loaded ${_totalEpisodeCounts.length} episode counts from SharedPreferences');
     } catch (e) {
       appLogger.w('Failed to load episode counts', error: e);
+    }
+  }
+
+  /// Backfill default download settings for shows/movies that were downloaded
+  /// before the per-item settings feature existed.
+  Future<void> _backfillDefaultDownloadSettings() async {
+    try {
+      final settings = await SettingsService.getInstance();
+      final ratingKeys = <String>{};
+
+      for (final meta in _metadata.values) {
+        if (meta.isEpisode && meta.grandparentRatingKey != null) {
+          ratingKeys.add(meta.grandparentRatingKey!);
+        } else if (meta.isMovie) {
+          ratingKeys.add(meta.ratingKey);
+        }
+      }
+
+      int backfilled = 0;
+      for (final ratingKey in ratingKeys) {
+        if (settings.getDownloadSettings(ratingKey) == null) {
+          await settings.setDownloadSettings(ratingKey, const DownloadSettings());
+          backfilled++;
+        }
+      }
+
+      if (backfilled > 0) {
+        appLogger.i('Backfilled default download settings for $backfilled items');
+      }
+    } catch (e) {
+      appLogger.w('Failed to backfill download settings', error: e);
     }
   }
 
@@ -254,6 +290,62 @@ class DownloadProvider extends ChangeNotifier {
         })
         .map((entry) => entry.value)
         .toList();
+  }
+
+  /// Returns season metadata for seasons that have at least one downloaded episode.
+  /// Used by auto-download to scope new-episode checks to only the seasons the user chose.
+  List<PlexMetadata> getDownloadedSeasonsForShow(String showRatingKey) {
+    final Map<String, PlexMetadata> seasons = {};
+    for (final entry in _metadata.entries) {
+      final meta = entry.value;
+      final progress = _downloads[entry.key];
+      if (meta.type == 'episode' &&
+          meta.grandparentRatingKey == showRatingKey &&
+          progress != null &&
+          (progress.status == DownloadStatus.completed ||
+           progress.status == DownloadStatus.downloading ||
+           progress.status == DownloadStatus.queued ||
+           progress.status == DownloadStatus.partial)) {
+        final seasonRatingKey = meta.parentRatingKey;
+        if (seasonRatingKey != null && !seasons.containsKey(seasonRatingKey)) {
+          final seasonGlobalKey = '${meta.serverId}:$seasonRatingKey';
+          final storedSeason = _metadata[seasonGlobalKey];
+          if (storedSeason != null && storedSeason.type == 'season') {
+            seasons[seasonRatingKey] = storedSeason;
+          }
+        }
+      }
+    }
+    return seasons.values.toList();
+  }
+
+  /// Get all shows that are "subscribed" for auto-download.
+  /// A show is subscribed if any episode is completed, downloading, or queued.
+  List<PlexMetadata> getSubscribedShows() {
+    final Map<String, PlexMetadata> shows = {};
+
+    for (final entry in _metadata.entries) {
+      final meta = entry.value;
+      final progress = _downloads[entry.key];
+
+      if (meta.type == 'episode' &&
+          progress != null &&
+          (progress.status == DownloadStatus.completed ||
+              progress.status == DownloadStatus.downloading ||
+              progress.status == DownloadStatus.queued ||
+              progress.status == DownloadStatus.partial)) {
+        final showRatingKey = meta.grandparentRatingKey;
+        if (showRatingKey != null && !shows.containsKey(showRatingKey)) {
+          final showGlobalKey = '${meta.serverId}:$showRatingKey';
+          final storedShow = _metadata[showGlobalKey];
+          if (storedShow != null && storedShow.type == 'show') {
+            shows[showRatingKey] = storedShow;
+          }
+        }
+      }
+    }
+
+    return shows.values.toList();
   }
 
   /// Get unique TV shows that have downloaded episodes
@@ -680,8 +772,24 @@ class DownloadProvider extends ChangeNotifier {
     _downloads[globalKey] = DownloadProgress(globalKey: globalKey, status: DownloadStatus.queued);
     notifyListeners();
 
+    // Resolve transcodeQuality from per-item download settings
+    final settingsService = await SettingsService.getInstance();
+    String? transcodeQuality;
+    if (metadataToStore.type == 'episode') {
+      final showKey = metadataToStore.grandparentRatingKey;
+      if (showKey != null) {
+        transcodeQuality = settingsService.getDownloadSettings(showKey)?.transcodeQuality;
+      }
+    } else if (metadataToStore.type == 'movie') {
+      transcodeQuality = settingsService.getDownloadSettings(metadataToStore.ratingKey)?.transcodeQuality;
+    }
+
     // Actually trigger download via DownloadManagerService
-    await _downloadManager.queueDownload(metadata: metadataToStore, client: client);
+    await _downloadManager.queueDownload(
+      metadata: metadataToStore,
+      client: client,
+      transcodeQuality: transcodeQuality,
+    );
   }
 
   /// Fetch and store show and season metadata for an episode
@@ -930,6 +1038,7 @@ class DownloadProvider extends ChangeNotifier {
       await _downloadManager.cancelDownload(globalKey);
       _downloads.remove(globalKey);
       _metadata.remove(globalKey);
+      _artworkPaths.remove(globalKey);
       notifyListeners();
     }
   }

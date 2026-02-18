@@ -36,6 +36,8 @@ import '../utils/scroll_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
+import '../widgets/download_settings_dialog.dart';
+import '../services/auto_download_service.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../utils/desktop_window_padding.dart';
@@ -575,58 +577,121 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                       ? 'Downloaded $currentFile - Click to complete'
                       : 'Partially downloaded - Click to complete';
 
-                  return IconButton.filledTonal(
-                    onPressed: () async {
-                      final client = _getClientForMetadata(context);
-                      if (client == null) return;
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (metadata.isShow || metadata.isMovie) ...[
+                        IconButton(
+                          onPressed: () => showDownloadSettingsDialog(
+                            context,
+                            ratingKey: metadata.ratingKey,
+                            title: metadata.title,
+                            isSeries: metadata.isShow,
+                            downloadProvider: downloadProvider,
+                            client: _getClientForMetadata(context),
+                          ),
+                          icon: const AppIcon(Symbols.settings_rounded, fill: 1),
+                          tooltip: t.downloads.downloadSettings,
+                          iconSize: 16,
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(36, 36),
+                            maximumSize: const Size(36, 36),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      IconButton.filledTonal(
+                        onPressed: () async {
+                          final client = _getClientForMetadata(context);
+                          if (client == null) return;
 
-                      // Queue only the missing episodes
-                      final count = await downloadProvider.queueMissingEpisodes(metadata, client);
-
-                      if (context.mounted) {
-                        final message = count > 0
-                            ? t.downloads.episodesQueued(count: count)
-                            : 'All episodes already downloaded';
-                        showAppSnackBar(context, message);
-                      }
-                    },
-                    tooltip: tooltip,
-                    icon: const AppIcon(Symbols.downloading_rounded, fill: 1),
-                    iconSize: 20,
-                    style: IconButton.styleFrom(
-                      minimumSize: const Size(48, 48),
-                      maximumSize: const Size(48, 48),
-                      foregroundColor: Colors.orange,
-                    ),
+                          // Use settings-aware refresh for shows, direct queue for others
+                          if (metadata.isShow) {
+                            final autoDownload = AutoDownloadService();
+                            final result = await autoDownload.refreshShow(metadata, client, downloadProvider);
+                            if (context.mounted) {
+                              if (result.queued > 0) {
+                                showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
+                              } else if (result.trimmed > 0) {
+                                showSuccessSnackBar(context, t.downloads.downloadDeleted);
+                              } else {
+                                showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+                              }
+                            }
+                          } else {
+                            final count = await downloadProvider.queueMissingEpisodes(metadata, client);
+                            if (context.mounted) {
+                              final message = count > 0
+                                  ? t.downloads.episodesQueued(count: count)
+                                  : t.downloads.noNewEpisodesFound;
+                              showAppSnackBar(context, message);
+                            }
+                          }
+                        },
+                        tooltip: tooltip,
+                        icon: const AppIcon(Symbols.downloading_rounded, fill: 1),
+                        iconSize: 20,
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(48, 48),
+                          maximumSize: const Size(48, 48),
+                          foregroundColor: Colors.orange,
+                        ),
+                      ),
+                    ],
                   );
                 }
 
                 // State 8: Downloaded/Completed (can delete)
                 if (downloadProvider.isDownloaded(globalKey)) {
-                  return IconButton.filledTonal(
-                    onPressed: () async {
-                      // Show delete download confirmation
-                      final confirmed = await showDeleteConfirmation(
-                        context,
-                        title: t.downloads.deleteDownload,
-                        message: t.downloads.deleteConfirm(title: metadata.title),
-                      );
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (metadata.isShow || metadata.isMovie) ...[
+                        IconButton(
+                          onPressed: () => showDownloadSettingsDialog(
+                            context,
+                            ratingKey: metadata.ratingKey,
+                            title: metadata.title,
+                            isSeries: metadata.isShow,
+                            downloadProvider: downloadProvider,
+                            client: _getClientForMetadata(context),
+                          ),
+                          icon: const AppIcon(Symbols.settings_rounded, fill: 1),
+                          tooltip: t.downloads.downloadSettings,
+                          iconSize: 16,
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(36, 36),
+                            maximumSize: const Size(36, 36),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      IconButton.filledTonal(
+                        onPressed: () async {
+                          // Show delete download confirmation
+                          final confirmed = await showDeleteConfirmation(
+                            context,
+                            title: t.downloads.deleteDownload,
+                            message: t.downloads.deleteConfirm(title: metadata.title),
+                          );
 
-                      if (confirmed && context.mounted) {
-                        await downloadProvider.deleteDownload(globalKey);
-                        if (context.mounted) {
-                          showSuccessSnackBar(context, t.downloads.downloadDeleted);
-                        }
-                      }
-                    },
-                    icon: const AppIcon(Symbols.file_download_done_rounded, fill: 1),
-                    tooltip: t.downloads.deleteDownload,
-                    iconSize: 20,
-                    style: IconButton.styleFrom(
-                      minimumSize: const Size(48, 48),
-                      maximumSize: const Size(48, 48),
-                      foregroundColor: Colors.green,
-                    ),
+                          if (confirmed && context.mounted) {
+                            await downloadProvider.deleteDownload(globalKey);
+                            if (context.mounted) {
+                              showSuccessSnackBar(context, t.downloads.downloadDeleted);
+                            }
+                          }
+                        },
+                        icon: const AppIcon(Symbols.file_download_done_rounded, fill: 1),
+                        tooltip: t.downloads.deleteDownload,
+                        iconSize: 20,
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(48, 48),
+                          maximumSize: const Size(48, 48),
+                          foregroundColor: Colors.green,
+                        ),
+                      ),
+                    ],
                   );
                 }
 
@@ -635,10 +700,36 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                   onPressed: () async {
                     final client = _getClientForMetadata(context);
                     if (client == null) return;
-                    final count = await downloadProvider.queueDownload(metadata, client);
-                    if (context.mounted) {
-                      final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
-                      showSuccessSnackBar(context, message);
+
+                    // For shows/movies: always show settings dialog before download
+                    if (metadata.isShow || metadata.isMovie) {
+                      if (!context.mounted) return;
+                      final settings = await showDownloadSettingsDialog(
+                        context,
+                        ratingKey: metadata.ratingKey,
+                        title: metadata.title,
+                        isSeries: metadata.isShow,
+                      );
+                      if (settings == null) return; // Cancelled
+                    }
+
+                    if (!context.mounted) return;
+                    // Use settings-aware refresh for shows, direct queue for others
+                    if (metadata.isShow) {
+                      final result = await AutoDownloadService().refreshShow(metadata, client, downloadProvider);
+                      if (context.mounted) {
+                        if (result.queued > 0) {
+                          showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
+                        } else {
+                          showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+                        }
+                      }
+                    } else {
+                      final count = await downloadProvider.queueDownload(metadata, client);
+                      if (context.mounted) {
+                        final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
+                        showSuccessSnackBar(context, message);
+                      }
                     }
                   },
                   icon: const AppIcon(Symbols.download_rounded, fill: 1),

@@ -845,6 +845,23 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String get pauseAll => '全部暂停';
 	@override String get resumeAll => '全部继续';
 	@override String get deleteAll => '全部删除';
+	@override String get checkForNewEpisodes => 'Check for new episodes';
+	@override String get noNewEpisodesFound => 'No new episodes found';
+	@override String get downloadSettings => 'Download Settings';
+	@override String get episodes => 'Episodes';
+	@override String get downloadAllEpisodes => 'Download all episodes';
+	@override String keepLastNUnwatched({required Object count}) => 'Keep last ${count} unwatched episodes';
+	@override String get retention => 'Retention';
+	@override String get retentionDescription => 'How long to keep watched episodes';
+	@override String get onNextRefresh => 'On next refresh';
+	@override String afterDays({required Object count}) => 'After ${count} days';
+	@override String afterWeeks({required Object count}) => 'After ${count} weeks';
+	@override String get quality => 'Quality';
+	@override String get original => 'Original';
+	@override String get settingsSaved => 'Download settings saved';
+	@override String get qualityChangeWarning => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.';
+	@override String get transcoding => '转码中';
+	@override String get downloading => '下载中';
 }
 
 // Path: playlists
@@ -1758,6 +1775,23 @@ extension on TranslationsZh {
 			'downloads.pauseAll' => '全部暂停',
 			'downloads.resumeAll' => '全部继续',
 			'downloads.deleteAll' => '全部删除',
+			'downloads.checkForNewEpisodes' => 'Check for new episodes',
+			'downloads.noNewEpisodesFound' => 'No new episodes found',
+			'downloads.downloadSettings' => 'Download Settings',
+			'downloads.episodes' => 'Episodes',
+			'downloads.downloadAllEpisodes' => 'Download all episodes',
+			'downloads.keepLastNUnwatched' => ({required Object count}) => 'Keep last ${count} unwatched episodes',
+			'downloads.retention' => 'Retention',
+			'downloads.retentionDescription' => 'How long to keep watched episodes',
+			'downloads.onNextRefresh' => 'On next refresh',
+			'downloads.afterDays' => ({required Object count}) => 'After ${count} days',
+			'downloads.afterWeeks' => ({required Object count}) => 'After ${count} weeks',
+			'downloads.quality' => 'Quality',
+			'downloads.original' => 'Original',
+			'downloads.settingsSaved' => 'Download settings saved',
+			'downloads.qualityChangeWarning' => 'Changing the quality will delete all downloaded episodes and re-download them at the new quality. This may take a while.',
+			'downloads.transcoding' => '转码中',
+			'downloads.downloading' => '下载中',
 			'playlists.title' => '播放列表',
 			'playlists.noPlaylists' => '未找到播放列表',
 			'playlists.create' => '创建播放列表',
