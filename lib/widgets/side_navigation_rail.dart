@@ -76,6 +76,7 @@ class NavigationRailItem extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          canRequestFocus: false,
           onTap: onTap,
           borderRadius: borderRadius,
           child: Container(
@@ -256,8 +257,57 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       _kDownloads,
       _kSettings,
       _kReconnect,
+      'liveTv',
       ...libraries.map((lib) => lib.globalKey),
     };
+  }
+
+  /// Ordered list of focusable keys matching visual top-to-bottom order.
+  List<String> _buildFocusOrder(List<PlexLibrary> visibleLibraries, {required bool hasLiveTv}) {
+    return [
+      if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
+      if (!widget.isOfflineMode) ...[
+        _kHome,
+        _kLibraries,
+        if (_librariesExpanded) ...visibleLibraries.map((lib) => lib.globalKey),
+        if (hasLiveTv) 'liveTv',
+        _kSearch,
+      ],
+      _kDownloads,
+      _kSettings,
+    ];
+  }
+
+  /// Handle D-pad UP/DOWN by explicitly moving focus to the next/previous item.
+  KeyEventResult _handleVerticalNavigation(FocusNode node, KeyEvent event, List<String> focusOrder) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    final isDown = event.logicalKey == LogicalKeyboardKey.arrowDown;
+    final isUp = event.logicalKey == LogicalKeyboardKey.arrowUp;
+    if (!isDown && !isUp) return KeyEventResult.ignored;
+
+    final currentKey = _focusTracker.lastFocusedKey;
+    if (currentKey == null) return KeyEventResult.ignored;
+
+    final currentIndex = focusOrder.indexOf(currentKey);
+    if (currentIndex == -1) return KeyEventResult.ignored;
+
+    final nextIndex = isDown ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex < 0 || nextIndex >= focusOrder.length) return KeyEventResult.handled;
+
+    final nextNode = _focusTracker.nodeFor(focusOrder[nextIndex]);
+    if (nextNode == null) return KeyEventResult.ignored;
+
+    nextNode.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final ctx = nextNode.context;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx,
+            alignment: 0.5, duration: const Duration(milliseconds: 200));
+      }
+    });
+    return KeyEventResult.handled;
   }
 
   /// Collapse the sidebar (resets touch-expand state).
@@ -319,6 +369,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _focusTracker.pruneExcept(_buildValidFocusKeys(allLibraries));
 
     final isCollapsed = !_shouldExpand;
+    final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
+    final focusOrder = _buildFocusOrder(visibleLibraries, hasLiveTv: hasLiveTv);
 
     // Listen to fullscreen changes for macOS
     return ListenableBuilder(
@@ -344,7 +396,12 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                 decoration: BoxDecoration(color: t.surface),
                 child: IgnorePointer(
                   ignoring: isCollapsed,
-                  child: Column(
+                  child: Focus(
+                    canRequestFocus: false,
+                    skipTraversal: true,
+                    onKeyEvent: (node, event) =>
+                        _handleVerticalNavigation(node, event, focusOrder),
+                    child: Column(
                     children: [
                       // Safe area for status bar and macOS traffic lights
                       SizedBox(height: _getTopPadding(context)),
@@ -497,6 +554,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                       ),
                     ],
                   ),
+                  ),
                 ),
               ),
             ),
@@ -596,6 +654,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
+              canRequestFocus: false,
               onTap: () {
                 setState(() {
                   _librariesExpanded = !_librariesExpanded;
