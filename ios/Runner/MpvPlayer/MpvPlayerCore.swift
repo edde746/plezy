@@ -236,6 +236,11 @@ class MpvPlayerCore: NSObject {
         return cstr.map { String(cString: $0) }
     }
 
+    func setLogLevel(_ level: String) {
+        guard let mpv = mpv else { return }
+        mpv_request_log_messages(mpv, level)
+    }
+
     func observeProperty(_ name: String, format: String) {
         guard mpv != nil else { return }
 
