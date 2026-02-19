@@ -55,6 +55,9 @@ class MpvPlayer {
   /// Returns true if mpv is initialized (has both mpv handle and render context).
   bool IsInitialized() const { return mpv_ != nullptr && mpv_gl_ != nullptr; }
 
+  /// Returns true if this player has been disposed.
+  bool IsDisposed() const { return disposed_.load(); }
+
   /// Returns true if mpv handle exists (even without render context).
   bool HasMpvHandle() const { return mpv_ != nullptr; }
 

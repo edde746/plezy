@@ -123,8 +123,8 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
       response = FL_METHOD_RESPONSE(fl_method_success_response_new(
           fl_value_new_int(mpv_texture_get_id(self->texture))));
     } else {
-      // Create player if it was disposed
-      if (!self->player) {
+      // Create player if it was disposed or doesn't exist
+      if (!self->player || self->player->IsDisposed()) {
         self->player = std::make_unique<mpv::MpvPlayer>();
       }
 
@@ -161,7 +161,8 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
   } else if (strcmp(method, "dispose") == 0) {
     if (self->player) {
       self->player->Dispose();
-      self->player.reset();
+      // Don't reset player here — stray g_idle callbacks still reference it.
+      // It will be replaced on next initialize() call.
     }
     if (self->texture) {
       mpv_texture_dispose(self->texture);

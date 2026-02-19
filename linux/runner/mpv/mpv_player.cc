@@ -130,13 +130,27 @@ bool MpvPlayer::InitRenderContext() {
 }
 
 void MpvPlayer::Dispose() {
-  std::lock_guard<std::mutex> lock(callback_mutex_);
-
+  // 1. Set disposed flag atomically FIRST — all callback paths check this
   if (disposed_.exchange(true)) {
     return;
   }
 
-  // Cancel pending async commands
+  // 2. Clear mpv's native callbacks to prevent new ones from firing
+  if (mpv_gl_) {
+    mpv_render_context_set_update_callback(mpv_gl_, nullptr, nullptr);
+  }
+  if (mpv_) {
+    mpv_set_wakeup_callback(mpv_, nullptr, nullptr);
+  }
+
+  // 3. Briefly hold mutex to null our callbacks
+  {
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    redraw_callback_ = nullptr;
+    event_callback_ = nullptr;
+  }
+
+  // 4. Cancel pending async commands
   {
     std::lock_guard<std::mutex> cmd_lock(pending_commands_mutex_);
     for (auto& pair : pending_commands_) {
@@ -145,20 +159,14 @@ void MpvPlayer::Dispose() {
     pending_commands_.clear();
   }
 
-  // Clear mpv callbacks BEFORE freeing
-  if (mpv_gl_) {
-    mpv_render_context_set_update_callback(mpv_gl_, nullptr, nullptr);
-  }
-  if (mpv_) {
-    mpv_set_wakeup_callback(mpv_, nullptr, nullptr);
-  }
-
-  // Remove pending idle callbacks
+  // 5. Remove pending idle callbacks
   if (event_source_id_ != 0) {
     g_source_remove(event_source_id_);
     event_source_id_ = 0;
   }
 
+  // 6. Free render context and mpv handle WITHOUT holding callback_mutex_
+  //    (mpv_render_context_free can block waiting for render thread)
   if (mpv_gl_) {
     mpv_render_context_free(mpv_gl_);
     mpv_gl_ = nullptr;
@@ -170,7 +178,6 @@ void MpvPlayer::Dispose() {
   }
 
   observed_properties_.clear();
-  redraw_callback_ = nullptr;
 }
 
 void MpvPlayer::Command(const std::vector<std::string>& args) {
