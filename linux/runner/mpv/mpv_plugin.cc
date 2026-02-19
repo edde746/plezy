@@ -159,17 +159,20 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
       }
     }
   } else if (strcmp(method, "dispose") == 0) {
-    if (self->player) {
-      self->player->Dispose();
-      // Don't reset player here — stray g_idle callbacks still reference it.
-      // It will be replaced on next initialize() call.
-    }
+    // Disconnect and unregister texture FIRST — this stops Flutter from
+    // calling populate(), preventing concurrent mpv_render_context_render()
+    // during player disposal.
     if (self->texture) {
       mpv_texture_dispose(self->texture);
       fl_texture_registrar_unregister_texture(self->texture_registrar,
                                               FL_TEXTURE(self->texture));
       g_object_unref(self->texture);
       self->texture = nullptr;
+    }
+    if (self->player) {
+      self->player->Dispose();
+      // Don't reset player here — stray g_idle callbacks still reference it.
+      // It will be replaced on next initialize() call.
     }
     self->initialized = FALSE;
     self->visible = FALSE;

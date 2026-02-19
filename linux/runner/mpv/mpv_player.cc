@@ -165,17 +165,23 @@ void MpvPlayer::Dispose() {
     event_source_id_ = 0;
   }
 
-  // 6. Free render context and mpv handle WITHOUT holding callback_mutex_
-  //    (mpv_render_context_free can block waiting for render thread)
-  if (mpv_gl_) {
-    mpv_render_context_free(mpv_gl_);
-    mpv_gl_ = nullptr;
-  }
+  // 6. Free render context and mpv handle in a background thread.
+  //    mpv_render_context_free() can block waiting for mpv's render/VO thread,
+  //    and mpv_terminate_destroy() can block on demuxer/network I/O.
+  //    Running these off the main thread prevents stalling the GLib main loop.
+  auto* gl = mpv_gl_;
+  auto* handle = mpv_;
+  mpv_gl_ = nullptr;
+  mpv_ = nullptr;
 
-  if (mpv_) {
-    mpv_terminate_destroy(mpv_);
-    mpv_ = nullptr;
-  }
+  std::thread([gl, handle]() {
+    if (gl) {
+      mpv_render_context_free(gl);
+    }
+    if (handle) {
+      mpv_terminate_destroy(handle);
+    }
+  }).detach();
 
   observed_properties_.clear();
 }
@@ -343,11 +349,23 @@ void MpvPlayer::OnMpvRenderUpdate(void* ctx) {
     return;
   }
 
-  // Call the redraw callback to notify MpvTexture via the registrar
-  std::lock_guard<std::mutex> lock(player->callback_mutex_);
-  if (player->redraw_callback_) {
-    player->redraw_callback_();
-  }
+  // Schedule redraw on main thread. Calling Flutter's
+  // fl_texture_registrar_mark_texture_frame_available directly from mpv's
+  // render/VO thread can deadlock during disposal on Wayland: the main thread
+  // blocks in mpv_render_context_free() waiting for the VO thread, while the
+  // VO thread blocks in the Flutter registrar waiting for the main thread.
+  g_idle_add(
+      [](gpointer data) -> gboolean {
+        auto* player = static_cast<MpvPlayer*>(data);
+        if (player->disposed_) return G_SOURCE_REMOVE;
+
+        std::lock_guard<std::mutex> lock(player->callback_mutex_);
+        if (player->redraw_callback_) {
+          player->redraw_callback_();
+        }
+        return G_SOURCE_REMOVE;
+      },
+      player);
 }
 
 bool MpvPlayer::ProcessEvents() {
