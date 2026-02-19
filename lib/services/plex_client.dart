@@ -2037,6 +2037,7 @@ class PlexClient {
             .where((ch) => ch.key.isNotEmpty)
             .toList();
       }
+      appLogger.d('EPG channels: container keys=${container?.keys.toList()}, size=${container?['size']}');
       return [];
     }, 'Failed to get EPG channels');
   }
