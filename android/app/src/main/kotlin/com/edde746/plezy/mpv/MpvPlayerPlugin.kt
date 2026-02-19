@@ -102,6 +102,7 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "abandonAudioFocus" -> handleAbandonAudioFocus(result)
             "openContentFd" -> handleOpenContentFd(call, result)
             "isInitialized" -> result.success(playerCore?.isInitialized ?: false)
+            "setLogLevel" -> result.success(null)
             else -> result.notImplemented()
         }
     }
