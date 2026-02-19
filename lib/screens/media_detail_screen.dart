@@ -1760,12 +1760,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                                     imageType: ImageType.art,
                                   );
 
-                                  return CachedNetworkImage(
+                                  return blurArtwork(CachedNetworkImage(
                                     imageUrl: imageUrl,
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => const PlaceholderContainer(),
                                     errorWidget: (context, url, error) => const PlaceholderContainer(),
-                                  );
+                                  ));
                                 },
                               )
                             : const PlaceholderContainer(),
@@ -1844,7 +1844,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                                           imageType: ImageType.logo,
                                         );
 
-                                        return CachedNetworkImage(
+                                        return blurArtwork(CachedNetworkImage(
                                           imageUrl: logoUrl,
                                           filterQuality: FilterQuality.medium,
                                           fit: BoxFit.contain,
@@ -1868,7 +1868,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                                           errorWidget: (context, url, error) {
                                             return _buildTitleText(context, metadata.title);
                                           },
-                                        );
+                                        ), sigma: 10, clip: false);
                                       },
                                     ),
                                   )

@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import '../services/settings_service.dart' show EpisodePosterMode;
+import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
 import 'mixins/multi_server_fields.dart';
 import 'plex_role.dart';
 
@@ -400,7 +401,16 @@ class PlexMetadata with MultiServerFields {
     return viewCount != null && viewCount! > 0;
   }
 
-  factory PlexMetadata.fromJson(Map<String, dynamic> json) => _$PlexMetadataFromJson(json);
+  factory PlexMetadata.fromJson(Map<String, dynamic> json) =>
+      _$PlexMetadataFromJson(kBlurArtwork ? _obfuscateJson(json) : json);
+
+  static Map<String, dynamic> _obfuscateJson(Map<String, dynamic> json) {
+    final copy = Map<String, dynamic>.from(json);
+    for (final key in const ['title', 'summary', 'tagline', 'grandparentTitle', 'parentTitle', 'studio']) {
+      if (copy[key] is String) copy[key] = obfuscateText(copy[key] as String);
+    }
+    return copy;
+  }
 
   Map<String, dynamic> toJson() => _$PlexMetadataToJson(this);
 }

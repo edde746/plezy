@@ -7,6 +7,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/formatters.dart';
 import '../painters/chapter_marker_painter.dart';
+import '../../plex_optimized_image.dart' show blurArtwork;
 
 /// Timeline slider with chapter markers for video playback
 ///
@@ -125,13 +126,13 @@ class _TimelineSliderState extends State<TimelineSlider> {
                   boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: CachedNetworkImage(
+                child: blurArtwork(CachedNetworkImage(
                   imageUrl: thumbnailUrl,
                   fit: BoxFit.cover,
                   fadeInDuration: Duration.zero,
                   placeholder: (_, _) => const SizedBox.shrink(), // Show nothing for placeholder
                   errorWidget: (_, _, _) => const SizedBox.shrink(), // Show nothing for errors
-                ),
+                )),
               ),
             if (hasThumbnail) const SizedBox(height: 4),
             Container(

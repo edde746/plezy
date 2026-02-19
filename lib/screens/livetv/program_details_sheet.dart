@@ -8,6 +8,7 @@ import '../../models/livetv_program.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/overlay_sheet.dart';
+import '../../widgets/plex_optimized_image.dart' show blurArtwork;
 
 /// Shows a bottom sheet with program details and actions (Record, Watch Channel, Play).
 void showProgramDetailsSheet(
@@ -218,13 +219,13 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
               if (widget.posterUrl != null) ...[
                 ClipRRect(
                   borderRadius: const BorderRadius.all(Radius.circular(6)),
-                  child: Image.network(
+                  child: blurArtwork(Image.network(
                     widget.posterUrl!,
                     width: 80,
                     height: 120,
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                  ),
+                  )),
                 ),
                 const SizedBox(width: 14),
               ],

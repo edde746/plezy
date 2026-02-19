@@ -1,3 +1,4 @@
+import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
 import 'plex_metadata.dart';
 
 /// Represents a Plex hub/recommendation section (e.g., Trending Movies, Top Thrillers)
@@ -54,7 +55,7 @@ class PlexHub {
 
     return PlexHub(
       hubKey: json['key'] as String? ?? '',
-      title: json['title'] as String? ?? 'Unknown',
+      title: kBlurArtwork ? obfuscateText(json['title'] as String? ?? 'Unknown') : json['title'] as String? ?? 'Unknown',
       type: json['type'] as String? ?? 'hub',
       hubIdentifier: json['hubIdentifier'] as String?,
       size: (json['size'] as num?)?.toInt() ?? metadataList.length,

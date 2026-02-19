@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
 import 'mixins/multi_server_fields.dart';
 
 part 'plex_playlist.g.dart';
@@ -94,7 +95,16 @@ class PlexPlaylist with MultiServerFields {
   /// Playlists don't track viewed leaf count
   int? get viewedLeafCount => null;
 
-  factory PlexPlaylist.fromJson(Map<String, dynamic> json) => _$PlexPlaylistFromJson(json);
+  factory PlexPlaylist.fromJson(Map<String, dynamic> json) {
+    if (kBlurArtwork) {
+      final copy = Map<String, dynamic>.from(json);
+      for (final key in const ['title', 'summary']) {
+        if (copy[key] is String) copy[key] = obfuscateText(copy[key] as String);
+      }
+      return _$PlexPlaylistFromJson(copy);
+    }
+    return _$PlexPlaylistFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$PlexPlaylistToJson(this);
 

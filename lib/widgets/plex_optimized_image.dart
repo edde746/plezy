@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -6,6 +7,32 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
 import 'media_card.dart';
+
+/// Set to `true` to blur all artwork (for store screenshots).
+const kBlurArtwork = false;
+
+/// Wraps [child] with a blur filter when [kBlurArtwork] is `true`.
+/// Rotates vowels (a→e, e→i, i→o, o→u, u→a) when [kBlurArtwork] is `true`.
+String obfuscateText(String text) {
+  if (!kBlurArtwork) return text;
+  const from = 'aeiouAEIOU';
+  const to = 'eiouaEIOUA';
+  final buf = StringBuffer();
+  for (var i = 0; i < text.length; i++) {
+    final idx = from.indexOf(text[i]);
+    buf.write(idx >= 0 ? to[idx] : text[i]);
+  }
+  return buf.toString();
+}
+
+Widget blurArtwork(Widget child, {double sigma = 30, bool clip = true}) {
+  if (!kBlurArtwork) return child;
+  final filtered = ImageFiltered(
+    imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+    child: child,
+  );
+  return clip ? ClipRect(child: filtered) : filtered;
+}
 
 class PlexOptimizedImage extends StatelessWidget {
   final PlexClient? client;
@@ -230,14 +257,16 @@ class PlexOptimizedImage extends StatelessWidget {
     if (localFilePath != null) {
       final file = File(localFilePath!);
       if (file.existsSync()) {
-        return Image.file(
-          file,
-          width: width,
-          height: height,
-          fit: fit,
-          filterQuality: filterQuality,
-          alignment: alignment,
-          errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context, error),
+        return blurArtwork(
+          Image.file(
+            file,
+            width: width,
+            height: height,
+            fit: fit,
+            filterQuality: filterQuality,
+            alignment: alignment,
+            errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context, error),
+          ),
         );
       }
     }
@@ -249,15 +278,17 @@ class PlexOptimizedImage extends StatelessWidget {
 
     // Fast path: skip LayoutBuilder when both dimensions are explicitly known
     if (_hasKnownDimensions) {
-      return _buildCachedImage(context, width!, height!);
+      return blurArtwork(_buildCachedImage(context, width!, height!));
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final effectiveWidth = _resolvedDimension(width, constraints.maxWidth, 300.0);
-        final effectiveHeight = _resolvedDimension(height, constraints.maxHeight, 450.0);
-        return _buildCachedImage(context, effectiveWidth, effectiveHeight);
-      },
+    return blurArtwork(
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final effectiveWidth = _resolvedDimension(width, constraints.maxWidth, 300.0);
+          final effectiveHeight = _resolvedDimension(height, constraints.maxHeight, 450.0);
+          return _buildCachedImage(context, effectiveWidth, effectiveHeight);
+        },
+      ),
     );
   }
 

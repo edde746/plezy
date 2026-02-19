@@ -9,6 +9,7 @@ import '../focus/dpad_navigator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
+import '../widgets/plex_optimized_image.dart' show blurArtwork;
 import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
 import '../models/plex_hub.dart';
@@ -1581,14 +1582,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           imageType: ImageType.art,
                         );
 
-                        return CachedNetworkImage(
+                        return blurArtwork(CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
                           placeholder: (context, url) =>
                               Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
                           errorWidget: (context, url, error) =>
                               Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                        );
+                        ));
                       },
                     ),
                   ),
@@ -1649,7 +1650,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               imageType: ImageType.logo,
                             );
 
-                            return CachedNetworkImage(
+                            return blurArtwork(CachedNetworkImage(
                               imageUrl: logoUrl,
                               filterQuality: FilterQuality.medium,
                               fit: BoxFit.contain,
@@ -1696,7 +1697,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   ),
                                 );
                               },
-                            );
+                            ), sigma: 10, clip: false);
                           },
                         ),
                       )

@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/plex_home_user.dart';
 import '../../theme/mono_tokens.dart';
 import '../../i18n/strings.g.dart';
+import '../../widgets/plex_optimized_image.dart' show blurArtwork;
 
 class UserAvatarWidget extends StatelessWidget {
   final PlexHomeUser user;
@@ -141,14 +142,14 @@ class UserAvatarWidget extends StatelessWidget {
         children: [
           // Avatar image
           ClipOval(
-            child: CachedNetworkImage(
+            child: blurArtwork(CachedNetworkImage(
               imageUrl: user.thumb,
               width: size,
               height: size,
               fit: BoxFit.cover,
               placeholder: (ctx, url) => _buildPlaceholderAvatar(theme),
               errorWidget: (ctx, url, error) => _buildPlaceholderAvatar(theme),
-            ),
+            )),
           ),
 
           // Indicators (only show icon indicators when not using text labels)
