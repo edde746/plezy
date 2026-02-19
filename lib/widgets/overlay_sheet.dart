@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../focus/dpad_navigator.dart';
+import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../utils/platform_detector.dart';
 
@@ -254,6 +255,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   }
 
   void _autoFocus() {
+    if (!InputModeTracker.isKeyboardMode(context)) return;
+
     // First post-frame: the FocusScope is now built and the node is attached.
     // Grab scope focus immediately so key events (especially back) are trapped.
     // Second post-frame: ListView.builder items are laid out and their
@@ -287,6 +290,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   }
 
   void _refocus() {
+    if (!InputModeTracker.isKeyboardMode(context)) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_isOpen) return;
       _sheetFocusScopeNode.requestFocus();
