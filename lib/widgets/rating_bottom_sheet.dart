@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../widgets/app_icon.dart';
 import '../focus/dpad_navigator.dart';
-import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 
 class RatingBottomSheet extends StatefulWidget {
