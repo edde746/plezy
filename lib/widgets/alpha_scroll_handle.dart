@@ -13,7 +13,10 @@ import 'alpha_jump_helper.dart';
 class AlphaScrollHandle extends StatefulWidget {
   final List<PlexFirstCharacter> firstCharacters;
   final void Function(int targetIndex) onJump;
-  final int currentFirstVisibleIndex;
+
+  /// The letter currently visible at the top of the grid, derived from the
+  /// actual item's sort title by the parent widget.
+  final String currentLetter;
 
   /// Whether the parent scroll view is currently scrolling.
   final bool isScrolling;
@@ -22,7 +25,7 @@ class AlphaScrollHandle extends StatefulWidget {
     super.key,
     required this.firstCharacters,
     required this.onJump,
-    required this.currentFirstVisibleIndex,
+    required this.currentLetter,
     required this.isScrolling,
   });
 
@@ -104,11 +107,10 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
   }
 
   void _onDragStart(DragStartDetails _) {
-    final currentLetter = _helper.currentLetter(widget.currentFirstVisibleIndex);
     setState(() {
       _isDragging = true;
-      _dragFraction = _helper.fractionForLetter(currentLetter);
-      _dragLetter = currentLetter;
+      _dragFraction = _helper.fractionForLetter(widget.currentLetter);
+      _dragLetter = widget.currentLetter;
     });
     _hideTimer?.cancel();
     _show();
@@ -152,10 +154,9 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
           final trackHeight = constraints.maxHeight;
           _trackHeight = trackHeight;
 
-          final currentLetter = _helper.currentLetter(widget.currentFirstVisibleIndex);
           final fraction = _isDragging && _dragFraction != null
               ? _dragFraction!
-              : _helper.fractionForLetter(currentLetter);
+              : _helper.fractionForLetter(widget.currentLetter);
           final usableHeight = trackHeight - _handleHeight;
           final handleTop = usableHeight > 0 ? (fraction * usableHeight) : 0.0;
 

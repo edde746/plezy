@@ -6,15 +6,20 @@ import 'package:flutter/services.dart';
 import '../models/plex_first_character.dart';
 import 'alpha_jump_helper.dart';
 
-/// Vertical strip of letters (#, A–Z) for jumping through sorted library items.
+/// Vertical strip of letters for jumping through sorted library items.
 ///
 /// Pre-computes a cumulative index map from [firstCharacters] data so that
 /// tapping a letter triggers [onJump] with the item index where that letter
-/// begins. Supports both touch (tap/drag) and D-pad (up/down/select) input.
+/// begins. When more letters exist than fit vertically, the bar keeps the
+/// highest-count letters (by item size) and drops the rest.
+/// Supports both touch (tap/drag) and D-pad (up/down/select) input.
 class AlphaJumpBar extends StatefulWidget {
   final List<PlexFirstCharacter> firstCharacters;
   final void Function(int targetIndex) onJump;
-  final int currentFirstVisibleIndex;
+
+  /// The letter currently visible at the top of the grid, derived from the
+  /// actual item's sort title by the parent widget.
+  final String currentLetter;
   final FocusNode? focusNode;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
@@ -23,7 +28,7 @@ class AlphaJumpBar extends StatefulWidget {
     super.key,
     required this.firstCharacters,
     required this.onJump,
-    required this.currentFirstVisibleIndex,
+    required this.currentLetter,
     this.focusNode,
     this.onNavigateLeft,
     this.onBack,
@@ -36,6 +41,12 @@ class AlphaJumpBar extends StatefulWidget {
 class _AlphaJumpBarState extends State<AlphaJumpBar> {
   late AlphaJumpHelper _helper;
 
+  /// Subset of letters actually rendered, filtered by available height.
+  List<String> _displayed = const [];
+
+  /// Cached max-letter count from the last layout pass.
+  int _lastMaxLetters = -1;
+
   /// Currently highlighted letter index (for D-pad navigation).
   int _highlightedIndex = 0;
 
@@ -45,10 +56,14 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
   /// Debounce timer for keyboard-driven jumps.
   Timer? _debounce;
 
+  /// Minimum vertical space per letter slot.
+  static const double _minLetterHeight = 20.0;
+
   @override
   void initState() {
     super.initState();
     _helper = AlphaJumpHelper(widget.firstCharacters);
+    _displayed = _helper.letters;
   }
 
   @override
@@ -56,6 +71,9 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.firstCharacters != widget.firstCharacters) {
       _helper = AlphaJumpHelper(widget.firstCharacters);
+      _lastMaxLetters = -1; // force recompute in next layout
+      _displayed = _helper.letters;
+      _clampHighlight();
     }
   }
 
@@ -63,6 +81,36 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
   void dispose() {
     _debounce?.cancel();
     super.dispose();
+  }
+
+  void _clampHighlight() {
+    if (_displayed.isNotEmpty) {
+      _highlightedIndex = _highlightedIndex.clamp(0, _displayed.length - 1);
+    } else {
+      _highlightedIndex = 0;
+    }
+  }
+
+  /// Recompute [_displayed] if the available letter count changed.
+  void _updateDisplayed(double availableHeight) {
+    final maxLetters = (availableHeight / _minLetterHeight).floor();
+    if (maxLetters == _lastMaxLetters) return;
+    _lastMaxLetters = maxLetters;
+    _displayed = _helper.displayLetters(maxLetters);
+    _clampHighlight();
+  }
+
+  /// Find the nearest displayed letter at or before [letter] in the full list.
+  String _nearestDisplayed(String letter) {
+    if (_displayed.contains(letter)) return letter;
+    final pos = _helper.letters.indexOf(letter);
+    if (pos < 0 && _displayed.isNotEmpty) return _displayed.first;
+    String result = _displayed.first;
+    for (final dl in _displayed) {
+      final dlPos = _helper.letters.indexOf(dl);
+      if (dlPos <= pos) result = dl;
+    }
+    return result;
   }
 
   void _jumpToLetter(String letter) {
@@ -73,19 +121,19 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
   }
 
   /// Schedule a debounced jump to the currently highlighted letter.
-  /// The highlight updates immediately for visual feedback, but the
-  /// actual scroll only fires after keyboard input settles.
   void _debouncedJump() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 150), () {
-      _jumpToLetter(AlphaJumpHelper.allLetters[_highlightedIndex]);
+      if (_highlightedIndex < _displayed.length) {
+        _jumpToLetter(_displayed[_highlightedIndex]);
+      }
     });
   }
 
-  /// Resolves a vertical drag position to a letter index.
+  /// Resolves a vertical drag position to a displayed-letter index.
   int _letterIndexFromDy(double dy, double totalHeight) {
-    final index = (dy / totalHeight * AlphaJumpHelper.allLetters.length).floor();
-    return index.clamp(0, AlphaJumpHelper.allLetters.length - 1);
+    final index = (dy / totalHeight * _displayed.length).floor();
+    return index.clamp(0, _displayed.length - 1);
   }
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
@@ -101,7 +149,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
       return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-      if (_highlightedIndex < AlphaJumpHelper.allLetters.length - 1) {
+      if (_highlightedIndex < _displayed.length - 1) {
         setState(() => _highlightedIndex++);
         _debouncedJump();
       }
@@ -123,7 +171,6 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
 
   @override
   Widget build(BuildContext context) {
-    final currentLetter = _helper.currentLetter(widget.currentFirstVisibleIndex);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Focus(
@@ -133,26 +180,30 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
         setState(() {
           _hasFocus = hasFocus;
           if (hasFocus) {
-            // Start highlight at the current letter when gaining focus
-            final idx = AlphaJumpHelper.allLetters.indexOf(currentLetter);
+            final displayed = _nearestDisplayed(widget.currentLetter);
+            final idx = _displayed.indexOf(displayed);
             if (idx >= 0) _highlightedIndex = idx;
           }
         });
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
+          _updateDisplayed(constraints.maxHeight);
+
+          final currentLetter = _nearestDisplayed(widget.currentLetter);
+
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTapDown: (details) {
               final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
               setState(() => _highlightedIndex = idx);
-              _jumpToLetter(AlphaJumpHelper.allLetters[idx]);
+              _jumpToLetter(_displayed[idx]);
             },
             onVerticalDragUpdate: (details) {
               final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
               if (idx != _highlightedIndex) {
                 setState(() => _highlightedIndex = idx);
-                _jumpToLetter(AlphaJumpHelper.allLetters[idx]);
+                _jumpToLetter(_displayed[idx]);
               }
             },
             child: Container(
@@ -163,9 +214,8 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(AlphaJumpHelper.allLetters.length, (i) {
-                  final letter = AlphaJumpHelper.allLetters[i];
-                  final isActive = _helper.activeLetters.contains(letter);
+                children: List.generate(_displayed.length, (i) {
+                  final letter = _displayed[i];
                   final isCurrent = letter == currentLetter && !_hasFocus;
                   final isHighlighted = _hasFocus && i == _highlightedIndex;
 
@@ -184,14 +234,12 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
                     letterColor = colorScheme.onPrimary;
                   } else if (isCurrent) {
                     letterColor = colorScheme.primary;
-                  } else if (isActive) {
-                    letterColor = colorScheme.onSurface;
                   } else {
-                    letterColor = colorScheme.onSurface.withValues(alpha: 0.25);
+                    letterColor = colorScheme.onSurface;
                   }
 
                   return SizedBox(
-                    height: constraints.maxHeight / AlphaJumpHelper.allLetters.length,
+                    height: constraints.maxHeight / _displayed.length,
                     child: Center(
                       child: Container(
                         width: 22,

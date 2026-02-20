@@ -649,6 +649,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// Whether the device is a phone (not tablet/desktop/TV).
   bool _isPhone(BuildContext context) => PlatformDetector.isPhone(context);
 
+  /// The letter currently visible at the top of the grid, determined by
+  /// how many items we've scrolled past relative to the API's cumulative
+  /// firstCharacter counts.
+  String get _currentAlphaLetter {
+    return _alphaHelper.currentLetter(_currentFirstVisibleIndex);
+  }
+
   /// Whether the alpha jump bar should be shown.
   /// Only shown when sorting by title (titleSort) and not in folders mode.
   bool get _shouldShowAlphaJumpBar {
@@ -736,49 +743,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   /// Scroll to the item at [targetIndex], loading more pages if necessary.
-  /// Pins the index so scroll events during the animation don't override
-  /// the highlighted letter. The pin is cleared on the next user scroll.
-  ///
-  /// The [targetIndex] comes from [AlphaJumpHelper] which derives cumulative
-  /// indices from the `firstCharacters` API. That API may count by display
-  /// title (e.g. "The Simpsons" → T), while the grid sorts by `titleSort`
-  /// (e.g. "Simpsons" → S). We correct for this by searching the loaded
-  /// items' `titleSort` for the true start of the target letter.
+  /// The target index is a cumulative offset from the API's firstCharacter
+  /// counts — the same model used by [_currentAlphaLetter] so highlight
+  /// and jump always agree.
   void _jumpToIndex(int targetIndex) {
     _jumpScrollGeneration++;
     _isJumpScrolling = true;
 
-    // Determine the intended letter from the helper's model
-    final targetLetter = _alphaHelper.currentLetter(targetIndex);
-
-    // Correct the index using actual items' titleSort when available
-    final correctedIndex = _findFirstItemForLetter(targetLetter) ?? targetIndex;
-
     _hasJumpPin = true;
-    setState(() => _currentFirstVisibleIndex = correctedIndex);
+    setState(() => _currentFirstVisibleIndex = targetIndex);
 
-    if (correctedIndex < items.length) {
-      _scrollToItemIndex(correctedIndex);
+    if (targetIndex < items.length) {
+      _scrollToItemIndex(targetIndex);
     } else {
-      _loadUntilIndex(correctedIndex);
+      _loadUntilIndex(targetIndex);
     }
-  }
-
-  /// Returns the first character (A-Z or #) of an item's sort title.
-  static String _sortTitleFirstChar(String title) {
-    if (title.isEmpty) return '#';
-    final ch = title[0].toUpperCase();
-    return ch.codeUnitAt(0) >= 65 && ch.codeUnitAt(0) <= 90 ? ch : '#';
-  }
-
-  /// Find the index of the first loaded item whose `titleSort` starts with
-  /// [letter]. Returns null if no match is found (e.g. items not yet loaded).
-  int? _findFirstItemForLetter(String letter) {
-    for (int i = 0; i < items.length; i++) {
-      final sortTitle = items[i].titleSort ?? items[i].title;
-      if (_sortTitleFirstChar(sortTitle) == letter) return i;
-    }
-    return null;
   }
 
   /// Scroll the grid so that [index] is visible just below the chips bar
@@ -867,13 +846,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
                   ? AlphaScrollHandle(
                       firstCharacters: _firstCharacters,
                       onJump: _jumpToIndex,
-                      currentFirstVisibleIndex: _currentFirstVisibleIndex,
+                      currentLetter: _currentAlphaLetter,
                       isScrolling: _isScrollActive,
                     )
                   : AlphaJumpBar(
                       firstCharacters: _firstCharacters,
                       onJump: _jumpToIndex,
-                      currentFirstVisibleIndex: _currentFirstVisibleIndex,
+                      currentLetter: _currentAlphaLetter,
                       focusNode: _alphaJumpBarFocusNode,
                       onNavigateLeft: _navigateToGridNearScroll,
                       onBack: _navigateToGridNearScroll,
