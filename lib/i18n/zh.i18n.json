@@ -51,7 +51,8 @@
     "exitConfirmTitle": "退出应用？",
     "exitConfirmMessage": "确定要退出吗？",
     "dontAskAgain": "不再询问",
-    "exit": "退出"
+    "exit": "退出",
+    "viewAll": "查看全部"
   },
   "screens": {
     "licenses": "许可证",

@@ -24,6 +24,9 @@ class FocusableMediaCard extends StatefulWidget {
   /// True for downloaded content without server access
   final bool isOffline;
 
+  /// True when in a hub with mixed content (movies + episodes)
+  final bool mixedHubContext;
+
   /// Optional external focus node for programmatic focus control.
   /// If not provided, an internal focus node is created.
   final FocusNode? focusNode;
@@ -60,6 +63,7 @@ class FocusableMediaCard extends StatefulWidget {
     this.isInContinueWatching = false,
     this.collectionId,
     this.isOffline = false,
+    this.mixedHubContext = false,
     this.focusNode,
     this.onNavigateUp,
     this.onNavigateLeft,
@@ -102,6 +106,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
         isInContinueWatching: widget.isInContinueWatching,
         collectionId: widget.collectionId,
         isOffline: widget.isOffline,
+        mixedHubContext: widget.mixedHubContext,
       ),
     );
   }

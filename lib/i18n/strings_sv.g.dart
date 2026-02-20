@@ -149,6 +149,7 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get exitConfirmMessage => 'Är du säker på att du vill avsluta?';
 	@override String get dontAskAgain => 'Fråga inte igen';
 	@override String get exit => 'Avsluta';
+	@override String get viewAll => 'Visa alla';
 }
 
 // Path: screens
@@ -401,7 +402,6 @@ class _TranslationsMediaMenuSv implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Mediaobjekt borttaget';
 	@override String get mediaFailedToDelete => 'Kunde inte ta bort mediaobjekt';
 	@override String get rate => 'Betygsätt';
-
 }
 
 // Path: accessibility
@@ -1278,6 +1278,7 @@ extension on TranslationsSv {
 			'common.exitConfirmMessage' => 'Är du säker på att du vill avsluta?',
 			'common.dontAskAgain' => 'Fråga inte igen',
 			'common.exit' => 'Avsluta',
+			'common.viewAll' => 'Visa alla',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -1476,7 +1477,6 @@ extension on TranslationsSv {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Mediaobjekt borttaget',
 			'mediaMenu.mediaFailedToDelete' => 'Kunde inte ta bort mediaobjekt',
 			'mediaMenu.rate' => 'Betygsätt',
-
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1742,10 +1742,10 @@ extension on TranslationsSv {
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
 			'liveTv.overnight' => 'Natt',
-			'liveTv.morning' => 'Morgon',
-			'liveTv.daytime' => 'Dagtid',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.morning' => 'Morgon',
+			'liveTv.daytime' => 'Dagtid',
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',

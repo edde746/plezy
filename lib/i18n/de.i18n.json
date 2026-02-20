@@ -51,7 +51,8 @@
     "exitConfirmTitle": "App beenden?",
     "exitConfirmMessage": "Möchtest du die App wirklich beenden?",
     "dontAskAgain": "Nicht erneut fragen",
-    "exit": "Beenden"
+    "exit": "Beenden",
+    "viewAll": "Alle anzeigen"
   },
   "screens": {
     "licenses": "Lizenzen",

@@ -51,7 +51,8 @@
     "exitConfirmTitle": "Exit app?",
     "exitConfirmMessage": "Are you sure you want to exit?",
     "dontAskAgain": "Don't ask again",
-    "exit": "Exit"
+    "exit": "Exit",
+    "viewAll": "View All"
   },
   "screens": {
     "licenses": "Licenses",

@@ -51,7 +51,8 @@
     "exitConfirmTitle": "Avsluta appen?",
     "exitConfirmMessage": "Är du säker på att du vill avsluta?",
     "dontAskAgain": "Fråga inte igen",
-    "exit": "Avsluta"
+    "exit": "Avsluta",
+    "viewAll": "Visa alla"
   },
   "screens": {
     "licenses": "Licenser",

@@ -149,6 +149,7 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get exitConfirmMessage => '정말 종료하시겠습니까?';
 	@override String get dontAskAgain => '다시 묻지 않기';
 	@override String get exit => '종료';
+	@override String get viewAll => '모두 보기';
 }
 
 // Path: screens
@@ -401,7 +402,6 @@ class _TranslationsMediaMenuKo implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => '미디어 항목이 성공적으로 삭제되었습니다';
 	@override String get mediaFailedToDelete => '미디어 항목 삭제 실패';
 	@override String get rate => '평가';
-
 }
 
 // Path: accessibility
@@ -1278,6 +1278,7 @@ extension on TranslationsKo {
 			'common.exitConfirmMessage' => '정말 종료하시겠습니까?',
 			'common.dontAskAgain' => '다시 묻지 않기',
 			'common.exit' => '종료',
+			'common.viewAll' => '모두 보기',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -1476,7 +1477,6 @@ extension on TranslationsKo {
 			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
 			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
 			'mediaMenu.rate' => '평가',
-
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 영화',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV 프로그램',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1742,10 +1742,10 @@ extension on TranslationsKo {
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
 			'liveTv.overnight' => '심야',
-			'liveTv.morning' => '아침',
-			'liveTv.daytime' => '낮',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.morning' => '아침',
+			'liveTv.daytime' => '낮',
 			'liveTv.evening' => '저녁',
 			'liveTv.lateNight' => '심야 방송',
 			'liveTv.whatsOn' => '지금 방송 중',

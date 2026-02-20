@@ -149,6 +149,7 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get exitConfirmMessage => 'Weet je zeker dat je wilt afsluiten?';
 	@override String get dontAskAgain => 'Niet meer vragen';
 	@override String get exit => 'Afsluiten';
+	@override String get viewAll => 'Alles weergeven';
 }
 
 // Path: screens
@@ -401,7 +402,6 @@ class _TranslationsMediaMenuNl implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Media-item succesvol verwijderd';
 	@override String get mediaFailedToDelete => 'Verwijderen van media-item mislukt';
 	@override String get rate => 'Beoordelen';
-
 }
 
 // Path: accessibility
@@ -1278,6 +1278,7 @@ extension on TranslationsNl {
 			'common.exitConfirmMessage' => 'Weet je zeker dat je wilt afsluiten?',
 			'common.dontAskAgain' => 'Niet meer vragen',
 			'common.exit' => 'Afsluiten',
+			'common.viewAll' => 'Alles weergeven',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
@@ -1476,7 +1477,6 @@ extension on TranslationsNl {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media-item succesvol verwijderd',
 			'mediaMenu.mediaFailedToDelete' => 'Verwijderen van media-item mislukt',
 			'mediaMenu.rate' => 'Beoordelen',
-
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1742,10 +1742,10 @@ extension on TranslationsNl {
 			'liveTv.today' => 'Vandaag',
 			'liveTv.midnight' => 'Middernacht',
 			'liveTv.overnight' => 'Nacht',
-			'liveTv.morning' => 'Ochtend',
-			'liveTv.daytime' => 'Overdag',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.morning' => 'Ochtend',
+			'liveTv.daytime' => 'Overdag',
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',

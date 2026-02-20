@@ -51,7 +51,8 @@
     "exitConfirmTitle": "Quitter l'application ?",
     "exitConfirmMessage": "Êtes-vous sûr de vouloir quitter ?",
     "dontAskAgain": "Ne plus demander",
-    "exit": "Quitter"
+    "exit": "Quitter",
+    "viewAll": "Tout afficher"
   },
   "screens": {
     "licenses": "Licenses",

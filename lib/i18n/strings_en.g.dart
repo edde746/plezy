@@ -248,6 +248,9 @@ class TranslationsCommonEn {
 
 	/// en: 'Exit'
 	String get exit => 'Exit';
+
+	/// en: 'View All'
+	String get viewAll => 'View All';
 }
 
 // Path: screens
@@ -859,7 +862,6 @@ class TranslationsMediaMenuEn {
 
 	/// en: 'Rate'
 	String get rate => 'Rate';
-
 }
 
 // Path: accessibility
@@ -2769,6 +2771,7 @@ extension on Translations {
 			'common.exitConfirmMessage' => 'Are you sure you want to exit?',
 			'common.dontAskAgain' => 'Don\'t ask again',
 			'common.exit' => 'Exit',
+			'common.viewAll' => 'View All',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -2967,7 +2970,6 @@ extension on Translations {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
-
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -3233,10 +3235,10 @@ extension on Translations {
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
-			'liveTv.morning' => 'Morning',
-			'liveTv.daytime' => 'Daytime',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.morning' => 'Morning',
+			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',

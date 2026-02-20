@@ -51,7 +51,8 @@
     "exitConfirmTitle": "App afsluiten?",
     "exitConfirmMessage": "Weet je zeker dat je wilt afsluiten?",
     "dontAskAgain": "Niet meer vragen",
-    "exit": "Afsluiten"
+    "exit": "Afsluiten",
+    "viewAll": "Alles weergeven"
   },
   "screens": {
     "licenses": "Licenties",

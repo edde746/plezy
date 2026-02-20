@@ -149,6 +149,7 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get exitConfirmMessage => 'Sei sicuro di voler uscire?';
 	@override String get dontAskAgain => 'Non chiedere più';
 	@override String get exit => 'Esci';
+	@override String get viewAll => 'Mostra tutto';
 }
 
 // Path: screens
@@ -401,7 +402,6 @@ class _TranslationsMediaMenuIt implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Elemento multimediale eliminato con successo';
 	@override String get mediaFailedToDelete => 'Impossibile eliminare l\'elemento multimediale';
 	@override String get rate => 'Valuta';
-
 }
 
 // Path: accessibility
@@ -1278,6 +1278,7 @@ extension on TranslationsIt {
 			'common.exitConfirmMessage' => 'Sei sicuro di voler uscire?',
 			'common.dontAskAgain' => 'Non chiedere più',
 			'common.exit' => 'Esci',
+			'common.viewAll' => 'Mostra tutto',
 			'screens.licenses' => 'Licenze',
 			'screens.switchProfile' => 'Cambia profilo',
 			'screens.subtitleStyling' => 'Stile sottotitoli',
@@ -1476,7 +1477,6 @@ extension on TranslationsIt {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Elemento multimediale eliminato con successo',
 			'mediaMenu.mediaFailedToDelete' => 'Impossibile eliminare l\'elemento multimediale',
 			'mediaMenu.rate' => 'Valuta',
-
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, serie TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1742,10 +1742,10 @@ extension on TranslationsIt {
 			'liveTv.today' => 'Oggi',
 			'liveTv.midnight' => 'Mezzanotte',
 			'liveTv.overnight' => 'Notte',
-			'liveTv.morning' => 'Mattina',
-			'liveTv.daytime' => 'Giorno',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.morning' => 'Mattina',
+			'liveTv.daytime' => 'Giorno',
 			'liveTv.evening' => 'Sera',
 			'liveTv.lateNight' => 'Notte tarda',
 			'liveTv.whatsOn' => 'In onda ora',

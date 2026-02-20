@@ -51,7 +51,8 @@
     "exitConfirmTitle": "앱을 종료하시겠습니까?",
     "exitConfirmMessage": "정말 종료하시겠습니까?",
     "dontAskAgain": "다시 묻지 않기",
-    "exit": "종료"
+    "exit": "종료",
+    "viewAll": "모두 보기"
   },
   "screens": {
     "licenses": "라이선스",

@@ -149,6 +149,7 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get exitConfirmMessage => 'Êtes-vous sûr de vouloir quitter ?';
 	@override String get dontAskAgain => 'Ne plus demander';
 	@override String get exit => 'Quitter';
+	@override String get viewAll => 'Tout afficher';
 }
 
 // Path: screens
@@ -401,7 +402,6 @@ class _TranslationsMediaMenuFr implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Élément média supprimé avec succès';
 	@override String get mediaFailedToDelete => 'Échec de la suppression de l\'élément média';
 	@override String get rate => 'Noter';
-
 }
 
 // Path: accessibility
@@ -1278,6 +1278,7 @@ extension on TranslationsFr {
 			'common.exitConfirmMessage' => 'Êtes-vous sûr de vouloir quitter ?',
 			'common.dontAskAgain' => 'Ne plus demander',
 			'common.exit' => 'Quitter',
+			'common.viewAll' => 'Tout afficher',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
@@ -1476,7 +1477,6 @@ extension on TranslationsFr {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Élément média supprimé avec succès',
 			'mediaMenu.mediaFailedToDelete' => 'Échec de la suppression de l\'élément média',
 			'mediaMenu.rate' => 'Noter',
-
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, show TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1742,10 +1742,10 @@ extension on TranslationsFr {
 			'liveTv.today' => 'Aujourd\'hui',
 			'liveTv.midnight' => 'Minuit',
 			'liveTv.overnight' => 'Nuit',
-			'liveTv.morning' => 'Matin',
-			'liveTv.daytime' => 'Journée',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.morning' => 'Matin',
+			'liveTv.daytime' => 'Journée',
 			'liveTv.evening' => 'Soirée',
 			'liveTv.lateNight' => 'Nuit tardive',
 			'liveTv.whatsOn' => 'En ce moment',

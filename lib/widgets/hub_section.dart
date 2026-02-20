@@ -6,6 +6,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart' show EpisodePosterMode, LibraryDensity;
@@ -94,12 +95,15 @@ class HubSectionState extends State<HubSection> {
     _hubFocusNode.addListener(_onFocusChange);
   }
 
+  /// Total item count including the optional "View All" card
+  int get _totalItemCount => widget.hub.items.length + (widget.hub.more ? 1 : 0);
+
   @override
   void didUpdateWidget(HubSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Clamp focus index if item count changed
     if (widget.hub.items.length != oldWidget.hub.items.length) {
-      final maxIndex = widget.hub.items.isEmpty ? 0 : widget.hub.items.length - 1;
+      final maxIndex = _totalItemCount == 0 ? 0 : _totalItemCount - 1;
       if (_focusedIndex > maxIndex) {
         _focusedIndex = maxIndex;
       }
@@ -128,9 +132,9 @@ class HubSectionState extends State<HubSection> {
 
   /// Request focus on this hub at a specific item index
   void requestFocusAt(int index) {
-    if (widget.hub.items.isEmpty) return;
+    if (_totalItemCount == 0) return;
 
-    final clamped = index.clamp(0, widget.hub.items.length - 1);
+    final clamped = index.clamp(0, _totalItemCount - 1);
     _focusedIndex = clamped;
     // Remember this position for this specific hub
     HubFocusMemory.setForHub(widget.hub.hubKey, clamped);
@@ -145,7 +149,7 @@ class HubSectionState extends State<HubSection> {
 
   /// Request focus using the stored memory for this hub
   void requestFocusFromMemory() {
-    final index = HubFocusMemory.getForHub(widget.hub.hubKey, widget.hub.items.length);
+    final index = HubFocusMemory.getForHub(widget.hub.hubKey, _totalItemCount);
     requestFocusAt(index);
   }
 
@@ -166,7 +170,7 @@ class HubSectionState extends State<HubSection> {
   bool get hasFocusedItem => _hubFocusNode.hasFocus;
 
   /// Get the number of items in this hub
-  int get itemCount => widget.hub.items.length;
+  int get itemCount => _totalItemCount;
 
   /// Scroll to center the item at the given index
   void _scrollToIndex(int index, {bool animate = true}) {
@@ -225,8 +229,8 @@ class HubSectionState extends State<HubSection> {
       return KeyEventResult.ignored;
     }
 
-    final itemCount = widget.hub.items.length;
-    if (itemCount == 0) return KeyEventResult.ignored;
+    final totalCount = _totalItemCount;
+    if (totalCount == 0) return KeyEventResult.ignored;
 
     // Left: move to previous item, or navigate to sidebar at left edge
     if (key.isLeftKey) {
@@ -246,7 +250,7 @@ class HubSectionState extends State<HubSection> {
 
     // Right: move to next item, ALWAYS consume to prevent escape
     if (key.isRightKey) {
-      if (_focusedIndex < itemCount - 1) {
+      if (_focusedIndex < totalCount - 1) {
         setState(() {
           _focusedIndex++;
         });
@@ -287,12 +291,18 @@ class HubSectionState extends State<HubSection> {
   }
 
   void _activateCurrentItem() {
+    if (_focusedIndex == widget.hub.items.length && widget.hub.more) {
+      _navigateToHubDetail(context);
+      return;
+    }
     if (_focusedIndex >= widget.hub.items.length) return;
     final item = widget.hub.items[_focusedIndex];
     _navigateToItem(item);
   }
 
   void _showContextMenuForCurrentItem() {
+    // No context menu for the "View All" card
+    if (_focusedIndex >= widget.hub.items.length) return;
     _mediaCardKeys[_focusedIndex]?.currentState?.showContextMenu();
   }
 
@@ -307,6 +317,7 @@ class HubSectionState extends State<HubSection> {
   @override
   Widget build(BuildContext context) {
     final hasFocus = _hubFocusNode.hasFocus;
+    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,7 +361,7 @@ class HubSectionState extends State<HubSection> {
                         ),
                       ),
                     ],
-                    if (widget.hub.more) ...[
+                    if (widget.hub.more && !isKeyboardMode) ...[
                       const SizedBox(width: 4),
                       const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20),
                     ],
@@ -425,10 +436,48 @@ class HubSectionState extends State<HubSection> {
                       controller: scrollController,
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                      itemCount: widget.hub.items.length,
+                      itemCount: isKeyboardMode ? _totalItemCount : widget.hub.items.length,
                       itemBuilder: (context, index) {
-                        final item = widget.hub.items[index];
                         final isItemFocused = hasFocus && index == _focusedIndex;
+
+                        // "View All" card at end
+                        if (index == widget.hub.items.length) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: _LockedHubItemWrapper(
+                              isFocused: isItemFocused,
+                              onTap: () {
+                                _onItemTapped(index);
+                                _navigateToHubDetail(context);
+                              },
+                              child: SizedBox(
+                                width: 80,
+                                height: containerHeight - 10,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Symbols.arrow_forward_rounded,
+                                        size: 32,
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        t.common.viewAll,
+                                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final item = widget.hub.items[index];
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),

@@ -149,6 +149,7 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get exitConfirmMessage => 'Möchtest du die App wirklich beenden?';
 	@override String get dontAskAgain => 'Nicht erneut fragen';
 	@override String get exit => 'Beenden';
+	@override String get viewAll => 'Alle anzeigen';
 }
 
 // Path: screens
@@ -401,7 +402,6 @@ class _TranslationsMediaMenuDe implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Medienelement erfolgreich gelöscht';
 	@override String get mediaFailedToDelete => 'Löschen des Medienelements fehlgeschlagen';
 	@override String get rate => 'Bewerten';
-
 }
 
 // Path: accessibility
@@ -1278,6 +1278,7 @@ extension on TranslationsDe {
 			'common.exitConfirmMessage' => 'Möchtest du die App wirklich beenden?',
 			'common.dontAskAgain' => 'Nicht erneut fragen',
 			'common.exit' => 'Beenden',
+			'common.viewAll' => 'Alle anzeigen',
 			'screens.licenses' => 'Lizenzen',
 			'screens.switchProfile' => 'Profil wechseln',
 			'screens.subtitleStyling' => 'Untertitel-Stil',
@@ -1476,7 +1477,6 @@ extension on TranslationsDe {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medienelement erfolgreich gelöscht',
 			'mediaMenu.mediaFailedToDelete' => 'Löschen des Medienelements fehlgeschlagen',
 			'mediaMenu.rate' => 'Bewerten',
-
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, Film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, Serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1742,10 +1742,10 @@ extension on TranslationsDe {
 			'liveTv.today' => 'Heute',
 			'liveTv.midnight' => 'Mitternacht',
 			'liveTv.overnight' => 'Nacht',
-			'liveTv.morning' => 'Morgen',
-			'liveTv.daytime' => 'Tagsüber',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.morning' => 'Morgen',
+			'liveTv.daytime' => 'Tagsüber',
 			'liveTv.evening' => 'Abend',
 			'liveTv.lateNight' => 'Spätnacht',
 			'liveTv.whatsOn' => 'Jetzt im TV',

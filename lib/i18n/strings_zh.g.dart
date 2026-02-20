@@ -149,6 +149,7 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get exitConfirmMessage => '确定要退出吗？';
 	@override String get dontAskAgain => '不再询问';
 	@override String get exit => '退出';
+	@override String get viewAll => '查看全部';
 }
 
 // Path: screens
@@ -401,7 +402,6 @@ class _TranslationsMediaMenuZh implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => '媒体项已成功删除';
 	@override String get mediaFailedToDelete => '删除媒体项失败';
 	@override String get rate => '评分';
-
 }
 
 // Path: accessibility
@@ -1278,6 +1278,7 @@ extension on TranslationsZh {
 			'common.exitConfirmMessage' => '确定要退出吗？',
 			'common.dontAskAgain' => '不再询问',
 			'common.exit' => '退出',
+			'common.viewAll' => '查看全部',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -1476,7 +1477,6 @@ extension on TranslationsZh {
 			'mediaMenu.mediaDeletedSuccessfully' => '媒体项已成功删除',
 			'mediaMenu.mediaFailedToDelete' => '删除媒体项失败',
 			'mediaMenu.rate' => '评分',
-
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1742,10 +1742,10 @@ extension on TranslationsZh {
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
 			'liveTv.overnight' => '凌晨',
-			'liveTv.morning' => '上午',
-			'liveTv.daytime' => '白天',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.morning' => '上午',
+			'liveTv.daytime' => '白天',
 			'liveTv.evening' => '晚上',
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '正在播出',
