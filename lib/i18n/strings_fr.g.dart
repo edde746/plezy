@@ -400,6 +400,8 @@ class _TranslationsMediaMenuFr implements TranslationsMediaMenuEn {
 	@override String get deleteMultipleWarning => 'Plusieurs éléments peuvent être supprimés.';
 	@override String get mediaDeletedSuccessfully => 'Élément média supprimé avec succès';
 	@override String get mediaFailedToDelete => 'Échec de la suppression de l\'élément média';
+	@override String get rate => 'Noter';
+
 }
 
 // Path: accessibility
@@ -1473,6 +1475,8 @@ extension on TranslationsFr {
 			'mediaMenu.deleteMultipleWarning' => 'Plusieurs éléments peuvent être supprimés.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Élément média supprimé avec succès',
 			'mediaMenu.mediaFailedToDelete' => 'Échec de la suppression de l\'élément média',
+			'mediaMenu.rate' => 'Noter',
+
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, show TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',

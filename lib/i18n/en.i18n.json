@@ -266,7 +266,8 @@
     "confirmDelete": "Are you sure you want to delete this item from your filesystem?",
     "deleteMultipleWarning": "Multiple items may be deleted.",
     "mediaDeletedSuccessfully": "Media item deleted successfully",
-    "mediaFailedToDelete": "Failed to delete media item"
+    "mediaFailedToDelete": "Failed to delete media item",
+    "rate": "Rate"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, movie",

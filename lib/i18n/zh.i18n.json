@@ -266,7 +266,8 @@
     "confirmDelete": "确定要从文件系统中删除此项吗？",
     "deleteMultipleWarning": "可能会删除多个项目。",
     "mediaDeletedSuccessfully": "媒体项已成功删除",
-    "mediaFailedToDelete": "删除媒体项失败"
+    "mediaFailedToDelete": "删除媒体项失败",
+    "rate": "评分"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, 电影",

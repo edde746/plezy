@@ -348,24 +348,27 @@ class _EpisodeCardState extends State<_EpisodeCard> {
   }
 
   Widget _buildEpisodeMetaRow(BuildContext context) {
+    final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12);
+    final dot = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Text('•', style: mutedStyle),
+    );
     return Row(
       children: [
-        if (widget.episode.duration != null)
-          Text(
-            formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
-          ),
+        if (widget.episode.duration != null) Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)), style: mutedStyle),
         if (widget.episode.originallyAvailableAt != null) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Text(
-              '•',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
-            ),
-          ),
+          dot,
+          Text(formatFullDate(widget.episode.originallyAvailableAt!), style: mutedStyle),
+        ],
+        if (widget.episode.userRating != null && widget.episode.userRating! > 0) ...[
+          dot,
+          Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber)),
+          const SizedBox(width: 2),
           Text(
-            formatFullDate(widget.episode.originallyAvailableAt!),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
+            (widget.episode.userRating! / 2) == (widget.episode.userRating! / 2).truncateToDouble()
+                ? '${(widget.episode.userRating! / 2).toInt()}'
+                : (widget.episode.userRating! / 2).toStringAsFixed(1),
+            style: mutedStyle,
           ),
         ],
       ],

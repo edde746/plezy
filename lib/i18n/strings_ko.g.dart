@@ -400,6 +400,8 @@ class _TranslationsMediaMenuKo implements TranslationsMediaMenuEn {
 	@override String get deleteMultipleWarning => '여러 항목이 삭제될 수 있습니다.';
 	@override String get mediaDeletedSuccessfully => '미디어 항목이 성공적으로 삭제되었습니다';
 	@override String get mediaFailedToDelete => '미디어 항목 삭제 실패';
+	@override String get rate => '평가';
+
 }
 
 // Path: accessibility
@@ -1473,6 +1475,8 @@ extension on TranslationsKo {
 			'mediaMenu.deleteMultipleWarning' => '여러 항목이 삭제될 수 있습니다.',
 			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
 			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
+			'mediaMenu.rate' => '평가',
+
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 영화',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV 프로그램',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',

@@ -266,7 +266,8 @@
     "confirmDelete": "Är du säker på att du vill ta bort detta objekt från ditt filsystem?",
     "deleteMultipleWarning": "Flera objekt kan komma att tas bort.",
     "mediaDeletedSuccessfully": "Mediaobjekt borttaget",
-    "mediaFailedToDelete": "Kunde inte ta bort mediaobjekt"
+    "mediaFailedToDelete": "Kunde inte ta bort mediaobjekt",
+    "rate": "Betygsätt"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

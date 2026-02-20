@@ -10,6 +10,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../widgets/collapsible_text.dart';
+import '../widgets/rating_bottom_sheet.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focusable_wrapper.dart';
@@ -75,6 +76,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   int _focusedSeasonIndex = 0;
   late final FocusNode _seasonsFocusNode;
   late final FocusNode _playButtonFocusNode;
+  late final FocusNode _ratingChipFocusNode;
   Timer? _selectKeyTimer;
   bool _isSelectKeyDown = false;
   bool _longPressTriggered = false;
@@ -256,6 +258,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     _seasonsFocusNode = FocusNode(debugLabel: 'seasons_row');
     _extrasFocusNode = FocusNode(debugLabel: 'extras_row');
     _playButtonFocusNode = FocusNode(debugLabel: 'play_button');
+    _ratingChipFocusNode = FocusNode(debugLabel: 'rating_chip');
     _overviewFocusNode = FocusNode(debugLabel: 'overview');
     _castFocusNode = FocusNode(debugLabel: 'cast_row');
     _loadFullMetadata();
@@ -275,6 +278,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     _seasonsFocusNode.dispose();
     _extrasFocusNode.dispose();
     _playButtonFocusNode.dispose();
+    _ratingChipFocusNode.dispose();
     _overviewFocusNode.dispose();
     _castFocusNode.dispose();
     _castScrollController.dispose();
@@ -772,7 +776,95 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         chips.add(_buildRatingChip(metadata.audienceRatingImage, metadata.audienceRating!, Symbols.people_rounded));
       }
     }
+
+    // User rating chip (tappable)
+    if (!widget.isOffline) {
+      chips.add(_buildUserRatingChip(metadata));
+    }
+
     return chips;
+  }
+
+  Widget _buildUserRatingChip(PlexMetadata metadata) {
+    final hasRating = metadata.userRating != null && metadata.userRating! > 0;
+    final starValue = hasRating ? metadata.userRating! / 2.0 : 0.0;
+
+    return FocusableWrapper(
+      focusNode: _ratingChipFocusNode,
+      onSelect: () => _showRatingDialog(metadata, starValue),
+      borderRadius: 100,
+      useBackgroundFocus: true,
+      onKeyEvent: (_, event) {
+        if (!event.isActionable) return KeyEventResult.ignored;
+        final key = event.logicalKey;
+        if (key.isDownKey) {
+          _playButtonFocusNode.requestFocus();
+          return KeyEventResult.handled;
+        }
+        if (key.isUpKey) {
+          return KeyEventResult.handled; // consume — nothing above
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: () => _showRatingDialog(metadata, starValue),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.8),
+            borderRadius: const BorderRadius.all(Radius.circular(100)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppIcon(
+                Symbols.star_rounded,
+                fill: hasRating ? 1 : 0,
+                color: hasRating
+                    ? Colors.amber
+                    : Theme.of(context).colorScheme.onSecondaryContainer,
+                size: 16,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                hasRating
+                    ? (starValue == starValue.truncateToDouble()
+                        ? '${starValue.toInt()}'
+                        : starValue.toStringAsFixed(1))
+                    : t.mediaMenu.rate,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showRatingDialog(PlexMetadata metadata, double currentStarValue) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => RatingBottomSheet(
+        currentRating: currentStarValue,
+        onRate: (stars) async {
+          final client = _getClientForMetadata(this.context);
+          if (client == null) return;
+          final plexRating = stars * 2.0; // Convert 0-5 stars to 0-10 scale
+          final success = await client.rateItem(metadata.ratingKey, plexRating);
+          if (success) _updateWatchState();
+        },
+        onClear: () async {
+          final client = _getClientForMetadata(this.context);
+          if (client == null) return;
+          final success = await client.rateItem(metadata.ratingKey, -1);
+          if (success) _updateWatchState();
+        },
+      ),
+    );
   }
 
   /// Build a combined RT chip showing critic + audience side by side.
@@ -1036,6 +1128,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   KeyEventResult _handlePlayButtonKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
     if (!event.isActionable) return KeyEventResult.ignored;
+
+    // UP: focus the rating chip if available
+    if (key.isUpKey) {
+      if (!widget.isOffline) {
+        _ratingChipFocusNode.requestFocus();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.handled;
+    }
+
     if (!key.isDownKey) return KeyEventResult.ignored;
 
     final metadata = _fullMetadata ?? widget.metadata;
@@ -2386,6 +2488,22 @@ class _SeasonCardState extends State<_SeasonCard> {
                               t.discover.episodeCount(count: widget.season.leafCount.toString()),
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                             ),
+                          if (widget.season.userRating != null && widget.season.userRating! > 0) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Symbols.star_rounded, size: 14, fill: 1, color: Colors.amber)),
+                                const SizedBox(width: 3),
+                                Text(
+                                  (widget.season.userRating! / 2) == (widget.season.userRating! / 2).truncateToDouble()
+                                      ? '${(widget.season.userRating! / 2).toInt()}'
+                                      : (widget.season.userRating! / 2).toStringAsFixed(1),
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ],
                           // Hide watch progress when offline (not tracked)
                           if (!widget.isOffline) ...[
                             const SizedBox(height: 8),
@@ -2473,3 +2591,4 @@ class _SeasonCardState extends State<_SeasonCard> {
     );
   }
 }
+

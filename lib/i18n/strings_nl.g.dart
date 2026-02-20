@@ -400,6 +400,8 @@ class _TranslationsMediaMenuNl implements TranslationsMediaMenuEn {
 	@override String get deleteMultipleWarning => 'Meerdere items kunnen worden verwijderd.';
 	@override String get mediaDeletedSuccessfully => 'Media-item succesvol verwijderd';
 	@override String get mediaFailedToDelete => 'Verwijderen van media-item mislukt';
+	@override String get rate => 'Beoordelen';
+
 }
 
 // Path: accessibility
@@ -1473,6 +1475,8 @@ extension on TranslationsNl {
 			'mediaMenu.deleteMultipleWarning' => 'Meerdere items kunnen worden verwijderd.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media-item succesvol verwijderd',
 			'mediaMenu.mediaFailedToDelete' => 'Verwijderen van media-item mislukt',
+			'mediaMenu.rate' => 'Beoordelen',
+
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',

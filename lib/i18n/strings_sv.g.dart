@@ -400,6 +400,8 @@ class _TranslationsMediaMenuSv implements TranslationsMediaMenuEn {
 	@override String get deleteMultipleWarning => 'Flera objekt kan komma att tas bort.';
 	@override String get mediaDeletedSuccessfully => 'Mediaobjekt borttaget';
 	@override String get mediaFailedToDelete => 'Kunde inte ta bort mediaobjekt';
+	@override String get rate => 'Betygsätt';
+
 }
 
 // Path: accessibility
@@ -1473,6 +1475,8 @@ extension on TranslationsSv {
 			'mediaMenu.deleteMultipleWarning' => 'Flera objekt kan komma att tas bort.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Mediaobjekt borttaget',
 			'mediaMenu.mediaFailedToDelete' => 'Kunde inte ta bort mediaobjekt',
+			'mediaMenu.rate' => 'Betygsätt',
+
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',

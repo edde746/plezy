@@ -266,7 +266,8 @@
     "confirmDelete": "Sei sicuro di voler eliminare questo elemento dal tuo filesystem?",
     "deleteMultipleWarning": "Potrebbero essere eliminati più elementi.",
     "mediaDeletedSuccessfully": "Elemento multimediale eliminato con successo",
-    "mediaFailedToDelete": "Impossibile eliminare l'elemento multimediale"
+    "mediaFailedToDelete": "Impossibile eliminare l'elemento multimediale",
+    "rate": "Valuta"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

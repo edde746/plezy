@@ -400,6 +400,8 @@ class _TranslationsMediaMenuZh implements TranslationsMediaMenuEn {
 	@override String get deleteMultipleWarning => '可能会删除多个项目。';
 	@override String get mediaDeletedSuccessfully => '媒体项已成功删除';
 	@override String get mediaFailedToDelete => '删除媒体项失败';
+	@override String get rate => '评分';
+
 }
 
 // Path: accessibility
@@ -1473,6 +1475,8 @@ extension on TranslationsZh {
 			'mediaMenu.deleteMultipleWarning' => '可能会删除多个项目。',
 			'mediaMenu.mediaDeletedSuccessfully' => '媒体项已成功删除',
 			'mediaMenu.mediaFailedToDelete' => '删除媒体项失败',
+			'mediaMenu.rate' => '评分',
+
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',

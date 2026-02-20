@@ -26,6 +26,7 @@ import '../theme/mono_tokens.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/overlay_sheet.dart';
+import '../widgets/rating_bottom_sheet.dart';
 import '../i18n/strings.g.dart';
 
 /// Helper class to store menu action data
@@ -184,6 +185,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             icon: Symbols.close_rounded,
             label: t.mediaMenu.removeFromContinueWatching,
           ),
+        );
+      }
+
+      // Rate (for movies, shows, seasons, and episodes)
+      if (mediaType == PlexMediaType.movie ||
+          mediaType == PlexMediaType.show ||
+          mediaType == PlexMediaType.season ||
+          mediaType == PlexMediaType.episode) {
+        menuActions.add(
+          _MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate),
         );
       }
 
@@ -394,6 +405,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             if (context.mounted) {
               showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
             }
+          }
+          break;
+
+        case 'rate':
+          if (context.mounted) {
+            await _showRatingSheet(context, metadata!, client);
           }
           break;
 
@@ -928,6 +945,25 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Handle remove from collection action
+  Future<void> _showRatingSheet(BuildContext context, PlexMetadata metadata, PlexClient client) async {
+    final currentStarValue = (metadata.userRating != null && metadata.userRating! > 0) ? metadata.userRating! / 2.0 : 0.0;
+    await showModalBottomSheet(
+      context: context,
+      builder: (context) => RatingBottomSheet(
+        currentRating: currentStarValue,
+        onRate: (stars) async {
+          final plexRating = stars * 2.0;
+          final success = await client.rateItem(metadata.ratingKey, plexRating);
+          if (success) widget.onRefresh?.call(metadata.ratingKey);
+        },
+        onClear: () async {
+          final success = await client.rateItem(metadata.ratingKey, -1);
+          if (success) widget.onRefresh?.call(metadata.ratingKey);
+        },
+      ),
+    );
+  }
+
   Future<void> _handleRemoveFromCollection(BuildContext context, PlexMetadata metadata) async {
     final client = _getClientForItem();
 

@@ -400,6 +400,8 @@ class _TranslationsMediaMenuEs implements TranslationsMediaMenuEn {
 	@override String get deleteMultipleWarning => 'Es posible que se eliminen varios elementos.';
 	@override String get mediaDeletedSuccessfully => 'Elemento multimedia eliminado con éxito';
 	@override String get mediaFailedToDelete => 'Error al eliminar el elemento multimedia';
+	@override String get rate => 'Calificar';
+
 }
 
 // Path: accessibility
@@ -1473,6 +1475,8 @@ extension on TranslationsEs {
 			'mediaMenu.deleteMultipleWarning' => 'Es posible que se eliminen varios elementos.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Elemento multimedia eliminado con éxito',
 			'mediaMenu.mediaFailedToDelete' => 'Error al eliminar el elemento multimedia',
+			'mediaMenu.rate' => 'Calificar',
+
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, película',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, serie de TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',

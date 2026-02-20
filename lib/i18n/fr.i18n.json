@@ -266,7 +266,8 @@
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet élément de votre système de fichiers?",
     "deleteMultipleWarning": "Plusieurs éléments peuvent être supprimés.",
     "mediaDeletedSuccessfully": "Élément média supprimé avec succès",
-    "mediaFailedToDelete": "Échec de la suppression de l'élément média"
+    "mediaFailedToDelete": "Échec de la suppression de l'élément média",
+    "rate": "Noter"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

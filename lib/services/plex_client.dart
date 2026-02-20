@@ -1177,6 +1177,19 @@ class PlexClient {
     await _dio.put('/actions/removeFromContinueWatching', queryParameters: {'ratingKey': ratingKey});
   }
 
+  /// Rate a media item (0.0-10.0 scale, where each integer = half a star)
+  /// Pass -1 to clear an existing rating
+  Future<bool> rateItem(String ratingKey, double rating) {
+    return _wrapBoolApiCall(
+      () => _dio.put('/:/rate', queryParameters: {
+        'key': ratingKey,
+        'identifier': 'com.plexapp.plugins.library',
+        'rating': rating,
+      }),
+      'Failed to rate item',
+    );
+  }
+
   /// Delete a media item from the library
   /// This permanently removes the item and its associated files from the server
   /// Returns true if deletion was successful, false otherwise

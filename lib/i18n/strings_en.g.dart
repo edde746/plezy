@@ -856,6 +856,10 @@ class TranslationsMediaMenuEn {
 
 	/// en: 'Failed to delete media item'
 	String get mediaFailedToDelete => 'Failed to delete media item';
+
+	/// en: 'Rate'
+	String get rate => 'Rate';
+
 }
 
 // Path: accessibility
@@ -2962,6 +2966,8 @@ extension on Translations {
 			'mediaMenu.deleteMultipleWarning' => 'Multiple items may be deleted.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
+			'mediaMenu.rate' => 'Rate',
+
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
