@@ -13,6 +13,7 @@ class ProfileListTile extends StatelessWidget {
   final VoidCallback onTap;
   final bool isCurrentUser;
   final bool showTrailingIcon;
+  final bool allowCurrentUserTap;
 
   const ProfileListTile({
     super.key,
@@ -20,6 +21,7 @@ class ProfileListTile extends StatelessWidget {
     required this.onTap,
     this.isCurrentUser = false,
     this.showTrailingIcon = true,
+    this.allowCurrentUserTap = false,
   });
 
   @override
@@ -53,7 +55,7 @@ class ProfileListTile extends StatelessWidget {
       title: Text(user.displayName),
       subtitle: _hasUserAttributes() ? Row(children: _buildUserAttributes(theme)) : null,
       trailing: trailing,
-      onTap: isCurrentUser ? null : onTap,
+      onTap: isCurrentUser && !allowCurrentUserTap ? null : onTap,
     );
   }
 

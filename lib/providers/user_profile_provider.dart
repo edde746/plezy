@@ -223,14 +223,13 @@ class UserProfileProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> switchToUser(PlexHomeUser user, BuildContext? context) async {
+  Future<bool> switchToUser(PlexHomeUser user, BuildContext? context, {bool verifyPin = false}) async {
     if (_authService == null || _storageService == null) {
       _setError('Services not initialized');
       return false;
     }
 
-    if (user.uuid == _currentUser?.uuid) {
-      // Already on this user
+    if (user.uuid == _currentUser?.uuid && !(verifyPin && user.requiresPassword)) {
       return true;
     }
 

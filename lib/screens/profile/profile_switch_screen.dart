@@ -98,11 +98,12 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
                         autofocus: isFirstSelectable,
                         focusNode: isFirstSelectable ? _firstSelectableFocusNode : null,
                         disableScale: true,
-                        onSelect: isCurrentUser ? null : () => _switchToUser(context, user),
+                        onSelect: isCurrentUser && !widget.requireSelection ? null : () => _switchToUser(context, user),
                         child: Card(
                           child: ProfileListTile(
                             user: user,
                             isCurrentUser: isCurrentUser,
+                            allowCurrentUserTap: widget.requireSelection,
                             onTap: () => _switchToUser(context, user),
                           ),
                         ),
@@ -120,7 +121,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
   void _switchToUser(BuildContext context, PlexHomeUser user) async {
     final userProvider = context.userProfile;
     final navigator = Navigator.of(context);
-    final success = await userProvider.switchToUser(user, context);
+    final success = await userProvider.switchToUser(user, context, verifyPin: widget.requireSelection);
 
     if (success) {
       if (widget.requireSelection) {
