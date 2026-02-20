@@ -40,6 +40,7 @@ import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_pip_manager.dart';
 import '../services/pip_service.dart';
+import '../models/shader_preset.dart';
 import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
 import '../providers/user_profile_provider.dart';
@@ -1032,6 +1033,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             _videoFilterManager?.ambientLightingService = _ambientLightingService;
 
             await _applySavedShaderPreset();
+            await _restoreAmbientLighting();
           }
         }
 
@@ -1147,6 +1149,39 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
+  /// Restore ambient lighting from persisted setting
+  Future<void> _restoreAmbientLighting() async {
+    final settings = await SettingsService.getInstance();
+    if (!settings.getAmbientLighting()) return;
+
+    final ambientLighting = _ambientLightingService;
+    if (ambientLighting == null || !ambientLighting.isSupported) return;
+
+    // Same enable logic as _toggleAmbientLighting
+    final dwidth = await player?.getProperty('dwidth');
+    final dheight = await player?.getProperty('dheight');
+    if (dwidth == null || dheight == null) return;
+    final w = double.tryParse(dwidth);
+    final h = double.tryParse(dheight);
+    if (w == null || h == null || h == 0) return;
+    final videoAspect = w / h;
+
+    final playerSize = _videoFilterManager?.playerSize;
+    if (playerSize == null || playerSize.height == 0) return;
+    final outputAspect = playerSize.width / playerSize.height;
+
+    // Clear shaders — ambient lighting and shaders are mutually exclusive
+    final shaderProvider = context.read<ShaderProvider>();
+    if (shaderProvider.isShaderEnabled) {
+      await _shaderService!.applyPreset(ShaderPreset.none);
+      shaderProvider.setCurrentPreset(ShaderPreset.none);
+    }
+
+    _videoFilterManager?.resetToContain();
+    await ambientLighting.enable(videoAspect, outputAspect);
+    if (mounted) setState(() {});
+  }
+
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void _cycleBoxFitMode() {
     // Disable ambient lighting when switching boxfit modes
@@ -1190,11 +1225,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (playerSize == null || playerSize.height == 0) return;
       final outputAspect = playerSize.width / playerSize.height;
 
+      // Clear shaders — ambient lighting and shaders are mutually exclusive
+      final shaderProvider = context.read<ShaderProvider>();
+      if (shaderProvider.isShaderEnabled) {
+        await _shaderService!.applyPreset(ShaderPreset.none);
+        shaderProvider.setCurrentPreset(ShaderPreset.none);
+      }
+
       // Force contain mode when enabling ambient lighting
       _videoFilterManager?.resetToContain();
 
       await ambientLighting.enable(videoAspect, outputAspect);
     }
+
+    // Persist ambient lighting state
+    final settings = await SettingsService.getInstance();
+    settings.setAmbientLighting(ambientLighting.isEnabled);
 
     setState(() {});
   }

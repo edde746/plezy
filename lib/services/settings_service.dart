@@ -75,6 +75,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySelectedExternalPlayer = 'selected_external_player';
   static const String _keyCustomExternalPlayers = 'custom_external_players';
   static const String _keyConfirmExitOnBack = 'confirm_exit_on_back';
+  static const String _keyAmbientLighting = 'ambient_lighting';
 
   SettingsService._();
 
@@ -1117,6 +1118,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyConfirmExitOnBack) ?? true; // Default: enabled
   }
 
+  // Ambient Lighting
+  Future<void> setAmbientLighting(bool enabled) async {
+    await prefs.setBool(_keyAmbientLighting, enabled);
+  }
+
+  bool getAmbientLighting() {
+    return prefs.getBool(_keyAmbientLighting) ?? false;
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1171,6 +1181,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keySelectedExternalPlayer),
       prefs.remove(_keyCustomExternalPlayers),
       prefs.remove(_keyConfirmExitOnBack),
+      prefs.remove(_keyAmbientLighting),
     ]);
   }
 

@@ -576,6 +576,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                   : null,
               trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.amber) : null,
               onTap: () async {
+                // Disable ambient lighting when selecting a shader
+                if (preset.type != ShaderPresetType.none && widget.isAmbientLightingEnabled) {
+                  widget.onToggleAmbientLighting?.call();
+                }
                 await widget.shaderService!.applyPreset(preset);
                 await shaderProvider.setPreset(preset);
                 widget.onShaderChanged?.call();
