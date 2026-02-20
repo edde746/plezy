@@ -80,10 +80,9 @@ dependencies {
     implementation("androidx.tvprovider:tvprovider:1.0.0")
 
     // Media3 ExoPlayer for Android
-    implementation("androidx.media3:media3-exoplayer:1.5.1")
-    implementation("androidx.media3:media3-ui:1.5.1")
-    implementation("androidx.media3:media3-common:1.5.1")
-    implementation("androidx.media3:media3-session:1.5.1")
+    implementation("androidx.media3:media3-exoplayer:1.9.2")
+    implementation("androidx.media3:media3-ui:1.9.2")
+    implementation("androidx.media3:media3-common:1.9.2")
 
     // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
