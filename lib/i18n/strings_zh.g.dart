@@ -490,6 +490,8 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
 	@override String get noChaptersAvailable => '没有可用的章节';
+	@override String get queue => 'Queue';
+	@override String get noQueueItems => 'No items in queue';
 }
 
 // Path: userStatus
@@ -1542,6 +1544,8 @@ extension on TranslationsZh {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '发生错误：${error}',
 			'videoControls.chapters' => '章节',
 			'videoControls.noChaptersAvailable' => '没有可用的章节',
+			'videoControls.queue' => 'Queue',
+			'videoControls.noQueueItems' => 'No items in queue',
 			'userStatus.admin' => '管理员',
 			'userStatus.restricted' => '受限',
 			'userStatus.protected' => '受保护',
@@ -1740,10 +1744,10 @@ extension on TranslationsZh {
 			'liveTv.allChannels' => '所有频道',
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
-			'liveTv.midnight' => '午夜',
-			'liveTv.overnight' => '凌晨',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.midnight' => '午夜',
+			'liveTv.overnight' => '凌晨',
 			'liveTv.morning' => '上午',
 			'liveTv.daytime' => '白天',
 			'liveTv.evening' => '晚上',

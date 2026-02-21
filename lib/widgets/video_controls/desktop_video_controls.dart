@@ -95,6 +95,12 @@ class DesktopVideoControls extends StatefulWidget {
   /// Called to toggle ambient lighting (passed to settings sheet)
   final VoidCallback? onToggleAmbientLighting;
 
+  /// Whether to show the queue button
+  final bool showQueueButton;
+
+  /// Callback when a queue item is selected
+  final Function(PlexMetadata)? onQueueItemSelected;
+
   const DesktopVideoControls({
     super.key,
     required this.player,
@@ -143,6 +149,8 @@ class DesktopVideoControls extends StatefulWidget {
     this.liveChannelName,
     this.isAmbientLightingEnabled = false,
     this.onToggleAmbientLighting,
+    this.showQueueButton = false,
+    this.onQueueItemSelected,
   });
 
   @override
@@ -686,6 +694,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 onNavigateLeft: navigateFromTrackToVolume,
                 canControl: widget.canControl,
                 isLive: widget.isLive,
+                showQueueButton: widget.showQueueButton,
+                onQueueItemSelected: widget.onQueueItemSelected,
                 shaderService: widget.shaderService,
                 onShaderChanged: widget.onShaderChanged,
                 isAmbientLightingEnabled: widget.isAmbientLightingEnabled,

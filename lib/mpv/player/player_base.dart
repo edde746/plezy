@@ -176,7 +176,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           final buffer = Duration(milliseconds: (value * 1000).toInt());
           _state = _state.copyWith(buffer: buffer);
           bufferController.add(buffer);
+          // Synthesize a single range for players without demuxer-cache-state (ExoPlayer).
+          // ExoPlayer only buffers ahead of the current position, so use position as start.
+          final ranges = [BufferRange(start: _state.position, end: buffer)];
+          _state = _state.copyWith(bufferRanges: ranges);
+          bufferRangesController.add(ranges);
         }
+        break;
+
+      case 'demuxer-cache-state':
+        _handleDemuxerCacheState(value);
         break;
 
       case 'volume':
@@ -259,6 +268,48 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
+  /// Parse demuxer-cache-state property to extract seekable ranges and buffer end.
+  void _handleDemuxerCacheState(dynamic value) {
+    Map? cacheState;
+    if (value is Map) {
+      cacheState = value;
+    } else if (value is String && value.isNotEmpty) {
+      try {
+        final parsed = jsonDecode(value);
+        if (parsed is Map) cacheState = parsed;
+      } catch (_) {}
+    }
+    if (cacheState == null) return;
+
+    // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
+    final cacheEnd = cacheState['cache-end'] as num?;
+    if (cacheEnd != null) {
+      final buffer = Duration(milliseconds: (cacheEnd * 1000).toInt());
+      _state = _state.copyWith(buffer: buffer);
+      bufferController.add(buffer);
+    }
+
+    // Extract seekable-ranges array
+    final seekableRanges = cacheState['seekable-ranges'];
+    if (seekableRanges is List) {
+      final ranges = <BufferRange>[];
+      for (final range in seekableRanges) {
+        if (range is Map) {
+          final start = range['start'] as num?;
+          final end = range['end'] as num?;
+          if (start != null && end != null) {
+            ranges.add(BufferRange(
+              start: Duration(milliseconds: (start * 1000).toInt()),
+              end: Duration(milliseconds: (end * 1000).toInt()),
+            ));
+          }
+        }
+      }
+      _state = _state.copyWith(bufferRanges: ranges);
+      bufferRangesController.add(ranges);
+    }
+  }
+
   /// Handle a player event from the platform.
   /// Subclasses can override this to handle platform-specific events.
   void handlePlayerEvent(String name, Map? data) {
@@ -280,6 +331,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'playback-restart':
+        // Clear stale buffer ranges from before the seek; fresh ones will
+        // arrive shortly via the next demuxer-cache-state update.
+        _state = _state.copyWith(bufferRanges: const []);
+        bufferRangesController.add(const []);
         playbackRestartController.add(null);
         break;
 

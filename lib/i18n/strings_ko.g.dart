@@ -490,6 +490,8 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 	@override String get chapters => '챕터';
 	@override String get noChaptersAvailable => '사용 가능한 챕터가 없습니다';
+	@override String get queue => 'Queue';
+	@override String get noQueueItems => 'No items in queue';
 }
 
 // Path: userStatus
@@ -1542,6 +1544,8 @@ extension on TranslationsKo {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '오류가 발생했습니다: ${error}',
 			'videoControls.chapters' => '챕터',
 			'videoControls.noChaptersAvailable' => '사용 가능한 챕터가 없습니다',
+			'videoControls.queue' => 'Queue',
+			'videoControls.noQueueItems' => 'No items in queue',
 			'userStatus.admin' => '관리자',
 			'userStatus.restricted' => '제한됨',
 			'userStatus.protected' => '보호됨',
@@ -1740,10 +1744,10 @@ extension on TranslationsKo {
 			'liveTv.allChannels' => '전체 채널',
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
-			'liveTv.midnight' => '자정',
-			'liveTv.overnight' => '심야',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.midnight' => '자정',
+			'liveTv.overnight' => '심야',
 			'liveTv.morning' => '아침',
 			'liveTv.daytime' => '낮',
 			'liveTv.evening' => '저녁',

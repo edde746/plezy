@@ -490,6 +490,8 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsNl pipErrors = _TranslationsVideoControlsPipErrorsNl._(_root);
 	@override String get chapters => 'Hoofdstukken';
 	@override String get noChaptersAvailable => 'Geen hoofdstukken beschikbaar';
+	@override String get queue => 'Queue';
+	@override String get noQueueItems => 'No items in queue';
 }
 
 // Path: userStatus
@@ -1542,6 +1544,8 @@ extension on TranslationsNl {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Er is een fout opgetreden: ${error}',
 			'videoControls.chapters' => 'Hoofdstukken',
 			'videoControls.noChaptersAvailable' => 'Geen hoofdstukken beschikbaar',
+			'videoControls.queue' => 'Queue',
+			'videoControls.noQueueItems' => 'No items in queue',
 			'userStatus.admin' => 'Beheerder',
 			'userStatus.restricted' => 'Beperkt',
 			'userStatus.protected' => 'Beschermd',
@@ -1740,10 +1744,10 @@ extension on TranslationsNl {
 			'liveTv.allChannels' => 'Alle zenders',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Vandaag',
-			'liveTv.midnight' => 'Middernacht',
-			'liveTv.overnight' => 'Nacht',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.midnight' => 'Middernacht',
+			'liveTv.overnight' => 'Nacht',
 			'liveTv.morning' => 'Ochtend',
 			'liveTv.daytime' => 'Overdag',
 			'liveTv.evening' => 'Avond',

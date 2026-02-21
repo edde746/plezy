@@ -50,6 +50,9 @@ class PlayerState {
   /// Available audio output devices.
   final List<AudioDevice> audioDevices;
 
+  /// Seekable buffered ranges from the demuxer cache.
+  final List<BufferRange> bufferRanges;
+
   const PlayerState({
     this.playing = false,
     this.completed = false,
@@ -66,6 +69,7 @@ class PlayerState {
     this.audioPassthrough = false,
     this.audioDevice = AudioDevice.auto,
     this.audioDevices = const [],
+    this.bufferRanges = const [],
   });
 
   /// Creates a copy with the given fields replaced.
@@ -85,6 +89,7 @@ class PlayerState {
     bool? audioPassthrough,
     AudioDevice? audioDevice,
     List<AudioDevice>? audioDevices,
+    List<BufferRange>? bufferRanges,
   }) {
     return PlayerState(
       playing: playing ?? this.playing,
@@ -102,6 +107,7 @@ class PlayerState {
       audioPassthrough: audioPassthrough ?? this.audioPassthrough,
       audioDevice: audioDevice ?? this.audioDevice,
       audioDevices: audioDevices ?? this.audioDevices,
+      bufferRanges: bufferRanges ?? this.bufferRanges,
     );
   }
 

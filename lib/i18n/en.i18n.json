@@ -341,7 +341,9 @@
       "unknown": "An error occurred: ${error}"
     },
     "chapters": "Chapters",
-    "noChaptersAvailable": "No chapters available"
+    "noChaptersAvailable": "No chapters available",
+    "queue": "Queue",
+    "noQueueItems": "No items in queue"
   },
   "userStatus": {
     "admin": "Admin",

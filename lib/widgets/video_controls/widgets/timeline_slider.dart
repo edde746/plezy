@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../models/plex_media_info.dart';
+import '../../../mpv/models.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/formatters.dart';
+import '../painters/buffer_range_painter.dart';
 import '../painters/chapter_marker_painter.dart';
 import '../../plex_optimized_image.dart' show blurArtwork;
 
@@ -16,6 +18,7 @@ import '../../plex_optimized_image.dart' show blurArtwork;
 class TimelineSlider extends StatefulWidget {
   final Duration position;
   final Duration duration;
+  final List<BufferRange> bufferRanges;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
   final ValueChanged<Duration> onSeek;
@@ -40,6 +43,7 @@ class TimelineSlider extends StatefulWidget {
     super.key,
     required this.position,
     required this.duration,
+    this.bufferRanges = const [],
     required this.chapters,
     required this.chaptersLoaded,
     required this.onSeek,
@@ -61,7 +65,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
   bool _showKeySeekThumbnail = false;
   Timer? _keySeekTimer;
 
-  static const _sliderPadding = 24.0;
+  // Must match the slider track inset: max(overlayRadius, thumbRadius)
+  static const _sliderPadding = 12.0;
 
   static const _thumbWidth = 160.0;
   static const _thumbHeight = 90.0;
@@ -201,7 +206,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
             if (widget.chaptersLoaded && widget.chapters.isNotEmpty && widget.duration.inMilliseconds > 0)
               Positioned.fill(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
                   child: Row(
                     children:
                         widget.chapters.map((chapter) {
@@ -223,10 +228,26 @@ class _TimelineSliderState extends State<TimelineSlider> {
                   ),
                 ),
               ),
+            // Buffer range + background track painter
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
+                  child: CustomPaint(
+                    painter: BufferRangePainter(ranges: widget.bufferRanges, duration: widget.duration),
+                  ),
+                ),
+              ),
+            ),
             // Slider - use IgnorePointer to block interaction while preserving visual style
             IgnorePointer(
               ignoring: !widget.enabled,
-              child: Semantics(
+              child: SliderTheme(
+                data: SliderThemeData(
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                ),
+                child: Semantics(
                 label: t.videoControls.timelineSlider,
                 slider: true,
                 child: Slider(
@@ -242,8 +263,9 @@ class _TimelineSliderState extends State<TimelineSlider> {
                     widget.onSeekEnd(Duration(milliseconds: value.toInt()));
                   },
                   activeColor: Colors.white,
-                  inactiveColor: Colors.white.withValues(alpha: 0.3),
+                  inactiveColor: Colors.transparent,
                 ),
+              ),
               ),
             ),
             // Chapter marker indicators
@@ -251,7 +273,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
               Positioned.fill(
                 child: IgnorePointer(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
                     child: CustomPaint(
                       painter: ChapterMarkerPainter(chapters: widget.chapters, duration: widget.duration),
                     ),

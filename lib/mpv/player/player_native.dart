@@ -30,6 +30,10 @@ class PlayerNative extends PlayerBase {
   @override
   String get playerType => 'mpv';
 
+  /// Node properties are returned as structured maps on macOS/iOS/Linux,
+  /// but as JSON strings on Android/Windows.
+  static final String _nodeFormat = (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node';
+
   // ============================================
   // Initialization
   // ============================================
@@ -58,13 +62,14 @@ class PlayerNative extends PlayerBase {
       await observeProperty('duration', 'double');
       await observeProperty('pause', 'flag');
       await observeProperty('paused-for-cache', 'flag');
-      await observeProperty('track-list', (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node');
+      await observeProperty('track-list', _nodeFormat);
       await observeProperty('eof-reached', 'flag');
       await observeProperty('volume', 'double');
       await observeProperty('speed', 'double');
       await observeProperty('aid', 'string');
       await observeProperty('sid', 'string');
-      await observeProperty('audio-device-list', (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node');
+      await observeProperty('demuxer-cache-state', _nodeFormat);
+      await observeProperty('audio-device-list', _nodeFormat);
       await observeProperty('audio-device', 'string');
     } catch (e) {
       errorController.add('Initialization failed: $e');

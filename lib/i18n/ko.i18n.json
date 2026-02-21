@@ -341,7 +341,9 @@
       "unknown": "오류가 발생했습니다: ${error}"
     },
     "chapters": "챕터",
-    "noChaptersAvailable": "사용 가능한 챕터가 없습니다"
+    "noChaptersAvailable": "사용 가능한 챕터가 없습니다",
+    "queue": "Queue",
+    "noQueueItems": "No items in queue"
   },
   "userStatus": {
     "admin": "관리자",

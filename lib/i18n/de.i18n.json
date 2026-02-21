@@ -341,7 +341,9 @@
       "unknown": "Ein Fehler ist aufgetreten: ${error}"
     },
     "chapters": "Kapitel",
-    "noChaptersAvailable": "Keine Kapitel verfügbar"
+    "noChaptersAvailable": "Keine Kapitel verfügbar",
+    "queue": "Queue",
+    "noQueueItems": "No items in queue"
   },
   "userStatus": {
     "admin": "Eigentümer",

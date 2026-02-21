@@ -65,35 +65,42 @@ class VideoTimelineBar extends StatelessWidget {
           stream: player.streams.duration,
           initialData: player.state.duration,
           builder: (context, durationSnapshot) {
-            final position = positionSnapshot.data ?? Duration.zero;
-            final duration = durationSnapshot.data ?? Duration.zero;
-            final remaining = position - duration; // We want this to be negative
+            return StreamBuilder<List<BufferRange>>(
+              stream: player.streams.bufferRanges,
+              initialData: player.state.bufferRanges,
+              builder: (context, bufferRangesSnapshot) {
+                final position = positionSnapshot.data ?? Duration.zero;
+                final duration = durationSnapshot.data ?? Duration.zero;
+                final bufferRanges = bufferRangesSnapshot.data ?? const [];
+                final remaining = position - duration; // We want this to be negative
 
-            return horizontalLayout
-                ? _buildHorizontalLayout(position, duration, remaining)
-                : _buildVerticalLayout(position, duration, remaining);
+                return horizontalLayout
+                    ? _buildHorizontalLayout(position, duration, remaining, bufferRanges)
+                    : _buildVerticalLayout(position, duration, remaining, bufferRanges);
+              },
+            );
           },
         );
       },
     );
   }
 
-  Widget _buildHorizontalLayout(Duration position, Duration duration, Duration remaining) {
+  Widget _buildHorizontalLayout(Duration position, Duration duration, Duration remaining, List<BufferRange> bufferRanges) {
     return Row(
       children: [
         _buildTimestamp(position),
         const SizedBox(width: 12),
-        Expanded(child: _buildSlider(position, duration)),
+        Expanded(child: _buildSlider(position, duration, bufferRanges)),
         const SizedBox(width: 12),
         _buildTimestamp(remaining),
       ],
     );
   }
 
-  Widget _buildVerticalLayout(Duration position, Duration duration, Duration remaining) {
+  Widget _buildVerticalLayout(Duration position, Duration duration, Duration remaining, List<BufferRange> bufferRanges) {
     return Column(
       children: [
-        _buildSlider(position, duration),
+        _buildSlider(position, duration, bufferRanges),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
@@ -124,10 +131,11 @@ class VideoTimelineBar extends StatelessWidget {
     );
   }
 
-  Widget _buildSlider(Duration position, Duration duration) {
+  Widget _buildSlider(Duration position, Duration duration, List<BufferRange> bufferRanges) {
     return TimelineSlider(
       position: position,
       duration: duration,
+      bufferRanges: bufferRanges,
       chapters: chapters,
       chaptersLoaded: chaptersLoaded,
       onSeek: onSeek,

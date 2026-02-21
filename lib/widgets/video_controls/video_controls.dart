@@ -51,6 +51,7 @@ import 'desktop_video_controls.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/shader_preset.dart';
+import '../../providers/playback_state_provider.dart';
 import '../../providers/shader_provider.dart';
 import '../../services/shader_service.dart';
 
@@ -888,6 +889,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   Widget _buildTrackChapterControlsWidget() {
+    final playbackState = context.watch<PlaybackStateProvider>();
+
     return TrackChapterControls(
       player: widget.player,
       chapters: _chapters,
@@ -916,6 +919,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       serverId: widget.metadata.serverId ?? '',
       canControl: widget.canControl,
       isLive: widget.isLive,
+      showQueueButton: playbackState.isQueueActive,
+      onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
@@ -1798,6 +1803,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             onBack: widget.onBack,
                                             onNext: widget.onNext,
                                             onPrevious: widget.onPrevious,
+                                            onSeekToPreviousChapter: _seekToPreviousChapter,
+                                            onSeekToNextChapter: _seekToNextChapter,
                                             canControl: widget.canControl,
                                             hasFirstFrame: widget.hasFirstFrame,
                                             thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
@@ -1862,6 +1869,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   Widget _buildDesktopControlsListener() {
     final pipMode = (_isPipSupported && Platform.isAndroid) ? widget.onTogglePIPMode : null;
     final boxFitMode = widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null;
+    final playbackState = context.watch<PlaybackStateProvider>();
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -1910,6 +1918,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         onBack: widget.onBack,
         canControl: widget.canControl,
         hasFirstFrame: widget.hasFirstFrame,
+        showQueueButton: playbackState.isQueueActive,
+        onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
         shaderService: widget.shaderService,
         onShaderChanged: widget.onShaderChanged,
         thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
@@ -2032,6 +2042,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Switch to a different media version
+  void _onQueueItemSelected(PlexMetadata item) {
+    final videoPlayerState = context.findAncestorStateOfType<VideoPlayerScreenState>();
+    videoPlayerState?.navigateToQueueItem(item);
+  }
+
   Future<void> _switchMediaVersion(int newMediaIndex) async {
     if (newMediaIndex == widget.selectedMediaIndex) {
       return; // Already using this version

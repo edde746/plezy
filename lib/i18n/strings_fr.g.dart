@@ -490,6 +490,8 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsFr pipErrors = _TranslationsVideoControlsPipErrorsFr._(_root);
 	@override String get chapters => 'Chapitres';
 	@override String get noChaptersAvailable => 'Aucun chapitre disponible';
+	@override String get queue => 'Queue';
+	@override String get noQueueItems => 'No items in queue';
 }
 
 // Path: userStatus
@@ -1542,6 +1544,8 @@ extension on TranslationsFr {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Une erreur s\'est produite : ${error}',
 			'videoControls.chapters' => 'Chapitres',
 			'videoControls.noChaptersAvailable' => 'Aucun chapitre disponible',
+			'videoControls.queue' => 'Queue',
+			'videoControls.noQueueItems' => 'No items in queue',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Restreint',
 			'userStatus.protected' => 'Protégé',
@@ -1740,10 +1744,10 @@ extension on TranslationsFr {
 			'liveTv.allChannels' => 'Toutes les chaînes',
 			'liveTv.now' => 'Maintenant',
 			'liveTv.today' => 'Aujourd\'hui',
-			'liveTv.midnight' => 'Minuit',
-			'liveTv.overnight' => 'Nuit',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.midnight' => 'Minuit',
+			'liveTv.overnight' => 'Nuit',
 			'liveTv.morning' => 'Matin',
 			'liveTv.daytime' => 'Journée',
 			'liveTv.evening' => 'Soirée',

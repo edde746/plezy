@@ -23,6 +23,7 @@ mixin PlayerStreamControllersMixin {
   final errorController = StreamController<String>.broadcast();
   final audioDeviceController = StreamController<AudioDevice>.broadcast();
   final audioDevicesController = StreamController<List<AudioDevice>>.broadcast();
+  final bufferRangesController = StreamController<List<BufferRange>>.broadcast();
   final playbackRestartController = StreamController<void>.broadcast();
   final backendSwitchedController = StreamController<void>.broadcast();
 
@@ -43,6 +44,7 @@ mixin PlayerStreamControllersMixin {
       error: errorController.stream,
       audioDevice: audioDeviceController.stream,
       audioDevices: audioDevicesController.stream,
+      bufferRanges: bufferRangesController.stream,
       playbackRestart: playbackRestartController.stream,
       backendSwitched: backendSwitchedController.stream,
     );
@@ -64,6 +66,7 @@ mixin PlayerStreamControllersMixin {
     await errorController.close();
     await audioDeviceController.close();
     await audioDevicesController.close();
+    await bufferRangesController.close();
     await playbackRestartController.close();
     await backendSwitchedController.close();
   }

@@ -1,3 +1,10 @@
+/// Represents a contiguous buffered range in the demuxer cache.
+class BufferRange {
+  final Duration start;
+  final Duration end;
+  const BufferRange({required this.start, required this.end});
+}
+
 /// Log level for player messages.
 enum PlayerLogLevel {
   /// No logging.

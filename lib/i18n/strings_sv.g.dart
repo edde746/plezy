@@ -490,6 +490,8 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
 	@override String get chapters => 'Kapitel';
 	@override String get noChaptersAvailable => 'Inga kapitel tillgängliga';
+	@override String get queue => 'Queue';
+	@override String get noQueueItems => 'No items in queue';
 }
 
 // Path: userStatus
@@ -1542,6 +1544,8 @@ extension on TranslationsSv {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ett fel uppstod: ${error}',
 			'videoControls.chapters' => 'Kapitel',
 			'videoControls.noChaptersAvailable' => 'Inga kapitel tillgängliga',
+			'videoControls.queue' => 'Queue',
+			'videoControls.noQueueItems' => 'No items in queue',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Begränsad',
 			'userStatus.protected' => 'Skyddad',
@@ -1740,10 +1744,10 @@ extension on TranslationsSv {
 			'liveTv.allChannels' => 'Alla kanaler',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
-			'liveTv.midnight' => 'Midnatt',
-			'liveTv.overnight' => 'Natt',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.midnight' => 'Midnatt',
+			'liveTv.overnight' => 'Natt',
 			'liveTv.morning' => 'Morgon',
 			'liveTv.daytime' => 'Dagtid',
 			'liveTv.evening' => 'Kväll',

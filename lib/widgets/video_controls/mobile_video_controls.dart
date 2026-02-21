@@ -34,6 +34,8 @@ class MobileVideoControls extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+  final VoidCallback? onSeekToPreviousChapter;
+  final VoidCallback? onSeekToNextChapter;
 
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
@@ -67,6 +69,8 @@ class MobileVideoControls extends StatelessWidget {
     this.onBack,
     this.onNext,
     this.onPrevious,
+    this.onSeekToPreviousChapter,
+    this.onSeekToNextChapter,
     this.canControl = true,
     this.hasFirstFrame,
     this.thumbnailUrlBuilder,
@@ -118,6 +122,8 @@ class MobileVideoControls extends StatelessWidget {
   }
 
   Widget _buildPlaybackControlsContent(BuildContext _) {
+    final hasChapters = !isLive && chaptersLoaded && chapters.isNotEmpty;
+
     return PlayPauseStreamBuilder(
       player: player,
       builder: (context, isPlaying) {
@@ -125,6 +131,15 @@ class MobileVideoControls extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (!isLive) ...[
+              if (hasChapters) ...[
+                CircularControlButton(
+                  semanticLabel: t.videoControls.previousChapterButton,
+                  icon: Symbols.fast_rewind_rounded,
+                  iconSize: 32,
+                  onPressed: onSeekToPreviousChapter,
+                ),
+                const SizedBox(width: 16),
+              ],
               // Previous episode button (greyed out when unavailable)
               CircularControlButton(
                 semanticLabel: t.videoControls.previousButton,
@@ -157,6 +172,15 @@ class MobileVideoControls extends StatelessWidget {
                 iconSize: 48,
                 onPressed: onNext,
               ),
+              if (hasChapters) ...[
+                const SizedBox(width: 16),
+                CircularControlButton(
+                  semanticLabel: t.videoControls.nextChapterButton,
+                  icon: Symbols.fast_forward_rounded,
+                  iconSize: 32,
+                  onPressed: onSeekToNextChapter,
+                ),
+              ],
             ],
           ],
         );

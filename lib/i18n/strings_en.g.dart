@@ -1071,6 +1071,12 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'No chapters available'
 	String get noChaptersAvailable => 'No chapters available';
+
+	/// en: 'Queue'
+	String get queue => 'Queue';
+
+	/// en: 'No items in queue'
+	String get noQueueItems => 'No items in queue';
 }
 
 // Path: userStatus
@@ -3035,6 +3041,8 @@ extension on Translations {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'An error occurred: ${error}',
 			'videoControls.chapters' => 'Chapters',
 			'videoControls.noChaptersAvailable' => 'No chapters available',
+			'videoControls.queue' => 'Queue',
+			'videoControls.noQueueItems' => 'No items in queue',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Restricted',
 			'userStatus.protected' => 'Protected',
@@ -3233,10 +3241,10 @@ extension on Translations {
 			'liveTv.allChannels' => 'All Channels',
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
-			'liveTv.midnight' => 'Midnight',
-			'liveTv.overnight' => 'Overnight',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.midnight' => 'Midnight',
+			'liveTv.overnight' => 'Overnight',
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',

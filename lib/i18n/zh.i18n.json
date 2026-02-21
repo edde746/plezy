@@ -341,7 +341,9 @@
       "unknown": "发生错误：${error}"
     },
     "chapters": "章节",
-    "noChaptersAvailable": "没有可用的章节"
+    "noChaptersAvailable": "没有可用的章节",
+    "queue": "Queue",
+    "noQueueItems": "No items in queue"
   },
   "userStatus": {
     "admin": "管理员",

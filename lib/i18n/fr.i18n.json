@@ -341,7 +341,9 @@
       "unknown": "Une erreur s'est produite : ${error}"
     },
     "chapters": "Chapitres",
-    "noChaptersAvailable": "Aucun chapitre disponible"
+    "noChaptersAvailable": "Aucun chapitre disponible",
+    "queue": "Queue",
+    "noQueueItems": "No items in queue"
   },
   "userStatus": {
     "admin": "Admin",

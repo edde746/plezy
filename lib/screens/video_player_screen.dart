@@ -1758,6 +1758,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     await _navigateToEpisode(_previousEpisode!);
   }
 
+  /// Navigate to a specific queue item (called from QueueSheet)
+  Future<void> navigateToQueueItem(PlexMetadata metadata) async {
+    _notifyWatchTogetherMediaChange(metadata: metadata);
+    await _navigateToEpisode(metadata);
+  }
+
   bool _isSwitchingChannel = false;
 
   /// Switch to an adjacent live TV channel (delta: +1 for next, -1 for previous)
