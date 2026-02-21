@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 
 import 'package:drift/drift.dart';
 
@@ -40,7 +41,7 @@ class PlexApiCache {
     final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
 
     if (result != null) {
-      return jsonDecode(result.data) as Map<String, dynamic>;
+      return await Isolate.run(() => jsonDecode(result.data) as Map<String, dynamic>);
     }
     return null;
   }
@@ -48,11 +49,10 @@ class PlexApiCache {
   /// Cache a response for an endpoint
   Future<void> put(String serverId, String endpoint, Map<String, dynamic> data) async {
     final key = _buildKey(serverId, endpoint);
+    final encoded = await Isolate.run(() => jsonEncode(data));
     await _db
         .into(_db.apiCache)
-        .insertOnConflictUpdate(
-          ApiCacheCompanion(cacheKey: Value(key), data: Value(jsonEncode(data)), cachedAt: Value(DateTime.now())),
-        );
+        .insertOnConflictUpdate(ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded), cachedAt: Value(DateTime.now())));
   }
 
   /// Delete all cached data for a server
@@ -130,27 +130,35 @@ class PlexApiCache {
   Future<Map<String, PlexMetadata>> getAllPinnedMetadata() async {
     final rows = await (_db.select(_db.apiCache)..where((t) => t.pinned.equals(true))).get();
 
-    final result = <String, PlexMetadata>{};
+    // Extract (cacheKey, data) pairs and parse serverId/ratingKey on main thread (cheap string ops),
+    // then send raw JSON strings to isolate for the expensive decode+parse.
+    final entries = <(String serverId, String ratingKey, String data)>[];
     for (final row in rows) {
-      // Extract serverId and ratingKey from cache key like "serverId:/library/metadata/12345"
       final colonIdx = row.cacheKey.indexOf(':');
       if (colonIdx < 0) continue;
       final serverId = row.cacheKey.substring(0, colonIdx);
       final match = RegExp(r'/library/metadata/([^/]+)$').firstMatch(row.cacheKey);
       if (match == null) continue;
-      final ratingKey = match.group(1)!;
-
-      try {
-        final data = jsonDecode(row.data) as Map<String, dynamic>;
-        final json = PlexCacheParser.extractFirstMetadata(data);
-        if (json == null) continue;
-        final metadata = PlexMetadata.fromJsonWithImages(json).copyWith(serverId: serverId);
-        result['$serverId:$ratingKey'] = metadata;
-      } catch (_) {
-        // Skip malformed entries
-      }
+      entries.add((serverId, match.group(1)!, row.data));
     }
-    return result;
+
+    if (entries.isEmpty) return {};
+
+    return await Isolate.run(() {
+      final result = <String, PlexMetadata>{};
+      for (final (serverId, ratingKey, rawData) in entries) {
+        try {
+          final data = jsonDecode(rawData) as Map<String, dynamic>;
+          final json = PlexCacheParser.extractFirstMetadata(data);
+          if (json == null) continue;
+          final metadata = PlexMetadata.fromJsonWithImages(json).copyWith(serverId: serverId);
+          result['$serverId:$ratingKey'] = metadata;
+        } catch (_) {
+          // Skip malformed entries
+        }
+      }
+      return result;
+    });
   }
 
   /// Clear all cached data (useful for debugging/testing)
