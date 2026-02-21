@@ -143,8 +143,9 @@ class _PairingScreenState extends State<PairingScreen> {
     if (data == _lastScannedCode) return;
     _lastScannedCode = data;
 
-    // New format: ip|port|sessionId|pin (4 parts separated by pipe)
-    final parts = data.split('|');
+    // Strip URL wrapper if present (e.g. "https://plezy.app/scan#ip|port|sid|pin")
+    final payload = data.contains('#') ? data.split('#').last : data;
+    final parts = payload.split('|');
     if (parts.length == 4) {
       final ip = parts.first;
       final port = parts[1];

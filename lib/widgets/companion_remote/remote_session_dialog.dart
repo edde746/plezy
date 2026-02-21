@@ -123,8 +123,8 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
         final ip = addressParts.first;
         final port = addressParts[1];
 
-        // New QR format: ip|port|sessionId|pin (using pipe separator)
-        final qrData = '$ip|$port|${session.sessionId}|${session.pin}';
+        // URL-wrapped QR format so external scanners open a real webpage
+        final qrData = 'https://plezy.app/scan#$ip|$port|${session.sessionId}|${session.pin}';
 
         return Dialog(
           child: ConstrainedBox(
