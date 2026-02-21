@@ -43,6 +43,7 @@ class MpvPlayerCore: NSObject {
     private var mpv: OpaquePointer?
     private weak var window: NSWindow?
     private lazy var queue = DispatchQueue(label: "mpv", qos: .userInitiated)
+    private var playbackActivity: NSObjectProtocol?
 
     weak var delegate: MpvPlayerDelegate?
 
@@ -79,6 +80,7 @@ class MpvPlayerCore: NSObject {
             layer.contentsScale = screen.backingScaleFactor
         }
         layer.framebufferOnly = true
+        layer.isOpaque = true
         layer.backgroundColor = NSColor.black.cgColor
         layer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
 
@@ -166,6 +168,7 @@ class MpvPlayerCore: NSObject {
         checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
         checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "yes"))
+        checkError(mpv_set_option_string(mpv, "vulkan-swap-mode", "mailbox"))
 
         // Initialize MPV
         let initResult = mpv_initialize(mpv)
@@ -307,6 +310,9 @@ class MpvPlayerCore: NSObject {
             if let superlayer = window?.contentView?.layer {
                 superlayer.insertSublayer(layer, at: 0)
             }
+            beginPlaybackActivity()
+        } else {
+            endPlaybackActivity()
         }
 
         layer.isHidden = !visible
@@ -547,9 +553,28 @@ class MpvPlayerCore: NSObject {
         }
     }
 
+    // MARK: - Power Management
+
+    private func beginPlaybackActivity() {
+        guard playbackActivity == nil else { return }
+        playbackActivity = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiated, .latencyCritical],
+            reason: "Video playback"
+        )
+        print("[MpvPlayerCore] Began playback activity assertion")
+    }
+
+    private func endPlaybackActivity() {
+        guard let activity = playbackActivity else { return }
+        ProcessInfo.processInfo.endActivity(activity)
+        playbackActivity = nil
+        print("[MpvPlayerCore] Ended playback activity assertion")
+    }
+
     // MARK: - Cleanup
 
     func dispose() {
+        endPlaybackActivity()
         NotificationCenter.default.removeObserver(self)
 
         // Cancel any pending async commands
