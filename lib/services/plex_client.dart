@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:ui' show VoidCallback;
 
@@ -32,6 +33,61 @@ import '../utils/plex_cache_parser.dart';
 import '../utils/plex_url_helper.dart';
 import '../utils/watch_state_notifier.dart';
 import 'plex_api_cache.dart';
+
+/// Process hub JSON response in an isolate.
+/// Top-level function so it can be passed to [Isolate.run].
+List<PlexHub> _processHubResponse(String jsonStr, String serverId, String? serverName) {
+  final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+  final container = decoded['MediaContainer'] as Map<String, dynamic>?;
+  if (container == null || container['Hub'] == null) return [];
+
+  final hubs = <PlexHub>[];
+  for (final hubJson in container['Hub'] as List) {
+    try {
+      final hub = PlexHub.fromJson(hubJson as Map<String, dynamic>);
+      if (hub.items.isEmpty) continue;
+
+      final videoItems = hub.items
+          .where((item) => item.isVideoContent)
+          .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
+          .toList();
+
+      if (videoItems.isNotEmpty) {
+        hubs.add(
+          PlexHub(
+            hubKey: hub.hubKey,
+            title: hub.title,
+            type: hub.type,
+            hubIdentifier: hub.hubIdentifier,
+            size: hub.size,
+            more: hub.more,
+            items: videoItems,
+            serverId: serverId,
+            serverName: serverName,
+          ),
+        );
+      }
+    } catch (_) {
+      // Skip hubs that fail to parse
+    }
+  }
+  return hubs;
+}
+
+/// Process on-deck JSON response in an isolate.
+/// Top-level function so it can be passed to [Isolate.run].
+List<PlexMetadata> _processOnDeckResponse(String jsonStr, String serverId, String? serverName) {
+  final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+  final container = decoded['MediaContainer'] as Map<String, dynamic>?;
+  if (container == null || container['Metadata'] == null) return [];
+
+  final allItems = (container['Metadata'] as List)
+      .map((json) => PlexMetadata.fromJsonWithImages(json as Map<String, dynamic>)
+          .copyWith(serverId: serverId, serverName: serverName))
+      .toList();
+
+  return allItems.where((item) => !item.isMusicContent).toList();
+}
 
 /// Constants for Plex stream types
 class PlexStreamType {
@@ -702,17 +758,13 @@ class PlexClient {
 
   /// Get on deck items (continue watching, filtered to video content only)
   Future<List<PlexMetadata>> getOnDeck() async {
-    final response = await _dio.get('/library/onDeck');
-    final container = _getMediaContainer(response);
-    if (container != null && container['Metadata'] != null) {
-      final allItems = (container['Metadata'] as List)
-          .map((json) => _tagMetadata(PlexMetadata.fromJsonWithImages(json)))
-          .toList();
-
-      // Filter out music content (artists, albums, tracks)
-      return allItems.where((item) => !item.isMusicContent).toList();
-    }
-    return [];
+    final response = await _dio.get(
+      '/library/onDeck',
+      options: Options(responseType: ResponseType.plain),
+    );
+    final sid = serverId;
+    final sname = serverName;
+    return Isolate.run(() => _processOnDeckResponse(response.data as String, sid, sname));
   }
 
   /// Get on deck items filtered by a specific library section
@@ -1305,44 +1357,11 @@ class PlexClient {
       final response = await _dio.get(
         '/hubs/sections/$sectionId',
         queryParameters: {'count': limit, 'includeGuids': 1},
+        options: Options(responseType: ResponseType.plain),
       );
-
-      final container = _getMediaContainer(response);
-      if (container != null && container['Hub'] != null) {
-        final hubs = <PlexHub>[];
-        for (final hubJson in container['Hub'] as List) {
-          try {
-            final hub = PlexHub.fromJson(hubJson);
-            // Only include hubs that have items and are movie/show content
-            if (hub.items.isNotEmpty) {
-              // Filter to only video content (movies, shows, seasons, episodes) and tag with server info
-              final videoItems = hub.items
-                  .where((item) => item.isVideoContent)
-                  .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
-                  .toList();
-
-              if (videoItems.isNotEmpty) {
-                hubs.add(
-                  PlexHub(
-                    hubKey: hub.hubKey,
-                    title: hub.title,
-                    type: hub.type,
-                    hubIdentifier: hub.hubIdentifier,
-                    size: hub.size,
-                    more: hub.more,
-                    items: videoItems,
-                    serverId: serverId,
-                    serverName: serverName,
-                  ),
-                );
-              }
-            }
-          } catch (e) {
-            appLogger.w('Failed to parse hub', error: e);
-          }
-        }
-        return hubs;
-      }
+      final sid = serverId;
+      final sname = serverName;
+      return Isolate.run(() => _processHubResponse(response.data as String, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get library hubs: $e');
     }
@@ -1354,43 +1373,14 @@ class PlexClient {
   /// This matches the official Plex client's home page layout.
   Future<List<PlexHub>> getGlobalHubs({int limit = 10}) async {
     try {
-      final response = await _dio.get('/hubs', queryParameters: {'count': limit, 'includeGuids': 1});
-
-      final container = _getMediaContainer(response);
-      if (container != null && container['Hub'] != null) {
-        final hubs = <PlexHub>[];
-        for (final hubJson in container['Hub'] as List) {
-          try {
-            final hub = PlexHub.fromJson(hubJson);
-            if (hub.items.isEmpty) continue;
-
-            // Filter to only video content (movies, shows, seasons, episodes) and tag with server info
-            final videoItems = hub.items
-                .where((item) => item.isVideoContent)
-                .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
-                .toList();
-
-            if (videoItems.isNotEmpty) {
-              hubs.add(
-                PlexHub(
-                  hubKey: hub.hubKey,
-                  title: hub.title,
-                  type: hub.type,
-                  hubIdentifier: hub.hubIdentifier,
-                  size: hub.size,
-                  more: hub.more,
-                  items: videoItems,
-                  serverId: serverId,
-                  serverName: serverName,
-                ),
-              );
-            }
-          } catch (e) {
-            appLogger.w('Failed to parse global hub', error: e);
-          }
-        }
-        return hubs;
-      }
+      final response = await _dio.get(
+        '/hubs',
+        queryParameters: {'count': limit, 'includeGuids': 1},
+        options: Options(responseType: ResponseType.plain),
+      );
+      final sid = serverId;
+      final sname = serverName;
+      return Isolate.run(() => _processHubResponse(response.data as String, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get global hubs: $e');
     }
