@@ -6,20 +6,23 @@ default_platform(:android)
 platform :android do
   desc "Build and deploy to Google Play Store"
   lane :release do
-    # Build the Flutter app
-    sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true")
-
-    # Get version code from pubspec.yaml
+    # Get version from pubspec.yaml
     pubspec_path = "#{ENV['PWD']}/../pubspec.yaml"
     pubspec_content = File.read(pubspec_path)
     version_match = pubspec_content.match(/version:\s*(.+)\+(\d+)/)
 
     if version_match
+      version_name = version_match[1].strip
       version_code = version_match[2].to_i
-      UI.message("Using version code: #{version_code}")
+      UI.message("Using version: #{version_name}+#{version_code}")
     else
-      UI.user_error!("Could not extract version code from pubspec.yaml")
+      UI.user_error!("Could not extract version from pubspec.yaml")
     end
+
+    debug_info_dir = "../build/debug-info/#{version_name}+#{version_code}"
+
+    # Build the Flutter app
+    sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true --obfuscate --split-debug-info=#{debug_info_dir}/aab")
 
     upload_to_play_store(
       track: "production",
@@ -29,7 +32,7 @@ platform :android do
     )
 
     # Build split-per-ABI APKs for Amazon Appstore (doesn't accept AABs)
-    sh("cd #{ENV['PWD']}/.. && flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/debug-info")
+    sh("cd #{ENV['PWD']}/.. && flutter build apk --release --split-per-abi --obfuscate --split-debug-info=#{debug_info_dir}/apk")
 
     upload_to_amazon_appstore(
       apk_paths: [
