@@ -27,6 +27,7 @@ import '../../services/update_service.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/tv_number_spinner.dart';
 import 'hotkey_recorder_widget.dart';
 import '../../providers/companion_remote_provider.dart';
@@ -212,7 +213,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         onKeyEvent: _handleKeyEvent,
         child: CustomScrollView(
           slivers: [
-            CustomAppBar(title: Text(t.settings.title), pinned: true),
+            ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
             SliverPadding(
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
@@ -1754,61 +1755,54 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    return FocusedScrollScaffold(
+      title: Text(t.settings.keyboardShortcuts),
+      actions: [
+        TextButton(
+          onPressed: () async {
+            await widget.keyboardService.resetToDefaults();
+            await _loadHotkeys();
+            if (mounted) {
+              showSuccessSnackBar(this.context, t.settings.shortcutsReset);
+            }
+          },
+          child: Text(t.common.reset),
+        ),
+      ],
+      slivers: _isLoading
+          ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
+          : [
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final actions = _hotkeys.keys.toList();
+                    final action = actions[index];
+                    final hotkey = _hotkeys[action]!;
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(
-            title: Text(t.settings.keyboardShortcuts),
-            pinned: true,
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  await widget.keyboardService.resetToDefaults();
-                  await _loadHotkeys();
-                  if (mounted) {
-                    showSuccessSnackBar(this.context, t.settings.shortcutsReset);
-                  }
-                },
-                child: Text(t.common.reset),
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        title: Text(widget.keyboardService.getActionDisplayName(action)),
+                        subtitle: Text(action),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
+                            borderRadius: const BorderRadius.all(Radius.circular(6)),
+                          ),
+                          child: Text(
+                            widget.keyboardService.formatHotkey(hotkey),
+                            style: const TextStyle(fontFamily: 'monospace'),
+                          ),
+                        ),
+                        onTap: () => _editHotkey(action, hotkey),
+                      ),
+                    );
+                  }, childCount: _hotkeys.length),
+                ),
               ),
             ],
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final actions = _hotkeys.keys.toList();
-                final action = actions[index];
-                final hotkey = _hotkeys[action]!;
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    title: Text(widget.keyboardService.getActionDisplayName(action)),
-                    subtitle: Text(action),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
-                        borderRadius: const BorderRadius.all(Radius.circular(6)),
-                      ),
-                      child: Text(
-                        widget.keyboardService.formatHotkey(hotkey),
-                        style: const TextStyle(fontFamily: 'monospace'),
-                      ),
-                    ),
-                    onTap: () => _editHotkey(action, hotkey),
-                  ),
-                );
-              }, childCount: _hotkeys.length),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

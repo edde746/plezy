@@ -7,8 +7,7 @@ import '../../focus/focusable_button.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../services/settings_service.dart';
-import '../../focus/key_event_utils.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 
 class MpvConfigScreen extends StatefulWidget {
   const MpvConfigScreen({super.key});
@@ -263,26 +262,11 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Focus(
-        canRequestFocus: false,
-        onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-        child: FocusScope(
-          autofocus: true,
-          child: const Scaffold(body: Center(child: CircularProgressIndicator())),
-        ),
-      );
-    }
-
-    return Focus(
-      canRequestFocus: false,
-      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-      child: FocusScope(
-        autofocus: true,
-        child: Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              CustomAppBar(title: Text(t.screens.mpvConfig), pinned: true),
+    return FocusedScrollScaffold(
+      title: Text(t.screens.mpvConfig),
+      slivers: _isLoading
+          ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
+          : [
               SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: SliverList(
@@ -295,9 +279,6 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
     );
   }
 

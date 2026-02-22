@@ -6,8 +6,7 @@ import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../focus/input_mode_tracker.dart';
-import '../../focus/key_event_utils.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/tv_color_picker.dart';
 import '../../widgets/tv_number_spinner.dart';
 
@@ -301,26 +300,11 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Focus(
-        canRequestFocus: false,
-        onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-        child: FocusScope(
-          autofocus: true,
-          child: const Scaffold(body: Center(child: CircularProgressIndicator())),
-        ),
-      );
-    }
-
-    return Focus(
-      canRequestFocus: false,
-      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-      child: FocusScope(
-        autofocus: true,
-        child: Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              CustomAppBar(title: Text(t.screens.subtitleStyling), pinned: true),
+    return FocusedScrollScaffold(
+      title: Text(t.screens.subtitleStyling),
+      slivers: _isLoading
+          ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
+          : [
               SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: SliverList(
@@ -328,9 +312,6 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
     );
   }
 

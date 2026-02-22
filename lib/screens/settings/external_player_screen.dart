@@ -8,8 +8,7 @@ import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/external_player_models.dart';
 import '../../services/settings_service.dart';
-import '../../focus/key_event_utils.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 
 class ExternalPlayerScreen extends StatefulWidget {
   const ExternalPlayerScreen({super.key});
@@ -47,79 +46,66 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Focus(
-        canRequestFocus: false,
-        onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-        child: FocusScope(
-          autofocus: true,
-          child: const Scaffold(body: Center(child: CircularProgressIndicator())),
-        ),
+      return FocusedScrollScaffold(
+        title: Text(t.externalPlayer.title),
+        slivers: [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
       );
     }
 
     final knownPlayers = KnownPlayers.getForCurrentPlatform();
 
-    return Focus(
-      canRequestFocus: false,
-      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-      child: FocusScope(
-        autofocus: true,
-        child: Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              CustomAppBar(title: Text(t.externalPlayer.title), pinned: true),
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    Card(
-                      child: SwitchListTile(
-                        secondary: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
-                        title: Text(t.externalPlayer.useExternalPlayer),
-                        subtitle: Text(t.externalPlayer.useExternalPlayerDescription),
-                        value: _useExternalPlayer,
-                        onChanged: (value) async {
-                          setState(() => _useExternalPlayer = value);
-                          await _settingsService.setUseExternalPlayer(value);
-                        },
-                      ),
-                    ),
-                    if (_useExternalPlayer) ...[
-                      const SizedBox(height: 16),
-                      Card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Text(
-                                t.externalPlayer.selectPlayer,
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            // Known players
-                            ...knownPlayers.map((player) => _buildPlayerTile(player)),
-                            // Custom players
-                            if (_customPlayers.isNotEmpty) const Divider(),
-                            ..._customPlayers.map((player) => _buildPlayerTile(player, isCustom: true)),
-                            // Add custom player button
-                            const Divider(),
-                            ListTile(
-                              leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                              title: Text(t.externalPlayer.addCustomPlayer),
-                              onTap: _showAddCustomPlayerDialog,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ]),
+    return FocusedScrollScaffold(
+      title: Text(t.externalPlayer.title),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              Card(
+                child: SwitchListTile(
+                  secondary: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
+                  title: Text(t.externalPlayer.useExternalPlayer),
+                  subtitle: Text(t.externalPlayer.useExternalPlayerDescription),
+                  value: _useExternalPlayer,
+                  onChanged: (value) async {
+                    setState(() => _useExternalPlayer = value);
+                    await _settingsService.setUseExternalPlayer(value);
+                  },
                 ),
               ),
-            ],
+              if (_useExternalPlayer) ...[
+                const SizedBox(height: 16),
+                Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          t.externalPlayer.selectPlayer,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      // Known players
+                      ...knownPlayers.map((player) => _buildPlayerTile(player)),
+                      // Custom players
+                      if (_customPlayers.isNotEmpty) const Divider(),
+                      ..._customPlayers.map((player) => _buildPlayerTile(player, isCustom: true)),
+                      // Add custom player button
+                      const Divider(),
+                      ListTile(
+                        leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                        title: Text(t.externalPlayer.addCustomPlayer),
+                        onTap: _showAddCustomPlayerDialog,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ]),
           ),
         ),
-      ),
+      ],
     );
   }
 

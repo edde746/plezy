@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import 'desktop_app_bar.dart';
 
@@ -9,7 +10,10 @@ import 'desktop_app_bar.dart';
 /// - Keyboard navigation (back key handling)
 /// - Custom scrollable content with slivers
 /// - Consistent app bar with title and optional actions
-class FocusedScrollScaffold extends StatelessWidget {
+///
+/// Automatically focuses the first content item (skipping the app bar)
+/// when in keyboard navigation mode.
+class FocusedScrollScaffold extends StatefulWidget {
   /// The title to display in the app bar.
   /// Can be a Text widget or a more complex widget like Column.
   final Widget title;
@@ -39,22 +43,53 @@ class FocusedScrollScaffold extends StatelessWidget {
   });
 
   @override
+  State<FocusedScrollScaffold> createState() => _FocusedScrollScaffoldState();
+}
+
+class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
+  final _scopeNode = FocusScopeNode();
+  bool _focusRequested = false;
+
+  @override
+  void dispose() {
+    _scopeNode.dispose();
+    super.dispose();
+  }
+
+  void _requestInitialFocus() {
+    if (_focusRequested || !mounted || !InputModeTracker.isKeyboardMode(context)) return;
+    _focusRequested = true;
+    _scopeNode.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      primaryFocus?.nextFocus();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Request focus after first build when in keyboard mode
+    if (!_focusRequested && InputModeTracker.isKeyboardMode(context)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _requestInitialFocus());
+    }
+
     return Focus(
       canRequestFocus: false,
       onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
       child: FocusScope(
-        autofocus: true,
+        node: _scopeNode,
         child: Scaffold(
           body: CustomScrollView(
             slivers: [
-              CustomAppBar(
-                title: title,
-                pinned: pinned,
-                actions: actions,
-                automaticallyImplyLeading: automaticallyImplyLeading,
+              ExcludeFocus(
+                child: CustomAppBar(
+                  title: widget.title,
+                  pinned: widget.pinned,
+                  actions: widget.actions,
+                  automaticallyImplyLeading: widget.automaticallyImplyLeading,
+                ),
               ),
-              ...slivers,
+              ...widget.slivers,
             ],
           ),
         ),
