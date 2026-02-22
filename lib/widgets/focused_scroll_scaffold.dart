@@ -41,19 +41,22 @@ class FocusedScrollScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Focus(
-      autofocus: true,
+      canRequestFocus: false,
       onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-      child: Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            CustomAppBar(
-              title: title,
-              pinned: pinned,
-              actions: actions,
-              automaticallyImplyLeading: automaticallyImplyLeading,
-            ),
-            ...slivers,
-          ],
+      child: FocusScope(
+        autofocus: true,
+        child: Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              CustomAppBar(
+                title: title,
+                pinned: pinned,
+                actions: actions,
+                automaticallyImplyLeading: automaticallyImplyLeading,
+              ),
+              ...slivers,
+            ],
+          ),
         ),
       ),
     );

@@ -284,24 +284,32 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Focus(
-        autofocus: true,
+        canRequestFocus: false,
         onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-        child: const Scaffold(body: Center(child: CircularProgressIndicator())),
+        child: FocusScope(
+          autofocus: true,
+          child: const Scaffold(body: Center(child: CircularProgressIndicator())),
+        ),
       );
     }
 
     return Focus(
-      autofocus: true,
+      canRequestFocus: false,
       onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-      child: Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            CustomAppBar(title: Text(t.screens.subtitleStyling), pinned: true),
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(delegate: SliverChildListDelegate([_buildStylingCard(), const SizedBox(height: 24)])),
-            ),
-          ],
+      child: FocusScope(
+        autofocus: true,
+        child: Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              CustomAppBar(title: Text(t.screens.subtitleStyling), pinned: true),
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([_buildStylingCard(), const SizedBox(height: 24)]),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
