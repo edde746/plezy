@@ -135,6 +135,81 @@ Future<String?> showTextInputDialog(
   );
 }
 
+/// Shows a multiline text input dialog for editing longer text like summaries.
+/// Returns the entered text, or null if cancelled.
+/// Allows empty text to be submitted (for clearing fields).
+Future<String?> showMultilineTextInputDialog(
+  BuildContext context, {
+  required String title,
+  required String labelText,
+  String? initialValue,
+}) {
+  return showDialog<String>(
+    context: context,
+    builder: (context) => _MultilineTextInputDialog(title: title, labelText: labelText, initialValue: initialValue),
+  );
+}
+
+class _MultilineTextInputDialog extends StatefulWidget {
+  final String title;
+  final String labelText;
+  final String? initialValue;
+
+  const _MultilineTextInputDialog({required this.title, required this.labelText, this.initialValue});
+
+  @override
+  State<_MultilineTextInputDialog> createState() => _MultilineTextInputDialogState();
+}
+
+class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog> {
+  late final TextEditingController _controller;
+  final _saveFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _saveFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: 400,
+        child: TextField(
+          controller: _controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: widget.labelText),
+          maxLines: 8,
+          minLines: 3,
+        ),
+      ),
+      actions: [
+        FocusableButton(
+          onPressed: () => Navigator.pop(context),
+          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+        ),
+        FocusableButton(
+          focusNode: _saveFocusNode,
+          onPressed: () => Navigator.pop(context, _controller.text),
+          child: TextButton(
+            onPressed: () => Navigator.pop(context, _controller.text),
+            child: Text(t.common.save),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _TextInputDialog extends StatefulWidget {
   final String title;
   final String labelText;

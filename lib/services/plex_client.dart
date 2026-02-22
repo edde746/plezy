@@ -1566,6 +1566,94 @@ class PlexClient {
   }
 
   // ============================================================================
+  // Metadata Editing Methods
+  // ============================================================================
+
+  /// Update metadata fields for a media item
+  Future<bool> updateMetadata({
+    required int sectionId,
+    required String ratingKey,
+    required int typeNumber,
+    String? title,
+    String? titleSort,
+    String? originalTitle,
+    String? originallyAvailableAt,
+    String? contentRating,
+    String? studio,
+    String? tagline,
+    String? summary,
+  }) {
+    final queryParams = <String, dynamic>{
+      'type': typeNumber,
+      'id': ratingKey,
+    };
+
+    void addField(String name, String? value) {
+      if (value != null) {
+        queryParams['$name.value'] = value;
+        queryParams['$name.locked'] = '1';
+      }
+    }
+
+    addField('title', title);
+    addField('titleSort', titleSort);
+    addField('originalTitle', originalTitle);
+    addField('originallyAvailableAt', originallyAvailableAt);
+    addField('contentRating', contentRating);
+    addField('studio', studio);
+    addField('tagline', tagline);
+    addField('summary', summary);
+
+    return _wrapBoolApiCall(
+      () => _dio.put('/library/sections/$sectionId/all', queryParameters: queryParams),
+      'Failed to update metadata',
+    );
+  }
+
+  /// Get available artwork (posters or backgrounds) for a media item
+  Future<List<Map<String, dynamic>>> getAvailableArtwork(String ratingKey, String element) async {
+    try {
+      final response = await _dio.get('/library/metadata/$ratingKey/$element');
+      final container = _getMediaContainer(response);
+      if (container != null && container['Metadata'] != null) {
+        return (container['Metadata'] as List).cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (e) {
+      appLogger.e('Failed to get available artwork', error: e);
+      return [];
+    }
+  }
+
+  /// Set artwork from a URL (can be a Plex internal path or external URL)
+  Future<bool> setArtworkFromUrl(String ratingKey, String element, String url) {
+    return _wrapBoolApiCall(
+      () => _dio.post('/library/metadata/$ratingKey/$element', queryParameters: {'url': url}),
+      'Failed to set artwork from URL',
+    );
+  }
+
+  /// Upload artwork from binary data
+  Future<bool> uploadArtwork(String ratingKey, String element, List<int> bytes) {
+    return _wrapBoolApiCall(
+      () => _dio.post(
+        '/library/metadata/$ratingKey/$element',
+        data: bytes,
+        options: Options(headers: {'Content-Length': bytes.length}),
+      ),
+      'Failed to upload artwork',
+    );
+  }
+
+  /// Update per-media advanced preferences
+  Future<bool> updateMetadataPrefs(String ratingKey, Map<String, String> prefs) {
+    return _wrapBoolApiCall(
+      () => _dio.put('/library/metadata/$ratingKey/prefs', queryParameters: prefs),
+      'Failed to update metadata preferences',
+    );
+  }
+
+  // ============================================================================
   // Collection Methods
   // ============================================================================
 

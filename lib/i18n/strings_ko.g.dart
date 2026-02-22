@@ -74,6 +74,7 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCompanionRemoteKo companionRemote = _TranslationsCompanionRemoteKo._(_root);
 	@override late final _TranslationsVideoSettingsKo videoSettings = _TranslationsVideoSettingsKo._(_root);
 	@override late final _TranslationsExternalPlayerKo externalPlayer = _TranslationsExternalPlayerKo._(_root);
+	@override late final _TranslationsMetadataEditKo metadataEdit = _TranslationsMetadataEditKo._(_root);
 }
 
 // Path: app
@@ -1050,6 +1051,74 @@ class _TranslationsExternalPlayerKo implements TranslationsExternalPlayerEn {
 	@override String get playInExternalPlayer => '외부 플레이어에서 재생';
 }
 
+// Path: metadataEdit
+class _TranslationsMetadataEditKo implements TranslationsMetadataEditEn {
+	_TranslationsMetadataEditKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get editMetadata => '편집...';
+	@override String get screenTitle => '메타데이터 편집';
+	@override String get basicInfo => '기본 정보';
+	@override String get artwork => '아트워크';
+	@override String get advancedSettings => '고급 설정';
+	@override String get title => '제목';
+	@override String get sortTitle => '정렬 제목';
+	@override String get originalTitle => '원제';
+	@override String get releaseDate => '출시일';
+	@override String get contentRating => '콘텐츠 등급';
+	@override String get studio => '스튜디오';
+	@override String get tagline => '태그라인';
+	@override String get summary => '줄거리';
+	@override String get poster => '포스터';
+	@override String get background => '배경';
+	@override String get selectPoster => '포스터 선택';
+	@override String get selectBackground => '배경 선택';
+	@override String get fromUrl => 'URL에서';
+	@override String get uploadFile => '파일 업로드';
+	@override String get enterImageUrl => '이미지 URL 입력';
+	@override String get imageUrl => '이미지 URL';
+	@override String get metadataUpdated => '메타데이터가 업데이트되었습니다';
+	@override String get metadataUpdateFailed => '메타데이터 업데이트 실패';
+	@override String get artworkUpdated => '아트워크가 업데이트되었습니다';
+	@override String get artworkUpdateFailed => '아트워크 업데이트 실패';
+	@override String get noArtworkAvailable => '사용 가능한 아트워크 없음';
+	@override String get notSet => '설정되지 않음';
+	@override String get libraryDefault => '라이브러리 기본값';
+	@override String get accountDefault => '계정 기본값';
+	@override String get seriesDefault => '시리즈 기본값';
+	@override String get episodeSorting => '에피소드 정렬';
+	@override String get oldestFirst => '오래된 순';
+	@override String get newestFirst => '최신 순';
+	@override String get keep => '유지';
+	@override String get allEpisodes => '모든 에피소드';
+	@override String latestEpisodes({required Object count}) => '최신 에피소드 ${count}개';
+	@override String get latestEpisode => '최신 에피소드';
+	@override String episodesAddedPastDays({required Object count}) => '최근 ${count}일 내 추가된 에피소드';
+	@override String get deleteAfterPlaying => '재생 후 에피소드 삭제';
+	@override String get never => '안 함';
+	@override String get afterADay => '하루 후';
+	@override String get afterAWeek => '일주일 후';
+	@override String get afterAMonth => '한 달 후';
+	@override String get onNextRefresh => '다음 새로고침 시';
+	@override String get seasons => '시즌';
+	@override String get show => '표시';
+	@override String get hide => '숨기기';
+	@override String get episodeOrdering => '에피소드 순서';
+	@override String get tmdbAiring => 'The Movie Database (방영순)';
+	@override String get tvdbAiring => 'TheTVDB (방영순)';
+	@override String get tvdbAbsolute => 'TheTVDB (절대순)';
+	@override String get metadataLanguage => '메타데이터 언어';
+	@override String get useOriginalTitle => '원제 사용';
+	@override String get preferredAudioLanguage => '선호 오디오 언어';
+	@override String get preferredSubtitleLanguage => '선호 자막 언어';
+	@override String get subtitleMode => '자막 자동 선택 모드';
+	@override String get manuallySelected => '수동 선택';
+	@override String get shownWithForeignAudio => '외국어 오디오 시 표시';
+	@override String get alwaysEnabled => '항상 활성화';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsKo._(this._root);
@@ -1979,6 +2048,65 @@ extension on TranslationsKo {
 			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',
 			'externalPlayer.playInExternalPlayer' => '외부 플레이어에서 재생',
+			'metadataEdit.editMetadata' => '편집...',
+			'metadataEdit.screenTitle' => '메타데이터 편집',
+			'metadataEdit.basicInfo' => '기본 정보',
+			'metadataEdit.artwork' => '아트워크',
+			'metadataEdit.advancedSettings' => '고급 설정',
+			'metadataEdit.title' => '제목',
+			'metadataEdit.sortTitle' => '정렬 제목',
+			'metadataEdit.originalTitle' => '원제',
+			'metadataEdit.releaseDate' => '출시일',
+			'metadataEdit.contentRating' => '콘텐츠 등급',
+			'metadataEdit.studio' => '스튜디오',
+			'metadataEdit.tagline' => '태그라인',
+			'metadataEdit.summary' => '줄거리',
+			'metadataEdit.poster' => '포스터',
+			'metadataEdit.background' => '배경',
+			'metadataEdit.selectPoster' => '포스터 선택',
+			'metadataEdit.selectBackground' => '배경 선택',
+			'metadataEdit.fromUrl' => 'URL에서',
+			'metadataEdit.uploadFile' => '파일 업로드',
+			'metadataEdit.enterImageUrl' => '이미지 URL 입력',
+			'metadataEdit.imageUrl' => '이미지 URL',
+			'metadataEdit.metadataUpdated' => '메타데이터가 업데이트되었습니다',
+			'metadataEdit.metadataUpdateFailed' => '메타데이터 업데이트 실패',
+			'metadataEdit.artworkUpdated' => '아트워크가 업데이트되었습니다',
+			'metadataEdit.artworkUpdateFailed' => '아트워크 업데이트 실패',
+			'metadataEdit.noArtworkAvailable' => '사용 가능한 아트워크 없음',
+			'metadataEdit.notSet' => '설정되지 않음',
+			'metadataEdit.libraryDefault' => '라이브러리 기본값',
+			'metadataEdit.accountDefault' => '계정 기본값',
+			'metadataEdit.seriesDefault' => '시리즈 기본값',
+			'metadataEdit.episodeSorting' => '에피소드 정렬',
+			'metadataEdit.oldestFirst' => '오래된 순',
+			'metadataEdit.newestFirst' => '최신 순',
+			'metadataEdit.keep' => '유지',
+			'metadataEdit.allEpisodes' => '모든 에피소드',
+			'metadataEdit.latestEpisodes' => ({required Object count}) => '최신 에피소드 ${count}개',
+			'metadataEdit.latestEpisode' => '최신 에피소드',
+			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '최근 ${count}일 내 추가된 에피소드',
+			'metadataEdit.deleteAfterPlaying' => '재생 후 에피소드 삭제',
+			'metadataEdit.never' => '안 함',
+			'metadataEdit.afterADay' => '하루 후',
+			'metadataEdit.afterAWeek' => '일주일 후',
+			'metadataEdit.afterAMonth' => '한 달 후',
+			'metadataEdit.onNextRefresh' => '다음 새로고침 시',
+			'metadataEdit.seasons' => '시즌',
+			'metadataEdit.show' => '표시',
+			'metadataEdit.hide' => '숨기기',
+			'metadataEdit.episodeOrdering' => '에피소드 순서',
+			'metadataEdit.tmdbAiring' => 'The Movie Database (방영순)',
+			'metadataEdit.tvdbAiring' => 'TheTVDB (방영순)',
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (절대순)',
+			'metadataEdit.metadataLanguage' => '메타데이터 언어',
+			'metadataEdit.useOriginalTitle' => '원제 사용',
+			'metadataEdit.preferredAudioLanguage' => '선호 오디오 언어',
+			'metadataEdit.preferredSubtitleLanguage' => '선호 자막 언어',
+			'metadataEdit.subtitleMode' => '자막 자동 선택 모드',
+			'metadataEdit.manuallySelected' => '수동 선택',
+			'metadataEdit.shownWithForeignAudio' => '외국어 오디오 시 표시',
+			'metadataEdit.alwaysEnabled' => '항상 활성화',
 			_ => null,
 		};
 	}

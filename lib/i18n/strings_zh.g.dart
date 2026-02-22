@@ -74,6 +74,7 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCompanionRemoteZh companionRemote = _TranslationsCompanionRemoteZh._(_root);
 	@override late final _TranslationsVideoSettingsZh videoSettings = _TranslationsVideoSettingsZh._(_root);
 	@override late final _TranslationsExternalPlayerZh externalPlayer = _TranslationsExternalPlayerZh._(_root);
+	@override late final _TranslationsMetadataEditZh metadataEdit = _TranslationsMetadataEditZh._(_root);
 }
 
 // Path: app
@@ -1050,6 +1051,74 @@ class _TranslationsExternalPlayerZh implements TranslationsExternalPlayerEn {
 	@override String get playInExternalPlayer => '在外部播放器中播放';
 }
 
+// Path: metadataEdit
+class _TranslationsMetadataEditZh implements TranslationsMetadataEditEn {
+	_TranslationsMetadataEditZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get editMetadata => '编辑...';
+	@override String get screenTitle => '编辑元数据';
+	@override String get basicInfo => '基本信息';
+	@override String get artwork => '封面图片';
+	@override String get advancedSettings => '高级设置';
+	@override String get title => '标题';
+	@override String get sortTitle => '排序标题';
+	@override String get originalTitle => '原始标题';
+	@override String get releaseDate => '上映日期';
+	@override String get contentRating => '内容分级';
+	@override String get studio => '制片厂';
+	@override String get tagline => '标语';
+	@override String get summary => '简介';
+	@override String get poster => '海报';
+	@override String get background => '背景';
+	@override String get selectPoster => '选择海报';
+	@override String get selectBackground => '选择背景';
+	@override String get fromUrl => '从 URL';
+	@override String get uploadFile => '上传文件';
+	@override String get enterImageUrl => '输入图片 URL';
+	@override String get imageUrl => '图片 URL';
+	@override String get metadataUpdated => '元数据已更新';
+	@override String get metadataUpdateFailed => '元数据更新失败';
+	@override String get artworkUpdated => '封面图片已更新';
+	@override String get artworkUpdateFailed => '封面图片更新失败';
+	@override String get noArtworkAvailable => '没有可用的封面图片';
+	@override String get notSet => '未设置';
+	@override String get libraryDefault => '媒体库默认';
+	@override String get accountDefault => '账户默认';
+	@override String get seriesDefault => '剧集默认';
+	@override String get episodeSorting => '剧集排序';
+	@override String get oldestFirst => '最旧优先';
+	@override String get newestFirst => '最新优先';
+	@override String get keep => '保留';
+	@override String get allEpisodes => '所有剧集';
+	@override String latestEpisodes({required Object count}) => '最新 ${count} 集';
+	@override String get latestEpisode => '最新一集';
+	@override String episodesAddedPastDays({required Object count}) => '过去 ${count} 天内添加的剧集';
+	@override String get deleteAfterPlaying => '播放后删除剧集';
+	@override String get never => '从不';
+	@override String get afterADay => '一天后';
+	@override String get afterAWeek => '一周后';
+	@override String get afterAMonth => '一个月后';
+	@override String get onNextRefresh => '下次刷新时';
+	@override String get seasons => '季';
+	@override String get show => '显示';
+	@override String get hide => '隐藏';
+	@override String get episodeOrdering => '剧集排列顺序';
+	@override String get tmdbAiring => 'The Movie Database（播出顺序）';
+	@override String get tvdbAiring => 'TheTVDB（播出顺序）';
+	@override String get tvdbAbsolute => 'TheTVDB（绝对顺序）';
+	@override String get metadataLanguage => '元数据语言';
+	@override String get useOriginalTitle => '使用原始标题';
+	@override String get preferredAudioLanguage => '首选音频语言';
+	@override String get preferredSubtitleLanguage => '首选字幕语言';
+	@override String get subtitleMode => '自动选择字幕模式';
+	@override String get manuallySelected => '手动选择';
+	@override String get shownWithForeignAudio => '外语音频时显示';
+	@override String get alwaysEnabled => '始终启用';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsZh._(this._root);
@@ -1979,6 +2048,65 @@ extension on TranslationsZh {
 			'externalPlayer.launchFailed' => '无法打开外部播放器',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
 			'externalPlayer.playInExternalPlayer' => '在外部播放器中播放',
+			'metadataEdit.editMetadata' => '编辑...',
+			'metadataEdit.screenTitle' => '编辑元数据',
+			'metadataEdit.basicInfo' => '基本信息',
+			'metadataEdit.artwork' => '封面图片',
+			'metadataEdit.advancedSettings' => '高级设置',
+			'metadataEdit.title' => '标题',
+			'metadataEdit.sortTitle' => '排序标题',
+			'metadataEdit.originalTitle' => '原始标题',
+			'metadataEdit.releaseDate' => '上映日期',
+			'metadataEdit.contentRating' => '内容分级',
+			'metadataEdit.studio' => '制片厂',
+			'metadataEdit.tagline' => '标语',
+			'metadataEdit.summary' => '简介',
+			'metadataEdit.poster' => '海报',
+			'metadataEdit.background' => '背景',
+			'metadataEdit.selectPoster' => '选择海报',
+			'metadataEdit.selectBackground' => '选择背景',
+			'metadataEdit.fromUrl' => '从 URL',
+			'metadataEdit.uploadFile' => '上传文件',
+			'metadataEdit.enterImageUrl' => '输入图片 URL',
+			'metadataEdit.imageUrl' => '图片 URL',
+			'metadataEdit.metadataUpdated' => '元数据已更新',
+			'metadataEdit.metadataUpdateFailed' => '元数据更新失败',
+			'metadataEdit.artworkUpdated' => '封面图片已更新',
+			'metadataEdit.artworkUpdateFailed' => '封面图片更新失败',
+			'metadataEdit.noArtworkAvailable' => '没有可用的封面图片',
+			'metadataEdit.notSet' => '未设置',
+			'metadataEdit.libraryDefault' => '媒体库默认',
+			'metadataEdit.accountDefault' => '账户默认',
+			'metadataEdit.seriesDefault' => '剧集默认',
+			'metadataEdit.episodeSorting' => '剧集排序',
+			'metadataEdit.oldestFirst' => '最旧优先',
+			'metadataEdit.newestFirst' => '最新优先',
+			'metadataEdit.keep' => '保留',
+			'metadataEdit.allEpisodes' => '所有剧集',
+			'metadataEdit.latestEpisodes' => ({required Object count}) => '最新 ${count} 集',
+			'metadataEdit.latestEpisode' => '最新一集',
+			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '过去 ${count} 天内添加的剧集',
+			'metadataEdit.deleteAfterPlaying' => '播放后删除剧集',
+			'metadataEdit.never' => '从不',
+			'metadataEdit.afterADay' => '一天后',
+			'metadataEdit.afterAWeek' => '一周后',
+			'metadataEdit.afterAMonth' => '一个月后',
+			'metadataEdit.onNextRefresh' => '下次刷新时',
+			'metadataEdit.seasons' => '季',
+			'metadataEdit.show' => '显示',
+			'metadataEdit.hide' => '隐藏',
+			'metadataEdit.episodeOrdering' => '剧集排列顺序',
+			'metadataEdit.tmdbAiring' => 'The Movie Database（播出顺序）',
+			'metadataEdit.tvdbAiring' => 'TheTVDB（播出顺序）',
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB（绝对顺序）',
+			'metadataEdit.metadataLanguage' => '元数据语言',
+			'metadataEdit.useOriginalTitle' => '使用原始标题',
+			'metadataEdit.preferredAudioLanguage' => '首选音频语言',
+			'metadataEdit.preferredSubtitleLanguage' => '首选字幕语言',
+			'metadataEdit.subtitleMode' => '自动选择字幕模式',
+			'metadataEdit.manuallySelected' => '手动选择',
+			'metadataEdit.shownWithForeignAudio' => '外语音频时显示',
+			'metadataEdit.alwaysEnabled' => '始终启用',
 			_ => null,
 		};
 	}

@@ -47,6 +47,7 @@ import '../mixins/watch_state_aware.dart';
 import '../mixins/deletion_aware.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
+import 'metadata_edit_screen.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -703,6 +704,25 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
             iconSize: 20,
             style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
           ),
+          // Edit metadata button (hidden in offline mode)
+          if (!widget.isOffline) ...[
+            const SizedBox(width: 12),
+            IconButton.filledTonal(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: metadata)),
+                );
+                if (result == true && mounted) {
+                  _loadFullMetadata();
+                }
+              },
+              icon: const AppIcon(Symbols.edit_rounded, fill: 1),
+              tooltip: t.metadataEdit.editMetadata,
+              iconSize: 20,
+              style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
+            ),
+          ],
         ],
       ),
     );

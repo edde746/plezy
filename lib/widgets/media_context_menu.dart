@@ -20,6 +20,7 @@ import '../services/external_player_service.dart';
 import '../focus/focusable_button.dart';
 import '../focus/dpad_navigator.dart';
 import '../screens/media_detail_screen.dart';
+import '../screens/metadata_edit_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/deletion_notifier.dart';
@@ -196,6 +197,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           mediaType == PlexMediaType.episode) {
         menuActions.add(
           _MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate),
+        );
+      }
+
+      // Edit Metadata (for movies, shows, seasons, and episodes)
+      if (mediaType == PlexMediaType.movie ||
+          mediaType == PlexMediaType.show ||
+          mediaType == PlexMediaType.season ||
+          mediaType == PlexMediaType.episode) {
+        menuActions.add(
+          _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
         );
       }
 
@@ -412,6 +423,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'rate':
           if (context.mounted) {
             await _showRatingSheet(context, metadata!, client);
+          }
+          break;
+
+        case 'edit_metadata':
+          didNavigate = true;
+          if (context.mounted) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: metadata!)),
+            );
+            widget.onRefresh?.call(metadata!.ratingKey);
           }
           break;
 

@@ -74,6 +74,7 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCompanionRemoteNl companionRemote = _TranslationsCompanionRemoteNl._(_root);
 	@override late final _TranslationsVideoSettingsNl videoSettings = _TranslationsVideoSettingsNl._(_root);
 	@override late final _TranslationsExternalPlayerNl externalPlayer = _TranslationsExternalPlayerNl._(_root);
+	@override late final _TranslationsMetadataEditNl metadataEdit = _TranslationsMetadataEditNl._(_root);
 }
 
 // Path: app
@@ -1050,6 +1051,74 @@ class _TranslationsExternalPlayerNl implements TranslationsExternalPlayerEn {
 	@override String get playInExternalPlayer => 'Afspelen in externe speler';
 }
 
+// Path: metadataEdit
+class _TranslationsMetadataEditNl implements TranslationsMetadataEditEn {
+	_TranslationsMetadataEditNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get editMetadata => 'Bewerken...';
+	@override String get screenTitle => 'Metadata bewerken';
+	@override String get basicInfo => 'Basisinformatie';
+	@override String get artwork => 'Artwork';
+	@override String get advancedSettings => 'Geavanceerde instellingen';
+	@override String get title => 'Titel';
+	@override String get sortTitle => 'Sorteertitel';
+	@override String get originalTitle => 'Oorspronkelijke titel';
+	@override String get releaseDate => 'Releasedatum';
+	@override String get contentRating => 'Leeftijdsclassificatie';
+	@override String get studio => 'Studio';
+	@override String get tagline => 'Tagline';
+	@override String get summary => 'Samenvatting';
+	@override String get poster => 'Poster';
+	@override String get background => 'Achtergrond';
+	@override String get selectPoster => 'Poster selecteren';
+	@override String get selectBackground => 'Achtergrond selecteren';
+	@override String get fromUrl => 'Vanaf URL';
+	@override String get uploadFile => 'Bestand uploaden';
+	@override String get enterImageUrl => 'Voer afbeeldings-URL in';
+	@override String get imageUrl => 'Afbeeldings-URL';
+	@override String get metadataUpdated => 'Metadata bijgewerkt';
+	@override String get metadataUpdateFailed => 'Metadata bijwerken mislukt';
+	@override String get artworkUpdated => 'Artwork bijgewerkt';
+	@override String get artworkUpdateFailed => 'Artwork bijwerken mislukt';
+	@override String get noArtworkAvailable => 'Geen artwork beschikbaar';
+	@override String get notSet => 'Niet ingesteld';
+	@override String get libraryDefault => 'Bibliotheekstandaard';
+	@override String get accountDefault => 'Accountstandaard';
+	@override String get seriesDefault => 'Seriestandaard';
+	@override String get episodeSorting => 'Afleveringen sorteren';
+	@override String get oldestFirst => 'Oudste eerst';
+	@override String get newestFirst => 'Nieuwste eerst';
+	@override String get keep => 'Bewaren';
+	@override String get allEpisodes => 'Alle afleveringen';
+	@override String latestEpisodes({required Object count}) => '${count} nieuwste afleveringen';
+	@override String get latestEpisode => 'Nieuwste aflevering';
+	@override String episodesAddedPastDays({required Object count}) => 'Afleveringen toegevoegd in de afgelopen ${count} dagen';
+	@override String get deleteAfterPlaying => 'Afleveringen verwijderen na afspelen';
+	@override String get never => 'Nooit';
+	@override String get afterADay => 'Na een dag';
+	@override String get afterAWeek => 'Na een week';
+	@override String get afterAMonth => 'Na een maand';
+	@override String get onNextRefresh => 'Bij volgende verversing';
+	@override String get seasons => 'Seizoenen';
+	@override String get show => 'Tonen';
+	@override String get hide => 'Verbergen';
+	@override String get episodeOrdering => 'Afleveringsvolgorde';
+	@override String get tmdbAiring => 'The Movie Database (Uitgezonden)';
+	@override String get tvdbAiring => 'TheTVDB (Uitgezonden)';
+	@override String get tvdbAbsolute => 'TheTVDB (Absoluut)';
+	@override String get metadataLanguage => 'Metadatataal';
+	@override String get useOriginalTitle => 'Oorspronkelijke titel gebruiken';
+	@override String get preferredAudioLanguage => 'Voorkeurstaal audio';
+	@override String get preferredSubtitleLanguage => 'Voorkeurstaal ondertiteling';
+	@override String get subtitleMode => 'Automatische ondertitelselectie';
+	@override String get manuallySelected => 'Handmatig geselecteerd';
+	@override String get shownWithForeignAudio => 'Weergeven bij anderstalig geluid';
+	@override String get alwaysEnabled => 'Altijd ingeschakeld';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsNl._(this._root);
@@ -1979,6 +2048,65 @@ extension on TranslationsNl {
 			'externalPlayer.launchFailed' => 'Kan externe speler niet openen',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is niet geïnstalleerd',
 			'externalPlayer.playInExternalPlayer' => 'Afspelen in externe speler',
+			'metadataEdit.editMetadata' => 'Bewerken...',
+			'metadataEdit.screenTitle' => 'Metadata bewerken',
+			'metadataEdit.basicInfo' => 'Basisinformatie',
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Geavanceerde instellingen',
+			'metadataEdit.title' => 'Titel',
+			'metadataEdit.sortTitle' => 'Sorteertitel',
+			'metadataEdit.originalTitle' => 'Oorspronkelijke titel',
+			'metadataEdit.releaseDate' => 'Releasedatum',
+			'metadataEdit.contentRating' => 'Leeftijdsclassificatie',
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
+			'metadataEdit.summary' => 'Samenvatting',
+			'metadataEdit.poster' => 'Poster',
+			'metadataEdit.background' => 'Achtergrond',
+			'metadataEdit.selectPoster' => 'Poster selecteren',
+			'metadataEdit.selectBackground' => 'Achtergrond selecteren',
+			'metadataEdit.fromUrl' => 'Vanaf URL',
+			'metadataEdit.uploadFile' => 'Bestand uploaden',
+			'metadataEdit.enterImageUrl' => 'Voer afbeeldings-URL in',
+			'metadataEdit.imageUrl' => 'Afbeeldings-URL',
+			'metadataEdit.metadataUpdated' => 'Metadata bijgewerkt',
+			'metadataEdit.metadataUpdateFailed' => 'Metadata bijwerken mislukt',
+			'metadataEdit.artworkUpdated' => 'Artwork bijgewerkt',
+			'metadataEdit.artworkUpdateFailed' => 'Artwork bijwerken mislukt',
+			'metadataEdit.noArtworkAvailable' => 'Geen artwork beschikbaar',
+			'metadataEdit.notSet' => 'Niet ingesteld',
+			'metadataEdit.libraryDefault' => 'Bibliotheekstandaard',
+			'metadataEdit.accountDefault' => 'Accountstandaard',
+			'metadataEdit.seriesDefault' => 'Seriestandaard',
+			'metadataEdit.episodeSorting' => 'Afleveringen sorteren',
+			'metadataEdit.oldestFirst' => 'Oudste eerst',
+			'metadataEdit.newestFirst' => 'Nieuwste eerst',
+			'metadataEdit.keep' => 'Bewaren',
+			'metadataEdit.allEpisodes' => 'Alle afleveringen',
+			'metadataEdit.latestEpisodes' => ({required Object count}) => '${count} nieuwste afleveringen',
+			'metadataEdit.latestEpisode' => 'Nieuwste aflevering',
+			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Afleveringen toegevoegd in de afgelopen ${count} dagen',
+			'metadataEdit.deleteAfterPlaying' => 'Afleveringen verwijderen na afspelen',
+			'metadataEdit.never' => 'Nooit',
+			'metadataEdit.afterADay' => 'Na een dag',
+			'metadataEdit.afterAWeek' => 'Na een week',
+			'metadataEdit.afterAMonth' => 'Na een maand',
+			'metadataEdit.onNextRefresh' => 'Bij volgende verversing',
+			'metadataEdit.seasons' => 'Seizoenen',
+			'metadataEdit.show' => 'Tonen',
+			'metadataEdit.hide' => 'Verbergen',
+			'metadataEdit.episodeOrdering' => 'Afleveringsvolgorde',
+			'metadataEdit.tmdbAiring' => 'The Movie Database (Uitgezonden)',
+			'metadataEdit.tvdbAiring' => 'TheTVDB (Uitgezonden)',
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absoluut)',
+			'metadataEdit.metadataLanguage' => 'Metadatataal',
+			'metadataEdit.useOriginalTitle' => 'Oorspronkelijke titel gebruiken',
+			'metadataEdit.preferredAudioLanguage' => 'Voorkeurstaal audio',
+			'metadataEdit.preferredSubtitleLanguage' => 'Voorkeurstaal ondertiteling',
+			'metadataEdit.subtitleMode' => 'Automatische ondertitelselectie',
+			'metadataEdit.manuallySelected' => 'Handmatig geselecteerd',
+			'metadataEdit.shownWithForeignAudio' => 'Weergeven bij anderstalig geluid',
+			'metadataEdit.alwaysEnabled' => 'Altijd ingeschakeld',
 			_ => null,
 		};
 	}

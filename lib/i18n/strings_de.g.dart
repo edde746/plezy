@@ -74,6 +74,7 @@ class TranslationsDe with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCompanionRemoteDe companionRemote = _TranslationsCompanionRemoteDe._(_root);
 	@override late final _TranslationsVideoSettingsDe videoSettings = _TranslationsVideoSettingsDe._(_root);
 	@override late final _TranslationsExternalPlayerDe externalPlayer = _TranslationsExternalPlayerDe._(_root);
+	@override late final _TranslationsMetadataEditDe metadataEdit = _TranslationsMetadataEditDe._(_root);
 }
 
 // Path: app
@@ -1050,6 +1051,74 @@ class _TranslationsExternalPlayerDe implements TranslationsExternalPlayerEn {
 	@override String get playInExternalPlayer => 'In externem Player abspielen';
 }
 
+// Path: metadataEdit
+class _TranslationsMetadataEditDe implements TranslationsMetadataEditEn {
+	_TranslationsMetadataEditDe._(this._root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get editMetadata => 'Bearbeiten...';
+	@override String get screenTitle => 'Metadaten bearbeiten';
+	@override String get basicInfo => 'Grundlegende Infos';
+	@override String get artwork => 'Artwork';
+	@override String get advancedSettings => 'Erweiterte Einstellungen';
+	@override String get title => 'Titel';
+	@override String get sortTitle => 'Sortiertitel';
+	@override String get originalTitle => 'Originaltitel';
+	@override String get releaseDate => 'Erscheinungsdatum';
+	@override String get contentRating => 'Altersfreigabe';
+	@override String get studio => 'Studio';
+	@override String get tagline => 'Tagline';
+	@override String get summary => 'Zusammenfassung';
+	@override String get poster => 'Poster';
+	@override String get background => 'Hintergrund';
+	@override String get selectPoster => 'Poster auswählen';
+	@override String get selectBackground => 'Hintergrund auswählen';
+	@override String get fromUrl => 'Von URL';
+	@override String get uploadFile => 'Datei hochladen';
+	@override String get enterImageUrl => 'Bild-URL eingeben';
+	@override String get imageUrl => 'Bild-URL';
+	@override String get metadataUpdated => 'Metadaten aktualisiert';
+	@override String get metadataUpdateFailed => 'Metadaten konnten nicht aktualisiert werden';
+	@override String get artworkUpdated => 'Artwork aktualisiert';
+	@override String get artworkUpdateFailed => 'Artwork konnte nicht aktualisiert werden';
+	@override String get noArtworkAvailable => 'Kein Artwork verfügbar';
+	@override String get notSet => 'Nicht festgelegt';
+	@override String get libraryDefault => 'Bibliotheksstandard';
+	@override String get accountDefault => 'Kontostandard';
+	@override String get seriesDefault => 'Serienstandard';
+	@override String get episodeSorting => 'Episodensortierung';
+	@override String get oldestFirst => 'Älteste zuerst';
+	@override String get newestFirst => 'Neueste zuerst';
+	@override String get keep => 'Behalten';
+	@override String get allEpisodes => 'Alle Episoden';
+	@override String latestEpisodes({required Object count}) => '${count} neueste Episoden';
+	@override String get latestEpisode => 'Neueste Episode';
+	@override String episodesAddedPastDays({required Object count}) => 'Episoden der letzten ${count} Tage';
+	@override String get deleteAfterPlaying => 'Episoden nach Wiedergabe löschen';
+	@override String get never => 'Nie';
+	@override String get afterADay => 'Nach einem Tag';
+	@override String get afterAWeek => 'Nach einer Woche';
+	@override String get afterAMonth => 'Nach einem Monat';
+	@override String get onNextRefresh => 'Bei nächster Aktualisierung';
+	@override String get seasons => 'Staffeln';
+	@override String get show => 'Anzeigen';
+	@override String get hide => 'Ausblenden';
+	@override String get episodeOrdering => 'Episodenreihenfolge';
+	@override String get tmdbAiring => 'The Movie Database (Ausgestrahlt)';
+	@override String get tvdbAiring => 'TheTVDB (Ausgestrahlt)';
+	@override String get tvdbAbsolute => 'TheTVDB (Absolut)';
+	@override String get metadataLanguage => 'Metadaten-Sprache';
+	@override String get useOriginalTitle => 'Originaltitel verwenden';
+	@override String get preferredAudioLanguage => 'Bevorzugte Audiosprache';
+	@override String get preferredSubtitleLanguage => 'Bevorzugte Untertitelsprache';
+	@override String get subtitleMode => 'Automatische Untertitelauswahl';
+	@override String get manuallySelected => 'Manuell ausgewählt';
+	@override String get shownWithForeignAudio => 'Bei fremdsprachigem Audio anzeigen';
+	@override String get alwaysEnabled => 'Immer aktiviert';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsDe implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsDe._(this._root);
@@ -1979,6 +2048,65 @@ extension on TranslationsDe {
 			'externalPlayer.launchFailed' => 'Externer Player konnte nicht geöffnet werden',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} ist nicht installiert',
 			'externalPlayer.playInExternalPlayer' => 'In externem Player abspielen',
+			'metadataEdit.editMetadata' => 'Bearbeiten...',
+			'metadataEdit.screenTitle' => 'Metadaten bearbeiten',
+			'metadataEdit.basicInfo' => 'Grundlegende Infos',
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Erweiterte Einstellungen',
+			'metadataEdit.title' => 'Titel',
+			'metadataEdit.sortTitle' => 'Sortiertitel',
+			'metadataEdit.originalTitle' => 'Originaltitel',
+			'metadataEdit.releaseDate' => 'Erscheinungsdatum',
+			'metadataEdit.contentRating' => 'Altersfreigabe',
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
+			'metadataEdit.summary' => 'Zusammenfassung',
+			'metadataEdit.poster' => 'Poster',
+			'metadataEdit.background' => 'Hintergrund',
+			'metadataEdit.selectPoster' => 'Poster auswählen',
+			'metadataEdit.selectBackground' => 'Hintergrund auswählen',
+			'metadataEdit.fromUrl' => 'Von URL',
+			'metadataEdit.uploadFile' => 'Datei hochladen',
+			'metadataEdit.enterImageUrl' => 'Bild-URL eingeben',
+			'metadataEdit.imageUrl' => 'Bild-URL',
+			'metadataEdit.metadataUpdated' => 'Metadaten aktualisiert',
+			'metadataEdit.metadataUpdateFailed' => 'Metadaten konnten nicht aktualisiert werden',
+			'metadataEdit.artworkUpdated' => 'Artwork aktualisiert',
+			'metadataEdit.artworkUpdateFailed' => 'Artwork konnte nicht aktualisiert werden',
+			'metadataEdit.noArtworkAvailable' => 'Kein Artwork verfügbar',
+			'metadataEdit.notSet' => 'Nicht festgelegt',
+			'metadataEdit.libraryDefault' => 'Bibliotheksstandard',
+			'metadataEdit.accountDefault' => 'Kontostandard',
+			'metadataEdit.seriesDefault' => 'Serienstandard',
+			'metadataEdit.episodeSorting' => 'Episodensortierung',
+			'metadataEdit.oldestFirst' => 'Älteste zuerst',
+			'metadataEdit.newestFirst' => 'Neueste zuerst',
+			'metadataEdit.keep' => 'Behalten',
+			'metadataEdit.allEpisodes' => 'Alle Episoden',
+			'metadataEdit.latestEpisodes' => ({required Object count}) => '${count} neueste Episoden',
+			'metadataEdit.latestEpisode' => 'Neueste Episode',
+			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Episoden der letzten ${count} Tage',
+			'metadataEdit.deleteAfterPlaying' => 'Episoden nach Wiedergabe löschen',
+			'metadataEdit.never' => 'Nie',
+			'metadataEdit.afterADay' => 'Nach einem Tag',
+			'metadataEdit.afterAWeek' => 'Nach einer Woche',
+			'metadataEdit.afterAMonth' => 'Nach einem Monat',
+			'metadataEdit.onNextRefresh' => 'Bei nächster Aktualisierung',
+			'metadataEdit.seasons' => 'Staffeln',
+			'metadataEdit.show' => 'Anzeigen',
+			'metadataEdit.hide' => 'Ausblenden',
+			'metadataEdit.episodeOrdering' => 'Episodenreihenfolge',
+			'metadataEdit.tmdbAiring' => 'The Movie Database (Ausgestrahlt)',
+			'metadataEdit.tvdbAiring' => 'TheTVDB (Ausgestrahlt)',
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
+			'metadataEdit.metadataLanguage' => 'Metadaten-Sprache',
+			'metadataEdit.useOriginalTitle' => 'Originaltitel verwenden',
+			'metadataEdit.preferredAudioLanguage' => 'Bevorzugte Audiosprache',
+			'metadataEdit.preferredSubtitleLanguage' => 'Bevorzugte Untertitelsprache',
+			'metadataEdit.subtitleMode' => 'Automatische Untertitelauswahl',
+			'metadataEdit.manuallySelected' => 'Manuell ausgewählt',
+			'metadataEdit.shownWithForeignAudio' => 'Bei fremdsprachigem Audio anzeigen',
+			'metadataEdit.alwaysEnabled' => 'Immer aktiviert',
 			_ => null,
 		};
 	}

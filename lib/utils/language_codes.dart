@@ -70,6 +70,38 @@ class LanguageCodes {
     return variations.toList();
   }
 
+  /// Get a display name for a language/locale code.
+  /// Handles plain codes ("en" → "English") and locale codes ("en-US" → "English",
+  /// "en-AU" → "English (Australia)").
+  /// Uses [_regionNames] for the country qualifier on non-primary variants.
+  static String getDisplayName(String code) {
+    if (code.isEmpty) return code;
+
+    // Plain language code (e.g. "en", "ja")
+    if (!code.contains('-')) {
+      return getLanguageName(code) ?? code;
+    }
+
+    // Locale code (e.g. "en-US", "zh-TW")
+    final parts = code.split('-');
+    final langName = getLanguageName(parts[0]) ?? parts[0];
+    final region = parts.length > 1 ? _regionNames[parts[1]] : null;
+    return region != null ? '$langName ($region)' : langName;
+  }
+
+  // Region qualifiers for Plex locale codes that differ from the primary variant.
+  // Only entries where Plex shows a country qualifier in its UI are listed.
+  static const _regionNames = <String, String>{
+    'AU': 'Australia',
+    'BR': 'Brazil',
+    'CA': 'Canada',
+    'GB': 'UK',
+    'HK': 'Hong Kong',
+    'MX': 'Mexico',
+    'PT': 'Portugal',
+    'TW': 'Taiwan',
+  };
+
   /// Get the English name of a language from its code
   static String? getLanguageName(String languageCode) {
     if (_codes == null) return null;

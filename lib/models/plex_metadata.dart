@@ -33,6 +33,18 @@ enum PlexMediaType {
 
   /// Whether this type can be played directly
   bool get isPlayable => isVideo || this == track;
+
+  /// Plex API type number for metadata editing endpoints
+  int get typeNumber => switch (this) {
+    PlexMediaType.movie => 1,
+    PlexMediaType.show => 2,
+    PlexMediaType.season => 3,
+    PlexMediaType.episode => 4,
+    PlexMediaType.artist => 8,
+    PlexMediaType.album => 9,
+    PlexMediaType.track => 10,
+    _ => 0,
+  };
 }
 
 @JsonSerializable()
@@ -81,6 +93,8 @@ class PlexMetadata with MultiServerFields {
   final int? librarySectionID; // Library section ID this item belongs to
   final String? ratingImage; // Rating source URI (e.g. rottentomatoes://image.rating.ripe)
   final String? audienceRatingImage; // Audience rating source URI
+  final String? tagline;
+  final String? originalTitle;
   final String? subtype; // Clip subtype: "trailer", "behindTheScenes", "deleted", etc.
   final int? extraType; // Numeric extra type identifier
   final String? primaryExtraKey; // Points to main trailer (e.g., "/library/metadata/52601")
@@ -161,6 +175,8 @@ class PlexMetadata with MultiServerFields {
     this.librarySectionID,
     this.ratingImage,
     this.audienceRatingImage,
+    this.tagline,
+    this.originalTitle,
     this.subtype,
     this.extraType,
     this.primaryExtraKey,
@@ -214,6 +230,8 @@ class PlexMetadata with MultiServerFields {
     int? librarySectionID,
     String? ratingImage,
     String? audienceRatingImage,
+    String? tagline,
+    String? originalTitle,
     String? subtype,
     int? extraType,
     String? primaryExtraKey,
@@ -265,6 +283,8 @@ class PlexMetadata with MultiServerFields {
       librarySectionID: librarySectionID ?? this.librarySectionID,
       ratingImage: ratingImage ?? this.ratingImage,
       audienceRatingImage: audienceRatingImage ?? this.audienceRatingImage,
+      tagline: tagline ?? this.tagline,
+      originalTitle: originalTitle ?? this.originalTitle,
       subtype: subtype ?? this.subtype,
       extraType: extraType ?? this.extraType,
       primaryExtraKey: primaryExtraKey ?? this.primaryExtraKey,

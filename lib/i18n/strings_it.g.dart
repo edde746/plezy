@@ -74,6 +74,7 @@ class TranslationsIt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCompanionRemoteIt companionRemote = _TranslationsCompanionRemoteIt._(_root);
 	@override late final _TranslationsVideoSettingsIt videoSettings = _TranslationsVideoSettingsIt._(_root);
 	@override late final _TranslationsExternalPlayerIt externalPlayer = _TranslationsExternalPlayerIt._(_root);
+	@override late final _TranslationsMetadataEditIt metadataEdit = _TranslationsMetadataEditIt._(_root);
 }
 
 // Path: app
@@ -1050,6 +1051,74 @@ class _TranslationsExternalPlayerIt implements TranslationsExternalPlayerEn {
 	@override String get playInExternalPlayer => 'Riproduci in lettore esterno';
 }
 
+// Path: metadataEdit
+class _TranslationsMetadataEditIt implements TranslationsMetadataEditEn {
+	_TranslationsMetadataEditIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get editMetadata => 'Modifica...';
+	@override String get screenTitle => 'Modifica metadati';
+	@override String get basicInfo => 'Informazioni di base';
+	@override String get artwork => 'Artwork';
+	@override String get advancedSettings => 'Impostazioni avanzate';
+	@override String get title => 'Titolo';
+	@override String get sortTitle => 'Titolo di ordinamento';
+	@override String get originalTitle => 'Titolo originale';
+	@override String get releaseDate => 'Data di uscita';
+	@override String get contentRating => 'Classificazione';
+	@override String get studio => 'Studio';
+	@override String get tagline => 'Tagline';
+	@override String get summary => 'Trama';
+	@override String get poster => 'Poster';
+	@override String get background => 'Sfondo';
+	@override String get selectPoster => 'Seleziona poster';
+	@override String get selectBackground => 'Seleziona sfondo';
+	@override String get fromUrl => 'Da URL';
+	@override String get uploadFile => 'Carica file';
+	@override String get enterImageUrl => 'Inserisci URL immagine';
+	@override String get imageUrl => 'URL immagine';
+	@override String get metadataUpdated => 'Metadati aggiornati';
+	@override String get metadataUpdateFailed => 'Aggiornamento metadati non riuscito';
+	@override String get artworkUpdated => 'Artwork aggiornato';
+	@override String get artworkUpdateFailed => 'Aggiornamento artwork non riuscito';
+	@override String get noArtworkAvailable => 'Nessun artwork disponibile';
+	@override String get notSet => 'Non impostato';
+	@override String get libraryDefault => 'Predefinito libreria';
+	@override String get accountDefault => 'Predefinito account';
+	@override String get seriesDefault => 'Predefinito serie';
+	@override String get episodeSorting => 'Ordinamento episodi';
+	@override String get oldestFirst => 'Più vecchi prima';
+	@override String get newestFirst => 'Più recenti prima';
+	@override String get keep => 'Conserva';
+	@override String get allEpisodes => 'Tutti gli episodi';
+	@override String latestEpisodes({required Object count}) => '${count} episodi più recenti';
+	@override String get latestEpisode => 'Episodio più recente';
+	@override String episodesAddedPastDays({required Object count}) => 'Episodi aggiunti negli ultimi ${count} giorni';
+	@override String get deleteAfterPlaying => 'Elimina episodi dopo la riproduzione';
+	@override String get never => 'Mai';
+	@override String get afterADay => 'Dopo un giorno';
+	@override String get afterAWeek => 'Dopo una settimana';
+	@override String get afterAMonth => 'Dopo un mese';
+	@override String get onNextRefresh => 'Al prossimo aggiornamento';
+	@override String get seasons => 'Stagioni';
+	@override String get show => 'Mostra';
+	@override String get hide => 'Nascondi';
+	@override String get episodeOrdering => 'Ordine episodi';
+	@override String get tmdbAiring => 'The Movie Database (In onda)';
+	@override String get tvdbAiring => 'TheTVDB (In onda)';
+	@override String get tvdbAbsolute => 'TheTVDB (Assoluto)';
+	@override String get metadataLanguage => 'Lingua metadati';
+	@override String get useOriginalTitle => 'Usa titolo originale';
+	@override String get preferredAudioLanguage => 'Lingua audio preferita';
+	@override String get preferredSubtitleLanguage => 'Lingua sottotitoli preferita';
+	@override String get subtitleMode => 'Selezione automatica sottotitoli';
+	@override String get manuallySelected => 'Selezionato manualmente';
+	@override String get shownWithForeignAudio => 'Mostrati con audio straniero';
+	@override String get alwaysEnabled => 'Sempre attivo';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsIt implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsIt._(this._root);
@@ -1979,6 +2048,65 @@ extension on TranslationsIt {
 			'externalPlayer.launchFailed' => 'Impossibile aprire il lettore esterno',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} non è installato',
 			'externalPlayer.playInExternalPlayer' => 'Riproduci in lettore esterno',
+			'metadataEdit.editMetadata' => 'Modifica...',
+			'metadataEdit.screenTitle' => 'Modifica metadati',
+			'metadataEdit.basicInfo' => 'Informazioni di base',
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Impostazioni avanzate',
+			'metadataEdit.title' => 'Titolo',
+			'metadataEdit.sortTitle' => 'Titolo di ordinamento',
+			'metadataEdit.originalTitle' => 'Titolo originale',
+			'metadataEdit.releaseDate' => 'Data di uscita',
+			'metadataEdit.contentRating' => 'Classificazione',
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
+			'metadataEdit.summary' => 'Trama',
+			'metadataEdit.poster' => 'Poster',
+			'metadataEdit.background' => 'Sfondo',
+			'metadataEdit.selectPoster' => 'Seleziona poster',
+			'metadataEdit.selectBackground' => 'Seleziona sfondo',
+			'metadataEdit.fromUrl' => 'Da URL',
+			'metadataEdit.uploadFile' => 'Carica file',
+			'metadataEdit.enterImageUrl' => 'Inserisci URL immagine',
+			'metadataEdit.imageUrl' => 'URL immagine',
+			'metadataEdit.metadataUpdated' => 'Metadati aggiornati',
+			'metadataEdit.metadataUpdateFailed' => 'Aggiornamento metadati non riuscito',
+			'metadataEdit.artworkUpdated' => 'Artwork aggiornato',
+			'metadataEdit.artworkUpdateFailed' => 'Aggiornamento artwork non riuscito',
+			'metadataEdit.noArtworkAvailable' => 'Nessun artwork disponibile',
+			'metadataEdit.notSet' => 'Non impostato',
+			'metadataEdit.libraryDefault' => 'Predefinito libreria',
+			'metadataEdit.accountDefault' => 'Predefinito account',
+			'metadataEdit.seriesDefault' => 'Predefinito serie',
+			'metadataEdit.episodeSorting' => 'Ordinamento episodi',
+			'metadataEdit.oldestFirst' => 'Più vecchi prima',
+			'metadataEdit.newestFirst' => 'Più recenti prima',
+			'metadataEdit.keep' => 'Conserva',
+			'metadataEdit.allEpisodes' => 'Tutti gli episodi',
+			'metadataEdit.latestEpisodes' => ({required Object count}) => '${count} episodi più recenti',
+			'metadataEdit.latestEpisode' => 'Episodio più recente',
+			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Episodi aggiunti negli ultimi ${count} giorni',
+			'metadataEdit.deleteAfterPlaying' => 'Elimina episodi dopo la riproduzione',
+			'metadataEdit.never' => 'Mai',
+			'metadataEdit.afterADay' => 'Dopo un giorno',
+			'metadataEdit.afterAWeek' => 'Dopo una settimana',
+			'metadataEdit.afterAMonth' => 'Dopo un mese',
+			'metadataEdit.onNextRefresh' => 'Al prossimo aggiornamento',
+			'metadataEdit.seasons' => 'Stagioni',
+			'metadataEdit.show' => 'Mostra',
+			'metadataEdit.hide' => 'Nascondi',
+			'metadataEdit.episodeOrdering' => 'Ordine episodi',
+			'metadataEdit.tmdbAiring' => 'The Movie Database (In onda)',
+			'metadataEdit.tvdbAiring' => 'TheTVDB (In onda)',
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Assoluto)',
+			'metadataEdit.metadataLanguage' => 'Lingua metadati',
+			'metadataEdit.useOriginalTitle' => 'Usa titolo originale',
+			'metadataEdit.preferredAudioLanguage' => 'Lingua audio preferita',
+			'metadataEdit.preferredSubtitleLanguage' => 'Lingua sottotitoli preferita',
+			'metadataEdit.subtitleMode' => 'Selezione automatica sottotitoli',
+			'metadataEdit.manuallySelected' => 'Selezionato manualmente',
+			'metadataEdit.shownWithForeignAudio' => 'Mostrati con audio straniero',
+			'metadataEdit.alwaysEnabled' => 'Sempre attivo',
 			_ => null,
 		};
 	}

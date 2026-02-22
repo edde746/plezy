@@ -77,6 +77,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsCompanionRemoteEn companionRemote = TranslationsCompanionRemoteEn._(_root);
 	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn._(_root);
 	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn._(_root);
+	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn._(_root);
 }
 
 // Path: app
@@ -2325,6 +2326,192 @@ class TranslationsExternalPlayerEn {
 	String get playInExternalPlayer => 'Play in External Player';
 }
 
+// Path: metadataEdit
+class TranslationsMetadataEditEn {
+	TranslationsMetadataEditEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Edit...'
+	String get editMetadata => 'Edit...';
+
+	/// en: 'Edit Metadata'
+	String get screenTitle => 'Edit Metadata';
+
+	/// en: 'Basic Info'
+	String get basicInfo => 'Basic Info';
+
+	/// en: 'Artwork'
+	String get artwork => 'Artwork';
+
+	/// en: 'Advanced Settings'
+	String get advancedSettings => 'Advanced Settings';
+
+	/// en: 'Title'
+	String get title => 'Title';
+
+	/// en: 'Sort Title'
+	String get sortTitle => 'Sort Title';
+
+	/// en: 'Original Title'
+	String get originalTitle => 'Original Title';
+
+	/// en: 'Release Date'
+	String get releaseDate => 'Release Date';
+
+	/// en: 'Content Rating'
+	String get contentRating => 'Content Rating';
+
+	/// en: 'Studio'
+	String get studio => 'Studio';
+
+	/// en: 'Tagline'
+	String get tagline => 'Tagline';
+
+	/// en: 'Summary'
+	String get summary => 'Summary';
+
+	/// en: 'Poster'
+	String get poster => 'Poster';
+
+	/// en: 'Background'
+	String get background => 'Background';
+
+	/// en: 'Select Poster'
+	String get selectPoster => 'Select Poster';
+
+	/// en: 'Select Background'
+	String get selectBackground => 'Select Background';
+
+	/// en: 'From URL'
+	String get fromUrl => 'From URL';
+
+	/// en: 'Upload File'
+	String get uploadFile => 'Upload File';
+
+	/// en: 'Enter image URL'
+	String get enterImageUrl => 'Enter image URL';
+
+	/// en: 'Image URL'
+	String get imageUrl => 'Image URL';
+
+	/// en: 'Metadata updated'
+	String get metadataUpdated => 'Metadata updated';
+
+	/// en: 'Failed to update metadata'
+	String get metadataUpdateFailed => 'Failed to update metadata';
+
+	/// en: 'Artwork updated'
+	String get artworkUpdated => 'Artwork updated';
+
+	/// en: 'Failed to update artwork'
+	String get artworkUpdateFailed => 'Failed to update artwork';
+
+	/// en: 'No artwork available'
+	String get noArtworkAvailable => 'No artwork available';
+
+	/// en: 'Not set'
+	String get notSet => 'Not set';
+
+	/// en: 'Library default'
+	String get libraryDefault => 'Library default';
+
+	/// en: 'Account default'
+	String get accountDefault => 'Account default';
+
+	/// en: 'Series default'
+	String get seriesDefault => 'Series default';
+
+	/// en: 'Episode Sorting'
+	String get episodeSorting => 'Episode Sorting';
+
+	/// en: 'Oldest first'
+	String get oldestFirst => 'Oldest first';
+
+	/// en: 'Newest first'
+	String get newestFirst => 'Newest first';
+
+	/// en: 'Keep'
+	String get keep => 'Keep';
+
+	/// en: 'All episodes'
+	String get allEpisodes => 'All episodes';
+
+	/// en: '${count} latest episodes'
+	String latestEpisodes({required Object count}) => '${count} latest episodes';
+
+	/// en: 'Latest episode'
+	String get latestEpisode => 'Latest episode';
+
+	/// en: 'Episodes added in the past ${count} days'
+	String episodesAddedPastDays({required Object count}) => 'Episodes added in the past ${count} days';
+
+	/// en: 'Delete Episodes After Playing'
+	String get deleteAfterPlaying => 'Delete Episodes After Playing';
+
+	/// en: 'Never'
+	String get never => 'Never';
+
+	/// en: 'After a day'
+	String get afterADay => 'After a day';
+
+	/// en: 'After a week'
+	String get afterAWeek => 'After a week';
+
+	/// en: 'After a month'
+	String get afterAMonth => 'After a month';
+
+	/// en: 'On next refresh'
+	String get onNextRefresh => 'On next refresh';
+
+	/// en: 'Seasons'
+	String get seasons => 'Seasons';
+
+	/// en: 'Show'
+	String get show => 'Show';
+
+	/// en: 'Hide'
+	String get hide => 'Hide';
+
+	/// en: 'Episode Ordering'
+	String get episodeOrdering => 'Episode Ordering';
+
+	/// en: 'The Movie Database (Aired)'
+	String get tmdbAiring => 'The Movie Database (Aired)';
+
+	/// en: 'TheTVDB (Aired)'
+	String get tvdbAiring => 'TheTVDB (Aired)';
+
+	/// en: 'TheTVDB (Absolute)'
+	String get tvdbAbsolute => 'TheTVDB (Absolute)';
+
+	/// en: 'Metadata Language'
+	String get metadataLanguage => 'Metadata Language';
+
+	/// en: 'Use Original Title'
+	String get useOriginalTitle => 'Use Original Title';
+
+	/// en: 'Preferred Audio Language'
+	String get preferredAudioLanguage => 'Preferred Audio Language';
+
+	/// en: 'Preferred Subtitle Language'
+	String get preferredSubtitleLanguage => 'Preferred Subtitle Language';
+
+	/// en: 'Auto-Select Subtitle Mode'
+	String get subtitleMode => 'Auto-Select Subtitle Mode';
+
+	/// en: 'Manually selected'
+	String get manuallySelected => 'Manually selected';
+
+	/// en: 'Shown with foreign audio'
+	String get shownWithForeignAudio => 'Shown with foreign audio';
+
+	/// en: 'Always enabled'
+	String get alwaysEnabled => 'Always enabled';
+}
+
 // Path: hotkeys.actions
 class TranslationsHotkeysActionsEn {
 	TranslationsHotkeysActionsEn._(this._root);
@@ -3476,6 +3663,65 @@ extension on Translations {
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
+			'metadataEdit.editMetadata' => 'Edit...',
+			'metadataEdit.screenTitle' => 'Edit Metadata',
+			'metadataEdit.basicInfo' => 'Basic Info',
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Advanced Settings',
+			'metadataEdit.title' => 'Title',
+			'metadataEdit.sortTitle' => 'Sort Title',
+			'metadataEdit.originalTitle' => 'Original Title',
+			'metadataEdit.releaseDate' => 'Release Date',
+			'metadataEdit.contentRating' => 'Content Rating',
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
+			'metadataEdit.summary' => 'Summary',
+			'metadataEdit.poster' => 'Poster',
+			'metadataEdit.background' => 'Background',
+			'metadataEdit.selectPoster' => 'Select Poster',
+			'metadataEdit.selectBackground' => 'Select Background',
+			'metadataEdit.fromUrl' => 'From URL',
+			'metadataEdit.uploadFile' => 'Upload File',
+			'metadataEdit.enterImageUrl' => 'Enter image URL',
+			'metadataEdit.imageUrl' => 'Image URL',
+			'metadataEdit.metadataUpdated' => 'Metadata updated',
+			'metadataEdit.metadataUpdateFailed' => 'Failed to update metadata',
+			'metadataEdit.artworkUpdated' => 'Artwork updated',
+			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
+			'metadataEdit.noArtworkAvailable' => 'No artwork available',
+			'metadataEdit.notSet' => 'Not set',
+			'metadataEdit.libraryDefault' => 'Library default',
+			'metadataEdit.accountDefault' => 'Account default',
+			'metadataEdit.seriesDefault' => 'Series default',
+			'metadataEdit.episodeSorting' => 'Episode Sorting',
+			'metadataEdit.oldestFirst' => 'Oldest first',
+			'metadataEdit.newestFirst' => 'Newest first',
+			'metadataEdit.keep' => 'Keep',
+			'metadataEdit.allEpisodes' => 'All episodes',
+			'metadataEdit.latestEpisodes' => ({required Object count}) => '${count} latest episodes',
+			'metadataEdit.latestEpisode' => 'Latest episode',
+			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Episodes added in the past ${count} days',
+			'metadataEdit.deleteAfterPlaying' => 'Delete Episodes After Playing',
+			'metadataEdit.never' => 'Never',
+			'metadataEdit.afterADay' => 'After a day',
+			'metadataEdit.afterAWeek' => 'After a week',
+			'metadataEdit.afterAMonth' => 'After a month',
+			'metadataEdit.onNextRefresh' => 'On next refresh',
+			'metadataEdit.seasons' => 'Seasons',
+			'metadataEdit.show' => 'Show',
+			'metadataEdit.hide' => 'Hide',
+			'metadataEdit.episodeOrdering' => 'Episode Ordering',
+			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
+			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
+			'metadataEdit.metadataLanguage' => 'Metadata Language',
+			'metadataEdit.useOriginalTitle' => 'Use Original Title',
+			'metadataEdit.preferredAudioLanguage' => 'Preferred Audio Language',
+			'metadataEdit.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
+			'metadataEdit.subtitleMode' => 'Auto-Select Subtitle Mode',
+			'metadataEdit.manuallySelected' => 'Manually selected',
+			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',
+			'metadataEdit.alwaysEnabled' => 'Always enabled',
 			_ => null,
 		};
 	}

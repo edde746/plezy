@@ -74,6 +74,7 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCompanionRemoteSv companionRemote = _TranslationsCompanionRemoteSv._(_root);
 	@override late final _TranslationsVideoSettingsSv videoSettings = _TranslationsVideoSettingsSv._(_root);
 	@override late final _TranslationsExternalPlayerSv externalPlayer = _TranslationsExternalPlayerSv._(_root);
+	@override late final _TranslationsMetadataEditSv metadataEdit = _TranslationsMetadataEditSv._(_root);
 }
 
 // Path: app
@@ -1050,6 +1051,74 @@ class _TranslationsExternalPlayerSv implements TranslationsExternalPlayerEn {
 	@override String get playInExternalPlayer => 'Spela i extern spelare';
 }
 
+// Path: metadataEdit
+class _TranslationsMetadataEditSv implements TranslationsMetadataEditEn {
+	_TranslationsMetadataEditSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get editMetadata => 'Redigera...';
+	@override String get screenTitle => 'Redigera metadata';
+	@override String get basicInfo => 'Grundläggande info';
+	@override String get artwork => 'Artwork';
+	@override String get advancedSettings => 'Avancerade inställningar';
+	@override String get title => 'Titel';
+	@override String get sortTitle => 'Sorteringstitel';
+	@override String get originalTitle => 'Originaltitel';
+	@override String get releaseDate => 'Utgivningsdatum';
+	@override String get contentRating => 'Åldersgräns';
+	@override String get studio => 'Studio';
+	@override String get tagline => 'Tagline';
+	@override String get summary => 'Sammanfattning';
+	@override String get poster => 'Poster';
+	@override String get background => 'Bakgrund';
+	@override String get selectPoster => 'Välj poster';
+	@override String get selectBackground => 'Välj bakgrund';
+	@override String get fromUrl => 'Från URL';
+	@override String get uploadFile => 'Ladda upp fil';
+	@override String get enterImageUrl => 'Ange bild-URL';
+	@override String get imageUrl => 'Bild-URL';
+	@override String get metadataUpdated => 'Metadata uppdaterad';
+	@override String get metadataUpdateFailed => 'Kunde inte uppdatera metadata';
+	@override String get artworkUpdated => 'Artwork uppdaterad';
+	@override String get artworkUpdateFailed => 'Kunde inte uppdatera artwork';
+	@override String get noArtworkAvailable => 'Ingen artwork tillgänglig';
+	@override String get notSet => 'Inte angiven';
+	@override String get libraryDefault => 'Biblioteksstandard';
+	@override String get accountDefault => 'Kontostandard';
+	@override String get seriesDefault => 'Seriestandard';
+	@override String get episodeSorting => 'Avsnittsortering';
+	@override String get oldestFirst => 'Äldst först';
+	@override String get newestFirst => 'Nyast först';
+	@override String get keep => 'Behåll';
+	@override String get allEpisodes => 'Alla avsnitt';
+	@override String latestEpisodes({required Object count}) => '${count} senaste avsnitten';
+	@override String get latestEpisode => 'Senaste avsnittet';
+	@override String episodesAddedPastDays({required Object count}) => 'Avsnitt tillagda de senaste ${count} dagarna';
+	@override String get deleteAfterPlaying => 'Ta bort avsnitt efter uppspelning';
+	@override String get never => 'Aldrig';
+	@override String get afterADay => 'Efter en dag';
+	@override String get afterAWeek => 'Efter en vecka';
+	@override String get afterAMonth => 'Efter en månad';
+	@override String get onNextRefresh => 'Vid nästa uppdatering';
+	@override String get seasons => 'Säsonger';
+	@override String get show => 'Visa';
+	@override String get hide => 'Dölj';
+	@override String get episodeOrdering => 'Avsnittsordning';
+	@override String get tmdbAiring => 'The Movie Database (Sändning)';
+	@override String get tvdbAiring => 'TheTVDB (Sändning)';
+	@override String get tvdbAbsolute => 'TheTVDB (Absolut)';
+	@override String get metadataLanguage => 'Metadataspråk';
+	@override String get useOriginalTitle => 'Använd originaltitel';
+	@override String get preferredAudioLanguage => 'Föredraget ljudspråk';
+	@override String get preferredSubtitleLanguage => 'Föredraget undertextspråk';
+	@override String get subtitleMode => 'Automatiskt val av undertexter';
+	@override String get manuallySelected => 'Manuellt vald';
+	@override String get shownWithForeignAudio => 'Visas vid främmande ljud';
+	@override String get alwaysEnabled => 'Alltid aktiverad';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsSv implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsSv._(this._root);
@@ -1979,6 +2048,65 @@ extension on TranslationsSv {
 			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
 			'externalPlayer.playInExternalPlayer' => 'Spela i extern spelare',
+			'metadataEdit.editMetadata' => 'Redigera...',
+			'metadataEdit.screenTitle' => 'Redigera metadata',
+			'metadataEdit.basicInfo' => 'Grundläggande info',
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Avancerade inställningar',
+			'metadataEdit.title' => 'Titel',
+			'metadataEdit.sortTitle' => 'Sorteringstitel',
+			'metadataEdit.originalTitle' => 'Originaltitel',
+			'metadataEdit.releaseDate' => 'Utgivningsdatum',
+			'metadataEdit.contentRating' => 'Åldersgräns',
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
+			'metadataEdit.summary' => 'Sammanfattning',
+			'metadataEdit.poster' => 'Poster',
+			'metadataEdit.background' => 'Bakgrund',
+			'metadataEdit.selectPoster' => 'Välj poster',
+			'metadataEdit.selectBackground' => 'Välj bakgrund',
+			'metadataEdit.fromUrl' => 'Från URL',
+			'metadataEdit.uploadFile' => 'Ladda upp fil',
+			'metadataEdit.enterImageUrl' => 'Ange bild-URL',
+			'metadataEdit.imageUrl' => 'Bild-URL',
+			'metadataEdit.metadataUpdated' => 'Metadata uppdaterad',
+			'metadataEdit.metadataUpdateFailed' => 'Kunde inte uppdatera metadata',
+			'metadataEdit.artworkUpdated' => 'Artwork uppdaterad',
+			'metadataEdit.artworkUpdateFailed' => 'Kunde inte uppdatera artwork',
+			'metadataEdit.noArtworkAvailable' => 'Ingen artwork tillgänglig',
+			'metadataEdit.notSet' => 'Inte angiven',
+			'metadataEdit.libraryDefault' => 'Biblioteksstandard',
+			'metadataEdit.accountDefault' => 'Kontostandard',
+			'metadataEdit.seriesDefault' => 'Seriestandard',
+			'metadataEdit.episodeSorting' => 'Avsnittsortering',
+			'metadataEdit.oldestFirst' => 'Äldst först',
+			'metadataEdit.newestFirst' => 'Nyast först',
+			'metadataEdit.keep' => 'Behåll',
+			'metadataEdit.allEpisodes' => 'Alla avsnitt',
+			'metadataEdit.latestEpisodes' => ({required Object count}) => '${count} senaste avsnitten',
+			'metadataEdit.latestEpisode' => 'Senaste avsnittet',
+			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Avsnitt tillagda de senaste ${count} dagarna',
+			'metadataEdit.deleteAfterPlaying' => 'Ta bort avsnitt efter uppspelning',
+			'metadataEdit.never' => 'Aldrig',
+			'metadataEdit.afterADay' => 'Efter en dag',
+			'metadataEdit.afterAWeek' => 'Efter en vecka',
+			'metadataEdit.afterAMonth' => 'Efter en månad',
+			'metadataEdit.onNextRefresh' => 'Vid nästa uppdatering',
+			'metadataEdit.seasons' => 'Säsonger',
+			'metadataEdit.show' => 'Visa',
+			'metadataEdit.hide' => 'Dölj',
+			'metadataEdit.episodeOrdering' => 'Avsnittsordning',
+			'metadataEdit.tmdbAiring' => 'The Movie Database (Sändning)',
+			'metadataEdit.tvdbAiring' => 'TheTVDB (Sändning)',
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
+			'metadataEdit.metadataLanguage' => 'Metadataspråk',
+			'metadataEdit.useOriginalTitle' => 'Använd originaltitel',
+			'metadataEdit.preferredAudioLanguage' => 'Föredraget ljudspråk',
+			'metadataEdit.preferredSubtitleLanguage' => 'Föredraget undertextspråk',
+			'metadataEdit.subtitleMode' => 'Automatiskt val av undertexter',
+			'metadataEdit.manuallySelected' => 'Manuellt vald',
+			'metadataEdit.shownWithForeignAudio' => 'Visas vid främmande ljud',
+			'metadataEdit.alwaysEnabled' => 'Alltid aktiverad',
 			_ => null,
 		};
 	}
