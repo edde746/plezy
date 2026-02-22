@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'dart:io' show Platform;
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
@@ -376,10 +377,28 @@ class _SetupScreenState extends State<SetupScreen> {
     final storage = await StorageService.getInstance();
     final registry = ServerRegistry(storage);
 
-    // Refresh servers from API to get updated connection info (IPs may change)
-    await registry.refreshServersFromApi();
+    // Check connectivity status to determine if we can refresh from API
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final hasNetworkConnection = !connectivityResult.contains(ConnectivityResult.none);
 
-    // Load all configured servers
+    // Check if we have previously authenticated (stored token and servers)
+    final hasPlexToken = storage.getPlexToken() != null;
+    final cachedServers = await registry.getServers();
+    final hasCachedServers = cachedServers.isNotEmpty;
+
+    // If offline (airplane mode) but previously authenticated, skip API refresh and use cached data
+    if (!hasNetworkConnection && hasPlexToken && hasCachedServers) {
+      appLogger.i('Device is offline (airplane mode) - skipping authentication, using cached servers');
+    } else if (hasNetworkConnection) {
+      // Only refresh from API if we have network connectivity
+      // This gets updated connection info (IPs, ports) that may have changed
+      await registry.refreshServersFromApi();
+    } else {
+      // No network and no cached data - user needs to authenticate first
+      appLogger.w('No network connection and no cached credentials - showing auth screen');
+    }
+
+    // Load all configured servers (from cache or freshly updated)
     final servers = await registry.getServers();
 
     if (servers.isEmpty) {
