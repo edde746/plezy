@@ -57,7 +57,7 @@ import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/video_controls/video_controls.dart';
-import '../focus/focusable_wrapper.dart';
+import '../focus/focusable_button.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
@@ -2500,27 +2500,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                               Row(
                                 children: [
                                   Expanded(
-                                    child: FocusableWrapper(
+                                    child: FocusableButton(
                                       focusNode: _playNextCancelFocusNode,
-                                      onSelect: _cancelAutoPlay,
-                                      useBackgroundFocus: true,
+                                      onPressed: _cancelAutoPlay,
                                       autoScroll: false,
-                                      borderRadius: 20,
-                                      onKeyEvent: (node, event) {
-                                        if (event is KeyDownEvent) {
-                                          // RIGHT arrow moves focus to Play Next button
-                                          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                                            _playNextConfirmFocusNode.requestFocus();
-                                            return KeyEventResult.handled;
-                                          }
-                                          // Trap focus - consume UP/DOWN to prevent escape
-                                          if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                                              event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                            return KeyEventResult.handled;
-                                          }
-                                        }
-                                        return KeyEventResult.ignored;
-                                      },
+                                      onNavigateRight: () => _playNextConfirmFocusNode.requestFocus(),
+                                      onNavigateUp: () {}, // Trap focus
+                                      onNavigateDown: () {}, // Trap focus
                                       child: OutlinedButton(
                                         onPressed: _cancelAutoPlay,
                                         style: OutlinedButton.styleFrom(
@@ -2534,27 +2520,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: FocusableWrapper(
+                                    child: FocusableButton(
                                       focusNode: _playNextConfirmFocusNode,
-                                      onSelect: _playNext,
-                                      useBackgroundFocus: true,
+                                      onPressed: _playNext,
                                       autoScroll: false,
-                                      borderRadius: 20,
-                                      onKeyEvent: (node, event) {
-                                        if (event is KeyDownEvent) {
-                                          // LEFT arrow moves focus to Cancel button
-                                          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                                            _playNextCancelFocusNode.requestFocus();
-                                            return KeyEventResult.handled;
-                                          }
-                                          // Trap focus - consume UP/DOWN to prevent escape
-                                          if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                                              event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                            return KeyEventResult.handled;
-                                          }
-                                        }
-                                        return KeyEventResult.ignored;
-                                      },
+                                      onNavigateLeft: () => _playNextCancelFocusNode.requestFocus(),
+                                      onNavigateUp: () {}, // Trap focus
+                                      onNavigateDown: () {}, // Trap focus
                                       child: FilledButton(
                                         onPressed: _playNext,
                                         style: FilledButton.styleFrom(

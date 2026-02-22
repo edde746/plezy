@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import '../../focus/focusable_button.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
@@ -1480,11 +1481,21 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             title: Text(selectedItem.confirmationTitle ?? t.dialog.confirmAction),
             content: Text(selectedItem.confirmationMessage ?? t.libraries.confirmActionMessage),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-              TextButton(
+              FocusableButton(
+                autofocus: true,
+                onPressed: () => Navigator.pop(context, false),
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(t.common.cancel),
+                ),
+              ),
+              FocusableButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: selectedItem.isDestructive ? TextButton.styleFrom(foregroundColor: Colors.red) : null,
-                child: Text(t.common.confirm),
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: selectedItem.isDestructive ? TextButton.styleFrom(foregroundColor: Colors.red) : null,
+                  child: Text(t.common.confirm),
+                ),
               ),
             ],
           ),

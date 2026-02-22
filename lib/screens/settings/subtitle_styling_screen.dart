@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
@@ -198,14 +199,23 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-                TextButton(
+                FocusableButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
+                ),
+                FocusableButton(
                   focusNode: saveFocusNode,
                   onPressed: () {
                     onSave(spinnerValue);
                     Navigator.pop(dialogContext);
                   },
-                  child: Text(t.common.save),
+                  child: TextButton(
+                    onPressed: () {
+                      onSave(spinnerValue);
+                      Navigator.pop(dialogContext);
+                    },
+                    child: Text(t.common.save),
+                  ),
                 ),
               ],
             );
@@ -263,14 +273,23 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 onConfirm: () => saveFocusNode.requestFocus(),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-                TextButton(
+                FocusableButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
+                ),
+                FocusableButton(
                   focusNode: saveFocusNode,
                   onPressed: () {
                     onColorSelected(_colorToHex(pickerColor));
                     Navigator.pop(dialogContext);
                   },
-                  child: Text(t.common.save),
+                  child: TextButton(
+                    onPressed: () {
+                      onColorSelected(_colorToHex(pickerColor));
+                      Navigator.pop(dialogContext);
+                    },
+                    child: Text(t.common.save),
+                  ),
                 ),
               ],
             );

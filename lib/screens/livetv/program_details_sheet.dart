@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../focus/focusable_wrapper.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
@@ -119,18 +119,15 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
     if (program.isCurrentlyAiring && widget.onTuneChannel != null) {
       final idx = buttonIndex;
       buttons.add(
-        FocusableWrapper(
+        FocusableButton(
           focusNode: _buttonFocusNodes[idx],
-          onSelect: () {
+          onPressed: () {
             closeSheet();
             widget.onTuneChannel!();
           },
           onNavigateLeft: idx > 0 ? () => _focusButton(idx - 1) : null,
           onNavigateRight: idx < _buttonFocusNodes.length - 1 ? () => _focusButton(idx + 1) : null,
           onBack: closeSheet,
-          borderRadius: 100,
-          useBackgroundFocus: true,
-          disableScale: true,
           child: FilledButton.icon(
             style: FilledButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
             onPressed: () {
@@ -181,18 +178,15 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
       buttons.add(const SizedBox(width: 8));
       final idx = buttonIndex;
       buttons.add(
-        FocusableWrapper(
+        FocusableButton(
           focusNode: _buttonFocusNodes[idx],
-          onSelect: () {
+          onPressed: () {
             closeSheet();
             widget.onTuneChannel!();
           },
           onNavigateLeft: idx > 0 ? () => _focusButton(idx - 1) : null,
           onNavigateRight: idx < _buttonFocusNodes.length - 1 ? () => _focusButton(idx + 1) : null,
           onBack: closeSheet,
-          borderRadius: 100,
-          useBackgroundFocus: true,
-          disableScale: true,
           child: OutlinedButton.icon(
             style: OutlinedButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
             onPressed: () {

@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
@@ -145,12 +146,9 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
-                child: FocusableWrapper(
+                child: FocusableButton(
                   autofocus: true,
-                  useBackgroundFocus: true,
-                  disableScale: true,
-                  borderRadius: 100,
-                  onSelect: _isCreating || _isJoining ? null : _createSession,
+                  onPressed: _isCreating || _isJoining ? null : _createSession,
                   child: FilledButton.icon(
                     onPressed: _isCreating || _isJoining ? null : _createSession,
                     icon: _isCreating
@@ -163,11 +161,8 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
-                child: FocusableWrapper(
-                  useBackgroundFocus: true,
-                  disableScale: true,
-                  borderRadius: 100,
-                  onSelect: _isCreating || _isJoining ? null : _joinSession,
+                child: FocusableButton(
+                  onPressed: _isCreating || _isJoining ? null : _joinSession,
                   child: OutlinedButton.icon(
                     onPressed: _isCreating || _isJoining ? null : _joinSession,
                     icon: _isJoining
@@ -213,34 +208,25 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
         title: Text(t.watchTogether.controlMode),
         content: Text(t.watchTogether.controlModeQuestion),
         actions: [
-          FocusableWrapper(
+          FocusableButton(
             autofocus: true,
-            useBackgroundFocus: true,
-            disableScale: true,
-            borderRadius: 100,
-            onSelect: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context),
             child: TextButton(
               onPressed: () => Navigator.pop(context),
               style: TextButton.styleFrom(padding: buttonPadding, shape: buttonShape),
               child: Text(t.common.cancel),
             ),
           ),
-          FocusableWrapper(
-            useBackgroundFocus: true,
-            disableScale: true,
-            borderRadius: 100,
-            onSelect: () => Navigator.pop(context, ControlMode.hostOnly),
+          FocusableButton(
+            onPressed: () => Navigator.pop(context, ControlMode.hostOnly),
             child: TextButton(
               onPressed: () => Navigator.pop(context, ControlMode.hostOnly),
               style: TextButton.styleFrom(padding: buttonPadding, shape: buttonShape),
               child: Text(t.watchTogether.hostOnly),
             ),
           ),
-          FocusableWrapper(
-            useBackgroundFocus: true,
-            disableScale: true,
-            borderRadius: 100,
-            onSelect: () => Navigator.pop(context, ControlMode.anyone),
+          FocusableButton(
+            onPressed: () => Navigator.pop(context, ControlMode.anyone),
             child: FilledButton(
               onPressed: () => Navigator.pop(context, ControlMode.anyone),
               child: Text(t.watchTogether.anyone),
@@ -408,12 +394,9 @@ class _ActiveSessionContent extends StatelessWidget {
         // Leave/End Session Button
         SizedBox(
           width: double.infinity,
-          child: FocusableWrapper(
+          child: FocusableButton(
             autofocus: true,
-            useBackgroundFocus: true,
-            disableScale: true,
-            borderRadius: 100,
-            onSelect: () => _leaveSession(context),
+            onPressed: () => _leaveSession(context),
             child: OutlinedButton.icon(
               onPressed: () => _leaveSession(context),
               style: OutlinedButton.styleFrom(

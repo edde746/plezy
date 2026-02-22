@@ -6,6 +6,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/snackbar_helper.dart';
@@ -120,7 +121,16 @@ class _LogsScreenState extends State<LogsScreen> {
               ),
             ],
           ),
-          actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(t.common.close))],
+          actions: [
+            FocusableButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(t.common.close),
+              ),
+            ),
+          ],
         ),
       );
     } catch (_) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/external_player_models.dart';
 import '../../services/settings_service.dart';
@@ -183,6 +184,8 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
   Future<void> _showAddCustomPlayerDialog() async {
     final nameController = TextEditingController();
     final valueController = TextEditingController();
+    final valueFocusNode = FocusNode();
+    final saveFocusNode = FocusNode();
     var selectedType = CustomPlayerType.command;
 
     final result = await showDialog<bool>(
@@ -215,6 +218,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
                     decoration: InputDecoration(labelText: t.externalPlayer.playerName, hintText: 'My Player'),
                     autofocus: true,
                     textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => primaryFocus?.nextFocus(),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -238,27 +242,43 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
                   const SizedBox(height: 16),
                   TextField(
                     controller: valueController,
+                    focusNode: valueFocusNode,
                     decoration: InputDecoration(labelText: fieldLabel, hintText: fieldHint),
                     textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => saveFocusNode.requestFocus(),
                   ),
                 ],
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-              FilledButton(
+              FocusableButton(
+                onPressed: () => Navigator.pop(context),
+                child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+              ),
+              FocusableButton(
+                focusNode: saveFocusNode,
                 onPressed: () {
                   if (nameController.text.isNotEmpty && valueController.text.isNotEmpty) {
                     Navigator.pop(context, true);
                   }
                 },
-                child: Text(t.common.save),
+                child: FilledButton(
+                  onPressed: () {
+                    if (nameController.text.isNotEmpty && valueController.text.isNotEmpty) {
+                      Navigator.pop(context, true);
+                    }
+                  },
+                  child: Text(t.common.save),
+                ),
               ),
             ],
           );
         },
       ),
     );
+
+    valueFocusNode.dispose();
+    saveFocusNode.dispose();
 
     if (result != true) return;
 

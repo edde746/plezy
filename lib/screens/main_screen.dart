@@ -10,6 +10,7 @@ import '../../services/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
+import '../focus/focusable_button.dart';
 import '../utils/dialogs.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
@@ -226,27 +227,36 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
             ],
           ),
           actions: [
-            TextButton(
+            FocusableButton(
               autofocus: true,
               onPressed: () => Navigator.pop(dialogContext),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: const StadiumBorder(),
+              child: TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(t.common.later),
               ),
-              child: Text(t.common.later),
             ),
-            TextButton(
+            FocusableButton(
               onPressed: () async {
                 await UpdateService.skipVersion(updateInfo['latestVersion']);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: const StadiumBorder(),
+              child: TextButton(
+                onPressed: () async {
+                  await UpdateService.skipVersion(updateInfo['latestVersion']);
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(t.update.skipVersion),
               ),
-              child: Text(t.update.skipVersion),
             ),
-            FilledButton(
+            FocusableButton(
               onPressed: () async {
                 final url = Uri.parse(updateInfo['releaseUrl']);
                 if (await canLaunchUrl(url)) {
@@ -254,7 +264,16 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                 }
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
-              child: Text(t.update.viewRelease),
+              child: FilledButton(
+                onPressed: () async {
+                  final url = Uri.parse(updateInfo['releaseUrl']);
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                },
+                child: Text(t.update.viewRelease),
+              ),
             ),
           ],
         );

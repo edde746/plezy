@@ -33,6 +33,9 @@ class FocusableWrapper extends StatefulWidget {
   /// Called when the user presses UP and there's no focusable item above.
   final VoidCallback? onNavigateUp;
 
+  /// Called when the user presses DOWN and there's no focusable item below.
+  final VoidCallback? onNavigateDown;
+
   /// Called when the user presses LEFT and there's no focusable item to the left.
   final VoidCallback? onNavigateLeft;
 
@@ -83,9 +86,18 @@ class FocusableWrapper extends StatefulWidget {
   /// Useful for video controls where outline doesn't look good.
   final bool useBackgroundFocus;
 
+  /// Custom color for the focus border. Only used when [useBackgroundFocus] is false.
+  /// Useful for filled buttons where the default primary border blends in.
+  final Color? focusColor;
+
   /// Whether to disable the scale animation on focus.
   /// Useful for elements like sliders where scaling looks odd.
   final bool disableScale;
+
+  /// Whether descendants can receive focus.
+  /// Set to false when the child widget has its own Focus (e.g. buttons)
+  /// that would compete with this wrapper's focus handling.
+  final bool descendantsAreFocusable;
 
   const FocusableWrapper({
     super.key,
@@ -94,6 +106,7 @@ class FocusableWrapper extends StatefulWidget {
     this.onLongPress,
     this.onFocusChange,
     this.onNavigateUp,
+    this.onNavigateDown,
     this.onNavigateLeft,
     this.onNavigateRight,
     this.onBack,
@@ -109,7 +122,9 @@ class FocusableWrapper extends StatefulWidget {
     this.enableLongPress = false,
     this.longPressDuration = const Duration(milliseconds: 500),
     this.useBackgroundFocus = false,
+    this.focusColor,
     this.disableScale = false,
+    this.descendantsAreFocusable = true,
   });
 
   @override
@@ -367,6 +382,12 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       return KeyEventResult.handled;
     }
 
+    // DOWN arrow - if callback provided, navigate down
+    if (key == LogicalKeyboardKey.arrowDown && widget.onNavigateDown != null) {
+      widget.onNavigateDown!();
+      return KeyEventResult.handled;
+    }
+
     // LEFT arrow - if callback provided, navigate left (caller is responsible
     // for only providing this callback when the item is at the left edge)
     if (key == LogicalKeyboardKey.arrowLeft && widget.onNavigateLeft != null) {
@@ -398,11 +419,12 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     // Choose decoration based on useBackgroundFocus
     final decoration = widget.useBackgroundFocus
         ? FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: widget.borderRadius)
-        : FocusTheme.focusDecoration(context, isFocused: showFocus, borderRadius: widget.borderRadius);
+        : FocusTheme.focusDecoration(context, isFocused: showFocus, borderRadius: widget.borderRadius, color: widget.focusColor);
 
     Widget result = Focus(
       focusNode: _focusNode,
       autofocus: widget.autofocus,
+      descendantsAreFocusable: widget.descendantsAreFocusable,
       onFocusChange: _handleFocusChange,
       onKeyEvent: _handleKeyEvent,
       child: AnimatedBuilder(

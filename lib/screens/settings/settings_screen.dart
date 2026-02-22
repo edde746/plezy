@@ -9,6 +9,7 @@ import '../../models/hotkey_model.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+
 import '../../focus/focus_memory_tracker.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
@@ -1408,7 +1409,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(t.settings.clearCache),
           content: Text(t.settings.clearCacheDescription),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+            TextButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(context),
+              child: Text(t.common.cancel),
+            ),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1434,7 +1439,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(t.settings.resetSettings),
           content: Text(t.settings.resetSettingsDescription),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+            TextButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(context),
+              child: Text(t.common.cancel),
+            ),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1443,7 +1452,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 if (mounted) {
                   navigator.pop();
                   showSuccessSnackBar(this.context, t.settings.resetSettingsSuccess);
-                  // Reload settings
                   _loadSettings();
                 }
               },
@@ -1581,7 +1589,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.close)),
+            TextButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(context),
+              child: Text(t.common.close),
+            ),
             FilledButton(
               onPressed: () async {
                 final url = Uri.parse(_updateInfo!['releaseUrl']);

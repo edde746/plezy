@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../utils/formatters.dart';
@@ -441,8 +442,18 @@ class _PairingScreenState extends State<PairingScreen> {
         title: Text(t.companionRemote.pairing.removeRecentConnection),
         content: Text(t.companionRemote.pairing.removeConfirm(name: session.deviceName)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.remove)),
+          FocusableButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(context, false),
+            child: TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(t.common.cancel),
+            ),
+          ),
+          FocusableButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.remove)),
+          ),
         ],
       ),
     );

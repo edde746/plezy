@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
@@ -103,8 +104,18 @@ class _DvrRecordingsScreenState extends State<DvrRecordingsScreen> with SingleTi
         title: Text(t.liveTv.deleteSubscription),
         content: Text(t.liveTv.deleteSubscriptionConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(t.common.delete)),
+          FocusableButton(
+            autofocus: true,
+            onPressed: () => Navigator.of(context).pop(false),
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(t.common.cancel),
+            ),
+          ),
+          FocusableButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(t.common.delete)),
+          ),
         ],
       ),
     );
@@ -320,6 +331,7 @@ class _SubscriptionEditDialog extends StatefulWidget {
 class _SubscriptionEditDialogState extends State<_SubscriptionEditDialog> {
   late Map<String, String> _prefs;
   final Map<String, TextEditingController> _textControllers = {};
+  final _saveFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -332,6 +344,7 @@ class _SubscriptionEditDialogState extends State<_SubscriptionEditDialog> {
     for (final controller in _textControllers.values) {
       controller.dispose();
     }
+    _saveFocusNode.dispose();
     super.dispose();
   }
 
@@ -351,8 +364,18 @@ class _SubscriptionEditDialogState extends State<_SubscriptionEditDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(null), child: Text(t.common.cancel)),
-        FilledButton(onPressed: () => Navigator.of(context).pop(_prefs), child: Text(t.common.save)),
+        FocusableButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: TextButton(onPressed: () => Navigator.of(context).pop(null), child: Text(t.common.cancel)),
+        ),
+        FocusableButton(
+          focusNode: _saveFocusNode,
+          onPressed: () => Navigator.of(context).pop(_prefs),
+          child: FilledButton(
+            onPressed: () => Navigator.of(context).pop(_prefs),
+            child: Text(t.common.save),
+          ),
+        ),
       ],
     );
   }
@@ -399,9 +422,11 @@ class _SubscriptionEditDialogState extends State<_SubscriptionEditDialog> {
       title: Text(setting.label ?? setting.id),
       subtitle: TextField(
         controller: controller,
+        textInputAction: TextInputAction.done,
         onChanged: (newValue) {
           _prefs[setting.id] = newValue;
         },
+        onSubmitted: (_) => _saveFocusNode.requestFocus(),
       ),
     );
   }

@@ -8,6 +8,7 @@ import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
@@ -100,9 +101,18 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
           ],
         ),
         actions: [
-          TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
+          FocusableButton(
+            onPressed: _cancel,
+            child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
+          ),
           if (!isMobile)
-            FilledButton(onPressed: () => _pinInputKey.currentState?._trySubmit(), child: Text(t.common.submit)),
+            FocusableButton(
+              onPressed: () => _pinInputKey.currentState?._trySubmit(),
+              child: FilledButton(
+                onPressed: () => _pinInputKey.currentState?._trySubmit(),
+                child: Text(t.common.submit),
+              ),
+            ),
         ],
       ),
     );

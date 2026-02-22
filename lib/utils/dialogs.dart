@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 
 /// Utility functions for showing common dialogs
@@ -24,18 +25,24 @@ Future<bool> showConfirmDialog(
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(
+          FocusableButton(
             autofocus: true,
             onPressed: () => Navigator.pop(dialogContext, false),
-            style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
-            child: Text(cancelText ?? t.common.cancel),
+            child: TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+              child: Text(cancelText ?? t.common.cancel),
+            ),
           ),
-          FilledButton(
+          FocusableButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            style: isDestructive
-                ? FilledButton.styleFrom(backgroundColor: colorScheme.error, foregroundColor: colorScheme.onError)
-                : null,
-            child: Text(confirmText),
+            child: FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: isDestructive
+                  ? FilledButton.styleFrom(backgroundColor: colorScheme.error, foregroundColor: colorScheme.onError)
+                  : null,
+              child: Text(confirmText),
+            ),
           ),
         ],
       );
@@ -80,15 +87,21 @@ Future<({bool confirmed, bool checked})> showConfirmDialogWithCheckbox(
               ],
             ),
             actions: [
-              TextButton(
+              FocusableButton(
                 autofocus: true,
                 onPressed: () => Navigator.pop(dialogContext, false),
-                style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
-                child: Text(cancelText ?? t.common.cancel),
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+                  child: Text(cancelText ?? t.common.cancel),
+                ),
               ),
-              FilledButton(
+              FocusableButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(confirmText),
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: Text(confirmText),
+                ),
               ),
             ],
           );
@@ -136,6 +149,7 @@ class _TextInputDialog extends StatefulWidget {
 
 class _TextInputDialogState extends State<_TextInputDialog> {
   late final TextEditingController _controller;
+  final _saveFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -146,6 +160,7 @@ class _TextInputDialogState extends State<_TextInputDialog> {
   @override
   void dispose() {
     _controller.dispose();
+    _saveFocusNode.dispose();
     super.dispose();
   }
 
@@ -163,11 +178,19 @@ class _TextInputDialogState extends State<_TextInputDialog> {
         controller: _controller,
         autofocus: true,
         decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText),
-        onSubmitted: (_) => _submit(),
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _saveFocusNode.requestFocus(),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        TextButton(onPressed: _submit, child: Text(t.common.save)),
+        FocusableButton(
+          onPressed: () => Navigator.pop(context),
+          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+        ),
+        FocusableButton(
+          focusNode: _saveFocusNode,
+          onPressed: _submit,
+          child: TextButton(onPressed: _submit, child: Text(t.common.save)),
+        ),
       ],
     );
   }

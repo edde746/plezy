@@ -17,6 +17,7 @@ import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
 import '../utils/focus_utils.dart';
 import '../services/external_player_service.dart';
+import '../focus/focusable_button.dart';
 import '../focus/dpad_navigator.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
@@ -1252,7 +1253,16 @@ class _PlaylistSelectionDialog extends StatelessWidget {
           },
         ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
+      actions: [
+        FocusableButton(
+          autofocus: true,
+          onPressed: () => Navigator.pop(context),
+          child: TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(t.common.cancel),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1292,7 +1302,16 @@ class _CollectionSelectionDialog extends StatelessWidget {
           },
         ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
+      actions: [
+        FocusableButton(
+          autofocus: true,
+          onPressed: () => Navigator.pop(context),
+          child: TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(t.common.cancel),
+          ),
+        ),
+      ],
     );
   }
 }

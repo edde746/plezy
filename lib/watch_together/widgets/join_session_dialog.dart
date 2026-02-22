@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 
@@ -100,11 +101,8 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
                 const SizedBox(height: 24),
 
                 // Join button
-                FocusableWrapper(
-                  useBackgroundFocus: true,
-                  disableScale: true,
-                  borderRadius: 100,
-                  onSelect: _join,
+                FocusableButton(
+                  onPressed: _join,
                   child: FilledButton.icon(
                     onPressed: _join,
                     icon: const Icon(Symbols.group_add),
