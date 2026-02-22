@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:universal_gamepad/universal_gamepad.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../utils/app_logger.dart';
 import '../utils/key_event_simulator.dart' as key_sim;
@@ -14,7 +15,7 @@ import '../utils/key_event_simulator.dart' as key_sim;
 /// Listens to gamepad events from the `universal_gamepad` package and translates
 /// them into focus navigation actions and key events that integrate with the
 /// existing keyboard navigation system.
-class GamepadService {
+class GamepadService with WindowListener {
   static GamepadService? _instance;
   StreamSubscription<GamepadEvent>? _subscription;
 
@@ -48,6 +49,9 @@ class GamepadService {
   // Track button states to prevent repeated events from button holds
   final Set<GamepadButton> _pressedButtons = {};
 
+  // Whether the app window is currently focused — ignore gamepad input when false
+  bool _windowFocused = true;
+
   GamepadService._();
 
   /// Get the singleton instance.
@@ -75,6 +79,10 @@ class GamepadService {
       appLogger.e('GamepadService: Error listing gamepads', error: e);
     }
 
+    // Track window focus so we ignore gamepad input when another app is active
+    windowManager.addListener(this);
+    _windowFocused = await windowManager.isFocused();
+
     _subscription?.cancel();
     _subscription = Gamepad.instance.events.listen(
       _handleGamepadEvent,
@@ -88,7 +96,33 @@ class GamepadService {
     _stopDirectionRepeat();
     _subscription?.cancel();
     _subscription = null;
+    windowManager.removeListener(this);
     Gamepad.instance.dispose();
+  }
+
+  @override
+  void onWindowFocus() => _windowFocused = true;
+
+  @override
+  void onWindowBlur() {
+    _windowFocused = false;
+    _stopDirectionRepeat();
+
+    // Send key-up for any face buttons that are mid-hold so widgets
+    // waiting for the release (e.g. long-press timers) don't get stuck.
+    if (_pressedButtons.contains(GamepadButton.a)) {
+      _simulateKeyUp(LogicalKeyboardKey.enter);
+    }
+    if (_pressedButtons.contains(GamepadButton.x)) {
+      _simulateKeyUp(LogicalKeyboardKey.gameButtonX);
+    }
+    _pressedButtons.clear();
+
+    // Reset analog stick state so re-focus doesn't inherit stale direction
+    _leftStickUp = false;
+    _leftStickDown = false;
+    _leftStickLeft = false;
+    _leftStickRight = false;
   }
 
   void _handleGamepadEvent(GamepadEvent event) {
@@ -103,6 +137,8 @@ class GamepadService {
   }
 
   void _handleButton(GamepadButtonEvent event) {
+    if (!_windowFocused) return;
+
     // Switch to keyboard mode on any button press
     if (event.pressed) {
       onGamepadInput?.call();
@@ -167,6 +203,8 @@ class GamepadService {
   }
 
   void _handleAxis(GamepadAxisEvent event) {
+    if (!_windowFocused) return;
+
     // Switch to keyboard mode on significant axis input
     if (event.value.abs() > 0.3) {
       onGamepadInput?.call();
