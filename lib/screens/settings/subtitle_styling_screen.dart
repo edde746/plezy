@@ -5,7 +5,7 @@ import 'package:flex_color_picker/flex_color_picker.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
-import '../../utils/platform_detector.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/tv_color_picker.dart';
@@ -335,6 +335,8 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   }
 
   Widget _buildStylingCard() {
+    final useDpadControls = InputModeTracker.isKeyboardMode(context);
+
     return Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,7 +349,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             ),
           ),
           // Font Size Slider
-          if (PlatformDetector.isTV())
+          if (useDpadControls)
             ListTile(
               title: Text(t.subtitlingStyling.fontSize),
               trailing: Text('$_fontSize'),
@@ -380,7 +382,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             ),
           const Divider(),
           // Subtitle Position Slider
-          if (PlatformDetector.isTV())
+          if (useDpadControls)
             ListTile(
               title: Text(t.subtitlingStyling.position),
               trailing: Text(() {
@@ -433,7 +435,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 _settingsService.setSubtitleTextColor(color);
               }
 
-              if (PlatformDetector.isTV()) {
+              if (useDpadControls) {
                 _showTvColorPicker(t.subtitlingStyling.textColor, _textColor, onColorSelected);
               } else {
                 _showColorPicker(t.subtitlingStyling.textColor, _textColor, onColorSelected);
@@ -442,7 +444,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
           ),
           const Divider(),
           // Border Size Slider
-          if (PlatformDetector.isTV())
+          if (useDpadControls)
             ListTile(
               title: Text(t.subtitlingStyling.borderSize),
               trailing: Text('$_borderSize'),
@@ -485,7 +487,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 _settingsService.setSubtitleBorderColor(color);
               }
 
-              if (PlatformDetector.isTV()) {
+              if (useDpadControls) {
                 _showTvColorPicker(t.subtitlingStyling.borderColor, _borderColor, onColorSelected);
               } else {
                 _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, onColorSelected);
@@ -494,7 +496,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
           ),
           const Divider(),
           // Background Opacity Slider
-          if (PlatformDetector.isTV())
+          if (useDpadControls)
             ListTile(
               title: Text(t.subtitlingStyling.backgroundOpacity),
               trailing: Text('$_backgroundOpacity%'),
@@ -540,7 +542,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 _settingsService.setSubtitleBackgroundColor(color);
               }
 
-              if (PlatformDetector.isTV()) {
+              if (useDpadControls) {
                 _showTvColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, onColorSelected);
               } else {
                 _showColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, onColorSelected);

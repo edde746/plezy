@@ -1100,9 +1100,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     required int currentValue,
     required Future<void> Function(int value) onSave,
   }) {
-    final isTV = PlatformDetector.isTV();
+    final useDpadControls = InputModeTracker.isKeyboardMode(context);
 
-    if (isTV) {
+    if (useDpadControls) {
       _showNumericInputDialogTV(
         title: title,
         suffixText: suffixText,
