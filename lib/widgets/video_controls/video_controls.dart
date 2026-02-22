@@ -885,7 +885,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       }
     }
 
-    return PlaybackExtras(chapters: chapters, markers: markers);
+    return PlaybackExtras.withChapterFallback(chapters: chapters, markers: markers);
   }
 
   Widget _buildTrackChapterControlsWidget() {

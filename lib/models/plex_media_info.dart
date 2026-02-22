@@ -183,4 +183,51 @@ class PlaybackExtras {
   final List<PlexMarker> markers;
 
   PlaybackExtras({required this.chapters, required this.markers});
+
+  static final _introPattern = RegExp(
+    r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$',
+    caseSensitive: false,
+  );
+  static final _creditsPattern = RegExp(
+    r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
+    caseSensitive: false,
+  );
+
+  static String? _classifyChapterTitle(String title) {
+    if (_introPattern.hasMatch(title)) return 'intro';
+    if (_creditsPattern.hasMatch(title)) return 'credits';
+    return null;
+  }
+
+  /// Returns [PlaybackExtras] using real markers when available, otherwise
+  /// synthesises markers from chapter titles matching intro/credits patterns.
+  factory PlaybackExtras.withChapterFallback({
+    required List<PlexChapter> chapters,
+    required List<PlexMarker> markers,
+  }) {
+    if (markers.isNotEmpty) {
+      return PlaybackExtras(chapters: chapters, markers: markers);
+    }
+
+    final synthetic = <PlexMarker>[];
+    for (var i = 0; i < chapters.length; i++) {
+      final ch = chapters[i];
+      final title = ch.title;
+      if (title == null || title.isEmpty) continue;
+
+      final type = _classifyChapterTitle(title);
+      if (type == null) continue;
+
+      final start = ch.startTimeOffset;
+      if (start == null) continue;
+
+      final end = ch.endTimeOffset ??
+          (i + 1 < chapters.length ? chapters[i + 1].startTimeOffset : null);
+      if (end == null) continue;
+
+      synthetic.add(PlexMarker(id: ch.id, type: type, startTimeOffset: start, endTimeOffset: end));
+    }
+
+    return PlaybackExtras(chapters: chapters, markers: synthetic);
+  }
 }

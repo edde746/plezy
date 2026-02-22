@@ -997,7 +997,7 @@ class PlexClient {
       }
     }
 
-    return PlaybackExtras(chapters: chapters, markers: markers);
+    return PlaybackExtras.withChapterFallback(chapters: chapters, markers: markers);
   }
 
   /// Get consolidated video playback data (URL, media info, versions, and markers) in a single API call.
