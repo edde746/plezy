@@ -38,11 +38,8 @@ static void send_event(MpvPlugin* self, FlValue* event) {
 static void mpv_plugin_dispose(GObject* object) {
   MpvPlugin* self = MPV_PLUGIN(object);
 
-  if (self->player) {
-    self->player->Dispose();
-    self->player.reset();
-  }
-
+  // Texture must be disposed BEFORE player — mpv_texture_dispose needs
+  // the player's EGL context to clean up GL resources.
   if (self->texture) {
     mpv_texture_dispose(self->texture);
     if (self->texture_registrar) {
@@ -51,6 +48,11 @@ static void mpv_plugin_dispose(GObject* object) {
     }
     g_object_unref(self->texture);
     self->texture = nullptr;
+  }
+
+  if (self->player) {
+    self->player->Dispose();
+    self->player.reset();
   }
 
   g_clear_object(&self->method_channel);
