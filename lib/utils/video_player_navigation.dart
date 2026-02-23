@@ -77,7 +77,7 @@ Future<bool?> navigateToVideoPlayer(
 
       if (isOffline) {
         // Offline mode: resolve local file path for the external player
-        final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+        final globalKey = metadata.globalKey;
         final videoPath = await downloadProvider.getVideoFilePath(globalKey);
         if (videoPath != null && context.mounted) {
           final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';

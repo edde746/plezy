@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../models/plex_metadata.dart';
 import '../utils/plex_cache_parser.dart';
+import '../utils/global_key_utils.dart';
 
 /// Key-value cache for Plex API responses using Drift/SQLite.
 /// Stores raw JSON responses keyed by serverId:endpoint format.
@@ -152,7 +153,7 @@ class PlexApiCache {
           final json = PlexCacheParser.extractFirstMetadata(data);
           if (json == null) continue;
           final metadata = PlexMetadata.fromJsonWithImages(json).copyWith(serverId: serverId);
-          result['$serverId:$ratingKey'] = metadata;
+          result[buildGlobalKey(serverId, ratingKey)] = metadata;
         } catch (_) {
           // Skip malformed entries
         }

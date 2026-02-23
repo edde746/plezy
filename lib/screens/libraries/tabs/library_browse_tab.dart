@@ -32,6 +32,7 @@ import '../../../mixins/grid_focus_node_mixin.dart';
 import '../../../mixins/item_updatable.dart';
 import '../../../mixins/deletion_aware.dart';
 import '../../../utils/deletion_notifier.dart';
+import '../../../utils/global_key_utils.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../i18n/strings.g.dart';
 import '../../main_screen.dart';
@@ -61,7 +62,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   PlexClient get client => getClientForLibrary();
 
   String _toGlobalKey(String ratingKey, {String? serverId}) =>
-      '${serverId ?? widget.library.serverId ?? ''}:$ratingKey';
+      buildGlobalKey(serverId ?? widget.library.serverId ?? '', ratingKey);
 
   @override
   String? get deletionServerId => widget.library.serverId;

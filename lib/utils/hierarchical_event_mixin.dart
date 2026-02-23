@@ -1,3 +1,5 @@
+import 'global_key_utils.dart';
+
 /// Mixin providing hierarchical event matching methods.
 ///
 /// Events that represent changes to media items often need to check if they
@@ -24,7 +26,7 @@ mixin HierarchicalEventMixin {
 
   /// Check if this event affects a specific globalKey.
   bool affectsGlobalKey(String globalKey) =>
-      this.globalKey == globalKey || parentChain.any((pk) => '$serverId:$pk' == globalKey);
+      this.globalKey == globalKey || parentChain.any((pk) => buildGlobalKey(serverId, pk) == globalKey);
 
   /// Check if this event affects any item in a collection.
   bool affectsAnyOf(Iterable<String> ratingKeys) => ratingKeys.any(affectsItem);

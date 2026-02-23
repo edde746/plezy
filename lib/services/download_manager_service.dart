@@ -430,7 +430,7 @@ class DownloadManagerService {
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
   }) async {
-    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+    final globalKey = metadata.globalKey;
 
     // Check if already downloading or completed
     final existing = await _database.getDownloadedMedia(globalKey);
@@ -1252,12 +1252,13 @@ class DownloadManagerService {
 
       if (metadata == null) {
         // Fallback: Try database record
-        final downloadRecord = await _database.getDownloadedMedia('$serverId:$ratingKey');
+        final gk = buildGlobalKey(serverId, ratingKey);
+        final downloadRecord = await _database.getDownloadedMedia(gk);
         if (downloadRecord?.videoFilePath != null) {
           await _deleteByFilePath(downloadRecord!);
           return;
         }
-        appLogger.w('Cannot delete - no metadata for $serverId:$ratingKey');
+        appLogger.w('Cannot delete - no metadata for $gk');
         return;
       }
 
@@ -1433,12 +1434,12 @@ class DownloadManagerService {
   }) async {
     for (int i = 0; i < episodes.length; i++) {
       final episode = episodes[i];
-      final episodeGlobalKey = '$serverId:${episode.ratingKey}';
+      final episodeGlobalKey = buildGlobalKey(serverId, episode.ratingKey);
 
       // Emit progress update
       _emitDeletionProgress(
         DeletionProgress(
-          globalKey: '$serverId:$parentKey',
+          globalKey: buildGlobalKey(serverId, parentKey),
           itemTitle: parentTitle,
           currentItem: i + 1,
           totalItems: episodes.length,
@@ -1551,7 +1552,7 @@ class DownloadManagerService {
     final otherEpisodes = await _database.getEpisodesBySeason(seasonKey);
 
     // Check if any episodes besides this one
-    return otherEpisodes.any((e) => e.globalKey != '${episode.serverId}:${episode.ratingKey}');
+    return otherEpisodes.any((e) => e.globalKey != episode.globalKey);
   }
 
   /// Check if show artwork is in use
@@ -1562,7 +1563,7 @@ class DownloadManagerService {
     final showEpisodes = await _database.getEpisodesByShow(showKey);
 
     // Check if any episodes belong to this show besides the current item
-    return showEpisodes.any((item) => item.globalKey != '${metadata.serverId}:${metadata.ratingKey}');
+    return showEpisodes.any((item) => item.globalKey != metadata.globalKey);
   }
 
   /// Find file with any extension

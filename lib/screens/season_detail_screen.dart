@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../main.dart';
 import '../focus/focusable_wrapper.dart';
+import '../utils/global_key_utils.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
@@ -55,7 +56,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   bool _suppressNextBackKeyUp = false;
   bool _routeSubscribed = false;
 
-  String _toGlobalKey(String ratingKey, {String? serverId}) => '${serverId ?? widget.season.serverId ?? ''}:$ratingKey';
+  String _toGlobalKey(String ratingKey, {String? serverId}) => buildGlobalKey(serverId ?? widget.season.serverId ?? '', ratingKey);
 
   // WatchStateAware: watch all episode ratingKeys
   @override
@@ -270,7 +271,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                   String? localPosterPath;
                   if (widget.isOffline && episode.serverId != null) {
                     final downloadProvider = context.read<DownloadProvider>();
-                    final globalKey = '${episode.serverId}:${episode.ratingKey}';
+                    final globalKey = episode.globalKey;
                     // Get the artwork reference and convert to local file path
                     final artworkRef = downloadProvider.getArtworkPaths(globalKey);
                     localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, episode.serverId!);
@@ -499,7 +500,7 @@ class _EpisodeCardState extends State<_EpisodeCard> {
 
                           // Only show download status in online mode
                           if (!widget.isOffline && widget.episode.serverId != null) {
-                            final globalKey = '${widget.episode.serverId}:${widget.episode.ratingKey}';
+                            final globalKey = widget.episode.globalKey;
                             final progress = downloadProvider.getProgress(globalKey);
                             final isQueueing = downloadProvider.isQueueing(globalKey);
 

@@ -5,6 +5,7 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/plex_api_cache.dart';
 import '../utils/watch_state_notifier.dart';
 import 'download_provider.dart';
+import '../utils/global_key_utils.dart';
 
 /// Provider for offline watch status UI state.
 ///
@@ -174,7 +175,7 @@ class OfflineWatchProvider extends ChangeNotifier {
     required bool isNowWatched,
     required WatchStateChangeType changeType,
   }) {
-    final globalKey = '$serverId:$ratingKey';
+    final globalKey = buildGlobalKey(serverId, ratingKey);
     final metadata = _downloadProvider.getMetadata(globalKey);
     if (metadata != null) {
       WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: isNowWatched);

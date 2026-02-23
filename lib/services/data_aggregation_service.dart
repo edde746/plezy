@@ -5,6 +5,7 @@ import '../models/plex_hub.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
+import '../utils/global_key_utils.dart';
 import 'multi_server_manager.dart';
 import 'plex_auth_service.dart';
 
@@ -45,7 +46,7 @@ class DataAggregationService {
       filteredOnDeck = allOnDeck.where((item) {
         final librarySectionId = item.librarySectionID;
         if (librarySectionId == null) return true; // Keep if no section ID
-        final globalKey = '${item.serverId}:$librarySectionId';
+        final globalKey = buildGlobalKey(item.serverId!, librarySectionId.toString());
         return !hiddenLibraryKeys.contains(globalKey);
       }).toList();
     }
@@ -118,7 +119,7 @@ class DataAggregationService {
                   // Build the global key for the item's library section
                   final librarySectionId = item.librarySectionID;
                   if (librarySectionId == null) return true; // Keep if no section ID
-                  final globalKey = '$serverId:$librarySectionId';
+                  final globalKey = buildGlobalKey(serverId, librarySectionId.toString());
                   return !hiddenLibraryKeys.contains(globalKey);
                 }).toList();
 

@@ -6,6 +6,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/key_event_utils.dart';
+import '../utils/global_key_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
@@ -81,8 +82,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _isAutoScrollPaused = false;
   HiddenLibrariesProvider? _hiddenLibrariesProvider;
 
-  String _toGlobalKey(String ratingKey, String serverId) => '$serverId:$ratingKey';
-
   // WatchStateAware: watch on-deck items and their parent shows/seasons
   @override
   Set<String>? get watchedRatingKeys {
@@ -106,12 +105,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final serverId = item.serverId;
       if (serverId == null) return null;
 
-      keys.add(_toGlobalKey(item.ratingKey, serverId));
+      keys.add(buildGlobalKey(serverId, item.ratingKey));
       if (item.parentRatingKey != null) {
-        keys.add(_toGlobalKey(item.parentRatingKey!, serverId));
+        keys.add(buildGlobalKey(serverId, item.parentRatingKey!));
       }
       if (item.grandparentRatingKey != null) {
-        keys.add(_toGlobalKey(item.grandparentRatingKey!, serverId));
+        keys.add(buildGlobalKey(serverId, item.grandparentRatingKey!));
       }
     }
     return keys;

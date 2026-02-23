@@ -1,3 +1,6 @@
+/// Builds a globalKey string from [serverId] and [ratingKey].
+String buildGlobalKey(String serverId, String ratingKey) => '$serverId:$ratingKey';
+
 /// Parses a globalKey string (format: "serverId:ratingKey") into its components.
 ///
 /// Returns `null` if the key does not contain a colon separator.

@@ -263,7 +263,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           mediaType == PlexMediaType.show ||
           mediaType == PlexMediaType.season) {
         final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-        final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+        final globalKey = metadata.globalKey;
         final isDownloaded = downloadProvider.isDownloaded(globalKey);
 
         if (isDownloaded) {
@@ -1063,7 +1063,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     // Check if the item is downloaded and use local file path if available
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+    final globalKey = metadata.globalKey;
     if (downloadProvider.isDownloaded(globalKey)) {
       final videoPath = await downloadProvider.getVideoFilePath(globalKey);
       if (videoPath != null && context.mounted) {
@@ -1107,7 +1107,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _handleDeleteDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final metadata = widget.item as PlexMetadata;
-    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+    final globalKey = metadata.globalKey;
 
     // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(

@@ -951,7 +951,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // since the user may have watched further since downloading.
         Duration? resumePosition;
         if (widget.isOffline) {
-          final globalKey = '${widget.metadata.serverId}:${widget.metadata.ratingKey}';
+          final globalKey = widget.metadata.globalKey;
           final localOffset = await offlineWatchService!.getLocalViewOffset(globalKey);
           if (localOffset != null && localOffset > 0) {
             resumePosition = Duration(milliseconds: localOffset);
@@ -1103,7 +1103,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Debug: log metadata info
     appLogger.d('Offline playback - serverId: ${widget.metadata.serverId}, ratingKey: ${widget.metadata.ratingKey}');
 
-    final globalKey = '${widget.metadata.serverId}:${widget.metadata.ratingKey}';
+    final globalKey = widget.metadata.globalKey;
     appLogger.d('Looking up video with globalKey: $globalKey');
 
     final videoPath = await downloadProvider.getVideoFilePath(globalKey);

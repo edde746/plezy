@@ -4,6 +4,7 @@ import '../services/settings_service.dart' show EpisodePosterMode;
 import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
 import 'mixins/multi_server_fields.dart';
 import 'plex_role.dart';
+import '../utils/global_key_utils.dart';
 
 part 'plex_metadata.g.dart';
 
@@ -111,7 +112,7 @@ class PlexMetadata with MultiServerFields {
   final String? clearLogo;
 
   /// Global unique identifier across all servers (serverId:ratingKey)
-  String get globalKey => serverId != null ? '$serverId:$ratingKey' : ratingKey;
+  String get globalKey => serverId != null ? buildGlobalKey(serverId!, ratingKey) : ratingKey;
 
   /// Parsed media type enum for type-safe comparisons
   PlexMediaType get mediaType {

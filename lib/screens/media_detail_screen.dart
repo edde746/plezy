@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import '../utils/global_key_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
@@ -106,7 +107,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   final _seasonsSectionKey = GlobalKey();
 
   String _toGlobalKey(String ratingKey, {String? serverId}) =>
-      '${serverId ?? widget.metadata.serverId ?? ''}:$ratingKey';
+      buildGlobalKey(serverId ?? widget.metadata.serverId ?? '', ratingKey);
 
   // WatchStateAware: watch the show/movie and all season ratingKeys
   @override
@@ -424,7 +425,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
           if (!widget.isOffline)
             Consumer<DownloadProvider>(
               builder: (context, downloadProvider, _) {
-                final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+                final globalKey = metadata.globalKey;
                 final progress = downloadProvider.getProgress(globalKey);
                 final isQueueing = downloadProvider.isQueueing(globalKey);
 

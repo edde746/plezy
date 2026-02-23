@@ -2,6 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
 import 'mixins/multi_server_fields.dart';
+import '../utils/global_key_utils.dart';
 
 part 'plex_playlist.g.dart';
 
@@ -65,7 +66,7 @@ class PlexPlaylist with MultiServerFields {
   bool get isEditable => !smart;
 
   /// Get globally unique key across all servers
-  String get globalKey => serverId != null ? '$serverId:$ratingKey' : ratingKey;
+  String get globalKey => serverId != null ? buildGlobalKey(serverId!, ratingKey) : ratingKey;
 
   // Properties for MediaCard compatibility with PlexMetadata interface
 

@@ -1,6 +1,7 @@
 import '../models/plex_metadata.dart';
 import 'app_logger.dart';
 import 'base_notifier.dart';
+import 'global_key_utils.dart';
 import 'hierarchical_event_mixin.dart';
 
 /// Event representing a media item deletion with parent chain for hierarchical invalidation
@@ -42,7 +43,7 @@ class DeletionEvent with HierarchicalEventMixin {
     required this.mediaType,
     this.leafCount = 1,
     this.isDownloadOnly = false,
-  }) : globalKey = '$serverId:$ratingKey';
+  }) : globalKey = buildGlobalKey(serverId, ratingKey);
 
   @override
   String toString() => 'DeletionEvent(deleted: $globalKey, type: $mediaType, parents: $parentChain)';

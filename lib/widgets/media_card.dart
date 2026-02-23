@@ -149,7 +149,7 @@ class MediaCardState extends State<MediaCard> {
     if (metadata.serverId == null) return null;
 
     final downloadProvider = context.read<DownloadProvider>();
-    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+    final globalKey = metadata.globalKey;
 
     // Get artwork reference and resolve to local path using hash (includes serverId)
     final artwork = downloadProvider.getArtworkPaths(globalKey);

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'tables.dart';
 import '../models/download_models.dart';
 import '../utils/app_logger.dart';
+import '../utils/global_key_utils.dart';
 
 part 'app_database.g.dart';
 
@@ -99,7 +100,7 @@ class AppDatabase extends _$AppDatabase {
     required int duration,
     required bool shouldMarkWatched,
   }) async {
-    final globalKey = '$serverId:$ratingKey';
+    final globalKey = buildGlobalKey(serverId, ratingKey);
     final now = DateTime.now().millisecondsSinceEpoch;
 
     // Check for existing progress entry
@@ -144,7 +145,7 @@ class AppDatabase extends _$AppDatabase {
     required String ratingKey,
     required String actionType, // 'watched' or 'unwatched'
   }) async {
-    final globalKey = '$serverId:$ratingKey';
+    final globalKey = buildGlobalKey(serverId, ratingKey);
     final now = DateTime.now().millisecondsSinceEpoch;
 
     // Remove conflicting actions (opposite action type and progress)
