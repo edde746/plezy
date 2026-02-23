@@ -24,6 +24,7 @@ import '../utils/plex_image_helper.dart';
 import '../../services/plex_client.dart';
 import '../services/plex_api_cache.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_video_playback_data.dart';
 import '../utils/content_utils.dart';
 import '../utils/rating_utils.dart';
 import '../models/download_models.dart';
@@ -65,6 +66,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   bool _isLoadingSeasons = false;
   PlexMetadata? _fullMetadata;
   PlexMetadata? _onDeckEpisode;
+  PlexVideoPlaybackData? _playbackData;
   bool _isLoadingMetadata = true;
   List<PlexMetadata>? _extras;
   late final ScrollController _scrollController;
@@ -360,6 +362,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
           metadata: metadata,
           isOffline: widget.isOffline,
           onRefresh: _loadFullMetadata,
+          playbackData: _playbackData,
         );
       }
     }
@@ -966,6 +969,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       final result = await client.getMetadataWithImagesAndOnDeck(widget.metadata.ratingKey);
       final metadata = result['metadata'] as PlexMetadata?;
       final onDeckEpisode = result['onDeckEpisode'] as PlexMetadata?;
+      final playbackData = result['playbackData'] as PlexVideoPlaybackData?;
 
       if (!mounted) return;
 
@@ -983,6 +987,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         setState(() {
           _fullMetadata = metadataWithServerId;
           _onDeckEpisode = onDeckWithServerId;
+          _playbackData = playbackData;
           _isLoadingMetadata = false;
         });
 

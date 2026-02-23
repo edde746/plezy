@@ -460,7 +460,9 @@ class PlexClient {
           ),
           parseCache: (cachedData) {
             final metadata = _parseMetadataWithImagesFromCachedResponse(cachedData);
-            return {'metadata': metadata, 'onDeckEpisode': null};
+            final firstMetadata = PlexCacheParser.extractFirstMetadata(cachedData);
+            final playbackData = parseVideoPlaybackDataFromJson(firstMetadata);
+            return {'metadata': metadata, 'onDeckEpisode': null, 'playbackData': playbackData};
           },
           parseResponse: (response) {
             PlexMetadata? metadata;
@@ -485,10 +487,13 @@ class PlexClient {
               }
             }
 
-            return {'metadata': metadata, 'onDeckEpisode': onDeckEpisode};
+            // Parse playback data from the same response — zero extra network cost
+            final playbackData = parseVideoPlaybackDataFromJson(metadataJson);
+
+            return {'metadata': metadata, 'onDeckEpisode': onDeckEpisode, 'playbackData': playbackData};
           },
         ) ??
-        {'metadata': null, 'onDeckEpisode': null};
+        {'metadata': null, 'onDeckEpisode': null, 'playbackData': null};
   }
 
   /// Get metadata by rating key with images (includes clearLogo)
@@ -934,24 +939,10 @@ class PlexClient {
     );
   }
 
-  /// Get consolidated video playback data (URL, media info, versions, and markers) in a single API call.
-  /// This is the primary method for playback initialization.
-  /// Uses cache for offline mode support and network fallback.
-  Future<PlexVideoPlaybackData> getVideoPlaybackData(String ratingKey, {int mediaIndex = 0}) async {
-    Map<String, dynamic>? data;
-    try {
-      data = await _fetchWithCacheFirst<Map<String, dynamic>>(
-        cacheKey: '/library/metadata/$ratingKey',
-        networkCall: () =>
-            _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
-        parseCache: (cached) => cached as Map<String, dynamic>?,
-        parseResponse: (response) => response.data as Map<String, dynamic>?,
-      );
-    } catch (_) {
-      // Gracefully degrade: return empty playback data on total failure
-    }
-    final metadataJson = _getFirstMetadataJsonFromData(data);
-
+  /// Parse video playback data from raw metadata JSON (no network call).
+  /// Used by [getVideoPlaybackData] and [getMetadataWithImagesAndOnDeck] to
+  /// avoid redundant fetches when the response is already available.
+  PlexVideoPlaybackData parseVideoPlaybackDataFromJson(Map<String, dynamic>? metadataJson, {int mediaIndex = 0}) {
     String? videoUrl;
     PlexMediaInfo? mediaInfo;
     List<PlexMediaVersion> availableVersions = [];
@@ -1002,6 +993,26 @@ class PlexClient {
       availableVersions: availableVersions,
       markers: markers,
     );
+  }
+
+  /// Get consolidated video playback data (URL, media info, versions, and markers) in a single API call.
+  /// This is the primary method for playback initialization.
+  /// Uses cache for offline mode support and network fallback.
+  Future<PlexVideoPlaybackData> getVideoPlaybackData(String ratingKey, {int mediaIndex = 0}) async {
+    Map<String, dynamic>? data;
+    try {
+      data = await _fetchWithCacheFirst<Map<String, dynamic>>(
+        cacheKey: '/library/metadata/$ratingKey',
+        networkCall: () =>
+            _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
+        parseCache: (cached) => cached as Map<String, dynamic>?,
+        parseResponse: (response) => response.data as Map<String, dynamic>?,
+      );
+    } catch (_) {
+      // Gracefully degrade: return empty playback data on total failure
+    }
+    final metadataJson = _getFirstMetadataJsonFromData(data);
+    return parseVideoPlaybackDataFromJson(metadataJson, mediaIndex: mediaIndex);
   }
 
   /// Get file information for a media item

@@ -657,15 +657,18 @@ class DownloadProvider extends ChangeNotifier {
     }
 
     // Fetch full metadata to get year, summary, clearLogo
-    // The metadata from getChildren() is summarized and missing these fields
+    // The metadata from getChildren() is summarized and missing these fields.
+    // If metadata already has summary, it's already full (e.g., from detail screen).
     PlexMetadata metadataToStore = metadata;
-    try {
-      final fullMetadata = await client.getMetadataWithImages(metadata.ratingKey);
-      if (fullMetadata != null) {
-        metadataToStore = fullMetadata.copyWith(serverId: metadata.serverId, serverName: metadata.serverName);
+    if (metadata.summary == null) {
+      try {
+        final fullMetadata = await client.getMetadataWithImages(metadata.ratingKey);
+        if (fullMetadata != null) {
+          metadataToStore = fullMetadata.copyWith(serverId: metadata.serverId, serverName: metadata.serverName);
+        }
+      } catch (e) {
+        appLogger.w('Failed to fetch full metadata for ${metadata.ratingKey}, using partial', error: e);
       }
-    } catch (e) {
-      appLogger.w('Failed to fetch full metadata for ${metadata.ratingKey}, using partial', error: e);
     }
 
     // For episodes, also fetch and store show and season metadata for offline display

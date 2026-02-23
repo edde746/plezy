@@ -73,6 +73,16 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
 
   Future<void> _loadMetadata() async {
     try {
+      // If the passed metadata already has full fields (e.g., from detail screen),
+      // use it directly instead of re-fetching. We check both summary and
+      // librarySectionID since the edit screen needs both for display and save.
+      if (widget.metadata.summary != null && widget.metadata.librarySectionID != null) {
+        _fullMetadata = widget.metadata;
+        _initFieldsFromMetadata(widget.metadata);
+        setState(() => _isLoading = false);
+        return;
+      }
+
       final meta = await _client.getMetadataWithImages(widget.metadata.ratingKey);
       if (!mounted) return;
       if (meta != null) {

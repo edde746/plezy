@@ -18,6 +18,7 @@ import '../models/livetv_channel.dart';
 import '../services/plex_api_cache.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_video_playback_data.dart';
 import '../utils/content_utils.dart';
 import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
@@ -71,6 +72,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final SubtitleTrack? preferredSubtitleTrack;
   final int selectedMediaIndex;
   final bool isOffline;
+  final PlexVideoPlaybackData? playbackData;
 
   // Live TV fields
   final bool isLive;
@@ -90,6 +92,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredSubtitleTrack,
     this.selectedMediaIndex = 0,
     this.isOffline = false,
+    this.playbackData,
     this.isLive = false,
     this.liveChannelName,
     this.liveStreamUrl,
@@ -930,6 +933,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           metadata: widget.metadata,
           selectedMediaIndex: widget.selectedMediaIndex,
           preferOffline: true, // Use downloaded file if available
+          playbackData: widget.playbackData,
         );
       }
 

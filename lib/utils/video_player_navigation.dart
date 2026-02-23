@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../mpv/mpv.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_video_playback_data.dart';
 import '../providers/download_provider.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
@@ -40,12 +41,14 @@ Future<bool?> navigateToVideoPlayer(
   int? selectedMediaIndex,
   bool usePushReplacement = false,
   bool isOffline = false,
+  PlexVideoPlaybackData? playbackData,
 }) async {
   // Extract navigator before any async operations
   final navigator = Navigator.of(context);
 
   // Load saved media version preference if not explicitly provided
   int mediaIndex = selectedMediaIndex ?? 0;
+  var effectivePlaybackData = playbackData;
   if (selectedMediaIndex == null) {
     try {
       final settingsService = await SettingsService.getInstance();
@@ -53,6 +56,11 @@ Future<bool?> navigateToVideoPlayer(
       final savedPreference = settingsService.getMediaVersionPreference(seriesKey);
       if (savedPreference != null) {
         mediaIndex = savedPreference;
+        // Pre-parsed playbackData was built with mediaIndex=0; invalidate if
+        // the resolved index differs so the player re-fetches with the correct one
+        if (savedPreference != 0) {
+          effectivePlaybackData = null;
+        }
       }
     } catch (e) {
       // Ignore errors loading preference, use default
@@ -109,6 +117,7 @@ Future<bool?> navigateToVideoPlayer(
       preferredSubtitleTrack: preferredSubtitleTrack,
       selectedMediaIndex: mediaIndex,
       isOffline: isOffline,
+      playbackData: effectivePlaybackData,
     ),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,
@@ -140,6 +149,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   SubtitleTrack? preferredSubtitleTrack,
   int? selectedMediaIndex,
   bool usePushReplacement = false,
+  PlexVideoPlaybackData? playbackData,
 }) async {
   final result = await navigateToVideoPlayer(
     context,
@@ -149,6 +159,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
     preferredSubtitleTrack: preferredSubtitleTrack,
     selectedMediaIndex: selectedMediaIndex,
     usePushReplacement: usePushReplacement,
+    playbackData: playbackData,
   );
 
   appLogger.d('Returned from playback, refreshing metadata');
