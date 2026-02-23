@@ -36,6 +36,7 @@ import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
 import 'utils/app_logger.dart';
@@ -376,8 +377,14 @@ class _SetupScreenState extends State<SetupScreen> {
     final storage = await StorageService.getInstance();
     final registry = ServerRegistry(storage);
 
-    // Refresh servers from API to get updated connection info (IPs may change)
-    await registry.refreshServersFromApi();
+    // Check network connectivity early to fast-path airplane mode
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
+
+    if (hasNetwork) {
+      // Refresh servers from API to get updated connection info (IPs may change)
+      await registry.refreshServersFromApi();
+    }
 
     // Load all configured servers
     final servers = await registry.getServers();
@@ -390,6 +397,17 @@ class _SetupScreenState extends State<SetupScreen> {
     }
 
     if (!mounted) return;
+
+    // No network — skip connection attempts and go straight to offline mode
+    if (!hasNetwork) {
+      await context.read<DownloadProvider>().ensureInitialized();
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
+      );
+      return;
+    }
 
     try {
       final result = await ServerConnectionOrchestrator.connectAndInitialize(

@@ -17,4 +17,10 @@ class ConnectionTimeouts {
 
   /// Dio receive timeout for streaming/large responses from a Plex server.
   static const receive = Duration(seconds: 120);
+
+  /// Dio connect timeout for plex.tv / clients.plex.tv API requests.
+  static const plexTvConnect = Duration(seconds: 5);
+
+  /// Dio receive timeout for plex.tv / clients.plex.tv API responses.
+  static const plexTvReceive = Duration(seconds: 10);
 }

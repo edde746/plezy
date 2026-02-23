@@ -51,7 +51,10 @@ class PlexAuthService {
 
   static Future<PlexAuthService> create() async {
     final storage = await StorageService.getInstance();
-    final dio = Dio();
+    final dio = Dio(BaseOptions(
+      connectTimeout: ConnectionTimeouts.plexTvConnect,
+      receiveTimeout: ConnectionTimeouts.plexTvReceive,
+    ));
 
     // Get or create client identifier
     String? clientIdentifier = storage.getClientIdentifier();
