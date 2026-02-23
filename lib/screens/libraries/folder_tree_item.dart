@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../models/plex_metadata.dart';
+import '../../i18n/strings.g.dart';
 
 /// Individual item in the folder tree
 /// Can be either a folder (expandable) or a file (tappable)
@@ -12,6 +13,8 @@ class FolderTreeItem extends StatelessWidget {
   final bool isFolder;
   final VoidCallback? onTap;
   final VoidCallback? onExpand;
+  final VoidCallback? onPlayAll;
+  final VoidCallback? onShuffle;
   final bool isLoading;
 
   const FolderTreeItem({
@@ -22,6 +25,8 @@ class FolderTreeItem extends StatelessWidget {
     this.isFolder = false,
     this.onTap,
     this.onExpand,
+    this.onPlayAll,
+    this.onShuffle,
     this.isLoading = false,
   });
 
@@ -64,7 +69,7 @@ class FolderTreeItem extends StatelessWidget {
     return InkWell(
       onTap: _handleTap,
       child: Container(
-        padding: EdgeInsets.only(left: 16.0 + indentation, right: 16.0, top: 12.0, bottom: 12.0),
+        padding: EdgeInsets.only(left: 16.0 + indentation, right: 8.0, top: 8.0, bottom: 8.0),
         child: Row(
           children: [
             // Expand/collapse icon for folders
@@ -101,6 +106,38 @@ class FolderTreeItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+
+            // Play/Shuffle buttons for folders
+            if (isFolder) ...[
+              IconButton(
+                onPressed: onPlayAll,
+                icon: AppIcon(
+                  Symbols.play_arrow_rounded,
+                  fill: 1,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+                tooltip: t.common.play,
+                iconSize: 18,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+              IconButton(
+                onPressed: onShuffle,
+                icon: AppIcon(
+                  Symbols.shuffle_rounded,
+                  fill: 1,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+                tooltip: t.common.shuffle,
+                iconSize: 18,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
 
             // Additional metadata for files
             if (!isFolder && item.year != null)

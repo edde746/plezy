@@ -432,6 +432,16 @@ class PlexClient {
     return 'server://$machineId/com.plexapp.plugins.library/library/metadata/$ratingKey';
   }
 
+  /// Build a server URI from a folder key for play queue creation.
+  /// Folder keys are like `/library/sections/1/folder?parent=123`.
+  Future<String> buildFolderUri(String folderKey) async {
+    final machineId = config.machineIdentifier ?? await getMachineIdentifier();
+    if (machineId == null) {
+      throw Exception('Could not get server machine identifier');
+    }
+    return 'server://$machineId/com.plexapp.plugins.library$folderKey';
+  }
+
   /// Get metadata by rating key with images (includes clearLogo and OnDeck)
   /// Uses cache when offline or as fallback on network error
   /// Note: OnDeck data is not relevant for offline mode

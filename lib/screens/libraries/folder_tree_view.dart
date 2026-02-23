@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../models/plex_metadata.dart';
+import '../../services/play_queue_launcher.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/media_navigation_helper.dart';
 import '../../utils/provider_extensions.dart';
@@ -134,6 +135,18 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     await navigateToMediaItem(context, item, onRefresh: widget.onRefresh);
   }
 
+  Future<void> _handleFolderPlay(PlexMetadata folder) async {
+    final client = context.getClientForServer(widget.serverId!);
+    final launcher = PlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
+    await launcher.launchFromFolder(folderKey: folder.key, shuffle: false);
+  }
+
+  Future<void> _handleFolderShuffle(PlexMetadata folder) async {
+    final client = context.getClientForServer(widget.serverId!);
+    final launcher = PlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
+    await launcher.launchFromFolder(folderKey: folder.key, shuffle: true);
+  }
+
   bool _isFolder(PlexMetadata item) {
     // Folders typically don't have a specific type or might have special indicators
     // Check for common folder indicators
@@ -163,6 +176,8 @@ class _FolderTreeViewState extends State<FolderTreeView> {
           isLoading: isLoading,
           onExpand: isFolder ? () => _toggleFolder(item) : null,
           onTap: !isFolder ? () => _handleItemTap(item) : null,
+          onPlayAll: isFolder ? () => _handleFolderPlay(item) : null,
+          onShuffle: isFolder ? () => _handleFolderShuffle(item) : null,
         ),
       );
 

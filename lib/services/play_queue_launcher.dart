@@ -177,6 +177,43 @@ class PlayQueueLauncher {
     );
   }
 
+  /// Launch playback from a folder's contents.
+  Future<PlayQueueResult> launchFromFolder({
+    required String folderKey,
+    required bool shuffle,
+    bool showLoadingIndicator = true,
+  }) async {
+    return _executeWithLoading(
+      showLoading: showLoadingIndicator,
+      action: shuffle ? t.common.shuffle : t.common.play,
+      execute: (dismissLoading) async {
+        final folderUri = await client.buildFolderUri(folderKey);
+
+        var playQueue = await client.createPlayQueue(
+          uri: folderUri,
+          type: 'video',
+          shuffle: shuffle ? 1 : 0,
+        );
+
+        if (playQueue != null && (playQueue.items == null || playQueue.items!.isEmpty)) {
+          final fetchedQueue = await client.getPlayQueue(playQueue.playQueueID);
+          if (fetchedQueue != null && fetchedQueue.items != null && fetchedQueue.items!.isNotEmpty) {
+            playQueue = fetchedQueue;
+          }
+        }
+
+        await dismissLoading();
+
+        return _launchFromQueue(
+          playQueue: playQueue,
+          ratingKey: folderKey,
+          serverId: serverId,
+          serverName: serverName,
+        );
+      },
+    );
+  }
+
   /// Core method to launch playback from a play queue.
   Future<PlayQueueResult> _launchFromQueue({
     required PlayQueueResponse? playQueue,
