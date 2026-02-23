@@ -1952,107 +1952,131 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
   }
 
-  /// Handle audio track changes from the user - save both stream selection and language preference
-  Future<void> _onAudioTrackChanged(AudioTrack track) async {
-    final settings = await SettingsService.getInstance();
+  /// Rating key used for series/movie level language preferences.
+  String get _preferenceRatingKey {
+    return widget.metadata.isEpisode
+        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
+        : widget.metadata.ratingKey;
+  }
 
-    // Only save if remember track selections is enabled
-    if (!settings.getRememberTrackSelections()) {
-      return;
-    }
+  /// Common guard checks for track change handlers.
+  /// Returns the part ID if all checks pass, or null if the change should be skipped.
+  Future<int?> _guardTrackChange() async {
+    final settings = await SettingsService.getInstance();
+    if (!settings.getRememberTrackSelections()) return null;
+
     if (_currentMediaInfo == null) {
       appLogger.w('No media info available, cannot save stream selection');
-      return;
+      return null;
     }
+
     final partId = _currentMediaInfo!.getPartId();
     if (partId == null) {
       appLogger.w('No part ID available, cannot save stream selection');
-      return;
     }
+    return partId;
+  }
 
-    final languageCode = track.language;
-    int? streamID;
+  /// Save language preference and stream selection to the server.
+  Future<void> _saveTrackPreferences({
+    required int partId,
+    required String trackType,
+    String? languageCode,
+    int? streamID,
+  }) async {
+    try {
+      if (!mounted) return;
+      final client = _getClientForMetadata(context);
+      final ratingKey = _preferenceRatingKey;
 
-    // === Matching by attributes ===
-    PlexAudioTrack? matched;
-    final normalizedTrackLang = _iso6391ToPlex6392(track.language);
+      final futures = <Future>[];
 
-    appLogger.d('Normalized media_kit language: ${track.language} -> $normalizedTrackLang');
+      if (languageCode != null && (trackType == 'subtitle' || languageCode.isNotEmpty)) {
+        futures.add(
+          trackType == 'audio'
+              ? client.setMetadataPreferences(ratingKey, audioLanguage: languageCode)
+              : client.setMetadataPreferences(ratingKey, subtitleLanguage: languageCode),
+        );
+      }
+      if (streamID != null) {
+        futures.add(
+          trackType == 'audio'
+              ? client.selectStreams(partId, audioStreamID: streamID, allParts: true)
+              : client.selectStreams(partId, subtitleStreamID: streamID, allParts: true),
+        );
+      }
 
-    for (final plexTrack in _currentMediaInfo!.audioTracks) {
-      final matchLang = plexTrack.languageCode == normalizedTrackLang;
-      final matchTitle = (track.title == null || track.title!.isEmpty)
+      await Future.wait(futures);
+      appLogger.d('Successfully saved $trackType preferences (language + stream)');
+    } catch (e) {
+      appLogger.e('Failed to save $trackType preferences', error: e);
+    }
+  }
+
+  /// Match an mpv track against Plex tracks by language and title.
+  int? _matchTrackByAttributes<T>({
+    required String? mpvLanguage,
+    required String? mpvTitle,
+    required List<T> plexTracks,
+    required String? Function(T) getLanguageCode,
+    required String? Function(T) getDisplayTitle,
+    required String? Function(T) getTitle,
+    required int Function(T) getId,
+  }) {
+    final normalizedLang = _iso6391ToPlex6392(mpvLanguage);
+
+    for (final plexTrack in plexTracks) {
+      final matchLang = getLanguageCode(plexTrack) == normalizedLang;
+      final matchTitle = (mpvTitle == null || mpvTitle.isEmpty)
           ? true
-          : (plexTrack.displayTitle == track.title || plexTrack.title == track.title);
+          : (getDisplayTitle(plexTrack) == mpvTitle || getTitle(plexTrack) == mpvTitle);
 
       if (matchLang && matchTitle) {
-        matched = plexTrack;
-        appLogger.d('Matched audio by lang/title: streamID ${matched.id}');
-        break;
+        return getId(plexTrack);
       }
     }
+    return null;
+  }
 
-    if (matched != null) {
-      streamID = matched.id;
+  /// Handle audio track changes from the user - save both stream selection and language preference
+  Future<void> _onAudioTrackChanged(AudioTrack track) async {
+    final partId = await _guardTrackChange();
+    if (partId == null) return;
+
+    int? streamID = _matchTrackByAttributes(
+      mpvLanguage: track.language,
+      mpvTitle: track.title,
+      plexTracks: _currentMediaInfo!.audioTracks,
+      getLanguageCode: (t) => t.languageCode,
+      getDisplayTitle: (t) => t.displayTitle,
+      getTitle: (t) => t.title,
+      getId: (t) => t.id,
+    );
+
+    if (streamID != null) {
       appLogger.d('Matched audio by lang/title: streamID $streamID');
     } else {
-      // Use property-based matching from track_selection_service
       final matchedPlex = findPlexTrackForMpvAudio(track, _currentMediaInfo!.audioTracks);
-
-      if (matchedPlex != null) {
-        streamID = matchedPlex.id;
+      streamID = matchedPlex?.id;
+      if (streamID != null) {
         appLogger.d('Matched audio by properties: streamID $streamID');
       } else {
         appLogger.e('Could not match audio track to any Plex track');
       }
     }
 
-    final isEpisode = widget.metadata.isEpisode;
-    final languagePrefRatingKey = isEpisode
-        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
-        : widget.metadata.ratingKey;
-
-    try {
-      if (!mounted) return;
-      final client = _getClientForMetadata(context);
-
-      final futures = <Future>[];
-
-      // 1. Language preference (series/movie level)
-      if (languageCode != null && languageCode.isNotEmpty) {
-        futures.add(client.setMetadataPreferences(languagePrefRatingKey, audioLanguage: languageCode));
-      }
-      // 2. Exact stream selection (part level)
-      if (streamID != null) {
-        futures.add(client.selectStreams(partId, audioStreamID: streamID, allParts: true));
-      }
-
-      await Future.wait(futures);
-      appLogger.d('Successfully saved audio preferences (language + stream)');
-    } catch (e) {
-      appLogger.e('Failed to save audio preferences', error: e);
-    }
+    await _saveTrackPreferences(
+      partId: partId,
+      trackType: 'audio',
+      languageCode: track.language,
+      streamID: streamID,
+    );
   }
 
   /// Handle subtitle track changes from the user - save both stream selection and language preference
   Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async {
-    final settings = await SettingsService.getInstance();
-
-    // Only save if remember track selections is enabled
-    if (!settings.getRememberTrackSelections()) {
-      return;
-    }
-
-    if (_currentMediaInfo == null) {
-      appLogger.w('No media info available, cannot save stream selection');
-      return;
-    }
-
-    final partId = _currentMediaInfo!.getPartId();
-    if (partId == null) {
-      appLogger.w('No part ID available, cannot save stream selection');
-      return;
-    }
+    final partId = await _guardTrackChange();
+    if (partId == null) return;
 
     String? languageCode;
     int? streamID;
@@ -2064,38 +2088,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     } else {
       languageCode = track.language;
 
-      // === Matching by attributes ===
-      PlexSubtitleTrack? matched;
-      final normalizedTrackLang = _iso6391ToPlex6392(track.language);
+      streamID = _matchTrackByAttributes(
+        mpvLanguage: track.language,
+        mpvTitle: track.title,
+        plexTracks: _currentMediaInfo!.subtitleTracks,
+        getLanguageCode: (t) => t.languageCode,
+        getDisplayTitle: (t) => t.displayTitle,
+        getTitle: (t) => t.title,
+        getId: (t) => t.id,
+      );
 
-      appLogger.d('Normalized media_kit language: ${track.language} -> $normalizedTrackLang');
-
-      for (final plexTrack in _currentMediaInfo!.subtitleTracks) {
-        final matchLang = plexTrack.languageCode == normalizedTrackLang;
-        final matchTitle = (track.title == null || track.title!.isEmpty)
-            ? true
-            : (plexTrack.displayTitle == track.title || plexTrack.title == track.title);
-
-        appLogger.d('Comparing with streamID ${plexTrack.id}:');
-        appLogger.d('  matchLang: $matchLang (${plexTrack.languageCode} == $normalizedTrackLang)');
-        appLogger.d('  matchTitle: $matchTitle');
-
-        if (matchLang && matchTitle) {
-          matched = plexTrack;
-          appLogger.d('  ✅ MATCHED!');
-          break;
-        }
-      }
-
-      if (matched != null) {
-        streamID = matched.id;
+      if (streamID != null) {
         appLogger.d('Matched subtitle by lang/title: streamID $streamID');
       } else {
-        // Use property-based matching from track_selection_service
         final matchedPlex = findPlexTrackForMpvSubtitle(track, _currentMediaInfo!.subtitleTracks);
-
-        if (matchedPlex != null) {
-          streamID = matchedPlex.id;
+        streamID = matchedPlex?.id;
+        if (streamID != null) {
           appLogger.d('Matched subtitle by properties: streamID $streamID');
         } else {
           appLogger.e('Could not match subtitle track to any Plex track');
@@ -2103,36 +2111,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     }
 
-    // Determine ratingKeys
-    final isEpisode = widget.metadata.isEpisode;
-    final languagePrefRatingKey = isEpisode
-        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
-        : widget.metadata.ratingKey;
-
-    appLogger.i(
-      'Saving subtitle preference: language=$languageCode (ratingKey: $languagePrefRatingKey), streamID=$streamID (partId: $partId)',
+    await _saveTrackPreferences(
+      partId: partId,
+      trackType: 'subtitle',
+      languageCode: languageCode,
+      streamID: streamID,
     );
-
-    try {
-      if (!mounted) return;
-      final client = _getClientForMetadata(context);
-
-      final futures = <Future>[];
-
-      // 1. Save language preference at series/movie level
-      if (languageCode != null) {
-        futures.add(client.setMetadataPreferences(languagePrefRatingKey, subtitleLanguage: languageCode));
-      }
-      // 2. Save exact stream selection using part ID
-      if (streamID != null) {
-        futures.add(client.selectStreams(partId, subtitleStreamID: streamID, allParts: true));
-      }
-
-      await Future.wait(futures);
-      appLogger.d('Successfully saved subtitle preferences (language + stream)');
-    } catch (e) {
-      appLogger.e('Failed to save subtitle preferences', error: e);
-    }
   }
 
   /// Set flag to skip orientation restoration when replacing with another video

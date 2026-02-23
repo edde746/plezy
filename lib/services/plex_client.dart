@@ -557,6 +557,27 @@ class PlexClient {
     }
   }
 
+  /// Fetch data with cache checked first, network only on cache miss.
+  ///
+  /// Use this when fresh data is not critical and prior fetches likely
+  /// already populated the cache (e.g. playback after visiting detail screen).
+  Future<T?> _fetchWithCacheFirst<T>({
+    required String cacheKey,
+    required Future<Response> Function() networkCall,
+    required T? Function(dynamic cachedData) parseCache,
+    required T? Function(Response response) parseResponse,
+    bool cacheResponse = true,
+  }) async {
+    final cached = await _cache.get(serverId, cacheKey);
+    if (cached != null) return parseCache(cached);
+    if (_offlineMode) return null;
+    final response = await networkCall();
+    if (cacheResponse && response.data != null) {
+      await _cache.put(serverId, cacheKey, response.data);
+    }
+    return parseResponse(response);
+  }
+
   /// Get first metadata JSON from response data
   Map<String, dynamic>? _getFirstMetadataJsonFromData(Map<String, dynamic>? data) =>
       PlexCacheParser.extractFirstMetadata(data);
@@ -647,6 +668,23 @@ class PlexClient {
         endTimeOffset: chapter['endTimeOffset'] as int?,
         title: chapter['tag'] as String? ?? chapter['title'] as String?,
         thumb: chapter['thumb'] as String?,
+      );
+    }).toList();
+  }
+
+  /// Parse markers from metadata JSON
+  List<PlexMarker> _parseMarkers(Map<String, dynamic>? metadataJson) {
+    if (metadataJson == null || metadataJson['Marker'] == null) {
+      return [];
+    }
+
+    final markerList = metadataJson['Marker'] as List;
+    return markerList.map((marker) {
+      return PlexMarker(
+        id: marker['id'] as int,
+        type: marker['type'] as String,
+        startTimeOffset: marker['startTimeOffset'] as int,
+        endTimeOffset: marker['endTimeOffset'] as int,
       );
     }).toList();
   }
@@ -869,145 +907,31 @@ class PlexClient {
     }
   }
 
-  /// Get chapters for a media item
-  Future<List<PlexChapter>> getChapters(String ratingKey) async {
-    final response = await _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1});
-
-    final metadataJson = _getFirstMetadataJson(response);
-    if (metadataJson != null && metadataJson['Chapter'] != null) {
-      final chapterList = metadataJson['Chapter'] as List<dynamic>;
-      return chapterList.map((chapter) {
-        return PlexChapter(
-          id: chapter['id'] as int,
-          index: chapter['index'] as int?,
-          startTimeOffset: chapter['startTimeOffset'] as int?,
-          endTimeOffset: chapter['endTimeOffset'] as int?,
-          title: chapter['tag'] as String?,
-          thumb: chapter['thumb'] as String?,
-        );
-      }).toList();
-    }
-
-    return [];
-  }
-
-  Future<List<PlexMarker>> getMarkers(String ratingKey) async {
-    final response = await _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1});
-
-    final metadataJson = _getFirstMetadataJson(response);
-
-    if (metadataJson != null && metadataJson['Marker'] != null) {
-      final markerList = metadataJson['Marker'] as List;
-      return markerList.map((marker) {
-        return PlexMarker(
-          id: marker['id'] as int,
-          type: marker['type'] as String,
-          startTimeOffset: marker['startTimeOffset'] as int,
-          endTimeOffset: marker['endTimeOffset'] as int,
-        );
-      }).toList();
-    }
-
-    return [];
-  }
-
   /// Get chapters and markers from cached metadata or fetch if needed
   /// Uses same cache key as other metadata methods for consistency
   Future<PlaybackExtras> getPlaybackExtras(String ratingKey) async {
-    // Use same cache key as other metadata methods
-    final cacheKey = '/library/metadata/$ratingKey';
-
-    // If offline mode, return from cache only
-    if (_offlineMode) {
-      final cached = await _cache.get(serverId, cacheKey);
-      if (cached != null) {
-        return _parsePlaybackExtrasFromCachedResponse(cached);
-      }
-      return PlaybackExtras(chapters: [], markers: []);
-    }
-
-    // Online: check cache first (already has chapters/markers from other fetches)
-    appLogger.d('getPlaybackExtras: serverId=$serverId, cacheKey=$cacheKey');
-    final cached = await _cache.get(serverId, cacheKey);
-    if (cached != null) {
-      final chapters = PlexCacheParser.extractChapters(cached);
-      appLogger.d('getPlaybackExtras: cache hit, ${chapters?.length ?? 0} chapters');
-      return _parsePlaybackExtrasFromCachedResponse(cached);
-    }
-    appLogger.d('getPlaybackExtras: cache miss');
-
-    // Not in cache - fetch and cache
     try {
-      final response = await _dio.get(
-        '/library/metadata/$ratingKey',
-        queryParameters: {'includeChapters': 1, 'includeMarkers': 1},
+      final data = await _fetchWithCacheFirst<Map<String, dynamic>>(
+        cacheKey: '/library/metadata/$ratingKey',
+        networkCall: () =>
+            _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1, 'includeMarkers': 1}),
+        parseCache: (cached) => cached as Map<String, dynamic>?,
+        parseResponse: (response) => response.data as Map<String, dynamic>?,
       );
-
-      // Cache at base endpoint
-      if (response.data != null) {
-        await _cache.put(serverId, cacheKey, response.data);
-      }
-
-      return _parsePlaybackExtrasFromResponse(response);
+      final metadataJson = _getFirstMetadataJsonFromData(data);
+      return _parsePlaybackExtrasFromMetadataJson(metadataJson);
     } catch (e) {
-      // Network failed
-      appLogger.w('Network request failed for playback extras', error: e);
+      appLogger.w('Failed to get playback extras', error: e);
       return PlaybackExtras(chapters: [], markers: []);
     }
-  }
-
-  /// Parse PlaybackExtras from API response
-  PlaybackExtras _parsePlaybackExtrasFromResponse(Response response) {
-    final metadataJson = _getFirstMetadataJson(response);
-    return _parsePlaybackExtrasFromMetadataJson(metadataJson);
-  }
-
-  /// Parse PlaybackExtras from cached response
-  PlaybackExtras _parsePlaybackExtrasFromCachedResponse(Map<String, dynamic> cached) {
-    final metadataJson = PlexCacheParser.extractFirstMetadata(cached);
-    return _parsePlaybackExtrasFromMetadataJson(metadataJson);
   }
 
   /// Parse PlaybackExtras from metadata JSON
   PlaybackExtras _parsePlaybackExtrasFromMetadataJson(Map<String, dynamic>? metadataJson) {
-    final chapters = <PlexChapter>[];
-    final markers = <PlexMarker>[];
-
-    if (metadataJson != null) {
-      // Parse chapters
-      if (metadataJson['Chapter'] != null) {
-        final chapterList = metadataJson['Chapter'] as List<dynamic>;
-        for (var chapter in chapterList) {
-          chapters.add(
-            PlexChapter(
-              id: chapter['id'] as int,
-              index: chapter['index'] as int?,
-              startTimeOffset: chapter['startTimeOffset'] as int?,
-              endTimeOffset: chapter['endTimeOffset'] as int?,
-              title: chapter['tag'] as String?,
-              thumb: chapter['thumb'] as String?,
-            ),
-          );
-        }
-      }
-
-      // Parse markers
-      if (metadataJson['Marker'] != null) {
-        final markerList = metadataJson['Marker'] as List;
-        for (var marker in markerList) {
-          markers.add(
-            PlexMarker(
-              id: marker['id'] as int,
-              type: marker['type'] as String,
-              startTimeOffset: marker['startTimeOffset'] as int,
-              endTimeOffset: marker['endTimeOffset'] as int,
-            ),
-          );
-        }
-      }
-    }
-
-    return PlaybackExtras.withChapterFallback(chapters: chapters, markers: markers);
+    return PlaybackExtras.withChapterFallback(
+      chapters: _parseChapters(metadataJson),
+      markers: _parseMarkers(metadataJson),
+    );
   }
 
   /// Get consolidated video playback data (URL, media info, versions, and markers) in a single API call.
@@ -1016,7 +940,7 @@ class PlexClient {
   Future<PlexVideoPlaybackData> getVideoPlaybackData(String ratingKey, {int mediaIndex = 0}) async {
     Map<String, dynamic>? data;
     try {
-      data = await _fetchWithCacheFallback<Map<String, dynamic>>(
+      data = await _fetchWithCacheFirst<Map<String, dynamic>>(
         cacheKey: '/library/metadata/$ratingKey',
         networkCall: () =>
             _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
@@ -1031,24 +955,9 @@ class PlexClient {
     String? videoUrl;
     PlexMediaInfo? mediaInfo;
     List<PlexMediaVersion> availableVersions = [];
-    List<PlexMarker> markers = [];
+    final markers = _parseMarkers(metadataJson);
 
     if (metadataJson != null) {
-      // Parse markers (for auto-skip functionality)
-      if (metadataJson['Marker'] != null) {
-        final markerList = metadataJson['Marker'] as List;
-        for (var marker in markerList) {
-          markers.add(
-            PlexMarker(
-              id: marker['id'] as int,
-              type: marker['type'] as String,
-              startTimeOffset: marker['startTimeOffset'] as int,
-              endTimeOffset: marker['endTimeOffset'] as int,
-            ),
-          );
-        }
-      }
-
       if (metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
         final mediaList = metadataJson['Media'] as List;
 
@@ -1099,7 +1008,7 @@ class PlexClient {
   /// Uses cache for offline mode support and network fallback.
   Future<PlexFileInfo?> getFileInfo(String ratingKey) async {
     try {
-      final data = await _fetchWithCacheFallback<Map<String, dynamic>>(
+      final data = await _fetchWithCacheFirst<Map<String, dynamic>>(
         cacheKey: '/library/metadata/$ratingKey',
         networkCall: () =>
             _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
