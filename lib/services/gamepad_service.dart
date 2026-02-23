@@ -101,7 +101,10 @@ class GamepadService with WindowListener {
   }
 
   @override
-  void onWindowFocus() => _windowFocused = true;
+  void onWindowFocus() {
+    _windowFocused = true;
+    Gamepad.instance.resume();
+  }
 
   @override
   void onWindowBlur() {
@@ -123,6 +126,9 @@ class GamepadService with WindowListener {
     _leftStickDown = false;
     _leftStickLeft = false;
     _leftStickRight = false;
+
+    // Release native device handles so other apps can use the gamepad.
+    Gamepad.instance.pause();
   }
 
   void _handleGamepadEvent(GamepadEvent event) {
