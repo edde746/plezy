@@ -524,7 +524,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && !_isOffline && !_isShowingProfileSelection) {
-      _showProfileSelectionOnResume();
+      // Only show profile selection on resume for mobile platforms.
+      // On desktop, "resumed" fires on every window focus gain (alt-tab, click),
+      // which is too frequent — the initial prompt on startup is sufficient.
+      if (Platform.isAndroid || Platform.isIOS) {
+        _showProfileSelectionOnResume();
+      }
     }
   }
 
