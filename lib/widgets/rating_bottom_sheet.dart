@@ -21,6 +21,9 @@ class RatingBottomSheet extends StatefulWidget {
   State<RatingBottomSheet> createState() => _RatingBottomSheetState();
 }
 
+String formatRating(double value) =>
+    value == value.truncateToDouble() ? value.toInt().toString() : value.toStringAsFixed(1);
+
 class _RatingBottomSheetState extends State<RatingBottomSheet> {
   late double _selectedRating;
   late final FocusNode _starsFocusNode;
@@ -52,13 +55,13 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
               height: 4,
               decoration: BoxDecoration(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: const BorderRadius.all(Radius.circular(2)),
               ),
             ),
             const SizedBox(height: 20),
             Text(
               _selectedRating > 0
-                  ? '${_selectedRating == _selectedRating.truncateToDouble() ? _selectedRating.toInt().toString() : _selectedRating.toStringAsFixed(1)} / 5'
+                  ? '${formatRating(_selectedRating)} / 5'
                   : t.mediaMenu.rate,
               style: theme.textTheme.titleMedium,
             ),
@@ -80,7 +83,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: const BorderRadius.all(Radius.circular(12)),
                             color: hasFocus
                                 ? theme.colorScheme.primary.withValues(alpha: 0.12)
                                 : null,

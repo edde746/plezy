@@ -279,7 +279,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   /// Handle D-pad UP/DOWN by explicitly moving focus to the next/previous item.
-  KeyEventResult _handleVerticalNavigation(FocusNode node, KeyEvent event, List<String> focusOrder) {
+  KeyEventResult _handleVerticalNavigation(FocusNode _, KeyEvent event, List<String> focusOrder) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
     final isDown = event.logicalKey == LogicalKeyboardKey.arrowDown;

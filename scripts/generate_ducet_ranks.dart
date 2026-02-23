@@ -4,19 +4,20 @@
 ///   dart run scripts/generate_ducet_ranks.dart [allkeys.txt] [FractionalUCA.txt]
 ///
 /// Downloads the files automatically if not provided.
+library;
 import 'dart:io';
 
 // ---------------------------------------------------------------------------
 // Weight tuple for multi-level UCA comparison
 // ---------------------------------------------------------------------------
-class _Weight implements Comparable<_Weight> {
+class Weight implements Comparable<Weight> {
   final List<(int, int, int)> levels;
   final int codepoint; // tiebreaker
 
-  const _Weight(this.levels, this.codepoint);
+  const Weight(this.levels, this.codepoint);
 
   @override
-  int compareTo(_Weight other) {
+  int compareTo(Weight other) {
     final len = levels.length < other.levels.length ? levels.length : other.levels.length;
 
     // Primary pass
@@ -60,8 +61,8 @@ bool _isKatakana(int cp) =>
 // (opposite of raw DUCET). We adjust by subtracting 6 from katakana tertiary
 // weights, placing them below hiragana tertiaries (0x000D+).
 // ---------------------------------------------------------------------------
-Map<int, _Weight> parseAllKeys(String text) {
-  final result = <int, _Weight>{};
+Map<int, Weight> parseAllKeys(String text) {
+  final result = <int, Weight>{};
   final weightRe = RegExp(r'\[([.*])([0-9A-Fa-f]{4})\.([0-9A-Fa-f]{4})\.([0-9A-Fa-f]{4})\]');
 
   for (final line in text.split('\n')) {
@@ -94,7 +95,7 @@ Map<int, _Weight> parseAllKeys(String text) {
 
     if (levels.every((l) => l.$1 == 0 && l.$2 == 0 && l.$3 == 0)) continue;
 
-    result[cp] = _Weight(levels, cp);
+    result[cp] = Weight(levels, cp);
   }
 
   return result;
@@ -122,7 +123,7 @@ Map<int, _Weight> parseAllKeys(String text) {
     // Extract Kangxi radical → CJK mapping from header
     final headerChars = line.substring(eqIdx + 1, colonIdx).runes.toList();
     if (headerChars.length >= 2) {
-      final kangxi = headerChars[0];
+      final kangxi = headerChars.first;
       final cjk = headerChars[1];
       // Kangxi Radicals: U+2F00-U+2FD5
       if (kangxi >= 0x2F00 && kangxi <= 0x2FD5 && cjk <= 0xFFFF) {
@@ -166,7 +167,7 @@ Map<int, _Weight> parseAllKeys(String text) {
 // ---------------------------------------------------------------------------
 // Build final ordered list
 // ---------------------------------------------------------------------------
-List<int> buildOrder(Map<int, _Weight> allKeys, List<int> cjkRadicalOrder) {
+List<int> buildOrder(Map<int, Weight> allKeys, List<int> cjkRadicalOrder) {
   final entries = allKeys.entries.toList();
   entries.sort((a, b) => a.value.compareTo(b.value));
 
@@ -200,7 +201,7 @@ List<int> buildOrder(Map<int, _Weight> allKeys, List<int> cjkRadicalOrder) {
 // Main
 // ---------------------------------------------------------------------------
 Future<void> main(List<String> args) async {
-  final allKeysPath = args.length > 0 ? args[0] : '/tmp/allkeys.txt';
+  final allKeysPath = args.isNotEmpty ? args.first : '/tmp/allkeys.txt';
   final fracUcaPath = args.length > 1 ? args[1] : '/tmp/FractionalUCA.txt';
 
   // Download if missing

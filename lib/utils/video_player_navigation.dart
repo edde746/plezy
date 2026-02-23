@@ -43,8 +43,10 @@ Future<bool?> navigateToVideoPlayer(
   bool isOffline = false,
   PlexVideoPlaybackData? playbackData,
 }) async {
-  // Extract navigator before any async operations
+  // Extract context-dependent values before any async operations
   final navigator = Navigator.of(context);
+  final downloadProvider = context.read<DownloadProvider>();
+  final client = isOffline ? null : context.getClientForMetadata(metadata);
 
   // Load saved media version preference if not explicitly provided
   int mediaIndex = selectedMediaIndex ?? 0;
@@ -75,19 +77,17 @@ Future<bool?> navigateToVideoPlayer(
 
       if (isOffline) {
         // Offline mode: resolve local file path for the external player
-        final downloadProvider = context.read<DownloadProvider>();
         final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
         final videoPath = await downloadProvider.getVideoFilePath(globalKey);
-        if (videoPath != null) {
+        if (videoPath != null && context.mounted) {
           final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
           launched = await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
         }
-      } else {
-        final client = context.getClientForMetadata(metadata);
+      } else if (context.mounted) {
         launched = await ExternalPlayerService.launch(
           context: context,
           metadata: metadata,
-          client: client,
+          client: client!,
           mediaIndex: mediaIndex,
         );
       }

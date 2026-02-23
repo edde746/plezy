@@ -129,7 +129,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
         height: 400,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : _artworkList == null || _artworkList!.isEmpty
+            : (_artworkList == null || _artworkList!.isEmpty)
                 ? Center(child: Text(t.metadataEdit.noArtworkAvailable))
                 : _buildGrid(),
       ),
@@ -193,10 +193,10 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
               Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                   child: PlexOptimizedImage(
                     client: widget.client,
                     imagePath: thumbUrl,

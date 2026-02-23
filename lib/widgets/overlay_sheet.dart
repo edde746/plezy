@@ -392,7 +392,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     }
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     // Suppress stale select key-ups
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
       return KeyEventResult.handled;

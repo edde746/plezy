@@ -242,19 +242,21 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
               title: Text(title),
               content: SizedBox(
                 width: double.maxFinite,
-                child: ListView(
-                  shrinkWrap: true,
-                  children: options.map((option) {
-                    return FocusableRadioListTile<String>(
-                      title: Text(option.label),
-                      value: option.value,
-                      groupValue: selected,
-                      onChanged: (val) {
-                        setDialogState(() => selected = val);
-                        Navigator.pop(dialogContext, val);
-                      },
-                    );
-                  }).toList(),
+                child: RadioGroup<String>(
+                  groupValue: selected,
+                  onChanged: (val) {
+                    setDialogState(() => selected = val);
+                    Navigator.pop(dialogContext, val);
+                  },
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: options.map((option) {
+                      return FocusableRadioListTile<String>(
+                        title: Text(option.label),
+                        value: option.value,
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
               actions: [
@@ -490,7 +492,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
               width: 40,
               height: 60,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: const BorderRadius.all(Radius.circular(4)),
                 child: PlexOptimizedImage(
                   client: _client,
                   imagePath: meta.thumb,
@@ -510,7 +512,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
                 width: 80,
                 height: 45,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
                   child: PlexOptimizedImage(
                     client: _client,
                     imagePath: meta.art,

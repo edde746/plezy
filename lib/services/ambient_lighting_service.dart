@@ -38,9 +38,7 @@ class AmbientLightingService {
 
     try {
       // Write static shader (only needs to happen once)
-      if (_shaderPath == null) {
-        _shaderPath = await _writeShaderToTemp(_generateShader());
-      }
+      _shaderPath ??= await _writeShaderToTemp(_generateShader());
 
       if (kDebugMode) {
         debugPrint('AmbientLightingService: Shader path: $_shaderPath');

@@ -382,7 +382,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
                         episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
                     return SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                      padding: const EdgeInsets.all(8),
                       sliver: SliverLayoutBuilder(
                         builder: (context, constraints) {
                           final maxExtent = GridSizeCalculator.getMaxCrossAxisExtentWithPadding(

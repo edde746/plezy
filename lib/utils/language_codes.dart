@@ -84,7 +84,7 @@ class LanguageCodes {
 
     // Locale code (e.g. "en-US", "zh-TW")
     final parts = code.split('-');
-    final langName = getLanguageName(parts[0]) ?? parts[0];
+    final langName = getLanguageName(parts.first) ?? parts.first;
     final region = parts.length > 1 ? _regionNames[parts[1]] : null;
     return region != null ? '$langName ($region)' : langName;
   }

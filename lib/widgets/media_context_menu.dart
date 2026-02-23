@@ -1066,7 +1066,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
     if (downloadProvider.isDownloaded(globalKey)) {
       final videoPath = await downloadProvider.getVideoFilePath(globalKey);
-      if (videoPath != null) {
+      if (videoPath != null && context.mounted) {
         final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
         await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
         return;
@@ -1074,6 +1074,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
 
     final client = _getClientForItem();
+    if (!context.mounted) return;
     await ExternalPlayerService.launch(context: context, metadata: metadata, client: client);
   }
 

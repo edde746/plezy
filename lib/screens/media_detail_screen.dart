@@ -851,9 +851,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
               const SizedBox(width: 4),
               Text(
                 hasRating
-                    ? (starValue == starValue.truncateToDouble()
-                        ? '${starValue.toInt()}'
-                        : starValue.toStringAsFixed(1))
+                    ? formatRating(starValue)
                     : t.mediaMenu.rate,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSecondaryContainer,
@@ -2064,7 +2062,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                                   duration: const Duration(milliseconds: 150),
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: const BorderRadius.all(Radius.circular(8)),
                                     border: Border.all(
                                       color: showFocus
                                           ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
@@ -2072,16 +2070,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                                       width: 2,
                                     ),
                                   ),
-                                  child: isTv
-                                      ? Text(
-                                          metadata.summary!,
-                                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
-                                        )
-                                      : CollapsibleText(
-                                          text: metadata.summary!,
-                                          maxLines: isMobile ? 6 : 4,
-                                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
-                                        ),
+                                  child: () {
+                                    final summaryStyle =
+                                        Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6);
+                                    if (isTv) {
+                                      return Text(metadata.summary!, style: summaryStyle);
+                                    }
+                                    return CollapsibleText(
+                                      text: metadata.summary!,
+                                      maxLines: isMobile ? 6 : 4,
+                                      style: summaryStyle,
+                                    );
+                                  }(),
                                 );
                               },
                             ),

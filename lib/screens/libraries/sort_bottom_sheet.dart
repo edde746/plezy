@@ -94,40 +94,41 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
           action: widget.onClear != null ? TextButton(onPressed: _handleClear, child: Text(t.common.clear)) : null,
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: widget.sortOptions.length,
-            itemBuilder: (context, index) {
-              final sort = widget.sortOptions[index];
-              final isSelected = _currentSort?.key == sort.key;
+          child: RadioGroup<PlexSort>(
+            groupValue: _currentSort,
+            onChanged: (value) {
+              if (value != null) _handleSortSelect(value);
+            },
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: widget.sortOptions.length,
+              itemBuilder: (context, index) {
+                final sort = widget.sortOptions[index];
+                final isSelected = _currentSort?.key == sort.key;
 
-              return Focus(
-                canRequestFocus: false,
-                skipTraversal: true,
-                onKeyEvent: (node, event) {
-                  if (!event.isActionable) return KeyEventResult.ignored;
-                  if (!isSelected) return KeyEventResult.ignored;
-                  if (event.logicalKey.isLeftKey) {
-                    _handleDirectionChange(sort, false);
-                    return KeyEventResult.handled;
-                  }
-                  if (event.logicalKey.isRightKey) {
-                    _handleDirectionChange(sort, true);
-                    return KeyEventResult.handled;
-                  }
-                  return KeyEventResult.ignored;
-                },
-                child: FocusableRadioListTile<PlexSort>(
-                  focusNode: (widget.selectedSort?.key == sort.key || (widget.selectedSort == null && index == 0))
-                      ? _initialFocusNode
-                      : null,
-                  title: Text(sort.title),
-                  value: sort,
-                  groupValue: _currentSort,
-                  onChanged: (value) {
-                    if (value != null) _handleSortSelect(value);
+                return Focus(
+                  canRequestFocus: false,
+                  skipTraversal: true,
+                  onKeyEvent: (node, event) {
+                    if (!event.isActionable) return KeyEventResult.ignored;
+                    if (!isSelected) return KeyEventResult.ignored;
+                    if (event.logicalKey.isLeftKey) {
+                      _handleDirectionChange(sort, false);
+                      return KeyEventResult.handled;
+                    }
+                    if (event.logicalKey.isRightKey) {
+                      _handleDirectionChange(sort, true);
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
                   },
-                  secondary: isSelected
+                  child: FocusableRadioListTile<PlexSort>(
+                    focusNode: (widget.selectedSort?.key == sort.key || (widget.selectedSort == null && index == 0))
+                        ? _initialFocusNode
+                        : null,
+                    title: Text(sort.title),
+                    value: sort,
+                    secondary: isSelected
                       ? SegmentedButton<bool>(
                           showSelectedIcon: false,
                           segments: const [
@@ -146,6 +147,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                 ),
               );
             },
+            ),
           ),
         ),
       ],

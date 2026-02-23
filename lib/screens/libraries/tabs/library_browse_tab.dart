@@ -495,23 +495,25 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             final options = _getGroupingOptions();
             return StatefulBuilder(
               builder: (context, setSheetState) {
-                return ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: options.length,
-                  itemBuilder: (context, index) {
-                    final grouping = options[index];
-                    return RadioListTile<String>(
-                      title: Text(_getGroupingLabel(grouping)),
-                      value: grouping,
-                      groupValue: pendingGrouping,
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setSheetState(() {
-                          pendingGrouping = value;
-                        });
-                      },
-                    );
+                return RadioGroup<String>(
+                  groupValue: pendingGrouping,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setSheetState(() {
+                      pendingGrouping = value;
+                    });
                   },
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    itemBuilder: (context, index) {
+                      final grouping = options[index];
+                      return RadioListTile<String>(
+                        title: Text(_getGroupingLabel(grouping)),
+                        value: grouping,
+                      );
+                    },
+                  ),
                 );
               },
             );

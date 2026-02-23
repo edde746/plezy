@@ -1157,6 +1157,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Restore ambient lighting from persisted setting
   Future<void> _restoreAmbientLighting() async {
+    final shaderProvider = context.read<ShaderProvider>();
     final settings = await SettingsService.getInstance();
     if (!settings.getAmbientLighting()) return;
 
@@ -1177,7 +1178,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final outputAspect = playerSize.width / playerSize.height;
 
     // Clear shaders — ambient lighting and shaders are mutually exclusive
-    final shaderProvider = context.read<ShaderProvider>();
     if (shaderProvider.isShaderEnabled) {
       await _shaderService!.applyPreset(ShaderPreset.none);
       shaderProvider.setCurrentPreset(ShaderPreset.none);
@@ -1212,6 +1212,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _toggleAmbientLighting() async {
     final ambientLighting = _ambientLightingService;
     if (ambientLighting == null || !ambientLighting.isSupported) return;
+    final shaderProvider = context.read<ShaderProvider>();
 
     if (ambientLighting.isEnabled) {
       await ambientLighting.disable();
@@ -1232,7 +1233,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final outputAspect = playerSize.width / playerSize.height;
 
       // Clear shaders — ambient lighting and shaders are mutually exclusive
-      final shaderProvider = context.read<ShaderProvider>();
       if (shaderProvider.isShaderEnabled) {
         await _shaderService!.applyPreset(ShaderPreset.none);
         shaderProvider.setCurrentPreset(ShaderPreset.none);
@@ -1248,7 +1248,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final settings = await SettingsService.getInstance();
     settings.setAmbientLighting(ambientLighting.isEnabled);
 
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   /// Toggle between contain and cover modes only (for pinch gesture)

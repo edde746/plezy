@@ -112,7 +112,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   void _handleEvent(dynamic event) {
     if (_disposed) return;
     if (event is List && event.length == 2) {
-      final name = _propIdToName[event[0] as int];
+      final name = _propIdToName[event.first as int];
       if (name != null) {
         handlePropertyChange(name, event[1]);
       }
