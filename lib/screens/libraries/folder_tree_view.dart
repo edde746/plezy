@@ -16,8 +16,17 @@ class FolderTreeView extends StatefulWidget {
   final String libraryKey;
   final String? serverId; // Server this library belongs to
   final void Function(String)? onRefresh;
+  final FocusNode? firstItemFocusNode;
+  final VoidCallback? onNavigateUp;
 
-  const FolderTreeView({super.key, required this.libraryKey, this.serverId, this.onRefresh});
+  const FolderTreeView({
+    super.key,
+    required this.libraryKey,
+    this.serverId,
+    this.onRefresh,
+    this.firstItemFocusNode,
+    this.onNavigateUp,
+  });
 
   @override
   State<FolderTreeView> createState() => _FolderTreeViewState();
@@ -165,6 +174,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       // Create a unique key path that includes parent hierarchy and index
       final itemPath = parentPath.isEmpty ? '$i' : '$parentPath-$i';
 
+      // First root item gets the external focus node and navigate-up callback
+      final isFirstRootItem = depth == 0 && i == 0;
+
       // Add the item itself
       widgets.add(
         FolderTreeItem(
@@ -178,6 +190,8 @@ class _FolderTreeViewState extends State<FolderTreeView> {
           onTap: !isFolder ? () => _handleItemTap(item) : null,
           onPlayAll: isFolder ? () => _handleFolderPlay(item) : null,
           onShuffle: isFolder ? () => _handleFolderShuffle(item) : null,
+          focusNode: isFirstRootItem ? widget.firstItemFocusNode : null,
+          onNavigateUp: isFirstRootItem ? widget.onNavigateUp : null,
         ),
       );
 
@@ -212,7 +226,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
     return RefreshIndicator(
       onRefresh: _loadRootFolders,
-      child: ListView(children: _buildTreeItems(_rootFolders, 0)),
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        children: _buildTreeItems(_rootFolders, 0),
+      ),
     );
   }
 }

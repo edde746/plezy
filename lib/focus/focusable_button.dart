@@ -37,6 +37,9 @@ class FocusableButton extends StatefulWidget {
   /// Whether to scroll the widget into view when focused.
   final bool autoScroll;
 
+  /// Whether to use background color instead of border for focus indicator.
+  final bool useBackgroundFocus;
+
   const FocusableButton({
     super.key,
     required this.child,
@@ -49,6 +52,7 @@ class FocusableButton extends StatefulWidget {
     this.onNavigateRight,
     this.onBack,
     this.autoScroll = true,
+    this.useBackgroundFocus = false,
   });
 
   @override
@@ -71,6 +75,7 @@ class _FocusableButtonState extends State<FocusableButton> {
       focusNode: widget.focusNode,
       disableScale: true,
       borderRadius: 100,
+      useBackgroundFocus: widget.useBackgroundFocus,
       descendantsAreFocusable: false,
       onFocusChange: (f) => setState(() => _isFocused = f),
       autoScroll: widget.autoScroll,

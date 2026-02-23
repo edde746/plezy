@@ -223,9 +223,22 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   @override
   Widget buildContent(List<PlexMetadata> items) => const SizedBox.shrink();
 
-  /// Focus the first item in the grid/list (for tab activation)
+  /// Focus the first item in the grid/list/folder tree (for tab activation)
   @override
   void focusFirstItem() {
+    // In folder mode, items list is empty — focus the first folder tree item directly
+    if (_selectedGrouping == 'folders') {
+      void request() {
+        if (mounted && !firstItemFocusNode.hasFocus) {
+          firstItemFocusNode.requestFocus();
+        }
+      }
+
+      request();
+      WidgetsBinding.instance.addPostFrameCallback((_) => request());
+      return;
+    }
+
     if (items.isNotEmpty) {
       // Request immediately, then once more on the next frame to handle cases
       // where the grid/list attaches after the initial focus attempt.
@@ -246,14 +259,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// Focus the chips bar (for navigating from tab bar to content).
   /// Called by libraries screen when pressing DOWN on tab bar.
   void focusChipsBar() {
-    // If in folders mode, no chips to focus - go directly to folder tree
-    if (_selectedGrouping == 'folders') {
-      focusFirstItem();
-      return;
-    }
-
-    // With Stack layout, chips are always visible on top of the grid.
-    // No need to scroll - just focus the chip.
+    // Grouping chip is always visible (including in folder mode)
     _groupingChipFocusNode.requestFocus();
   }
 
@@ -602,6 +608,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// Navigate focus from chips down to the grid item.
   /// Restores focus to the previously focused item if content hasn't changed.
   void _navigateToGrid() {
+    // In folder mode, firstItemFocusNode is attached to the first folder tree item
+    if (_selectedGrouping == 'folders') {
+      firstItemFocusNode.requestFocus();
+      return;
+    }
+
     if (items.isEmpty) return;
 
     final targetIndex = shouldRestoreGridFocus && lastFocusedGridIndex! < items.length ? lastFocusedGridIndex! : 0;
@@ -819,6 +831,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
                 libraryKey: widget.library.key,
                 serverId: widget.library.serverId,
                 onRefresh: updateItem,
+                firstItemFocusNode: firstItemFocusNode,
+                onNavigateUp: () => _groupingChipFocusNode.requestFocus(),
               ),
             ),
           ],
