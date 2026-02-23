@@ -430,7 +430,7 @@ class SettingsService extends BaseSharedPreferencesService {
     final jsonString = prefs.getString(_keyKeyboardShortcuts);
     if (jsonString == null) return getDefaultKeyboardShortcuts();
 
-    final decoded = _decodeJsonStringToMap(jsonString);
+    final decoded = decodeJsonStringToMap(jsonString);
     if (decoded.isEmpty) return getDefaultKeyboardShortcuts();
 
     final shortcuts = decoded.map((key, value) => MapEntry(key, value.toString()));
@@ -494,6 +494,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
       return result;
     } catch (e) {
+      appLogger.d('Failed to parse keyboard hotkeys', error: e);
       return getDefaultKeyboardHotkeys();
     }
   }
@@ -804,17 +805,8 @@ class SettingsService extends BaseSharedPreferencesService {
     final jsonString = prefs.getString(_keyMediaVersionPreferences);
     if (jsonString == null) return {};
 
-    final decoded = _decodeJsonStringToMap(jsonString);
+    final decoded = decodeJsonStringToMap(jsonString);
     return decoded.map((key, value) => MapEntry(key, value as int));
-  }
-
-  /// Helper to decode JSON string to Map with error handling
-  Map<String, dynamic> _decodeJsonStringToMap(String jsonString) {
-    try {
-      return json.decode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      return {};
-    }
   }
 
   // App Locale
@@ -1080,7 +1072,8 @@ class SettingsService extends BaseSharedPreferencesService {
     if (jsonString == null) return KnownPlayers.systemDefault;
     try {
       return ExternalPlayer.fromJsonString(jsonString);
-    } catch (_) {
+    } catch (e) {
+      appLogger.d('Failed to parse external player', error: e);
       return KnownPlayers.systemDefault;
     }
   }
@@ -1096,7 +1089,8 @@ class SettingsService extends BaseSharedPreferencesService {
     try {
       final List<dynamic> decoded = json.decode(jsonString);
       return decoded.map((e) => ExternalPlayer.fromJson(e as Map<String, dynamic>)).toList();
-    } catch (_) {
+    } catch (e) {
+      appLogger.d('Failed to parse custom external players', error: e);
       return [];
     }
   }

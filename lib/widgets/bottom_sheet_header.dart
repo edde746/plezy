@@ -99,14 +99,7 @@ class BottomSheetHeader extends StatelessWidget {
             child: IconButton(
               focusNode: closeFocusNode,
               icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),
-              onPressed: onClose ?? () {
-                final sheetController = OverlaySheetController.maybeOf(context);
-                if (sheetController != null) {
-                  sheetController.close();
-                } else {
-                  Navigator.pop(context);
-                }
-              },
+              onPressed: onClose ?? () => OverlaySheetController.closeAdaptive(context),
             ),
           ),
         ],

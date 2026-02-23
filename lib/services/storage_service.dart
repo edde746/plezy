@@ -131,7 +131,7 @@ class StorageService extends BaseSharedPreferencesService {
         prefs.getString(_keyLibraryFilters);
     if (jsonString == null) return {};
 
-    final decoded = _decodeJsonStringToMap(jsonString);
+    final decoded = decodeJsonStringToMap(jsonString);
     return decoded.map((key, value) => MapEntry(key, value.toString()));
   }
 
@@ -308,24 +308,7 @@ class StorageService extends BaseSharedPreferencesService {
     final jsonString = prefs.getString(key);
     if (jsonString == null) return null;
 
-    return _decodeJsonStringToMap(jsonString, legacyStringOk: legacyStringOk);
-  }
-
-  /// Helper to decode JSON string to Map with error handling
-  ///
-  /// [jsonString] - The JSON string to decode
-  /// [legacyStringOk] - If true, returns {'key': value, 'descending': false}
-  ///                    when value is a plain string (for legacy library sort)
-  Map<String, dynamic> _decodeJsonStringToMap(String jsonString, {bool legacyStringOk = false}) {
-    try {
-      return json.decode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      if (legacyStringOk) {
-        // Legacy support: if it's just a string, return it as the key
-        return {'key': jsonString, 'descending': false};
-      }
-      return {};
-    }
+    return decodeJsonStringToMap(jsonString, legacyStringOk: legacyStringOk);
   }
 
   /// Remove all keys matching a prefix

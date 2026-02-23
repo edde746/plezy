@@ -18,31 +18,17 @@ void showProgramDetailsSheet(
   required String? posterUrl,
   required VoidCallback? onTuneChannel,
 }) {
-  final controller = OverlaySheetController.maybeOf(context);
-  if (controller != null) {
-    controller.show(
-      builder: (sheetContext) {
-        return _ProgramDetailsSheetContent(
-          program: program,
-          channel: channel,
-          posterUrl: posterUrl,
-          onTuneChannel: onTuneChannel,
-        );
-      },
-    );
-  } else {
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) {
-        return _ProgramDetailsSheetContent(
-          program: program,
-          channel: channel,
-          posterUrl: posterUrl,
-          onTuneChannel: onTuneChannel,
-        );
-      },
-    );
-  }
+  OverlaySheetController.showAdaptive(
+    context,
+    builder: (sheetContext) {
+      return _ProgramDetailsSheetContent(
+        program: program,
+        channel: channel,
+        posterUrl: posterUrl,
+        onTuneChannel: onTuneChannel,
+      );
+    },
+  );
 }
 
 class _ProgramDetailsSheetContent extends StatefulWidget {
@@ -107,14 +93,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
     final buttons = <Widget>[];
     int buttonIndex = 0;
 
-    void closeSheet() {
-      final controller = OverlaySheetController.maybeOf(context);
-      if (controller != null) {
-        controller.close();
-      } else {
-        Navigator.of(context).pop();
-      }
-    }
+    void closeSheet() => OverlaySheetController.closeAdaptive(context);
 
     if (program.isCurrentlyAiring && widget.onTuneChannel != null) {
       final idx = buttonIndex;

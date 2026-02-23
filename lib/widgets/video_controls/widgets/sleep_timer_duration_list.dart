@@ -46,12 +46,7 @@ class SleepTimerDurationList extends StatelessWidget {
               // Pause playback when timer completes
               player.pause();
             });
-            final sheetController = OverlaySheetController.maybeOf(context);
-            if (sheetController != null) {
-              sheetController.close();
-            } else {
-              Navigator.pop(context);
-            }
+            OverlaySheetController.closeAdaptive(context);
 
             // Show confirmation snackbar
             showSuccessSnackBar(context, t.messages.sleepTimerSet(label: label));

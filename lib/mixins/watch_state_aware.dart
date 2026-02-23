@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../utils/watch_state_notifier.dart';
+import 'event_aware.dart';
 
 /// Mixin for screens that need to react to watch state changes.
 ///
@@ -55,31 +56,14 @@ mixin WatchStateAware<T extends StatefulWidget> on State<T> {
   @override
   void initState() {
     super.initState();
-    _subscribeToWatchState();
-  }
-
-  void _subscribeToWatchState() {
-    _watchStateSubscription = WatchStateNotifier().stream.listen((event) {
-      if (!mounted) return;
-
-      final serverId = watchStateServerId;
-      if (serverId != null && event.serverId != serverId) return;
-
-      final globalKeys = watchedGlobalKeys;
-      if (globalKeys != null) {
-        if (event.affectsAnyGlobalKey(globalKeys)) {
-          onWatchStateChanged(event);
-        }
-        return;
-      }
-
-      final keys = watchedRatingKeys;
-      // If keys is null, receive all events
-      // Otherwise, filter to events that affect our keys
-      if (keys == null || event.affectsAnyOf(keys)) {
-        onWatchStateChanged(event);
-      }
-    });
+    _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
+      notifier: WatchStateNotifier(),
+      mounted: () => mounted,
+      serverId: () => watchStateServerId,
+      globalKeys: () => watchedGlobalKeys,
+      ratingKeys: () => watchedRatingKeys,
+      onEvent: onWatchStateChanged,
+    );
   }
 
   @override

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import '../focus/dpad_navigator.dart';
+import '../focus/key_event_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
@@ -306,211 +306,69 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   /// Handle key events for the hero section
-  KeyEventResult _handleHeroKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) {
-      return KeyEventResult.ignored;
-    }
-
-    final key = event.logicalKey;
-
-    // DOWN: Move to first hub
-    if (key.isDownKey) {
+  late final _handleHeroKeyEvent = dpadKeyHandler(
+    onDown: () {
       final keys = _allHubKeys;
-      if (keys.isNotEmpty) {
-        keys.first.currentState?.requestFocusFromMemory();
-      }
-      return KeyEventResult.handled;
-    }
-
-    // UP: Move to app bar (refresh button)
-    if (key.isUpKey) {
-      _refreshButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // LEFT: Navigate hero carousel to previous, or focus sidebar at index 0
-    if (key.isLeftKey) {
+      if (keys.isNotEmpty) keys.first.currentState?.requestFocusFromMemory();
+    },
+    onUp: () => _refreshButtonFocusNode.requestFocus(),
+    onLeft: () {
       if (_currentHeroIndex > 0) {
         _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
       } else {
         _navigateToSidebar();
       }
-      return KeyEventResult.handled;
-    }
-
-    // RIGHT: Navigate hero carousel to next
-    if (key.isRightKey) {
+    },
+    onRight: () {
       if (_currentHeroIndex < _onDeck.length - 1) {
         _heroController.nextPage(duration: tokens(context).slow, curve: Curves.easeInOut);
       }
-      return KeyEventResult.handled;
-    }
-
-    // SELECT: Play current hero item
-    if (key.isSelectKey) {
+    },
+    onSelect: () {
       if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
         navigateToVideoPlayer(context, metadata: _onDeck[_currentHeroIndex]);
       }
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
+    },
+  );
 
   /// Handle key events for the refresh button in app bar
-  KeyEventResult _handleRefreshKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) {
-      return KeyEventResult.ignored;
-    }
-
-    final key = event.logicalKey;
-
-    // DOWN: Return to hero/content
-    if (key.isDownKey) {
-      _focusContentFromAppBar();
-      return KeyEventResult.handled;
-    }
-
-    // RIGHT: Move to watch together button
-    if (key.isRightKey) {
-      _watchTogetherButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // LEFT: Navigate to sidebar
-    if (key.isLeftKey) {
-      _navigateToSidebar();
-      return KeyEventResult.handled;
-    }
-
-    // UP: Block at boundary
-    if (key.isUpKey) {
-      return KeyEventResult.handled;
-    }
-
-    // SELECT: Trigger refresh
-    if (key.isSelectKey) {
-      _loadContent();
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
+  late final _handleRefreshKeyEvent = dpadKeyHandler(
+    onDown: _focusContentFromAppBar,
+    onRight: () => _watchTogetherButtonFocusNode.requestFocus(),
+    onLeft: _navigateToSidebar,
+    onUp: () {}, // Block at boundary
+    onSelect: _loadContent,
+  );
 
   /// Handle key events for the watch together button in app bar
-  KeyEventResult _handleWatchTogetherKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) {
-      return KeyEventResult.ignored;
-    }
-
-    final key = event.logicalKey;
-
-    // DOWN: Return to hero/content
-    if (key.isDownKey) {
-      _focusContentFromAppBar();
-      return KeyEventResult.handled;
-    }
-
-    // LEFT: Move to refresh button
-    if (key.isLeftKey) {
-      _refreshButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // RIGHT: Move to companion remote button
-    if (key.isRightKey) {
-      _companionRemoteButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // UP: Block at boundary
-    if (key.isUpKey) {
-      return KeyEventResult.handled;
-    }
-
-    // SELECT: Navigate to Watch Together screen
-    if (key.isSelectKey) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen()));
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
+  late final _handleWatchTogetherKeyEvent = dpadKeyHandler(
+    onDown: _focusContentFromAppBar,
+    onLeft: () => _refreshButtonFocusNode.requestFocus(),
+    onRight: () => _companionRemoteButtonFocusNode.requestFocus(),
+    onUp: () {}, // Block at boundary
+    onSelect: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+  );
 
   /// Handle key events for the companion remote button in app bar
-  KeyEventResult _handleCompanionRemoteKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) {
-      return KeyEventResult.ignored;
-    }
-
-    final key = event.logicalKey;
-
-    // DOWN: Return to hero
-    if (key.isDownKey) {
-      _heroFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // LEFT: Move to watch together button
-    if (key.isLeftKey) {
-      _watchTogetherButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // RIGHT: Move to user button
-    if (key.isRightKey) {
-      _userButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // UP: Block at boundary
-    if (key.isUpKey) {
-      return KeyEventResult.handled;
-    }
-
-    // SELECT: Show companion remote dialog (host a remote session)
-    if (key.isSelectKey) {
-      RemoteSessionDialog.show(context);
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
+  late final _handleCompanionRemoteKeyEvent = dpadKeyHandler(
+    onDown: () => _heroFocusNode.requestFocus(),
+    onLeft: () => _watchTogetherButtonFocusNode.requestFocus(),
+    onRight: () => _userButtonFocusNode.requestFocus(),
+    onUp: () {}, // Block at boundary
+    onSelect: () => RemoteSessionDialog.show(context),
+  );
 
   /// Handle key events for the user button in app bar
-  KeyEventResult _handleUserKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) {
-      return KeyEventResult.ignored;
-    }
-
-    final key = event.logicalKey;
-
-    // DOWN: Return to hero/content
-    if (key.isDownKey) {
-      _focusContentFromAppBar();
-      return KeyEventResult.handled;
-    }
-
-    // LEFT: Move to companion remote button
-    if (key.isLeftKey) {
-      _companionRemoteButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // RIGHT/UP: Block at boundary
-    if (key.isRightKey || key.isUpKey) {
-      return KeyEventResult.handled;
-    }
-
-    // SELECT: Show user menu
-    if (key.isSelectKey) {
+  late final _handleUserKeyEvent = dpadKeyHandler(
+    onDown: _focusContentFromAppBar,
+    onLeft: () => _companionRemoteButtonFocusNode.requestFocus(),
+    onRight: () {}, // Block at boundary
+    onUp: () {}, // Block at boundary
+    onSelect: () {
       final userProvider = context.read<UserProfileProvider>();
       _showUserMenu(context, userProvider);
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
+    },
+  );
 
   @override
   void dispose() {

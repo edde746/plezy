@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Base class for services that use SharedPreferences singleton pattern.
@@ -31,6 +32,22 @@ abstract class BaseSharedPreferencesService {
       await instance.onInit();
     }
     return _instances[T] as T;
+  }
+
+  /// Decode a JSON string to a Map with error handling.
+  ///
+  /// If [legacyStringOk] is true and the value is a plain string (not valid
+  /// JSON), returns `{'key': jsonString, 'descending': false}` for legacy
+  /// library sort compatibility.
+  Map<String, dynamic> decodeJsonStringToMap(String jsonString, {bool legacyStringOk = false}) {
+    try {
+      return json.decode(jsonString) as Map<String, dynamic>;
+    } catch (e) {
+      if (legacyStringOk) {
+        return {'key': jsonString, 'descending': false};
+      }
+      return {};
+    }
   }
 
   /// Hook for subclass-specific initialization after SharedPreferences is ready.

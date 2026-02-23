@@ -87,6 +87,73 @@ class OverlaySheetController {
   void refocus() {
     _state._refocus();
   }
+
+  /// Show a sheet using the overlay system if available, otherwise fall back
+  /// to [showModalBottomSheet]. Returns the result from the sheet.
+  static Future<T?> showAdaptive<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+    BoxConstraints? constraints,
+    Color? backgroundColor,
+    bool barrierDismissible = true,
+    bool isScrollControlled = false,
+    FocusNode? initialFocusNode,
+  }) {
+    final controller = maybeOf(context);
+    if (controller != null) {
+      return controller.show<T>(
+        builder: builder,
+        constraints: constraints,
+        backgroundColor: backgroundColor,
+        barrierDismissible: barrierDismissible,
+        initialFocusNode: initialFocusNode,
+      );
+    }
+    return showModalBottomSheet<T>(
+      context: context,
+      builder: builder,
+      constraints: constraints,
+      backgroundColor: backgroundColor ?? Colors.grey[900],
+      barrierColor: Colors.black54,
+      isScrollControlled: isScrollControlled,
+    );
+  }
+
+  /// Push a sub-page using the overlay system if available, otherwise fall
+  /// back to [showModalBottomSheet]. Returns the result from the page.
+  static Future<T?> pushAdaptive<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+    FocusNode? initialFocusNode,
+  }) {
+    final controller = maybeOf(context);
+    if (controller != null) {
+      return controller.push<T>(builder: builder, initialFocusNode: initialFocusNode);
+    }
+    return showModalBottomSheet<T>(context: context, builder: builder);
+  }
+
+  /// Close the sheet entirely. Uses overlay controller if available,
+  /// otherwise pops the route.
+  static void closeAdaptive(BuildContext context, [dynamic result]) {
+    final controller = maybeOf(context);
+    if (controller != null) {
+      controller.close(result);
+    } else {
+      Navigator.pop(context, result);
+    }
+  }
+
+  /// Pop one level (sub-page or close if last page). Uses overlay controller
+  /// if available, otherwise pops the route.
+  static void popAdaptive(BuildContext context, [dynamic result]) {
+    final controller = maybeOf(context);
+    if (controller != null) {
+      controller.pop(result);
+    } else {
+      Navigator.pop(context, result);
+    }
+  }
 }
 
 /// Host widget for the overlay-based bottom sheet system.

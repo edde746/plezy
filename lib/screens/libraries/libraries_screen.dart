@@ -351,61 +351,29 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Handle key events for the edit button in app bar
-  KeyEventResult _handleEditKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) return KeyEventResult.ignored;
-    final key = event.logicalKey;
-
-    if (key.isLeftKey) {
-      // Navigate back to last tab (Playlists)
-      getTabChipFocusNode(3).requestFocus();
-      return KeyEventResult.handled;
-    }
-    if (key.isRightKey) {
-      _refreshButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-    if (key.isDownKey) {
-      _focusCurrentTab();
-      return KeyEventResult.handled;
-    }
-    if (key.isUpKey) {
-      return KeyEventResult.handled; // Block at boundary
-    }
-    if (key.isSelectKey) {
-      _showLibraryManagementSheet();
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
+  late final _handleEditKeyEvent = dpadKeyHandler(
+    onLeft: () => getTabChipFocusNode(3).requestFocus(),
+    onRight: () => _refreshButtonFocusNode.requestFocus(),
+    onDown: _focusCurrentTab,
+    onUp: () {}, // Block at boundary
+    onSelect: _showLibraryManagementSheet,
+  );
 
   /// Handle key events for the refresh button in app bar
-  KeyEventResult _handleRefreshKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) return KeyEventResult.ignored;
-    final key = event.logicalKey;
-
-    if (key.isLeftKey) {
-      // Navigate to edit button if libraries exist, else to last tab
+  late final _handleRefreshKeyEvent = dpadKeyHandler(
+    onLeft: () {
       final librariesProvider = context.read<LibrariesProvider>();
       if (librariesProvider.libraries.isNotEmpty) {
         _editButtonFocusNode.requestFocus();
       } else {
         getTabChipFocusNode(3).requestFocus();
       }
-      return KeyEventResult.handled;
-    }
-    if (key.isRightKey || key.isUpKey) {
-      return KeyEventResult.handled; // Block at boundary
-    }
-    if (key.isDownKey) {
-      _focusCurrentTab();
-      return KeyEventResult.handled;
-    }
-    if (key.isSelectKey) {
-      _refreshCurrentTab();
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
+    },
+    onRight: () {}, // Block at boundary
+    onUp: () {}, // Block at boundary
+    onDown: _focusCurrentTab,
+    onSelect: _refreshCurrentTab,
+  );
 
   @override
   void dispose() {
@@ -1422,52 +1390,27 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
   Future<void> _showLibraryMenuBottomSheet(BuildContext outerContext, PlexLibrary library) async {
     final menuItems = widget.getLibraryMenuItems(library);
-    final controller = OverlaySheetController.maybeOf(outerContext);
-    final String? selected;
-    if (controller != null) {
-      selected = await controller.push<String>(
-        builder: (context) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+    final selected = await OverlaySheetController.pushAdaptive<String>(
+      outerContext,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+            ...menuItems.indexed.map(
+              (entry) => ListTile(
+                leading: AppIcon(entry.$2.icon, fill: 1),
+                title: Text(entry.$2.label),
+                onTap: () => OverlaySheetController.popAdaptive(context, entry.$2.value),
               ),
-              ...menuItems.indexed.map(
-                (entry) => ListTile(
-                  leading: AppIcon(entry.$2.icon, fill: 1),
-                  title: Text(entry.$2.label),
-                  onTap: () => controller.pop(entry.$2.value),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
-    } else {
-      selected = await showModalBottomSheet<String>(
-        context: outerContext,
-        builder: (context) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              ),
-              ...menuItems.indexed.map(
-                (entry) => ListTile(
-                  leading: AppIcon(entry.$2.icon, fill: 1),
-                  title: Text(entry.$2.label),
-                  onTap: () => Navigator.pop(context, entry.$2.value),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+      ),
+    );
 
     if (selected != null && mounted) {
       // Find the selected item to check if confirmation is needed

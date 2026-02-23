@@ -309,26 +309,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _openedFromKeyboard = false;
 
     if (useBottomSheet) {
-      // Show overlay sheet if available, otherwise fall back to modal bottom sheet
-      final overlayController = OverlaySheetController.maybeOf(context);
-      if (overlayController != null) {
-        selected = await overlayController.show<String>(
-          builder: (context) => _FocusableContextMenuSheet(
-            title: widget.item.title,
-            actions: menuActions,
-            focusFirstItem: openedFromKeyboard,
-          ),
-        );
-      } else {
-        selected = await showModalBottomSheet<String>(
-          context: context,
-          builder: (context) => _FocusableContextMenuSheet(
-            title: widget.item.title,
-            actions: menuActions,
-            focusFirstItem: openedFromKeyboard,
-          ),
-        );
-      }
+      selected = await OverlaySheetController.showAdaptive<String>(
+        context,
+        builder: (context) => _FocusableContextMenuSheet(
+          title: widget.item.title,
+          actions: menuActions,
+          focusFirstItem: openedFromKeyboard,
+        ),
+      );
     } else {
       // Show custom focusable popup menu on larger screens
       // Use stored tap position or fallback to widget position
@@ -580,19 +568,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (fileInfo != null && context.mounted) {
         // Show file info bottom sheet
-        final overlayController = OverlaySheetController.maybeOf(context);
-        if (overlayController != null) {
-          await overlayController.show(
-            builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
-          );
-        } else {
-          await showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
-          );
-        }
+        await OverlaySheetController.showAdaptive(
+          context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
+        );
       } else if (context.mounted) {
         showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
       }
@@ -634,55 +615,29 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     String? selected;
     if (useBottomSheet) {
-      final overlayController = OverlaySheetController.maybeOf(context);
-      if (overlayController != null) {
-        selected = await overlayController.push<String>(
-          builder: (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(t.common.addTo, style: Theme.of(context).textTheme.titleMedium),
-                ),
-                ...submenuActions.map((action) {
-                  return ListTile(
-                    leading: AppIcon(action.icon, fill: 1),
-                    title: Text(action.label),
-                    onTap: () => overlayController.pop(action.value),
-                  );
-                }),
-                const SizedBox(height: 8),
-              ],
-            ),
+      selected = await OverlaySheetController.pushAdaptive<String>(
+        context,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(t.common.addTo, style: Theme.of(context).textTheme.titleMedium),
+              ),
+              ...submenuActions.map((action) {
+                return ListTile(
+                  leading: AppIcon(action.icon, fill: 1),
+                  title: Text(action.label),
+                  onTap: () => OverlaySheetController.popAdaptive(context, action.value),
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
           ),
-        );
-      } else {
-        selected = await showModalBottomSheet<String>(
-          context: context,
-          builder: (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(t.common.addTo, style: Theme.of(context).textTheme.titleMedium),
-                ),
-                ...submenuActions.map((action) {
-                  return ListTile(
-                    leading: AppIcon(action.icon, fill: 1),
-                    title: Text(action.label),
-                    onTap: () => Navigator.pop(context, action.value),
-                  );
-                }),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        );
-      }
+        ),
+      );
     } else {
       selected = await showMenu<String>(
         context: context,
@@ -1392,14 +1347,7 @@ class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> 
                       focusNode: index == 0 ? _initialFocusNode : null,
                       leading: AppIcon(action.icon, fill: 1),
                       title: Text(action.label),
-                      onTap: () {
-                        final controller = OverlaySheetController.maybeOf(context);
-                        if (controller != null) {
-                          controller.close(action.value);
-                        } else {
-                          Navigator.pop(context, action.value);
-                        }
-                      },
+                      onTap: () => OverlaySheetController.closeAdaptive(context, action.value),
                       hoverColor: action.hoverColor,
                     );
                   }),

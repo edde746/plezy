@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../utils/deletion_notifier.dart';
+import 'event_aware.dart';
 
 /// Mixin for screens that need to react to deletion events.
 ///
@@ -56,31 +57,14 @@ mixin DeletionAware<T extends StatefulWidget> on State<T> {
   @override
   void initState() {
     super.initState();
-    _subscribeToDeletions();
-  }
-
-  void _subscribeToDeletions() {
-    _deletionSubscription = DeletionNotifier().stream.listen((event) {
-      if (!mounted) return;
-
-      final serverId = deletionServerId;
-      if (serverId != null && event.serverId != serverId) return;
-
-      final globalKeys = deletionGlobalKeys;
-      if (globalKeys != null) {
-        if (event.affectsAnyGlobalKey(globalKeys)) {
-          onDeletionEvent(event);
-        }
-        return;
-      }
-
-      final ratingKeys = deletionRatingKeys;
-      // If keys is null, receive all events
-      // Otherwise, filter to events that affect our keys
-      if (ratingKeys == null || event.affectsAnyOf(ratingKeys)) {
-        onDeletionEvent(event);
-      }
-    });
+    _deletionSubscription = subscribeToHierarchicalEvents<DeletionEvent>(
+      notifier: DeletionNotifier(),
+      mounted: () => mounted,
+      serverId: () => deletionServerId,
+      globalKeys: () => deletionGlobalKeys,
+      ratingKeys: () => deletionRatingKeys,
+      onEvent: onDeletionEvent,
+    );
   }
 
   @override

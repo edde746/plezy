@@ -59,77 +59,68 @@ class SettingsProvider extends ChangeNotifier {
 
   bool get showUnwatchedCount => _showUnwatchedCount;
 
-  Future<void> setLibraryDensity(LibraryDensity density) async {
+  /// Helper to update a setting: ensures init, deduplicates, persists, notifies.
+  Future<void> _updateSetting<T>({
+    required T current,
+    required T value,
+    required void Function(T) setLocal,
+    required Future<void> Function(T) persist,
+  }) async {
     if (!_isInitialized) await _initializeSettings();
-    if (_libraryDensity != density) {
-      _libraryDensity = density;
-      await _settingsService!.setLibraryDensity(density);
+    if (current != value) {
+      setLocal(value);
+      await persist(value);
       notifyListeners();
     }
   }
 
-  Future<void> setViewMode(ViewMode mode) async {
-    if (!_isInitialized) await _initializeSettings();
-    if (_viewMode != mode) {
-      _viewMode = mode;
-      await _settingsService!.setViewMode(mode);
-      notifyListeners();
-    }
-  }
+  Future<void> setLibraryDensity(LibraryDensity density) => _updateSetting(
+    current: _libraryDensity, value: density,
+    setLocal: (v) => _libraryDensity = v,
+    persist: _settingsService!.setLibraryDensity,
+  );
 
-  Future<void> setEpisodePosterMode(EpisodePosterMode mode) async {
-    if (!_isInitialized) await _initializeSettings();
-    if (_episodePosterMode != mode) {
-      _episodePosterMode = mode;
-      await _settingsService!.setEpisodePosterMode(mode);
-      notifyListeners();
-    }
-  }
+  Future<void> setViewMode(ViewMode mode) => _updateSetting(
+    current: _viewMode, value: mode,
+    setLocal: (v) => _viewMode = v,
+    persist: _settingsService!.setViewMode,
+  );
 
-  Future<void> setShowHeroSection(bool value) async {
-    if (!_isInitialized) await _initializeSettings();
-    if (_showHeroSection != value) {
-      _showHeroSection = value;
-      await _settingsService!.setShowHeroSection(value);
-      notifyListeners();
-    }
-  }
+  Future<void> setEpisodePosterMode(EpisodePosterMode mode) => _updateSetting(
+    current: _episodePosterMode, value: mode,
+    setLocal: (v) => _episodePosterMode = v,
+    persist: _settingsService!.setEpisodePosterMode,
+  );
 
-  Future<void> setUseGlobalHubs(bool value) async {
-    if (!_isInitialized) await _initializeSettings();
-    if (_useGlobalHubs != value) {
-      _useGlobalHubs = value;
-      await _settingsService!.setUseGlobalHubs(value);
-      notifyListeners();
-    }
-  }
+  Future<void> setShowHeroSection(bool value) => _updateSetting(
+    current: _showHeroSection, value: value,
+    setLocal: (v) => _showHeroSection = v,
+    persist: _settingsService!.setShowHeroSection,
+  );
 
-  Future<void> setShowServerNameOnHubs(bool value) async {
-    if (!_isInitialized) await _initializeSettings();
-    if (_showServerNameOnHubs != value) {
-      _showServerNameOnHubs = value;
-      await _settingsService!.setShowServerNameOnHubs(value);
-      notifyListeners();
-    }
-  }
+  Future<void> setUseGlobalHubs(bool value) => _updateSetting(
+    current: _useGlobalHubs, value: value,
+    setLocal: (v) => _useGlobalHubs = v,
+    persist: _settingsService!.setUseGlobalHubs,
+  );
 
-  Future<void> setAlwaysKeepSidebarOpen(bool value) async {
-    if (!_isInitialized) await _initializeSettings();
-    if (_alwaysKeepSidebarOpen != value) {
-      _alwaysKeepSidebarOpen = value;
-      await _settingsService!.setAlwaysKeepSidebarOpen(value);
-      notifyListeners();
-    }
-  }
+  Future<void> setShowServerNameOnHubs(bool value) => _updateSetting(
+    current: _showServerNameOnHubs, value: value,
+    setLocal: (v) => _showServerNameOnHubs = v,
+    persist: _settingsService!.setShowServerNameOnHubs,
+  );
 
-  Future<void> setShowUnwatchedCount(bool value) async {
-    if (!_isInitialized) await _initializeSettings();
-    if (_showUnwatchedCount != value) {
-      _showUnwatchedCount = value;
-      await _settingsService!.setShowUnwatchedCount(value);
-      notifyListeners();
-    }
-  }
+  Future<void> setAlwaysKeepSidebarOpen(bool value) => _updateSetting(
+    current: _alwaysKeepSidebarOpen, value: value,
+    setLocal: (v) => _alwaysKeepSidebarOpen = v,
+    persist: _settingsService!.setAlwaysKeepSidebarOpen,
+  );
+
+  Future<void> setShowUnwatchedCount(bool value) => _updateSetting(
+    current: _showUnwatchedCount, value: value,
+    setLocal: (v) => _showUnwatchedCount = v,
+    persist: _settingsService!.setShowUnwatchedCount,
+  );
 
   String get libraryDensityDisplayName {
     switch (_libraryDensity) {
