@@ -17,6 +17,7 @@ import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
+import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
@@ -1054,9 +1055,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       );
     }
 
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: Column(
+    return OverlaySheetHost(
+      child: Scaffold(
+        body: IndexedStack(index: _currentIndex, children: _screens),
+        bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Reconnect bar when offline
@@ -1101,6 +1103,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
             destinations: _buildNavDestinations(_isOffline),
           ),
         ],
+      ),
       ),
     );
   }

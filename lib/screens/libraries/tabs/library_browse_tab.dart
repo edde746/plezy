@@ -822,58 +822,54 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     // For folders mode, use FolderTreeView instead of grid/list
     if (_selectedGrouping == 'folders') {
-      return OverlaySheetHost(
-        child: Column(
-          children: [
-            _buildChipsBar(),
-            Expanded(
-              child: FolderTreeView(
-                libraryKey: widget.library.key,
-                serverId: widget.library.serverId,
-                onRefresh: updateItem,
-                firstItemFocusNode: firstItemFocusNode,
-                onNavigateUp: () => _groupingChipFocusNode.requestFocus(),
-              ),
+      return Column(
+        children: [
+          _buildChipsBar(),
+          Expanded(
+            child: FolderTreeView(
+              libraryKey: widget.library.key,
+              serverId: widget.library.serverId,
+              onRefresh: updateItem,
+              firstItemFocusNode: firstItemFocusNode,
+              onNavigateUp: () => _groupingChipFocusNode.requestFocus(),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 
     // For list/grid modes, use Stack with chips layered on top of grid.
     // This allows the grid to use Clip.none for focus decorations while
     // the chips bar (with background) covers any overflow at the top.
-    return OverlaySheetHost(
-      child: Stack(
-        children: [
-          // Grid fills the entire area, with top padding for chips bar
-          Positioned.fill(child: _buildScrollableContent()),
-          // Chips bar on top with solid background
-          Positioned(top: 0, left: 0, right: 0, child: _buildChipsBar()),
-          // Alpha jump bar / scroll handle on the right edge
-          if (_shouldShowAlphaJumpBar)
-            Positioned(
-              top: _chipsBarHeight,
-              right: 0,
-              bottom: 0,
-              child: _isPhone(context)
-                  ? AlphaScrollHandle(
-                      firstCharacters: _firstCharacters,
-                      onJump: _jumpToIndex,
-                      currentLetter: _currentAlphaLetter,
-                      isScrolling: _isScrollActive,
-                    )
-                  : AlphaJumpBar(
-                      firstCharacters: _firstCharacters,
-                      onJump: _jumpToIndex,
-                      currentLetter: _currentAlphaLetter,
-                      focusNode: _alphaJumpBarFocusNode,
-                      onNavigateLeft: _navigateToGridNearScroll,
-                      onBack: _navigateToGridNearScroll,
-                    ),
-            ),
-        ],
-      ),
+    return Stack(
+      children: [
+        // Grid fills the entire area, with top padding for chips bar
+        Positioned.fill(child: _buildScrollableContent()),
+        // Chips bar on top with solid background
+        Positioned(top: 0, left: 0, right: 0, child: _buildChipsBar()),
+        // Alpha jump bar / scroll handle on the right edge
+        if (_shouldShowAlphaJumpBar)
+          Positioned(
+            top: _chipsBarHeight,
+            right: 0,
+            bottom: 0,
+            child: _isPhone(context)
+                ? AlphaScrollHandle(
+                    firstCharacters: _firstCharacters,
+                    onJump: _jumpToIndex,
+                    currentLetter: _currentAlphaLetter,
+                    isScrolling: _isScrollActive,
+                  )
+                : AlphaJumpBar(
+                    firstCharacters: _firstCharacters,
+                    onJump: _jumpToIndex,
+                    currentLetter: _currentAlphaLetter,
+                    focusNode: _alphaJumpBarFocusNode,
+                    onNavigateLeft: _navigateToGridNearScroll,
+                    onBack: _navigateToGridNearScroll,
+                  ),
+          ),
+      ],
     );
   }
 

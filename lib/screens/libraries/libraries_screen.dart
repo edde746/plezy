@@ -1034,9 +1034,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // Compute visible libraries (filtered from all libraries)
     final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
-    return OverlaySheetHost(
-      child: Scaffold(
-        body: ScrollConfiguration(
+    return Scaffold(
+      body: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
           child: CustomScrollView(
             controller: _outerScrollController,
@@ -1171,12 +1170,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             ],
           ),
         ),
-      ),
     );
   }
 }
 
 class _LibraryManagementSheet extends StatefulWidget {
+
   final bool isDialog;
   final List<PlexLibrary> allLibraries;
   final Set<String> hiddenLibraryKeys;

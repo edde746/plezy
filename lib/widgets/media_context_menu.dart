@@ -1322,41 +1322,39 @@ class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> 
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              widget.title,
-              style: Theme.of(context).textTheme.titleMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            widget.title,
+            style: Theme.of(context).textTheme.titleMedium,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Flexible(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...widget.actions.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final action = entry.value;
+                  return FocusableListTile(
+                    focusNode: index == 0 ? _initialFocusNode : null,
+                    leading: AppIcon(action.icon, fill: 1),
+                    title: Text(action.label),
+                    onTap: () => OverlaySheetController.closeAdaptive(context, action.value),
+                    hoverColor: action.hoverColor,
+                  );
+                }),
+              ],
             ),
           ),
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ...widget.actions.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final action = entry.value;
-                    return FocusableListTile(
-                      focusNode: index == 0 ? _initialFocusNode : null,
-                      leading: AppIcon(action.icon, fill: 1),
-                      title: Text(action.label),
-                      onTap: () => OverlaySheetController.closeAdaptive(context, action.value),
-                      hoverColor: action.hoverColor,
-                    );
-                  }),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

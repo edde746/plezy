@@ -113,7 +113,7 @@ class OverlaySheetController {
       context: context,
       builder: builder,
       constraints: constraints,
-      backgroundColor: backgroundColor ?? Colors.grey[900],
+      backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
       barrierColor: Colors.black54,
       isScrollControlled: isScrollControlled,
     );
@@ -187,7 +187,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   bool _isClosing = false;
   bool _barrierDismissible = true;
   BoxConstraints? _constraints;
-  Color _backgroundColor = Colors.grey[900]!;
+  Color? _explicitBackgroundColor;
 
   // Drag-to-dismiss state
   double _dragOffset = 0;
@@ -249,7 +249,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       _isClosing = false;
       _barrierDismissible = barrierDismissible;
       _constraints = constraints;
-      if (backgroundColor != null) _backgroundColor = backgroundColor;
+      _explicitBackgroundColor = backgroundColor;
       _dragOffset = 0;
       _isDragging = false;
     });
@@ -454,7 +454,6 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         BoxConstraints(
           maxWidth: isDesktop ? 700 : double.infinity,
           maxHeight: isDesktop ? 400 : size.height * 0.75,
-          minHeight: isDesktop ? 300 : size.height * 0.5,
         );
 
     Widget sheet = FocusScope(
@@ -470,7 +469,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
             child: Transform.translate(
               offset: Offset(0, _dragOffset.clamp(0, double.infinity)),
               child: Material(
-                color: _backgroundColor,
+                color: _explicitBackgroundColor ?? Theme.of(context).colorScheme.surface,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 clipBehavior: Clip.antiAlias,
                 child: SafeArea(

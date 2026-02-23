@@ -37,8 +37,6 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
         BottomSheetHeader(
           title: t.fileInfo.title,
           icon: Symbols.info_rounded,
-          iconColor: Colors.white,
-          titleColor: Colors.white,
           closeFocusNode: _initialFocusNode,
         ),
         // Content
@@ -50,7 +48,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               if (widget.title.isNotEmpty) ...[
                 Text(
                   widget.title,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 20),
               ],
@@ -115,7 +113,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
     );
   }
 
@@ -127,12 +125,12 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
         children: [
           SizedBox(
             width: 140,
-            child: Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+            child: Text(label, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 14)),
           ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: isMonospace ? 'monospace' : null),
+              style: TextStyle(fontSize: 14, fontFamily: isMonospace ? 'monospace' : null),
             ),
           ),
         ],
