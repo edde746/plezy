@@ -19,20 +19,29 @@
 // to have the correct function signature.
 static void* get_opengl_proc_address(void* ctx, const char* name) {
   (void)ctx;
+
+  // Detect the actual display backend at runtime.  On most Linux distros both
+  // GDK_WINDOWING_WAYLAND and GDK_WINDOWING_X11 are defined at compile time,
+  // but only one is active at runtime.  The previous check (epoxy_has_egl())
+  // was wrong because it returns true whenever the EGL library is loadable,
+  // even on X11 sessions with NVIDIA drivers — causing mpv to get EGL function
+  // pointers for a GLX context and producing corrupted/blank video.
+  GdkDisplay* display = gdk_display_get_default();
+
 #ifdef GDK_WINDOWING_WAYLAND
-  // On Wayland, use EGL
-  if (epoxy_has_egl()) {
+  if (GDK_IS_WAYLAND_DISPLAY(display)) {
     return reinterpret_cast<void*>(eglGetProcAddress(name));
   }
 #endif
 #ifdef GDK_WINDOWING_X11
-  // On X11, use GLX
-  return reinterpret_cast<void*>(glXGetProcAddressARB(
-      reinterpret_cast<const GLubyte*>(name)));
-#else
-  // Fallback: try EGL
-  return reinterpret_cast<void*>(eglGetProcAddress(name));
+  if (GDK_IS_X11_DISPLAY(display)) {
+    return reinterpret_cast<void*>(glXGetProcAddressARB(
+        reinterpret_cast<const GLubyte*>(name)));
+  }
 #endif
+
+  // Fallback for non-X11/non-Wayland (rare)
+  return reinterpret_cast<void*>(eglGetProcAddress(name));
 }
 
 namespace mpv {
@@ -60,6 +69,7 @@ bool MpvPlayer::Initialize() {
 
   // Configure mpv for embedded playback.
   mpv_set_option_string(mpv_, "vo", "libmpv");
+  mpv_set_option_string(mpv_, "gpu-api", "opengl");
   mpv_set_option_string(mpv_, "hwdec", "auto");
   mpv_set_option_string(mpv_, "keep-open", "yes");
 
@@ -284,7 +294,7 @@ void MpvPlayer::Render(int width, int height, int fbo) {
       .fbo = fbo,
       .w = width,
       .h = height,
-      .internal_format = 0,
+      .internal_format = GL_RGBA8,
   };
 
   int flip_y = 0;
