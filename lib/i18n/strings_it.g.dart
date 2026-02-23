@@ -245,6 +245,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get hardwareDecodingDescription => 'Utilizza l\'accelerazione hardware quando disponibile';
 	@override String get bufferSize => 'Dimensione buffer';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get bufferSizeAuto => 'Auto (Consigliato)';
+	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Il tuo dispositivo ha ${heap}MB di memoria. Un buffer di ${size}MB potrebbe causare problemi di riproduzione.';
 	@override String get subtitleStyling => 'Stile sottotitoli';
 	@override String get subtitleStylingDescription => 'Personalizza l\'aspetto dei sottotitoli';
 	@override String get smallSkipDuration => 'Durata skip breve';
@@ -1417,6 +1419,8 @@ extension on TranslationsIt {
 			'settings.hardwareDecodingDescription' => 'Utilizza l\'accelerazione hardware quando disponibile',
 			'settings.bufferSize' => 'Dimensione buffer',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
+			'settings.bufferSizeAuto' => 'Auto (Consigliato)',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Il tuo dispositivo ha ${heap}MB di memoria. Un buffer di ${size}MB potrebbe causare problemi di riproduzione.',
 			'settings.subtitleStyling' => 'Stile sottotitoli',
 			'settings.subtitleStylingDescription' => 'Personalizza l\'aspetto dei sottotitoli',
 			'settings.smallSkipDuration' => 'Durata skip breve',
@@ -1811,10 +1815,10 @@ extension on TranslationsIt {
 			'liveTv.reloadGuide' => 'Ricarica guida',
 			'liveTv.guideReloaded' => 'Dati della guida ricaricati',
 			'liveTv.allChannels' => 'Tutti i canali',
-			'liveTv.now' => 'Ora',
-			'liveTv.today' => 'Oggi',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => 'Ora',
+			'liveTv.today' => 'Oggi',
 			'liveTv.midnight' => 'Mezzanotte',
 			'liveTv.overnight' => 'Notte',
 			'liveTv.morning' => 'Mattina',

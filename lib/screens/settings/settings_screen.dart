@@ -22,6 +22,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
+import '../../mpv/player/player_android.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
 import '../../utils/snackbar_helper.dart';
@@ -105,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
   bool _enableDebugLogging = false;
   bool _enableHardwareDecoding = true;
-  int _bufferSize = 128;
+  int _bufferSize = 0;
   int _seekTimeSmall = 10;
   int _seekTimeLarge = 30;
   int _sleepTimerDuration = 30;
@@ -486,7 +487,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             focusNode: _focusTracker.get(_kBufferSize),
             leading: const AppIcon(Symbols.memory_rounded, fill: 1),
             title: Text(t.settings.bufferSize),
-            subtitle: Text(t.settings.bufferSizeMB(size: _bufferSize.toString())),
+            subtitle: Text(_bufferSize == 0 ? t.settings.bufferSizeAuto : t.settings.bufferSizeMB(size: _bufferSize.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showBufferSizeDialog(),
           ),
@@ -1057,7 +1058,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   }
 
   void _showBufferSizeDialog() {
-    final options = [64, 128, 256, 512, 1024];
+    final options = [0, 64, 128, 256, 512, 1024];
 
     showDialog(
       context: context,
@@ -1072,13 +1073,19 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   _bufferSize == size ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
                   fill: 1,
                 ),
-                title: Text('${size}MB'),
-                onTap: () {
+                title: Text(size == 0 ? t.settings.bufferSizeAuto : '${size}MB'),
+                onTap: () async {
                   setState(() {
                     _bufferSize = size;
                     _settingsService.setBufferSize(size);
                   });
                   Navigator.pop(context);
+                  if (Platform.isAndroid && size > 0) {
+                    final heapMB = await PlayerAndroid.getHeapSize();
+                    if (heapMB > 0 && size > heapMB ~/ 4 && mounted) {
+                      showAppSnackBar(this.context, t.settings.bufferSizeWarning(heap: heapMB.toString(), size: size.toString()));
+                    }
+                  }
                 },
               );
             }).toList(),

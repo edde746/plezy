@@ -20,6 +20,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
   static const String _keyBufferSize = 'buffer_size';
+  static const String _keyBufferSizeMigratedToAuto = 'buffer_size_migrated_to_auto';
   static const String _keyKeyboardShortcuts = 'keyboard_shortcuts';
   static const String _keyKeyboardHotkeys = 'keyboard_hotkeys';
   static const String _keyEnableHardwareDecoding = 'enable_hardware_decoding';
@@ -121,7 +122,14 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   int getBufferSize() {
-    return prefs.getInt(_keyBufferSize) ?? 128; // Default 128MB
+    // One-time migration: reset existing users to Auto.
+    // SharedPreferences updates in-memory cache synchronously, so the
+    // unawaited disk-flush futures are safe here (idempotent if re-run).
+    if (prefs.getBool(_keyBufferSizeMigratedToAuto) != true) {
+      prefs.remove(_keyBufferSize);
+      prefs.setBool(_keyBufferSizeMigratedToAuto, true);
+    }
+    return prefs.getInt(_keyBufferSize) ?? 0; // 0 = Auto
   }
 
   // Hardware Decoding
@@ -1182,6 +1190,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyCustomExternalPlayers),
       prefs.remove(_keyConfirmExitOnBack),
       prefs.remove(_keyAmbientLighting),
+      prefs.remove(_keyBufferSizeMigratedToAuto),
     ]);
   }
 

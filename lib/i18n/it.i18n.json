@@ -126,6 +126,8 @@
     "hardwareDecodingDescription": "Utilizza l'accelerazione hardware quando disponibile",
     "bufferSize": "Dimensione buffer",
     "bufferSizeMB": "${size}MB",
+    "bufferSizeAuto": "Auto (Consigliato)",
+    "bufferSizeWarning": "Il tuo dispositivo ha ${heap}MB di memoria. Un buffer di ${size}MB potrebbe causare problemi di riproduzione.",
     "subtitleStyling": "Stile sottotitoli",
     "subtitleStylingDescription": "Personalizza l'aspetto dei sottotitoli",
     "smallSkipDuration": "Durata skip breve",

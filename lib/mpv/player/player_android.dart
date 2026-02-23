@@ -235,6 +235,17 @@ class PlayerAndroid extends PlayerBase {
     }
   }
 
+  /// Get the device's large heap size in MB (Android only).
+  /// Returns 0 if unavailable.
+  static Future<int> getHeapSize() async {
+    try {
+      final result = await _methodChannel.invokeMethod<int>('getHeapSize');
+      return result ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
   /// Get the current player type ('exoplayer' or 'mpv' if fallback is active).
   Future<String> getPlayerType() async {
     checkDisposed();

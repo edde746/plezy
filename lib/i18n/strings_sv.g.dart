@@ -245,6 +245,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
 	@override String get bufferSize => 'Bufferstorlek';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get bufferSizeAuto => 'Auto (Rekommenderat)';
+	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Din enhet har ${heap}MB minne. En buffert på ${size}MB kan orsaka uppspelningsproblem.';
 	@override String get subtitleStyling => 'Undertext-styling';
 	@override String get subtitleStylingDescription => 'Anpassa undertextutseende';
 	@override String get smallSkipDuration => 'Kort hoppvaraktighet';
@@ -1417,6 +1419,8 @@ extension on TranslationsSv {
 			'settings.hardwareDecodingDescription' => 'Använd hårdvaruacceleration när tillgängligt',
 			'settings.bufferSize' => 'Bufferstorlek',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
+			'settings.bufferSizeAuto' => 'Auto (Rekommenderat)',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Din enhet har ${heap}MB minne. En buffert på ${size}MB kan orsaka uppspelningsproblem.',
 			'settings.subtitleStyling' => 'Undertext-styling',
 			'settings.subtitleStylingDescription' => 'Anpassa undertextutseende',
 			'settings.smallSkipDuration' => 'Kort hoppvaraktighet',
@@ -1811,10 +1815,10 @@ extension on TranslationsSv {
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.guideReloaded' => 'Programdata omladdad',
 			'liveTv.allChannels' => 'Alla kanaler',
-			'liveTv.now' => 'Nu',
-			'liveTv.today' => 'Idag',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => 'Nu',
+			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
 			'liveTv.overnight' => 'Natt',
 			'liveTv.morning' => 'Morgon',

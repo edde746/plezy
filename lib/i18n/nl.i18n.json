@@ -126,6 +126,8 @@
     "hardwareDecodingDescription": "Gebruik hardware versnelling indien beschikbaar",
     "bufferSize": "Buffer grootte",
     "bufferSizeMB": "${size}MB",
+    "bufferSizeAuto": "Auto (Aanbevolen)",
+    "bufferSizeWarning": "Je apparaat heeft ${heap}MB geheugen. Een buffer van ${size}MB kan afspeelproblemen veroorzaken.",
     "subtitleStyling": "Ondertitel opmaak",
     "subtitleStylingDescription": "Pas ondertitel uiterlijk aan",
     "smallSkipDuration": "Korte skip duur",

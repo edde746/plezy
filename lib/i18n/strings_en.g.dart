@@ -481,6 +481,12 @@ class TranslationsSettingsEn {
 	/// en: '${size}MB'
 	String bufferSizeMB({required Object size}) => '${size}MB';
 
+	/// en: 'Auto (Recommended)'
+	String get bufferSizeAuto => 'Auto (Recommended)';
+
+	/// en: 'Your device has ${heap}MB of memory. A ${size}MB buffer may cause playback issues.'
+	String bufferSizeWarning({required Object heap, required Object size}) => 'Your device has ${heap}MB of memory. A ${size}MB buffer may cause playback issues.';
+
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
@@ -3032,6 +3038,8 @@ extension on Translations {
 			'settings.hardwareDecodingDescription' => 'Use hardware acceleration when available',
 			'settings.bufferSize' => 'Buffer Size',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
+			'settings.bufferSizeAuto' => 'Auto (Recommended)',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Your device has ${heap}MB of memory. A ${size}MB buffer may cause playback issues.',
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
@@ -3426,10 +3434,10 @@ extension on Translations {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.guideReloaded' => 'Guide data reloaded',
 			'liveTv.allChannels' => 'All Channels',
-			'liveTv.now' => 'Now',
-			'liveTv.today' => 'Today',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => 'Now',
+			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
 			'liveTv.morning' => 'Morning',

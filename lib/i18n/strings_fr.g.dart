@@ -245,6 +245,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get hardwareDecodingDescription => 'Utilisez l\'accélération matérielle lorsqu\'elle est disponible.';
 	@override String get bufferSize => 'Taille du Buffer';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get bufferSizeAuto => 'Auto (Recommandé)';
+	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Votre appareil dispose de ${heap}MB de mémoire. Un tampon de ${size}MB peut causer des problèmes de lecture.';
 	@override String get subtitleStyling => 'Stylisation des sous-titres';
 	@override String get subtitleStylingDescription => 'Personnaliser l\'apparence des sous-titres';
 	@override String get smallSkipDuration => 'Small Skip Duration';
@@ -1417,6 +1419,8 @@ extension on TranslationsFr {
 			'settings.hardwareDecodingDescription' => 'Utilisez l\'accélération matérielle lorsqu\'elle est disponible.',
 			'settings.bufferSize' => 'Taille du Buffer',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
+			'settings.bufferSizeAuto' => 'Auto (Recommandé)',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Votre appareil dispose de ${heap}MB de mémoire. Un tampon de ${size}MB peut causer des problèmes de lecture.',
 			'settings.subtitleStyling' => 'Stylisation des sous-titres',
 			'settings.subtitleStylingDescription' => 'Personnaliser l\'apparence des sous-titres',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
@@ -1811,10 +1815,10 @@ extension on TranslationsFr {
 			'liveTv.reloadGuide' => 'Recharger le guide',
 			'liveTv.guideReloaded' => 'Données du guide rechargées',
 			'liveTv.allChannels' => 'Toutes les chaînes',
-			'liveTv.now' => 'Maintenant',
-			'liveTv.today' => 'Aujourd\'hui',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => 'Maintenant',
+			'liveTv.today' => 'Aujourd\'hui',
 			'liveTv.midnight' => 'Minuit',
 			'liveTv.overnight' => 'Nuit',
 			'liveTv.morning' => 'Matin',

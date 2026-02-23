@@ -126,6 +126,8 @@
     "hardwareDecodingDescription": "如果可用，使用硬件加速",
     "bufferSize": "缓冲区大小",
     "bufferSizeMB": "${size}MB",
+    "bufferSizeAuto": "自动（推荐）",
+    "bufferSizeWarning": "您的设备有 ${heap}MB 内存。${size}MB 的缓冲区可能导致播放问题。",
     "subtitleStyling": "字幕样式",
     "subtitleStylingDescription": "调整字幕外观",
     "smallSkipDuration": "短跳过时长",

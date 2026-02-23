@@ -245,6 +245,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
 	@override String get bufferSize => '버퍼 크기';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get bufferSizeAuto => '자동 (권장)';
+	@override String bufferSizeWarning({required Object heap, required Object size}) => '기기 메모리가 ${heap}MB입니다. ${size}MB 버퍼는 재생 문제를 일으킬 수 있습니다.';
 	@override String get subtitleStyling => '자막 스타일';
 	@override String get subtitleStylingDescription => '자막의 외형을 사용자 설정';
 	@override String get smallSkipDuration => '짧은 건너뛰기 시간';
@@ -1417,6 +1419,8 @@ extension on TranslationsKo {
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
 			'settings.bufferSize' => '버퍼 크기',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
+			'settings.bufferSizeAuto' => '자동 (권장)',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '기기 메모리가 ${heap}MB입니다. ${size}MB 버퍼는 재생 문제를 일으킬 수 있습니다.',
 			'settings.subtitleStyling' => '자막 스타일',
 			'settings.subtitleStylingDescription' => '자막의 외형을 사용자 설정',
 			'settings.smallSkipDuration' => '짧은 건너뛰기 시간',
@@ -1811,10 +1815,10 @@ extension on TranslationsKo {
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.guideReloaded' => '편성표 데이터가 새로고침되었습니다',
 			'liveTv.allChannels' => '전체 채널',
-			'liveTv.now' => '지금',
-			'liveTv.today' => '오늘',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => '지금',
+			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
 			'liveTv.overnight' => '심야',
 			'liveTv.morning' => '아침',

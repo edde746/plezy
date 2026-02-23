@@ -126,6 +126,8 @@
     "hardwareDecodingDescription": "Hardwarebeschleunigung verwenden, sofern verfügbar",
     "bufferSize": "Puffergröße",
     "bufferSizeMB": "${size}MB",
+    "bufferSizeAuto": "Auto (Empfohlen)",
+    "bufferSizeWarning": "Ihr Gerät hat ${heap}MB Speicher. Ein ${size}MB-Puffer kann Wiedergabeprobleme verursachen.",
     "subtitleStyling": "Untertitel-Stil",
     "subtitleStylingDescription": "Aussehen von Untertiteln anpassen",
     "smallSkipDuration": "Kleine Sprungdauer",

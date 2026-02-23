@@ -380,7 +380,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Load buffer size from settings
       final settingsService = await SettingsService.getInstance();
       final bufferSizeMB = settingsService.getBufferSize();
-      final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
       final useExoPlayer = settingsService.getUseExoPlayer();
@@ -389,7 +388,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player = Player(useExoPlayer: useExoPlayer);
 
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
-      await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
+      if (bufferSizeMB > 0) {
+        final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
+        await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
+      }
       await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
       await player!.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
       await player!.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));

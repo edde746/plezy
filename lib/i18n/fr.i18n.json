@@ -126,6 +126,8 @@
     "hardwareDecodingDescription": "Utilisez l'accélération matérielle lorsqu'elle est disponible.",
     "bufferSize": "Taille du Buffer",
     "bufferSizeMB": "${size}MB",
+    "bufferSizeAuto": "Auto (Recommandé)",
+    "bufferSizeWarning": "Votre appareil dispose de ${heap}MB de mémoire. Un tampon de ${size}MB peut causer des problèmes de lecture.",
     "subtitleStyling": "Stylisation des sous-titres",
     "subtitleStylingDescription": "Personnaliser l'apparence des sous-titres",
     "smallSkipDuration": "Small Skip Duration",

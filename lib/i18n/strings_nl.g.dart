@@ -245,6 +245,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get hardwareDecodingDescription => 'Gebruik hardware versnelling indien beschikbaar';
 	@override String get bufferSize => 'Buffer grootte';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get bufferSizeAuto => 'Auto (Aanbevolen)';
+	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Je apparaat heeft ${heap}MB geheugen. Een buffer van ${size}MB kan afspeelproblemen veroorzaken.';
 	@override String get subtitleStyling => 'Ondertitel opmaak';
 	@override String get subtitleStylingDescription => 'Pas ondertitel uiterlijk aan';
 	@override String get smallSkipDuration => 'Korte skip duur';
@@ -1417,6 +1419,8 @@ extension on TranslationsNl {
 			'settings.hardwareDecodingDescription' => 'Gebruik hardware versnelling indien beschikbaar',
 			'settings.bufferSize' => 'Buffer grootte',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
+			'settings.bufferSizeAuto' => 'Auto (Aanbevolen)',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Je apparaat heeft ${heap}MB geheugen. Een buffer van ${size}MB kan afspeelproblemen veroorzaken.',
 			'settings.subtitleStyling' => 'Ondertitel opmaak',
 			'settings.subtitleStylingDescription' => 'Pas ondertitel uiterlijk aan',
 			'settings.smallSkipDuration' => 'Korte skip duur',
@@ -1811,10 +1815,10 @@ extension on TranslationsNl {
 			'liveTv.reloadGuide' => 'Gids herladen',
 			'liveTv.guideReloaded' => 'Gidsgegevens herladen',
 			'liveTv.allChannels' => 'Alle zenders',
-			'liveTv.now' => 'Nu',
-			'liveTv.today' => 'Vandaag',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => 'Nu',
+			'liveTv.today' => 'Vandaag',
 			'liveTv.midnight' => 'Middernacht',
 			'liveTv.overnight' => 'Nacht',
 			'liveTv.morning' => 'Ochtend',

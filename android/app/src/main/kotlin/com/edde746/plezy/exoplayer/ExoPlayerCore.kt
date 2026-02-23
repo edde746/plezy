@@ -344,6 +344,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     setTargetBufferBytes(bufferSizeBytes)
                     setPrioritizeTimeOverSizeThresholds(false)
                     Log.d(TAG, "Buffer byte limit set to ${bufferSizeBytes / 1024 / 1024}MB")
+                } else {
+                    Log.d(TAG, "Buffer in auto mode (time-based thresholds)")
                 }
             }.build()
 

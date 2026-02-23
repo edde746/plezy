@@ -1,6 +1,8 @@
 package com.edde746.plezy.exoplayer
 
 import android.app.Activity
+import android.app.ActivityManager
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.edde746.plezy.mpv.MpvPlayerCore
@@ -119,6 +121,10 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             )
             "getStats" -> handleGetStats(result)
             "getPlayerType" -> result.success(if (usingMpvFallback) "mpv" else "exoplayer")
+            "getHeapSize" -> {
+                val am = activity?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+                result.success(am?.largeMemoryClass ?: 0)
+            }
             "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
             "observeProperty" -> handleObserveProperty(call, result)
             else -> result.notImplemented()

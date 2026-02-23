@@ -245,6 +245,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
 	@override String get bufferSize => '缓冲区大小';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get bufferSizeAuto => '自动（推荐）';
+	@override String bufferSizeWarning({required Object heap, required Object size}) => '您的设备有 ${heap}MB 内存。${size}MB 的缓冲区可能导致播放问题。';
 	@override String get subtitleStyling => '字幕样式';
 	@override String get subtitleStylingDescription => '调整字幕外观';
 	@override String get smallSkipDuration => '短跳过时长';
@@ -1417,6 +1419,8 @@ extension on TranslationsZh {
 			'settings.hardwareDecodingDescription' => '如果可用，使用硬件加速',
 			'settings.bufferSize' => '缓冲区大小',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
+			'settings.bufferSizeAuto' => '自动（推荐）',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '您的设备有 ${heap}MB 内存。${size}MB 的缓冲区可能导致播放问题。',
 			'settings.subtitleStyling' => '字幕样式',
 			'settings.subtitleStylingDescription' => '调整字幕外观',
 			'settings.smallSkipDuration' => '短跳过时长',
@@ -1811,10 +1815,10 @@ extension on TranslationsZh {
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.guideReloaded' => '节目指南已重新加载',
 			'liveTv.allChannels' => '所有频道',
-			'liveTv.now' => '现在',
-			'liveTv.today' => '今天',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => '现在',
+			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
 			'liveTv.overnight' => '凌晨',
 			'liveTv.morning' => '上午',

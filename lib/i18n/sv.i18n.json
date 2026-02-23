@@ -126,6 +126,8 @@
     "hardwareDecodingDescription": "Använd hårdvaruacceleration när tillgängligt",
     "bufferSize": "Bufferstorlek",
     "bufferSizeMB": "${size}MB",
+    "bufferSizeAuto": "Auto (Rekommenderat)",
+    "bufferSizeWarning": "Din enhet har ${heap}MB minne. En buffert på ${size}MB kan orsaka uppspelningsproblem.",
     "subtitleStyling": "Undertext-styling",
     "subtitleStylingDescription": "Anpassa undertextutseende",
     "smallSkipDuration": "Kort hoppvaraktighet",
