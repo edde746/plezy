@@ -990,13 +990,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
               ? SideNavigationRailState.expandedWidth
               : SideNavigationRailState.collapsedWidth;
 
-          return PopScope(
-            canPop: false, // Prevent system back from popping on Android TV
-            // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
-            onPopInvokedWithResult: (didPop, result) {},
-            child: Focus(
-              onKeyEvent: (node, event) => _handleBackKey(event),
-              child: MainScreenFocusScope(
+          return OverlaySheetHost(
+            child: PopScope(
+              canPop: false, // Prevent system back from popping on Android TV
+              // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
+              onPopInvokedWithResult: (didPop, result) {},
+              child: Focus(
+                onKeyEvent: (node, event) => _handleBackKey(event),
+                child: MainScreenFocusScope(
                 focusSidebar: _focusSidebar,
                 focusContent: _focusContent,
                 isSidebarFocused: _isSidebarFocused,
@@ -1050,6 +1051,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                 ),
               ),
             ),
+          ),
           );
         },
       );
