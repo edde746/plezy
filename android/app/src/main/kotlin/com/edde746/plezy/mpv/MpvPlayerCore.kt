@@ -135,6 +135,7 @@ class MpvPlayerCore(private val activity: Activity) :
     private fun ensureFlutterOverlayOnTop() {
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
+            if (!isInitialized) return@post
             var flutterContainer: ViewGroup? = null
 
             // First pass: look for FlutterView by name (debug builds)
@@ -717,15 +718,20 @@ class MpvPlayerCore(private val activity: Activity) :
         MPVLib.removeObserver(this)
         MPVLib.removeLogObserver(this)
 
-        surfaceView?.holder?.removeCallback(this)
         overlayLayoutListener?.let { listener ->
             val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
             contentView.viewTreeObserver.removeOnGlobalLayoutListener(listener)
         }
+        overlayLayoutListener = null
 
-        // Post view removal to next frame to avoid SurfaceControl race on render thread
-        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+        // Remove SurfaceView synchronously (keep callback so surfaceDestroyed
+        // fires → MPVLib.detachSurface()), then remove callback after.
         val container = surfaceContainer
+        surfaceView?.let { container?.removeView(it) }
+        surfaceView?.holder?.removeCallback(this)
+
+        // Defer empty container removal (plain FrameLayout, no SurfaceControl)
+        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
             container?.let { contentView.removeView(it) }
         }

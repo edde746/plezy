@@ -146,6 +146,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private fun ensureFlutterOverlayOnTop() {
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
+            if (!isInitialized) return@post
             var flutterContainer: ViewGroup? = null
 
             for (i in 0 until contentView.childCount) {
@@ -1275,14 +1276,19 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
             contentView.viewTreeObserver.removeOnGlobalLayoutListener(listener)
         }
+        overlayLayoutListener = null
 
-        // Post view removal to next frame to avoid SurfaceControl race on render thread
-        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+        // Remove SurfaceView from container synchronously — triggers
+        // onDetachedFromWindow which properly unregisters PositionUpdateListener
+        // and releases SurfaceControl before the render thread can access it.
         val container = surfaceContainer
-        val subtitle = subtitleView
+        surfaceView?.let { container?.removeView(it) }
+        subtitleView?.let { container?.removeView(it) }
+
+        // Defer empty container removal (plain FrameLayout, no SurfaceControl)
+        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
             container?.let { contentView.removeView(it) }
-            subtitle?.let { contentView.removeView(it) }
         }
         surfaceContainer = null
         surfaceView = null
