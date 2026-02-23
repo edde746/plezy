@@ -139,6 +139,11 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
         fl_texture_registrar_register_texture(
             self->texture_registrar, FL_TEXTURE(self->texture));
 
+        // Create the render context eagerly — mpv needs it BEFORE any
+        // file is loaded, otherwise VO init fails with "No render context
+        // set" and the video track is dropped entirely.
+        self->player->InitRenderContext();
+
         // Set redraw callback: when mpv has a frame, mark texture available
         MpvTexture* tex = self->texture;
         self->player->SetRedrawCallback([tex]() {
