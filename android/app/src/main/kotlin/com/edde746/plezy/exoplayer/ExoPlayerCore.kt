@@ -1,7 +1,10 @@
 package com.edde746.plezy.exoplayer
 
 import android.app.Activity
+import android.app.ActivityManager
+import android.content.ComponentCallbacks2
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
@@ -101,6 +104,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var audioFocusRequest: AudioFocusRequest? = null
     private var hasAudioFocus: Boolean = false
     private var wasPlayingBeforeFocusLoss: Boolean = false
+
+    // Memory pressure detection
+    private var memoryCallback: ComponentCallbacks2? = null
 
     // Track state for event emission
     private var lastPosition: Long = 0
@@ -339,15 +345,29 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
             val wrappedRenderersFactory = AssRenderersFactory(handler, renderersFactory)
 
-            val loadControl = DefaultLoadControl.Builder().apply {
-                if (bufferSizeBytes != null && bufferSizeBytes > 0) {
-                    setTargetBufferBytes(bufferSizeBytes)
-                    setPrioritizeTimeOverSizeThresholds(false)
-                    Log.d(TAG, "Buffer byte limit set to ${bufferSizeBytes / 1024 / 1024}MB")
-                } else {
-                    Log.d(TAG, "Buffer in auto mode (time-based thresholds)")
+            // Compute memory-aware buffer limits to prevent CCodec OOM crashes
+            val activityManager = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val memoryInfo = ActivityManager.MemoryInfo()
+            activityManager.getMemoryInfo(memoryInfo)
+            val availableMB = memoryInfo.availMem / (1024 * 1024)
+
+            val targetBufferBytes = if (bufferSizeBytes != null && bufferSizeBytes > 0) {
+                bufferSizeBytes
+            } else {
+                // Scale buffer to available memory to reduce hardware decoder pressure
+                when {
+                    availableMB < 512 -> 50 * 1024 * 1024
+                    availableMB < 1024 -> 75 * 1024 * 1024
+                    else -> 150 * 1024 * 1024
                 }
+            }
+
+            val loadControl = DefaultLoadControl.Builder().apply {
+                setTargetBufferBytes(targetBufferBytes)
+                setPrioritizeTimeOverSizeThresholds(false)
+                setBufferDurationsMs(15_000, 30_000, 2_500, 5_000)
             }.build()
+            Log.d(TAG, "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB")
 
             exoPlayer = ExoPlayer.Builder(activity)
                 .setTrackSelector(trackSelector!!)
@@ -380,6 +400,22 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     Log.d(TAG, "  Child $i: ${child?.javaClass?.simpleName}, w=${child?.width}, h=${child?.height}, visibility=${child?.visibility}")
                 }
             }
+
+            // Register memory pressure listener to detect impending OOM
+            memoryCallback = object : ComponentCallbacks2 {
+                override fun onTrimMemory(level: Int) {
+                    if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {
+                        Log.w(TAG, "TRIM_MEMORY level $level - critical memory pressure")
+                        delegate?.onEvent("memory-pressure", mapOf("level" to "critical"))
+                    }
+                }
+                override fun onConfigurationChanged(newConfig: Configuration) {}
+                override fun onLowMemory() {
+                    Log.w(TAG, "onLowMemory - system-wide memory pressure")
+                    delegate?.onEvent("memory-pressure", mapOf("level" to "critical"))
+                }
+            }
+            activity.registerComponentCallbacks(memoryCallback)
 
             // Start position update loop
             startPositionUpdates()
@@ -1265,6 +1301,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         clearVideoFrameRate()
         abandonAudioFocus()
         audioManager = null
+
+        memoryCallback?.let { activity.unregisterComponentCallbacks(it) }
+        memoryCallback = null
 
         exoPlayer?.clearVideoSurface()
         exoPlayer?.removeListener(this)

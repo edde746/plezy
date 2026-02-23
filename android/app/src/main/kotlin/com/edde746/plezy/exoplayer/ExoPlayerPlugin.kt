@@ -32,6 +32,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var activity: Activity? = null
     private var activityBinding: ActivityPluginBinding? = null
     private val nameToId = mutableMapOf<String, Int>()
+    private var configuredBufferSizeBytes: Int? = null
 
     // FlutterPlugin
 
@@ -145,6 +146,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         val bufferSizeBytes = call.argument<Int>("bufferSizeBytes")
+        configuredBufferSizeBytes = bufferSizeBytes
 
         currentActivity.runOnUiThread {
             try {
@@ -597,6 +599,13 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 mpvCore?.setProperty("hwdec", "auto")
                 mpvCore?.setProperty("vo", "gpu")
                 mpvCore?.setProperty("ao", "audiotrack")
+
+                // Forward user's buffer config to MPV fallback
+                configuredBufferSizeBytes?.let { bytes ->
+                    if (bytes > 0) {
+                        mpvCore?.setProperty("demuxer-max-bytes", bytes.toString())
+                    }
+                }
 
                 // Setup property observers
                 mpvCore?.observeProperty("time-pos", "double")
