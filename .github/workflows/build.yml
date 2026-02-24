@@ -270,7 +270,7 @@ jobs:
           hdiutil create -format ULMO -srcfolder dmg-staging -volname "Plezy" plezy-macos.dmg
 
       - name: Sign DMG for Sparkle (EdDSA)
-        if: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+        if: env.SPARKLE_PRIVATE_KEY != ''
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
@@ -404,7 +404,7 @@ jobs:
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64"
 
       - name: Sign installer for WinSparkle (DSA)
-        if: ${{ secrets.WINSPARKLE_DSA_PRIVATE_KEY != '' }}
+        if: env.WINSPARKLE_DSA_PRIVATE_KEY != ''
         env:
           WINSPARKLE_DSA_PRIVATE_KEY: ${{ secrets.WINSPARKLE_DSA_PRIVATE_KEY }}
         shell: pwsh
