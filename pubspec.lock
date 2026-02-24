@@ -70,7 +70,7 @@ packages:
     description:
       path: "packages/auto_updater"
       ref: HEAD
-      resolved-ref: d3dcb88a62292bbedc0a3d9101fed2991f57d40a
+      resolved-ref: c70320c6885db88ef8360d278f936e90a7cc9689
       url: "https://github.com/edde746/auto_updater"
     source: git
     version: "1.0.0"
@@ -95,7 +95,7 @@ packages:
     description:
       path: "packages/auto_updater_windows"
       ref: HEAD
-      resolved-ref: d3dcb88a62292bbedc0a3d9101fed2991f57d40a
+      resolved-ref: c70320c6885db88ef8360d278f936e90a7cc9689
       url: "https://github.com/edde746/auto_updater"
     source: git
     version: "1.0.0"
