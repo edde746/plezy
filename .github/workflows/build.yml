@@ -414,18 +414,19 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         shell: pwsh
         run: |
+          mkdir _signer | Out-Null
+          @{name="signer"; environment=@{sdk=">=3.0.0 <4.0.0"}; dependencies=@{cryptography="^2.7.0"}} | ConvertTo-Json -Depth 3 | Out-File _signer/pubspec.yaml
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/edde746/auto_updater/main/packages/auto_updater/bin/sign_update.dart" -OutFile _signer/sign.dart
+          Push-Location _signer
+          dart pub get
           @"
           -----BEGIN ED25519 PRIVATE KEY-----
           $($env:SPARKLE_PRIVATE_KEY)
           -----END ED25519 PRIVATE KEY-----
           "@ | Out-File -Encoding ascii ed25519_key.pem
-          git clone --depth 1 https://github.com/edde746/auto_updater _auto_updater
-          Push-Location _auto_updater/packages/auto_updater
-          dart pub get
-          $output = dart run bin/sign_update.dart ../../../plezy-windows-installer.exe ../../../ed25519_key.pem
+          $output = dart run sign.dart ../plezy-windows-installer.exe ed25519_key.pem
           Pop-Location
-          Remove-Item _auto_updater -Recurse -Force
-          Remove-Item ed25519_key.pem
+          Remove-Item _signer -Recurse -Force
           $sig = [regex]::Match($output, 'edSignature="([^"]*)"').Groups[1].Value
           $sig | Out-File -Encoding ascii win-ed-signature.txt
           (Get-Item plezy-windows-installer.exe).Length | Out-File -Encoding ascii win-installer-size.txt
