@@ -217,11 +217,19 @@ jobs:
 
           APP_PATH="build/macos/Build/Products/Release/Plezy.app"
 
-          # Sign all frameworks and dylibs first (inside-out signing)
-          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -o -name "*.dylib" | while read framework; do
-            echo "Signing: $framework"
-            codesign --force --sign "$IDENTITY" --timestamp --options runtime "$framework"
-          done
+          # Deep sign everything inside-out: executables, dylibs, XPC services, app bundles, frameworks
+          find "$APP_PATH/Contents/Frameworks" \( -name "*.xpc" -o -name "*.app" -o -name "*.framework" -o -name "*.dylib" \) -print0 \
+            | sort -zr \
+            | while IFS= read -r -d '' item; do
+              echo "Signing: $item"
+              codesign --force --sign "$IDENTITY" --timestamp --options runtime "$item"
+            done
+
+          # Sign any remaining bare executables (e.g. Sparkle's Autoupdate)
+          find "$APP_PATH/Contents/Frameworks" -type f -perm +111 ! -name "*.dylib" ! -path "*/Headers/*" ! -path "*/Modules/*" -print0 \
+            | while IFS= read -r -d '' exe; do
+              codesign --force --sign "$IDENTITY" --timestamp --options runtime "$exe" 2>/dev/null || true
+            done
 
           # Sign the app bundle itself
           echo "Signing app bundle: $APP_PATH"
@@ -274,8 +282,11 @@ jobs:
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          SIGN_BIN="macos/Pods/Sparkle/bin/sign_update"
-          SIGNATURE=$(echo "$SPARKLE_PRIVATE_KEY" | "$SIGN_BIN" plezy-macos.dmg --ed-key-file - -p)
+          printf -- "-----BEGIN ED25519 PRIVATE KEY-----\n%s\n-----END ED25519 PRIVATE KEY-----\n" "$SPARKLE_PRIVATE_KEY" > ed25519_key.pem
+          OUTPUT=$(dart run auto_updater:sign_update plezy-macos.dmg ed25519_key.pem)
+          rm ed25519_key.pem
+          # Extract edSignature value from output like: sparkle:edSignature="..." length="..."
+          SIGNATURE=$(echo "$OUTPUT" | grep -o 'edSignature="[^"]*"' | sed 's/edSignature="//;s/"//')
           echo "MACOS_ED_SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
           echo "MACOS_DMG_SIZE=$(stat -f%z plezy-macos.dmg)" >> $GITHUB_ENV
 
@@ -403,16 +414,21 @@ jobs:
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64"
 
-      - name: Sign installer for WinSparkle (DSA)
-        if: env.WINSPARKLE_DSA_PRIVATE_KEY != ''
+      - name: Sign installer for WinSparkle (EdDSA)
+        if: env.SPARKLE_PRIVATE_KEY != ''
         env:
-          WINSPARKLE_DSA_PRIVATE_KEY: ${{ secrets.WINSPARKLE_DSA_PRIVATE_KEY }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         shell: pwsh
         run: |
-          $env:WINSPARKLE_DSA_PRIVATE_KEY | Out-File -Encoding ascii dsa_priv.pem
-          $output = dart run auto_updater:sign_update plezy-windows-installer.exe
-          Remove-Item dsa_priv.pem
-          $output | Out-File -Encoding ascii win-dsa-signature.txt
+          @"
+          -----BEGIN ED25519 PRIVATE KEY-----
+          $($env:SPARKLE_PRIVATE_KEY)
+          -----END ED25519 PRIVATE KEY-----
+          "@ | Out-File -Encoding ascii ed25519_key.pem
+          $output = dart run auto_updater:sign_update plezy-windows-installer.exe ed25519_key.pem
+          Remove-Item ed25519_key.pem
+          $sig = [regex]::Match($output, 'edSignature="([^"]*)"').Groups[1].Value
+          $sig | Out-File -Encoding ascii win-ed-signature.txt
           (Get-Item plezy-windows-installer.exe).Length | Out-File -Encoding ascii win-installer-size.txt
 
       - name: Attest Windows artifacts
@@ -441,7 +457,7 @@ jobs:
           name: windows-installer
           path: |
             plezy-windows-installer.exe
-            win-dsa-signature.txt
+            win-ed-signature.txt
             win-installer-size.txt
 
   build-linux-x64:
@@ -710,10 +726,10 @@ jobs:
           fi
 
           # Read Windows signature metadata (may be empty if secrets not configured)
-          WIN_DSA_SIG=""
+          WIN_ED_SIG=""
           WIN_INSTALLER_SIZE="0"
-          if [ -f artifacts/windows-installer/win-dsa-signature.txt ]; then
-            WIN_DSA_SIG=$(cat artifacts/windows-installer/win-dsa-signature.txt)
+          if [ -f artifacts/windows-installer/win-ed-signature.txt ]; then
+            WIN_ED_SIG=$(cat artifacts/windows-installer/win-ed-signature.txt)
           fi
           if [ -f artifacts/windows-installer/win-installer-size.txt ]; then
             WIN_INSTALLER_SIZE=$(cat artifacts/windows-installer/win-installer-size.txt)
@@ -741,7 +757,7 @@ jobs:
           fi
 
           # Windows entry
-          if [ -n "$WIN_DSA_SIG" ]; then
+          if [ -n "$WIN_ED_SIG" ]; then
             cat >> appcast.xml << XMLEOF
               <item>
                 <title>Version ${VERSION}</title>
@@ -749,7 +765,7 @@ jobs:
                 <sparkle:os>windows-x64</sparkle:os>
                 <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-windows-installer.exe"
                            length="${WIN_INSTALLER_SIZE}" type="application/octet-stream"
-                           sparkle:dsaSignature="${WIN_DSA_SIG}" />
+                           sparkle:edSignature="${WIN_ED_SIG}" />
               </item>
           XMLEOF
           fi

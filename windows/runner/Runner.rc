@@ -107,9 +107,9 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// WinSparkle DSA public key for update signature verification
+// WinSparkle EdDSA public key for update signature verification
 //
-DSAPub          DSAPEM                  "resources\\dsa_pub.pem"
+EdDSAPub        EDDSA                   "resources\\ed25519_pub.txt"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////

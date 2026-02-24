@@ -68,10 +68,11 @@ packages:
   auto_updater:
     dependency: "direct main"
     description:
-      name: auto_updater
-      sha256: "74fd008b021d15e4fc50fb5f1923870e6374ae831bb1168241c23bc35a4e898b"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/auto_updater"
+      ref: HEAD
+      resolved-ref: d3dcb88a62292bbedc0a3d9101fed2991f57d40a
+      url: "https://github.com/edde746/auto_updater"
+    source: git
     version: "1.0.0"
   auto_updater_macos:
     dependency: transitive
@@ -305,6 +306,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  cryptography:
+    dependency: transitive
+    description:
+      name: cryptography
+      sha256: "3eda3029d34ec9095a27a198ac9785630fe525c0eb6a49f3d575272f8e792ef0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.9.0"
   csslib:
     dependency: transitive
     description:
