@@ -751,10 +751,10 @@ jobs:
               <item>
                 <title>Version ${VERSION}</title>
                 <sparkle:version>${VERSION}</sparkle:version>
-                <sparkle:os>macos</sparkle:os>
                 <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-macos.dmg"
                            length="${MACOS_DMG_SIZE}" type="application/octet-stream"
-                           sparkle:edSignature="${MACOS_ED_SIG}" />
+                           sparkle:edSignature="${MACOS_ED_SIG}"
+                           sparkle:os="macos" />
               </item>
           XMLEOF
           fi
@@ -765,11 +765,11 @@ jobs:
               <item>
                 <title>Version ${VERSION}</title>
                 <sparkle:version>${VERSION}</sparkle:version>
-                <sparkle:os>windows</sparkle:os>
                 <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-windows-installer.exe"
                            length="${WIN_INSTALLER_SIZE}" type="application/octet-stream"
                            sparkle:edSignature="${WIN_ED_SIG}"
-                           sparkle:installerArguments="/SILENT /SP-" />
+                           sparkle:installerArguments="/SILENT /SP-"
+                           sparkle:os="windows" />
               </item>
           XMLEOF
           fi
