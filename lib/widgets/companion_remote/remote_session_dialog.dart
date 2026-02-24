@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
+import '../../focus/focusable_button.dart';
 import '../../utils/app_logger.dart';
 
 class RemoteSessionDialog extends StatefulWidget {
@@ -253,19 +254,30 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                           label: Text(t.companionRemote.session.newSession),
                         ),
                       const SizedBox(width: 8),
-                      TextButton(
+                      FocusableButton(
                         onPressed: () async {
                           await provider.leaveSession();
                           if (context.mounted) {
                             Navigator.of(context).pop();
                           }
                         },
-                        child: Text(t.common.disconnect),
+                        child: TextButton(
+                          onPressed: () async {
+                            await provider.leaveSession();
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
+                          },
+                          child: Text(t.common.disconnect),
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      FilledButton(
+                      FocusableButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: Text(t.companionRemote.session.minimize),
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(t.companionRemote.session.minimize),
+                        ),
                       ),
                     ],
                   ),
