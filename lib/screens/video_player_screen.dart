@@ -1154,7 +1154,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final isInPip = _videoPIPManager!.isPipActive.value;
     // Only handle exit - entry is handled by onBeforeEnterPip callback
     if (!isInPip) {
+      final restoreAmbient = _videoFilterManager!.hadAmbientLightingBeforePip;
       _videoFilterManager!.exitPipMode();
+      // Restore ambient lighting if it was active before PiP
+      if (restoreAmbient) {
+        _videoFilterManager!.clearPipAmbientLightingFlag();
+        _restoreAmbientLighting();
+      }
     }
   }
 

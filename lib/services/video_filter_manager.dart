@@ -26,6 +26,9 @@ class VideoFilterManager {
   /// Store the boxFitMode before entering PiP so it can be restored
   int? _prePipBoxFitMode;
 
+  /// Store whether ambient lighting was active before entering PiP
+  bool? _prePipAmbientLighting;
+
   /// Ambient lighting service reference - when active, video-aspect-override is managed by ambient lighting
   AmbientLightingService? ambientLightingService;
 
@@ -75,6 +78,11 @@ class VideoFilterManager {
 
   /// Force contain mode for PiP (no cropping/stretching)
   void enterPipMode() {
+    // Disable ambient lighting for PiP — it wastes space on blurred borders
+    if (ambientLightingService?.isEnabled == true) {
+      _prePipAmbientLighting = true;
+      ambientLightingService!.disable();
+    }
     if (_boxFitMode != 0) {
       _prePipBoxFitMode = _boxFitMode;
       _boxFitMode = 0; // Contain mode
@@ -89,6 +97,14 @@ class VideoFilterManager {
       _prePipBoxFitMode = null;
       updateVideoFilter();
     }
+  }
+
+  /// Whether ambient lighting was active before entering PiP
+  bool get hadAmbientLightingBeforePip => _prePipAmbientLighting == true;
+
+  /// Clear the pre-PiP ambient lighting flag after restore
+  void clearPipAmbientLightingFlag() {
+    _prePipAmbientLighting = null;
   }
 
   /// Update player size when layout changes
