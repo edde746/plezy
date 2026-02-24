@@ -72,9 +72,22 @@ class FocusBuilders {
     double borderRadius = FocusTheme.defaultBorderRadius,
     required Widget child,
   }) {
+    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
+
+    // In touch mode, no item ever shows focus effects — skip animated wrappers
+    // entirely. This saves ~2 element levels per card on ARM32 Android phones.
+    if (!isKeyboardMode) {
+      final gestureWidget = (onTap != null || onLongPress != null)
+          ? GestureDetector(onTap: onTap, onLongPress: onLongPress, child: child)
+          : child;
+      if (focusNode != null && onKeyEvent != null) {
+        return Focus(focusNode: focusNode, onKeyEvent: onKeyEvent, child: gestureWidget);
+      }
+      return gestureWidget;
+    }
+
     final duration = FocusTheme.getAnimationDuration(context);
-    // Only show focus effects during keyboard/d-pad navigation
-    final showFocus = isFocused && InputModeTracker.isKeyboardMode(context);
+    final showFocus = isFocused && isKeyboardMode;
 
     final focusedWidget = AnimatedScale(
       scale: showFocus ? FocusTheme.focusScale : 1.0,

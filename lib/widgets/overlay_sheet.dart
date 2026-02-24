@@ -421,13 +421,14 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     // No PopScope here — the parent screen's PopScope should check
     // OverlaySheetController.isOpen and delegate to us. This avoids
     // the double-callback problem with nested PopScopes in one route.
+
     return _OverlaySheetScope(
       controller: _controller,
       child: Stack(
         children: [
           widget.child,
+          // Barrier + sheet only when open
           if (_isOpen) ...[
-            // Barrier
             AnimatedBuilder(
               animation: _barrierAnimation,
               builder: (context, child) {
@@ -437,7 +438,6 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
                 );
               },
             ),
-            // Sheet
             _buildSheet(context),
           ],
         ],
@@ -451,10 +451,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
     final effectiveConstraints =
         _constraints ??
-        BoxConstraints(
-          maxWidth: isDesktop ? 700 : double.infinity,
-          maxHeight: isDesktop ? 400 : size.height * 0.75,
-        );
+        BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: isDesktop ? 400 : size.height * 0.75);
 
     Widget sheet = FocusScope(
       node: _sheetFocusScopeNode,

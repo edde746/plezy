@@ -334,19 +334,23 @@ class PlexOptimizedImage extends StatelessWidget {
     // Generate cache key if not provided
     final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl, memWidth, memHeight);
 
-    return CachedNetworkImage(
-      imageUrl: imageUrl,
+    return Image(
+      image: CachedNetworkImageProvider(
+        imageUrl,
+        cacheKey: effectiveCacheKey,
+        headers: const {'User-Agent': 'Plezy'},
+        maxHeight: memHeight,
+      ),
       width: width,
       height: height,
       fit: fit,
       filterQuality: filterQuality,
       alignment: alignment,
-      fadeInDuration: fadeInDuration,
-      memCacheHeight: memHeight,
-      cacheKey: effectiveCacheKey,
-      placeholder: placeholder != null ? placeholder! : (context, url) => _buildPlaceholder(context),
-      errorWidget: errorWidget != null ? errorWidget! : (context, url, error) => _buildErrorWidget(context, error),
-      httpHeaders: {'User-Agent': 'Plezy Flutter Client'},
+      errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context, error),
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) return child;
+        return _buildPlaceholder(context);
+      },
     );
   }
 

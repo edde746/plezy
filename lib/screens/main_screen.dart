@@ -982,6 +982,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   Widget build(BuildContext context) {
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
 
+    return _buildContent(context, useSideNav);
+  }
+
+  Widget _buildContent(BuildContext context, bool useSideNav) {
     if (useSideNav) {
       return Consumer<SettingsProvider>(
         builder: (context, settingsProvider, child) {
@@ -998,60 +1002,60 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
               child: Focus(
                 onKeyEvent: (node, event) => _handleBackKey(event),
                 child: MainScreenFocusScope(
-                focusSidebar: _focusSidebar,
-                focusContent: _focusContent,
-                isSidebarFocused: _isSidebarFocused,
-                child: SideNavigationScope(
-                  child: Stack(
-                    children: [
-                      // Content with animated left padding based on sidebar state
-                      Positioned.fill(
-                        child: AnimatedPadding(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOutCubic,
-                          padding: EdgeInsets.only(left: contentLeftPadding),
+                  focusSidebar: _focusSidebar,
+                  focusContent: _focusContent,
+                  isSidebarFocused: _isSidebarFocused,
+                  child: SideNavigationScope(
+                    child: Stack(
+                      children: [
+                        // Content with animated left padding based on sidebar state
+                        Positioned.fill(
+                          child: AnimatedPadding(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOutCubic,
+                            padding: EdgeInsets.only(left: contentLeftPadding),
+                            child: FocusScope(
+                              node: _contentFocusScope,
+                              // No autofocus - we control focus programmatically to prevent
+                              // autofocus from stealing focus back after setState() rebuilds
+                              child: IndexedStack(index: _currentIndex, children: _screens),
+                            ),
+                          ),
+                        ),
+                        // Sidebar overlays content when expanded (unless always expanded)
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: 0,
                           child: FocusScope(
-                            node: _contentFocusScope,
-                            // No autofocus - we control focus programmatically to prevent
-                            // autofocus from stealing focus back after setState() rebuilds
-                            child: IndexedStack(index: _currentIndex, children: _screens),
+                            node: _sidebarFocusScope,
+                            child: SideNavigationRail(
+                              key: _sideNavKey,
+                              selectedIndex: _currentIndex,
+                              selectedLibraryKey: _selectedLibraryGlobalKey,
+                              isOfflineMode: _isOffline,
+                              isSidebarFocused: _isSidebarFocused,
+                              alwaysExpanded: alwaysExpanded,
+                              isReconnecting: _isReconnecting,
+                              onDestinationSelected: (index) {
+                                _selectTab(index);
+                                _focusContent();
+                              },
+                              onLibrarySelected: (key) {
+                                _selectLibrary(key);
+                                _focusContent();
+                              },
+                              onNavigateToContent: _focusContent,
+                              onReconnect: _triggerReconnect,
+                            ),
                           ),
                         ),
-                      ),
-                      // Sidebar overlays content when expanded (unless always expanded)
-                      Positioned(
-                        top: 0,
-                        bottom: 0,
-                        left: 0,
-                        child: FocusScope(
-                          node: _sidebarFocusScope,
-                          child: SideNavigationRail(
-                            key: _sideNavKey,
-                            selectedIndex: _currentIndex,
-                            selectedLibraryKey: _selectedLibraryGlobalKey,
-                            isOfflineMode: _isOffline,
-                            isSidebarFocused: _isSidebarFocused,
-                            alwaysExpanded: alwaysExpanded,
-                            isReconnecting: _isReconnecting,
-                            onDestinationSelected: (index) {
-                              _selectTab(index);
-                              _focusContent();
-                            },
-                            onLibrarySelected: (key) {
-                              _selectLibrary(key);
-                              _focusContent();
-                            },
-                            onNavigateToContent: _focusContent,
-                            onReconnect: _triggerReconnect,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           );
         },
       );
@@ -1061,51 +1065,51 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       child: Scaffold(
         body: IndexedStack(index: _currentIndex, children: _screens),
         bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Reconnect bar when offline
-          if (_isOffline)
-            Material(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: InkWell(
-                onTap: _isReconnecting ? null : _triggerReconnect,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_isReconnecting)
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Reconnect bar when offline
+            if (_isOffline)
+              Material(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: InkWell(
+                  onTap: _isReconnecting ? null : _triggerReconnect,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_isReconnecting)
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          )
+                        else
+                          Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          t.common.reconnect,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                             color: Theme.of(context).colorScheme.primary,
                           ),
-                        )
-                      else
-                        Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Text(
-                        t.common.reconnect,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Theme.of(context).colorScheme.primary,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
+            NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: _selectTab,
+              destinations: _buildNavDestinations(_isOffline),
             ),
-          NavigationBar(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: _selectTab,
-            destinations: _buildNavDestinations(_isOffline),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }

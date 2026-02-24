@@ -24,8 +24,8 @@ import 'providers/playback_state_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
-import 'providers/shader_provider.dart';
 import 'providers/companion_remote_provider.dart';
+import 'providers/shader_provider.dart';
 import 'watch_together/watch_together.dart';
 import 'services/multi_server_manager.dart';
 import 'services/offline_watch_sync_service.dart';
@@ -311,8 +311,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (context) => LibrariesProvider()),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
         ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
-        ChangeNotifierProvider(create: (context) => ShaderProvider()),
         ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),
+        ChangeNotifierProvider(create: (context) => ShaderProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

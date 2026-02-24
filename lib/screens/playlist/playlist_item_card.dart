@@ -12,7 +12,7 @@ import '../../widgets/plex_optimized_image.dart';
 
 /// Custom list item widget for playlist items
 /// Shows drag handle, poster, title/metadata, duration, and remove button
-class PlaylistItemCard extends StatelessWidget {
+class PlaylistItemCard extends StatefulWidget {
   final PlexMetadata item;
   final int index;
   final VoidCallback onRemove;
@@ -39,20 +39,36 @@ class PlaylistItemCard extends StatelessWidget {
   });
 
   @override
+  State<PlaylistItemCard> createState() => _PlaylistItemCardState();
+}
+
+class _PlaylistItemCardState extends State<PlaylistItemCard> {
+  final _contextMenuKey = GlobalKey<MediaContextMenuState>();
+  Offset? _tapPosition;
+
+  void _storeTapPosition(TapDownDetails details) {
+    _tapPosition = details.globalPosition;
+  }
+
+  void _showContextMenu() {
+    _contextMenuKey.currentState?.showContextMenu(context, position: _tapPosition);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Determine if row is focused (main content area)
-    final isRowFocused = isFocused && focusedColumn == 0;
+    final isRowFocused = widget.isFocused && widget.focusedColumn == 0;
 
     // Focus states for individual elements
-    final isDragHandleFocused = isFocused && focusedColumn == 1;
-    final isRemoveButtonFocused = isFocused && focusedColumn == 2;
+    final isDragHandleFocused = widget.isFocused && widget.focusedColumn == 1;
+    final isRemoveButtonFocused = widget.isFocused && widget.focusedColumn == 2;
 
     // Determine card styling based on focus/move state
     Color? cardColor;
     ShapeBorder? cardShape;
-    if (isMoving) {
+    if (widget.isMoving) {
       cardColor = colorScheme.primaryContainer;
     } else if (isRowFocused) {
       // Row is focused - use visible border like FocusableWrapper
@@ -64,27 +80,32 @@ class PlaylistItemCard extends StatelessWidget {
     }
 
     return MediaContextMenu(
-      item: item,
-      onRefresh: onRefresh,
-      onTap: onTap,
+      key: _contextMenuKey,
+      item: widget.item,
+      onRefresh: widget.onRefresh,
+      onTap: widget.onTap,
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         color: cardColor,
         shape: cardShape,
         child: InkWell(
-          onTap: onTap,
+          onTap: widget.onTap,
+          onTapDown: _storeTapPosition,
+          onLongPress: _showContextMenu,
+          onSecondaryTapDown: _storeTapPosition,
+          onSecondaryTap: _showContextMenu,
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
                 // Drag handle (if reorderable)
                 // Wrapped in GestureDetector to consume long-press and prevent context menu
-                if (canReorder)
+                if (widget.canReorder)
                   GestureDetector(
                     // ignore: no-empty-block - consumes long-press to prevent context menu on drag
                     onLongPress: () {},
                     child: ReorderableDragStartListener(
-                      index: index,
+                      index: widget.index,
                       child: Container(
                         color: Colors.transparent,
                         height: 90,
@@ -99,9 +120,9 @@ class PlaylistItemCard extends StatelessWidget {
                                 )
                               : null,
                           child: AppIcon(
-                            isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
+                            widget.isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
                             fill: 1,
-                            color: (isMoving || isDragHandleFocused) ? colorScheme.primary : Colors.grey,
+                            color: (widget.isMoving || isDragHandleFocused) ? colorScheme.primary : Colors.grey,
                           ),
                         ),
                       ),
@@ -121,7 +142,7 @@ class PlaylistItemCard extends StatelessWidget {
                     children: [
                       // Title
                       Text(
-                        item.displayTitle,
+                        widget.item.displayTitle,
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -138,10 +159,14 @@ class PlaylistItemCard extends StatelessWidget {
                       ),
 
                       // Progress indicator if partially watched
-                      if (item.viewOffset != null && item.duration != null)
+                      if (widget.item.viewOffset != null && widget.item.duration != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
-                          child: MediaProgressBar(viewOffset: item.viewOffset!, duration: item.duration!, minHeight: 3),
+                          child: MediaProgressBar(
+                            viewOffset: widget.item.viewOffset!,
+                            duration: widget.item.duration!,
+                            minHeight: 3,
+                          ),
                         ),
                     ],
                   ),
@@ -150,8 +175,11 @@ class PlaylistItemCard extends StatelessWidget {
                 const SizedBox(width: 12),
 
                 // Duration
-                if (item.duration != null)
-                  Text(formatDurationTextual(item.duration!), style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+                if (widget.item.duration != null)
+                  Text(
+                    formatDurationTextual(widget.item.duration!),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  ),
 
                 const SizedBox(width: 8),
 
@@ -165,7 +193,7 @@ class PlaylistItemCard extends StatelessWidget {
                       : null,
                   child: IconButton(
                     icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
-                    onPressed: onRemove,
+                    onPressed: widget.onRemove,
                     tooltip: t.playlists.removeItem,
                     color: isRemoveButtonFocused ? colorScheme.primary : Colors.grey[400],
                   ),
@@ -180,11 +208,11 @@ class PlaylistItemCard extends StatelessWidget {
 
   /// Get the correct PlexClient for this item's server
   PlexClient _getClientForItem(BuildContext context) {
-    return context.getClientForServer(item.serverId!);
+    return context.getClientForServer(widget.item.serverId!);
   }
 
   Widget _buildPosterImage(BuildContext context) {
-    final posterUrl = item.posterThumb();
+    final posterUrl = widget.item.posterThumb();
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(6)),
       child: PlexOptimizedImage.poster(
@@ -209,22 +237,22 @@ class PlaylistItemCard extends StatelessWidget {
   }
 
   String _buildSubtitle() {
-    final itemType = item.type.toLowerCase();
+    final itemType = widget.item.type.toLowerCase();
 
     if (itemType == 'episode') {
       // For episodes, show "S#E# - Episode Title"
-      final season = item.parentIndex;
-      final episode = item.index;
+      final season = widget.item.parentIndex;
+      final episode = widget.item.index;
       if (season != null && episode != null) {
-        return 'S${season}E$episode${item.displaySubtitle != null ? ' - ${item.displaySubtitle}' : ''}';
+        return 'S${season}E$episode${widget.item.displaySubtitle != null ? ' - ${widget.item.displaySubtitle}' : ''}';
       }
-      return item.displaySubtitle ?? t.discover.tvShow;
+      return widget.item.displaySubtitle ?? t.discover.tvShow;
     } else if (itemType == 'movie') {
       // For movies, show year
-      return item.year?.toString() ?? t.discover.movie;
+      return widget.item.year?.toString() ?? t.discover.movie;
     }
 
     // Default to type
-    return item.type;
+    return widget.item.type;
   }
 }

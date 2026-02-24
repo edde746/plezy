@@ -270,7 +270,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       leading: true,
       trailing: true,
     );
-    _loadPlaybackExtras();
     _loadSeekTimes();
     _startHideTimer();
     _initKeyboardService();
@@ -286,16 +285,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       _initAlwaysOnTopState();
     }
 
-    // Focus play/pause button on first frame if in keyboard mode
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusPlayPauseIfKeyboardMode();
-    });
     // Register global key handler for focus-independent shortcuts (desktop only)
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
     // Listen for first frame to start auto-hide timer
     widget.hasFirstFrame?.addListener(_onFirstFrameReady);
     // Listen for external requests to show controls (e.g. screen-level focus recovery)
     widget.controlsVisible?.addListener(_onControlsVisibleExternal);
+
+    // Defer context-dependent initialization to after first build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadPlaybackExtras();
+      _focusPlayPauseIfKeyboardMode();
+    });
   }
 
   /// Called when hasFirstFrame changes - start auto-hide timer when first frame is ready
@@ -634,7 +636,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   /// Controls hide delay: 5s on mobile/TV/keyboard-nav, 3s on desktop with mouse.
   Duration get _hideDelay {
-    final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
+    final isMobile = (Platform.isIOS || Platform.isAndroid) && !PlatformDetector.isTV();
     if (isMobile || PlatformDetector.isTV() || _videoPlayerNavigationEnabled) {
       return const Duration(seconds: 5);
     }

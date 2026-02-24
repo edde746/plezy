@@ -72,10 +72,6 @@ class MediaContextMenu extends StatefulWidget {
 class MediaContextMenuState extends State<MediaContextMenu> {
   Offset? _tapPosition;
 
-  void _storeTapPosition(TapDownDetails details) {
-    _tapPosition = details.globalPosition;
-  }
-
   bool _openedFromKeyboard = false;
   bool _isContextMenuOpen = false;
 
@@ -109,11 +105,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Get the correct PlexClient for this item's server
   PlexClient _getClientForItem() => context.getClientWithFallback(_itemServerId);
-
-  void _handleTap() {
-    if (_isContextMenuOpen) return;
-    widget.onTap?.call();
-  }
 
   void _showContextMenu(BuildContext context) async {
     if (_isContextMenuOpen) return;
@@ -195,9 +186,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           mediaType == PlexMediaType.show ||
           mediaType == PlexMediaType.season ||
           mediaType == PlexMediaType.episode) {
-        menuActions.add(
-          _MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate),
-        );
+        menuActions.add(_MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate));
       }
 
       // Edit Metadata (for movies, shows, seasons, and episodes)
@@ -924,7 +913,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Handle remove from collection action
   Future<void> _showRatingSheet(BuildContext context, PlexMetadata metadata, PlexClient client) async {
-    final currentStarValue = (metadata.userRating != null && metadata.userRating! > 0) ? metadata.userRating! / 2.0 : 0.0;
+    final currentStarValue = (metadata.userRating != null && metadata.userRating! > 0)
+        ? metadata.userRating! / 2.0
+        : 0.0;
     await showModalBottomSheet(
       context: context,
       builder: (context) => RatingBottomSheet(
@@ -1177,14 +1168,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _handleTap,
-      onTapDown: _storeTapPosition,
-      onLongPress: () => _showContextMenu(context),
-      onSecondaryTapDown: _storeTapPosition,
-      onSecondaryTap: () => _showContextMenu(context),
-      child: widget.child,
-    );
+    // GestureDetector wrapping removed — gesture callbacks are now on InkWell
+    // directly in the card widgets, saving 1 element level. The context menu
+    // is still accessible programmatically via showContextMenu().
+    return widget.child;
   }
 }
 
@@ -1235,10 +1222,7 @@ class _PlaylistSelectionDialog extends StatelessWidget {
         FocusableButton(
           autofocus: true,
           onPressed: () => Navigator.pop(context),
-          child: TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(t.common.cancel),
-          ),
+          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
         ),
       ],
     );
@@ -1284,10 +1268,7 @@ class _CollectionSelectionDialog extends StatelessWidget {
         FocusableButton(
           autofocus: true,
           onPressed: () => Navigator.pop(context),
-          child: TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(t.common.cancel),
-          ),
+          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
         ),
       ],
     );

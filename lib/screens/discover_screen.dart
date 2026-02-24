@@ -154,16 +154,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return context.getClientForServer(serverId);
   }
 
-  /// Update hub keys when hubs list changes
+  /// Update hub keys when hubs list changes — reuse existing keys to avoid
+  /// mass deep unmounts (ARM32 stack overflow during finalizeTree).
   void _updateHubKeys() {
-    _hubKeys.clear();
-    for (int i = 0; i < _hubs.length; i++) {
+    while (_hubKeys.length < _hubs.length) {
       _hubKeys.add(GlobalKey<HubSectionState>());
     }
-    // Create continue watching hub key if needed
-    if (_onDeck.isNotEmpty) {
-      _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
+    if (_hubKeys.length > _hubs.length) {
+      _hubKeys.removeRange(_hubs.length, _hubKeys.length);
     }
+    _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
   }
 
   /// Get all hub states (continue watching + other hubs)
@@ -1097,138 +1097,137 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showServerNameOnHubs = context.watch<SettingsProvider>().showServerNameOnHubs;
     final duplicateHubTitles = _getDuplicateHubTitles();
 
-    return Scaffold(
-      body: Stack(
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Stack(
         children: [
-          SafeArea(
-            top: false,
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // Hero Section (Continue Watching) - at top of screen
-                Consumer<SettingsProvider>(
-                  builder: (context, settingsProvider, child) {
-                    if (_onDeck.isNotEmpty && settingsProvider.showHeroSection) {
-                      return _buildHeroSection();
-                    }
-                    // Add top padding when hero is not shown
-                    return SliverToBoxAdapter(
-                      child: SizedBox(height: kToolbarHeight + MediaQuery.of(context).padding.top + 16),
-                    );
-                  },
+          CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              // Hero Section (Continue Watching) - at top of screen
+              Consumer<SettingsProvider>(
+                builder: (context, settingsProvider, child) {
+                  if (_onDeck.isNotEmpty && settingsProvider.showHeroSection) {
+                    return _buildHeroSection();
+                  }
+                  // Add top padding when hero is not shown
+                  return SliverToBoxAdapter(
+                    child: SizedBox(height: kToolbarHeight + MediaQuery.of(context).padding.top + 16),
+                  );
+                },
+              ),
+              if (_isLoading) const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
+              if (_errorMessage != null)
+                SliverFillRemaining(
+                  child: ErrorStateWidget(
+                    message: _errorMessage!,
+                    icon: Symbols.error_outline_rounded,
+                    onRetry: _loadContent,
+                  ),
                 ),
-                if (_isLoading) const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-                if (_errorMessage != null)
-                  SliverFillRemaining(
-                    child: ErrorStateWidget(
-                      message: _errorMessage!,
-                      icon: Symbols.error_outline_rounded,
-                      onRetry: _loadContent,
+              if (!_isLoading && _errorMessage == null) ...[
+                // On Deck / Continue Watching
+                if (_onDeck.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: HubSection(
+                      key: _continueWatchingHubKey,
+                      hub: PlexHub(
+                        hubKey: 'continue_watching',
+                        title: t.discover.continueWatching,
+                        type: 'mixed',
+                        hubIdentifier: '_continue_watching_',
+                        size: _onDeck.length,
+                        more: false,
+                        items: _onDeck,
+                      ),
+                      icon: Symbols.play_circle_rounded,
+                      onRefresh: updateItem,
+                      onRemoveFromContinueWatching: _refreshContinueWatching,
+                      isInContinueWatching: true,
+                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
+                      onNavigateUp: _focusTopBoundary,
+                      onNavigateToSidebar: _navigateToSidebar,
                     ),
                   ),
-                if (!_isLoading && _errorMessage == null) ...[
-                  // On Deck / Continue Watching
-                  if (_onDeck.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: HubSection(
-                        key: _continueWatchingHubKey,
-                        hub: PlexHub(
-                          hubKey: 'continue_watching',
-                          title: t.discover.continueWatching,
-                          type: 'mixed',
-                          hubIdentifier: '_continue_watching_',
-                          size: _onDeck.length,
-                          more: false,
-                          items: _onDeck,
-                        ),
-                        icon: Symbols.play_circle_rounded,
-                        onRefresh: updateItem,
-                        onRemoveFromContinueWatching: _refreshContinueWatching,
-                        isInContinueWatching: true,
-                        onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
-                        onNavigateUp: _focusTopBoundary,
-                        onNavigateToSidebar: _navigateToSidebar,
-                      ),
+
+                // Recommendation Hubs (Trending, Top in Genre, etc.)
+                for (int i = 0; i < _hubs.length; i++)
+                  SliverToBoxAdapter(
+                    child: HubSection(
+                      key: i < _hubKeys.length ? _hubKeys[i] : null,
+                      hub: _hubs[i],
+                      icon: _getHubIcon(_hubs[i].title),
+                      showServerName: showServerNameOnHubs || duplicateHubTitles.contains(_hubs[i].title),
+                      onRefresh: updateItem,
+                      // Hub index is i + 1 if continue watching exists, otherwise i
+                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
+                      onNavigateUp: (i == 0 && _onDeck.isEmpty) ? _focusTopBoundary : null,
+                      onNavigateToSidebar: _navigateToSidebar,
                     ),
+                  ),
 
-                  // Recommendation Hubs (Trending, Top in Genre, etc.)
-                  for (int i = 0; i < _hubs.length; i++)
+                // Show loading skeleton for hubs while they're loading
+                if (_areHubsLoading && _hubs.isEmpty)
+                  for (int i = 0; i < 3; i++)
                     SliverToBoxAdapter(
-                      child: HubSection(
-                        key: i < _hubKeys.length ? _hubKeys[i] : null,
-                        hub: _hubs[i],
-                        icon: _getHubIcon(_hubs[i].title),
-                        showServerName: showServerNameOnHubs || duplicateHubTitles.contains(_hubs[i].title),
-                        onRefresh: updateItem,
-                        // Hub index is i + 1 if continue watching exists, otherwise i
-                        onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                        onNavigateUp: (i == 0 && _onDeck.isEmpty) ? _focusTopBoundary : null,
-                        onNavigateToSidebar: _navigateToSidebar,
-                      ),
-                    ),
-
-                  // Show loading skeleton for hubs while they're loading
-                  if (_areHubsLoading && _hubs.isEmpty)
-                    for (int i = 0; i < 3; i++)
-                      SliverToBoxAdapter(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Hub title skeleton
-                              Container(
-                                width: 200,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  borderRadius: const BorderRadius.all(Radius.circular(4)),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              // Hub items skeleton
-                              SizedBox(
-                                height: 200,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: 5,
-                                  itemBuilder: (context, index) {
-                                    return Container(
-                                      margin: const EdgeInsets.only(right: 12),
-                                      width: 140,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                  if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
-                    SliverFillRemaining(
-                      child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text(t.discover.noContentAvailable),
-                            SizedBox(height: 8),
-                            Text(t.discover.addMediaToLibraries, style: TextStyle(color: Colors.grey)),
+                            // Hub title skeleton
+                            Container(
+                              width: 200,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                borderRadius: const BorderRadius.all(Radius.circular(4)),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Hub items skeleton
+                            SizedBox(
+                              height: 200,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 5,
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    margin: const EdgeInsets.only(right: 12),
+                                    width: 140,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                ],
+                if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(t.discover.noContentAvailable),
+                          SizedBox(height: 8),
+                          Text(t.discover.addMediaToLibraries, style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                SliverToBoxAdapter(child: SizedBox(height: 24 + bottomPadding)),
               ],
-            ),
+            ],
           ),
           // Overlaid app bar — excluded from default focus traversal so that
           // initial/tab-switch focus lands on content (hero/hubs), not the toolbar.
@@ -1439,14 +1438,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           imageType: ImageType.art,
                         );
 
-                        return blurArtwork(CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                          errorWidget: (context, url, error) =>
-                              Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                        ));
+                        return blurArtwork(
+                          CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                            errorWidget: (context, url, error) =>
+                                Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -1507,39 +1508,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               imageType: ImageType.logo,
                             );
 
-                            return blurArtwork(CachedNetworkImage(
-                              imageUrl: logoUrl,
-                              filterQuality: FilterQuality.medium,
-                              fit: BoxFit.contain,
-                              memCacheWidth: (400 * dpr).clamp(200, 800).round(),
-                              alignment: isLargeScreen ? Alignment.bottomLeft : Alignment.bottomCenter,
-                              placeholder: (context, url) => Align(
-                                alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
-                                child: Text(
-                                  showName,
-                                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-                                    fontWeight: FontWeight.bold,
-                                    shadows: [
-                                      Shadow(
-                                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
-                                        blurRadius: 8,
-                                      ),
-                                    ],
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
-                                ),
-                              ),
-                              errorWidget: (context, url, error) {
-                                // Fallback to text if logo fails to load
-                                return Align(
+                            return blurArtwork(
+                              CachedNetworkImage(
+                                imageUrl: logoUrl,
+                                filterQuality: FilterQuality.medium,
+                                fit: BoxFit.contain,
+                                memCacheWidth: (400 * dpr).clamp(200, 800).round(),
+                                alignment: isLargeScreen ? Alignment.bottomLeft : Alignment.bottomCenter,
+                                placeholder: (context, url) => Align(
                                   alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
                                   child: Text(
                                     showName,
                                     style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                                       fontWeight: FontWeight.bold,
                                       shadows: [
                                         Shadow(
@@ -1552,9 +1533,33 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
                                   ),
-                                );
-                              },
-                            ), sigma: 10, clip: false);
+                                ),
+                                errorWidget: (context, url, error) {
+                                  // Fallback to text if logo fails to load
+                                  return Align(
+                                    alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
+                                    child: Text(
+                                      showName,
+                                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                        fontWeight: FontWeight.bold,
+                                        shadows: [
+                                          Shadow(
+                                            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                                            blurRadius: 8,
+                                          ),
+                                        ],
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                                    ),
+                                  );
+                                },
+                              ),
+                              sigma: 10,
+                              clip: false,
+                            );
                           },
                         ),
                       )

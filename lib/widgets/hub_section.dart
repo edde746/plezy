@@ -377,10 +377,11 @@ class HubSectionState extends State<HubSection> {
           Focus(
             focusNode: _hubFocusNode,
             onKeyEvent: _handleKeyEvent,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Responsive base card width for posters (2:3 aspect ratio)
-                final screenWidth = constraints.maxWidth;
+            child: Builder(
+              builder: (context) {
+                // Use MediaQuery instead of LayoutBuilder to save 1 element level.
+                // HubSection is always full-width inside CustomScrollView.
+                final screenWidth = MediaQuery.of(context).size.width;
                 final settings = context.watch<SettingsProvider>();
                 final densityScale = switch (settings.libraryDensity) {
                   LibraryDensity.compact => 0.8,
@@ -444,7 +445,8 @@ class HubSectionState extends State<HubSection> {
                         if (index == widget.hub.items.length) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: _LockedHubItemWrapper(
+                            child: FocusBuilders.buildLockedFocusWrapper(
+                              context: context,
                               isFocused: isItemFocused,
                               onTap: () {
                                 _onItemTapped(index);
@@ -481,7 +483,8 @@ class HubSectionState extends State<HubSection> {
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: _LockedHubItemWrapper(
+                          child: FocusBuilders.buildLockedFocusWrapper(
+                            context: context,
                             isFocused: isItemFocused,
                             onTap: () => _onItemTapped(index),
                             onLongPress: () => _mediaCardKeys[index]?.currentState?.showContextMenu(),
@@ -524,26 +527,5 @@ class HubSectionState extends State<HubSection> {
     });
     HubFocusMemory.setForHub(widget.hub.hubKey, index);
     _hubFocusNode.requestFocus();
-  }
-}
-
-/// Wrapper that provides visual focus decoration without using Flutter's focus system.
-class _LockedHubItemWrapper extends StatelessWidget {
-  final bool isFocused;
-  final Widget child;
-  final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
-
-  const _LockedHubItemWrapper({required this.isFocused, required this.child, this.onTap, this.onLongPress});
-
-  @override
-  Widget build(BuildContext context) {
-    return FocusBuilders.buildLockedFocusWrapper(
-      context: context,
-      isFocused: isFocused,
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: child,
-    );
   }
 }

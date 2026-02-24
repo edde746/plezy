@@ -58,7 +58,7 @@ class _VideoState extends State<Video> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ColoredBox(
       color: _hasFirstFrame ? Colors.transparent : widget.backgroundColor,
       child: Stack(
         fit: StackFit.expand,
