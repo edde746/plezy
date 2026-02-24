@@ -424,8 +424,8 @@ jobs:
           Pop-Location
           Remove-Item _signer -Recurse -Force
           $sig = [regex]::Match($output, 'edSignature="([^"]*)"').Groups[1].Value
-          $sig | Out-File -Encoding ascii win-ed-signature.txt
-          (Get-Item plezy-windows-installer.exe).Length | Out-File -Encoding ascii win-installer-size.txt
+          Set-Content -Path win-ed-signature.txt -Value $sig -Encoding ascii -NoNewline
+          Set-Content -Path win-installer-size.txt -Value (Get-Item plezy-windows-installer.exe).Length.ToString() -Encoding ascii -NoNewline
 
       - name: Attest Windows artifacts
         uses: actions/attest-build-provenance@v2
@@ -758,7 +758,7 @@ jobs:
               <item>
                 <title>Version ${VERSION}</title>
                 <sparkle:version>${VERSION}</sparkle:version>
-                <sparkle:os>windows-x64</sparkle:os>
+                <sparkle:os>windows</sparkle:os>
                 <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-windows-installer.exe"
                            length="${WIN_INSTALLER_SIZE}" type="application/octet-stream"
                            sparkle:edSignature="${WIN_ED_SIG}" />
