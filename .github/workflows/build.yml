@@ -405,8 +405,15 @@ jobs:
           name: windows-arm64-build
           path: build-arm64
 
+      - name: Read version from pubspec
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value -replace '\+.*'
+          echo "version=$v" >> $env:GITHUB_OUTPUT
+
       - name: Build installer and portables
-        run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64"
+        run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
 
       - name: Sign installer for WinSparkle (EdDSA)
         if: env.SPARKLE_PRIVATE_KEY != ''
@@ -761,7 +768,8 @@ jobs:
                 <sparkle:os>windows</sparkle:os>
                 <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-windows-installer.exe"
                            length="${WIN_INSTALLER_SIZE}" type="application/octet-stream"
-                           sparkle:edSignature="${WIN_ED_SIG}" />
+                           sparkle:edSignature="${WIN_ED_SIG}"
+                           sparkle:installerArguments="/SILENT /SP-" />
               </item>
           XMLEOF
           fi
