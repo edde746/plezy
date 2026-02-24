@@ -1525,7 +1525,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                   ),
                   IconButton(
                     icon: const AppIcon(Symbols.close_rounded, fill: 1),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => OverlaySheetController.popAdaptive(context),
                   ),
                 ],
               ),
