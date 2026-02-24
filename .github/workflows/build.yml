@@ -419,11 +419,7 @@ jobs:
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/edde746/auto_updater/main/packages/auto_updater/bin/sign_update.dart" -OutFile _signer/sign.dart
           Push-Location _signer
           dart pub get
-          @"
-          -----BEGIN ED25519 PRIVATE KEY-----
-          $($env:SPARKLE_PRIVATE_KEY)
-          -----END ED25519 PRIVATE KEY-----
-          "@ | Out-File -Encoding ascii ed25519_key.pem
+          Set-Content -Path ed25519_key.pem -Value $env:SPARKLE_PRIVATE_KEY -Encoding ascii
           $output = dart run sign.dart ../plezy-windows-installer.exe ed25519_key.pem
           Pop-Location
           Remove-Item _signer -Recurse -Force
