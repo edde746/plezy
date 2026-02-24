@@ -109,7 +109,7 @@ END
 //
 // WinSparkle EdDSA public key for update signature verification
 //
-EdDSAPub        EDDSA                   "resources\\ed25519_pub.txt"
+EdDSAPub EDDSA {"q7t6eu1txRrqv1PeWDCRV95rFxnmD/D3GZWbUPMwUyU="}
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
