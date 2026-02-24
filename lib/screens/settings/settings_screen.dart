@@ -931,6 +931,31 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   }
 
   Widget _buildUpdateSection() {
+    // Native updater: simple tile that triggers Sparkle/WinSparkle native dialog
+    if (UpdateService.useNativeUpdater) {
+      return Card(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                t.settings.updates,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              focusNode: _focusTracker.get(_kCheckForUpdates),
+              leading: const AppIcon(Symbols.system_update_rounded, fill: 1),
+              title: Text(t.settings.checkForUpdates),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => UpdateService.checkForUpdatesNative(inBackground: false),
+            ),
+          ],
+        ),
+      );
+    }
+
     final hasUpdate = _updateInfo != null && _updateInfo!['hasUpdate'] == true;
 
     return Card(

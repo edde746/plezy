@@ -1,4 +1,7 @@
 PODS:
+  - auto_updater_macos (0.0.1):
+    - FlutterMacOS
+    - Sparkle
   - connectivity_plus (0.0.1):
     - FlutterMacOS
   - device_info_plus (0.0.1):
@@ -22,6 +25,7 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - Sparkle (2.9.0)
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
@@ -60,6 +64,7 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
+  - auto_updater_macos (from `Flutter/ephemeral/.symlinks/plugins/auto_updater_macos/macos`)
   - connectivity_plus (from `Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos`)
   - device_info_plus (from `Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos`)
   - file_picker (from `Flutter/ephemeral/.symlinks/plugins/file_picker/macos`)
@@ -80,9 +85,12 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - Sparkle
     - sqlite3
 
 EXTERNAL SOURCES:
+  auto_updater_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/auto_updater_macos/macos
   connectivity_plus:
     :path: Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos
   device_info_plus:
@@ -119,6 +127,7 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/window_manager/macos
 
 SPEC CHECKSUMS:
+  auto_updater_macos: 3a42f1a06be6981f1a18be37e6e7bf86aa732118
   connectivity_plus: 4adf20a405e25b42b9c9f87feff8f4b6fde18a4e
   device_info_plus: 4fb280989f669696856f8b129e4a5e3cd6c48f76
   file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
@@ -130,6 +139,7 @@ SPEC CHECKSUMS:
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
   screen_retriever_macos: 452e51764a9e1cdb74b3c541238795849f21557f
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
+  Sparkle: f4355f9ebbe9b7d932df4980d70f13922ac97b2a
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   sqlite3: 8d708bc63e9f4ce48f0ad9d6269e478c5ced1d9b
   sqlite3_flutter_libs: d13b8b3003f18f596e542bcb9482d105577eff41

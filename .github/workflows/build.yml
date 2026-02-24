@@ -269,16 +269,34 @@ jobs:
           ln -s /Applications dmg-staging/Applications
           hdiutil create -format ULMO -srcfolder dmg-staging -volname "Plezy" plezy-macos.dmg
 
+      - name: Sign DMG for Sparkle (EdDSA)
+        if: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          SIGN_BIN="macos/Pods/Sparkle/bin/sign_update"
+          SIGNATURE=$(echo "$SPARKLE_PRIVATE_KEY" | "$SIGN_BIN" plezy-macos.dmg --ed-key-file - -p)
+          echo "MACOS_ED_SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
+          echo "MACOS_DMG_SIZE=$(stat -f%z plezy-macos.dmg)" >> $GITHUB_ENV
+
       - name: Attest macOS DMG
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: plezy-macos.dmg
 
+      - name: Write macOS signature metadata
+        run: |
+          echo "${{ env.MACOS_ED_SIGNATURE }}" > macos-ed-signature.txt
+          echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
+
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
           name: macos-dmg
-          path: plezy-macos.dmg
+          path: |
+            plezy-macos.dmg
+            macos-ed-signature.txt
+            macos-dmg-size.txt
 
   build-windows-x64:
     runs-on: windows-latest
@@ -361,6 +379,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
       - name: Download x64 build
         uses: actions/download-artifact@v4
         with:
@@ -375,6 +402,18 @@ jobs:
 
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64"
+
+      - name: Sign installer for WinSparkle (DSA)
+        if: ${{ secrets.WINSPARKLE_DSA_PRIVATE_KEY != '' }}
+        env:
+          WINSPARKLE_DSA_PRIVATE_KEY: ${{ secrets.WINSPARKLE_DSA_PRIVATE_KEY }}
+        shell: pwsh
+        run: |
+          $env:WINSPARKLE_DSA_PRIVATE_KEY | Out-File -Encoding ascii dsa_priv.pem
+          $output = dart run auto_updater:sign_update plezy-windows-installer.exe
+          Remove-Item dsa_priv.pem
+          $output | Out-File -Encoding ascii win-dsa-signature.txt
+          (Get-Item plezy-windows-installer.exe).Length | Out-File -Encoding ascii win-installer-size.txt
 
       - name: Attest Windows artifacts
         uses: actions/attest-build-provenance@v2
@@ -400,7 +439,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: plezy-windows-installer.exe
+          path: |
+            plezy-windows-installer.exe
+            win-dsa-signature.txt
+            win-installer-size.txt
 
   build-linux-x64:
     runs-on: ubuntu-latest
@@ -634,6 +676,11 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: pubspec.yaml
+          sparse-checkout-cone-mode: false
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -641,6 +688,82 @@ jobs:
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
+
+      - name: Read version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate appcast.xml
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Read macOS signature metadata (may be empty if secrets not configured)
+          MACOS_ED_SIG=""
+          MACOS_DMG_SIZE="0"
+          if [ -f artifacts/macos-dmg/macos-ed-signature.txt ]; then
+            MACOS_ED_SIG=$(cat artifacts/macos-dmg/macos-ed-signature.txt)
+          fi
+          if [ -f artifacts/macos-dmg/macos-dmg-size.txt ]; then
+            MACOS_DMG_SIZE=$(cat artifacts/macos-dmg/macos-dmg-size.txt)
+          fi
+
+          # Read Windows signature metadata (may be empty if secrets not configured)
+          WIN_DSA_SIG=""
+          WIN_INSTALLER_SIZE="0"
+          if [ -f artifacts/windows-installer/win-dsa-signature.txt ]; then
+            WIN_DSA_SIG=$(cat artifacts/windows-installer/win-dsa-signature.txt)
+          fi
+          if [ -f artifacts/windows-installer/win-installer-size.txt ]; then
+            WIN_INSTALLER_SIZE=$(cat artifacts/windows-installer/win-installer-size.txt)
+          fi
+
+          cat > appcast.xml << 'XMLEOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+            <channel>
+              <title>Plezy Updates</title>
+          XMLEOF
+
+          # macOS entry
+          if [ -n "$MACOS_ED_SIG" ]; then
+            cat >> appcast.xml << XMLEOF
+              <item>
+                <title>Version ${VERSION}</title>
+                <sparkle:version>${VERSION}</sparkle:version>
+                <sparkle:os>macos</sparkle:os>
+                <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-macos.dmg"
+                           length="${MACOS_DMG_SIZE}" type="application/octet-stream"
+                           sparkle:edSignature="${MACOS_ED_SIG}" />
+              </item>
+          XMLEOF
+          fi
+
+          # Windows entry
+          if [ -n "$WIN_DSA_SIG" ]; then
+            cat >> appcast.xml << XMLEOF
+              <item>
+                <title>Version ${VERSION}</title>
+                <sparkle:version>${VERSION}</sparkle:version>
+                <sparkle:os>windows-x64</sparkle:os>
+                <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-windows-installer.exe"
+                           length="${WIN_INSTALLER_SIZE}" type="application/octet-stream"
+                           sparkle:dsaSignature="${WIN_DSA_SIG}" />
+              </item>
+          XMLEOF
+          fi
+
+          cat >> appcast.xml << 'XMLEOF'
+            </channel>
+          </rss>
+          XMLEOF
+
+          # Clean up leading whitespace from heredoc indentation
+          sed -i 's/^          //' appcast.xml
+
+          echo "Generated appcast.xml:"
+          cat appcast.xml
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -656,6 +779,7 @@ jobs:
             artifacts/windows-installer/plezy-windows-installer.exe
             artifacts/linux-x64/*
             artifacts/linux-arm64/*
+            appcast.xml
           draft: true
           prerelease: false
           generate_release_notes: true

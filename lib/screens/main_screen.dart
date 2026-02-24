@@ -195,6 +195,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     if (!mounted) return;
 
+    // Native updater (Sparkle/WinSparkle) handles everything — skip Flutter dialog
+    if (UpdateService.useNativeUpdater) {
+      await UpdateService.checkForUpdatesNative(inBackground: true);
+      return;
+    }
+
     try {
       final updateInfo = await UpdateService.checkForUpdatesOnStartup();
 

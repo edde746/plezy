@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:auto_updater/auto_updater.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
@@ -5,9 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service to check for new versions on GitHub
 /// Only enabled when ENABLE_UPDATE_CHECK build flag is set
+///
+/// On macOS (non-Homebrew) and installed Windows: delegates to Sparkle/WinSparkle
+/// via auto_updater for native update dialogs and in-app installs.
+/// On all other platforms: falls back to GitHub API check + browser link dialog.
 class UpdateService {
   static final Logger _logger = Logger();
   static const String _githubRepo = 'edde746/plezy';
+  static const String _feedUrl = 'https://github.com/edde746/plezy/releases/latest/download/appcast.xml';
 
   // SharedPreferences keys
   static const String _keySkippedVersion = 'update_skipped_version';
@@ -16,9 +24,68 @@ class UpdateService {
   // Check cooldown: 6 hours
   static const Duration _checkCooldown = Duration(hours: 6);
 
+  static bool _nativeUpdaterInitialized = false;
+
   /// Check if update checking is enabled via build flag
   static bool get isUpdateCheckEnabled {
     return const bool.fromEnvironment('ENABLE_UPDATE_CHECK', defaultValue: false);
+  }
+
+  /// Whether the native auto_updater (Sparkle/WinSparkle) should be used.
+  /// True on macOS (non-Homebrew) and installed Windows (has uninstaller).
+  static bool get useNativeUpdater {
+    if (!isUpdateCheckEnabled) return false;
+    if (Platform.isMacOS) return !_isHomebrewInstall();
+    if (Platform.isWindows) return _isInstalledApp();
+    return false;
+  }
+
+  /// Initialize the native auto_updater (Sparkle/WinSparkle).
+  /// Call once at startup if [useNativeUpdater] is true.
+  static Future<void> initNativeUpdater() async {
+    if (_nativeUpdaterInitialized) return;
+    _nativeUpdaterInitialized = true;
+
+    try {
+      await autoUpdater.setFeedURL(_feedUrl);
+      // 6 hours in seconds
+      await autoUpdater.setScheduledCheckInterval(_checkCooldown.inSeconds);
+    } catch (e) {
+      _logger.e('Failed to initialize native auto updater: $e');
+    }
+  }
+
+  /// Trigger a background update check via Sparkle/WinSparkle.
+  /// Only shows UI if an update is found.
+  static Future<void> checkForUpdatesNative({bool inBackground = true}) async {
+    if (!_nativeUpdaterInitialized) await initNativeUpdater();
+    try {
+      await autoUpdater.checkForUpdates(inBackground: inBackground);
+    } catch (e) {
+      _logger.e('Native update check failed: $e');
+    }
+  }
+
+  /// Check if the macOS app was installed via Homebrew.
+  /// Homebrew casks live under /opt/homebrew/Caskroom/ or /usr/local/Caskroom/.
+  static bool _isHomebrewInstall() {
+    try {
+      final execPath = Platform.resolvedExecutable;
+      return execPath.contains('/Caskroom/') || execPath.contains('/homebrew/');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Check if the Windows app is an installed copy (not portable).
+  /// The Inno Setup installer places unins000.exe next to the executable.
+  static bool _isInstalledApp() {
+    try {
+      final exeDir = File(Platform.resolvedExecutable).parent.path;
+      return File('$exeDir\\unins000.exe').existsSync();
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Skip a specific version
