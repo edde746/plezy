@@ -70,6 +70,12 @@ dev_dependencies:
   dart_code_linter: ^3.2.1
   drift_dev: ^2.14.0
 
+dependency_overrides:
+  auto_updater_windows:
+    git:
+      url: https://github.com/edde746/auto_updater
+      path: packages/auto_updater_windows
+
 flutter:
   uses-material-design: true
   assets:

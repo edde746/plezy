@@ -91,12 +91,13 @@ packages:
     source: hosted
     version: "1.0.0"
   auto_updater_windows:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: auto_updater_windows
-      sha256: "2bba20a71eee072f49b7267fedd5c4f1406c4b1b1e5b83932c634dbab75b80c9"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/auto_updater_windows"
+      ref: HEAD
+      resolved-ref: d3dcb88a62292bbedc0a3d9101fed2991f57d40a
+      url: "https://github.com/edde746/auto_updater"
+    source: git
     version: "1.0.0"
   background_downloader:
     dependency: "direct main"
