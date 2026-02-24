@@ -390,14 +390,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: "stable"
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
 
       - name: Download x64 build
         uses: actions/download-artifact@v4
@@ -425,7 +419,12 @@ jobs:
           $($env:SPARKLE_PRIVATE_KEY)
           -----END ED25519 PRIVATE KEY-----
           "@ | Out-File -Encoding ascii ed25519_key.pem
-          $output = dart run auto_updater:sign_update plezy-windows-installer.exe ed25519_key.pem
+          git clone --depth 1 https://github.com/edde746/auto_updater _auto_updater
+          Push-Location _auto_updater/packages/auto_updater
+          dart pub get
+          $output = dart run bin/sign_update.dart ../../../plezy-windows-installer.exe ../../../ed25519_key.pem
+          Pop-Location
+          Remove-Item _auto_updater -Recurse -Force
           Remove-Item ed25519_key.pem
           $sig = [regex]::Match($output, 'edSignature="([^"]*)"').Groups[1].Value
           $sig | Out-File -Encoding ascii win-ed-signature.txt
