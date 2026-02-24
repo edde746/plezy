@@ -12,11 +12,17 @@ class SleepTimerService extends ChangeNotifier {
   Timer? _timer;
   DateTime? _endTime;
   Duration? _duration;
+  Duration? _originalDuration;
   VoidCallback? _onTimerComplete;
+  bool _needsRestart = false;
   final StreamController<void> _completedController = StreamController<void>.broadcast();
+  final StreamController<void> _promptController = StreamController<void>.broadcast();
 
   /// Emits when the sleep timer completes (not when cancelled)
   Stream<void> get onCompleted => _completedController.stream;
+
+  /// Emits when the timer fires and wants to show a "still watching?" prompt
+  Stream<void> get onPrompt => _promptController.stream;
 
   /// Whether a timer is currently active
   bool get isActive => _timer != null && _timer!.isActive;
@@ -26,6 +32,9 @@ class SleepTimerService extends ChangeNotifier {
 
   /// The original duration of the timer
   Duration? get duration => _duration;
+
+  /// The user-selected duration (unmodified by extendTimer)
+  Duration? get originalDuration => _originalDuration;
 
   /// Remaining time on the timer
   Duration? get remainingTime {
@@ -41,6 +50,7 @@ class SleepTimerService extends ChangeNotifier {
     // Cancel any existing timer
     cancelTimer();
 
+    _originalDuration = duration;
     _duration = duration;
     _endTime = DateTime.now().add(duration);
     _onTimerComplete = onComplete;
@@ -52,9 +62,9 @@ class SleepTimerService extends ChangeNotifier {
       final remaining = remainingTime;
 
       if (remaining == null || remaining.inSeconds <= 0) {
-        appLogger.d('Sleep timer completed');
-        _executeCallback();
-        cancelTimer();
+        appLogger.d('Sleep timer completed - showing prompt');
+        _stopTimerOnly();
+        _promptController.add(null);
       } else {
         // Notify listeners to update UI
         notifyListeners();
@@ -64,16 +74,48 @@ class SleepTimerService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Cancel the active timer
+  /// Cancel the active timer (user-initiated, clears everything)
   void cancelTimer() {
-    if (_timer != null) {
+    if (_timer != null || _originalDuration != null) {
       appLogger.d('Sleep timer cancelled');
       _timer?.cancel();
       _timer = null;
       _endTime = null;
       _duration = null;
+      _originalDuration = null;
       _onTimerComplete = null;
       notifyListeners();
+    }
+  }
+
+  /// Restart the timer with the original user-selected duration
+  void restartTimer() {
+    if (_originalDuration != null && _onTimerComplete != null) {
+      final duration = _originalDuration!;
+      final callback = _onTimerComplete!;
+      startTimer(duration, callback);
+    }
+  }
+
+  /// Execute the completion callback directly (fallback path)
+  void executeCompletion() {
+    _executeCallback();
+  }
+
+  /// Mark that the timer should restart when a new playback session begins
+  /// (e.g. user exited the player and started something new)
+  void markNeedsRestart() {
+    if (isActive || _originalDuration != null) {
+      _needsRestart = true;
+    }
+  }
+
+  /// Restart the timer if it was marked for restart (new playback session).
+  /// [onComplete] provides the new callback for the fresh session.
+  void restartIfNeeded(VoidCallback onComplete) {
+    if (_needsRestart && _originalDuration != null) {
+      _needsRestart = false;
+      startTimer(_originalDuration!, onComplete);
     }
   }
 
@@ -85,6 +127,16 @@ class SleepTimerService extends ChangeNotifier {
       appLogger.d('Sleep timer extended by ${additionalTime.inMinutes} minutes');
       notifyListeners();
     }
+  }
+
+  /// Stop the periodic timer but preserve _originalDuration and _onTimerComplete
+  /// for the prompt flow (restart/completion)
+  void _stopTimerOnly() {
+    _timer?.cancel();
+    _timer = null;
+    _endTime = null;
+    _duration = null;
+    notifyListeners();
   }
 
   void _executeCallback() {
@@ -102,6 +154,7 @@ class SleepTimerService extends ChangeNotifier {
   void dispose() {
     _timer?.cancel();
     _completedController.close();
+    _promptController.close();
     super.dispose();
   }
 }

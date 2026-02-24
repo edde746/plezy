@@ -160,6 +160,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late final FocusNode _playNextCancelFocusNode;
   late final FocusNode _playNextConfirmFocusNode;
 
+  // "Still watching?" prompt (sleep timer)
+  bool _showStillWatchingPrompt = false;
+  int _stillWatchingCountdown = 30;
+  Timer? _stillWatchingTimer;
+  late final FocusNode _stillWatchingPauseFocusNode;
+  late final FocusNode _stillWatchingContinueFocusNode;
+
   // Screen-level focus node: persists across loading/initialized phases so
   // key events never escape the video player route.
   late final FocusNode _screenFocusNode;
@@ -221,6 +228,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playNextCancelFocusNode = FocusNode(debugLabel: 'PlayNextCancel');
     _playNextConfirmFocusNode = FocusNode(debugLabel: 'PlayNextConfirm');
 
+    // Initialize "Still watching?" dialog focus nodes
+    _stillWatchingPauseFocusNode = FocusNode(debugLabel: 'StillWatchingPause');
+    _stillWatchingContinueFocusNode = FocusNode(debugLabel: 'StillWatchingContinue');
+
     // Screen-level focus node that wraps the entire build output.
     // Ensures a single stable focus target across loading → initialized phases.
     _screenFocusNode = FocusNode(debugLabel: 'VideoPlayerScreen');
@@ -265,9 +276,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Wire companion remote playback callbacks
     _setupCompanionRemoteCallbacks();
 
-    // Exit the player when the sleep timer completes so the device can auto-lock
-    _sleepTimerSubscription = SleepTimerService().onCompleted.listen((_) {
-      if (mounted) _handleBackButton();
+    // Show "Still watching?" prompt when sleep timer fires
+    _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
+      if (mounted) _showStillWatchingDialog();
     });
 
     // Initialize player asynchronously with buffer size from settings
@@ -462,6 +473,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         setState(() {
           _isPlayerInitialized = true;
         });
+
+        // Restart sleep timer if we're starting a new playback session
+        final p = player;
+        if (p != null) {
+          SleepTimerService().restartIfNeeded(() => p.pause());
+        }
 
         // Enable wakelock to prevent screen from turning off during playback
         WakelockPlus.enable();
@@ -1570,6 +1587,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _videoPIPManager?.onBeforeEnterPip = null;
     _videoFilterManager?.dispose();
 
+    // Mark sleep timer for restart if truly exiting (not episode transition)
+    if (!_isReplacingWithVideo) {
+      SleepTimerService().markNeedsRestart();
+    }
+
     // Cancel stream subscriptions
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
@@ -1585,9 +1607,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
 
+    // Cancel still watching timer
+    _stillWatchingTimer?.cancel();
+
     // Dispose Play Next dialog focus nodes
     _playNextCancelFocusNode.dispose();
     _playNextConfirmFocusNode.dispose();
+
+    // Dispose "Still watching?" dialog focus nodes
+    _stillWatchingPauseFocusNode.dispose();
+    _stillWatchingContinueFocusNode.dispose();
 
     // Dispose screen-level focus node
     _screenFocusNode.removeListener(_onScreenFocusChanged);
@@ -1678,7 +1707,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   void _onVideoCompleted(bool completed) async {
-    if (completed && _nextEpisode != null && !_showPlayNextDialog && !_completionTriggered) {
+    if (completed &&
+        _nextEpisode != null &&
+        !_showPlayNextDialog &&
+        !_showStillWatchingPrompt &&
+        !_completionTriggered) {
       _completionTriggered = true;
 
       // Capture keyboard mode before async gap
@@ -1743,6 +1776,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Cancel auto-play timer if running
     _autoPlayTimer?.cancel();
+    _dismissStillWatching();
 
     // Notify Watch Together of episode change before navigating
     _notifyWatchTogetherMediaChange(metadata: _nextEpisode);
@@ -1934,6 +1968,73 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     });
   }
 
+  // -- "Still watching?" prompt --
+
+  void _showStillWatchingDialog() {
+    // Don't show if auto-play dialog is already visible
+    if (_showPlayNextDialog) return;
+
+    final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
+
+    setState(() {
+      _showStillWatchingPrompt = true;
+      _stillWatchingCountdown = 30;
+    });
+
+    if (isKeyboardMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _stillWatchingContinueFocusNode.requestFocus();
+      });
+    }
+
+    _stillWatchingTimer?.cancel();
+    _stillWatchingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _stillWatchingCountdown--;
+      });
+      if (_stillWatchingCountdown <= 0) {
+        timer.cancel();
+        _onStillWatchingTimeout();
+      }
+    });
+  }
+
+  void _onStillWatchingTimeout() {
+    player?.pause();
+    setState(() {
+      _showStillWatchingPrompt = false;
+    });
+  }
+
+  void _onStillWatchingContinue() {
+    _stillWatchingTimer?.cancel();
+    SleepTimerService().restartTimer();
+    setState(() {
+      _showStillWatchingPrompt = false;
+    });
+  }
+
+  void _onStillWatchingPause() {
+    _stillWatchingTimer?.cancel();
+    player?.pause();
+    setState(() {
+      _showStillWatchingPrompt = false;
+    });
+  }
+
+  void _dismissStillWatching() {
+    _stillWatchingTimer?.cancel();
+    if (_showStillWatchingPrompt) {
+      setState(() {
+        _showStillWatchingPrompt = false;
+      });
+    }
+  }
+
   /// Apply track selection using the TrackSelectionService
   Future<void> _applyTrackSelection() async {
     if (!mounted || player == null) return;
@@ -2069,12 +2170,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     }
 
-    await _saveTrackPreferences(
-      partId: partId,
-      trackType: 'audio',
-      languageCode: track.language,
-      streamID: streamID,
-    );
+    await _saveTrackPreferences(partId: partId, trackType: 'audio', languageCode: track.language, streamID: streamID);
   }
 
   /// Handle subtitle track changes from the user - save both stream selection and language preference
@@ -2115,12 +2211,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     }
 
-    await _saveTrackPreferences(
-      partId: partId,
-      trackType: 'subtitle',
-      languageCode: languageCode,
-      streamID: streamID,
-    );
+    await _saveTrackPreferences(partId: partId, trackType: 'subtitle', languageCode: languageCode, streamID: streamID);
   }
 
   /// Set flag to skip orientation restoration when replacing with another video
@@ -2251,9 +2342,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       },
       child: OverlaySheetHost(
         child: Builder(
-          builder: (sheetContext) => _isPlayerInitialized && player != null
-              ? _buildVideoPlayer(sheetContext)
-              : _buildLoadingSpinner(),
+          builder: (sheetContext) =>
+              _isPlayerInitialized && player != null ? _buildVideoPlayer(sheetContext) : _buildLoadingSpinner(),
         ),
       ),
     );
@@ -2533,6 +2623,104 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                                               const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
                                             ] else
                                               Text(t.videoControls.playNext),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              // "Still watching?" overlay (hidden in PiP mode)
+              ValueListenableBuilder<bool>(
+                valueListenable: PipService().isPipActive,
+                builder: (context, isInPip, child) {
+                  if (isInPip || !_showStillWatchingPrompt) {
+                    return const SizedBox.shrink();
+                  }
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: _controlsVisible,
+                    builder: (context, controlsShown, child) {
+                      return AnimatedPositioned(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        right: 24,
+                        bottom: controlsShown ? 100 : 24,
+                        child: Container(
+                          width: 320,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.9),
+                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                t.videoControls.stillWatching,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                t.videoControls.pausingIn(seconds: '$_stillWatchingCountdown'),
+                                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: FocusableButton(
+                                      focusNode: _stillWatchingPauseFocusNode,
+                                      onPressed: _onStillWatchingPause,
+                                      autoScroll: false,
+                                      onNavigateRight: () => _stillWatchingContinueFocusNode.requestFocus(),
+                                      onNavigateUp: () {},
+                                      onNavigateDown: () {},
+                                      child: OutlinedButton(
+                                        onPressed: _onStillWatchingPause,
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                        child: Text(t.videoControls.pauseButton),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: FocusableButton(
+                                      focusNode: _stillWatchingContinueFocusNode,
+                                      onPressed: _onStillWatchingContinue,
+                                      autoScroll: false,
+                                      onNavigateLeft: () => _stillWatchingPauseFocusNode.requestFocus(),
+                                      onNavigateUp: () {},
+                                      onNavigateDown: () {},
+                                      child: FilledButton(
+                                        onPressed: _onStillWatchingContinue,
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: Colors.black,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text('$_stillWatchingCountdown'),
+                                            const SizedBox(width: 4),
+                                            Text(t.videoControls.continueWatching),
                                           ],
                                         ),
                                       ),

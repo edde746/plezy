@@ -460,6 +460,9 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get timerActive => '定时器已激活';
 	@override String playbackWillPauseIn({required Object duration}) => '播放将在 ${duration} 后暂停';
 	@override String get sleepTimerCompleted => '睡眠定时器已完成 - 播放已暂停';
+	@override String get stillWatching => '还在看吗？';
+	@override String pausingIn({required Object seconds}) => '${seconds}秒后暂停';
+	@override String get continueWatching => '继续';
 	@override String get autoPlayNext => '自动播放下一集';
 	@override String get playNext => '播放下一集';
 	@override String get playButton => '播放';
@@ -1580,6 +1583,9 @@ extension on TranslationsZh {
 			'videoControls.timerActive' => '定时器已激活',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '播放将在 ${duration} 后暂停',
 			'videoControls.sleepTimerCompleted' => '睡眠定时器已完成 - 播放已暂停',
+			'videoControls.stillWatching' => '还在看吗？',
+			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}秒后暂停',
+			'videoControls.continueWatching' => '继续',
 			'videoControls.autoPlayNext' => '自动播放下一集',
 			'videoControls.playNext' => '播放下一集',
 			'videoControls.playButton' => '播放',
@@ -1812,11 +1818,11 @@ extension on TranslationsZh {
 			'liveTv.live' => '直播',
 			'liveTv.hd' => '高清',
 			'liveTv.premiere' => '新',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.guideReloaded' => '节目指南已重新加载',
 			'liveTv.allChannels' => '所有频道',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',

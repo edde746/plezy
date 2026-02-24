@@ -981,6 +981,15 @@ class TranslationsVideoControlsEn {
 	/// en: 'Sleep timer completed - playback paused'
 	String get sleepTimerCompleted => 'Sleep timer completed - playback paused';
 
+	/// en: 'Still watching?'
+	String get stillWatching => 'Still watching?';
+
+	/// en: 'Pausing in ${seconds}s'
+	String pausingIn({required Object seconds}) => 'Pausing in ${seconds}s';
+
+	/// en: 'Continue'
+	String get continueWatching => 'Continue';
+
 	/// en: 'Auto-Play Next'
 	String get autoPlayNext => 'Auto-Play Next';
 
@@ -3199,6 +3208,9 @@ extension on Translations {
 			'videoControls.timerActive' => 'Timer Active',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Playback will pause in ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Sleep timer completed - playback paused',
+			'videoControls.stillWatching' => 'Still watching?',
+			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausing in ${seconds}s',
+			'videoControls.continueWatching' => 'Continue',
 			'videoControls.autoPlayNext' => 'Auto-Play Next',
 			'videoControls.playNext' => 'Play Next',
 			'videoControls.playButton' => 'Play',
@@ -3431,11 +3443,11 @@ extension on Translations {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEW',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.guideReloaded' => 'Guide data reloaded',
 			'liveTv.allChannels' => 'All Channels',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',

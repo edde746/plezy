@@ -460,6 +460,9 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get timerActive => 'Schlaftimer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert';
 	@override String get sleepTimerCompleted => 'Schlaftimer abgelaufen – Wiedergabe pausiert';
+	@override String get stillWatching => 'Schaust du noch?';
+	@override String pausingIn({required Object seconds}) => 'Pause in ${seconds}s';
+	@override String get continueWatching => 'Weiter';
 	@override String get autoPlayNext => 'Nächstes automatisch abspielen';
 	@override String get playNext => 'Nächstes abspielen';
 	@override String get playButton => 'Wiedergeben';
@@ -1580,6 +1583,9 @@ extension on TranslationsDe {
 			'videoControls.timerActive' => 'Schlaftimer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert',
 			'videoControls.sleepTimerCompleted' => 'Schlaftimer abgelaufen – Wiedergabe pausiert',
+			'videoControls.stillWatching' => 'Schaust du noch?',
+			'videoControls.pausingIn' => ({required Object seconds}) => 'Pause in ${seconds}s',
+			'videoControls.continueWatching' => 'Weiter',
 			'videoControls.autoPlayNext' => 'Nächstes automatisch abspielen',
 			'videoControls.playNext' => 'Nächstes abspielen',
 			'videoControls.playButton' => 'Wiedergeben',
@@ -1812,11 +1818,11 @@ extension on TranslationsDe {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEU',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Programmführer neu laden',
 			'liveTv.guideReloaded' => 'Programmdaten neu geladen',
 			'liveTv.allChannels' => 'Alle Kanäle',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.now' => 'Jetzt',
 			'liveTv.today' => 'Heute',
 			'liveTv.midnight' => 'Mitternacht',

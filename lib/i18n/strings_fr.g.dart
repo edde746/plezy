@@ -460,6 +460,9 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get timerActive => 'Minuterie active';
 	@override String playbackWillPauseIn({required Object duration}) => 'La lecture sera mise en pause dans ${duration}';
 	@override String get sleepTimerCompleted => 'Minuterie de mise en veille terminée - lecture en pause';
+	@override String get stillWatching => 'Toujours en train de regarder ?';
+	@override String pausingIn({required Object seconds}) => 'Pause dans ${seconds}s';
+	@override String get continueWatching => 'Continuer';
 	@override String get autoPlayNext => 'Lecture automatique suivante';
 	@override String get playNext => 'Lire l\'épisode suivant';
 	@override String get playButton => 'Lire';
@@ -1580,6 +1583,9 @@ extension on TranslationsFr {
 			'videoControls.timerActive' => 'Minuterie active',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'La lecture sera mise en pause dans ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Minuterie de mise en veille terminée - lecture en pause',
+			'videoControls.stillWatching' => 'Toujours en train de regarder ?',
+			'videoControls.pausingIn' => ({required Object seconds}) => 'Pause dans ${seconds}s',
+			'videoControls.continueWatching' => 'Continuer',
 			'videoControls.autoPlayNext' => 'Lecture automatique suivante',
 			'videoControls.playNext' => 'Lire l\'épisode suivant',
 			'videoControls.playButton' => 'Lire',
@@ -1812,11 +1818,11 @@ extension on TranslationsFr {
 			'liveTv.live' => 'EN DIRECT',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NOUVEAU',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Recharger le guide',
 			'liveTv.guideReloaded' => 'Données du guide rechargées',
 			'liveTv.allChannels' => 'Toutes les chaînes',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.now' => 'Maintenant',
 			'liveTv.today' => 'Aujourd\'hui',
 			'liveTv.midnight' => 'Minuit',

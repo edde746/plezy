@@ -460,6 +460,9 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
 	@override String get sleepTimerCompleted => 'Sovtimer slutförd - uppspelning pausad';
+	@override String get stillWatching => 'Tittar du fortfarande?';
+	@override String pausingIn({required Object seconds}) => 'Pausar om ${seconds}s';
+	@override String get continueWatching => 'Fortsätt';
 	@override String get autoPlayNext => 'Spela nästa automatiskt';
 	@override String get playNext => 'Spela nästa';
 	@override String get playButton => 'Spela';
@@ -1580,6 +1583,9 @@ extension on TranslationsSv {
 			'videoControls.timerActive' => 'Timer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Uppspelningen pausas om ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Sovtimer slutförd - uppspelning pausad',
+			'videoControls.stillWatching' => 'Tittar du fortfarande?',
+			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausar om ${seconds}s',
+			'videoControls.continueWatching' => 'Fortsätt',
 			'videoControls.autoPlayNext' => 'Spela nästa automatiskt',
 			'videoControls.playNext' => 'Spela nästa',
 			'videoControls.playButton' => 'Spela',
@@ -1812,11 +1818,11 @@ extension on TranslationsSv {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.guideReloaded' => 'Programdata omladdad',
 			'liveTv.allChannels' => 'Alla kanaler',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',

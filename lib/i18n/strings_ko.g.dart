@@ -460,6 +460,9 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get timerActive => '타이머 활성화됨';
 	@override String playbackWillPauseIn({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다';
 	@override String get sleepTimerCompleted => '수면 타이머 완료됨 - 재생이 일시 중지되었습니다';
+	@override String get stillWatching => '아직 시청 중이신가요?';
+	@override String pausingIn({required Object seconds}) => '${seconds}초 후 일시 정지';
+	@override String get continueWatching => '계속';
 	@override String get autoPlayNext => '다음 자동 재생';
 	@override String get playNext => '다음 재생';
 	@override String get playButton => '재생';
@@ -1580,6 +1583,9 @@ extension on TranslationsKo {
 			'videoControls.timerActive' => '타이머 활성화됨',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다',
 			'videoControls.sleepTimerCompleted' => '수면 타이머 완료됨 - 재생이 일시 중지되었습니다',
+			'videoControls.stillWatching' => '아직 시청 중이신가요?',
+			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}초 후 일시 정지',
+			'videoControls.continueWatching' => '계속',
 			'videoControls.autoPlayNext' => '다음 자동 재생',
 			'videoControls.playNext' => '다음 재생',
 			'videoControls.playButton' => '재생',
@@ -1812,11 +1818,11 @@ extension on TranslationsKo {
 			'liveTv.live' => '실시간',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '신규',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.guideReloaded' => '편성표 데이터가 새로고침되었습니다',
 			'liveTv.allChannels' => '전체 채널',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
