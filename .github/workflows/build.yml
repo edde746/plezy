@@ -738,43 +738,40 @@ jobs:
             WIN_INSTALLER_SIZE=$(cat artifacts/windows-installer/win-installer-size.txt)
           fi
 
-          cat > appcast.xml << 'XMLEOF'
+          cat > appcast.xml << XMLEOF
           <?xml version="1.0" encoding="utf-8"?>
           <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
             <channel>
               <title>Plezy Updates</title>
-          XMLEOF
-
-          # macOS entry
-          if [ -n "$MACOS_ED_SIG" ]; then
-            cat >> appcast.xml << XMLEOF
               <item>
                 <title>Version ${VERSION}</title>
                 <sparkle:version>${VERSION}</sparkle:version>
+                <sparkle:releaseNotesLink>https://gh-html.edde746.dev/edde746/plezy/${VERSION}</sparkle:releaseNotesLink>
+          XMLEOF
+
+          # macOS enclosure
+          if [ -n "$MACOS_ED_SIG" ]; then
+            cat >> appcast.xml << XMLEOF
                 <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-macos.dmg"
                            length="${MACOS_DMG_SIZE}" type="application/octet-stream"
                            sparkle:edSignature="${MACOS_ED_SIG}"
                            sparkle:os="macos" />
-              </item>
           XMLEOF
           fi
 
-          # Windows entry
+          # Windows enclosure
           if [ -n "$WIN_ED_SIG" ]; then
             cat >> appcast.xml << XMLEOF
-              <item>
-                <title>Version ${VERSION}</title>
-                <sparkle:version>${VERSION}</sparkle:version>
                 <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-windows-installer.exe"
                            length="${WIN_INSTALLER_SIZE}" type="application/octet-stream"
                            sparkle:edSignature="${WIN_ED_SIG}"
                            sparkle:installerArguments="/SILENT /SP-"
                            sparkle:os="windows" />
-              </item>
           XMLEOF
           fi
 
           cat >> appcast.xml << 'XMLEOF'
+              </item>
             </channel>
           </rss>
           XMLEOF
