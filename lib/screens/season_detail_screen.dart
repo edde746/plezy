@@ -343,9 +343,14 @@ class _EpisodeCard extends StatefulWidget {
 
 class _EpisodeCardState extends State<_EpisodeCard> {
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
+  Offset? _tapPosition;
+
+  void _storeTapPosition(TapDownDetails details) {
+    _tapPosition = details.globalPosition;
+  }
 
   void _showContextMenu() {
-    _contextMenuKey.currentState?.showContextMenu(context);
+    _contextMenuKey.currentState?.showContextMenu(context, position: _tapPosition);
   }
 
   Widget _buildEpisodeMetaRow(BuildContext context) {
@@ -405,6 +410,10 @@ class _EpisodeCardState extends State<_EpisodeCard> {
         child: InkWell(
           key: Key(widget.episode.ratingKey),
           onTap: widget.onTap,
+          onTapDown: _storeTapPosition,
+          onLongPress: _showContextMenu,
+          onSecondaryTapDown: _storeTapPosition,
+          onSecondaryTap: _showContextMenu,
           hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
           child: Container(
             decoration: BoxDecoration(

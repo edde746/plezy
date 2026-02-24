@@ -2464,9 +2464,14 @@ class _SeasonCard extends StatefulWidget {
 
 class _SeasonCardState extends State<_SeasonCard> {
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
+  Offset? _tapPosition;
+
+  void _storeTapPosition(TapDownDetails details) {
+    _tapPosition = details.globalPosition;
+  }
 
   void _showContextMenu() {
-    _contextMenuKey.currentState?.showContextMenu(context);
+    _contextMenuKey.currentState?.showContextMenu(context, position: _tapPosition);
   }
 
   @override
@@ -2491,6 +2496,10 @@ class _SeasonCardState extends State<_SeasonCard> {
             hint: "Tap to view ${widget.season.title}",
             child: InkWell(
               onTap: widget.onTap,
+              onTapDown: _storeTapPosition,
+              onLongPress: _showContextMenu,
+              onSecondaryTapDown: _storeTapPosition,
+              onSecondaryTap: _showContextMenu,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
