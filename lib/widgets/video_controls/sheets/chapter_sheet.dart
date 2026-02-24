@@ -7,6 +7,7 @@ import '../../../mpv/mpv.dart';
 import '../../../services/plex_client.dart';
 import '../../../services/download_storage_service.dart';
 import '../../../models/plex_media_info.dart';
+import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../widgets/focusable_list_tile.dart';
@@ -76,7 +77,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
             content = const Center(child: CircularProgressIndicator());
           } else if (widget.chapters.isEmpty) {
             content = Center(
-              child: Text(t.videoControls.noChaptersAvailable, style: const TextStyle(color: Colors.white70)),
+              child: Text(t.videoControls.noChaptersAvailable, style: TextStyle(color: tokens(context).textMuted)),
             );
           } else {
             content = ListView.builder(
@@ -92,8 +93,11 @@ class _ChapterSheetState extends State<ChapterSheet> {
 
                 return FocusableListTile(
                   leading: chapter.thumb != null
-                      ? Stack(
-                          children: [
+                      ? SizedBox(
+                          width: 60,
+                          height: 34,
+                          child: Stack(
+                            children: [
                             ClipRRect(
                               borderRadius: const BorderRadius.all(Radius.circular(4)),
                               child: PlexOptimizedImage.thumb(
@@ -116,20 +120,21 @@ class _ChapterSheetState extends State<ChapterSheet> {
                                   ),
                                 ),
                               ),
-                          ],
+                            ],
+                          ),
                         )
                       : null,
                   title: Text(
                     chapter.label,
                     style: TextStyle(
-                      color: isCurrentChapter ? Colors.blue : Colors.white,
+                      color: isCurrentChapter ? Colors.blue : null,
                       fontWeight: isCurrentChapter ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   subtitle: Text(
                     formatDurationTimestamp(chapter.startTime),
                     style: TextStyle(
-                      color: isCurrentChapter ? Colors.blue.withValues(alpha: 0.7) : Colors.white70,
+                      color: isCurrentChapter ? Colors.blue.withValues(alpha: 0.7) : tokens(context).textMuted,
                       fontSize: 12,
                     ),
                   ),

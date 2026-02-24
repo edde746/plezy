@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
 
 /// Reusable widget for adjusting sync offsets (audio or subtitle)
@@ -146,8 +147,8 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
       child: Container(
         width: 48,
         height: 48,
-        decoration: BoxDecoration(color: Colors.grey[800], borderRadius: const BorderRadius.all(Radius.circular(8))),
-        child: Icon(icon, color: Colors.white, size: 28),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: const BorderRadius.all(Radius.circular(8))),
+        child: Icon(icon, color: tokens(context).text, size: 28),
       ),
     );
   }
@@ -165,10 +166,10 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // Current offset display
           Text(
             formatSyncOffset(_currentOffset),
-            style: const TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(_getDescriptionText(), style: const TextStyle(color: Colors.white70, fontSize: 16)),
+          Text(_getDescriptionText(), style: TextStyle(color: tokens(context).textMuted, fontSize: 16)),
           const SizedBox(height: 48),
           // Slider with +/- buttons
           Row(
@@ -183,7 +184,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
               // Slider section
               Text(
                 t.videoControls.minusTime(amount: "5", unit: "s"),
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: tokens(context).textMuted),
               ),
               Expanded(
                 child: Slider(
@@ -192,7 +193,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                   max: _sliderMax,
                   divisions: _sliderDivisions,
                   activeColor: Colors.blue,
-                  inactiveColor: Colors.white24,
+                  inactiveColor: Theme.of(context).colorScheme.outlineVariant,
                   onChanged: (value) {
                     setState(() {
                       _currentOffset = value;
@@ -205,7 +206,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
               ),
               Text(
                 t.videoControls.addTime(amount: "5", unit: "s"),
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: tokens(context).textMuted),
               ),
               const SizedBox(width: 12),
               // Increment button
@@ -223,10 +224,6 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),
             label: Text(t.videoControls.resetToZero),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey[850],
-              disabledForegroundColor: Colors.white38,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),

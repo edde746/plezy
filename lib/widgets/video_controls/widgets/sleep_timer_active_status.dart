@@ -27,7 +27,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             t.videoControls.playbackWillPauseIn(duration: formatDurationWithSeconds(remainingTime)),
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
           ),
           const SizedBox(height: 16),
           Row(
@@ -37,8 +37,8 @@ class SleepTimerActiveStatus extends StatelessWidget {
                 icon: const AppIcon(Symbols.add_rounded, fill: 1),
                 label: Text(t.videoControls.addTime(amount: "15", unit: " min")),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white54),
+                  foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  side: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 onPressed: () {
                   sleepTimer.extendTimer(const Duration(minutes: 15));

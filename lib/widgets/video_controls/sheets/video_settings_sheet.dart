@@ -14,6 +14,7 @@ import '../../../services/shader_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../theme/mono_tokens.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../widgets/sync_offset_control.dart';
@@ -43,21 +44,22 @@ class _SettingsMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = tokens(context);
     final valueWidget = Text(
       valueText,
-      style: TextStyle(color: isHighlighted ? Colors.amber : Colors.white70, fontSize: 14),
+      style: TextStyle(color: isHighlighted ? Colors.amber : t.textMuted, fontSize: 14),
       overflow: allowValueOverflow ? TextOverflow.ellipsis : null,
     );
 
     return FocusableListTile(
-      leading: AppIcon(icon, fill: 1, color: isHighlighted ? Colors.amber : Colors.white70),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+      leading: AppIcon(icon, fill: 1, color: isHighlighted ? Colors.amber : t.textMuted),
+      title: Text(title),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (allowValueOverflow) Flexible(child: valueWidget) else valueWidget,
           const SizedBox(width: 8),
-          const AppIcon(Symbols.chevron_right_rounded, fill: 1, color: Colors.white70),
+          AppIcon(Symbols.chevron_right_rounded, fill: 1, color: t.textMuted),
         ],
       ),
       onTap: onTap,
@@ -286,8 +288,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         // HDR Toggle (iOS, macOS, and Windows)
         if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
           ListTile(
-            leading: AppIcon(Symbols.hdr_strong_rounded, fill: 1, color: _enableHDR ? Colors.amber : Colors.white70),
-            title: Text(t.videoSettings.hdr, style: const TextStyle(color: Colors.white)),
+            leading: AppIcon(Symbols.hdr_strong_rounded, fill: 1, color: _enableHDR ? Colors.amber : tokens(context).textMuted),
+            title: Text(t.videoSettings.hdr),
             trailing: Switch(value: _enableHDR, onChanged: (_) => _toggleHDR(), activeThumbColor: Colors.amber),
             onTap: _toggleHDR,
           ),
@@ -297,9 +299,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           leading: AppIcon(
             Symbols.skip_next_rounded,
             fill: 1,
-            color: _autoPlayNextEpisode ? Colors.amber : Colors.white70,
+            color: _autoPlayNextEpisode ? Colors.amber : tokens(context).textMuted,
           ),
-          title: Text(t.videoControls.autoPlayNext, style: const TextStyle(color: Colors.white)),
+          title: Text(t.videoControls.autoPlayNext),
           trailing: Switch(
             value: _autoPlayNextEpisode,
             onChanged: (_) => _toggleAutoPlayNextEpisode(),
@@ -345,9 +347,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             leading: AppIcon(
               Symbols.blur_on,
               fill: 1,
-              color: widget.isAmbientLightingEnabled ? Colors.amber : Colors.white70,
+              color: widget.isAmbientLightingEnabled ? Colors.amber : tokens(context).textMuted,
             ),
-            title: Text(t.videoControls.ambientLighting, style: const TextStyle(color: Colors.white)),
+            title: Text(t.videoControls.ambientLighting),
             trailing: Switch(
               value: widget.isAmbientLightingEnabled,
               onChanged: (_) {
@@ -367,9 +369,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           leading: AppIcon(
             Symbols.analytics_rounded,
             fill: 1,
-            color: _showPerformanceOverlay ? Colors.amber : Colors.white70,
+            color: _showPerformanceOverlay ? Colors.amber : tokens(context).textMuted,
           ),
-          title: Text(t.videoSettings.performanceOverlay, style: const TextStyle(color: Colors.white)),
+          title: Text(t.videoSettings.performanceOverlay),
           trailing: Switch(
             value: _showPerformanceOverlay,
             onChanged: (_) => _togglePerformanceOverlay(),
@@ -397,7 +399,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final label = speed == 1.0 ? 'Normal' : '${speed.toStringAsFixed(2)}x';
 
             return ListTile(
-              title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
+              title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : null)),
               trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
               onTap: () async {
                 widget.player.setRate(speed);
@@ -521,7 +523,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                     child: Text(
                       _formatBackend(entry.key),
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: tokens(context).textMuted, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                   for (final d in entry.value) _buildDeviceTile(d, currentDevice),
@@ -546,7 +548,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final label = device.description.isEmpty ? device.name : device.description;
 
     return ListTile(
-      title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
+      title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : null)),
       trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
       onTap: () {
         widget.player.setAudioDevice(device);
@@ -570,9 +572,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final isSelected = preset.id == currentPreset.id;
 
             return FocusableListTile(
-              title: Text(preset.name, style: TextStyle(color: isSelected ? Colors.amber : Colors.white)),
+              title: Text(preset.name, style: TextStyle(color: isSelected ? Colors.amber : null)),
               subtitle: _getShaderSubtitle(preset) != null
-                  ? Text(_getShaderSubtitle(preset)!, style: const TextStyle(color: Colors.white54, fontSize: 12))
+                  ? Text(_getShaderSubtitle(preset)!, style: TextStyle(color: tokens(context).textMuted, fontSize: 12))
                   : null,
               trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.amber) : null,
               onTap: () async {
@@ -624,7 +626,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       iconColor: () {
         if (isIconActive) return Colors.amber;
         if (_currentView == _SettingsView.shader && isShaderActive) return Colors.amber;
-        return Colors.white;
+        return null;
       }(),
       onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
       child: () {

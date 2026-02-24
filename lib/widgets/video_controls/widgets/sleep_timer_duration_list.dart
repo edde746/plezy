@@ -36,11 +36,8 @@ class SleepTimerDurationList extends StatelessWidget {
         );
 
         return ListTile(
-          leading: const AppIcon(Symbols.timer_rounded, fill: 1, color: Colors.white70),
-          title: Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.normal),
-          ),
+          leading: AppIcon(Symbols.timer_rounded, fill: 1, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          title: Text(label),
           onTap: () {
             sleepTimer.startTimer(Duration(minutes: minutes), () {
               // Pause playback when timer completes

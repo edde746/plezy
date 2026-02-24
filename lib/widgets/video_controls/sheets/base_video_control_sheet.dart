@@ -26,7 +26,7 @@ class BaseVideoControlSheet extends StatelessWidget {
     Widget content = Column(
       children: [
         VideoSheetHeader(title: title, icon: icon, iconColor: iconColor, onBack: onBack),
-        const Divider(color: Colors.white24, height: 1),
+        Divider(color: Theme.of(context).dividerColor, height: 1),
         Expanded(child: child),
       ],
     );

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../providers/playback_state_provider.dart';
+import '../../../theme/mono_tokens.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
@@ -28,7 +29,7 @@ class QueueSheet extends StatelessWidget {
         Widget content;
         if (items.isEmpty) {
           content = Center(
-            child: Text(t.videoControls.noQueueItems, style: const TextStyle(color: Colors.white70)),
+            child: Text(t.videoControls.noQueueItems, style: TextStyle(color: tokens(context).textMuted)),
           );
         } else {
           // Find current index for initial scroll
@@ -46,7 +47,7 @@ class QueueSheet extends StatelessWidget {
                 title: Text(
                   item.title,
                   style: TextStyle(
-                    color: isCurrent ? Colors.blue : Colors.white,
+                    color: isCurrent ? Colors.blue : null,
                     fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                   ),
                   maxLines: 1,
@@ -55,7 +56,7 @@ class QueueSheet extends StatelessWidget {
                 subtitle: Text(
                   _buildSubtitle(item),
                   style: TextStyle(
-                    color: isCurrent ? Colors.blue.withValues(alpha: 0.7) : Colors.white70,
+                    color: isCurrent ? Colors.blue.withValues(alpha: 0.7) : tokens(context).textMuted,
                     fontSize: 12,
                   ),
                   maxLines: 1,
@@ -88,30 +89,34 @@ class QueueSheet extends StatelessWidget {
     // Try to get client for thumbnails, may fail in offline mode
     final client = _tryGetClient(context, item);
 
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
-          child: PlexOptimizedImage.thumb(
-            client: client,
-            imagePath: item.thumb,
-            width: 60,
-            height: 34,
-            fit: BoxFit.cover,
-            errorWidget: (context, url, error) =>
-                const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
-          ),
-        ),
-        if (isCurrent)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(4)),
-                border: const Border.fromBorderSide(BorderSide(color: Colors.blue, width: 2)),
-              ),
+    return SizedBox(
+      width: 60,
+      height: 34,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(4)),
+            child: PlexOptimizedImage.thumb(
+              client: client,
+              imagePath: item.thumb,
+              width: 60,
+              height: 34,
+              fit: BoxFit.cover,
+              errorWidget: (context, url, error) =>
+                  const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
             ),
           ),
-      ],
+          if (isCurrent)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                  border: const Border.fromBorderSide(BorderSide(color: Colors.blue, width: 2)),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

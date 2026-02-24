@@ -36,7 +36,7 @@ class _VersionSheetState extends State<VersionSheet> {
           final isSelected = index == widget.selectedMediaIndex;
 
           return FocusableListTile(
-            title: Text(version.displayLabel, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
+            title: Text(version.displayLabel, style: TextStyle(color: isSelected ? Colors.blue : null)),
             trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
             onTap: () {
               OverlaySheetController.of(context).close();

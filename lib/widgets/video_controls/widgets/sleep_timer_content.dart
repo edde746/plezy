@@ -31,7 +31,7 @@ class SleepTimerContent extends StatelessWidget {
           children: [
             if (sleepTimer.isActive && remainingTime != null) ...[
               SleepTimerActiveStatus(sleepTimer: sleepTimer, remainingTime: remainingTime, onCancel: onCancel),
-              const Divider(color: Colors.white24, height: 1),
+              Divider(color: Theme.of(context).dividerColor, height: 1),
             ],
             Expanded(
               child: SleepTimerDurationList(player: player, sleepTimer: sleepTimer, defaultDuration: defaultDuration),
