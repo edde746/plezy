@@ -205,7 +205,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _statusSubscription = null;
   }
 
-  Future<({String sessionId, String pin, String address})> createSession() async {
+  Future<({String sessionId, String pin, List<String> addresses})> createSession() async {
     await leaveSession();
 
     appLogger.d('CompanionRemote: Creating session as host');
@@ -225,7 +225,7 @@ class CompanionRemoteProvider with ChangeNotifier {
 
       notifyListeners();
       appLogger.d(
-        'CompanionRemote: Session created - ID: ${result.sessionId}, PIN: ${result.pin}, Address: ${result.address}',
+        'CompanionRemote: Session created - ID: ${result.sessionId}, PIN: ${result.pin}, Addresses: ${result.addresses}',
       );
 
       return result;
@@ -244,13 +244,18 @@ class CompanionRemoteProvider with ChangeNotifier {
   }
 
   Future<void> joinSession(String sessionId, String pin, String hostAddress) async {
+    await joinSessionMulti(sessionId, pin, [hostAddress]);
+  }
+
+  Future<void> joinSessionMulti(String sessionId, String pin, List<String> hostAddresses) async {
     await leaveSession();
 
     _lastSessionId = sessionId;
     _lastPin = pin;
-    _lastHostAddress = hostAddress;
+    // Store first address as fallback for reconnection; will be updated with winner
+    _lastHostAddress = hostAddresses.first;
 
-    appLogger.d('CompanionRemote: Joining session - ID: $sessionId, Host: $hostAddress');
+    appLogger.d('CompanionRemote: Joining session - ID: $sessionId, Hosts: $hostAddresses');
 
     _peerService = CompanionRemotePeerService();
     _setupPeerServiceListeners();
@@ -264,11 +269,18 @@ class CompanionRemoteProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _peerService!.joinSession(sessionId, pin, _deviceName, _platform, hostAddress);
+      final winner = await _peerService!.joinSessionRacing(
+        sessionId,
+        pin,
+        _deviceName,
+        _platform,
+        hostAddresses,
+      );
+      _lastHostAddress = winner;
 
       _session = _session?.copyWith(status: RemoteSessionStatus.connected);
       notifyListeners();
-      appLogger.d('CompanionRemote: Successfully joined session');
+      appLogger.d('CompanionRemote: Successfully joined session via $winner');
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to join session', error: e);
       _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: e.toString());

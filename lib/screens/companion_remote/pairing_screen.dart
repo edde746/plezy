@@ -144,23 +144,26 @@ class _PairingScreenState extends State<PairingScreen> {
     if (data == _lastScannedCode) return;
     _lastScannedCode = data;
 
-    // Strip URL wrapper if present (e.g. "https://plezy.app/scan#ip|port|sid|pin")
+    // Strip URL wrapper if present (e.g. "https://plezy.app/scan#ip1,ip2|port|sid|pin")
     final payload = data.contains('#') ? data.split('#').last : data;
     final parts = payload.split('|');
     if (parts.length == 4) {
-      final ip = parts.first;
+      final ipsField = parts.first;
       final port = parts[1];
       final sessionId = parts[2];
       final pin = parts[3];
-      final hostAddress = '$ip:$port';
+
+      // Support comma-separated IPs (multi-NIC) or single IP (legacy)
+      final ips = ipsField.split(',');
+      final hostAddresses = ips.map((ip) => '$ip:$port').toList();
 
       _scannerController?.stop();
       setState(() {
         _errorMessage = null;
         _isConnecting = true;
       });
-      // Connect directly instead of going through _connect() which requires Form validation
-      _connectWithCredentials(sessionId, pin, hostAddress);
+
+      _connectWithCredentialsMulti(sessionId, pin, hostAddresses);
     } else {
       setState(() {
         _errorMessage = t.companionRemote.pairing.invalidQrCode;
@@ -168,10 +171,14 @@ class _PairingScreenState extends State<PairingScreen> {
     }
   }
 
-  Future<void> _connectWithCredentials(String sessionId, String pin, String hostAddress) async {
+  Future<void> _connectWithCredentialsMulti(String sessionId, String pin, List<String> hostAddresses) async {
     try {
       final provider = context.read<CompanionRemoteProvider>();
-      await provider.joinSession(sessionId.trim().toUpperCase(), pin.trim(), hostAddress.trim());
+      await provider.joinSessionMulti(
+        sessionId.trim().toUpperCase(),
+        pin.trim(),
+        hostAddresses.map((a) => a.trim()).toList(),
+      );
 
       if (mounted) {
         Navigator.of(context).pop();

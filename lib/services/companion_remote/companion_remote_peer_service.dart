@@ -86,44 +86,43 @@ class CompanionRemotePeerService {
     return List.generate(6, (index) => random.nextInt(10).toString()).join();
   }
 
-  Future<String> _getLocalIpAddress() async {
+  Future<List<String>> _getAllLocalIpAddresses() async {
     try {
       final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4);
 
-      // Prefer WiFi interface, then any non-loopback
+      final preferred = <String>[];
+      final others = <String>[];
+
       for (final interface in interfaces) {
-        // Skip loopback
         if (interface.name.toLowerCase().contains('lo')) continue;
 
         for (final addr in interface.addresses) {
           if (!addr.isLoopback && addr.type == InternetAddressType.IPv4) {
-            // Prefer names that suggest WiFi/Ethernet
-            if (interface.name.toLowerCase().contains('en') ||
-                interface.name.toLowerCase().contains('wl') ||
-                interface.name.toLowerCase().contains('eth')) {
-              return addr.address;
+            final name = interface.name.toLowerCase();
+            if (name.contains('en') || name.contains('wl') || name.contains('eth')) {
+              preferred.add(addr.address);
+            } else {
+              others.add(addr.address);
             }
           }
         }
       }
 
-      // Fallback: return any non-loopback IPv4
-      for (final interface in interfaces) {
-        for (final addr in interface.addresses) {
-          if (!addr.isLoopback && addr.type == InternetAddressType.IPv4) {
-            return addr.address;
-          }
-        }
+      final all = [...preferred, ...others];
+      if (all.isEmpty) {
+        throw const RemotePeerError(type: RemotePeerErrorType.networkError, message: 'No network interface found');
       }
-
-      throw const RemotePeerError(type: RemotePeerErrorType.networkError, message: 'No network interface found');
+      return all;
     } catch (e) {
-      appLogger.e('CompanionRemote: Failed to get local IP', error: e);
+      appLogger.e('CompanionRemote: Failed to get local IPs', error: e);
       rethrow;
     }
   }
 
-  Future<({String sessionId, String pin, String address})> createSession(String deviceName, String platform) async {
+  Future<({String sessionId, String pin, List<String> addresses})> createSession(
+    String deviceName,
+    String platform,
+  ) async {
     if (_server != null) {
       await disconnect();
     }
@@ -145,11 +144,12 @@ class CompanionRemotePeerService {
         _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
       }
 
-      final localIp = await _getLocalIpAddress();
+      final localIps = await _getAllLocalIpAddresses();
       final port = _server!.port;
-      _hostAddress = '$localIp:$port';
+      final addresses = localIps.map((ip) => '$ip:$port').toList();
+      _hostAddress = addresses.first;
 
-      appLogger.d('CompanionRemote: Host server started at $_hostAddress');
+      appLogger.d('CompanionRemote: Host server started, addresses: $addresses');
 
       // Listen for WebSocket connections
       _server!.listen((HttpRequest request) async {
@@ -168,7 +168,7 @@ class CompanionRemotePeerService {
 
       _connectionStateController.add(RemoteSessionStatus.connected);
 
-      return (sessionId: _sessionId!, pin: _pin!, address: _hostAddress!);
+      return (sessionId: _sessionId!, pin: _pin!, addresses: addresses);
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to create server', error: e);
       _errorController.add(
@@ -439,6 +439,94 @@ class CompanionRemotePeerService {
         throw const RemotePeerError(type: RemotePeerErrorType.timeout, message: 'Timed out joining session');
       },
     );
+  }
+
+  /// Race WebSocket connections to multiple host addresses in parallel.
+  /// Returns the winning address and sets up a proper managed connection via [joinSession].
+  Future<String> joinSessionRacing(
+    String sessionId,
+    String pin,
+    String deviceName,
+    String platform,
+    List<String> hostAddresses,
+  ) async {
+    if (hostAddresses.length == 1) {
+      await joinSession(sessionId, pin, deviceName, platform, hostAddresses.first);
+      return hostAddresses.first;
+    }
+
+    appLogger.d('CompanionRemote: Racing connections to ${hostAddresses.length} addresses');
+
+    final completer = Completer<String>();
+    final channels = <IOWebSocketChannel>[];
+    final subs = <StreamSubscription>[];
+
+    void cleanup() {
+      for (final sub in subs) {
+        sub.cancel();
+      }
+      for (final ch in channels) {
+        try {
+          ch.sink.close();
+        } catch (_) {}
+      }
+    }
+
+    for (final address in hostAddresses) {
+      try {
+        final url = 'ws://$address/ws';
+        final channel = IOWebSocketChannel.connect(Uri.parse(url), connectTimeout: const Duration(seconds: 5));
+        channels.add(channel);
+
+        // Send auth immediately
+        channel.sink.add(jsonEncode({
+          'type': 'auth',
+          'sessionId': sessionId.toUpperCase(),
+          'pin': pin,
+          'deviceName': deviceName,
+          'platform': platform,
+        }));
+
+        final sub = channel.stream.listen(
+          (data) {
+            try {
+              final json = jsonDecode(data as String) as Map<String, dynamic>;
+              if (json['type'] == 'authSuccess' && !completer.isCompleted) {
+                appLogger.d('CompanionRemote: Race winner: $address');
+                completer.complete(address);
+              }
+            } catch (_) {}
+          },
+          onError: (_) {},
+          onDone: () {},
+        );
+        subs.add(sub);
+      } catch (e) {
+        appLogger.d('CompanionRemote: Race candidate $address failed to start: $e');
+      }
+    }
+
+    if (channels.isEmpty) {
+      throw const RemotePeerError(
+        type: RemotePeerErrorType.connectionFailed,
+        message: 'Failed to connect to any address',
+      );
+    }
+
+    try {
+      final winner = await completer.future.timeout(const Duration(seconds: 10));
+      cleanup();
+
+      // Now set up the proper managed connection on the winning address
+      await joinSession(sessionId, pin, deviceName, platform, winner);
+      return winner;
+    } on TimeoutException {
+      cleanup();
+      throw const RemotePeerError(
+        type: RemotePeerErrorType.timeout,
+        message: 'Timed out connecting to all addresses',
+      );
+    }
   }
 
   void _startPingTimer() {
