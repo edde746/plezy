@@ -9,8 +9,6 @@ import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
 import '../models/livetv_hub_result.dart';
 import '../models/livetv_program.dart';
-import '../models/livetv_scheduled_recording.dart';
-import '../models/livetv_subscription.dart';
 import '../models/plex_config.dart';
 import '../models/play_queue_response.dart';
 import '../models/plex_file_info.dart';
@@ -2408,11 +2406,6 @@ class PlexClient {
     }
   }
 
-  /// Reload the DVR guide data
-  Future<bool> reloadGuide(String dvrKey) {
-    return _wrapBoolApiCall(() => _dio.post('/livetv/dvrs/$dvrKey/reloadGuide'), 'Failed to reload guide');
-  }
-
   /// Get active live TV sessions
   Future<List<PlexMetadata>> getLiveTvSessions() {
     return _wrapListApiCall<PlexMetadata>(
@@ -2420,113 +2413,6 @@ class PlexClient {
       _extractMetadataList,
       'Failed to get live TV sessions',
     );
-  }
-
-  /// Get all DVR recording subscriptions
-  Future<List<LiveTvSubscription>> getSubscriptions() async {
-    return _wrapListApiCall<LiveTvSubscription>(() => _dio.get('/media/subscriptions'), (response) {
-      final container = _getMediaContainer(response);
-      if (container != null && container['MediaSubscription'] != null) {
-        return (container['MediaSubscription'] as List).map((json) {
-          final sub = LiveTvSubscription.fromJson(json as Map<String, dynamic>);
-          return LiveTvSubscription(
-            key: sub.key,
-            ratingKey: sub.ratingKey,
-            guid: sub.guid,
-            title: sub.title,
-            summary: sub.summary,
-            type: sub.type,
-            thumb: sub.thumb,
-            art: sub.art,
-            targetLibrarySectionID: sub.targetLibrarySectionID,
-            targetSectionID: sub.targetSectionID,
-            createdAt: sub.createdAt,
-            settings: sub.settings,
-            serverId: serverId,
-          );
-        }).toList();
-      }
-      return [];
-    }, 'Failed to get subscriptions');
-  }
-
-  /// Create a DVR recording subscription
-  Future<LiveTvSubscription?> createSubscription({
-    required String type,
-    required int targetSectionID,
-    required int targetLibrarySectionID,
-    Map<String, String>? prefs,
-    String? hint,
-    String? uri,
-  }) async {
-    try {
-      final queryParams = <String, dynamic>{
-        'type': type,
-        'targetSectionID': targetSectionID,
-        'targetLibrarySectionID': targetLibrarySectionID,
-      };
-      if (hint != null) queryParams['hint'] = hint;
-      if (uri != null) queryParams['uri'] = uri;
-      if (prefs != null) {
-        for (final entry in prefs.entries) {
-          queryParams['prefs[${entry.key}]'] = entry.value;
-        }
-      }
-
-      final response = await _dio.post('/media/subscriptions', queryParameters: queryParams);
-      final container = _getMediaContainer(response);
-      if (container != null && container['MediaSubscription'] != null) {
-        final subs = container['MediaSubscription'] as List;
-        if (subs.isNotEmpty) {
-          return LiveTvSubscription.fromJson(subs.first as Map<String, dynamic>);
-        }
-      }
-      return null;
-    } catch (e) {
-      appLogger.e('Failed to create subscription', error: e);
-      return null;
-    }
-  }
-
-  /// Delete a DVR recording subscription
-  Future<bool> deleteSubscription(String subscriptionId) {
-    return _wrapBoolApiCall(() => _dio.delete('/media/subscriptions/$subscriptionId'), 'Failed to delete subscription');
-  }
-
-  /// Edit a DVR recording subscription's preferences
-  Future<bool> editSubscription(String subscriptionId, Map<String, String> prefs) {
-    final queryParams = <String, dynamic>{};
-    for (final entry in prefs.entries) {
-      queryParams['prefs[${entry.key}]'] = entry.value;
-    }
-    return _wrapBoolApiCall(
-      () => _dio.put('/media/subscriptions/$subscriptionId', queryParameters: queryParams),
-      'Failed to edit subscription',
-    );
-  }
-
-  /// Get scheduled DVR recordings
-  Future<List<ScheduledRecording>> getScheduledRecordings() async {
-    return _wrapListApiCall<ScheduledRecording>(() => _dio.get('/media/subscriptions/scheduled'), (response) {
-      final container = _getMediaContainer(response);
-      if (container != null && container['Metadata'] != null) {
-        return (container['Metadata'] as List)
-            .map((json) => ScheduledRecording.fromJson(json as Map<String, dynamic>))
-            .toList();
-      }
-      return [];
-    }, 'Failed to get scheduled recordings');
-  }
-
-  /// Get subscription template for a program (used for recording setup)
-  Future<Map<String, dynamic>?> getSubscriptionTemplate(String guid) async {
-    try {
-      final response = await _dio.get('/media/subscriptions/template', queryParameters: {'guid': guid});
-      return _getMediaContainer(response);
-    } catch (e) {
-      appLogger.e('Failed to get subscription template', error: e);
-      return null;
-    }
   }
 
   Future<void> _handleEndpointSwitch(String newBaseUrl) async {

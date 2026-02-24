@@ -13,7 +13,6 @@ import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_tab_chip.dart';
-import 'dvr_recordings_screen.dart';
 import 'tabs/guide_tab.dart';
 import 'tabs/whats_on_tab.dart';
 
@@ -34,9 +33,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   // App bar action button focus
   final _refreshButtonFocusNode = FocusNode(debugLabel: 'RefreshButton');
-  final _dvrButtonFocusNode = FocusNode(debugLabel: 'DvrButton');
   bool _isRefreshFocused = false;
-  bool _isDvrFocused = false;
 
   List<LiveTvChannel> _channels = [];
   bool _isLoading = true;
@@ -51,7 +48,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     suppressAutoFocus = true;
     initTabNavigation();
     _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
-    _dvrButtonFocusNode.addListener(_onDvrFocusChange);
     _loadChannels();
   }
 
@@ -61,18 +57,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     _whatsOnTabFocusNode.dispose();
     _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
     _refreshButtonFocusNode.dispose();
-    _dvrButtonFocusNode.removeListener(_onDvrFocusChange);
-    _dvrButtonFocusNode.dispose();
     disposeTabNavigation();
     super.dispose();
   }
 
   void _onRefreshFocusChange() {
     if (mounted) setState(() => _isRefreshFocused = _refreshButtonFocusNode.hasFocus);
-  }
-
-  void _onDvrFocusChange() {
-    if (mounted) setState(() => _isDvrFocused = _dvrButtonFocusNode.hasFocus);
   }
 
   @override
@@ -204,10 +194,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     }
   }
 
-  void _openRecordings() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DvrRecordingsScreen()));
-  }
-
   void _focusCurrentTab() {
     if (tabController.index == 0) {
       _guideTabKey.currentState?.focusContent();
@@ -235,7 +221,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       return KeyEventResult.handled;
     }
     if (key.isRightKey) {
-      _dvrButtonFocusNode.requestFocus();
       return KeyEventResult.handled;
     }
     if (key.isDownKey) {
@@ -247,28 +232,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     }
     if (key.isSelectKey) {
       _loadChannels();
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
-  KeyEventResult _handleDvrKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) return KeyEventResult.ignored;
-    final key = event.logicalKey;
-
-    if (key.isLeftKey) {
-      _refreshButtonFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-    if (key.isRightKey || key.isUpKey) {
-      return KeyEventResult.handled;
-    }
-    if (key.isDownKey) {
-      _focusCurrentTab();
-      return KeyEventResult.handled;
-    }
-    if (key.isSelectKey) {
-      _openRecordings();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -352,21 +315,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                 icon: const AppIcon(Symbols.refresh_rounded),
                 tooltip: t.liveTv.reloadGuide,
                 onPressed: _loadChannels,
-              ),
-            ),
-          ),
-          Focus(
-            focusNode: _dvrButtonFocusNode,
-            onKeyEvent: _handleDvrKeyEvent,
-            child: Container(
-              decoration: BoxDecoration(
-                color: _isDvrFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                borderRadius: const BorderRadius.all(Radius.circular(20)),
-              ),
-              child: IconButton(
-                icon: const AppIcon(Symbols.fiber_dvr_rounded),
-                tooltip: t.liveTv.recordings,
-                onPressed: _openRecordings,
               ),
             ),
           ),

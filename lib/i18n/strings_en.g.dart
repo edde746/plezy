@@ -1718,15 +1718,6 @@ class TranslationsLiveTvEn {
 	/// en: 'Guide'
 	String get guide => 'Guide';
 
-	/// en: 'Recordings'
-	String get recordings => 'Recordings';
-
-	/// en: 'Subscriptions'
-	String get subscriptions => 'Subscriptions';
-
-	/// en: 'Scheduled'
-	String get scheduled => 'Scheduled';
-
 	/// en: 'No channels available'
 	String get noChannels => 'No channels available';
 
@@ -1742,32 +1733,8 @@ class TranslationsLiveTvEn {
 	/// en: 'Now Playing'
 	String get nowPlaying => 'Now Playing';
 
-	/// en: 'Record'
-	String get record => 'Record';
-
-	/// en: 'Record Series'
-	String get recordSeries => 'Record Series';
-
-	/// en: 'Cancel Recording'
-	String get cancelRecording => 'Cancel Recording';
-
-	/// en: 'Delete Recording Rule'
-	String get deleteSubscription => 'Delete Recording Rule';
-
-	/// en: 'Are you sure you want to delete this recording rule?'
-	String get deleteSubscriptionConfirm => 'Are you sure you want to delete this recording rule?';
-
-	/// en: 'Recording rule deleted'
-	String get subscriptionDeleted => 'Recording rule deleted';
-
 	/// en: 'No program data available'
 	String get noPrograms => 'No program data available';
-
-	/// en: 'No recordings scheduled'
-	String get noRecordings => 'No recordings scheduled';
-
-	/// en: 'No recording rules'
-	String get noSubscriptions => 'No recording rules';
 
 	/// en: 'Ch. ${number}'
 	String channelNumber({required Object number}) => 'Ch. ${number}';
@@ -1783,9 +1750,6 @@ class TranslationsLiveTvEn {
 
 	/// en: 'Reload Guide'
 	String get reloadGuide => 'Reload Guide';
-
-	/// en: 'Guide data reloaded'
-	String get guideReloaded => 'Guide data reloaded';
 
 	/// en: 'All Channels'
 	String get allChannels => 'All Channels';
@@ -3422,31 +3386,17 @@ extension on Translations {
 			'liveTv.title' => 'Live TV',
 			'liveTv.channels' => 'Channels',
 			'liveTv.guide' => 'Guide',
-			'liveTv.recordings' => 'Recordings',
-			'liveTv.subscriptions' => 'Subscriptions',
-			'liveTv.scheduled' => 'Scheduled',
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.tuneFailed' => 'Failed to tune channel',
 			'liveTv.loading' => 'Loading channels...',
 			'liveTv.nowPlaying' => 'Now Playing',
-			'liveTv.record' => 'Record',
-			'liveTv.recordSeries' => 'Record Series',
-			'liveTv.cancelRecording' => 'Cancel Recording',
-			'liveTv.deleteSubscription' => 'Delete Recording Rule',
-			'liveTv.deleteSubscriptionConfirm' => 'Are you sure you want to delete this recording rule?',
-			'liveTv.subscriptionDeleted' => 'Recording rule deleted',
 			'liveTv.noPrograms' => 'No program data available',
-			'liveTv.noRecordings' => 'No recordings scheduled',
-			'liveTv.noSubscriptions' => 'No recording rules',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEW',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Reload Guide',
-			'liveTv.guideReloaded' => 'Guide data reloaded',
 			'liveTv.allChannels' => 'All Channels',
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
@@ -3457,6 +3407,8 @@ extension on Translations {
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
