@@ -282,8 +282,7 @@ class PlayerNative extends PlayerBase {
   Future<void> updateFrame() async {
     checkDisposed();
     if (!initialized) return;
-    // Only iOS and macOS use Metal layer that needs frame updates
-    if (Platform.isIOS || Platform.isMacOS) {
+    if (Platform.isIOS || Platform.isMacOS || Platform.isLinux) {
       await methodChannel.invokeMethod('updateFrame');
     }
   }

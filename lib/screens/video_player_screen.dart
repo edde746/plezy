@@ -1698,6 +1698,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Toggle wakelock based on playback state
     if (isPlaying) {
       WakelockPlus.enable();
+      // Force a texture refresh on resume to unstick stale frames
+      // (Linux/macOS texture registrars can miss frame-available
+      // notifications after extended pause periods)
+      player?.updateFrame();
     } else {
       WakelockPlus.disable();
     }

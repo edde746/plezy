@@ -324,6 +324,11 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
 
       response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
     }
+  } else if (strcmp(method, "updateFrame") == 0) {
+    if (self->visible && self->texture) {
+      mpv_texture_mark_frame_available(self->texture);
+    }
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   } else if (strcmp(method, "isInitialized") == 0) {
     gboolean initialized = self->player && self->initialized;
     response = FL_METHOD_RESPONSE(
