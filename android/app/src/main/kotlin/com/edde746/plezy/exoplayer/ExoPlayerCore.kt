@@ -356,16 +356,21 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             } else {
                 // Scale buffer to available memory to reduce hardware decoder pressure
                 when {
-                    availableMB < 512 -> 50 * 1024 * 1024
-                    availableMB < 1024 -> 75 * 1024 * 1024
-                    else -> 150 * 1024 * 1024
+                    availableMB <= 512 -> 30 * 1024 * 1024
+                    availableMB <= 1024 -> 50 * 1024 * 1024
+                    availableMB <= 2048 -> 60 * 1024 * 1024
+                    else -> 130 * 1024 * 1024
                 }
             }
 
             val loadControl = DefaultLoadControl.Builder().apply {
                 setTargetBufferBytes(targetBufferBytes)
                 setPrioritizeTimeOverSizeThresholds(false)
-                setBufferDurationsMs(15_000, 30_000, 2_500, 5_000)
+                if (availableMB <= 2048) {
+                    setBufferDurationsMs(15_000, 50_000, 2_500, 5_000)
+                } else {
+                    setBufferDurationsMs(30_000, 60_000, 2_500, 5_000)
+                }
             }.build()
             Log.d(TAG, "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB")
 
