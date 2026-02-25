@@ -1257,26 +1257,36 @@ class _SkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Poster area
-        const Expanded(child: SkeletonLoader()),
-        const SizedBox(height: 4),
-        // Title bar
-        const SkeletonLoader(
-          child: SizedBox(height: 10, width: double.infinity),
-        ),
-        const SizedBox(height: 3),
-        // Subtitle bar
-        const FractionallySizedBox(
-          alignment: Alignment.centerLeft,
-          widthFactor: 0.6,
-          child: SkeletonLoader(
-            child: SizedBox(height: 8, width: double.infinity),
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Poster area — matches the Expanded poster in _buildGridCard
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: const SkeletonLoader(child: SizedBox.expand()),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          // Title bar
+          SkeletonLoader(
+            borderRadius: BorderRadius.circular(4),
+            child: const SizedBox(height: 13, width: double.infinity),
+          ),
+          const SizedBox(height: 3),
+          // Subtitle bar
+          FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: 0.6,
+            child: SkeletonLoader(
+              borderRadius: BorderRadius.circular(4),
+              child: const SizedBox(height: 11),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

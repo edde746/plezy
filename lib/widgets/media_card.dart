@@ -828,7 +828,7 @@ class _SkeletonLoaderState extends State<SkeletonLoader> with SingleTickerProvid
           identifier: "skeleton-loader",
           child: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: _animation.value),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: _animation.value * 0.15),
               borderRadius: widget.borderRadius ?? BorderRadius.circular(tokens(context).radiusSm),
             ),
             child: widget.child,
