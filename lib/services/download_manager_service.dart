@@ -451,9 +451,15 @@ class DownloadManagerService {
       status: DownloadStatus.queued.index,
     );
 
-    // Pin the already-cached API response for offline use
-    // (getMetadataWithImages was already called by download_provider, which cached with chapters/markers)
-    await _apiCache.pinForOffline(metadata.serverId!, metadata.ratingKey);
+    // Ensure metadata is in cache before pinning.
+    // Normally getMetadataWithImages already cached the full API response (with chapters/markers),
+    // but if the network failed during the provider's fetch, the cache entry may not exist.
+    final cached = await _apiCache.get(metadata.serverId!, '/library/metadata/${metadata.ratingKey}');
+    if (cached == null) {
+      await _cacheMetadataForOffline(metadata.serverId!, metadata.ratingKey, metadata);
+    } else {
+      await _apiCache.pinForOffline(metadata.serverId!, metadata.ratingKey);
+    }
 
     // Add to queue
     await _database.addToQueue(
@@ -501,8 +507,20 @@ class DownloadManagerService {
       final serverId = parsed.serverId;
       final ratingKey = parsed.ratingKey;
 
-      final metadata = await _apiCache.getMetadata(serverId, ratingKey);
-      if (metadata == null) throw Exception('Metadata not found in cache for $globalKey');
+      var metadata = await _apiCache.getMetadata(serverId, ratingKey);
+      if (metadata == null) {
+        // Cache miss — try re-fetching from server (cache may have been cleared between queue and prepare)
+        appLogger.w('Cache miss for $globalKey, attempting network re-fetch');
+        try {
+          final fetched = await client.getMetadataWithImages(ratingKey);
+          if (fetched != null) metadata = fetched.copyWith(serverId: serverId);
+        } catch (e) {
+          appLogger.w('Network re-fetch failed for $globalKey', error: e);
+        }
+        if (metadata == null) {
+          throw Exception('Metadata not found in cache and could not be fetched for $globalKey');
+        }
+      }
 
       final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
       if (playbackData.videoUrl == null) throw Exception('Could not get video URL');
