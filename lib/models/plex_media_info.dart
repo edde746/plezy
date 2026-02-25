@@ -173,7 +173,7 @@ class PlexMarker {
 
   bool containsPosition(Duration position) {
     final posMs = position.inMilliseconds;
-    return posMs >= startTimeOffset && posMs <= endTimeOffset;
+    return posMs >= startTimeOffset && posMs < endTimeOffset;
   }
 }
 

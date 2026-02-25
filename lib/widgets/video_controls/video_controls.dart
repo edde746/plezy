@@ -406,6 +406,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _skipMarker() {
     if (_currentMarker != null) {
       final endTime = _currentMarker!.endTime;
+      setState(() {
+        _currentMarker = null;
+      });
       widget.player.seek(endTime);
       widget.onSeekCompleted?.call(endTime);
     }
