@@ -14,6 +14,7 @@ import 'package:flutter/services.dart'
         PhysicalKeyboardKey,
         KeyEvent,
         KeyDownEvent,
+        KeyUpEvent,
         HardwareKeyboard;
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/macos_window_service.dart';
@@ -1288,6 +1289,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
+  /// Exit fullscreen if the window is actually fullscreen (async check).
+  /// Used by ESC handler on Windows/Linux to avoid relying on _isFullscreen flag.
+  Future<void> _exitFullscreenIfNeeded() async {
+    if (await windowManager.isFullScreen()) {
+      await FullscreenStateManager().exitFullscreen();
+    }
+  }
+
   /// Initialize always-on-top state from window manager (desktop only)
   Future<void> _initAlwaysOnTopState() async {
     final isOnTop = await windowManager.isAlwaysOnTop();
@@ -1370,8 +1379,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _handleGlobalKeyEvent(KeyEvent event) {
     if (!mounted) return false;
 
-    // TV back key fallback — Focus.onKeyEvent won't fire if _focusNode lost focus
-    if (PlatformDetector.isTV() && event.logicalKey.isBackKey) {
+    // Back key fallback when _focusNode lost focus (TV, or desktop with nav on).
+    // Focus.onKeyEvent won't fire if _focusNode lost focus, so handle ESC here.
+    if ((_videoPlayerNavigationEnabled || PlatformDetector.isTV()) && event.logicalKey.isBackKey) {
       if (!_focusNode.hasFocus) {
         // Skip if an overlay sheet is open — the sheet's FocusScope handles
         // back keys via its own onKeyEvent. Without this check, this global
@@ -1407,6 +1417,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // (e.g. after controls auto-hide). The !hasFocus guard prevents
     // double-handling when the Focus onKeyEvent already processes the event.
     if (!_focusNode.hasFocus && _keyboardService != null) {
+      // On Windows/Linux with navigation off, ESC only exits fullscreen —
+      // never exits the player. Intercept before the keyboard shortcuts
+      // service which would call onBack and pop the route.
+      // Skip if an overlay sheet is open — let the sheet handle ESC.
+      if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
+        final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
+        if (!sheetOpen) {
+          if (event is KeyUpEvent) {
+            _exitFullscreenIfNeeded();
+          }
+          _focusNode.requestFocus();
+          return true;
+        }
+      }
       final result = _keyboardService!.handleVideoPlayerKeyEvent(
         event,
         widget.player,
@@ -1521,12 +1545,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           focusNode: _focusNode,
           autofocus: true,
           onKeyEvent: (node, event) {
-            final backResult = handleBackKeyAction(event, () {
-              // On Windows/Linux with navigation off, ESC first exits fullscreen
-              if (!_videoPlayerNavigationEnabled && _isFullscreen && (Platform.isWindows || Platform.isLinux)) {
-                _toggleFullscreen();
-                return;
+            // On Windows/Linux with navigation off, ESC only exits fullscreen —
+            // never exits the player. Consume all back key events and check
+            // actual window state asynchronously.
+            if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
+              if (event is KeyUpEvent) {
+                _exitFullscreenIfNeeded();
               }
+              return KeyEventResult.handled;
+            }
+            final backResult = handleBackKeyAction(event, () {
               if (!_showControls) {
                 _showControlsWithFocus();
                 return;

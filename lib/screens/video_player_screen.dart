@@ -171,6 +171,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // key events never escape the video player route.
   late final FocusNode _screenFocusNode;
 
+  // Cached setting: when false on Windows/Linux, ESC should not exit the player
+  bool _videoPlayerNavigationEnabled = false;
+
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
 
@@ -393,6 +396,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       // Load buffer size from settings
       final settingsService = await SettingsService.getInstance();
+      _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
       final bufferSizeMB = settingsService.getBufferSize();
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
@@ -2327,7 +2331,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       canRequestFocus: isCurrentRoute,
       onKeyEvent: (node, event) {
         if (!isCurrentRoute) return KeyEventResult.ignored;
-        // Back keys always pass through — handled by PopScope (system back
+        // On Windows/Linux with navigation off, consume ESC so Flutter's
+        // DismissAction doesn't trigger a route pop. The video controls'
+        // global key handler manages fullscreen/controls toggle instead.
+        if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
+          return KeyEventResult.handled;
+        }
+        // Back keys pass through — handled by PopScope (system back
         // gesture) or overlay sheet's onKeyEvent.
         if (event.logicalKey.isBackKey) return KeyEventResult.ignored;
         // Self-heal: if this node itself has primary focus (no descendant
