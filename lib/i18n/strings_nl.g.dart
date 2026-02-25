@@ -1018,6 +1018,7 @@ class _TranslationsVideoSettingsNl implements TranslationsVideoSettingsEn {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Audio-uitvoer';
 	@override String get performanceOverlay => 'Prestatie-overlay';
+	@override String get audioPassthrough => 'Audio-doorvoer';
 }
 
 // Path: externalPlayer
@@ -2019,6 +2020,7 @@ extension on TranslationsNl {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audio-uitvoer',
 			'videoSettings.performanceOverlay' => 'Prestatie-overlay',
+			'videoSettings.audioPassthrough' => 'Audio-doorvoer',
 			'externalPlayer.title' => 'Externe speler',
 			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een externe app in plaats van de ingebouwde speler',

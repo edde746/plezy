@@ -115,6 +115,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   bool _enableHDR = true;
   bool _showPerformanceOverlay = false;
   bool _autoPlayNextEpisode = true;
+  bool _audioPassthrough = false;
 
   @override
   void initState() {
@@ -131,6 +132,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       _enableHDR = settings.getEnableHDR();
       _showPerformanceOverlay = settings.getShowPerformanceOverlay();
       _autoPlayNextEpisode = settings.getAutoPlayNextEpisode();
+      _audioPassthrough = settings.getAudioPassthrough();
     });
   }
 
@@ -164,6 +166,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     setState(() {
       _autoPlayNextEpisode = newValue;
     });
+  }
+
+  Future<void> _toggleAudioPassthrough() async {
+    final newValue = !_audioPassthrough;
+    final settings = await SettingsService.getInstance();
+    await settings.setAudioPassthrough(newValue);
+    if (!mounted) return;
+    setState(() {
+      _audioPassthrough = newValue;
+    });
+    await widget.player.setAudioPassthrough(newValue);
   }
 
   void _navigateTo(_SettingsView view) {
@@ -329,6 +342,23 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 onTap: () => _navigateTo(_SettingsView.audioDevice),
               );
             },
+          ),
+
+        // Audio Passthrough (Desktop only)
+        if (isDesktop)
+          ListTile(
+            leading: AppIcon(
+              Symbols.surround_sound_rounded,
+              fill: 1,
+              color: _audioPassthrough ? Colors.amber : tokens(context).textMuted,
+            ),
+            title: Text(t.videoSettings.audioPassthrough),
+            trailing: Switch(
+              value: _audioPassthrough,
+              onChanged: (_) => _toggleAudioPassthrough(),
+              activeThumbColor: Colors.amber,
+            ),
+            onTap: _toggleAudioPassthrough,
           ),
 
         // Shader Preset (MPV only)

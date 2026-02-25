@@ -433,6 +433,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await player!.setProperty('audio-exclusive', 'yes');
       }
 
+      // Audio passthrough (desktop only - sends bitstream to receiver)
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        if (settingsService.getAudioPassthrough()) {
+          await player!.setAudioPassthrough(true);
+        }
+      }
+
       // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
       if (Platform.isIOS || Platform.isMacOS || Platform.isWindows) {
         final enableHDR = settingsService.getEnableHDR();

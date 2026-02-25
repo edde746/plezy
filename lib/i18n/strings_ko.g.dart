@@ -1018,6 +1018,7 @@ class _TranslationsVideoSettingsKo implements TranslationsVideoSettingsEn {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => '오디오 출력';
 	@override String get performanceOverlay => '성능 오버레이';
+	@override String get audioPassthrough => '오디오 패스스루';
 }
 
 // Path: externalPlayer
@@ -2019,6 +2020,7 @@ extension on TranslationsKo {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => '오디오 출력',
 			'videoSettings.performanceOverlay' => '성능 오버레이',
+			'videoSettings.audioPassthrough' => '오디오 패스스루',
 			'externalPlayer.title' => '외부 플레이어',
 			'externalPlayer.useExternalPlayer' => '외부 플레이어 사용',
 			'externalPlayer.useExternalPlayerDescription' => '내장 플레이어 대신 외부 앱에서 동영상 열기',

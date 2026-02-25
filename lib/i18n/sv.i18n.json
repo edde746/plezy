@@ -806,7 +806,8 @@
     "subtitleSync": "Undertextsynkronisering",
     "hdr": "HDR",
     "audioOutput": "Ljudutgång",
-    "performanceOverlay": "Prestandaöverlägg"
+    "performanceOverlay": "Prestandaöverlägg",
+    "audioPassthrough": "Ljudgenomkoppling"
   },
   "externalPlayer": {
     "title": "Extern spelare",

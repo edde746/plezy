@@ -806,7 +806,8 @@
     "subtitleSync": "Ondertitel synchronisatie",
     "hdr": "HDR",
     "audioOutput": "Audio-uitvoer",
-    "performanceOverlay": "Prestatie-overlay"
+    "performanceOverlay": "Prestatie-overlay",
+    "audioPassthrough": "Audio-doorvoer"
   },
   "externalPlayer": {
     "title": "Externe speler",

@@ -806,7 +806,8 @@
     "subtitleSync": "字幕同步",
     "hdr": "HDR",
     "audioOutput": "音频输出",
-    "performanceOverlay": "性能监控"
+    "performanceOverlay": "性能监控",
+    "audioPassthrough": "音频直通"
   },
   "externalPlayer": {
     "title": "外部播放器",

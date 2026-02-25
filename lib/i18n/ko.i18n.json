@@ -806,7 +806,8 @@
     "subtitleSync": "자막 동기화",
     "hdr": "HDR",
     "audioOutput": "오디오 출력",
-    "performanceOverlay": "성능 오버레이"
+    "performanceOverlay": "성능 오버레이",
+    "audioPassthrough": "오디오 패스스루"
   },
   "externalPlayer": {
     "title": "외부 플레이어",

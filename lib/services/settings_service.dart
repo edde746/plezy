@@ -77,6 +77,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyCustomExternalPlayers = 'custom_external_players';
   static const String _keyConfirmExitOnBack = 'confirm_exit_on_back';
   static const String _keyAmbientLighting = 'ambient_lighting';
+  static const String _keyAudioPassthrough = 'audio_passthrough';
 
   SettingsService._();
 
@@ -1129,6 +1130,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyAmbientLighting) ?? false;
   }
 
+  // Audio Passthrough
+  Future<void> setAudioPassthrough(bool enabled) async {
+    await prefs.setBool(_keyAudioPassthrough, enabled);
+  }
+
+  bool getAudioPassthrough() {
+    return prefs.getBool(_keyAudioPassthrough) ?? false;
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1184,6 +1194,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyCustomExternalPlayers),
       prefs.remove(_keyConfirmExitOnBack),
       prefs.remove(_keyAmbientLighting),
+      prefs.remove(_keyAudioPassthrough),
       prefs.remove(_keyBufferSizeMigratedToAuto),
     ]);
   }

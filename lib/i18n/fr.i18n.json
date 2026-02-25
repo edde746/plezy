@@ -806,7 +806,8 @@
     "subtitleSync": "Synchronisation des sous-titres",
     "hdr": "HDR",
     "audioOutput": "Sortie audio",
-    "performanceOverlay": "Superposition de performance"
+    "performanceOverlay": "Superposition de performance",
+    "audioPassthrough": "Audio Pass-Through"
   },
   "externalPlayer": {
     "title": "Lecteur externe",

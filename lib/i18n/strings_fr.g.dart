@@ -1018,6 +1018,7 @@ class _TranslationsVideoSettingsFr implements TranslationsVideoSettingsEn {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Sortie audio';
 	@override String get performanceOverlay => 'Superposition de performance';
+	@override String get audioPassthrough => 'Audio Pass-Through';
 }
 
 // Path: externalPlayer
@@ -2019,6 +2020,7 @@ extension on TranslationsFr {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Sortie audio',
 			'videoSettings.performanceOverlay' => 'Superposition de performance',
+			'videoSettings.audioPassthrough' => 'Audio Pass-Through',
 			'externalPlayer.title' => 'Lecteur externe',
 			'externalPlayer.useExternalPlayer' => 'Utiliser un lecteur externe',
 			'externalPlayer.useExternalPlayerDescription' => 'Ouvrir les vidéos dans une application externe au lieu du lecteur intégré',

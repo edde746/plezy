@@ -2249,6 +2249,9 @@ class TranslationsVideoSettingsEn {
 
 	/// en: 'Performance Overlay'
 	String get performanceOverlay => 'Performance Overlay';
+
+	/// en: 'Audio Passthrough'
+	String get audioPassthrough => 'Audio Passthrough';
 }
 
 // Path: externalPlayer
@@ -3620,6 +3623,7 @@ extension on Translations {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
+			'videoSettings.audioPassthrough' => 'Audio Passthrough',
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in an external app instead of the built-in player',
