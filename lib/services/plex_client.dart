@@ -32,6 +32,13 @@ import '../utils/plex_url_helper.dart';
 import '../utils/watch_state_notifier.dart';
 import 'plex_api_cache.dart';
 
+/// Result of a paginated library content fetch
+class LibraryContentResult {
+  final List<PlexMetadata> items;
+  final int totalSize;
+  const LibraryContentResult({required this.items, required this.totalSize});
+}
+
 /// Process hub JSON response in an isolate.
 /// Top-level function so it can be passed to [Isolate.run].
 List<PlexHub> _processHubResponse(String jsonStr, String serverId, String? serverName) {
@@ -372,7 +379,7 @@ class PlexClient {
   }
 
   /// Get library content by section ID
-  Future<List<PlexMetadata>> getLibraryContent(
+  Future<LibraryContentResult> getLibraryContent(
     String sectionId, {
     int? start,
     int? size,
@@ -394,7 +401,11 @@ class PlexClient {
       cancelToken: cancelToken,
     );
 
-    return _extractMetadataList(response);
+    final items = _extractMetadataList(response);
+    final container = _getMediaContainer(response);
+    final totalSize = container?['totalSize'] as int? ?? container?['size'] as int? ?? items.length;
+
+    return LibraryContentResult(items: items, totalSize: totalSize);
   }
 
   /// Parse list of PlexMetadata from a cached response

@@ -524,7 +524,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   ) async {
     while (_hasMoreItems && requestId == _requestId) {
       try {
-        final items = await client.getLibraryContent(
+        final result = await client.getLibraryContent(
           library.key,
           start: _currentPage * _pageSize,
           size: _pageSize,
@@ -533,7 +533,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         );
 
         // Tag items with server info for multi-server support
-        final taggedItems = items
+        final taggedItems = result.items
             .map((item) => item.copyWith(serverId: library.serverId, serverName: library.serverName))
             .toList();
 
