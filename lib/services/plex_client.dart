@@ -233,7 +233,7 @@ class PlexClient {
       final response = await dio.get('/', options: Options(headers: {'X-Plex-Token': token}));
 
       stopwatch.stop();
-      final success = response.statusCode == 200 || response.statusCode == 401;
+      final success = response.statusCode == 200;
 
       return ConnectionTestResult(
         success: success,
@@ -369,6 +369,17 @@ class PlexClient {
   Future<Map<String, dynamic>> getServerIdentity() async {
     final response = await _dio.get('/identity');
     return response.data;
+  }
+
+  /// Check if the server connection is healthy (reachable AND authenticated).
+  /// Returns true only if the server responds with HTTP 200.
+  Future<bool> isHealthy() async {
+    try {
+      final response = await _dio.get('/identity');
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Get library sections

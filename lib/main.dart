@@ -378,13 +378,25 @@ class _SetupScreenState extends State<SetupScreen> {
     final storage = await StorageService.getInstance();
     final registry = ServerRegistry(storage);
 
-    // Check network connectivity early to fast-path airplane mode
-    final connectivityResult = await Connectivity().checkConnectivity();
+    // Check network connectivity early to fast-path airplane mode.
+    // Timeout guards against connectivity_plus hanging on some Android TV devices after force-close.
+    final connectivityResult = await Connectivity()
+        .checkConnectivity()
+        .timeout(const Duration(seconds: 3), onTimeout: () => [ConnectivityResult.other]);
     final hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
 
     if (hasNetwork) {
-      // Refresh servers from API to get updated connection info (IPs may change)
-      await registry.refreshServersFromApi();
+      // Refresh servers from API to get updated connection info (IPs may change).
+      // If the stored token is invalid (e.g. after removing a Plex profile PIN),
+      // redirect to AuthScreen so the user can re-authenticate.
+      final refreshResult = await registry.refreshServersFromApi();
+      if (refreshResult == ServerRefreshResult.authError) {
+        await storage.clearCredentials();
+        if (mounted) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
+        }
+        return;
+      }
     }
 
     // Load all configured servers

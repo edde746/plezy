@@ -288,7 +288,9 @@ class MultiServerManager {
     }
   }
 
-  /// Test connection health for all servers
+  /// Test connection health for all servers.
+  /// Uses [PlexClient.isHealthy] which checks for HTTP 200, so servers with
+  /// invalid tokens (401) are correctly reported as offline.
   Future<void> checkServerHealth() async {
     appLogger.d('Checking health for ${_clients.length} servers');
 
@@ -296,13 +298,10 @@ class MultiServerManager {
       final serverId = entry.key;
       final client = entry.value;
 
-      try {
-        // Simple ping by fetching server identity
-        await client.getServerIdentity();
-        updateServerStatus(serverId, true);
-      } catch (e) {
-        appLogger.w('Server $serverId health check failed: $e');
-        updateServerStatus(serverId, false);
+      final healthy = await client.isHealthy();
+      updateServerStatus(serverId, healthy);
+      if (!healthy) {
+        appLogger.w('Server $serverId health check failed');
       }
     });
 
