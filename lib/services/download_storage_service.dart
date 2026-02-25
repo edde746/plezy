@@ -222,7 +222,11 @@ class DownloadStorageService {
   String _sanitizeFileName(String name) {
     // Remove invalid filesystem characters: < > : " / \ | ? *
     // Also remove leading/trailing whitespace and dots
-    return name.replaceAll(RegExp(r'[<>:"/\\|?*]'), '').replaceAll(RegExp(r'^\.+|\.+$'), '').trim();
+    return name
+        .replaceAll(RegExp(r'[<>:"/\\|?*]'), '')
+        .replaceAll(RegExp(r'^\.+|\.+$'), '')
+        .replaceAll('.', '_')
+        .trim();
   }
 
   /// Ensure a directory exists, creating it if necessary
