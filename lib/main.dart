@@ -79,7 +79,8 @@ void main() async {
   await initializeDateFormatting(savedLocale.languageCode, null);
 
   // Configure image cache for large libraries
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20; // 200MB
+  PaintingBinding.instance.imageCache.maximumSize = 2000; // default 1000
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300MB
 
   // Initialize services in parallel where possible
   final futures = <Future<void>>[];
