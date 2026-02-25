@@ -15,9 +15,11 @@ import '../focus/input_mode_tracker.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
 import '../services/download_storage_service.dart';
+import '../widgets/collapsible_text.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/formatters.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -637,14 +639,24 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                       // Summary
                       if (widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text(
-                          widget.episode.summary!,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        if (PlatformDetector.isTV())
+                          Text(
+                            widget.episode.summary!,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        else
+                          CollapsibleText(
+                            text: widget.episode.summary!,
+                            maxLines: 3,
+                            small: true,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
+                          ),
                       ],
 
                       // Metadata row (duration, watched status)
