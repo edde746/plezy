@@ -1264,7 +1264,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   }
                 },
                 itemBuilder: (context, index) {
-                  return _buildHeroItem(_onDeck[index]);
+                  return _buildHeroItem(_onDeck[index], heroHeight);
                 },
               ),
               // Bottom gradient that extends past hero bounds to ensure seamless blend
@@ -1380,7 +1380,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  Widget _buildHeroItem(PlexMetadata heroItem) {
+  Widget _buildHeroItem(PlexMetadata heroItem, double heroHeight) {
     final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.title;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1406,7 +1406,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           clipBehavior: Clip.none,
           children: [
             // Background Image with fade/zoom animation and parallax
-            if (heroItem.art != null || heroItem.grandparentArt != null)
+            if (heroItem.art != null || heroItem.backgroundSquare != null || heroItem.grandparentArt != null)
               ClipRect(
                 child: AnimatedBuilder(
                   animation: _scrollController,
@@ -1429,9 +1429,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         final client = _getClientForItem(heroItem);
                         final mediaQuery = MediaQuery.of(context);
                         final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
+                        final containerAspect = screenWidth / heroHeight;
                         final imageUrl = PlexImageHelper.getOptimizedImageUrl(
                           client: client,
-                          thumbPath: heroItem.art ?? heroItem.grandparentArt,
+                          thumbPath: heroItem.heroArt(containerAspectRatio: containerAspect) ?? heroItem.grandparentArt,
                           maxWidth: mediaQuery.size.width,
                           maxHeight: mediaQuery.size.height * 0.7,
                           devicePixelRatio: dpr,

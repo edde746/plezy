@@ -1853,14 +1853,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                       SizedBox(
                         height: headerHeight,
                         width: double.infinity,
-                        child: metadata.art != null
+                        child: (metadata.art != null || metadata.backgroundSquare != null)
                             ? Builder(
                                 builder: (context) {
+                                  final containerAspect = size.width / headerHeight;
+                                  final heroArtPath = metadata.heroArt(containerAspectRatio: containerAspect);
+
                                   // Check for offline local file first
                                   if (widget.isOffline && widget.metadata.serverId != null) {
                                     final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
                                       widget.metadata.serverId!,
-                                      metadata.art,
+                                      heroArtPath,
                                     );
                                     if (localPath != null && File(localPath).existsSync()) {
                                       return Image.file(
@@ -1879,7 +1882,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                                   final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
                                   final imageUrl = PlexImageHelper.getOptimizedImageUrl(
                                     client: client,
-                                    thumbPath: metadata.art,
+                                    thumbPath: heroArtPath,
                                     maxWidth: mediaQuery.size.width,
                                     maxHeight: mediaQuery.size.height * 0.6,
                                     devicePixelRatio: dpr,

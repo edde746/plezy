@@ -112,6 +112,9 @@ class PlexMetadata with MultiServerFields {
   // Clear logo URL (extracted from Image array, but serialized for offline storage)
   final String? clearLogo;
 
+  // Square background art URL (extracted from Image array, used for near-square hero layouts)
+  final String? backgroundSquare;
+
   /// Global unique identifier across all servers (serverId:ratingKey)
   String get globalKey => serverId != null ? buildGlobalKey(serverId!, ratingKey) : ratingKey;
 
@@ -186,6 +189,7 @@ class PlexMetadata with MultiServerFields {
     this.serverId,
     this.serverName,
     this.clearLogo,
+    this.backgroundSquare,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -242,6 +246,7 @@ class PlexMetadata with MultiServerFields {
     String? serverId,
     String? serverName,
     String? clearLogo,
+    String? backgroundSquare,
   }) {
     return PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -296,33 +301,46 @@ class PlexMetadata with MultiServerFields {
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
       clearLogo: clearLogo ?? this.clearLogo,
+      backgroundSquare: backgroundSquare ?? this.backgroundSquare,
     );
   }
 
-  /// Extract clearLogo from Image array in raw JSON
-  static String? _extractClearLogoFromJson(Map<String, dynamic> json) {
+  /// Extract an image URL by type from the Image array in raw JSON
+  static String? _extractImageFromJson(Map<String, dynamic> json, String imageType) {
     if (!json.containsKey('Image')) return null;
 
     final images = json['Image'] as List?;
     if (images == null) return null;
 
     for (var image in images) {
-      if (image is Map && image['type'] == 'clearLogo') {
+      if (image is Map && image['type'] == imageType) {
         return image['url'] as String?;
       }
     }
     return null;
   }
 
-  /// Create from JSON with clearLogo extracted from Image array
+  /// Create from JSON with Image array fields extracted
   factory PlexMetadata.fromJsonWithImages(Map<String, dynamic> json) {
-    // Extract clearLogo before parsing
-    final clearLogoUrl = _extractClearLogoFromJson(json);
-    // Add it to the json so it gets parsed
+    final clearLogoUrl = _extractImageFromJson(json, 'clearLogo');
     if (clearLogoUrl != null) {
       json['clearLogo'] = clearLogoUrl;
     }
+    final backgroundSquareUrl = _extractImageFromJson(json, 'backgroundSquare');
+    if (backgroundSquareUrl != null) {
+      json['backgroundSquare'] = backgroundSquareUrl;
+    }
     return PlexMetadata.fromJson(json);
+  }
+
+  /// Returns the best hero art path based on the container's aspect ratio.
+  /// Uses backgroundSquare when the container is closer to 1:1 than 16:9.
+  String? heroArt({required double containerAspectRatio}) {
+    // Threshold = midpoint of 1:1 (1.0) and 16:9 (~1.78) ≈ 1.39
+    if (containerAspectRatio < 1.39 && backgroundSquare != null) {
+      return backgroundSquare;
+    }
+    return art;
   }
 
   // Helper to get the display title (show name for episodes/seasons, title otherwise)

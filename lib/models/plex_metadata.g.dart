@@ -57,6 +57,7 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   extraType: (json['extraType'] as num?)?.toInt(),
   primaryExtraKey: json['primaryExtraKey'] as String?,
   clearLogo: json['clearLogo'] as String?,
+  backgroundSquare: json['backgroundSquare'] as String?,
 );
 
 Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) => <String, dynamic>{
@@ -110,4 +111,5 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) => <String, dyn
   'extraType': instance.extraType,
   'primaryExtraKey': instance.primaryExtraKey,
   'clearLogo': instance.clearLogo,
+  'backgroundSquare': instance.backgroundSquare,
 };

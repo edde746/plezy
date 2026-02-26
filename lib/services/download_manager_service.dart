@@ -916,6 +916,11 @@ class DownloadManagerService {
         await _downloadSingleArtwork(serverId, metadata.art!, client);
       }
 
+      // Download square background art
+      if (metadata.backgroundSquare != null) {
+        await _downloadSingleArtwork(serverId, metadata.backgroundSquare!, client);
+      }
+
       // Store thumb reference in database (primary artwork for display)
       await _database.updateArtworkPaths(globalKey: globalKey, thumbPath: metadata.thumb);
 
@@ -976,6 +981,11 @@ class DownloadManagerService {
     // Download background art
     if (metadata.art != null) {
       await _downloadSingleArtwork(serverId, metadata.art!, client);
+    }
+
+    // Download square background art
+    if (metadata.backgroundSquare != null) {
+      await _downloadSingleArtwork(serverId, metadata.backgroundSquare!, client);
     }
   }
 
