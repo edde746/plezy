@@ -786,6 +786,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   bool get _shouldShowAlphaJumpBar {
     if (_selectedGrouping == 'folders') return false;
     if (_firstCharacters.isEmpty) return false;
+    if (_firstCharacters.length < 6 || _alphaHelper.totalItemCount < 80) return false;
     // Show when no sort is selected (default is titleSort) or when explicitly sorting by title
     final sortKey = _selectedSort?.key ?? '';
     return sortKey.isEmpty || sortKey.startsWith('titleSort');
