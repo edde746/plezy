@@ -40,6 +40,9 @@ class MpvPlayerCore(private val activity: Activity) :
     companion object {
         private const val TAG = "MpvPlayerCore"
         private const val SHORT_VIDEO_LENGTH_MS = 300000L // 5 minutes
+
+        // Guards MPVLib.create/destroy which share global native state
+        private val mpvLock = Object()
     }
 
     private var surfaceView: SurfaceView? = null
@@ -178,10 +181,11 @@ class MpvPlayerCore(private val activity: Activity) :
         }
     }
 
-    fun initialize(): Boolean {
+    fun initialize(onResult: (Boolean) -> Unit) {
         if (isInitialized) {
             Log.d(TAG, "Already initialized")
-            return true
+            onResult(true)
+            return
         }
 
         try {
@@ -250,25 +254,31 @@ class MpvPlayerCore(private val activity: Activity) :
 
             Log.d(TAG, "SurfaceView added to content view")
 
-            // Initialize MPVLib
-            MPVLib.create(activity.applicationContext)
-
-            // Configure MPV defaults
-            setupMpvDefaults()
-
-            // Initialize MPV
-            MPVLib.init()
-
-            // Register event and log observers
-            MPVLib.addObserver(this)
-            MPVLib.addLogObserver(this)
-
-            isInitialized = true
-            Log.d(TAG, "Initialized successfully")
-            return true
+            // Native MPVLib init on background thread — waits for any
+            // in-flight destroy to finish without blocking the UI thread.
+            val ctx = activity.applicationContext
+            Thread {
+                try {
+                    synchronized(mpvLock) {
+                        MPVLib.create(ctx)
+                        setupMpvDefaults()
+                        MPVLib.init()
+                    }
+                    handler.post {
+                        MPVLib.addObserver(this)
+                        MPVLib.addLogObserver(this)
+                        isInitialized = true
+                        Log.d(TAG, "Initialized successfully")
+                        onResult(true)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to initialize native: ${e.message}", e)
+                    handler.post { onResult(false) }
+                }
+            }.start()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize: ${e.message}", e)
-            return false
+            onResult(false)
         }
     }
 
@@ -737,10 +747,16 @@ class MpvPlayerCore(private val activity: Activity) :
         }
         surfaceContainer = null
         surfaceView = null
-
-        MPVLib.destroy()
         isInitialized = false
 
-        Log.d(TAG, "Disposed")
+        // Run native destroy on background thread to avoid ANR —
+        // MPVLib.destroy() blocks on pthread_cond_wait while mpv's
+        // internal threads (lua, demux, vo) shut down.
+        Thread {
+            synchronized(mpvLock) {
+                MPVLib.destroy()
+            }
+            Log.d(TAG, "Disposed (native)")
+        }.start()
     }
 }
