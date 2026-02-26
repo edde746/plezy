@@ -117,6 +117,8 @@
     "alwaysKeepSidebarOpenDescription": "사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다",
     "showUnwatchedCount": "미시청 수 표시",
     "showUnwatchedCountDescription": "시리즈 및 시즌에 미시청 에피소드 수 표시",
+    "hideSpoilers": "미시청 에피소드 스포일러 숨기기",
+    "hideSpoilersDescription": "아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다",
     "playerBackend": "플레이어 백엔드",
     "exoPlayer": "ExoPlayer (권장)",
     "exoPlayerDescription": "더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어",

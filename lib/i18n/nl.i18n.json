@@ -117,6 +117,8 @@
     "alwaysKeepSidebarOpenDescription": "Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan",
     "showUnwatchedCount": "Aantal ongekeken tonen",
     "showUnwatchedCountDescription": "Toon aantal ongekeken afleveringen bij series en seizoenen",
+    "hideSpoilers": "Spoilers voor ongekeken afleveringen verbergen",
+    "hideSpoilersDescription": "Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien",
     "playerBackend": "Speler backend",
     "exoPlayer": "ExoPlayer (Aanbevolen)",
     "exoPlayerDescription": "Android-native speler met betere hardware-ondersteuning",

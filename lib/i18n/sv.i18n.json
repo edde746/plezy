@@ -117,6 +117,8 @@
     "alwaysKeepSidebarOpenDescription": "Sidofältet förblir expanderat och innehållsytan anpassas",
     "showUnwatchedCount": "Visa antal osedda",
     "showUnwatchedCountDescription": "Visa antal osedda avsnitt för serier och säsonger",
+    "hideSpoilers": "Dölj spoilers för osedda avsnitt",
+    "hideSpoilersDescription": "Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu",
     "playerBackend": "Spelarmotor",
     "exoPlayer": "ExoPlayer (Rekommenderad)",
     "exoPlayerDescription": "Android-nativ spelare med bättre hårdvarustöd",

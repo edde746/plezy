@@ -236,6 +236,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => '侧边栏保持展开状态，内容区域自动调整';
 	@override String get showUnwatchedCount => '显示未观看数量';
 	@override String get showUnwatchedCountDescription => '在剧集和季上显示未观看的集数';
+	@override String get hideSpoilers => '隐藏未看剧集的剧透内容';
+	@override String get hideSpoilersDescription => '模糊未观看剧集的缩略图并隐藏其描述';
 	@override String get playerBackend => '播放器引擎';
 	@override String get exoPlayer => 'ExoPlayer（推荐）';
 	@override String get exoPlayerDescription => 'Android 原生播放器，硬件支持更好';
@@ -1394,6 +1396,8 @@ extension on TranslationsZh {
 			'settings.alwaysKeepSidebarOpenDescription' => '侧边栏保持展开状态，内容区域自动调整',
 			'settings.showUnwatchedCount' => '显示未观看数量',
 			'settings.showUnwatchedCountDescription' => '在剧集和季上显示未观看的集数',
+			'settings.hideSpoilers' => '隐藏未看剧集的剧透内容',
+			'settings.hideSpoilersDescription' => '模糊未观看剧集的缩略图并隐藏其描述',
 			'settings.playerBackend' => '播放器引擎',
 			'settings.exoPlayer' => 'ExoPlayer（推荐）',
 			'settings.exoPlayerDescription' => 'Android 原生播放器，硬件支持更好',

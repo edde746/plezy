@@ -117,6 +117,8 @@
     "alwaysKeepSidebarOpenDescription": "La barre latérale reste étendue et la zone de contenu s'adapte",
     "showUnwatchedCount": "Afficher le nombre non visionné",
     "showUnwatchedCountDescription": "Afficher le nombre d'épisodes non visionnés pour les séries et saisons",
+    "hideSpoilers": "Masquer les spoilers des épisodes non vus",
+    "hideSpoilersDescription": "Flouter les miniatures et masquer les descriptions des épisodes que vous n'avez pas encore regardés",
     "playerBackend": "Moteur de lecture",
     "exoPlayer": "ExoPlayer (Recommandé)",
     "exoPlayerDescription": "Lecteur natif Android avec meilleur support matériel",

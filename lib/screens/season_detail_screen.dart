@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +15,8 @@ import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
+import '../providers/settings_provider.dart';
+import '../utils/content_utils.dart';
 import '../services/download_storage_service.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
@@ -383,6 +386,9 @@ class _EpisodeCardState extends State<_EpisodeCard> {
 
   @override
   Widget build(BuildContext context) {
+    final hideSpoilers = context.watch<SettingsProvider>().hideSpoilers;
+    final shouldBlur = hideSpoilers && widget.episode.shouldHideSpoiler;
+
     // Hide progress when offline (not tracked)
     final hasProgress =
         !widget.isOffline &&
@@ -430,7 +436,17 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                     children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.all(Radius.circular(6)),
-                        child: AspectRatio(aspectRatio: 16 / 9, child: _buildEpisodeThumbnail()),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: shouldBlur
+                              ? ClipRect(
+                                  child: ImageFiltered(
+                                    imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                    child: _buildEpisodeThumbnail(),
+                                  ),
+                                )
+                              : _buildEpisodeThumbnail(),
+                        ),
                       ),
 
                       // Play overlay
@@ -634,8 +650,8 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                         },
                       ),
 
-                      // Summary
-                      if (widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
+                      // Summary (hidden when spoiler protection is active)
+                      if (!shouldBlur && widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
                           widget.episode.summary!,

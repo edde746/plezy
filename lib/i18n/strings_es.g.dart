@@ -236,6 +236,8 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse';
 	@override String get showUnwatchedCount => 'Mostrar conteo de no vistos';
 	@override String get showUnwatchedCountDescription => 'Mostrar el conteo de episodios no vistos en series y temporadas';
+	@override String get hideSpoilers => 'Ocultar spoilers de episodios no vistos';
+	@override String get hideSpoilersDescription => 'Difuminar miniaturas y ocultar descripciones de episodios que aún no has visto';
 	@override String get playerBackend => 'Reproductor';
 	@override String get exoPlayer => 'ExoPlayer (Recomendado)';
 	@override String get exoPlayerDescription => 'Reproductor nativo de Android con mejor soporte de hardware';
@@ -1394,6 +1396,8 @@ extension on TranslationsEs {
 			'settings.alwaysKeepSidebarOpenDescription' => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse',
 			'settings.showUnwatchedCount' => 'Mostrar conteo de no vistos',
 			'settings.showUnwatchedCountDescription' => 'Mostrar el conteo de episodios no vistos en series y temporadas',
+			'settings.hideSpoilers' => 'Ocultar spoilers de episodios no vistos',
+			'settings.hideSpoilersDescription' => 'Difuminar miniaturas y ocultar descripciones de episodios que aún no has visto',
 			'settings.playerBackend' => 'Reproductor',
 			'settings.exoPlayer' => 'ExoPlayer (Recomendado)',
 			'settings.exoPlayerDescription' => 'Reproductor nativo de Android con mejor soporte de hardware',

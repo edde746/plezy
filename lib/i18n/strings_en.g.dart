@@ -454,6 +454,12 @@ class TranslationsSettingsEn {
 	/// en: 'Display unwatched episode count on shows and seasons'
 	String get showUnwatchedCountDescription => 'Display unwatched episode count on shows and seasons';
 
+	/// en: 'Hide Spoilers for Unwatched Episodes'
+	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
+
+	/// en: 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet'
+	String get hideSpoilersDescription => 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet';
+
 	/// en: 'Player Backend'
 	String get playerBackend => 'Player Backend';
 
@@ -2982,6 +2988,8 @@ extension on Translations {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
 			'settings.showUnwatchedCountDescription' => 'Display unwatched episode count on shows and seasons',
+			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
+			'settings.hideSpoilersDescription' => 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet',
 			'settings.playerBackend' => 'Player Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Recommended)',
 			'settings.exoPlayerDescription' => 'Android native player with better hardware support',

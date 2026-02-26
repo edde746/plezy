@@ -236,6 +236,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다';
 	@override String get showUnwatchedCount => '미시청 수 표시';
 	@override String get showUnwatchedCountDescription => '시리즈 및 시즌에 미시청 에피소드 수 표시';
+	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
+	@override String get hideSpoilersDescription => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다';
 	@override String get playerBackend => '플레이어 백엔드';
 	@override String get exoPlayer => 'ExoPlayer (권장)';
 	@override String get exoPlayerDescription => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어';
@@ -1394,6 +1396,8 @@ extension on TranslationsKo {
 			'settings.alwaysKeepSidebarOpenDescription' => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다',
 			'settings.showUnwatchedCount' => '미시청 수 표시',
 			'settings.showUnwatchedCountDescription' => '시리즈 및 시즌에 미시청 에피소드 수 표시',
+			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
+			'settings.hideSpoilersDescription' => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다',
 			'settings.playerBackend' => '플레이어 백엔드',
 			'settings.exoPlayer' => 'ExoPlayer (권장)',
 			'settings.exoPlayerDescription' => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어',

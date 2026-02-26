@@ -71,6 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kShowServerNameOnHubs = 'show_server_name_on_hubs';
   static const _kAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const _kShowUnwatchedCount = 'show_unwatched_count';
+  static const _kHideSpoilers = 'hide_spoilers';
   static const _kRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const _kConfirmExitOnBack = 'confirm_exit_on_back';
   static const _kPlayerBackend = 'player_backend';
@@ -379,6 +380,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 value: settingsProvider.showUnwatchedCount,
                 onChanged: (value) async {
                   await settingsProvider.setShowUnwatchedCount(value);
+                },
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                focusNode: _focusTracker.get(_kHideSpoilers),
+                secondary: const AppIcon(Symbols.visibility_off_rounded, fill: 1),
+                title: Text(t.settings.hideSpoilers),
+                subtitle: Text(t.settings.hideSpoilersDescription),
+                value: settingsProvider.hideSpoilers,
+                onChanged: (value) async {
+                  await settingsProvider.setHideSpoilers(value);
                 },
               );
             },

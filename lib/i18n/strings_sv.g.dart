@@ -236,6 +236,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidofältet förblir expanderat och innehållsytan anpassas';
 	@override String get showUnwatchedCount => 'Visa antal osedda';
 	@override String get showUnwatchedCountDescription => 'Visa antal osedda avsnitt för serier och säsonger';
+	@override String get hideSpoilers => 'Dölj spoilers för osedda avsnitt';
+	@override String get hideSpoilersDescription => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu';
 	@override String get playerBackend => 'Spelarmotor';
 	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
 	@override String get exoPlayerDescription => 'Android-nativ spelare med bättre hårdvarustöd';
@@ -1394,6 +1396,8 @@ extension on TranslationsSv {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidofältet förblir expanderat och innehållsytan anpassas',
 			'settings.showUnwatchedCount' => 'Visa antal osedda',
 			'settings.showUnwatchedCountDescription' => 'Visa antal osedda avsnitt för serier och säsonger',
+			'settings.hideSpoilers' => 'Dölj spoilers för osedda avsnitt',
+			'settings.hideSpoilersDescription' => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu',
 			'settings.playerBackend' => 'Spelarmotor',
 			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
 			'settings.exoPlayerDescription' => 'Android-nativ spelare med bättre hårdvarustöd',

@@ -117,6 +117,8 @@
     "alwaysKeepSidebarOpenDescription": "La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse",
     "showUnwatchedCount": "Mostrar conteo de no vistos",
     "showUnwatchedCountDescription": "Mostrar el conteo de episodios no vistos en series y temporadas",
+    "hideSpoilers": "Ocultar spoilers de episodios no vistos",
+    "hideSpoilersDescription": "Difuminar miniaturas y ocultar descripciones de episodios que aún no has visto",
     "playerBackend": "Reproductor",
     "exoPlayer": "ExoPlayer (Recomendado)",
     "exoPlayerDescription": "Reproductor nativo de Android con mejor soporte de hardware",

@@ -117,6 +117,8 @@
     "alwaysKeepSidebarOpenDescription": "Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an",
     "showUnwatchedCount": "Anzahl nicht gesehener Folgen anzeigen",
     "showUnwatchedCountDescription": "Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an",
+    "hideSpoilers": "Spoiler für nicht gesehene Episoden verbergen",
+    "hideSpoilersDescription": "Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden",
     "playerBackend": "Player-Backend",
     "exoPlayer": "ExoPlayer (Empfohlen)",
     "exoPlayerDescription": "Android-nativer Player mit besserer Hardware-Unterstützung",

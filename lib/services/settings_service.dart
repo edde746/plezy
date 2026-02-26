@@ -70,6 +70,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyUseExoPlayer = 'use_exoplayer';
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const String _keyShowUnwatchedCount = 'show_unwatched_count';
+  static const String _keyHideSpoilers = 'hide_spoilers';
   static const String _keyGlobalShaderPreset = 'global_shader_preset';
   static const String _keyRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const String _keyUseExternalPlayer = 'use_external_player';
@@ -1037,6 +1038,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyShowUnwatchedCount) ?? true; // Default: enabled (show counts)
   }
 
+  // Hide Spoilers (blur thumbnails and hide descriptions for unwatched episodes)
+  Future<void> setHideSpoilers(bool enabled) async {
+    await prefs.setBool(_keyHideSpoilers, enabled);
+  }
+
+  bool getHideSpoilers() {
+    return prefs.getBool(_keyHideSpoilers) ?? false; // Default: disabled
+  }
+
   // Global Shader Preset (for MPV video enhancement)
   Future<void> setGlobalShaderPreset(String presetId) async {
     await prefs.setString(_keyGlobalShaderPreset, presetId);
@@ -1187,6 +1197,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyUseExoPlayer),
       prefs.remove(_keyAlwaysKeepSidebarOpen),
       prefs.remove(_keyShowUnwatchedCount),
+      prefs.remove(_keyHideSpoilers),
       prefs.remove(_keyGlobalShaderPreset),
       prefs.remove(_keyRequireProfileSelectionOnOpen),
       prefs.remove(_keyUseExternalPlayer),
