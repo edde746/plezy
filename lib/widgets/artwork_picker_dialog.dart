@@ -187,37 +187,40 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
         return FocusableWrapper(
           borderRadius: 8,
           onSelect: () => _selectArtwork(artwork),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  child: PlexOptimizedImage(
-                    client: widget.client,
-                    imagePath: thumbUrl,
-                    fit: BoxFit.contain,
+          child: GestureDetector(
+            onTap: () => _selectArtwork(artwork),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
                   ),
-                ),
-              ),
-              if (isSelected)
-                Positioned(
-                  right: 6,
-                  bottom: 6,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    child: PlexOptimizedImage(
+                      client: widget.client,
+                      imagePath: thumbUrl,
+                      fit: BoxFit.contain,
                     ),
-                    child: Icon(Symbols.check_rounded, size: 16, color: Theme.of(context).colorScheme.onPrimary),
                   ),
                 ),
-            ],
+                if (isSelected)
+                  Positioned(
+                    right: 6,
+                    bottom: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Symbols.check_rounded, size: 16, color: Theme.of(context).colorScheme.onPrimary),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },

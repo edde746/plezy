@@ -713,11 +713,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
             const SizedBox(width: 12),
             IconButton.filledTonal(
               onPressed: () async {
-                final result = await Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: metadata)),
                 );
-                if (result == true && mounted) {
+                if (mounted) {
                   _loadFullMetadata();
                 }
               },

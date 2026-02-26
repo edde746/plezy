@@ -1577,19 +1577,24 @@ class PlexClient {
 
   /// Set artwork from a URL (can be a Plex internal path or external URL)
   Future<bool> setArtworkFromUrl(String ratingKey, String element, String url) {
+    final setElement = element.endsWith('s') ? element.substring(0, element.length - 1) : element;
     return _wrapBoolApiCall(
-      () => _dio.post('/library/metadata/$ratingKey/$element', queryParameters: {'url': url}),
+      () => _dio.put('/library/metadata/$ratingKey/$setElement', queryParameters: {'url': url}),
       'Failed to set artwork from URL',
     );
   }
 
   /// Upload artwork from binary data
   Future<bool> uploadArtwork(String ratingKey, String element, List<int> bytes) {
+    final setElement = element.endsWith('s') ? element.substring(0, element.length - 1) : element;
     return _wrapBoolApiCall(
-      () => _dio.post(
-        '/library/metadata/$ratingKey/$element',
+      () => _dio.put(
+        '/library/metadata/$ratingKey/$setElement',
         data: bytes,
-        options: Options(headers: {'Content-Length': bytes.length}),
+        options: Options(
+          headers: {'Content-Length': bytes.length},
+          contentType: 'application/octet-stream',
+        ),
       ),
       'Failed to upload artwork',
     );
