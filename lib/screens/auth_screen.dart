@@ -97,6 +97,7 @@ class _AuthScreenState extends State<AuthScreen> {
         multiServerProvider: context.read<MultiServerProvider>(),
         librariesProvider: context.read<LibrariesProvider>(),
         syncService: context.read<OfflineWatchSyncService>(),
+        clientIdentifier: _authService.clientIdentifier,
       );
 
       if (!result.hasConnections) {
