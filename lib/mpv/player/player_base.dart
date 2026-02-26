@@ -174,6 +174,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'demuxer-cache-time':
         if (value is num) {
+          final nowMs = _throttleSw.elapsedMilliseconds;
+          if (nowMs - _lastCacheStateMs < 250) break;
+          _lastCacheStateMs = nowMs;
           final buffer = Duration(milliseconds: (value * 1000).toInt());
           _state = _state.copyWith(buffer: buffer);
           bufferController.add(buffer);
