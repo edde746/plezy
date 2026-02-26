@@ -331,10 +331,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'playback-restart':
-        // Clear stale buffer ranges from before the seek; fresh ones will
-        // arrive shortly via the next demuxer-cache-state update.
-        _state = _state.copyWith(bufferRanges: const []);
-        bufferRangesController.add(const []);
         playbackRestartController.add(null);
         break;
 
