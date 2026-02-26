@@ -732,11 +732,8 @@
       "minimize": "Minimaliseren"
     },
     "pairing": {
-      "recent": "Recent",
       "scan": "Scannen",
       "manual": "Handmatig",
-      "recentConnections": "Recente verbindingen",
-      "quickReconnect": "Snel opnieuw verbinden met eerder gekoppelde apparaten",
       "pairWithDesktop": "Koppelen met desktop",
       "enterSessionDetails": "Voer de sessiegegevens in die op je desktop-apparaat worden getoond",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +747,7 @@
       "cameraPermissionRequired": "Cameratoestemming is vereist om QR-codes te scannen.\nGeef cameratoegang in je apparaatinstellingen.",
       "cameraError": "Kan camera niet starten: ${error}",
       "scanInstruction": "Richt je camera op de QR-code die op je desktop wordt getoond",
-      "noRecentConnections": "Geen recente verbindingen",
-      "connectUsingManual": "Verbind met een apparaat via Handmatige invoer om te beginnen",
       "invalidQrCode": "Ongeldig QR-codeformaat",
-      "removeRecentConnection": "Recente verbinding verwijderen",
-      "removeConfirm": "\"${name}\" verwijderen uit recente verbindingen?",
       "validationHostRequired": "Voer een hostadres in",
       "validationHostFormat": "Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)",
       "validationSessionIdRequired": "Voer een sessie-ID in",
@@ -763,8 +756,7 @@
       "validationPinLength": "PIN moet 6 cijfers zijn",
       "connectionTimedOut": "Verbinding verlopen. Controleer de sessie-ID en PIN.",
       "sessionNotFound": "Kan de sessie niet vinden. Controleer je gegevens.",
-      "failedToConnect": "Verbinden mislukt: ${error}",
-      "failedToLoadRecent": "Kan recente sessies niet laden: ${error}"
+      "failedToConnect": "Verbinden mislukt: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Wil je de verbinding met de externe sessie verbreken?",

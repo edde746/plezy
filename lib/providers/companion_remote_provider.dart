@@ -10,8 +10,6 @@ import '../models/companion_remote/remote_command_type.dart';
 import '../models/companion_remote/remote_session.dart';
 import '../models/companion_remote/trusted_device.dart';
 import '../services/companion_remote/companion_remote_peer_service.dart';
-import '../models/companion_remote/recent_remote_session.dart';
-import '../services/companion_remote/companion_remote_discovery_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 
@@ -21,11 +19,9 @@ typedef DeviceApprovalCallback = Future<bool> Function(RemoteDevice device);
 class CompanionRemoteProvider with ChangeNotifier {
   RemoteSession? _session;
   CompanionRemotePeerService? _peerService;
-  CompanionRemoteDiscoveryService? _discoveryService;
   String _deviceName = 'Unknown Device';
   String _platform = 'unknown';
   final List<TrustedDevice> _trustedDevices = [];
-  final List<RecentRemoteSession> _recentSessions = [];
   bool _isPlayerActive = false;
 
   static const String _storageKey = 'companion_remote_trusted_devices';
@@ -46,7 +42,6 @@ class CompanionRemoteProvider with ChangeNotifier {
   StreamSubscription<void>? _deviceDisconnectedSubscription;
   StreamSubscription<RemotePeerError>? _errorSubscription;
   StreamSubscription<RemoteSessionStatus>? _statusSubscription;
-  StreamSubscription<List<RecentRemoteSession>>? _recentSessionsSubscription;
 
   CommandReceivedCallback? onCommandReceived;
   DeviceApprovalCallback? onDeviceApprovalRequired;
@@ -61,7 +56,6 @@ class CompanionRemoteProvider with ChangeNotifier {
   String? get pin => _session?.pin;
   RemoteDevice? get connectedDevice => _session?.connectedDevice;
   List<TrustedDevice> get trustedDevices => List.unmodifiable(_trustedDevices);
-  List<RecentRemoteSession> get recentSessions => List.unmodifiable(_recentSessions);
   bool get isPlayerActive => _isPlayerActive;
 
   CompanionRemoteProvider() {
@@ -165,7 +159,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     });
   }
 
-  Future<void> _handleDeviceInfo(RemoteCommand command) async {
+  void _handleDeviceInfo(RemoteCommand command) {
     if (command.data != null) {
       final id = command.data!['id'] as String? ?? 'unknown';
       final name = command.data!['name'] as String? ?? 'Unknown Device';
@@ -178,9 +172,6 @@ class CompanionRemoteProvider with ChangeNotifier {
 
       _session = _session?.copyWith(connectedDevice: device);
       notifyListeners();
-
-      // Save to recent sessions now that we have the remote device's real identity
-      await _addToRecentSessions();
     }
   }
 
@@ -470,91 +461,10 @@ class CompanionRemoteProvider with ChangeNotifier {
     return storage.prefs.getString(_lastDeviceKey);
   }
 
-  /// Load recent sessions
-  Future<void> loadRecentSessions() async {
-    try {
-      // Dispose previous discovery service and subscription to avoid leaks
-      _recentSessionsSubscription?.cancel();
-      _recentSessionsSubscription = null;
-      _discoveryService?.dispose();
-
-      _discoveryService = CompanionRemoteDiscoveryService();
-
-      // Listen for recent sessions updates
-      _recentSessionsSubscription = _discoveryService!.recentSessions.listen((sessions) {
-        _recentSessions.clear();
-        _recentSessions.addAll(sessions);
-        notifyListeners();
-      });
-
-      // Initial load happens in constructor, just notify
-      _recentSessions.clear();
-      _recentSessions.addAll(_discoveryService!.currentSessions);
-      notifyListeners();
-
-      appLogger.d('CompanionRemote: Loaded ${_recentSessions.length} recent sessions');
-    } catch (e) {
-      appLogger.e('CompanionRemote: Failed to load recent sessions', error: e);
-    }
-  }
-
-  /// Add current session to recent list (called after successful connection)
-  Future<void> _addToRecentSessions() async {
-    if (_session == null || _session!.sessionId.isEmpty) return;
-
-    // For mobile (remote role), save the connected desktop device
-    // For desktop (host role), this doesn't really apply but save connected mobile device
-    final deviceToSave = _session!.connectedDevice;
-    if (deviceToSave == null) {
-      appLogger.w('CompanionRemote: No connected device to save to recent sessions');
-      return;
-    }
-
-    final recentSession = RecentRemoteSession(
-      sessionId: _session!.sessionId,
-      pin: _session!.pin,
-      deviceName: deviceToSave.name,
-      platform: deviceToSave.platform,
-      lastConnected: DateTime.now(),
-      hostAddress: _peerService?.hostAddress,
-    );
-
-    if (_discoveryService != null) {
-      await _discoveryService!.addRecentSession(recentSession);
-    }
-  }
-
-  /// Connect to a recent session
-  Future<void> connectToRecentSession(RecentRemoteSession session) async {
-    if (session.hostAddress == null) {
-      throw const RemotePeerError(
-        type: RemotePeerErrorType.invalidSession,
-        message: 'No host address available for this session. Please scan a new QR code.',
-      );
-    }
-    await joinSession(session.sessionId, session.pin, session.hostAddress!);
-  }
-
-  /// Remove a recent session
-  Future<void> removeRecentSession(String sessionId) async {
-    if (_discoveryService != null) {
-      await _discoveryService!.removeRecentSession(sessionId);
-    }
-  }
-
-  /// Clear all recent sessions
-  Future<void> clearRecentSessions() async {
-    if (_discoveryService != null) {
-      await _discoveryService!.clearRecentSessions();
-    }
-  }
-
   @override
   void dispose() {
     _reconnectTimer?.cancel();
     leaveSession();
-    _recentSessionsSubscription?.cancel();
-    _discoveryService?.dispose();
     super.dispose();
   }
 }

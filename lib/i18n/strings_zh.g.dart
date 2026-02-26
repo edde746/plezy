@@ -1214,11 +1214,8 @@ class _TranslationsCompanionRemotePairingZh implements TranslationsCompanionRemo
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => '最近';
 	@override String get scan => '扫描';
 	@override String get manual => '手动';
-	@override String get recentConnections => '最近连接';
-	@override String get quickReconnect => '快速重新连接之前配对的设备';
 	@override String get pairWithDesktop => '与桌面配对';
 	@override String get enterSessionDetails => '输入桌面设备上显示的会话信息';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1232,11 +1229,7 @@ class _TranslationsCompanionRemotePairingZh implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => '扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。';
 	@override String cameraError({required Object error}) => '无法启动相机：${error}';
 	@override String get scanInstruction => '将相机对准桌面上显示的 QR 码';
-	@override String get noRecentConnections => '没有最近的连接';
-	@override String get connectUsingManual => '使用手动输入连接设备以开始使用';
 	@override String get invalidQrCode => '无效的 QR 码格式';
-	@override String get removeRecentConnection => '删除最近连接';
-	@override String removeConfirm({required Object name}) => '确定要从最近连接中删除 "${name}" 吗？';
 	@override String get validationHostRequired => '请输入主机地址';
 	@override String get validationHostFormat => '格式必须为 IP:端口（例如 192.168.1.100:48632）';
 	@override String get validationSessionIdRequired => '请输入会话 ID';
@@ -1246,7 +1239,6 @@ class _TranslationsCompanionRemotePairingZh implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => '连接超时。请检查会话 ID 和 PIN。';
 	@override String get sessionNotFound => '找不到会话。请检查您的凭据。';
 	@override String failedToConnect({required Object error}) => '连接失败：${error}';
-	@override String failedToLoadRecent({required Object error}) => '加载最近会话失败：${error}';
 }
 
 // Path: companionRemote.remote
@@ -1950,11 +1942,8 @@ extension on TranslationsZh {
 			'companionRemote.session.copyToClipboard' => '复制到剪贴板',
 			'companionRemote.session.newSession' => '新建会话',
 			'companionRemote.session.minimize' => '最小化',
-			'companionRemote.pairing.recent' => '最近',
 			'companionRemote.pairing.scan' => '扫描',
 			'companionRemote.pairing.manual' => '手动',
-			'companionRemote.pairing.recentConnections' => '最近连接',
-			'companionRemote.pairing.quickReconnect' => '快速重新连接之前配对的设备',
 			'companionRemote.pairing.pairWithDesktop' => '与桌面配对',
 			'companionRemote.pairing.enterSessionDetails' => '输入桌面设备上显示的会话信息',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1968,11 +1957,7 @@ extension on TranslationsZh {
 			'companionRemote.pairing.cameraPermissionRequired' => '扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => '无法启动相机：${error}',
 			'companionRemote.pairing.scanInstruction' => '将相机对准桌面上显示的 QR 码',
-			'companionRemote.pairing.noRecentConnections' => '没有最近的连接',
-			'companionRemote.pairing.connectUsingManual' => '使用手动输入连接设备以开始使用',
 			'companionRemote.pairing.invalidQrCode' => '无效的 QR 码格式',
-			'companionRemote.pairing.removeRecentConnection' => '删除最近连接',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '确定要从最近连接中删除 "${name}" 吗？',
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
 			'companionRemote.pairing.validationHostFormat' => '格式必须为 IP:端口（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.validationSessionIdRequired' => '请输入会话 ID',
@@ -1982,7 +1967,6 @@ extension on TranslationsZh {
 			'companionRemote.pairing.connectionTimedOut' => '连接超时。请检查会话 ID 和 PIN。',
 			'companionRemote.pairing.sessionNotFound' => '找不到会话。请检查您的凭据。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => '加载最近会话失败：${error}',
 			'companionRemote.remote.disconnectConfirm' => '是否要断开远程会话的连接？',
 			'companionRemote.remote.reconnecting' => '重新连接中...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '第 ${current} 次尝试，共 5 次',

@@ -732,11 +732,8 @@
       "minimize": "Minimize"
     },
     "pairing": {
-      "recent": "Recent",
       "scan": "Scan",
       "manual": "Manual",
-      "recentConnections": "Recent Connections",
-      "quickReconnect": "Quickly reconnect to previously paired devices",
       "pairWithDesktop": "Pair with Desktop",
       "enterSessionDetails": "Enter the session details shown on your desktop device",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +747,7 @@
       "cameraPermissionRequired": "Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.",
       "cameraError": "Could not start camera: ${error}",
       "scanInstruction": "Point your camera at the QR code shown on your desktop",
-      "noRecentConnections": "No recent connections",
-      "connectUsingManual": "Connect to a device using Manual entry to get started",
       "invalidQrCode": "Invalid QR code format",
-      "removeRecentConnection": "Remove Recent Connection",
-      "removeConfirm": "Remove \"${name}\" from recent connections?",
       "validationHostRequired": "Please enter host address",
       "validationHostFormat": "Format must be IP:port (e.g., 192.168.1.100:48632)",
       "validationSessionIdRequired": "Please enter a session ID",
@@ -763,8 +756,7 @@
       "validationPinLength": "PIN must be 6 digits",
       "connectionTimedOut": "Connection timed out. Please check the session ID and PIN.",
       "sessionNotFound": "Could not find the session. Please check your credentials.",
-      "failedToConnect": "Failed to connect: ${error}",
-      "failedToLoadRecent": "Failed to load recent sessions: ${error}"
+      "failedToConnect": "Failed to connect: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Do you want to disconnect from the remote session?",

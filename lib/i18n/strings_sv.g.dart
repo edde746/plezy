@@ -1214,11 +1214,8 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => 'Senaste';
 	@override String get scan => 'Skanna';
 	@override String get manual => 'Manuell';
-	@override String get recentConnections => 'Senaste anslutningar';
-	@override String get quickReconnect => 'Återanslut snabbt till tidigare parkopplade enheter';
 	@override String get pairWithDesktop => 'Parkoppla med dator';
 	@override String get enterSessionDetails => 'Ange sessionsuppgifterna som visas på din datorenhet';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1232,11 +1229,7 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.';
 	@override String cameraError({required Object error}) => 'Kunde inte starta kameran: ${error}';
 	@override String get scanInstruction => 'Rikta kameran mot QR-koden som visas på din dator';
-	@override String get noRecentConnections => 'Inga senaste anslutningar';
-	@override String get connectUsingManual => 'Anslut till en enhet via Manuell inmatning för att komma igång';
 	@override String get invalidQrCode => 'Ogiltigt QR-kodformat';
-	@override String get removeRecentConnection => 'Ta bort senaste anslutning';
-	@override String removeConfirm({required Object name}) => 'Ta bort "${name}" från senaste anslutningar?';
 	@override String get validationHostRequired => 'Ange en värdadress';
 	@override String get validationHostFormat => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)';
 	@override String get validationSessionIdRequired => 'Ange ett sessions-ID';
@@ -1246,7 +1239,6 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.';
 	@override String get sessionNotFound => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.';
 	@override String failedToConnect({required Object error}) => 'Kunde inte ansluta: ${error}';
-	@override String failedToLoadRecent({required Object error}) => 'Kunde inte ladda senaste sessioner: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1950,11 +1942,8 @@ extension on TranslationsSv {
 			'companionRemote.session.copyToClipboard' => 'Kopiera till urklipp',
 			'companionRemote.session.newSession' => 'Ny session',
 			'companionRemote.session.minimize' => 'Minimera',
-			'companionRemote.pairing.recent' => 'Senaste',
 			'companionRemote.pairing.scan' => 'Skanna',
 			'companionRemote.pairing.manual' => 'Manuell',
-			'companionRemote.pairing.recentConnections' => 'Senaste anslutningar',
-			'companionRemote.pairing.quickReconnect' => 'Återanslut snabbt till tidigare parkopplade enheter',
 			'companionRemote.pairing.pairWithDesktop' => 'Parkoppla med dator',
 			'companionRemote.pairing.enterSessionDetails' => 'Ange sessionsuppgifterna som visas på din datorenhet',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1968,11 +1957,7 @@ extension on TranslationsSv {
 			'companionRemote.pairing.cameraPermissionRequired' => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kunde inte starta kameran: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Rikta kameran mot QR-koden som visas på din dator',
-			'companionRemote.pairing.noRecentConnections' => 'Inga senaste anslutningar',
-			'companionRemote.pairing.connectUsingManual' => 'Anslut till en enhet via Manuell inmatning för att komma igång',
 			'companionRemote.pairing.invalidQrCode' => 'Ogiltigt QR-kodformat',
-			'companionRemote.pairing.removeRecentConnection' => 'Ta bort senaste anslutning',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Ta bort "${name}" från senaste anslutningar?',
 			'companionRemote.pairing.validationHostRequired' => 'Ange en värdadress',
 			'companionRemote.pairing.validationHostFormat' => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Ange ett sessions-ID',
@@ -1982,7 +1967,6 @@ extension on TranslationsSv {
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.',
 			'companionRemote.pairing.sessionNotFound' => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Kunde inte ladda senaste sessioner: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
 			'companionRemote.remote.reconnecting' => 'Återansluter...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Försök ${current} av 5',

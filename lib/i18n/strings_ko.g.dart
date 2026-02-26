@@ -1214,11 +1214,8 @@ class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemo
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => '최근';
 	@override String get scan => '스캔';
 	@override String get manual => '수동';
-	@override String get recentConnections => '최근 연결';
-	@override String get quickReconnect => '이전에 페어링한 기기에 빠르게 재연결';
 	@override String get pairWithDesktop => '데스크톱과 페어링';
 	@override String get enterSessionDetails => '데스크톱 기기에 표시된 세션 정보를 입력하세요';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1232,11 +1229,7 @@ class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => 'QR 코드를 스캔하려면 카메라 권한이 필요합니다.\n기기 설정에서 카메라 접근을 허용해 주세요.';
 	@override String cameraError({required Object error}) => '카메라를 시작할 수 없습니다: ${error}';
 	@override String get scanInstruction => '데스크톱에 표시된 QR 코드에 카메라를 향하세요';
-	@override String get noRecentConnections => '최근 연결 없음';
-	@override String get connectUsingManual => '수동 입력으로 기기에 연결하여 시작하세요';
 	@override String get invalidQrCode => '유효하지 않은 QR 코드 형식';
-	@override String get removeRecentConnection => '최근 연결 삭제';
-	@override String removeConfirm({required Object name}) => '"${name}"을(를) 최근 연결에서 삭제하시겠습니까?';
 	@override String get validationHostRequired => '호스트 주소를 입력하세요';
 	@override String get validationHostFormat => 'IP:포트 형식이어야 합니다 (예: 192.168.1.100:48632)';
 	@override String get validationSessionIdRequired => '세션 ID를 입력하세요';
@@ -1246,7 +1239,6 @@ class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => '연결 시간이 초과되었습니다. 세션 ID와 PIN을 확인하세요.';
 	@override String get sessionNotFound => '세션을 찾을 수 없습니다. 자격 증명을 확인하세요.';
 	@override String failedToConnect({required Object error}) => '연결 실패: ${error}';
-	@override String failedToLoadRecent({required Object error}) => '최근 세션 로드 실패: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1950,11 +1942,8 @@ extension on TranslationsKo {
 			'companionRemote.session.copyToClipboard' => '클립보드에 복사',
 			'companionRemote.session.newSession' => '새 세션',
 			'companionRemote.session.minimize' => '최소화',
-			'companionRemote.pairing.recent' => '최근',
 			'companionRemote.pairing.scan' => '스캔',
 			'companionRemote.pairing.manual' => '수동',
-			'companionRemote.pairing.recentConnections' => '최근 연결',
-			'companionRemote.pairing.quickReconnect' => '이전에 페어링한 기기에 빠르게 재연결',
 			'companionRemote.pairing.pairWithDesktop' => '데스크톱과 페어링',
 			'companionRemote.pairing.enterSessionDetails' => '데스크톱 기기에 표시된 세션 정보를 입력하세요',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1968,11 +1957,7 @@ extension on TranslationsKo {
 			'companionRemote.pairing.cameraPermissionRequired' => 'QR 코드를 스캔하려면 카메라 권한이 필요합니다.\n기기 설정에서 카메라 접근을 허용해 주세요.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => '카메라를 시작할 수 없습니다: ${error}',
 			'companionRemote.pairing.scanInstruction' => '데스크톱에 표시된 QR 코드에 카메라를 향하세요',
-			'companionRemote.pairing.noRecentConnections' => '최근 연결 없음',
-			'companionRemote.pairing.connectUsingManual' => '수동 입력으로 기기에 연결하여 시작하세요',
 			'companionRemote.pairing.invalidQrCode' => '유효하지 않은 QR 코드 형식',
-			'companionRemote.pairing.removeRecentConnection' => '최근 연결 삭제',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '"${name}"을(를) 최근 연결에서 삭제하시겠습니까?',
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => 'IP:포트 형식이어야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => '세션 ID를 입력하세요',
@@ -1982,7 +1967,6 @@ extension on TranslationsKo {
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 세션 ID와 PIN을 확인하세요.',
 			'companionRemote.pairing.sessionNotFound' => '세션을 찾을 수 없습니다. 자격 증명을 확인하세요.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => '최근 세션 로드 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current}/5 시도 중',

@@ -732,11 +732,8 @@
       "minimize": "Riduci"
     },
     "pairing": {
-      "recent": "Recenti",
       "scan": "Scansiona",
       "manual": "Manuale",
-      "recentConnections": "Connessioni recenti",
-      "quickReconnect": "Riconnettiti rapidamente ai dispositivi associati in precedenza",
       "pairWithDesktop": "Associa con desktop",
       "enterSessionDetails": "Inserisci i dettagli della sessione mostrati sul tuo dispositivo desktop",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +747,7 @@
       "cameraPermissionRequired": "L'autorizzazione della fotocamera è necessaria per scansionare i QR code.\nConcedi l'accesso alla fotocamera nelle impostazioni del dispositivo.",
       "cameraError": "Impossibile avviare la fotocamera: ${error}",
       "scanInstruction": "Punta la fotocamera verso il QR code mostrato sul tuo desktop",
-      "noRecentConnections": "Nessuna connessione recente",
-      "connectUsingManual": "Connettiti a un dispositivo tramite inserimento manuale per iniziare",
       "invalidQrCode": "Formato QR code non valido",
-      "removeRecentConnection": "Rimuovi connessione recente",
-      "removeConfirm": "Rimuovere \"${name}\" dalle connessioni recenti?",
       "validationHostRequired": "Inserisci l'indirizzo host",
       "validationHostFormat": "Il formato deve essere IP:porta (es. 192.168.1.100:48632)",
       "validationSessionIdRequired": "Inserisci un ID sessione",
@@ -763,8 +756,7 @@
       "validationPinLength": "Il PIN deve essere di 6 cifre",
       "connectionTimedOut": "Connessione scaduta. Verifica l'ID sessione e il PIN.",
       "sessionNotFound": "Sessione non trovata. Verifica le tue credenziali.",
-      "failedToConnect": "Connessione fallita: ${error}",
-      "failedToLoadRecent": "Impossibile caricare le sessioni recenti: ${error}"
+      "failedToConnect": "Connessione fallita: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Vuoi disconnetterti dalla sessione remota?",

@@ -1214,11 +1214,8 @@ class _TranslationsCompanionRemotePairingNl implements TranslationsCompanionRemo
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => 'Recent';
 	@override String get scan => 'Scannen';
 	@override String get manual => 'Handmatig';
-	@override String get recentConnections => 'Recente verbindingen';
-	@override String get quickReconnect => 'Snel opnieuw verbinden met eerder gekoppelde apparaten';
 	@override String get pairWithDesktop => 'Koppelen met desktop';
 	@override String get enterSessionDetails => 'Voer de sessiegegevens in die op je desktop-apparaat worden getoond';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1232,11 +1229,7 @@ class _TranslationsCompanionRemotePairingNl implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => 'Cameratoestemming is vereist om QR-codes te scannen.\nGeef cameratoegang in je apparaatinstellingen.';
 	@override String cameraError({required Object error}) => 'Kan camera niet starten: ${error}';
 	@override String get scanInstruction => 'Richt je camera op de QR-code die op je desktop wordt getoond';
-	@override String get noRecentConnections => 'Geen recente verbindingen';
-	@override String get connectUsingManual => 'Verbind met een apparaat via Handmatige invoer om te beginnen';
 	@override String get invalidQrCode => 'Ongeldig QR-codeformaat';
-	@override String get removeRecentConnection => 'Recente verbinding verwijderen';
-	@override String removeConfirm({required Object name}) => '"${name}" verwijderen uit recente verbindingen?';
 	@override String get validationHostRequired => 'Voer een hostadres in';
 	@override String get validationHostFormat => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)';
 	@override String get validationSessionIdRequired => 'Voer een sessie-ID in';
@@ -1246,7 +1239,6 @@ class _TranslationsCompanionRemotePairingNl implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => 'Verbinding verlopen. Controleer de sessie-ID en PIN.';
 	@override String get sessionNotFound => 'Kan de sessie niet vinden. Controleer je gegevens.';
 	@override String failedToConnect({required Object error}) => 'Verbinden mislukt: ${error}';
-	@override String failedToLoadRecent({required Object error}) => 'Kan recente sessies niet laden: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1950,11 +1942,8 @@ extension on TranslationsNl {
 			'companionRemote.session.copyToClipboard' => 'Kopieer naar klembord',
 			'companionRemote.session.newSession' => 'Nieuwe sessie',
 			'companionRemote.session.minimize' => 'Minimaliseren',
-			'companionRemote.pairing.recent' => 'Recent',
 			'companionRemote.pairing.scan' => 'Scannen',
 			'companionRemote.pairing.manual' => 'Handmatig',
-			'companionRemote.pairing.recentConnections' => 'Recente verbindingen',
-			'companionRemote.pairing.quickReconnect' => 'Snel opnieuw verbinden met eerder gekoppelde apparaten',
 			'companionRemote.pairing.pairWithDesktop' => 'Koppelen met desktop',
 			'companionRemote.pairing.enterSessionDetails' => 'Voer de sessiegegevens in die op je desktop-apparaat worden getoond',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1968,11 +1957,7 @@ extension on TranslationsNl {
 			'companionRemote.pairing.cameraPermissionRequired' => 'Cameratoestemming is vereist om QR-codes te scannen.\nGeef cameratoegang in je apparaatinstellingen.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kan camera niet starten: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Richt je camera op de QR-code die op je desktop wordt getoond',
-			'companionRemote.pairing.noRecentConnections' => 'Geen recente verbindingen',
-			'companionRemote.pairing.connectUsingManual' => 'Verbind met een apparaat via Handmatige invoer om te beginnen',
 			'companionRemote.pairing.invalidQrCode' => 'Ongeldig QR-codeformaat',
-			'companionRemote.pairing.removeRecentConnection' => 'Recente verbinding verwijderen',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '"${name}" verwijderen uit recente verbindingen?',
 			'companionRemote.pairing.validationHostRequired' => 'Voer een hostadres in',
 			'companionRemote.pairing.validationHostFormat' => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Voer een sessie-ID in',
@@ -1982,7 +1967,6 @@ extension on TranslationsNl {
 			'companionRemote.pairing.connectionTimedOut' => 'Verbinding verlopen. Controleer de sessie-ID en PIN.',
 			'companionRemote.pairing.sessionNotFound' => 'Kan de sessie niet vinden. Controleer je gegevens.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Verbinden mislukt: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Kan recente sessies niet laden: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',
 			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Poging ${current} van 5',

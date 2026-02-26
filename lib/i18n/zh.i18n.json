@@ -732,11 +732,8 @@
       "minimize": "最小化"
     },
     "pairing": {
-      "recent": "最近",
       "scan": "扫描",
       "manual": "手动",
-      "recentConnections": "最近连接",
-      "quickReconnect": "快速重新连接之前配对的设备",
       "pairWithDesktop": "与桌面配对",
       "enterSessionDetails": "输入桌面设备上显示的会话信息",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +747,7 @@
       "cameraPermissionRequired": "扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。",
       "cameraError": "无法启动相机：${error}",
       "scanInstruction": "将相机对准桌面上显示的 QR 码",
-      "noRecentConnections": "没有最近的连接",
-      "connectUsingManual": "使用手动输入连接设备以开始使用",
       "invalidQrCode": "无效的 QR 码格式",
-      "removeRecentConnection": "删除最近连接",
-      "removeConfirm": "确定要从最近连接中删除 \"${name}\" 吗？",
       "validationHostRequired": "请输入主机地址",
       "validationHostFormat": "格式必须为 IP:端口（例如 192.168.1.100:48632）",
       "validationSessionIdRequired": "请输入会话 ID",
@@ -763,8 +756,7 @@
       "validationPinLength": "PIN 必须为6位数字",
       "connectionTimedOut": "连接超时。请检查会话 ID 和 PIN。",
       "sessionNotFound": "找不到会话。请检查您的凭据。",
-      "failedToConnect": "连接失败：${error}",
-      "failedToLoadRecent": "加载最近会话失败：${error}"
+      "failedToConnect": "连接失败：${error}"
     },
     "remote": {
       "disconnectConfirm": "是否要断开远程会话的连接？",

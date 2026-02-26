@@ -1214,11 +1214,8 @@ class _TranslationsCompanionRemotePairingIt implements TranslationsCompanionRemo
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => 'Recenti';
 	@override String get scan => 'Scansiona';
 	@override String get manual => 'Manuale';
-	@override String get recentConnections => 'Connessioni recenti';
-	@override String get quickReconnect => 'Riconnettiti rapidamente ai dispositivi associati in precedenza';
 	@override String get pairWithDesktop => 'Associa con desktop';
 	@override String get enterSessionDetails => 'Inserisci i dettagli della sessione mostrati sul tuo dispositivo desktop';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1232,11 +1229,7 @@ class _TranslationsCompanionRemotePairingIt implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => 'L\'autorizzazione della fotocamera è necessaria per scansionare i QR code.\nConcedi l\'accesso alla fotocamera nelle impostazioni del dispositivo.';
 	@override String cameraError({required Object error}) => 'Impossibile avviare la fotocamera: ${error}';
 	@override String get scanInstruction => 'Punta la fotocamera verso il QR code mostrato sul tuo desktop';
-	@override String get noRecentConnections => 'Nessuna connessione recente';
-	@override String get connectUsingManual => 'Connettiti a un dispositivo tramite inserimento manuale per iniziare';
 	@override String get invalidQrCode => 'Formato QR code non valido';
-	@override String get removeRecentConnection => 'Rimuovi connessione recente';
-	@override String removeConfirm({required Object name}) => 'Rimuovere "${name}" dalle connessioni recenti?';
 	@override String get validationHostRequired => 'Inserisci l\'indirizzo host';
 	@override String get validationHostFormat => 'Il formato deve essere IP:porta (es. 192.168.1.100:48632)';
 	@override String get validationSessionIdRequired => 'Inserisci un ID sessione';
@@ -1246,7 +1239,6 @@ class _TranslationsCompanionRemotePairingIt implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => 'Connessione scaduta. Verifica l\'ID sessione e il PIN.';
 	@override String get sessionNotFound => 'Sessione non trovata. Verifica le tue credenziali.';
 	@override String failedToConnect({required Object error}) => 'Connessione fallita: ${error}';
-	@override String failedToLoadRecent({required Object error}) => 'Impossibile caricare le sessioni recenti: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1950,11 +1942,8 @@ extension on TranslationsIt {
 			'companionRemote.session.copyToClipboard' => 'Copia negli appunti',
 			'companionRemote.session.newSession' => 'Nuova sessione',
 			'companionRemote.session.minimize' => 'Riduci',
-			'companionRemote.pairing.recent' => 'Recenti',
 			'companionRemote.pairing.scan' => 'Scansiona',
 			'companionRemote.pairing.manual' => 'Manuale',
-			'companionRemote.pairing.recentConnections' => 'Connessioni recenti',
-			'companionRemote.pairing.quickReconnect' => 'Riconnettiti rapidamente ai dispositivi associati in precedenza',
 			'companionRemote.pairing.pairWithDesktop' => 'Associa con desktop',
 			'companionRemote.pairing.enterSessionDetails' => 'Inserisci i dettagli della sessione mostrati sul tuo dispositivo desktop',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1968,11 +1957,7 @@ extension on TranslationsIt {
 			'companionRemote.pairing.cameraPermissionRequired' => 'L\'autorizzazione della fotocamera è necessaria per scansionare i QR code.\nConcedi l\'accesso alla fotocamera nelle impostazioni del dispositivo.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Impossibile avviare la fotocamera: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Punta la fotocamera verso il QR code mostrato sul tuo desktop',
-			'companionRemote.pairing.noRecentConnections' => 'Nessuna connessione recente',
-			'companionRemote.pairing.connectUsingManual' => 'Connettiti a un dispositivo tramite inserimento manuale per iniziare',
 			'companionRemote.pairing.invalidQrCode' => 'Formato QR code non valido',
-			'companionRemote.pairing.removeRecentConnection' => 'Rimuovi connessione recente',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Rimuovere "${name}" dalle connessioni recenti?',
 			'companionRemote.pairing.validationHostRequired' => 'Inserisci l\'indirizzo host',
 			'companionRemote.pairing.validationHostFormat' => 'Il formato deve essere IP:porta (es. 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Inserisci un ID sessione',
@@ -1982,7 +1967,6 @@ extension on TranslationsIt {
 			'companionRemote.pairing.connectionTimedOut' => 'Connessione scaduta. Verifica l\'ID sessione e il PIN.',
 			'companionRemote.pairing.sessionNotFound' => 'Sessione non trovata. Verifica le tue credenziali.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Connessione fallita: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Impossibile caricare le sessioni recenti: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vuoi disconnetterti dalla sessione remota?',
 			'companionRemote.remote.reconnecting' => 'Riconnessione...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentativo ${current} di 5',

@@ -2694,20 +2694,11 @@ class TranslationsCompanionRemotePairingEn {
 
 	// Translations
 
-	/// en: 'Recent'
-	String get recent => 'Recent';
-
 	/// en: 'Scan'
 	String get scan => 'Scan';
 
 	/// en: 'Manual'
 	String get manual => 'Manual';
-
-	/// en: 'Recent Connections'
-	String get recentConnections => 'Recent Connections';
-
-	/// en: 'Quickly reconnect to previously paired devices'
-	String get quickReconnect => 'Quickly reconnect to previously paired devices';
 
 	/// en: 'Pair with Desktop'
 	String get pairWithDesktop => 'Pair with Desktop';
@@ -2748,20 +2739,8 @@ class TranslationsCompanionRemotePairingEn {
 	/// en: 'Point your camera at the QR code shown on your desktop'
 	String get scanInstruction => 'Point your camera at the QR code shown on your desktop';
 
-	/// en: 'No recent connections'
-	String get noRecentConnections => 'No recent connections';
-
-	/// en: 'Connect to a device using Manual entry to get started'
-	String get connectUsingManual => 'Connect to a device using Manual entry to get started';
-
 	/// en: 'Invalid QR code format'
 	String get invalidQrCode => 'Invalid QR code format';
-
-	/// en: 'Remove Recent Connection'
-	String get removeRecentConnection => 'Remove Recent Connection';
-
-	/// en: 'Remove "${name}" from recent connections?'
-	String removeConfirm({required Object name}) => 'Remove "${name}" from recent connections?';
 
 	/// en: 'Please enter host address'
 	String get validationHostRequired => 'Please enter host address';
@@ -2790,8 +2769,6 @@ class TranslationsCompanionRemotePairingEn {
 	/// en: 'Failed to connect: ${error}'
 	String failedToConnect({required Object error}) => 'Failed to connect: ${error}';
 
-	/// en: 'Failed to load recent sessions: ${error}'
-	String failedToLoadRecent({required Object error}) => 'Failed to load recent sessions: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -3553,11 +3530,8 @@ extension on Translations {
 			'companionRemote.session.copyToClipboard' => 'Copy to clipboard',
 			'companionRemote.session.newSession' => 'New Session',
 			'companionRemote.session.minimize' => 'Minimize',
-			'companionRemote.pairing.recent' => 'Recent',
 			'companionRemote.pairing.scan' => 'Scan',
 			'companionRemote.pairing.manual' => 'Manual',
-			'companionRemote.pairing.recentConnections' => 'Recent Connections',
-			'companionRemote.pairing.quickReconnect' => 'Quickly reconnect to previously paired devices',
 			'companionRemote.pairing.pairWithDesktop' => 'Pair with Desktop',
 			'companionRemote.pairing.enterSessionDetails' => 'Enter the session details shown on your desktop device',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3571,11 +3545,7 @@ extension on Translations {
 			'companionRemote.pairing.cameraPermissionRequired' => 'Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Could not start camera: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Point your camera at the QR code shown on your desktop',
-			'companionRemote.pairing.noRecentConnections' => 'No recent connections',
-			'companionRemote.pairing.connectUsingManual' => 'Connect to a device using Manual entry to get started',
 			'companionRemote.pairing.invalidQrCode' => 'Invalid QR code format',
-			'companionRemote.pairing.removeRecentConnection' => 'Remove Recent Connection',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Remove "${name}" from recent connections?',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Please enter a session ID',
@@ -3585,7 +3555,6 @@ extension on Translations {
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Please check the session ID and PIN.',
 			'companionRemote.pairing.sessionNotFound' => 'Could not find the session. Please check your credentials.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Failed to load recent sessions: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',

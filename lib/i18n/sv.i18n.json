@@ -732,11 +732,8 @@
       "minimize": "Minimera"
     },
     "pairing": {
-      "recent": "Senaste",
       "scan": "Skanna",
       "manual": "Manuell",
-      "recentConnections": "Senaste anslutningar",
-      "quickReconnect": "Återanslut snabbt till tidigare parkopplade enheter",
       "pairWithDesktop": "Parkoppla med dator",
       "enterSessionDetails": "Ange sessionsuppgifterna som visas på din datorenhet",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +747,7 @@
       "cameraPermissionRequired": "Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.",
       "cameraError": "Kunde inte starta kameran: ${error}",
       "scanInstruction": "Rikta kameran mot QR-koden som visas på din dator",
-      "noRecentConnections": "Inga senaste anslutningar",
-      "connectUsingManual": "Anslut till en enhet via Manuell inmatning för att komma igång",
       "invalidQrCode": "Ogiltigt QR-kodformat",
-      "removeRecentConnection": "Ta bort senaste anslutning",
-      "removeConfirm": "Ta bort \"${name}\" från senaste anslutningar?",
       "validationHostRequired": "Ange en värdadress",
       "validationHostFormat": "Format måste vara IP:port (t.ex. 192.168.1.100:48632)",
       "validationSessionIdRequired": "Ange ett sessions-ID",
@@ -763,8 +756,7 @@
       "validationPinLength": "PIN måste vara 6 siffror",
       "connectionTimedOut": "Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.",
       "sessionNotFound": "Kunde inte hitta sessionen. Kontrollera dina uppgifter.",
-      "failedToConnect": "Kunde inte ansluta: ${error}",
-      "failedToLoadRecent": "Kunde inte ladda senaste sessioner: ${error}"
+      "failedToConnect": "Kunde inte ansluta: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Vill du koppla från fjärrsessionen?",
