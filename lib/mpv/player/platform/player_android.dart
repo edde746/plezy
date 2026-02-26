@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
-import '../models.dart';
-import 'player_base.dart';
+import '../../models.dart';
+import '../player_base.dart';
 
 /// Android implementation of [Player] using ExoPlayer.
 /// Provides hardware-accelerated playback with ASS subtitle support via libass-android.
