@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex client for Flutter"
 publish_to: "none"
-version: 1.21.2+47
+version: 1.21.3+48
 
 environment:
   sdk: ^3.8.1
