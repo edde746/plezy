@@ -65,7 +65,6 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
-  flutter_launcher_icons: ^0.14.4
   slang_build_runner: ^4.12.0
   dart_code_linter: ^3.2.1
   drift_dev: ^2.14.0
@@ -81,22 +80,9 @@ flutter:
   assets:
     - lib/data/iso_639_codes.json
     - assets/plezy.png
+    - assets/plezy_adaptive_foreground.svg
     - assets/go-noto-current-regular.ttf
     - assets/shaders/nvscaler/
     - assets/shaders/anime4k/
     - assets/player_icons/
     - assets/rating_icons/
-
-flutter_launcher_icons:
-  android: true
-  ios: false
-  image_path: "assets/plezy.png"
-  adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/plezy_android_foreground.png"
-  adaptive_icon_monochrome: "assets/plezy_monochrome.png"
-  macos:
-    generate: false
-  windows:
-    generate: true
-  linux:
-    generate: true

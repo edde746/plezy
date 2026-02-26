@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'dart:io' show Platform;
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
@@ -46,6 +47,7 @@ import 'i18n/strings.g.dart';
 import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'utils/navigation_transitions.dart';
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
@@ -368,13 +370,21 @@ class SetupScreen extends StatefulWidget {
 }
 
 class _SetupScreenState extends State<SetupScreen> {
+  String _statusMessage = '';
+
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
   }
 
+  void _setStatus(String message) {
+    if (mounted) setState(() => _statusMessage = message);
+  }
+
   Future<void> _loadSavedCredentials() async {
+    _setStatus(t.common.checkingNetwork);
+
     final storage = await StorageService.getInstance();
     final registry = ServerRegistry(storage);
 
@@ -386,6 +396,8 @@ class _SetupScreenState extends State<SetupScreen> {
     final hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
 
     if (hasNetwork) {
+      _setStatus(t.common.refreshingServers);
+
       // Refresh servers from API to get updated connection info (IPs may change).
       // If the stored token is invalid (e.g. after removing a Plex profile PIN),
       // redirect to AuthScreen so the user can re-authenticate.
@@ -393,18 +405,20 @@ class _SetupScreenState extends State<SetupScreen> {
       if (refreshResult == ServerRefreshResult.authError) {
         await storage.clearCredentials();
         if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
+          Navigator.pushReplacement(context, fadeRoute(const AuthScreen()));
         }
         return;
       }
     }
+
+    _setStatus(t.common.loadingServers);
 
     // Load all configured servers
     final servers = await registry.getServers();
 
     if (servers.isEmpty) {
       if (mounted) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
+        Navigator.pushReplacement(context, fadeRoute(const AuthScreen()));
       }
       return;
     }
@@ -413,14 +427,17 @@ class _SetupScreenState extends State<SetupScreen> {
 
     // No network — skip connection attempts and go straight to offline mode
     if (!hasNetwork) {
+      _setStatus(t.common.startingOfflineMode);
       await context.read<DownloadProvider>().ensureInitialized();
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
+        fadeRoute(const MainScreen(isOfflineMode: true)),
       );
       return;
     }
+
+    _setStatus(t.common.connectingToServers);
 
     try {
       final result = await ServerConnectionOrchestrator.connectAndInitialize(
@@ -442,25 +459,27 @@ class _SetupScreenState extends State<SetupScreen> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainScreen(client: result.firstClient!)),
+          fadeRoute(MainScreen(client: result.firstClient!)),
         );
       } else {
+        _setStatus(t.common.startingOfflineMode);
         await context.read<DownloadProvider>().ensureInitialized();
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
+          fadeRoute(const MainScreen(isOfflineMode: true)),
         );
       }
     } catch (e, stackTrace) {
       appLogger.e('Error during multi-server connection', error: e, stackTrace: stackTrace);
 
       if (mounted) {
+        _setStatus(t.common.startingOfflineMode);
         await context.read<DownloadProvider>().ensureInitialized();
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
+          fadeRoute(const MainScreen(isOfflineMode: true)),
         );
       }
     }
@@ -468,12 +487,33 @@ class _SetupScreenState extends State<SetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [const CircularProgressIndicator(), const SizedBox(height: 16), Text(t.common.loading)],
-        ),
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Stack(
+        children: [
+          // Icon dead-center, matching Android 12+ splash position.
+          // 192dp accounts for the 16% inset in ic_launcher.xml.
+          Center(
+            child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288),
+          ),
+          // Status text below center, independent of icon position.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).size.height * 0.5 - 140,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                _statusMessage,
+                key: ValueKey(_statusMessage),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

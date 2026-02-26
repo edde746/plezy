@@ -52,7 +52,12 @@
     "exitConfirmMessage": "¿Estás seguro de que quieres salir?",
     "dontAskAgain": "No volver a preguntar",
     "exit": "Salir",
-    "viewAll": "Ver todo"
+    "viewAll": "Ver todo",
+    "checkingNetwork": "Comprobando red...",
+    "refreshingServers": "Actualizando servidores...",
+    "loadingServers": "Cargando servidores...",
+    "connectingToServers": "Conectando a servidores...",
+    "startingOfflineMode": "Iniciando modo sin conexión..."
   },
   "screens": {
     "licenses": "Licencias",

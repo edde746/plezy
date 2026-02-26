@@ -52,7 +52,12 @@
     "exitConfirmMessage": "Är du säker på att du vill avsluta?",
     "dontAskAgain": "Fråga inte igen",
     "exit": "Avsluta",
-    "viewAll": "Visa alla"
+    "viewAll": "Visa alla",
+    "checkingNetwork": "Kontrollerar nätverk...",
+    "refreshingServers": "Uppdaterar servrar...",
+    "loadingServers": "Laddar servrar...",
+    "connectingToServers": "Ansluter till servrar...",
+    "startingOfflineMode": "Startar offlineläge..."
   },
   "screens": {
     "licenses": "Licenser",

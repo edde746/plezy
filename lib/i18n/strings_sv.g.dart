@@ -151,6 +151,11 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get dontAskAgain => 'Fråga inte igen';
 	@override String get exit => 'Avsluta';
 	@override String get viewAll => 'Visa alla';
+	@override String get checkingNetwork => 'Kontrollerar nätverk...';
+	@override String get refreshingServers => 'Uppdaterar servrar...';
+	@override String get loadingServers => 'Laddar servrar...';
+	@override String get connectingToServers => 'Ansluter till servrar...';
+	@override String get startingOfflineMode => 'Startar offlineläge...';
 }
 
 // Path: screens
@@ -1338,6 +1343,11 @@ extension on TranslationsSv {
 			'common.dontAskAgain' => 'Fråga inte igen',
 			'common.exit' => 'Avsluta',
 			'common.viewAll' => 'Visa alla',
+			'common.checkingNetwork' => 'Kontrollerar nätverk...',
+			'common.refreshingServers' => 'Uppdaterar servrar...',
+			'common.loadingServers' => 'Laddar servrar...',
+			'common.connectingToServers' => 'Ansluter till servrar...',
+			'common.startingOfflineMode' => 'Startar offlineläge...',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',

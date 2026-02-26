@@ -52,7 +52,12 @@
     "exitConfirmMessage": "Möchtest du die App wirklich beenden?",
     "dontAskAgain": "Nicht erneut fragen",
     "exit": "Beenden",
-    "viewAll": "Alle anzeigen"
+    "viewAll": "Alle anzeigen",
+    "checkingNetwork": "Netzwerk wird geprüft...",
+    "refreshingServers": "Server werden aktualisiert...",
+    "loadingServers": "Server werden geladen...",
+    "connectingToServers": "Verbindung zu Servern...",
+    "startingOfflineMode": "Offlinemodus wird gestartet..."
   },
   "screens": {
     "licenses": "Lizenzen",

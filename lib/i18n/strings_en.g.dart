@@ -252,6 +252,21 @@ class TranslationsCommonEn {
 
 	/// en: 'View All'
 	String get viewAll => 'View All';
+
+	/// en: 'Checking network...'
+	String get checkingNetwork => 'Checking network...';
+
+	/// en: 'Refreshing servers...'
+	String get refreshingServers => 'Refreshing servers...';
+
+	/// en: 'Loading servers...'
+	String get loadingServers => 'Loading servers...';
+
+	/// en: 'Connecting to servers...'
+	String get connectingToServers => 'Connecting to servers...';
+
+	/// en: 'Starting offline mode...'
+	String get startingOfflineMode => 'Starting offline mode...';
 }
 
 // Path: screens
@@ -2930,6 +2945,11 @@ extension on Translations {
 			'common.dontAskAgain' => 'Don\'t ask again',
 			'common.exit' => 'Exit',
 			'common.viewAll' => 'View All',
+			'common.checkingNetwork' => 'Checking network...',
+			'common.refreshingServers' => 'Refreshing servers...',
+			'common.loadingServers' => 'Loading servers...',
+			'common.connectingToServers' => 'Connecting to servers...',
+			'common.startingOfflineMode' => 'Starting offline mode...',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',

@@ -151,6 +151,11 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get dontAskAgain => '다시 묻지 않기';
 	@override String get exit => '종료';
 	@override String get viewAll => '모두 보기';
+	@override String get checkingNetwork => '네트워크 확인 중...';
+	@override String get refreshingServers => '서버 새로고침 중...';
+	@override String get loadingServers => '서버 로딩 중...';
+	@override String get connectingToServers => '서버 연결 중...';
+	@override String get startingOfflineMode => '오프라인 모드 시작 중...';
 }
 
 // Path: screens
@@ -1338,6 +1343,11 @@ extension on TranslationsKo {
 			'common.dontAskAgain' => '다시 묻지 않기',
 			'common.exit' => '종료',
 			'common.viewAll' => '모두 보기',
+			'common.checkingNetwork' => '네트워크 확인 중...',
+			'common.refreshingServers' => '서버 새로고침 중...',
+			'common.loadingServers' => '서버 로딩 중...',
+			'common.connectingToServers' => '서버 연결 중...',
+			'common.startingOfflineMode' => '오프라인 모드 시작 중...',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',

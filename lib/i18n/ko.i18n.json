@@ -52,7 +52,12 @@
     "exitConfirmMessage": "정말 종료하시겠습니까?",
     "dontAskAgain": "다시 묻지 않기",
     "exit": "종료",
-    "viewAll": "모두 보기"
+    "viewAll": "모두 보기",
+    "checkingNetwork": "네트워크 확인 중...",
+    "refreshingServers": "서버 새로고침 중...",
+    "loadingServers": "서버 로딩 중...",
+    "connectingToServers": "서버 연결 중...",
+    "startingOfflineMode": "오프라인 모드 시작 중..."
   },
   "screens": {
     "licenses": "라이선스",

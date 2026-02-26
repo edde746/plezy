@@ -52,7 +52,12 @@
     "exitConfirmMessage": "确定要退出吗？",
     "dontAskAgain": "不再询问",
     "exit": "退出",
-    "viewAll": "查看全部"
+    "viewAll": "查看全部",
+    "checkingNetwork": "正在检查网络...",
+    "refreshingServers": "正在刷新服务器...",
+    "loadingServers": "正在加载服务器...",
+    "connectingToServers": "正在连接服务器...",
+    "startingOfflineMode": "正在启动离线模式..."
   },
   "screens": {
     "licenses": "许可证",

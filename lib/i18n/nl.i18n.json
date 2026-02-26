@@ -52,7 +52,12 @@
     "exitConfirmMessage": "Weet je zeker dat je wilt afsluiten?",
     "dontAskAgain": "Niet meer vragen",
     "exit": "Afsluiten",
-    "viewAll": "Alles weergeven"
+    "viewAll": "Alles weergeven",
+    "checkingNetwork": "Netwerk controleren...",
+    "refreshingServers": "Servers vernieuwen...",
+    "loadingServers": "Servers laden...",
+    "connectingToServers": "Verbinden met servers...",
+    "startingOfflineMode": "Offlinemodus starten..."
   },
   "screens": {
     "licenses": "Licenties",

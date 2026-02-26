@@ -151,6 +151,11 @@ class _TranslationsCommonEs implements TranslationsCommonEn {
 	@override String get dontAskAgain => 'No volver a preguntar';
 	@override String get exit => 'Salir';
 	@override String get viewAll => 'Ver todo';
+	@override String get checkingNetwork => 'Comprobando red...';
+	@override String get refreshingServers => 'Actualizando servidores...';
+	@override String get loadingServers => 'Cargando servidores...';
+	@override String get connectingToServers => 'Conectando a servidores...';
+	@override String get startingOfflineMode => 'Iniciando modo sin conexión...';
 }
 
 // Path: screens
@@ -1338,6 +1343,11 @@ extension on TranslationsEs {
 			'common.dontAskAgain' => 'No volver a preguntar',
 			'common.exit' => 'Salir',
 			'common.viewAll' => 'Ver todo',
+			'common.checkingNetwork' => 'Comprobando red...',
+			'common.refreshingServers' => 'Actualizando servidores...',
+			'common.loadingServers' => 'Cargando servidores...',
+			'common.connectingToServers' => 'Conectando a servidores...',
+			'common.startingOfflineMode' => 'Iniciando modo sin conexión...',
 			'screens.licenses' => 'Licencias',
 			'screens.switchProfile' => 'Cambiar Perfil',
 			'screens.subtitleStyling' => 'Estilo de Subtítulos',

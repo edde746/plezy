@@ -151,6 +151,11 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get dontAskAgain => 'Niet meer vragen';
 	@override String get exit => 'Afsluiten';
 	@override String get viewAll => 'Alles weergeven';
+	@override String get checkingNetwork => 'Netwerk controleren...';
+	@override String get refreshingServers => 'Servers vernieuwen...';
+	@override String get loadingServers => 'Servers laden...';
+	@override String get connectingToServers => 'Verbinden met servers...';
+	@override String get startingOfflineMode => 'Offlinemodus starten...';
 }
 
 // Path: screens
@@ -1338,6 +1343,11 @@ extension on TranslationsNl {
 			'common.dontAskAgain' => 'Niet meer vragen',
 			'common.exit' => 'Afsluiten',
 			'common.viewAll' => 'Alles weergeven',
+			'common.checkingNetwork' => 'Netwerk controleren...',
+			'common.refreshingServers' => 'Servers vernieuwen...',
+			'common.loadingServers' => 'Servers laden...',
+			'common.connectingToServers' => 'Verbinden met servers...',
+			'common.startingOfflineMode' => 'Offlinemodus starten...',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',

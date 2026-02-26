@@ -151,6 +151,11 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get dontAskAgain => 'Nicht erneut fragen';
 	@override String get exit => 'Beenden';
 	@override String get viewAll => 'Alle anzeigen';
+	@override String get checkingNetwork => 'Netzwerk wird geprüft...';
+	@override String get refreshingServers => 'Server werden aktualisiert...';
+	@override String get loadingServers => 'Server werden geladen...';
+	@override String get connectingToServers => 'Verbindung zu Servern...';
+	@override String get startingOfflineMode => 'Offlinemodus wird gestartet...';
 }
 
 // Path: screens
@@ -1338,6 +1343,11 @@ extension on TranslationsDe {
 			'common.dontAskAgain' => 'Nicht erneut fragen',
 			'common.exit' => 'Beenden',
 			'common.viewAll' => 'Alle anzeigen',
+			'common.checkingNetwork' => 'Netzwerk wird geprüft...',
+			'common.refreshingServers' => 'Server werden aktualisiert...',
+			'common.loadingServers' => 'Server werden geladen...',
+			'common.connectingToServers' => 'Verbindung zu Servern...',
+			'common.startingOfflineMode' => 'Offlinemodus wird gestartet...',
 			'screens.licenses' => 'Lizenzen',
 			'screens.switchProfile' => 'Profil wechseln',
 			'screens.subtitleStyling' => 'Untertitel-Stil',

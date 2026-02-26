@@ -151,6 +151,11 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get dontAskAgain => '不再询问';
 	@override String get exit => '退出';
 	@override String get viewAll => '查看全部';
+	@override String get checkingNetwork => '正在检查网络...';
+	@override String get refreshingServers => '正在刷新服务器...';
+	@override String get loadingServers => '正在加载服务器...';
+	@override String get connectingToServers => '正在连接服务器...';
+	@override String get startingOfflineMode => '正在启动离线模式...';
 }
 
 // Path: screens
@@ -1338,6 +1343,11 @@ extension on TranslationsZh {
 			'common.dontAskAgain' => '不再询问',
 			'common.exit' => '退出',
 			'common.viewAll' => '查看全部',
+			'common.checkingNetwork' => '正在检查网络...',
+			'common.refreshingServers' => '正在刷新服务器...',
+			'common.loadingServers' => '正在加载服务器...',
+			'common.connectingToServers' => '正在连接服务器...',
+			'common.startingOfflineMode' => '正在启动离线模式...',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',

@@ -17,6 +17,7 @@ import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../focus/focusable_button.dart';
+import '../utils/navigation_transitions.dart';
 import 'main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -114,7 +115,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainScreen(client: result.firstClient!)),
+        fadeRoute(MainScreen(client: result.firstClient!)),
       );
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
