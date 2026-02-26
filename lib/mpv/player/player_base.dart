@@ -40,6 +40,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool _disposed = false;
   final _throttleSw = Stopwatch()..start();
   int _lastEmitMs = 0;
+  int _lastCacheStateMs = 0;
   int _positionMs = 0;
   int _nextPropId = 0;
   final Map<int, String> _propIdToName = {};
@@ -274,6 +275,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (value is Map) {
       cacheState = value;
     } else if (value is String && value.isNotEmpty) {
+      // Throttle JSON parsing to avoid ANR on low-end devices
+      final nowMs = _throttleSw.elapsedMilliseconds;
+      if (nowMs - _lastCacheStateMs < 250) return;
+      _lastCacheStateMs = nowMs;
       try {
         final parsed = jsonDecode(value);
         if (parsed is Map) cacheState = parsed;
