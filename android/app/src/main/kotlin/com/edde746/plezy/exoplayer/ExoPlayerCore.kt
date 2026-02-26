@@ -91,6 +91,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var exoPlayer: ExoPlayer? = null
     private var trackSelector: DefaultTrackSelector? = null
     private var tunnelingDisabledForCodec: Boolean = false
+    private var pendingStartPositionMs: Long = 0L
     var delegate: ExoPlayerDelegate? = null
     var isInitialized: Boolean = false
         private set
@@ -520,6 +521,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 delegate?.onPropertyChange("paused-for-cache", true)
             }
             Player.STATE_READY -> {
+                // Restore start position if it was lost during track reselection
+                // (e.g. tunneling state change in onTracksChanged triggers renderer teardown)
+                if (pendingStartPositionMs > 0L) {
+                    val currentPos = exoPlayer?.currentPosition ?: 0L
+                    if (currentPos < 1000L) {
+                        Log.w(TAG, "Position lost during init (at ${currentPos}ms, expected ${pendingStartPositionMs}ms) — restoring")
+                        exoPlayer?.seekTo(pendingStartPositionMs)
+                    }
+                    pendingStartPositionMs = 0L
+                }
                 delegate?.onPropertyChange("paused-for-cache", false)
                 delegate?.onEvent("playback-restart", null)
                 emitTrackList()
@@ -750,11 +761,18 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val player = exoPlayer ?: return
         val currentSpeed = player.playbackParameters.speed
         val shouldTunnel = (currentSpeed == 1f) && !tunnelingDisabledForCodec
-        Log.d(TAG, "updateTunnelingState: speed=$currentSpeed, codecDisabled=$tunnelingDisabledForCodec, tunneling=$shouldTunnel")
+        val currentTunneling = selector.parameters.tunnelingEnabled
+        if (shouldTunnel == currentTunneling) return  // No change needed
+        Log.d(TAG, "updateTunnelingState: tunneling $currentTunneling -> $shouldTunnel")
         selector.setParameters(
             selector.buildUponParameters()
                 .setTunnelingEnabled(shouldTunnel)
         )
+        // Track reselection from setParameters() can reset position during initial load.
+        // Restore the pending start position if it hasn't been consumed yet.
+        if (pendingStartPositionMs > 0L) {
+            player.seekTo(pendingStartPositionMs)
+        }
     }
 
     private fun evaluateAudioCodecForTunneling() {
@@ -783,6 +801,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         currentHeaders = headers
         externalSubtitles.clear()
         tunnelingDisabledForCodec = false
+        pendingStartPositionMs = startPositionMs
 
         if (isLive) {
             // Live MKV streams lack Cues (seek index). FLAG_DISABLE_SEEK_FOR_CUES tells
@@ -1377,6 +1396,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         memoryCallback = null
 
         tunnelingDisabledForCodec = false
+        pendingStartPositionMs = 0L
         exoPlayer?.clearVideoSurface()
         exoPlayer?.removeListener(this)
         exoPlayer?.release()
