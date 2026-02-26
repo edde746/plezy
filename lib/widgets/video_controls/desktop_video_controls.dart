@@ -68,6 +68,7 @@ class DesktopVideoControls extends StatefulWidget {
   final VoidCallback? onLoadSeekTimes;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
+  final void Function(String propertyName, int offset)? onSyncOffsetChanged;
   final String serverId;
   final VoidCallback? onBack;
 
@@ -138,6 +139,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.onLoadSeekTimes,
     this.onCancelAutoHide,
     this.onStartAutoHide,
+    this.onSyncOffsetChanged,
     this.serverId = '',
     this.onBack,
     this.canControl = true,
@@ -689,6 +691,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 onLoadSeekTimes: widget.onLoadSeekTimes,
                 onCancelAutoHide: widget.onCancelAutoHide,
                 onStartAutoHide: widget.onStartAutoHide,
+                onSyncOffsetChanged: widget.onSyncOffsetChanged,
                 focusNodes: _trackControlFocusNodes,
                 onFocusChange: _onFocusChange,
                 onNavigateLeft: navigateFromTrackToVolume,

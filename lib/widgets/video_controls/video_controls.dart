@@ -657,16 +657,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (Platform.isMacOS) {
       _updateTrafficLightVisibility();
     }
-    // Immediately try to reclaim focus (important for TV where global handler
-    // won't fire if _focusNode lost focus)
-    if (!_focusNode.hasFocus) {
-      _focusNode.requestFocus();
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_focusNode.hasFocus) {
+    // Reclaim focus so the global key handler stays active for TV dpad,
+    // but skip if an overlay sheet owns focus — stealing it would break
+    // sheet navigation (e.g. the compact sync bar).
+    final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
+    if (!sheetOpen) {
+      if (!_focusNode.hasFocus) {
         _focusNode.requestFocus();
       }
-    });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_focusNode.hasFocus) {
+          _focusNode.requestFocus();
+        }
+      });
+    }
   }
 
   void _startHideTimer() {
@@ -922,6 +926,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       },
       onCancelAutoHide: () => _hideTimer?.cancel(),
       onStartAutoHide: _startHideTimer,
+      onSyncOffsetChanged: (propertyName, offset) {
+        setState(() {
+          if (propertyName == 'sub-delay') {
+            _subtitleSyncOffset = offset;
+          } else {
+            _audioSyncOffset = offset;
+          }
+        });
+      },
       serverId: widget.metadata.serverId ?? '',
       canControl: widget.canControl,
       isLive: widget.isLive,
@@ -1947,6 +1960,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         },
         onCancelAutoHide: () => _hideTimer?.cancel(),
         onStartAutoHide: _startHideTimer,
+        onSyncOffsetChanged: (propertyName, offset) {
+          setState(() {
+            if (propertyName == 'sub-delay') {
+              _subtitleSyncOffset = offset;
+            } else {
+              _audioSyncOffset = offset;
+            }
+          });
+        },
         serverId: widget.metadata.serverId ?? '',
         onBack: widget.onBack,
         canControl: widget.canControl,

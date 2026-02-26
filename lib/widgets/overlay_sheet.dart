@@ -48,14 +48,18 @@ class OverlaySheetController {
   /// Whether a sheet is currently showing (including while animating closed).
   bool get isOpen => _state._isOpen;
 
-  /// Show a bottom sheet with [builder] content. Returns a Future that completes
+  /// Show a sheet with [builder] content. Returns a Future that completes
   /// when the sheet is closed (with an optional result).
+  ///
+  /// [alignment] controls where the sheet appears. Defaults to
+  /// [Alignment.bottomCenter]. Use [Alignment.topCenter] to anchor at the top.
   Future<T?> show<T>({
     required WidgetBuilder builder,
     BoxConstraints? constraints,
     Color? backgroundColor,
     bool barrierDismissible = true,
     FocusNode? initialFocusNode,
+    Alignment alignment = Alignment.bottomCenter,
   }) {
     return _state._show<T>(
       builder: builder,
@@ -63,6 +67,7 @@ class OverlaySheetController {
       backgroundColor: backgroundColor,
       barrierDismissible: barrierDismissible,
       initialFocusNode: initialFocusNode,
+      alignment: alignment,
     );
   }
 
@@ -98,6 +103,7 @@ class OverlaySheetController {
     bool barrierDismissible = true,
     bool isScrollControlled = false,
     FocusNode? initialFocusNode,
+    Alignment alignment = Alignment.bottomCenter,
   }) {
     final controller = maybeOf(context);
     if (controller != null) {
@@ -107,6 +113,7 @@ class OverlaySheetController {
         backgroundColor: backgroundColor,
         barrierDismissible: barrierDismissible,
         initialFocusNode: initialFocusNode,
+        alignment: alignment,
       );
     }
     return showModalBottomSheet<T>(
@@ -176,7 +183,7 @@ class OverlaySheetHost extends StatefulWidget {
 
 class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
-  late final Animation<Offset> _slideAnimation;
+  late final CurvedAnimation _slideCurve;
   late final Animation<double> _barrierAnimation;
   late final OverlaySheetController _controller;
 
@@ -188,6 +195,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   bool _barrierDismissible = true;
   BoxConstraints? _constraints;
   Color? _explicitBackgroundColor;
+  Alignment _alignment = Alignment.bottomCenter;
 
   // Drag-to-dismiss state
   double _dragOffset = 0;
@@ -200,8 +208,10 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
     _animationController = AnimationController(duration: const Duration(milliseconds: 250), vsync: this);
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic),
+    _slideCurve = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
     );
 
     _barrierAnimation = Tween<double>(
@@ -218,6 +228,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       }
     }
     _sheetFocusScopeNode.dispose();
+    _slideCurve.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -228,6 +239,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Color? backgroundColor,
     bool barrierDismissible = true,
     FocusNode? initialFocusNode,
+    Alignment alignment = Alignment.bottomCenter,
   }) {
     // If already open, close first (instant)
     if (_isOpen) {
@@ -250,6 +262,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       _barrierDismissible = barrierDismissible;
       _constraints = constraints;
       _explicitBackgroundColor = backgroundColor;
+      _alignment = alignment;
       _dragOffset = 0;
       _isDragging = false;
     });
@@ -448,10 +461,17 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   Widget _buildSheet(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width > 600;
+    final isTop = _alignment.y < 0;
 
     final effectiveConstraints =
         _constraints ??
         BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: isDesktop ? 400 : size.height * 0.75);
+
+    // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
+    final slideBegin = isTop ? const Offset(0, -1) : const Offset(0, 1);
+    final borderRadius = isTop
+        ? const BorderRadius.vertical(bottom: Radius.circular(16))
+        : const BorderRadius.vertical(top: Radius.circular(16));
 
     Widget sheet = FocusScope(
       node: _sheetFocusScopeNode,
@@ -459,18 +479,26 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         canRequestFocus: false,
         skipTraversal: true,
         onKeyEvent: _handleKeyEvent,
-        child: SlideTransition(
-          position: _slideAnimation,
+        child: AnimatedBuilder(
+          animation: _slideCurve,
+          builder: (context, child) {
+            final slideOffset = Offset.lerp(slideBegin, Offset.zero, _slideCurve.value)!;
+            return FractionalTranslation(
+              translation: slideOffset,
+              child: child,
+            );
+          },
           child: Align(
-            alignment: Alignment.bottomCenter,
+            alignment: _alignment,
             child: Transform.translate(
               offset: Offset(0, _dragOffset.clamp(0, double.infinity)),
               child: Material(
                 color: _explicitBackgroundColor ?? Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: borderRadius,
                 clipBehavior: Clip.antiAlias,
                 child: SafeArea(
-                  top: false,
+                  top: !isTop,
+                  bottom: isTop,
                   child: ConstrainedBox(
                     constraints: effectiveConstraints,
                     child: _pageStack.isNotEmpty ? _pageStack.last.builder(context) : const SizedBox.shrink(),
@@ -483,8 +511,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       ),
     );
 
-    // Swipe-down-to-dismiss (skip on TV where there's no touchscreen)
-    if (!PlatformDetector.isTV()) {
+    // Swipe-down-to-dismiss (skip on TV and for top-aligned sheets)
+    if (!PlatformDetector.isTV() && !isTop) {
       sheet = GestureDetector(
         onVerticalDragStart: (_) {
           _isDragging = true;
