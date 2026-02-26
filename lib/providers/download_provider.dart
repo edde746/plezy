@@ -656,19 +656,18 @@ class DownloadProvider extends ChangeNotifier {
       }
     }
 
-    // Fetch full metadata to get year, summary, clearLogo
-    // The metadata from getChildren() is summarized and missing these fields.
-    // If metadata already has summary, it's already full (e.g., from detail screen).
+    // Always fetch full metadata before downloading.
+    // Hub items may have summary but the cache at /library/metadata/$ratingKey
+    // won't have the full API response (with Media/Part data needed for video URL)
+    // unless getMetadataWithImages has been called.
     PlexMetadata metadataToStore = metadata;
-    if (metadata.summary == null) {
-      try {
-        final fullMetadata = await client.getMetadataWithImages(metadata.ratingKey);
-        if (fullMetadata != null) {
-          metadataToStore = fullMetadata.copyWith(serverId: metadata.serverId, serverName: metadata.serverName);
-        }
-      } catch (e) {
-        appLogger.w('Failed to fetch full metadata for ${metadata.ratingKey}, using partial', error: e);
+    try {
+      final fullMetadata = await client.getMetadataWithImages(metadata.ratingKey);
+      if (fullMetadata != null) {
+        metadataToStore = fullMetadata.copyWith(serverId: metadata.serverId, serverName: metadata.serverName);
       }
+    } catch (e) {
+      appLogger.w('Failed to fetch full metadata for ${metadata.ratingKey}, using partial', error: e);
     }
 
     // For episodes, also fetch and store show and season metadata for offline display

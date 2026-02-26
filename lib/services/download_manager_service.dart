@@ -522,8 +522,16 @@ class DownloadManagerService {
         }
       }
 
-      final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
-      if (playbackData.videoUrl == null) throw Exception('Could not get video URL');
+      var playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+      if (playbackData.videoUrl == null) {
+        // Cache may contain a synthetic entry (from _cacheMetadataForOffline) without
+        // Media/Part data. Force a fresh network fetch to populate the cache properly.
+        appLogger.w('No video URL from cache for $globalKey, retrying via network');
+        final fetched = await client.getMetadataWithImages(ratingKey);
+        if (fetched != null) metadata = fetched.copyWith(serverId: serverId);
+        playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+        if (playbackData.videoUrl == null) throw Exception('Could not get video URL for $globalKey');
+      }
 
       final ext = _getExtensionFromUrl(playbackData.videoUrl!) ?? 'mp4';
 
