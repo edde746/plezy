@@ -8,7 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
-import 'services/macos_titlebar_service.dart';
+import 'services/macos_window_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/settings_service.dart';
 import 'utils/platform_detector.dart';
@@ -100,7 +100,7 @@ void main() async {
   }
 
   // Configure macOS window with custom titlebar (depends on window manager)
-  futures.add(MacOSTitlebarService.setupCustomTitlebar());
+  futures.add(MacOSWindowService.setupCustomTitlebar());
 
   // Initialize storage service
   futures.add(StorageService.getInstance());

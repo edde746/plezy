@@ -11,7 +11,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../mpv/mpv.dart';
-import '../mpv/player/player_android.dart';
+import '../mpv/player/platform/player_android.dart';
 
 import '../../services/plex_client.dart';
 import '../models/livetv_channel.dart';
@@ -24,7 +24,7 @@ import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../models/companion_remote/remote_command_type.dart';
+import '../models/companion_remote/remote_command.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';

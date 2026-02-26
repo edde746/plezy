@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/companion_remote/remote_command_type.dart';
+import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';

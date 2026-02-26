@@ -1,5 +1,5 @@
-import '../data/ducet_order.dart';
-import '../models/plex_first_character.dart';
+import '../../data/ducet_order.dart';
+import '../../models/plex_first_character.dart';
 
 /// Shared letter-index mapping logic used by both [AlphaJumpBar] (desktop/tablet/TV)
 /// and [AlphaScrollHandle] (phone).

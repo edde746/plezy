@@ -40,7 +40,8 @@ platform :android do
         "../build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
       ],
       overwrite_upload: true,
-      overwrite_upload_mode: 'reuse'
+      overwrite_upload_mode: 'reuse',
+      changes_not_sent_for_review: true
     )
   end
 end

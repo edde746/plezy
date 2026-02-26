@@ -6,7 +6,6 @@ import 'dart:math';
 import 'package:web_socket_channel/io.dart';
 
 import '../../models/companion_remote/remote_command.dart';
-import '../../models/companion_remote/remote_command_type.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
 

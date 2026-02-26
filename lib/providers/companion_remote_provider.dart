@@ -1,31 +1,23 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 import '../models/companion_remote/remote_command.dart';
-import '../models/companion_remote/remote_command_type.dart';
 import '../models/companion_remote/remote_session.dart';
-import '../models/companion_remote/trusted_device.dart';
 import '../services/companion_remote/companion_remote_peer_service.dart';
-import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 
 typedef CommandReceivedCallback = void Function(RemoteCommand command);
-typedef DeviceApprovalCallback = Future<bool> Function(RemoteDevice device);
 
 class CompanionRemoteProvider with ChangeNotifier {
   RemoteSession? _session;
   CompanionRemotePeerService? _peerService;
   String _deviceName = 'Unknown Device';
   String _platform = 'unknown';
-  final List<TrustedDevice> _trustedDevices = [];
   bool _isPlayerActive = false;
 
-  static const String _storageKey = 'companion_remote_trusted_devices';
-  static const String _lastDeviceKey = 'companion_remote_last_device';
   static const int _maxReconnectAttempts = 5;
 
   Timer? _reconnectTimer;
@@ -44,7 +36,6 @@ class CompanionRemoteProvider with ChangeNotifier {
   StreamSubscription<RemoteSessionStatus>? _statusSubscription;
 
   CommandReceivedCallback? onCommandReceived;
-  DeviceApprovalCallback? onDeviceApprovalRequired;
 
   bool get isInSession => _session != null && _session!.status != RemoteSessionStatus.disconnected;
   bool get isHost => _session?.isHost ?? false;
@@ -55,12 +46,10 @@ class CompanionRemoteProvider with ChangeNotifier {
   String? get sessionId => _session?.sessionId;
   String? get pin => _session?.pin;
   RemoteDevice? get connectedDevice => _session?.connectedDevice;
-  List<TrustedDevice> get trustedDevices => List.unmodifiable(_trustedDevices);
   bool get isPlayerActive => _isPlayerActive;
 
   CompanionRemoteProvider() {
     _initializeDeviceInfo();
-    _loadTrustedDevices();
   }
 
   Future<void> _initializeDeviceInfo() async {
@@ -117,12 +106,10 @@ class CompanionRemoteProvider with ChangeNotifier {
       },
     );
 
-    _deviceConnectedSubscription = _peerService!.onDeviceConnected.listen((device) async {
+    _deviceConnectedSubscription = _peerService!.onDeviceConnected.listen((device) {
       appLogger.d('CompanionRemote: Device connected: ${device.name}');
       _session = _session?.copyWith(status: RemoteSessionStatus.connected, connectedDevice: device);
       notifyListeners();
-
-      await addTrustedDevice(device, requireApproval: isHost);
     });
 
     _deviceDisconnectedSubscription = _peerService!.onDeviceDisconnected.listen((_) {
@@ -373,92 +360,6 @@ class CompanionRemoteProvider with ChangeNotifier {
     _isPlayerActive = false;
     _intentionalDisconnect = false;
     notifyListeners();
-  }
-
-  Future<void> _loadTrustedDevices() async {
-    try {
-      final storage = await StorageService.getInstance();
-      final json = storage.prefs.getString(_storageKey);
-      if (json != null) {
-        final List<dynamic> list = jsonDecode(json);
-        _trustedDevices.clear();
-        _trustedDevices.addAll(list.map((e) => TrustedDevice.fromJson(e as Map<String, dynamic>)));
-        appLogger.d('CompanionRemote: Loaded ${_trustedDevices.length} trusted devices');
-      }
-    } catch (e) {
-      appLogger.e('CompanionRemote: Failed to load trusted devices', error: e);
-    }
-  }
-
-  Future<void> _saveTrustedDevices() async {
-    try {
-      final storage = await StorageService.getInstance();
-      final json = jsonEncode(_trustedDevices.map((e) => e.toJson()).toList());
-      await storage.prefs.setString(_storageKey, json);
-      appLogger.d('CompanionRemote: Saved ${_trustedDevices.length} trusted devices');
-    } catch (e) {
-      appLogger.e('CompanionRemote: Failed to save trusted devices', error: e);
-    }
-  }
-
-  bool isDeviceTrusted(String peerId) {
-    return _trustedDevices.any((d) => d.peerId == peerId && d.isApproved);
-  }
-
-  Future<void> addTrustedDevice(RemoteDevice device, {bool requireApproval = true}) async {
-    final existing = _trustedDevices.where((d) => d.peerId == device.id).firstOrNull;
-
-    if (existing != null) {
-      final updated = existing.copyWith(
-        deviceName: device.name,
-        platform: device.platform,
-        lastConnected: DateTime.now(),
-        isApproved: !requireApproval || existing.isApproved,
-      );
-      _trustedDevices.remove(existing);
-      _trustedDevices.add(updated);
-    } else {
-      bool approved = !requireApproval;
-
-      if (requireApproval && onDeviceApprovalRequired != null) {
-        approved = await onDeviceApprovalRequired!(device);
-      }
-
-      _trustedDevices.add(
-        TrustedDevice(peerId: device.id, deviceName: device.name, platform: device.platform, isApproved: approved),
-      );
-    }
-
-    await _saveTrustedDevices();
-
-    if (isRemote) {
-      final storage = await StorageService.getInstance();
-      await storage.prefs.setString(_lastDeviceKey, device.id);
-    }
-
-    notifyListeners();
-  }
-
-  Future<void> removeTrustedDevice(String peerId) async {
-    _trustedDevices.removeWhere((d) => d.peerId == peerId);
-    await _saveTrustedDevices();
-    notifyListeners();
-  }
-
-  Future<void> approveTrustedDevice(String peerId) async {
-    final device = _trustedDevices.where((d) => d.peerId == peerId).firstOrNull;
-    if (device != null) {
-      final updated = device.copyWith(isApproved: true);
-      _trustedDevices.remove(device);
-      _trustedDevices.add(updated);
-      await _saveTrustedDevices();
-      notifyListeners();
-    }
-  }
-
-  Future<String?> getLastConnectedDevicePeerId() async {
-    final storage = await StorageService.getInstance();
-    return storage.prefs.getString(_lastDeviceKey);
   }
 
   @override

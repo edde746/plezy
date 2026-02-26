@@ -22,7 +22,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
-import '../../mpv/player/player_android.dart';
+import '../../mpv/player/platform/player_android.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
 import '../../utils/snackbar_helper.dart';
