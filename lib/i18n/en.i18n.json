@@ -273,8 +273,9 @@
     "goToSeason": "Go to season",
     "shufflePlay": "Shuffle Play",
     "fileInfo": "File Info",
-    "confirmDelete": "Are you sure you want to delete this item from your filesystem?",
-    "deleteMultipleWarning": "Multiple items may be deleted.",
+    "deleteFromServer": "Delete from server",
+    "confirmDelete": "This will permanently delete this media and its files from your server. This cannot be undone.",
+    "deleteMultipleWarning": "This includes all episodes and their files.",
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate"

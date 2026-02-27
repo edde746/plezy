@@ -876,11 +876,14 @@ class TranslationsMediaMenuEn {
 	/// en: 'File Info'
 	String get fileInfo => 'File Info';
 
-	/// en: 'Are you sure you want to delete this item from your filesystem?'
-	String get confirmDelete => 'Are you sure you want to delete this item from your filesystem?';
+	/// en: 'Delete from server'
+	String get deleteFromServer => 'Delete from server';
 
-	/// en: 'Multiple items may be deleted.'
-	String get deleteMultipleWarning => 'Multiple items may be deleted.';
+	/// en: 'This will permanently delete this media and its files from your server. This cannot be undone.'
+	String get confirmDelete => 'This will permanently delete this media and its files from your server. This cannot be undone.';
+
+	/// en: 'This includes all episodes and their files.'
+	String get deleteMultipleWarning => 'This includes all episodes and their files.';
 
 	/// en: 'Media item deleted successfully'
 	String get mediaDeletedSuccessfully => 'Media item deleted successfully';
@@ -3147,8 +3150,9 @@ extension on Translations {
 			'mediaMenu.goToSeason' => 'Go to season',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
 			'mediaMenu.fileInfo' => 'File Info',
-			'mediaMenu.confirmDelete' => 'Are you sure you want to delete this item from your filesystem?',
-			'mediaMenu.deleteMultipleWarning' => 'Multiple items may be deleted.',
+			'mediaMenu.deleteFromServer' => 'Delete from server',
+			'mediaMenu.confirmDelete' => 'This will permanently delete this media and its files from your server. This cannot be undone.',
+			'mediaMenu.deleteMultipleWarning' => 'This includes all episodes and their files.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',

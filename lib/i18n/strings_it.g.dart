@@ -407,8 +407,9 @@ class _TranslationsMediaMenuIt implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Vai alla stagione';
 	@override String get shufflePlay => 'Riproduzione casuale';
 	@override String get fileInfo => 'Info sul file';
-	@override String get confirmDelete => 'Sei sicuro di voler eliminare questo elemento dal tuo filesystem?';
-	@override String get deleteMultipleWarning => 'Potrebbero essere eliminati più elementi.';
+	@override String get deleteFromServer => 'Elimina dal server';
+	@override String get confirmDelete => 'Questo eliminerà permanentemente questo contenuto e i suoi file dal tuo server. Questa azione non può essere annullata.';
+	@override String get deleteMultipleWarning => 'Questo include tutti gli episodi e i loro file.';
 	@override String get mediaDeletedSuccessfully => 'Elemento multimediale eliminato con successo';
 	@override String get mediaFailedToDelete => 'Impossibile eliminare l\'elemento multimediale';
 	@override String get rate => 'Valuta';
@@ -1545,8 +1546,9 @@ extension on TranslationsIt {
 			'mediaMenu.goToSeason' => 'Vai alla stagione',
 			'mediaMenu.shufflePlay' => 'Riproduzione casuale',
 			'mediaMenu.fileInfo' => 'Info sul file',
-			'mediaMenu.confirmDelete' => 'Sei sicuro di voler eliminare questo elemento dal tuo filesystem?',
-			'mediaMenu.deleteMultipleWarning' => 'Potrebbero essere eliminati più elementi.',
+			'mediaMenu.deleteFromServer' => 'Elimina dal server',
+			'mediaMenu.confirmDelete' => 'Questo eliminerà permanentemente questo contenuto e i suoi file dal tuo server. Questa azione non può essere annullata.',
+			'mediaMenu.deleteMultipleWarning' => 'Questo include tutti gli episodi e i loro file.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Elemento multimediale eliminato con successo',
 			'mediaMenu.mediaFailedToDelete' => 'Impossibile eliminare l\'elemento multimediale',
 			'mediaMenu.rate' => 'Valuta',

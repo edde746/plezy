@@ -407,8 +407,9 @@ class _TranslationsMediaMenuDe implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Zur Staffel';
 	@override String get shufflePlay => 'Zufallswiedergabe';
 	@override String get fileInfo => 'Dateiinfo';
-	@override String get confirmDelete => 'Sind Sie sicher, dass Sie dieses Element aus Ihrem Dateisystem löschen möchten?';
-	@override String get deleteMultipleWarning => 'Mehrere Elemente können gelöscht werden.';
+	@override String get deleteFromServer => 'Vom Server löschen';
+	@override String get confirmDelete => 'Dieses Medium und seine Dateien werden dauerhaft von Ihrem Server gelöscht. Dies kann nicht rückgängig gemacht werden.';
+	@override String get deleteMultipleWarning => 'Dies umfasst alle Episoden und deren Dateien.';
 	@override String get mediaDeletedSuccessfully => 'Medienelement erfolgreich gelöscht';
 	@override String get mediaFailedToDelete => 'Löschen des Medienelements fehlgeschlagen';
 	@override String get rate => 'Bewerten';
@@ -1545,8 +1546,9 @@ extension on TranslationsDe {
 			'mediaMenu.goToSeason' => 'Zur Staffel',
 			'mediaMenu.shufflePlay' => 'Zufallswiedergabe',
 			'mediaMenu.fileInfo' => 'Dateiinfo',
-			'mediaMenu.confirmDelete' => 'Sind Sie sicher, dass Sie dieses Element aus Ihrem Dateisystem löschen möchten?',
-			'mediaMenu.deleteMultipleWarning' => 'Mehrere Elemente können gelöscht werden.',
+			'mediaMenu.deleteFromServer' => 'Vom Server löschen',
+			'mediaMenu.confirmDelete' => 'Dieses Medium und seine Dateien werden dauerhaft von Ihrem Server gelöscht. Dies kann nicht rückgängig gemacht werden.',
+			'mediaMenu.deleteMultipleWarning' => 'Dies umfasst alle Episoden und deren Dateien.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medienelement erfolgreich gelöscht',
 			'mediaMenu.mediaFailedToDelete' => 'Löschen des Medienelements fehlgeschlagen',
 			'mediaMenu.rate' => 'Bewerten',

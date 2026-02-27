@@ -273,8 +273,9 @@
     "goToSeason": "转到季",
     "shufflePlay": "随机播放",
     "fileInfo": "文件信息",
-    "confirmDelete": "确定要从文件系统中删除此项吗？",
-    "deleteMultipleWarning": "可能会删除多个项目。",
+    "deleteFromServer": "从服务器删除",
+    "confirmDelete": "这将永久删除此媒体及其文件。此操作无法撤销。",
+    "deleteMultipleWarning": "这包括所有剧集及其文件。",
     "mediaDeletedSuccessfully": "媒体项已成功删除",
     "mediaFailedToDelete": "删除媒体项失败",
     "rate": "评分"

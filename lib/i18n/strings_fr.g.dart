@@ -407,8 +407,9 @@ class _TranslationsMediaMenuFr implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Aller à la saison';
 	@override String get shufflePlay => 'Lecture aléatoire';
 	@override String get fileInfo => 'Informations sur le fichier';
-	@override String get confirmDelete => 'Êtes-vous sûr de vouloir supprimer cet élément de votre système de fichiers?';
-	@override String get deleteMultipleWarning => 'Plusieurs éléments peuvent être supprimés.';
+	@override String get deleteFromServer => 'Supprimer du serveur';
+	@override String get confirmDelete => 'Cela supprimera définitivement ce média et ses fichiers de votre serveur. Cette action est irréversible.';
+	@override String get deleteMultipleWarning => 'Cela inclut tous les épisodes et leurs fichiers.';
 	@override String get mediaDeletedSuccessfully => 'Élément média supprimé avec succès';
 	@override String get mediaFailedToDelete => 'Échec de la suppression de l\'élément média';
 	@override String get rate => 'Noter';
@@ -1545,8 +1546,9 @@ extension on TranslationsFr {
 			'mediaMenu.goToSeason' => 'Aller à la saison',
 			'mediaMenu.shufflePlay' => 'Lecture aléatoire',
 			'mediaMenu.fileInfo' => 'Informations sur le fichier',
-			'mediaMenu.confirmDelete' => 'Êtes-vous sûr de vouloir supprimer cet élément de votre système de fichiers?',
-			'mediaMenu.deleteMultipleWarning' => 'Plusieurs éléments peuvent être supprimés.',
+			'mediaMenu.deleteFromServer' => 'Supprimer du serveur',
+			'mediaMenu.confirmDelete' => 'Cela supprimera définitivement ce média et ses fichiers de votre serveur. Cette action est irréversible.',
+			'mediaMenu.deleteMultipleWarning' => 'Cela inclut tous les épisodes et leurs fichiers.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Élément média supprimé avec succès',
 			'mediaMenu.mediaFailedToDelete' => 'Échec de la suppression de l\'élément média',
 			'mediaMenu.rate' => 'Noter',

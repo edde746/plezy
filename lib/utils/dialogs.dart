@@ -115,8 +115,8 @@ Future<({bool confirmed, bool checked})> showConfirmDialogWithCheckbox(
 
 /// Shows a delete confirmation dialog.
 /// Convenience wrapper around [showConfirmDialog] with destructive styling.
-Future<bool> showDeleteConfirmation(BuildContext context, {required String title, required String message}) {
-  return showConfirmDialog(context, title: title, message: message, confirmText: t.common.delete, isDestructive: true);
+Future<bool> showDeleteConfirmation(BuildContext context, {required String title, required String message, String? confirmText}) {
+  return showConfirmDialog(context, title: title, message: message, confirmText: confirmText ?? t.common.delete, isDestructive: true);
 }
 
 /// Shows a text input dialog for creating/naming items

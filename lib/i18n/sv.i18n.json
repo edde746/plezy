@@ -273,8 +273,9 @@
     "goToSeason": "Gå till säsong",
     "shufflePlay": "Blanda uppspelning",
     "fileInfo": "Filinformation",
-    "confirmDelete": "Är du säker på att du vill ta bort detta objekt från ditt filsystem?",
-    "deleteMultipleWarning": "Flera objekt kan komma att tas bort.",
+    "deleteFromServer": "Ta bort från servern",
+    "confirmDelete": "Detta kommer permanent ta bort detta media och dess filer från din server. Detta kan inte ångras.",
+    "deleteMultipleWarning": "Detta inkluderar alla avsnitt och deras filer.",
     "mediaDeletedSuccessfully": "Mediaobjekt borttaget",
     "mediaFailedToDelete": "Kunde inte ta bort mediaobjekt",
     "rate": "Betygsätt"

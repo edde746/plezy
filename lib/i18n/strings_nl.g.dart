@@ -407,8 +407,9 @@ class _TranslationsMediaMenuNl implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Ga naar seizoen';
 	@override String get shufflePlay => 'Willekeurig afspelen';
 	@override String get fileInfo => 'Bestand info';
-	@override String get confirmDelete => 'Weet je zeker dat je dit item van je bestandssysteem wilt verwijderen?';
-	@override String get deleteMultipleWarning => 'Meerdere items kunnen worden verwijderd.';
+	@override String get deleteFromServer => 'Verwijderen van server';
+	@override String get confirmDelete => 'Dit zal deze media en de bijbehorende bestanden permanent van je server verwijderen. Dit kan niet ongedaan worden gemaakt.';
+	@override String get deleteMultipleWarning => 'Dit omvat alle afleveringen en hun bestanden.';
 	@override String get mediaDeletedSuccessfully => 'Media-item succesvol verwijderd';
 	@override String get mediaFailedToDelete => 'Verwijderen van media-item mislukt';
 	@override String get rate => 'Beoordelen';
@@ -1545,8 +1546,9 @@ extension on TranslationsNl {
 			'mediaMenu.goToSeason' => 'Ga naar seizoen',
 			'mediaMenu.shufflePlay' => 'Willekeurig afspelen',
 			'mediaMenu.fileInfo' => 'Bestand info',
-			'mediaMenu.confirmDelete' => 'Weet je zeker dat je dit item van je bestandssysteem wilt verwijderen?',
-			'mediaMenu.deleteMultipleWarning' => 'Meerdere items kunnen worden verwijderd.',
+			'mediaMenu.deleteFromServer' => 'Verwijderen van server',
+			'mediaMenu.confirmDelete' => 'Dit zal deze media en de bijbehorende bestanden permanent van je server verwijderen. Dit kan niet ongedaan worden gemaakt.',
+			'mediaMenu.deleteMultipleWarning' => 'Dit omvat alle afleveringen en hun bestanden.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media-item succesvol verwijderd',
 			'mediaMenu.mediaFailedToDelete' => 'Verwijderen van media-item mislukt',
 			'mediaMenu.rate' => 'Beoordelen',

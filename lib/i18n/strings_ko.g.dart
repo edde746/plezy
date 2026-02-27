@@ -407,8 +407,9 @@ class _TranslationsMediaMenuKo implements TranslationsMediaMenuEn {
 	@override String get goToSeason => '시즌으로 이동';
 	@override String get shufflePlay => '무작위 재생';
 	@override String get fileInfo => '파일 정보';
-	@override String get confirmDelete => '파일 시스템에서 이 항목을 삭제하시겠습니까?';
-	@override String get deleteMultipleWarning => '여러 항목이 삭제될 수 있습니다.';
+	@override String get deleteFromServer => '서버에서 삭제';
+	@override String get confirmDelete => '이 미디어와 파일이 서버에서 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.';
+	@override String get deleteMultipleWarning => '모든 에피소드와 파일이 포함됩니다.';
 	@override String get mediaDeletedSuccessfully => '미디어 항목이 성공적으로 삭제되었습니다';
 	@override String get mediaFailedToDelete => '미디어 항목 삭제 실패';
 	@override String get rate => '평가';
@@ -1545,8 +1546,9 @@ extension on TranslationsKo {
 			'mediaMenu.goToSeason' => '시즌으로 이동',
 			'mediaMenu.shufflePlay' => '무작위 재생',
 			'mediaMenu.fileInfo' => '파일 정보',
-			'mediaMenu.confirmDelete' => '파일 시스템에서 이 항목을 삭제하시겠습니까?',
-			'mediaMenu.deleteMultipleWarning' => '여러 항목이 삭제될 수 있습니다.',
+			'mediaMenu.deleteFromServer' => '서버에서 삭제',
+			'mediaMenu.confirmDelete' => '이 미디어와 파일이 서버에서 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.',
+			'mediaMenu.deleteMultipleWarning' => '모든 에피소드와 파일이 포함됩니다.',
 			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
 			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
 			'mediaMenu.rate' => '평가',

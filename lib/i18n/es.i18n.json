@@ -273,8 +273,9 @@
     "goToSeason": "Ir a la temporada",
     "shufflePlay": "Reproducción Aleatoria",
     "fileInfo": "Información del Archivo",
-    "confirmDelete": "¿Estás seguro de que quieres eliminar este elemento de tu sistema de archivos?",
-    "deleteMultipleWarning": "Es posible que se eliminen varios elementos.",
+    "deleteFromServer": "Eliminar del servidor",
+    "confirmDelete": "Esto eliminará permanentemente este contenido y sus archivos de tu servidor. Esta acción no se puede deshacer.",
+    "deleteMultipleWarning": "Esto incluye todos los episodios y sus archivos.",
     "mediaDeletedSuccessfully": "Elemento multimedia eliminado con éxito",
     "mediaFailedToDelete": "Error al eliminar el elemento multimedia",
     "rate": "Calificar"

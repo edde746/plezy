@@ -407,8 +407,9 @@ class _TranslationsMediaMenuZh implements TranslationsMediaMenuEn {
 	@override String get goToSeason => '转到季';
 	@override String get shufflePlay => '随机播放';
 	@override String get fileInfo => '文件信息';
-	@override String get confirmDelete => '确定要从文件系统中删除此项吗？';
-	@override String get deleteMultipleWarning => '可能会删除多个项目。';
+	@override String get deleteFromServer => '从服务器删除';
+	@override String get confirmDelete => '这将永久删除此媒体及其文件。此操作无法撤销。';
+	@override String get deleteMultipleWarning => '这包括所有剧集及其文件。';
 	@override String get mediaDeletedSuccessfully => '媒体项已成功删除';
 	@override String get mediaFailedToDelete => '删除媒体项失败';
 	@override String get rate => '评分';
@@ -1545,8 +1546,9 @@ extension on TranslationsZh {
 			'mediaMenu.goToSeason' => '转到季',
 			'mediaMenu.shufflePlay' => '随机播放',
 			'mediaMenu.fileInfo' => '文件信息',
-			'mediaMenu.confirmDelete' => '确定要从文件系统中删除此项吗？',
-			'mediaMenu.deleteMultipleWarning' => '可能会删除多个项目。',
+			'mediaMenu.deleteFromServer' => '从服务器删除',
+			'mediaMenu.confirmDelete' => '这将永久删除此媒体及其文件。此操作无法撤销。',
+			'mediaMenu.deleteMultipleWarning' => '这包括所有剧集及其文件。',
 			'mediaMenu.mediaDeletedSuccessfully' => '媒体项已成功删除',
 			'mediaMenu.mediaFailedToDelete' => '删除媒体项失败',
 			'mediaMenu.rate' => '评分',

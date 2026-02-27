@@ -407,8 +407,9 @@ class _TranslationsMediaMenuSv implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Gå till säsong';
 	@override String get shufflePlay => 'Blanda uppspelning';
 	@override String get fileInfo => 'Filinformation';
-	@override String get confirmDelete => 'Är du säker på att du vill ta bort detta objekt från ditt filsystem?';
-	@override String get deleteMultipleWarning => 'Flera objekt kan komma att tas bort.';
+	@override String get deleteFromServer => 'Ta bort från servern';
+	@override String get confirmDelete => 'Detta kommer permanent ta bort detta media och dess filer från din server. Detta kan inte ångras.';
+	@override String get deleteMultipleWarning => 'Detta inkluderar alla avsnitt och deras filer.';
 	@override String get mediaDeletedSuccessfully => 'Mediaobjekt borttaget';
 	@override String get mediaFailedToDelete => 'Kunde inte ta bort mediaobjekt';
 	@override String get rate => 'Betygsätt';
@@ -1545,8 +1546,9 @@ extension on TranslationsSv {
 			'mediaMenu.goToSeason' => 'Gå till säsong',
 			'mediaMenu.shufflePlay' => 'Blanda uppspelning',
 			'mediaMenu.fileInfo' => 'Filinformation',
-			'mediaMenu.confirmDelete' => 'Är du säker på att du vill ta bort detta objekt från ditt filsystem?',
-			'mediaMenu.deleteMultipleWarning' => 'Flera objekt kan komma att tas bort.',
+			'mediaMenu.deleteFromServer' => 'Ta bort från servern',
+			'mediaMenu.confirmDelete' => 'Detta kommer permanent ta bort detta media och dess filer från din server. Detta kan inte ångras.',
+			'mediaMenu.deleteMultipleWarning' => 'Detta inkluderar alla avsnitt och deras filer.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Mediaobjekt borttaget',
 			'mediaMenu.mediaFailedToDelete' => 'Kunde inte ta bort mediaobjekt',
 			'mediaMenu.rate' => 'Betygsätt',
