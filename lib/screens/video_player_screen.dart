@@ -421,6 +421,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
       );
       await player!.setProperty('sub-ass-override', 'no');
+      await player!.setProperty('sub-ass-video-aspect-override', '1');
       await player!.setProperty('sub-pos', settingsService.getSubtitlePosition().toString());
 
       // Platform-specific settings
