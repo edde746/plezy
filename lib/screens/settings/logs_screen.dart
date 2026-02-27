@@ -124,7 +124,7 @@ class _LogsScreenState extends State<LogsScreen> {
                 icon: const Icon(Icons.copy, size: 20),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: id));
-                  showSuccessSnackBar(ctx, t.messages.logsCopied);
+                  showSuccessSnackBar(context, t.messages.logsCopied);
                 },
               ),
             ],
