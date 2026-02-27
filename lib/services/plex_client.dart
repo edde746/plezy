@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui' show VoidCallback;
 
 import 'package:dio/dio.dart';
@@ -918,17 +919,20 @@ class PlexClient {
     return '${config.baseUrl}/$path'.withPlexToken(config.token);
   }
 
-  /// Check whether thumbnail previews are available for a given part.
-  /// Returns true if the server responds with 200 to the first thumbnail.
-  Future<bool> checkThumbnailsAvailable(int partId) async {
+  /// Download the full BIF (Base Index Frames) file for a given part.
+  /// Returns the raw bytes, or null on failure.
+  Future<Uint8List?> downloadBifFile(int partId) async {
     try {
-      final response = await _dio.get(
-        '/library/parts/$partId/indexes/sd/0',
-        options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 5)),
+      final response = await _dio.get<List<int>>(
+        '/library/parts/$partId/indexes/sd',
+        options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 30)),
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200 && response.data != null) {
+        return Uint8List.fromList(response.data!);
+      }
+      return null;
     } catch (_) {
-      return false;
+      return null;
     }
   }
 

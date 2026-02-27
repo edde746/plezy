@@ -1,5 +1,6 @@
 import 'dart:async' show StreamSubscription, Timer;
 import 'dart:io' show Platform;
+import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart' show PointerSignalEvent, PointerScrollEvent;
 import 'package:flutter/material.dart';
@@ -77,7 +78,7 @@ Widget plexVideoControlsBuilder(
   ValueNotifier<bool>? controlsVisible,
   ShaderService? shaderService,
   VoidCallback? onShaderChanged,
-  String Function(Duration time)? thumbnailUrlBuilder,
+  Uint8List? Function(Duration time)? thumbnailDataBuilder,
   bool isLive = false,
   String? liveChannelName,
   bool isAmbientLightingEnabled = false,
@@ -103,7 +104,7 @@ Widget plexVideoControlsBuilder(
     controlsVisible: controlsVisible,
     shaderService: shaderService,
     onShaderChanged: onShaderChanged,
-    thumbnailUrlBuilder: thumbnailUrlBuilder,
+    thumbnailDataBuilder: thumbnailDataBuilder,
     isLive: isLive,
     liveChannelName: liveChannelName,
     isAmbientLightingEnabled: isAmbientLightingEnabled,
@@ -148,8 +149,8 @@ class PlexVideoControls extends StatefulWidget {
   /// Called when shader preset changes
   final VoidCallback? onShaderChanged;
 
-  /// Optional callback that returns a thumbnail URL for a given timestamp.
-  final String Function(Duration time)? thumbnailUrlBuilder;
+  /// Optional callback that returns thumbnail image bytes for a given timestamp.
+  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
   /// Whether this is a live TV stream (disables seek, progress, etc.)
   final bool isLive;
@@ -184,7 +185,7 @@ class PlexVideoControls extends StatefulWidget {
     this.controlsVisible,
     this.shaderService,
     this.onShaderChanged,
-    this.thumbnailUrlBuilder,
+    this.thumbnailDataBuilder,
     this.isLive = false,
     this.liveChannelName,
     this.isAmbientLightingEnabled = false,
@@ -1853,7 +1854,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             onSeekToNextChapter: _seekToNextChapter,
                                             canControl: widget.canControl,
                                             hasFirstFrame: widget.hasFirstFrame,
-                                            thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+                                            thumbnailDataBuilder: widget.thumbnailDataBuilder,
                                             isLive: widget.isLive,
                                             liveChannelName: widget.liveChannelName,
                                           ),
@@ -1977,7 +1978,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
         shaderService: widget.shaderService,
         onShaderChanged: widget.onShaderChanged,
-        thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+        thumbnailDataBuilder: widget.thumbnailDataBuilder,
         isLive: widget.isLive,
         liveChannelName: widget.liveChannelName,
         isAmbientLightingEnabled: widget.isAmbientLightingEnabled,

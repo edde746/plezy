@@ -81,8 +81,8 @@ class DesktopVideoControls extends StatefulWidget {
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
 
-  /// Optional callback that returns a thumbnail URL for a given timestamp.
-  final String Function(Duration time)? thumbnailUrlBuilder;
+  /// Optional callback that returns thumbnail image bytes for a given timestamp.
+  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
   /// Whether this is a live TV stream
   final bool isLive;
@@ -146,7 +146,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.hasFirstFrame,
     this.shaderService,
     this.onShaderChanged,
-    this.thumbnailUrlBuilder,
+    this.thumbnailDataBuilder,
     this.isLive = false,
     this.liveChannelName,
     this.isAmbientLightingEnabled = false,
@@ -486,7 +486,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               onKeyEvent: _handleTimelineKeyEvent,
               onFocusChange: _onFocusChange,
               enabled: canInteract,
-              thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+              thumbnailDataBuilder: widget.thumbnailDataBuilder,
             ),
             const SizedBox(height: 4),
           ],
