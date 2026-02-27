@@ -65,6 +65,7 @@ class MediaDetailScreen extends StatefulWidget {
 class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAware, DeletionAware {
   List<PlexMetadata> _seasons = [];
   bool _isLoadingSeasons = false;
+  Completer<void>? _seasonsCompleter;
   PlexMetadata? _fullMetadata;
   PlexMetadata? _onDeckEpisode;
   PlexVideoPlaybackData? _playbackData;
@@ -1025,6 +1026,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   }
 
   Future<void> _loadSeasons() async {
+    _seasonsCompleter = Completer<void>();
     setState(() {
       _isLoadingSeasons = true;
     });
@@ -1048,11 +1050,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       setState(() {
         _isLoadingSeasons = false;
       });
+    } finally {
+      if (!(_seasonsCompleter?.isCompleted ?? true)) {
+        _seasonsCompleter?.complete();
+      }
     }
   }
 
   /// Load seasons from downloaded episodes (offline mode)
   void _loadSeasonsFromDownloads() {
+    _seasonsCompleter = Completer<void>();
     setState(() {
       _isLoadingSeasons = true;
     });
@@ -1087,6 +1094,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       _seasons = seasons;
       _isLoadingSeasons = false;
     });
+    if (!(_seasonsCompleter?.isCompleted ?? true)) {
+      _seasonsCompleter?.complete();
+    }
   }
 
   /// Load extras (trailers, behind-the-scenes, etc.)
@@ -1654,8 +1664,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       }
 
       // Wait for seasons to finish loading if they're currently loading
-      while (_isLoadingSeasons) {
-        await Future.delayed(const Duration(milliseconds: 100));
+      if (_isLoadingSeasons && _seasonsCompleter != null) {
+        await _seasonsCompleter!.future.timeout(const Duration(seconds: 10), onTimeout: () {});
       }
 
       if (!mounted) return;

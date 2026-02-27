@@ -173,6 +173,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // Screen-level focus node: persists across loading/initialized phases so
   // key events never escape the video player route.
   late final FocusNode _screenFocusNode;
+  bool _reclaimingFocus = false;
 
   // Cached setting: when false on Windows/Linux, ESC should not exit the player
   bool _videoPlayerNavigationEnabled = false;
@@ -1723,8 +1724,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// descendant has focus, so internal movement between child controls
   /// does NOT trigger this.
   void _onScreenFocusChanged() {
+    if (_reclaimingFocus) return;
     if (!_screenFocusNode.hasFocus && mounted && !_isExiting.value) {
+      _reclaimingFocus = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        _reclaimingFocus = false;
         if (mounted && !_isExiting.value && !_screenFocusNode.hasFocus) {
           _screenFocusNode.requestFocus();
         }
