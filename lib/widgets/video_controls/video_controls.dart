@@ -246,6 +246,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   int _autoSkipDelay = 5;
   Timer? _autoSkipTimer;
   double _autoSkipProgress = 0.0;
+  // Skip button dismiss state
+  bool _skipButtonDismissed = false;
+  Timer? _skipButtonDismissTimer;
   // Video player navigation (use arrow keys to navigate controls)
   bool _videoPlayerNavigationEnabled = false;
   // Performance overlay
@@ -355,14 +358,22 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _updateCurrentMarker(PlexMarker? foundMarker) {
     setState(() {
       _currentMarker = foundMarker;
+      _skipButtonDismissed = false;
     });
 
     if (foundMarker == null) {
       _cancelAutoSkipTimer();
+      _cancelSkipButtonDismissTimer();
       return;
     }
 
     _startAutoSkipTimer(foundMarker);
+
+    // Auto-skip OFF: dismiss button after 7s if no interaction
+    // Auto-skip ON: button stays until controls hide
+    if (!_shouldAutoSkipForMarker(foundMarker)) {
+      _startSkipButtonDismissTimer();
+    }
 
     // Auto-focus skip button on TV when marker appears (only in keyboard/TV mode, if controls hidden)
     if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context)) {
@@ -414,6 +425,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       widget.onSeekCompleted?.call(endTime);
     }
     _cancelAutoSkipTimer();
+    _cancelSkipButtonDismissTimer();
   }
 
   void _startAutoSkipTimer(PlexMarker marker) {
@@ -460,6 +472,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
+  /// Starts/restarts the skip button dismiss timer. When it fires, hides the
+  /// button and cancels any active auto-skip countdown.
+  void _startSkipButtonDismissTimer() {
+    _skipButtonDismissTimer?.cancel();
+    _skipButtonDismissTimer = Timer(const Duration(seconds: 7), () {
+      if (!mounted || _currentMarker == null) return;
+      setState(() {
+        _skipButtonDismissed = true;
+      });
+      _cancelAutoSkipTimer();
+    });
+  }
+
+  void _cancelSkipButtonDismissTimer() {
+    _skipButtonDismissTimer?.cancel();
+    _skipButtonDismissTimer = null;
+  }
+
   /// Perform the appropriate skip action based on marker type and next episode availability
   void _performAutoSkip() {
     if (_currentMarker == null) return;
@@ -476,9 +506,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Check if auto-skip should be active for the current marker
+  bool _shouldAutoSkipForMarker(PlexMarker marker) {
+    return (marker.isCredits && _autoSkipCredits) || (!marker.isCredits && _autoSkipIntro);
+  }
+
   bool _shouldShowAutoSkip() {
     if (_currentMarker == null) return false;
-    return (_currentMarker!.isCredits && _autoSkipCredits) || (!_currentMarker!.isCredits && _autoSkipIntro);
+    return _shouldAutoSkipForMarker(_currentMarker!);
   }
 
   Future<void> _loadSeekTimes() async {
@@ -570,6 +604,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
     _autoSkipTimer?.cancel();
+    _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
     _playingSubscription?.cancel();
@@ -653,7 +688,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (!mounted || !_showControls) return;
     setState(() {
       _showControls = false;
+      // Dismiss skip button with controls — after this it only re-appears with controls
+      if (_currentMarker != null) {
+        _skipButtonDismissed = true;
+      }
     });
+    _cancelSkipButtonDismissTimer();
     widget.controlsVisible?.value = false;
     if (Platform.isMacOS) {
       _updateTrafficLightVisibility();
@@ -751,21 +791,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   void _toggleControls() {
-    setState(() {
-      _showControls = !_showControls;
-    });
-    // Notify parent of visibility change (for popup positioning)
-    widget.controlsVisible?.value = _showControls;
-    // Cancel auto-skip on any tap, not just when controls become visible
-    _cancelAutoSkipTimer();
     if (_showControls) {
+      _hideControls();
+    } else {
+      setState(() {
+        _showControls = true;
+      });
+      widget.controlsVisible?.value = true;
       _startHideTimer();
+      if (Platform.isMacOS) {
+        _updateTrafficLightVisibility();
+      }
     }
-
-    // On macOS, hide/show traffic lights with controls
-    if (Platform.isMacOS) {
-      _updateTrafficLightVisibility();
-    }
+    // Cancel auto-skip on any tap
+    _cancelAutoSkipTimer();
   }
 
   void _toggleRotationLock() async {
@@ -1535,16 +1574,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
 
     if (_showControls) {
-      setState(() {
-        _showControls = false;
-      });
-      // Notify parent of visibility change (for popup positioning)
-      widget.controlsVisible?.value = false;
-      // Return focus to the main focus node
-      _focusNode.requestFocus();
-      if (Platform.isMacOS) {
-        _updateTrafficLightVisibility();
-      }
+      _hideControls();
     }
   }
 
@@ -1883,8 +1913,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                     ),
                   // Speed indicator overlay for long-press 2x
                   if (_showSpeedIndicator) Positioned.fill(child: IgnorePointer(child: _buildSpeedIndicator())),
-                  // Skip intro/credits button
-                  if (_currentMarker != null)
+                  // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
+                  if (_currentMarker != null && (!_skipButtonDismissed || _showControls))
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
