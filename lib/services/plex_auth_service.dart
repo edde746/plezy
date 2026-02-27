@@ -391,7 +391,7 @@ class PlexServer {
   /// Priority: local > remote > relay, then HTTPS > HTTP, then lowest latency
   /// Tests both plex.direct URI and direct IP for each connection
   /// HTTPS connections are tested first, with HTTP as fallback
-  Stream<PlexConnection> findBestWorkingConnection({String? preferredUri}) async* {
+  Stream<PlexConnection> findBestWorkingConnection({String? preferredUri, String? clientIdentifier}) async* {
     if (connections.isEmpty) {
       appLogger.w('No connections available for server discovery');
       return;
@@ -437,6 +437,7 @@ class PlexServer {
           cachedCandidate.url,
           accessToken,
           timeout: preferredTimeout,
+          clientIdentifier: clientIdentifier,
         );
 
         if (result.success) {
@@ -456,7 +457,7 @@ class PlexServer {
       appLogger.d('Running connection race to find first working endpoint', error: {'candidateCount': totalCandidates});
 
       for (final candidate in candidates) {
-        PlexClient.testConnectionWithLatency(candidate.url, accessToken, timeout: raceTimeout).then((result) {
+        PlexClient.testConnectionWithLatency(candidate.url, accessToken, timeout: raceTimeout, clientIdentifier: clientIdentifier).then((result) {
           completedTests++;
 
           if (!result.success) {
@@ -501,7 +502,7 @@ class PlexServer {
     }
 
     // Attempt HTTPS upgrade on the Phase 1 winner before emitting
-    final upgradedFirstCandidate = await _upgradeCandidateToHttpsIfPossible(firstCandidate);
+    final upgradedFirstCandidate = await _upgradeCandidateToHttpsIfPossible(firstCandidate, clientIdentifier: clientIdentifier);
     final emitCandidate = upgradedFirstCandidate ?? firstCandidate;
 
     final firstConnection = _updateConnectionUrl(emitCandidate.connection, emitCandidate.url);
@@ -523,7 +524,7 @@ class PlexServer {
 
     await Future.wait(
       candidates.map((candidate) async {
-        final result = await PlexClient.testConnectionWithAverageLatency(candidate.url, accessToken, attempts: 2);
+        final result = await PlexClient.testConnectionWithAverageLatency(candidate.url, accessToken, attempts: 2, clientIdentifier: clientIdentifier);
 
         if (result.success) {
           candidateResults[candidate] = result;
@@ -547,7 +548,7 @@ class PlexServer {
 
     // Emit the best connection if it's different from the first one
     if (bestCandidate != null) {
-      final upgradedCandidate = await _upgradeCandidateToHttpsIfPossible(bestCandidate) ?? bestCandidate;
+      final upgradedCandidate = await _upgradeCandidateToHttpsIfPossible(bestCandidate, clientIdentifier: clientIdentifier) ?? bestCandidate;
 
       final bestConnection = _updateConnectionUrl(upgradedCandidate.connection, upgradedCandidate.url);
       if (bestConnection.uri != firstConnection.uri) {
@@ -665,7 +666,7 @@ class PlexServer {
     return urls;
   }
 
-  Future<_ConnectionCandidate?> _upgradeCandidateToHttpsIfPossible(_ConnectionCandidate candidate) async {
+  Future<_ConnectionCandidate?> _upgradeCandidateToHttpsIfPossible(_ConnectionCandidate candidate, {String? clientIdentifier}) async {
     final currentUrl = candidate.url;
     if (currentUrl.startsWith('https://')) {
       return null;
@@ -715,6 +716,7 @@ class PlexServer {
       httpsUrl,
       accessToken,
       timeout: ConnectionTimeouts.connectionRace,
+      clientIdentifier: clientIdentifier,
     );
 
     if (!result.success) {

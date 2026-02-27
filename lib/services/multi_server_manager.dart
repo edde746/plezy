@@ -83,7 +83,7 @@ class MultiServerManager {
     final cachedEndpoint = storage.getServerEndpoint(serverId);
 
     // Find best working connection, passing cached endpoint for fast-path
-    final streamIterator = StreamIterator(server.findBestWorkingConnection(preferredUri: cachedEndpoint));
+    final streamIterator = StreamIterator(server.findBestWorkingConnection(preferredUri: cachedEndpoint, clientIdentifier: clientIdentifier));
 
     if (!await streamIterator.moveNext()) {
       throw Exception('No working connection found');
@@ -388,7 +388,7 @@ class MultiServerManager {
     try {
       appLogger.d('Starting connection optimization for ${server.name}', error: {'reason': reason});
 
-      await for (final connection in server.findBestWorkingConnection(preferredUri: cachedEndpoint)) {
+      await for (final connection in server.findBestWorkingConnection(preferredUri: cachedEndpoint, clientIdentifier: _clientIdentifier)) {
         final newUrl = connection.uri;
 
         // Check if this is actually a better connection than current
