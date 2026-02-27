@@ -19,7 +19,7 @@ platform :android do
       UI.user_error!("Could not extract version from pubspec.yaml")
     end
 
-    debug_info_dir = "./build/debug-info/#{version_name}+#{version_code}"
+    debug_info_dir = "./debug-info/#{version_name}+#{version_code}"
 
     # Build the Flutter app
     sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true --obfuscate --split-debug-info=#{debug_info_dir}/aab")
