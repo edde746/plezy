@@ -216,7 +216,6 @@ class PlexClient {
     String token, {
     Duration timeout = const Duration(seconds: 5),
     String? clientIdentifier,
-    String appName = 'Plezy',
   }) async {
     final stopwatch = Stopwatch()..start();
 
@@ -235,8 +234,8 @@ class PlexClient {
       final headers = <String, String>{'X-Plex-Token': token};
       if (clientIdentifier != null) {
         headers['X-Plex-Client-Identifier'] = clientIdentifier;
-        headers['X-Plex-Product'] = appName;
-        headers['X-Plex-Device-Name'] = appName;
+        headers['X-Plex-Product'] = 'Plezy';
+        headers['X-Plex-Device-Name'] = 'Plezy';
       }
 
       final response = await dio.get('/', options: Options(headers: headers));
@@ -276,7 +275,6 @@ class PlexClient {
     int attempts = 3,
     Duration timeout = const Duration(seconds: 5),
     String? clientIdentifier,
-    String appName = 'Plezy',
   }) async {
     final results = <ConnectionTestResult>[];
 
@@ -286,7 +284,6 @@ class PlexClient {
         token,
         timeout: timeout,
         clientIdentifier: clientIdentifier,
-        appName: appName,
       );
 
       // If any attempt fails, return failed result immediately
