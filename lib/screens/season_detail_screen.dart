@@ -59,7 +59,8 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   bool _suppressNextBackKeyUp = false;
   bool _routeSubscribed = false;
 
-  String _toGlobalKey(String ratingKey, {String? serverId}) => buildGlobalKey(serverId ?? widget.season.serverId ?? '', ratingKey);
+  String _toGlobalKey(String ratingKey, {String? serverId}) =>
+      buildGlobalKey(serverId ?? widget.season.serverId ?? '', ratingKey);
 
   // WatchStateAware: watch all episode ratingKeys
   @override
@@ -364,14 +365,18 @@ class _EpisodeCardState extends State<_EpisodeCard> {
     );
     return Row(
       children: [
-        if (widget.episode.duration != null) Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)), style: mutedStyle),
+        if (widget.episode.duration != null)
+          Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)), style: mutedStyle),
         if (widget.episode.originallyAvailableAt != null) ...[
           dot,
           Text(formatFullDate(widget.episode.originallyAvailableAt!), style: mutedStyle),
         ],
         if (widget.episode.userRating != null && widget.episode.userRating! > 0) ...[
           dot,
-          Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber)),
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
+          ),
           const SizedBox(width: 2),
           Text(
             (widget.episode.userRating! / 2) == (widget.episode.userRating! / 2).truncateToDouble()

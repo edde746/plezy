@@ -201,7 +201,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
                   ),
                 ],
               ),
@@ -648,7 +648,7 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
               hintText: t.companionRemote.remote.searchHint,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: IconButton(icon: const Icon(Icons.send), onPressed: () => _submit(_controller.text)),
-              border: OutlineInputBorder(borderRadius: const BorderRadius.all(Radius.circular(100))),
+              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(100))),
             ),
             onSubmitted: _submit,
           ),

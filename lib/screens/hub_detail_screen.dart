@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
@@ -15,11 +14,8 @@ import '../widgets/focusable_media_card.dart';
 import '../widgets/media_grid_delegate.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/overlay_sheet.dart';
-import 'package:flutter/services.dart';
-import '../focus/dpad_navigator.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
-import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import 'libraries/sort_bottom_sheet.dart';
 import 'libraries/state_messages.dart';

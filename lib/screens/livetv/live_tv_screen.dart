@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../focus/dpad_navigator.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';

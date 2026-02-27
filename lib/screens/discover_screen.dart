@@ -258,7 +258,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _loadContent();
   }
 
-
   /// Handle key events for the hero section
   late final _handleHeroKeyEvent = dpadKeyHandler(
     onDown: () {
@@ -284,7 +283,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
     },
   );
-
 
   @override
   void dispose() {
@@ -781,12 +779,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           PopupMenuItem(
             value: 'switch_profile',
             child: Row(
-              children: [AppIcon(Symbols.people_rounded, fill: 1), SizedBox(width: 8), Text(t.discover.switchProfile)],
+              children: [
+                AppIcon(Symbols.people_rounded, fill: 1),
+                const SizedBox(width: 8),
+                Text(t.discover.switchProfile),
+              ],
             ),
           ),
         PopupMenuItem(
           value: 'logout',
-          child: Row(children: [AppIcon(Symbols.logout_rounded, fill: 1), SizedBox(width: 8), Text(t.common.logout)]),
+          child: Row(
+            children: [AppIcon(Symbols.logout_rounded, fill: 1), const SizedBox(width: 8), Text(t.common.logout)],
+          ),
         ),
       ],
     ).then((value) {
@@ -838,14 +842,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     onNavigateLeft: _navigateToSidebar,
                     onNavigateDown: _focusContentFromAppBar,
                     actions: [
-                      FocusableAction(
-                        icon: Symbols.refresh_rounded,
-                        iconColor: Colors.white,
-                        onPressed: _loadContent,
-                      ),
+                      FocusableAction(icon: Symbols.refresh_rounded, iconColor: Colors.white, onPressed: _loadContent),
                       // Watch Together
                       FocusableAction(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                        onPressed: () =>
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
                         child: Stack(
                           children: [
                             IconButton(
@@ -854,7 +855,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 fill: watchTogether.isInSession ? 1 : 0,
                                 color: watchTogether.isInSession ? Theme.of(context).colorScheme.primary : Colors.white,
                               ),
-                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
+                              ),
                               tooltip: 'Watch Together',
                             ),
                             if (watchTogether.isInSession && watchTogether.participantCount > 1)
@@ -886,7 +890,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           if (isDesktop) {
                             RemoteSessionDialog.show(context);
                           } else {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => MobileRemoteScreen()));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
+                            );
                           }
                         },
                         child: Stack(
@@ -895,13 +902,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               icon: AppIcon(
                                 Symbols.phone_android_rounded,
                                 fill: companionRemote.isConnected ? 1 : 0,
-                                color: companionRemote.isConnected ? Theme.of(context).colorScheme.primary : Colors.white,
+                                color: companionRemote.isConnected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.white,
                               ),
                               onPressed: () {
                                 if (isDesktop) {
                                   RemoteSessionDialog.show(context);
                                 } else {
-                                  Navigator.push(context, MaterialPageRoute(builder: (context) => MobileRemoteScreen()));
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
+                                  );
                                 }
                               },
                               tooltip: t.companionRemote.title,
@@ -913,10 +925,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 child: Container(
                                   width: 8,
                                   height: 8,
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     color: Colors.green,
                                     shape: BoxShape.circle,
-                                    border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 1)),
+                                    border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1)),
                                   ),
                                 ),
                               ),
@@ -944,7 +956,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 child: Row(
                                   children: [
                                     AppIcon(Symbols.people_rounded, fill: 1),
-                                    SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                     Text(t.discover.switchProfile),
                                   ],
                                 ),
@@ -954,7 +966,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               child: Row(
                                 children: [
                                   AppIcon(Symbols.logout_rounded, fill: 1),
-                                  SizedBox(width: 8),
+                                  const SizedBox(width: 8),
                                   Text(t.common.logout),
                                 ],
                               ),
@@ -1097,11 +1109,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
+                          const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
                           Text(t.discover.noContentAvailable),
-                          SizedBox(height: 8),
-                          Text(t.discover.addMediaToLibraries, style: TextStyle(color: Colors.grey)),
+                          const SizedBox(height: 8),
+                          Text(t.discover.addMediaToLibraries, style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -1575,7 +1587,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ] else
               Text(
                 t.common.play,
-                style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600),
+                style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600),
               ),
           ],
         ),

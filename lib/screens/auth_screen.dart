@@ -113,10 +113,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await profileFuture;
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        fadeRoute(MainScreen(client: result.firstClient!)),
-      );
+      Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!)));
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       setState(() {
@@ -455,7 +452,7 @@ class _AuthScreenState extends State<AuthScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
             ),
-            child: Text(t.auth.debugEnterToken, style: TextStyle(fontSize: 12)),
+            child: Text(t.auth.debugEnterToken, style: const TextStyle(fontSize: 12)),
           ),
         ],
         if (_errorMessage != null) ...[

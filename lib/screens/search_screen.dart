@@ -235,16 +235,16 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
                               : null,
                           filled: true,
                           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          border: OutlineInputBorder(
-                            borderRadius: const BorderRadius.all(Radius.circular(100)),
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(100)),
                             borderSide: BorderSide.none,
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: const BorderRadius.all(Radius.circular(100)),
+                          enabledBorder: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(100)),
                             borderSide: BorderSide.none,
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: const BorderRadius.all(Radius.circular(100)),
+                          focusedBorder: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(100)),
                             borderSide: BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

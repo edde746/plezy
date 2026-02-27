@@ -242,24 +242,24 @@ class _TimelineSliderState extends State<TimelineSlider> {
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
                 ),
                 child: Semantics(
-                label: t.videoControls.timelineSlider,
-                slider: true,
-                child: Slider(
-                  value: widget.duration.inMilliseconds > 0 ? widget.position.inMilliseconds.toDouble() : 0.0,
-                  min: 0.0,
-                  max: widget.duration.inMilliseconds.toDouble(),
-                  onChanged: (value) {
-                    setState(() => _dragValue = value);
-                    widget.onSeek(Duration(milliseconds: value.toInt()));
-                  },
-                  onChangeEnd: (value) {
-                    setState(() => _dragValue = null);
-                    widget.onSeekEnd(Duration(milliseconds: value.toInt()));
-                  },
-                  activeColor: Colors.white,
-                  inactiveColor: Colors.transparent,
+                  label: t.videoControls.timelineSlider,
+                  slider: true,
+                  child: Slider(
+                    value: widget.duration.inMilliseconds > 0 ? widget.position.inMilliseconds.toDouble() : 0.0,
+                    min: 0.0,
+                    max: widget.duration.inMilliseconds.toDouble(),
+                    onChanged: (value) {
+                      setState(() => _dragValue = value);
+                      widget.onSeek(Duration(milliseconds: value.toInt()));
+                    },
+                    onChangeEnd: (value) {
+                      setState(() => _dragValue = null);
+                      widget.onSeekEnd(Duration(milliseconds: value.toInt()));
+                    },
+                    activeColor: Colors.white,
+                    inactiveColor: Colors.transparent,
+                  ),
                 ),
-              ),
               ),
             ),
             // Chapter marker indicators

@@ -51,10 +51,9 @@ class PlexAuthService {
 
   static Future<PlexAuthService> create() async {
     final storage = await StorageService.getInstance();
-    final dio = Dio(BaseOptions(
-      connectTimeout: ConnectionTimeouts.plexTvConnect,
-      receiveTimeout: ConnectionTimeouts.plexTvReceive,
-    ));
+    final dio = Dio(
+      BaseOptions(connectTimeout: ConnectionTimeouts.plexTvConnect, receiveTimeout: ConnectionTimeouts.plexTvReceive),
+    );
 
     // Get or create client identifier
     String? clientIdentifier = storage.getClientIdentifier();
@@ -276,7 +275,7 @@ class PlexServer {
   factory PlexServer.fromJson(Map<String, dynamic> json) {
     // Validate required fields first
     if (!_isValidServerJson(json)) {
-      throw FormatException(
+      throw const FormatException(
         'Invalid server data: missing required fields (name, clientIdentifier, accessToken, or connections)',
       );
     }
@@ -302,7 +301,7 @@ class PlexServer {
 
     // If no valid connections were parsed, this server is unusable
     if (connections.isEmpty) {
-      throw FormatException('Server has no valid connections');
+      throw const FormatException('Server has no valid connections');
     }
 
     DateTime? lastSeenAt;
@@ -863,7 +862,7 @@ class PlexConnection {
   factory PlexConnection.fromJson(Map<String, dynamic> json) {
     // Validate required fields
     if (!_isValidConnectionJson(json)) {
-      throw FormatException('Invalid connection data: missing required fields (protocol, address, port, or uri)');
+      throw const FormatException('Invalid connection data: missing required fields (protocol, address, port, or uri)');
     }
 
     return PlexConnection(

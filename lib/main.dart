@@ -137,7 +137,7 @@ void main() async {
 
 void _registerShaderLicenses() {
   LicenseRegistry.addLicense(() async* {
-    yield LicenseEntryWithLineBreaks(
+    yield const LicenseEntryWithLineBreaks(
       ['Anime4K'],
       'MIT License\n'
       '\n'
@@ -162,7 +162,7 @@ void _registerShaderLicenses() {
       'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE '
       'SOFTWARE.',
     );
-    yield LicenseEntryWithLineBreaks(
+    yield const LicenseEntryWithLineBreaks(
       ['NVIDIA Image Scaling (NVScaler)'],
       'The MIT License (MIT)\n'
       '\n'
@@ -390,9 +390,10 @@ class _SetupScreenState extends State<SetupScreen> {
 
     // Check network connectivity early to fast-path airplane mode.
     // Timeout guards against connectivity_plus hanging on some Android TV devices after force-close.
-    final connectivityResult = await Connectivity()
-        .checkConnectivity()
-        .timeout(const Duration(seconds: 3), onTimeout: () => [ConnectivityResult.other]);
+    final connectivityResult = await Connectivity().checkConnectivity().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => [ConnectivityResult.other],
+    );
     final hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
 
     if (hasNetwork) {
@@ -430,10 +431,7 @@ class _SetupScreenState extends State<SetupScreen> {
       _setStatus(t.common.startingOfflineMode);
       await context.read<DownloadProvider>().ensureInitialized();
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        fadeRoute(const MainScreen(isOfflineMode: true)),
-      );
+      Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true)));
       return;
     }
 
@@ -457,18 +455,12 @@ class _SetupScreenState extends State<SetupScreen> {
           downloadProvider.resumeQueuedDownloads(result.firstClient!);
         });
 
-        Navigator.pushReplacement(
-          context,
-          fadeRoute(MainScreen(client: result.firstClient!)),
-        );
+        Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!)));
       } else {
         _setStatus(t.common.startingOfflineMode);
         await context.read<DownloadProvider>().ensureInitialized();
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          fadeRoute(const MainScreen(isOfflineMode: true)),
-        );
+        Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true)));
       }
     } catch (e, stackTrace) {
       appLogger.e('Error during multi-server connection', error: e, stackTrace: stackTrace);
@@ -477,10 +469,7 @@ class _SetupScreenState extends State<SetupScreen> {
         _setStatus(t.common.startingOfflineMode);
         await context.read<DownloadProvider>().ensureInitialized();
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          fadeRoute(const MainScreen(isOfflineMode: true)),
-        );
+        Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true)));
       }
     }
   }
@@ -493,9 +482,7 @@ class _SetupScreenState extends State<SetupScreen> {
         children: [
           // Icon dead-center, matching Android 12+ splash position.
           // 192dp accounts for the 16% inset in ic_launcher.xml.
-          Center(
-            child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288),
-          ),
+          Center(child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288)),
           // Status text below center, independent of icon position.
           Positioned(
             left: 0,
@@ -507,9 +494,9 @@ class _SetupScreenState extends State<SetupScreen> {
                 _statusMessage,
                 key: ValueKey(_statusMessage),
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
               ),
             ),
           ),

@@ -95,7 +95,7 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       color: c.surface,
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: const BorderRadius.all(Radius.circular(14))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,

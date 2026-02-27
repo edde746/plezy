@@ -365,7 +365,7 @@ class _TvPinInputState extends State<_TvPinInput> {
       _digits[index] = digit;
       _activeIndex = index;
       _mobileControllers[index].text = digit.toString();
-      _mobileControllers[index].selection = TextSelection.collapsed(offset: 1);
+      _mobileControllers[index].selection = const TextSelection.collapsed(offset: 1);
     });
 
     if (index < 3) {
@@ -436,12 +436,12 @@ class _TvPinInputState extends State<_TvPinInput> {
               maxLength: 2, // allow overwrite
               obscureText: true,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 counterText: '',
                 border: OutlineInputBorder(
-                  borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
+                  borderRadius: BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: EdgeInsets.symmetric(vertical: 14),
               ),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (value) => _onMobileDigitChanged(i, value),

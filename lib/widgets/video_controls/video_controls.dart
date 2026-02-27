@@ -1288,7 +1288,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(Symbols.fast_forward_rounded, fill: 1, color: Colors.white, size: 16),
+            const AppIcon(Symbols.fast_forward_rounded, fill: 1, color: Colors.white, size: 16),
             const SizedBox(width: 4),
             const Text(
               '2x',
@@ -1565,7 +1565,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             // On Windows/Linux with navigation off, ESC only exits fullscreen —
             // never exits the player. Consume all back key events and check
             // actual window state asynchronously.
-            if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
+            if (!_videoPlayerNavigationEnabled &&
+                (Platform.isWindows || Platform.isLinux) &&
+                event.logicalKey.isBackKey) {
               if (event is KeyUpEvent) {
                 _exitFullscreenIfNeeded();
               }
