@@ -309,9 +309,33 @@ class DownloadManagerService {
         appLogger.i('Rescheduled ${rescheduled.length} killed download task(s)');
       }
 
+      // One-time migration: normalize stored file paths that may contain a
+      // doubled base-dir prefix from an earlier bug in the recovery callback.
+      final prefs = (await SettingsService.getInstance()).prefs;
+      if (!(prefs.getBool('download_paths_normalized') ?? false)) {
+        final allItems = await _database.select(_database.downloadedMedia).get();
+        var fixed = 0;
+        for (final item in allItems) {
+          if (item.videoFilePath != null) {
+            final normalized = await _storageService.toRelativePath(item.videoFilePath!);
+            if (normalized != item.videoFilePath) {
+              await _database.updateVideoFilePath(item.globalKey, normalized);
+              fixed++;
+            }
+          }
+          if (item.thumbPath != null) {
+            final normalized = await _storageService.toRelativePath(item.thumbPath!);
+            if (normalized != item.thumbPath) {
+              await _database.updateArtworkPaths(globalKey: item.globalKey, thumbPath: normalized);
+            }
+          }
+        }
+        if (fixed > 0) appLogger.i('Normalized $fixed corrupted download path(s)');
+        await prefs.setBool('download_paths_normalized', true);
+      }
+
       // Scan drift for orphaned items stuck in 'downloading'
       final allDownloads = await _database.select(_database.downloadedMedia).get();
-
       for (final item in allDownloads) {
         if (item.status == DownloadStatus.downloading.index) {
           // Video already downloaded but post-processing didn't complete
