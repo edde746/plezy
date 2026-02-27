@@ -4,9 +4,9 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/dpad_navigator.dart';
-import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
@@ -127,11 +127,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _playlistsTabChipFocusNode,
   ];
 
-  // App bar action button focus
-  late FocusNode _editButtonFocusNode;
-  late FocusNode _refreshButtonFocusNode;
-  bool _isEditFocused = false;
-  bool _isRefreshFocused = false;
+  // App bar action bar
+  final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
   // Scroll controller for the outer CustomScrollView
   final ScrollController _outerScrollController = ScrollController();
@@ -140,12 +137,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void initState() {
     super.initState();
     initTabNavigation();
-
-    // Initialize action button focus nodes
-    _editButtonFocusNode = FocusNode(debugLabel: 'EditButton');
-    _refreshButtonFocusNode = FocusNode(debugLabel: 'RefreshButton');
-    _editButtonFocusNode.addListener(_onEditFocusChange);
-    _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
 
     // Initialize with libraries from the provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -338,42 +329,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _focusCurrentTab();
   }
 
-  void _onEditFocusChange() {
-    if (mounted) {
-      setState(() => _isEditFocused = _editButtonFocusNode.hasFocus);
-    }
-  }
-
-  void _onRefreshFocusChange() {
-    if (mounted) {
-      setState(() => _isRefreshFocused = _refreshButtonFocusNode.hasFocus);
-    }
-  }
-
-  /// Handle key events for the edit button in app bar
-  late final _handleEditKeyEvent = dpadKeyHandler(
-    onLeft: () => getTabChipFocusNode(3).requestFocus(),
-    onRight: () => _refreshButtonFocusNode.requestFocus(),
-    onDown: _focusCurrentTab,
-    onUp: () {}, // Block at boundary
-    onSelect: _showLibraryManagementSheet,
-  );
-
-  /// Handle key events for the refresh button in app bar
-  late final _handleRefreshKeyEvent = dpadKeyHandler(
-    onLeft: () {
-      final librariesProvider = context.read<LibrariesProvider>();
-      if (librariesProvider.libraries.isNotEmpty) {
-        _editButtonFocusNode.requestFocus();
-      } else {
-        getTabChipFocusNode(3).requestFocus();
-      }
-    },
-    onRight: () {}, // Block at boundary
-    onUp: () {}, // Block at boundary
-    onDown: _focusCurrentTab,
-    onSelect: _refreshCurrentTab,
-  );
 
   @override
   void dispose() {
@@ -383,10 +338,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _browseTabChipFocusNode.dispose();
     _collectionsTabChipFocusNode.dispose();
     _playlistsTabChipFocusNode.dispose();
-    _editButtonFocusNode.removeListener(_onEditFocusChange);
-    _editButtonFocusNode.dispose();
-    _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
-    _refreshButtonFocusNode.dispose();
     disposeTabNavigation();
     super.dispose();
   }
@@ -935,13 +886,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               getTabChipFocusNode(newIndex).requestFocus();
             }
           : () {
-              // Navigate to first action button (edit if libraries exist, else refresh)
-              final librariesProvider = context.read<LibrariesProvider>();
-              if (librariesProvider.libraries.isNotEmpty) {
-                _editButtonFocusNode.requestFocus();
-              } else {
-                _refreshButtonFocusNode.requestFocus();
-              }
+              _actionBarKey.currentState?.getFocusNode(0).requestFocus();
             },
       onNavigateDown: _focusCurrentTabFromTabBar,
       onBack: onTabBarBack,
@@ -1048,36 +993,23 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 shadowColor: Colors.transparent,
                 scrolledUnderElevation: 0,
                 actions: [
-                  if (allLibraries.isNotEmpty)
-                    Focus(
-                      focusNode: _editButtonFocusNode,
-                      onKeyEvent: _handleEditKeyEvent,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _isEditFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                          borderRadius: const BorderRadius.all(Radius.circular(20)),
-                        ),
-                        child: IconButton(
-                          icon: const AppIcon(Symbols.edit_rounded, fill: 1),
+                  FocusableActionBar(
+                    key: _actionBarKey,
+                    onNavigateLeft: () => getTabChipFocusNode(3).requestFocus(),
+                    onNavigateDown: _focusCurrentTab,
+                    actions: [
+                      if (allLibraries.isNotEmpty)
+                        FocusableAction(
+                          icon: Symbols.edit_rounded,
                           tooltip: t.libraries.manageLibraries,
                           onPressed: _showLibraryManagementSheet,
                         ),
-                      ),
-                    ),
-                  Focus(
-                    focusNode: _refreshButtonFocusNode,
-                    onKeyEvent: _handleRefreshKeyEvent,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                        borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      ),
-                      child: IconButton(
-                        icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
+                      FocusableAction(
+                        icon: Symbols.refresh_rounded,
                         tooltip: t.common.refresh,
                         onPressed: _refreshCurrentTab,
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),

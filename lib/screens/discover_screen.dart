@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../focus/focusable_action_bar.dart';
 import '../focus/key_event_utils.dart';
 import '../utils/global_key_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -131,14 +132,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   // Hero and app bar focus
   late FocusNode _heroFocusNode;
-  late FocusNode _refreshButtonFocusNode;
-  late FocusNode _watchTogetherButtonFocusNode;
-  late FocusNode _companionRemoteButtonFocusNode;
-  late FocusNode _userButtonFocusNode;
-  bool _isRefreshFocused = false;
-  bool _isWatchTogetherFocused = false;
-  bool _isCompanionRemoteFocused = false;
-  bool _isUserFocused = false;
+  final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
   /// Get the correct PlexClient for an item's server
   PlexClient _getClientForItem(PlexMetadata? item) {
@@ -188,7 +182,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (_isHeroSectionVisible) {
       _heroFocusNode.requestFocus();
     } else {
-      _refreshButtonFocusNode.requestFocus();
+      _actionBarKey.currentState?.getFocusNode(0).requestFocus();
     }
     _scrollToTop();
   }
@@ -245,14 +239,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
-    _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
-    _watchTogetherButtonFocusNode = FocusNode(debugLabel: 'watch_together_button');
-    _companionRemoteButtonFocusNode = FocusNode(debugLabel: 'companion_remote_button');
-    _userButtonFocusNode = FocusNode(debugLabel: 'user_button');
-    _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
-    _watchTogetherButtonFocusNode.addListener(_onWatchTogetherFocusChange);
-    _companionRemoteButtonFocusNode.addListener(_onCompanionRemoteFocusChange);
-    _userButtonFocusNode.addListener(_onUserFocusChange);
     _loadContent();
     _startAutoScroll();
   }
@@ -272,37 +258,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _loadContent();
   }
 
-  void _onRefreshFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isRefreshFocused = _refreshButtonFocusNode.hasFocus;
-      });
-    }
-  }
-
-  void _onWatchTogetherFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isWatchTogetherFocused = _watchTogetherButtonFocusNode.hasFocus;
-      });
-    }
-  }
-
-  void _onCompanionRemoteFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isCompanionRemoteFocused = _companionRemoteButtonFocusNode.hasFocus;
-      });
-    }
-  }
-
-  void _onUserFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isUserFocused = _userButtonFocusNode.hasFocus;
-      });
-    }
-  }
 
   /// Handle key events for the hero section
   late final _handleHeroKeyEvent = dpadKeyHandler(
@@ -310,7 +265,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final keys = _allHubKeys;
       if (keys.isNotEmpty) keys.first.currentState?.requestFocusFromMemory();
     },
-    onUp: () => _refreshButtonFocusNode.requestFocus(),
+    onUp: () => _actionBarKey.currentState?.getFocusNode(0).requestFocus(),
     onLeft: () {
       if (_currentHeroIndex > 0) {
         _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
@@ -330,44 +285,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     },
   );
 
-  /// Handle key events for the refresh button in app bar
-  late final _handleRefreshKeyEvent = dpadKeyHandler(
-    onDown: _focusContentFromAppBar,
-    onRight: () => _watchTogetherButtonFocusNode.requestFocus(),
-    onLeft: _navigateToSidebar,
-    onUp: () {}, // Block at boundary
-    onSelect: _loadContent,
-  );
-
-  /// Handle key events for the watch together button in app bar
-  late final _handleWatchTogetherKeyEvent = dpadKeyHandler(
-    onDown: _focusContentFromAppBar,
-    onLeft: () => _refreshButtonFocusNode.requestFocus(),
-    onRight: () => _companionRemoteButtonFocusNode.requestFocus(),
-    onUp: () {}, // Block at boundary
-    onSelect: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
-  );
-
-  /// Handle key events for the companion remote button in app bar
-  late final _handleCompanionRemoteKeyEvent = dpadKeyHandler(
-    onDown: () => _heroFocusNode.requestFocus(),
-    onLeft: () => _watchTogetherButtonFocusNode.requestFocus(),
-    onRight: () => _userButtonFocusNode.requestFocus(),
-    onUp: () {}, // Block at boundary
-    onSelect: () => RemoteSessionDialog.show(context),
-  );
-
-  /// Handle key events for the user button in app bar
-  late final _handleUserKeyEvent = dpadKeyHandler(
-    onDown: _focusContentFromAppBar,
-    onLeft: () => _companionRemoteButtonFocusNode.requestFocus(),
-    onRight: () {}, // Block at boundary
-    onUp: () {}, // Block at boundary
-    onSelect: () {
-      final userProvider = context.read<UserProfileProvider>();
-      _showUserMenu(context, userProvider);
-    },
-  );
 
   @override
   void dispose() {
@@ -379,14 +296,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroController.dispose();
     _scrollController.dispose();
     _heroFocusNode.dispose();
-    _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
-    _refreshButtonFocusNode.dispose();
-    _watchTogetherButtonFocusNode.removeListener(_onWatchTogetherFocusChange);
-    _watchTogetherButtonFocusNode.dispose();
-    _companionRemoteButtonFocusNode.removeListener(_onCompanionRemoteFocusChange);
-    _companionRemoteButtonFocusNode.dispose();
-    _userButtonFocusNode.removeListener(_onUserFocusChange);
-    _userButtonFocusNode.dispose();
     super.dispose();
   }
 
@@ -849,7 +758,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Show user menu programmatically (for D-pad select)
   void _showUserMenu(BuildContext context, UserProfileProvider userProvider) {
-    final RenderBox? button = _userButtonFocusNode.context?.findRenderObject() as RenderBox?;
+    final actionBar = _actionBarKey.currentState;
+    if (actionBar == null) return;
+    final lastNode = actionBar.getFocusNode(actionBar.widget.actions.length - 1);
+    final RenderBox? button = lastNode.context?.findRenderObject() as RenderBox?;
     if (button == null) return;
 
     final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
@@ -916,171 +828,141 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
-              Focus(
-                focusNode: _refreshButtonFocusNode,
-                onKeyEvent: _handleRefreshKeyEvent,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                    borderRadius: const BorderRadius.all(Radius.circular(20)),
-                  ),
-                  child: IconButton(
-                    icon: const AppIcon(Symbols.refresh_rounded, fill: 1, color: Colors.white),
-                    onPressed: _loadContent,
-                  ),
-                ),
-              ),
-              // Watch Together button
-              Consumer<WatchTogetherProvider>(
-                builder: (context, watchTogether, child) {
-                  return Focus(
-                    focusNode: _watchTogetherButtonFocusNode,
-                    onKeyEvent: _handleWatchTogetherKeyEvent,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: _isWatchTogetherFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                        borderRadius: const BorderRadius.all(Radius.circular(20)),
+              Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
+                builder: (context, watchTogether, companionRemote, _) {
+                  final isDesktop = PlatformDetector.isDesktop(context);
+                  final userProvider = context.watch<UserProfileProvider>();
+
+                  return FocusableActionBar(
+                    key: _actionBarKey,
+                    onNavigateLeft: _navigateToSidebar,
+                    onNavigateDown: _focusContentFromAppBar,
+                    actions: [
+                      FocusableAction(
+                        icon: Symbols.refresh_rounded,
+                        iconColor: Colors.white,
+                        onPressed: _loadContent,
                       ),
-                      child: Stack(
-                        children: [
-                          IconButton(
-                            icon: AppIcon(
-                              Symbols.group_rounded,
-                              fill: watchTogether.isInSession ? 1 : 0,
-                              color: watchTogether.isInSession ? Theme.of(context).colorScheme.primary : Colors.white,
+                      // Watch Together
+                      FocusableAction(
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                        child: Stack(
+                          children: [
+                            IconButton(
+                              icon: AppIcon(
+                                Symbols.group_rounded,
+                                fill: watchTogether.isInSession ? 1 : 0,
+                                color: watchTogether.isInSession ? Theme.of(context).colorScheme.primary : Colors.white,
+                              ),
+                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                              tooltip: 'Watch Together',
                             ),
-                            onPressed: () =>
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
-                            tooltip: 'Watch Together',
-                          ),
-                          // Badge showing participant count when in session
-                          if (watchTogether.isInSession && watchTogether.participantCount > 1)
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                ),
-                                child: Text(
-                                  '${watchTogether.participantCount}',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                            if (watchTogether.isInSession && watchTogether.participantCount > 1)
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                                  ),
+                                  child: Text(
+                                    '${watchTogether.participantCount}',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              // Companion Remote button
-              Consumer<CompanionRemoteProvider>(
-                builder: (context, companionRemote, child) {
-                  final isDesktop = PlatformDetector.isDesktop(context);
-                  final hasDpadNav = isDesktop || PlatformDetector.isTV();
-
-                  return Focus(
-                    focusNode: hasDpadNav ? _companionRemoteButtonFocusNode : null,
-                    onKeyEvent: hasDpadNav ? _handleCompanionRemoteKeyEvent : null,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: hasDpadNav && _isCompanionRemoteFocused
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : Colors.transparent,
-                        borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      ),
-                      child: Stack(
-                        children: [
-                          IconButton(
-                            icon: AppIcon(
-                              Symbols.phone_android_rounded,
-                              fill: companionRemote.isConnected ? 1 : 0,
-                              color: companionRemote.isConnected ? Theme.of(context).colorScheme.primary : Colors.white,
-                            ),
-                            onPressed: () {
-                              if (isDesktop) {
-                                RemoteSessionDialog.show(context);
-                              } else {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => MobileRemoteScreen()));
-                              }
-                            },
-                            tooltip: t.companionRemote.title,
-                          ),
-                          // Badge showing connection status
-                          if (companionRemote.isConnected)
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  shape: BoxShape.circle,
-                                  border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 1)),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-              Consumer<UserProfileProvider>(
-                builder: (context, userProvider, child) {
-                  return Focus(
-                    focusNode: _userButtonFocusNode,
-                    onKeyEvent: _handleUserKeyEvent,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _isUserFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                        borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      ),
-                      child: PopupMenuButton<String>(
-                        icon: userProvider.currentUser?.thumb != null
-                            ? UserAvatarWidget(user: userProvider.currentUser!, size: 32, showIndicators: false)
-                            : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
-                        onSelected: (value) {
-                          if (value == 'switch_profile') {
-                            _handleSwitchProfile(context);
-                          } else if (value == 'logout') {
-                            _handleLogout();
+                      // Companion Remote
+                      FocusableAction(
+                        onPressed: () {
+                          if (isDesktop) {
+                            RemoteSessionDialog.show(context);
+                          } else {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => MobileRemoteScreen()));
                           }
                         },
-                        itemBuilder: (context) => [
-                          // Only show Switch Profile if multiple users available
-                          if (userProvider.hasMultipleUsers)
+                        child: Stack(
+                          children: [
+                            IconButton(
+                              icon: AppIcon(
+                                Symbols.phone_android_rounded,
+                                fill: companionRemote.isConnected ? 1 : 0,
+                                color: companionRemote.isConnected ? Theme.of(context).colorScheme.primary : Colors.white,
+                              ),
+                              onPressed: () {
+                                if (isDesktop) {
+                                  RemoteSessionDialog.show(context);
+                                } else {
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => MobileRemoteScreen()));
+                                }
+                              },
+                              tooltip: t.companionRemote.title,
+                            ),
+                            if (companionRemote.isConnected)
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                    border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 1)),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      // User menu
+                      FocusableAction(
+                        onPressed: () => _showUserMenu(context, userProvider),
+                        child: PopupMenuButton<String>(
+                          icon: userProvider.currentUser?.thumb != null
+                              ? UserAvatarWidget(user: userProvider.currentUser!, size: 32, showIndicators: false)
+                              : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
+                          onSelected: (value) {
+                            if (value == 'switch_profile') {
+                              _handleSwitchProfile(context);
+                            } else if (value == 'logout') {
+                              _handleLogout();
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            if (userProvider.hasMultipleUsers)
+                              PopupMenuItem(
+                                value: 'switch_profile',
+                                child: Row(
+                                  children: [
+                                    AppIcon(Symbols.people_rounded, fill: 1),
+                                    SizedBox(width: 8),
+                                    Text(t.discover.switchProfile),
+                                  ],
+                                ),
+                              ),
                             PopupMenuItem(
-                              value: 'switch_profile',
+                              value: 'logout',
                               child: Row(
                                 children: [
-                                  AppIcon(Symbols.people_rounded, fill: 1),
+                                  AppIcon(Symbols.logout_rounded, fill: 1),
                                   SizedBox(width: 8),
-                                  Text(t.discover.switchProfile),
+                                  Text(t.common.logout),
                                 ],
                               ),
                             ),
-                          PopupMenuItem(
-                            value: 'logout',
-                            child: Row(
-                              children: [
-                                AppIcon(Symbols.logout_rounded, fill: 1),
-                                SizedBox(width: 8),
-                                Text(t.common.logout),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   );
                 },
               ),

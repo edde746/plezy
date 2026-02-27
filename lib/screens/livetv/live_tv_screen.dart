@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/dpad_navigator.dart';
+import '../../focus/focusable_action_bar.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_dvr.dart';
@@ -31,9 +32,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   final _guideTabKey = GlobalKey<GuideTabState>();
   final _whatsOnTabKey = GlobalKey<WhatsOnTabState>();
 
-  // App bar action button focus
-  final _refreshButtonFocusNode = FocusNode(debugLabel: 'RefreshButton');
-  bool _isRefreshFocused = false;
+  // App bar action bar
+  final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
   List<LiveTvChannel> _channels = [];
   bool _isLoading = true;
@@ -47,7 +47,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     super.initState();
     suppressAutoFocus = true;
     initTabNavigation();
-    _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
     _loadChannels();
   }
 
@@ -55,15 +54,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void dispose() {
     _guideTabFocusNode.dispose();
     _whatsOnTabFocusNode.dispose();
-    _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
-    _refreshButtonFocusNode.dispose();
     disposeTabNavigation();
     super.dispose();
   }
 
-  void _onRefreshFocusChange() {
-    if (mounted) setState(() => _isRefreshFocused = _refreshButtonFocusNode.hasFocus);
-  }
 
   @override
   void onTabChanged() {
@@ -208,34 +202,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   @override
   void focusActiveTabIfReady() => _focusCurrentTab();
 
-  // ---------------------------------------------------------------------------
-  // Action button key handlers
-  // ---------------------------------------------------------------------------
-
-  KeyEventResult _handleRefreshKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) return KeyEventResult.ignored;
-    final key = event.logicalKey;
-
-    if (key.isLeftKey) {
-      getTabChipFocusNode(tabCount - 1).requestFocus();
-      return KeyEventResult.handled;
-    }
-    if (key.isRightKey) {
-      return KeyEventResult.handled;
-    }
-    if (key.isDownKey) {
-      _focusCurrentTab();
-      return KeyEventResult.handled;
-    }
-    if (key.isUpKey) {
-      return KeyEventResult.handled;
-    }
-    if (key.isSelectKey) {
-      _loadChannels();
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
 
   // ---------------------------------------------------------------------------
   // Tab chips
@@ -276,7 +242,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               });
               getTabChipFocusNode(newIndex).requestFocus();
             }
-          : () => _refreshButtonFocusNode.requestFocus(),
+          : () => _actionBarKey.currentState?.getFocusNode(0).requestFocus(),
       onNavigateDown: _focusCurrentTab,
       onBack: onTabBarBack,
     );
@@ -303,20 +269,17 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               )
             : Text(t.liveTv.title),
         actions: [
-          Focus(
-            focusNode: _refreshButtonFocusNode,
-            onKeyEvent: _handleRefreshKeyEvent,
-            child: Container(
-              decoration: BoxDecoration(
-                color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                borderRadius: const BorderRadius.all(Radius.circular(20)),
-              ),
-              child: IconButton(
-                icon: const AppIcon(Symbols.refresh_rounded),
+          FocusableActionBar(
+            key: _actionBarKey,
+            onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
+            onNavigateDown: _focusCurrentTab,
+            actions: [
+              FocusableAction(
+                icon: Symbols.refresh_rounded,
                 tooltip: t.liveTv.reloadGuide,
                 onPressed: _loadChannels,
               ),
-            ),
+            ],
           ),
         ],
       ),

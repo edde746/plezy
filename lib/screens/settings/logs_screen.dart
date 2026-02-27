@@ -6,6 +6,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
@@ -24,36 +25,15 @@ class _LogsScreenState extends State<LogsScreen> {
   List<LogEntry> _logs = [];
   final ScrollController _scrollController = ScrollController();
 
-  late final FocusNode _refreshFocusNode;
-  late final FocusNode _uploadFocusNode;
-  late final FocusNode _copyFocusNode;
-  late final FocusNode _clearFocusNode;
-  bool _isRefreshFocused = false;
-  bool _isUploadFocused = false;
-  bool _isCopyFocused = false;
-  bool _isClearFocused = false;
-
   @override
   void initState() {
     super.initState();
     _logs = MemoryLogOutput.getLogs();
-    _refreshFocusNode = FocusNode(debugLabel: 'RefreshLogs');
-    _uploadFocusNode = FocusNode(debugLabel: 'UploadLogs');
-    _copyFocusNode = FocusNode(debugLabel: 'CopyLogs');
-    _clearFocusNode = FocusNode(debugLabel: 'ClearLogs');
-    _refreshFocusNode.addListener(() => setState(() => _isRefreshFocused = _refreshFocusNode.hasFocus));
-    _uploadFocusNode.addListener(() => setState(() => _isUploadFocused = _uploadFocusNode.hasFocus));
-    _copyFocusNode.addListener(() => setState(() => _isCopyFocused = _copyFocusNode.hasFocus));
-    _clearFocusNode.addListener(() => setState(() => _isClearFocused = _clearFocusNode.hasFocus));
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _refreshFocusNode.dispose();
-    _uploadFocusNode.dispose();
-    _copyFocusNode.dispose();
-    _clearFocusNode.dispose();
     super.dispose();
   }
 
@@ -225,31 +205,6 @@ class _LogsScreenState extends State<LogsScreen> {
     return spans;
   }
 
-  Widget _buildActionButton({
-    required FocusNode focusNode,
-    required bool isFocused,
-    required FocusOnKeyEventCallback onKeyEvent,
-    required IconData icon,
-    required String? tooltip,
-    required VoidCallback? onPressed,
-  }) {
-    return Focus(
-      focusNode: focusNode,
-      onKeyEvent: onKeyEvent,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-          borderRadius: const BorderRadius.all(Radius.circular(20)),
-        ),
-        child: IconButton(
-          icon: AppIcon(icon, fill: 1),
-          tooltip: tooltip,
-          onPressed: onPressed,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -279,51 +234,29 @@ class _LogsScreenState extends State<LogsScreen> {
               title: Text(t.screens.logs),
               pinned: true,
               actions: [
-                _buildActionButton(
-                  focusNode: _refreshFocusNode,
-                  isFocused: _isRefreshFocused,
-                  onKeyEvent: dpadKeyHandler(
-                    onSelect: _loadLogs,
-                    onRight: () => _uploadFocusNode.requestFocus(),
-                  ),
-                  icon: Symbols.refresh_rounded,
-                  tooltip: t.common.refresh,
-                  onPressed: _loadLogs,
-                ),
-                _buildActionButton(
-                  focusNode: _uploadFocusNode,
-                  isFocused: _isUploadFocused,
-                  onKeyEvent: dpadKeyHandler(
-                    onSelect: _logs.isNotEmpty ? _uploadLogs : null,
-                    onLeft: () => _refreshFocusNode.requestFocus(),
-                    onRight: () => _copyFocusNode.requestFocus(),
-                  ),
-                  icon: Symbols.upload_rounded,
-                  tooltip: t.logs.uploadLogs,
-                  onPressed: _logs.isNotEmpty ? _uploadLogs : null,
-                ),
-                _buildActionButton(
-                  focusNode: _copyFocusNode,
-                  isFocused: _isCopyFocused,
-                  onKeyEvent: dpadKeyHandler(
-                    onSelect: _logs.isNotEmpty ? _copyAllLogs : null,
-                    onLeft: () => _uploadFocusNode.requestFocus(),
-                    onRight: () => _clearFocusNode.requestFocus(),
-                  ),
-                  icon: Symbols.content_copy_rounded,
-                  tooltip: t.logs.copyLogs,
-                  onPressed: _logs.isNotEmpty ? _copyAllLogs : null,
-                ),
-                _buildActionButton(
-                  focusNode: _clearFocusNode,
-                  isFocused: _isClearFocused,
-                  onKeyEvent: dpadKeyHandler(
-                    onSelect: _logs.isNotEmpty ? _clearLogs : null,
-                    onLeft: () => _copyFocusNode.requestFocus(),
-                  ),
-                  icon: Symbols.delete_outline_rounded,
-                  tooltip: t.logs.clearLogs,
-                  onPressed: _logs.isNotEmpty ? _clearLogs : null,
+                FocusableActionBar(
+                  actions: [
+                    FocusableAction(
+                      icon: Symbols.refresh_rounded,
+                      tooltip: t.common.refresh,
+                      onPressed: _loadLogs,
+                    ),
+                    FocusableAction(
+                      icon: Symbols.upload_rounded,
+                      tooltip: t.logs.uploadLogs,
+                      onPressed: _logs.isNotEmpty ? _uploadLogs : null,
+                    ),
+                    FocusableAction(
+                      icon: Symbols.content_copy_rounded,
+                      tooltip: t.logs.copyLogs,
+                      onPressed: _logs.isNotEmpty ? _copyAllLogs : null,
+                    ),
+                    FocusableAction(
+                      icon: Symbols.delete_outline_rounded,
+                      tooltip: t.logs.clearLogs,
+                      onPressed: _logs.isNotEmpty ? _clearLogs : null,
+                    ),
+                  ],
                 ),
               ],
             ),
