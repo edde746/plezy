@@ -369,15 +369,17 @@ class DownloadStorageService {
   Future<String> toRelativePath(String absolutePath) async {
     final baseDir = await _getBaseAppDir();
 
-    // If the path starts with the base directory, strip it
-    if (absolutePath.startsWith(baseDir.path)) {
-      // Remove the base path and any leading separator
-      var relative = absolutePath.substring(baseDir.path.length);
-      if (relative.startsWith('/') || relative.startsWith('\\')) {
-        relative = relative.substring(1);
+    // Strip the base directory prefix iteratively — background_downloader
+    // recovery paths can contain the base dir doubled (e.g.
+    // /data/.../app_flutter/data/.../app_flutter/downloads/...).
+    var result = absolutePath;
+    while (result.startsWith(baseDir.path)) {
+      result = result.substring(baseDir.path.length);
+      if (result.startsWith('/') || result.startsWith('\\')) {
+        result = result.substring(1);
       }
-      return relative;
     }
+    if (result != absolutePath) return result;
 
     // Already relative or from a different base - return as-is
     return absolutePath;

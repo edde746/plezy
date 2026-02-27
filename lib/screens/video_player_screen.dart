@@ -13,6 +13,7 @@ import 'package:window_manager/window_manager.dart';
 import '../mpv/mpv.dart';
 import '../mpv/player/platform/player_android.dart';
 
+import '../../services/bif_thumbnail_service.dart';
 import '../../services/plex_client.dart';
 import '../models/livetv_channel.dart';
 import '../services/plex_api_cache.dart';
@@ -20,6 +21,7 @@ import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_video_playback_data.dart';
 import '../utils/content_utils.dart';
+import '../utils/plex_cache_parser.dart';
 import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -139,7 +141,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
   bool _isHandlingBack = false;
-  bool _hasThumbnails = false;
+  BifThumbnailService? _bifService;
 
   // Live TV channel navigation
   int _liveChannelIndex = -1;
@@ -198,14 +200,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return context.getClientForServer(widget.metadata.serverId!);
   }
 
-  String? _buildThumbnailUrl(BuildContext context, Duration time) {
-    final partId = _currentMediaInfo?.partId;
-    if (partId == null || widget.isOffline) return null;
-    final client = _getClientForMetadata(context);
-    return '${client.config.baseUrl}/library/parts/$partId/indexes/sd/${time.inMilliseconds}'.withPlexToken(
-      client.config.token,
-    );
-  }
+  Uint8List? _getThumbnailData(Duration time) => _bifService?.getThumbnail(time);
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false); // Track if first video frame has rendered
@@ -1026,17 +1021,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         setState(() {
           _availableVersions = result.availableVersions.cast();
           _currentMediaInfo = result.mediaInfo;
-          _hasThumbnails = false;
+          _bifService?.dispose();
+          _bifService = null;
         });
 
-        // Check whether any thumbnails exist by requesting the first one
+        // Download and cache BIF thumbnail file
         if (_currentMediaInfo?.partId != null && !widget.isOffline) {
           final partId = _currentMediaInfo!.partId!;
           final client = _getClientForMetadata(context);
-          client.checkThumbnailsAvailable(partId).then((available) {
-            // Guard against media having changed while the probe was in flight
+          final service = BifThumbnailService();
+          service.load(client, partId).then((_) {
+            // Guard against media having changed while the download was in flight
             if (mounted && _currentMediaInfo?.partId == partId) {
-              setState(() => _hasThumbnails = available);
+              setState(() => _bifService = service);
+            } else {
+              service.dispose();
             }
           });
         }
@@ -1094,10 +1093,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     } on PlaybackException catch (e) {
       if (mounted) {
+        _hasFirstFrame.value = true; // Hide spinner on error
         showErrorSnackBar(context, e.message);
       }
     } catch (e) {
       if (mounted) {
+        _hasFirstFrame.value = true; // Hide spinner on error
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
@@ -1142,10 +1143,28 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     appLogger.d('Starting offline playback: $videoPath');
 
+    // Load cached media info so track selection (audio language) works offline
+    PlexMediaInfo? mediaInfo;
+    try {
+      final serverId = widget.metadata.serverId;
+      if (serverId != null) {
+        final cached = await PlexApiCache.instance.get(
+          serverId,
+          '/library/metadata/${widget.metadata.ratingKey}',
+        );
+        final metadataJson = PlexCacheParser.extractFirstMetadata(cached);
+        if (metadataJson != null) {
+          mediaInfo = PlexMediaInfo.fromMetadataJson(metadataJson);
+        }
+      }
+    } catch (e) {
+      appLogger.d('Could not load cached media info for offline playback', error: e);
+    }
+
     return PlaybackInitializationResult(
       availableVersions: [],
       videoUrl: videoPath.contains('://') ? videoPath : 'file://$videoPath',
-      mediaInfo: null,
+      mediaInfo: mediaInfo,
       externalSubtitles: const [],
       isOffline: true,
     );
@@ -1603,6 +1622,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _videoPIPManager?.isPipActive.removeListener(_onPipStateChanged);
     _videoPIPManager?.onBeforeEnterPip = null;
     _videoFilterManager?.dispose();
+
+    // Release cached BIF thumbnail data
+    _bifService?.dispose();
 
     // Mark sleep timer for restart if truly exiting (not episode transition)
     if (!_isReplacingWithVideo) {
@@ -2505,9 +2527,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         shaderService: _shaderService,
                         // ignore: no-empty-block - setState triggers rebuild to reflect shader change
                         onShaderChanged: () => setState(() {}),
-                        thumbnailUrlBuilder: _hasThumbnails && _currentMediaInfo?.partId != null
-                            ? (Duration time) => _buildThumbnailUrl(context, time)!
-                            : null,
+                        thumbnailDataBuilder: _bifService?.isAvailable == true ? _getThumbnailData : null,
                         isLive: widget.isLive,
                         liveChannelName: _liveChannelName,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
