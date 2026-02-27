@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../services/plex_client.dart';
@@ -20,6 +22,7 @@ class LiveTvServerInfo {
 class MultiServerProvider extends ChangeNotifier {
   final MultiServerManager _serverManager;
   final DataAggregationService _aggregationService;
+  StreamSubscription? _statusSubscription;
 
   /// Whether any connected server has Live TV / DVR
   bool _hasLiveTv = false;
@@ -31,7 +34,7 @@ class MultiServerProvider extends ChangeNotifier {
 
   MultiServerProvider(this._serverManager, this._aggregationService) {
     // Listen to server status changes
-    _serverManager.statusStream.listen((_) {
+    _statusSubscription = _serverManager.statusStream.listen((_) {
       notifyListeners();
       // Re-check live TV availability when servers come online
       checkLiveTvAvailability();
@@ -145,6 +148,7 @@ class MultiServerProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _statusSubscription?.cancel();
     _serverManager.dispose();
     super.dispose();
   }
