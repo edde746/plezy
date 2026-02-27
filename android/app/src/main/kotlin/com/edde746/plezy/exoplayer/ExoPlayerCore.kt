@@ -2,9 +2,7 @@ package com.edde746.plezy.exoplayer
 
 import android.app.Activity
 import android.app.ActivityManager
-import android.content.ComponentCallbacks2
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
@@ -106,9 +104,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var audioFocusRequest: AudioFocusRequest? = null
     private var hasAudioFocus: Boolean = false
     private var wasPlayingBeforeFocusLoss: Boolean = false
-
-    // Memory pressure detection
-    private var memoryCallback: ComponentCallbacks2? = null
 
     // Track state for event emission
     private var lastPosition: Long = 0
@@ -407,22 +402,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     Log.d(TAG, "  Child $i: ${child?.javaClass?.simpleName}, w=${child?.width}, h=${child?.height}, visibility=${child?.visibility}")
                 }
             }
-
-            // Register memory pressure listener to detect impending OOM
-            memoryCallback = object : ComponentCallbacks2 {
-                override fun onTrimMemory(level: Int) {
-                    if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {
-                        Log.w(TAG, "TRIM_MEMORY level $level - critical memory pressure")
-                        delegate?.onEvent("memory-pressure", mapOf("level" to "critical"))
-                    }
-                }
-                override fun onConfigurationChanged(newConfig: Configuration) {}
-                override fun onLowMemory() {
-                    Log.w(TAG, "onLowMemory - system-wide memory pressure")
-                    delegate?.onEvent("memory-pressure", mapOf("level" to "critical"))
-                }
-            }
-            activity.registerComponentCallbacks(memoryCallback)
 
             // Start position update loop
             startPositionUpdates()
@@ -1391,9 +1370,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         clearVideoFrameRate()
         abandonAudioFocus()
         audioManager = null
-
-        memoryCallback?.let { activity.unregisterComponentCallbacks(it) }
-        memoryCallback = null
 
         tunnelingDisabledForCodec = false
         pendingStartPositionMs = 0L

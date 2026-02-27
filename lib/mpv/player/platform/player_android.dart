@@ -36,12 +36,6 @@ class PlayerAndroid extends PlayerBase {
       return;
     }
 
-    if (name == 'memory-pressure') {
-      // System memory is critically low — playback may be at risk of OOM crash
-      errorController.add('Low memory — playback may be unstable');
-      return;
-    }
-
     // Delegate to base class for common events
     super.handlePlayerEvent(name, data);
   }
