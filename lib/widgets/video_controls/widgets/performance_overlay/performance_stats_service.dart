@@ -4,7 +4,7 @@ import 'dart:io' show ProcessInfo;
 import 'package:flutter/scheduler.dart';
 
 import '../../../../mpv/mpv.dart';
-import '../../../../mpv/player/player_android.dart';
+import '../../../../mpv/player/platform/player_android.dart';
 import '../../../../utils/app_logger.dart';
 import 'performance_stats.dart';
 

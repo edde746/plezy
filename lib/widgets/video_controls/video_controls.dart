@@ -1,5 +1,6 @@
 import 'dart:async' show StreamSubscription, Timer;
 import 'dart:io' show Platform;
+import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart' show PointerSignalEvent, PointerScrollEvent;
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import 'package:flutter/services.dart'
         PhysicalKeyboardKey,
         KeyEvent,
         KeyDownEvent,
+        KeyUpEvent,
         HardwareKeyboard;
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/macos_window_service.dart';
@@ -76,7 +78,7 @@ Widget plexVideoControlsBuilder(
   ValueNotifier<bool>? controlsVisible,
   ShaderService? shaderService,
   VoidCallback? onShaderChanged,
-  String Function(Duration time)? thumbnailUrlBuilder,
+  Uint8List? Function(Duration time)? thumbnailDataBuilder,
   bool isLive = false,
   String? liveChannelName,
   bool isAmbientLightingEnabled = false,
@@ -102,7 +104,7 @@ Widget plexVideoControlsBuilder(
     controlsVisible: controlsVisible,
     shaderService: shaderService,
     onShaderChanged: onShaderChanged,
-    thumbnailUrlBuilder: thumbnailUrlBuilder,
+    thumbnailDataBuilder: thumbnailDataBuilder,
     isLive: isLive,
     liveChannelName: liveChannelName,
     isAmbientLightingEnabled: isAmbientLightingEnabled,
@@ -147,8 +149,8 @@ class PlexVideoControls extends StatefulWidget {
   /// Called when shader preset changes
   final VoidCallback? onShaderChanged;
 
-  /// Optional callback that returns a thumbnail URL for a given timestamp.
-  final String Function(Duration time)? thumbnailUrlBuilder;
+  /// Optional callback that returns thumbnail image bytes for a given timestamp.
+  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
   /// Whether this is a live TV stream (disables seek, progress, etc.)
   final bool isLive;
@@ -183,7 +185,7 @@ class PlexVideoControls extends StatefulWidget {
     this.controlsVisible,
     this.shaderService,
     this.onShaderChanged,
-    this.thumbnailUrlBuilder,
+    this.thumbnailDataBuilder,
     this.isLive = false,
     this.liveChannelName,
     this.isAmbientLightingEnabled = false,
@@ -244,6 +246,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   int _autoSkipDelay = 5;
   Timer? _autoSkipTimer;
   double _autoSkipProgress = 0.0;
+  // Skip button dismiss state
+  bool _skipButtonDismissed = false;
+  Timer? _skipButtonDismissTimer;
   // Video player navigation (use arrow keys to navigate controls)
   bool _videoPlayerNavigationEnabled = false;
   // Performance overlay
@@ -353,14 +358,22 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _updateCurrentMarker(PlexMarker? foundMarker) {
     setState(() {
       _currentMarker = foundMarker;
+      _skipButtonDismissed = false;
     });
 
     if (foundMarker == null) {
       _cancelAutoSkipTimer();
+      _cancelSkipButtonDismissTimer();
       return;
     }
 
     _startAutoSkipTimer(foundMarker);
+
+    // Auto-skip OFF: dismiss button after 7s if no interaction
+    // Auto-skip ON: button stays until controls hide
+    if (!_shouldAutoSkipForMarker(foundMarker)) {
+      _startSkipButtonDismissTimer();
+    }
 
     // Auto-focus skip button on TV when marker appears (only in keyboard/TV mode, if controls hidden)
     if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context)) {
@@ -405,10 +418,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _skipMarker() {
     if (_currentMarker != null) {
       final endTime = _currentMarker!.endTime;
+      setState(() {
+        _currentMarker = null;
+      });
       widget.player.seek(endTime);
       widget.onSeekCompleted?.call(endTime);
     }
     _cancelAutoSkipTimer();
+    _cancelSkipButtonDismissTimer();
   }
 
   void _startAutoSkipTimer(PlexMarker marker) {
@@ -455,6 +472,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
+  /// Starts/restarts the skip button dismiss timer. When it fires, hides the
+  /// button and cancels any active auto-skip countdown.
+  void _startSkipButtonDismissTimer() {
+    _skipButtonDismissTimer?.cancel();
+    _skipButtonDismissTimer = Timer(const Duration(seconds: 7), () {
+      if (!mounted || _currentMarker == null) return;
+      setState(() {
+        _skipButtonDismissed = true;
+      });
+      _cancelAutoSkipTimer();
+    });
+  }
+
+  void _cancelSkipButtonDismissTimer() {
+    _skipButtonDismissTimer?.cancel();
+    _skipButtonDismissTimer = null;
+  }
+
   /// Perform the appropriate skip action based on marker type and next episode availability
   void _performAutoSkip() {
     if (_currentMarker == null) return;
@@ -471,9 +506,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Check if auto-skip should be active for the current marker
+  bool _shouldAutoSkipForMarker(PlexMarker marker) {
+    return (marker.isCredits && _autoSkipCredits) || (!marker.isCredits && _autoSkipIntro);
+  }
+
   bool _shouldShowAutoSkip() {
     if (_currentMarker == null) return false;
-    return (_currentMarker!.isCredits && _autoSkipCredits) || (!_currentMarker!.isCredits && _autoSkipIntro);
+    return _shouldAutoSkipForMarker(_currentMarker!);
   }
 
   Future<void> _loadSeekTimes() async {
@@ -565,6 +604,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
     _autoSkipTimer?.cancel();
+    _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
     _playingSubscription?.cancel();
@@ -648,21 +688,30 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (!mounted || !_showControls) return;
     setState(() {
       _showControls = false;
+      // Dismiss skip button with controls — after this it only re-appears with controls
+      if (_currentMarker != null) {
+        _skipButtonDismissed = true;
+      }
     });
+    _cancelSkipButtonDismissTimer();
     widget.controlsVisible?.value = false;
     if (Platform.isMacOS) {
       _updateTrafficLightVisibility();
     }
-    // Immediately try to reclaim focus (important for TV where global handler
-    // won't fire if _focusNode lost focus)
-    if (!_focusNode.hasFocus) {
-      _focusNode.requestFocus();
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_focusNode.hasFocus) {
+    // Reclaim focus so the global key handler stays active for TV dpad,
+    // but skip if an overlay sheet owns focus — stealing it would break
+    // sheet navigation (e.g. the compact sync bar).
+    final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
+    if (!sheetOpen) {
+      if (!_focusNode.hasFocus) {
         _focusNode.requestFocus();
       }
-    });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_focusNode.hasFocus) {
+          _focusNode.requestFocus();
+        }
+      });
+    }
   }
 
   void _startHideTimer() {
@@ -742,21 +791,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   void _toggleControls() {
-    setState(() {
-      _showControls = !_showControls;
-    });
-    // Notify parent of visibility change (for popup positioning)
-    widget.controlsVisible?.value = _showControls;
-    // Cancel auto-skip on any tap, not just when controls become visible
-    _cancelAutoSkipTimer();
     if (_showControls) {
+      _hideControls();
+    } else {
+      setState(() {
+        _showControls = true;
+      });
+      widget.controlsVisible?.value = true;
       _startHideTimer();
+      if (Platform.isMacOS) {
+        _updateTrafficLightVisibility();
+      }
     }
-
-    // On macOS, hide/show traffic lights with controls
-    if (Platform.isMacOS) {
-      _updateTrafficLightVisibility();
-    }
+    // Cancel auto-skip on any tap
+    _cancelAutoSkipTimer();
   }
 
   void _toggleRotationLock() async {
@@ -918,6 +966,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       },
       onCancelAutoHide: () => _hideTimer?.cancel(),
       onStartAutoHide: _startHideTimer,
+      onSyncOffsetChanged: (propertyName, offset) {
+        setState(() {
+          if (propertyName == 'sub-delay') {
+            _subtitleSyncOffset = offset;
+          } else {
+            _audioSyncOffset = offset;
+          }
+        });
+      },
       serverId: widget.metadata.serverId ?? '',
       canControl: widget.canControl,
       isLive: widget.isLive,
@@ -1270,7 +1327,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(Symbols.fast_forward_rounded, fill: 1, color: Colors.white, size: 16),
+            const AppIcon(Symbols.fast_forward_rounded, fill: 1, color: Colors.white, size: 16),
             const SizedBox(width: 4),
             const Text(
               '2x',
@@ -1285,6 +1342,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   Future<void> _toggleFullscreen() async {
     if (!PlatformDetector.isMobile(context)) {
       await FullscreenStateManager().toggleFullscreen();
+    }
+  }
+
+  /// Exit fullscreen if the window is actually fullscreen (async check).
+  /// Used by ESC handler on Windows/Linux to avoid relying on _isFullscreen flag.
+  Future<void> _exitFullscreenIfNeeded() async {
+    if (await windowManager.isFullScreen()) {
+      await FullscreenStateManager().exitFullscreen();
     }
   }
 
@@ -1370,8 +1435,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _handleGlobalKeyEvent(KeyEvent event) {
     if (!mounted) return false;
 
-    // TV back key fallback — Focus.onKeyEvent won't fire if _focusNode lost focus
-    if (PlatformDetector.isTV() && event.logicalKey.isBackKey) {
+    // Back key fallback when _focusNode lost focus (TV, or desktop with nav on).
+    // Focus.onKeyEvent won't fire if _focusNode lost focus, so handle ESC here.
+    if ((_videoPlayerNavigationEnabled || PlatformDetector.isTV()) && event.logicalKey.isBackKey) {
       if (!_focusNode.hasFocus) {
         // Skip if an overlay sheet is open — the sheet's FocusScope handles
         // back keys via its own onKeyEvent. Without this check, this global
@@ -1407,6 +1473,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // (e.g. after controls auto-hide). The !hasFocus guard prevents
     // double-handling when the Focus onKeyEvent already processes the event.
     if (!_focusNode.hasFocus && _keyboardService != null) {
+      // On Windows/Linux with navigation off, ESC only exits fullscreen —
+      // never exits the player. Intercept before the keyboard shortcuts
+      // service which would call onBack and pop the route.
+      // Skip if an overlay sheet is open — let the sheet handle ESC.
+      if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
+        final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
+        if (!sheetOpen) {
+          if (event is KeyUpEvent) {
+            _exitFullscreenIfNeeded();
+          }
+          _focusNode.requestFocus();
+          return true;
+        }
+      }
       final result = _keyboardService!.handleVideoPlayerKeyEvent(
         event,
         widget.player,
@@ -1494,16 +1574,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
 
     if (_showControls) {
-      setState(() {
-        _showControls = false;
-      });
-      // Notify parent of visibility change (for popup positioning)
-      widget.controlsVisible?.value = false;
-      // Return focus to the main focus node
-      _focusNode.requestFocus();
-      if (Platform.isMacOS) {
-        _updateTrafficLightVisibility();
-      }
+      _hideControls();
     }
   }
 
@@ -1521,12 +1592,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           focusNode: _focusNode,
           autofocus: true,
           onKeyEvent: (node, event) {
-            final backResult = handleBackKeyAction(event, () {
-              // On Windows/Linux with navigation off, ESC first exits fullscreen
-              if (!_videoPlayerNavigationEnabled && _isFullscreen && (Platform.isWindows || Platform.isLinux)) {
-                _toggleFullscreen();
-                return;
+            // On Windows/Linux with navigation off, ESC only exits fullscreen —
+            // never exits the player. Consume all back key events and check
+            // actual window state asynchronously.
+            if (!_videoPlayerNavigationEnabled &&
+                (Platform.isWindows || Platform.isLinux) &&
+                event.logicalKey.isBackKey) {
+              if (event is KeyUpEvent) {
+                _exitFullscreenIfNeeded();
               }
+              return KeyEventResult.handled;
+            }
+            final backResult = handleBackKeyAction(event, () {
               if (!_showControls) {
                 _showControlsWithFocus();
                 return;
@@ -1809,7 +1886,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             onSeekToNextChapter: _seekToNextChapter,
                                             canControl: widget.canControl,
                                             hasFirstFrame: widget.hasFirstFrame,
-                                            thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+                                            thumbnailDataBuilder: widget.thumbnailDataBuilder,
                                             isLive: widget.isLive,
                                             liveChannelName: widget.liveChannelName,
                                           ),
@@ -1836,8 +1913,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                     ),
                   // Speed indicator overlay for long-press 2x
                   if (_showSpeedIndicator) Positioned.fill(child: IgnorePointer(child: _buildSpeedIndicator())),
-                  // Skip intro/credits button
-                  if (_currentMarker != null)
+                  // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
+                  if (_currentMarker != null && (!_skipButtonDismissed || _showControls))
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
@@ -1916,6 +1993,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         },
         onCancelAutoHide: () => _hideTimer?.cancel(),
         onStartAutoHide: _startHideTimer,
+        onSyncOffsetChanged: (propertyName, offset) {
+          setState(() {
+            if (propertyName == 'sub-delay') {
+              _subtitleSyncOffset = offset;
+            } else {
+              _audioSyncOffset = offset;
+            }
+          });
+        },
         serverId: widget.metadata.serverId ?? '',
         onBack: widget.onBack,
         canControl: widget.canControl,
@@ -1924,7 +2010,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
         shaderService: widget.shaderService,
         onShaderChanged: widget.onShaderChanged,
-        thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+        thumbnailDataBuilder: widget.thumbnailDataBuilder,
         isLive: widget.isLive,
         liveChannelName: widget.liveChannelName,
         isAmbientLightingEnabled: widget.isAmbientLightingEnabled,

@@ -9,6 +9,8 @@ import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.res.Configuration
 import android.util.Rational
+import android.view.KeyEvent
+import android.view.ViewGroup
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.RenderMode
@@ -24,10 +26,35 @@ class MainActivity : FlutterActivity() {
 
     private val PIP_CHANNEL = "app.plezy/pip"
     private val EXTERNAL_PLAYER_CHANNEL = "app.plezy/external_player"
+    private val THEME_CHANNEL = "app.plezy/theme"
     private var watchNextPlugin: WatchNextPlugin? = null
+    private var cachedFlutterView: android.view.View? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Apply persisted theme color to the window background before anything
+        // else renders.  This prevents a white flash between the native splash
+        // screen and Flutter's first frame for non-default themes (e.g. OLED).
+        val prefs = getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE)
+        val savedTheme = prefs.getString("splash_theme", null)
+        if (savedTheme != null) {
+            val color = when (savedTheme) {
+                "oled" -> android.graphics.Color.BLACK
+                "dark" -> android.graphics.Color.parseColor("#0E0F12")
+                "light" -> android.graphics.Color.parseColor("#F7F7F8")
+                else -> null
+            }
+            if (color != null) {
+                window.decorView.setBackgroundColor(color)
+            }
+        }
+
         super.onCreate(savedInstanceState)
+
+        // Disable the Android splash screen fade-out animation to avoid
+        // a flicker before Flutter draws its first frame.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            splashScreen.setOnExitAnimationListener { splashScreenView -> splashScreenView.remove() }
+        }
 
         // Disable Android's default focus highlight ring that appears when using
         // D-pad navigation so the Flutter UI can render its own focus state.
@@ -37,6 +64,37 @@ class MainActivity : FlutterActivity() {
 
         // Handle Watch Next deep link from initial launch
         handleWatchNextIntent(intent)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // Ensure FlutterView has focus for DPAD events so they reach Flutter's
+        // key event system. Without this, Android's native focus navigation can
+        // consume DPAD direction events (especially from the Google TV virtual
+        // remote) before they reach Flutter.
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP,
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            KeyEvent.KEYCODE_DPAD_LEFT,
+            KeyEvent.KEYCODE_DPAD_RIGHT,
+            KeyEvent.KEYCODE_DPAD_CENTER -> {
+                val fv = cachedFlutterView ?: findFlutterView(window.decorView)?.also { cachedFlutterView = it }
+                if (fv != null && !fv.hasFocus()) {
+                    fv.requestFocus()
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    private fun findFlutterView(view: android.view.View): android.view.View? {
+        if (view.javaClass.name.contains("FlutterView")) return view
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val found = findFlutterView(view.getChildAt(i))
+                if (found != null) return found
+            }
+        }
+        return null
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -114,6 +172,41 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Exception) {
                         result.error("LAUNCH_FAILED", e.message ?: e.javaClass.simpleName, null)
                     }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // Splash screen theme: persist user's chosen theme for next launch (API 31+)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "setSplashTheme" -> {
+                    val mode = call.argument<String>("mode")
+
+                    // Persist for next cold start & update window background now
+                    getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE)
+                        .edit().putString("splash_theme", mode).apply()
+                    val color = when (mode) {
+                        "oled" -> android.graphics.Color.BLACK
+                        "dark" -> android.graphics.Color.parseColor("#0E0F12")
+                        "light" -> android.graphics.Color.parseColor("#F7F7F8")
+                        else -> null
+                    }
+                    if (color != null) {
+                        window.decorView.setBackgroundColor(color)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        val themeId = when (mode) {
+                            "dark" -> R.style.SplashTheme_Dark
+                            "oled" -> R.style.SplashTheme_Oled
+                            "light" -> R.style.SplashTheme_Light
+                            "system" -> android.content.res.Resources.ID_NULL
+                            else -> android.content.res.Resources.ID_NULL
+                        }
+                        splashScreen.setSplashScreenTheme(themeId)
+                    }
+                    result.success(true)
                 }
                 else -> result.notImplemented()
             }

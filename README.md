@@ -41,7 +41,7 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 
 ### 🎬 Playback
 - Wide codec support (HEVC, AV1, VP9, and more)
-- HDR and Dolby Vision (iOS, macOS, Windows)
+- HDR and Dolby Vision (not Linux)
 - Full ASS/SSA subtitle support
 - Audio and subtitle preferences synced with Plex profile
 - Progress sync and resume

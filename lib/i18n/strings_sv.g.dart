@@ -151,6 +151,11 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get dontAskAgain => 'Fråga inte igen';
 	@override String get exit => 'Avsluta';
 	@override String get viewAll => 'Visa alla';
+	@override String get checkingNetwork => 'Kontrollerar nätverk...';
+	@override String get refreshingServers => 'Uppdaterar servrar...';
+	@override String get loadingServers => 'Laddar servrar...';
+	@override String get connectingToServers => 'Ansluter till servrar...';
+	@override String get startingOfflineMode => 'Startar offlineläge...';
 }
 
 // Path: screens
@@ -236,6 +241,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidofältet förblir expanderat och innehållsytan anpassas';
 	@override String get showUnwatchedCount => 'Visa antal osedda';
 	@override String get showUnwatchedCountDescription => 'Visa antal osedda avsnitt för serier och säsonger';
+	@override String get hideSpoilers => 'Dölj spoilers för osedda avsnitt';
+	@override String get hideSpoilersDescription => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu';
 	@override String get playerBackend => 'Spelarmotor';
 	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
 	@override String get exoPlayerDescription => 'Android-nativ spelare med bättre hårdvarustöd';
@@ -400,8 +407,9 @@ class _TranslationsMediaMenuSv implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Gå till säsong';
 	@override String get shufflePlay => 'Blanda uppspelning';
 	@override String get fileInfo => 'Filinformation';
-	@override String get confirmDelete => 'Är du säker på att du vill ta bort detta objekt från ditt filsystem?';
-	@override String get deleteMultipleWarning => 'Flera objekt kan komma att tas bort.';
+	@override String get deleteFromServer => 'Ta bort från servern';
+	@override String get confirmDelete => 'Detta kommer permanent ta bort detta media och dess filer från din server. Detta kan inte ångras.';
+	@override String get deleteMultipleWarning => 'Detta inkluderar alla avsnitt och deras filer.';
 	@override String get mediaDeletedSuccessfully => 'Mediaobjekt borttaget';
 	@override String get mediaFailedToDelete => 'Kunde inte ta bort mediaobjekt';
 	@override String get rate => 'Betygsätt';
@@ -1018,6 +1026,7 @@ class _TranslationsVideoSettingsSv implements TranslationsVideoSettingsEn {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Ljudutgång';
 	@override String get performanceOverlay => 'Prestandaöverlägg';
+	@override String get audioPassthrough => 'Ljudgenomkoppling';
 }
 
 // Path: externalPlayer
@@ -1213,11 +1222,8 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => 'Senaste';
 	@override String get scan => 'Skanna';
 	@override String get manual => 'Manuell';
-	@override String get recentConnections => 'Senaste anslutningar';
-	@override String get quickReconnect => 'Återanslut snabbt till tidigare parkopplade enheter';
 	@override String get pairWithDesktop => 'Parkoppla med dator';
 	@override String get enterSessionDetails => 'Ange sessionsuppgifterna som visas på din datorenhet';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1231,11 +1237,7 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.';
 	@override String cameraError({required Object error}) => 'Kunde inte starta kameran: ${error}';
 	@override String get scanInstruction => 'Rikta kameran mot QR-koden som visas på din dator';
-	@override String get noRecentConnections => 'Inga senaste anslutningar';
-	@override String get connectUsingManual => 'Anslut till en enhet via Manuell inmatning för att komma igång';
 	@override String get invalidQrCode => 'Ogiltigt QR-kodformat';
-	@override String get removeRecentConnection => 'Ta bort senaste anslutning';
-	@override String removeConfirm({required Object name}) => 'Ta bort "${name}" från senaste anslutningar?';
 	@override String get validationHostRequired => 'Ange en värdadress';
 	@override String get validationHostFormat => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)';
 	@override String get validationSessionIdRequired => 'Ange ett sessions-ID';
@@ -1245,7 +1247,6 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.';
 	@override String get sessionNotFound => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.';
 	@override String failedToConnect({required Object error}) => 'Kunde inte ansluta: ${error}';
-	@override String failedToLoadRecent({required Object error}) => 'Kunde inte ladda senaste sessioner: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1343,6 +1344,11 @@ extension on TranslationsSv {
 			'common.dontAskAgain' => 'Fråga inte igen',
 			'common.exit' => 'Avsluta',
 			'common.viewAll' => 'Visa alla',
+			'common.checkingNetwork' => 'Kontrollerar nätverk...',
+			'common.refreshingServers' => 'Uppdaterar servrar...',
+			'common.loadingServers' => 'Laddar servrar...',
+			'common.connectingToServers' => 'Ansluter till servrar...',
+			'common.startingOfflineMode' => 'Startar offlineläge...',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -1401,6 +1407,8 @@ extension on TranslationsSv {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidofältet förblir expanderat och innehållsytan anpassas',
 			'settings.showUnwatchedCount' => 'Visa antal osedda',
 			'settings.showUnwatchedCountDescription' => 'Visa antal osedda avsnitt för serier och säsonger',
+			'settings.hideSpoilers' => 'Dölj spoilers för osedda avsnitt',
+			'settings.hideSpoilersDescription' => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu',
 			'settings.playerBackend' => 'Spelarmotor',
 			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
 			'settings.exoPlayerDescription' => 'Android-nativ spelare med bättre hårdvarustöd',
@@ -1538,8 +1546,9 @@ extension on TranslationsSv {
 			'mediaMenu.goToSeason' => 'Gå till säsong',
 			'mediaMenu.shufflePlay' => 'Blanda uppspelning',
 			'mediaMenu.fileInfo' => 'Filinformation',
-			'mediaMenu.confirmDelete' => 'Är du säker på att du vill ta bort detta objekt från ditt filsystem?',
-			'mediaMenu.deleteMultipleWarning' => 'Flera objekt kan komma att tas bort.',
+			'mediaMenu.deleteFromServer' => 'Ta bort från servern',
+			'mediaMenu.confirmDelete' => 'Detta kommer permanent ta bort detta media och dess filer från din server. Detta kan inte ångras.',
+			'mediaMenu.deleteMultipleWarning' => 'Detta inkluderar alla avsnitt och deras filer.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Mediaobjekt borttaget',
 			'mediaMenu.mediaFailedToDelete' => 'Kunde inte ta bort mediaobjekt',
 			'mediaMenu.rate' => 'Betygsätt',
@@ -1949,11 +1958,8 @@ extension on TranslationsSv {
 			'companionRemote.session.copyToClipboard' => 'Kopiera till urklipp',
 			'companionRemote.session.newSession' => 'Ny session',
 			'companionRemote.session.minimize' => 'Minimera',
-			'companionRemote.pairing.recent' => 'Senaste',
 			'companionRemote.pairing.scan' => 'Skanna',
 			'companionRemote.pairing.manual' => 'Manuell',
-			'companionRemote.pairing.recentConnections' => 'Senaste anslutningar',
-			'companionRemote.pairing.quickReconnect' => 'Återanslut snabbt till tidigare parkopplade enheter',
 			'companionRemote.pairing.pairWithDesktop' => 'Parkoppla med dator',
 			'companionRemote.pairing.enterSessionDetails' => 'Ange sessionsuppgifterna som visas på din datorenhet',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1967,11 +1973,7 @@ extension on TranslationsSv {
 			'companionRemote.pairing.cameraPermissionRequired' => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kunde inte starta kameran: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Rikta kameran mot QR-koden som visas på din dator',
-			'companionRemote.pairing.noRecentConnections' => 'Inga senaste anslutningar',
-			'companionRemote.pairing.connectUsingManual' => 'Anslut till en enhet via Manuell inmatning för att komma igång',
 			'companionRemote.pairing.invalidQrCode' => 'Ogiltigt QR-kodformat',
-			'companionRemote.pairing.removeRecentConnection' => 'Ta bort senaste anslutning',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Ta bort "${name}" från senaste anslutningar?',
 			'companionRemote.pairing.validationHostRequired' => 'Ange en värdadress',
 			'companionRemote.pairing.validationHostFormat' => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Ange ett sessions-ID',
@@ -1981,7 +1983,6 @@ extension on TranslationsSv {
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.',
 			'companionRemote.pairing.sessionNotFound' => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Kunde inte ladda senaste sessioner: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
 			'companionRemote.remote.reconnecting' => 'Återansluter...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Försök ${current} av 5',
@@ -2019,6 +2020,7 @@ extension on TranslationsSv {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Ljudutgång',
 			'videoSettings.performanceOverlay' => 'Prestandaöverlägg',
+			'videoSettings.audioPassthrough' => 'Ljudgenomkoppling',
 			'externalPlayer.title' => 'Extern spelare',
 			'externalPlayer.useExternalPlayer' => 'Använd extern spelare',
 			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en extern app istället för den inbyggda spelaren',

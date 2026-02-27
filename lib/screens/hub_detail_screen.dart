@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
@@ -15,11 +14,8 @@ import '../widgets/focusable_media_card.dart';
 import '../widgets/media_grid_delegate.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/overlay_sheet.dart';
-import 'package:flutter/services.dart';
-import '../focus/dpad_navigator.dart';
-import '../focus/focus_theme.dart';
+import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
-import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import 'libraries/sort_bottom_sheet.dart';
 import 'libraries/state_messages.dart';
@@ -48,7 +44,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
   String? _errorMessage;
 
   late final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'hub_detail_first_item');
-  late final FocusNode _sortButtonFocusNode = FocusNode(debugLabel: 'hub_detail_sort');
+  final _actionBarKey = GlobalKey<FocusableActionBarState>();
   bool _isAppBarFocused = false;
   bool _backHandledByKeyEvent = false;
 
@@ -63,7 +59,6 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
   @override
   void initState() {
     super.initState();
-    _sortButtonFocusNode.addListener(_onSortButtonFocusChange);
     // Start with items already loaded in the hub
     _items = widget.hub.items;
     _filteredItems = widget.hub.items;
@@ -84,21 +79,9 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
 
   @override
   void dispose() {
-    _sortButtonFocusNode.removeListener(_onSortButtonFocusChange);
     _firstItemFocusNode.dispose();
-    _sortButtonFocusNode.dispose();
     disposeGridFocusNodes();
     super.dispose();
-  }
-
-  void _onSortButtonFocusChange() {
-    if (!mounted) return;
-    final hasFocus = _sortButtonFocusNode.hasFocus;
-    if (hasFocus && !_isAppBarFocused) {
-      setState(() => _isAppBarFocused = true);
-    } else if (!hasFocus && _isAppBarFocused) {
-      setState(() => _isAppBarFocused = false);
-    }
   }
 
   void _focusGrid() {
@@ -114,7 +97,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
 
   void _navigateToAppBar() {
     setState(() => _isAppBarFocused = true);
-    _sortButtonFocusNode.requestFocus();
+    _actionBarKey.currentState?.getFocusNode(0).requestFocus();
   }
 
   void _handleBackFromContent() {
@@ -122,24 +105,6 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
     _navigateToAppBar();
   }
 
-  KeyEventResult _handleSortButtonKeyEvent(FocusNode _, KeyEvent event) {
-    final key = event.logicalKey;
-
-    final backResult = handleBackKeyAction(event, () => Navigator.pop(context));
-    if (backResult != KeyEventResult.ignored) return backResult;
-
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
-    if (key.isDownKey) {
-      _focusGrid();
-      return KeyEventResult.handled;
-    }
-    if (key.isSelectKey) {
-      _showSortBottomSheet();
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
 
   Future<void> _loadSorts() async {
     try {
@@ -315,7 +280,6 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
   @override
   Widget build(BuildContext context) {
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
-    final sortButtonFocused = isKeyboardMode && _isAppBarFocused;
 
     return PopScope(
       canPop: !isKeyboardMode || _isAppBarFocused,
@@ -336,16 +300,17 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
                 title: Text(widget.hub.title),
                 pinned: true,
                 actions: [
-                  Focus(
-                    focusNode: _sortButtonFocusNode,
-                    onKeyEvent: _handleSortButtonKeyEvent,
-                    child: Container(
-                      decoration: FocusTheme.focusBackgroundDecoration(isFocused: sortButtonFocused, borderRadius: 20),
-                      child: IconButton(
-                        icon: AppIcon(Symbols.swap_vert_rounded, fill: 1, semanticLabel: t.libraries.sort),
+                  FocusableActionBar(
+                    key: _actionBarKey,
+                    onNavigateDown: _focusGrid,
+                    onBack: () => Navigator.pop(context),
+                    actions: [
+                      FocusableAction(
+                        icon: Symbols.swap_vert_rounded,
+                        tooltip: t.libraries.sort,
                         onPressed: _showSortBottomSheet,
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),

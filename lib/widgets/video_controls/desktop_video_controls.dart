@@ -68,6 +68,7 @@ class DesktopVideoControls extends StatefulWidget {
   final VoidCallback? onLoadSeekTimes;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
+  final void Function(String propertyName, int offset)? onSyncOffsetChanged;
   final String serverId;
   final VoidCallback? onBack;
 
@@ -80,8 +81,8 @@ class DesktopVideoControls extends StatefulWidget {
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
 
-  /// Optional callback that returns a thumbnail URL for a given timestamp.
-  final String Function(Duration time)? thumbnailUrlBuilder;
+  /// Optional callback that returns thumbnail image bytes for a given timestamp.
+  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
   /// Whether this is a live TV stream
   final bool isLive;
@@ -138,13 +139,14 @@ class DesktopVideoControls extends StatefulWidget {
     this.onLoadSeekTimes,
     this.onCancelAutoHide,
     this.onStartAutoHide,
+    this.onSyncOffsetChanged,
     this.serverId = '',
     this.onBack,
     this.canControl = true,
     this.hasFirstFrame,
     this.shaderService,
     this.onShaderChanged,
-    this.thumbnailUrlBuilder,
+    this.thumbnailDataBuilder,
     this.isLive = false,
     this.liveChannelName,
     this.isAmbientLightingEnabled = false,
@@ -451,7 +453,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: Colors.red, borderRadius: const BorderRadius.all(Radius.circular(4))),
+              decoration: const BoxDecoration(color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(4))),
               child: Text(
                 t.liveTv.live,
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
@@ -484,7 +486,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               onKeyEvent: _handleTimelineKeyEvent,
               onFocusChange: _onFocusChange,
               enabled: canInteract,
-              thumbnailUrlBuilder: widget.thumbnailUrlBuilder,
+              thumbnailDataBuilder: widget.thumbnailDataBuilder,
             ),
             const SizedBox(height: 4),
           ],
@@ -689,6 +691,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 onLoadSeekTimes: widget.onLoadSeekTimes,
                 onCancelAutoHide: widget.onCancelAutoHide,
                 onStartAutoHide: widget.onStartAutoHide,
+                onSyncOffsetChanged: widget.onSyncOffsetChanged,
                 focusNodes: _trackControlFocusNodes,
                 onFocusChange: _onFocusChange,
                 onNavigateLeft: navigateFromTrackToVolume,

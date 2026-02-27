@@ -151,6 +151,11 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get dontAskAgain => 'Nicht erneut fragen';
 	@override String get exit => 'Beenden';
 	@override String get viewAll => 'Alle anzeigen';
+	@override String get checkingNetwork => 'Netzwerk wird geprüft...';
+	@override String get refreshingServers => 'Server werden aktualisiert...';
+	@override String get loadingServers => 'Server werden geladen...';
+	@override String get connectingToServers => 'Verbindung zu Servern...';
+	@override String get startingOfflineMode => 'Offlinemodus wird gestartet...';
 }
 
 // Path: screens
@@ -236,6 +241,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an';
 	@override String get showUnwatchedCount => 'Anzahl nicht gesehener Folgen anzeigen';
 	@override String get showUnwatchedCountDescription => 'Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an';
+	@override String get hideSpoilers => 'Spoiler für nicht gesehene Episoden verbergen';
+	@override String get hideSpoilersDescription => 'Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden';
 	@override String get playerBackend => 'Player-Backend';
 	@override String get exoPlayer => 'ExoPlayer (Empfohlen)';
 	@override String get exoPlayerDescription => 'Android-nativer Player mit besserer Hardware-Unterstützung';
@@ -400,8 +407,9 @@ class _TranslationsMediaMenuDe implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Zur Staffel';
 	@override String get shufflePlay => 'Zufallswiedergabe';
 	@override String get fileInfo => 'Dateiinfo';
-	@override String get confirmDelete => 'Sind Sie sicher, dass Sie dieses Element aus Ihrem Dateisystem löschen möchten?';
-	@override String get deleteMultipleWarning => 'Mehrere Elemente können gelöscht werden.';
+	@override String get deleteFromServer => 'Vom Server löschen';
+	@override String get confirmDelete => 'Dieses Medium und seine Dateien werden dauerhaft von Ihrem Server gelöscht. Dies kann nicht rückgängig gemacht werden.';
+	@override String get deleteMultipleWarning => 'Dies umfasst alle Episoden und deren Dateien.';
 	@override String get mediaDeletedSuccessfully => 'Medienelement erfolgreich gelöscht';
 	@override String get mediaFailedToDelete => 'Löschen des Medienelements fehlgeschlagen';
 	@override String get rate => 'Bewerten';
@@ -1018,6 +1026,7 @@ class _TranslationsVideoSettingsDe implements TranslationsVideoSettingsEn {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Audioausgabe';
 	@override String get performanceOverlay => 'Leistungsanzeige';
+	@override String get audioPassthrough => 'Audio-Durchleitung';
 }
 
 // Path: externalPlayer
@@ -1213,11 +1222,8 @@ class _TranslationsCompanionRemotePairingDe implements TranslationsCompanionRemo
 	final TranslationsDe _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => 'Zuletzt';
 	@override String get scan => 'Scannen';
 	@override String get manual => 'Manuell';
-	@override String get recentConnections => 'Letzte Verbindungen';
-	@override String get quickReconnect => 'Schnell mit zuvor gekoppelten Geräten verbinden';
 	@override String get pairWithDesktop => 'Mit Desktop koppeln';
 	@override String get enterSessionDetails => 'Gib die Sitzungsdetails ein, die auf deinem Desktop-Gerät angezeigt werden';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1231,11 +1237,7 @@ class _TranslationsCompanionRemotePairingDe implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => 'Kameraberechtigung wird zum Scannen von QR-Codes benötigt.\nBitte erteile den Kamerazugriff in den Geräteeinstellungen.';
 	@override String cameraError({required Object error}) => 'Kamera konnte nicht gestartet werden: ${error}';
 	@override String get scanInstruction => 'Richte deine Kamera auf den QR-Code auf deinem Desktop';
-	@override String get noRecentConnections => 'Keine letzten Verbindungen';
-	@override String get connectUsingManual => 'Verbinde dich über die manuelle Eingabe, um loszulegen';
 	@override String get invalidQrCode => 'Ungültiges QR-Code-Format';
-	@override String get removeRecentConnection => 'Letzte Verbindung entfernen';
-	@override String removeConfirm({required Object name}) => '"${name}" aus den letzten Verbindungen entfernen?';
 	@override String get validationHostRequired => 'Bitte Host-Adresse eingeben';
 	@override String get validationHostFormat => 'Format muss IP:Port sein (z.B. 192.168.1.100:48632)';
 	@override String get validationSessionIdRequired => 'Bitte Sitzungs-ID eingeben';
@@ -1245,7 +1247,6 @@ class _TranslationsCompanionRemotePairingDe implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => 'Zeitüberschreitung. Bitte Sitzungs-ID und PIN überprüfen.';
 	@override String get sessionNotFound => 'Sitzung nicht gefunden. Bitte Zugangsdaten überprüfen.';
 	@override String failedToConnect({required Object error}) => 'Verbindung fehlgeschlagen: ${error}';
-	@override String failedToLoadRecent({required Object error}) => 'Letzte Sitzungen konnten nicht geladen werden: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1343,6 +1344,11 @@ extension on TranslationsDe {
 			'common.dontAskAgain' => 'Nicht erneut fragen',
 			'common.exit' => 'Beenden',
 			'common.viewAll' => 'Alle anzeigen',
+			'common.checkingNetwork' => 'Netzwerk wird geprüft...',
+			'common.refreshingServers' => 'Server werden aktualisiert...',
+			'common.loadingServers' => 'Server werden geladen...',
+			'common.connectingToServers' => 'Verbindung zu Servern...',
+			'common.startingOfflineMode' => 'Offlinemodus wird gestartet...',
 			'screens.licenses' => 'Lizenzen',
 			'screens.switchProfile' => 'Profil wechseln',
 			'screens.subtitleStyling' => 'Untertitel-Stil',
@@ -1401,6 +1407,8 @@ extension on TranslationsDe {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an',
 			'settings.showUnwatchedCount' => 'Anzahl nicht gesehener Folgen anzeigen',
 			'settings.showUnwatchedCountDescription' => 'Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an',
+			'settings.hideSpoilers' => 'Spoiler für nicht gesehene Episoden verbergen',
+			'settings.hideSpoilersDescription' => 'Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden',
 			'settings.playerBackend' => 'Player-Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Empfohlen)',
 			'settings.exoPlayerDescription' => 'Android-nativer Player mit besserer Hardware-Unterstützung',
@@ -1538,8 +1546,9 @@ extension on TranslationsDe {
 			'mediaMenu.goToSeason' => 'Zur Staffel',
 			'mediaMenu.shufflePlay' => 'Zufallswiedergabe',
 			'mediaMenu.fileInfo' => 'Dateiinfo',
-			'mediaMenu.confirmDelete' => 'Sind Sie sicher, dass Sie dieses Element aus Ihrem Dateisystem löschen möchten?',
-			'mediaMenu.deleteMultipleWarning' => 'Mehrere Elemente können gelöscht werden.',
+			'mediaMenu.deleteFromServer' => 'Vom Server löschen',
+			'mediaMenu.confirmDelete' => 'Dieses Medium und seine Dateien werden dauerhaft von Ihrem Server gelöscht. Dies kann nicht rückgängig gemacht werden.',
+			'mediaMenu.deleteMultipleWarning' => 'Dies umfasst alle Episoden und deren Dateien.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medienelement erfolgreich gelöscht',
 			'mediaMenu.mediaFailedToDelete' => 'Löschen des Medienelements fehlgeschlagen',
 			'mediaMenu.rate' => 'Bewerten',
@@ -1949,11 +1958,8 @@ extension on TranslationsDe {
 			'companionRemote.session.copyToClipboard' => 'In Zwischenablage kopieren',
 			'companionRemote.session.newSession' => 'Neue Sitzung',
 			'companionRemote.session.minimize' => 'Minimieren',
-			'companionRemote.pairing.recent' => 'Zuletzt',
 			'companionRemote.pairing.scan' => 'Scannen',
 			'companionRemote.pairing.manual' => 'Manuell',
-			'companionRemote.pairing.recentConnections' => 'Letzte Verbindungen',
-			'companionRemote.pairing.quickReconnect' => 'Schnell mit zuvor gekoppelten Geräten verbinden',
 			'companionRemote.pairing.pairWithDesktop' => 'Mit Desktop koppeln',
 			'companionRemote.pairing.enterSessionDetails' => 'Gib die Sitzungsdetails ein, die auf deinem Desktop-Gerät angezeigt werden',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1967,11 +1973,7 @@ extension on TranslationsDe {
 			'companionRemote.pairing.cameraPermissionRequired' => 'Kameraberechtigung wird zum Scannen von QR-Codes benötigt.\nBitte erteile den Kamerazugriff in den Geräteeinstellungen.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kamera konnte nicht gestartet werden: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Richte deine Kamera auf den QR-Code auf deinem Desktop',
-			'companionRemote.pairing.noRecentConnections' => 'Keine letzten Verbindungen',
-			'companionRemote.pairing.connectUsingManual' => 'Verbinde dich über die manuelle Eingabe, um loszulegen',
 			'companionRemote.pairing.invalidQrCode' => 'Ungültiges QR-Code-Format',
-			'companionRemote.pairing.removeRecentConnection' => 'Letzte Verbindung entfernen',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '"${name}" aus den letzten Verbindungen entfernen?',
 			'companionRemote.pairing.validationHostRequired' => 'Bitte Host-Adresse eingeben',
 			'companionRemote.pairing.validationHostFormat' => 'Format muss IP:Port sein (z.B. 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Bitte Sitzungs-ID eingeben',
@@ -1981,7 +1983,6 @@ extension on TranslationsDe {
 			'companionRemote.pairing.connectionTimedOut' => 'Zeitüberschreitung. Bitte Sitzungs-ID und PIN überprüfen.',
 			'companionRemote.pairing.sessionNotFound' => 'Sitzung nicht gefunden. Bitte Zugangsdaten überprüfen.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Verbindung fehlgeschlagen: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Letzte Sitzungen konnten nicht geladen werden: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Möchtest du die Verbindung zur Fernsteuerungssitzung trennen?',
 			'companionRemote.remote.reconnecting' => 'Verbindung wird wiederhergestellt...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Versuch ${current} von 5',
@@ -2019,6 +2020,7 @@ extension on TranslationsDe {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audioausgabe',
 			'videoSettings.performanceOverlay' => 'Leistungsanzeige',
+			'videoSettings.audioPassthrough' => 'Audio-Durchleitung',
 			'externalPlayer.title' => 'Externer Player',
 			'externalPlayer.useExternalPlayer' => 'Externen Player verwenden',
 			'externalPlayer.useExternalPlayerDescription' => 'Videos in einer externen App statt im integrierten Player öffnen',

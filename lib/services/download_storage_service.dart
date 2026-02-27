@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import '../models/plex_metadata.dart';
+import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import 'settings_service.dart';
 import 'saf_storage_service.dart';
@@ -222,7 +223,11 @@ class DownloadStorageService {
   String _sanitizeFileName(String name) {
     // Remove invalid filesystem characters: < > : " / \ | ? *
     // Also remove leading/trailing whitespace and dots
-    return name.replaceAll(RegExp(r'[<>:"/\\|?*]'), '').replaceAll(RegExp(r'^\.+|\.+$'), '').trim();
+    return name
+        .replaceAll(RegExp(r'[<>:"/\\|?*]'), '')
+        .replaceAll(RegExp(r'^\.+|\.+$'), '')
+        .replaceAll('.', '_')
+        .trim();
   }
 
   /// Ensure a directory exists, creating it if necessary
@@ -365,15 +370,17 @@ class DownloadStorageService {
   Future<String> toRelativePath(String absolutePath) async {
     final baseDir = await _getBaseAppDir();
 
-    // If the path starts with the base directory, strip it
-    if (absolutePath.startsWith(baseDir.path)) {
-      // Remove the base path and any leading separator
-      var relative = absolutePath.substring(baseDir.path.length);
-      if (relative.startsWith('/') || relative.startsWith('\\')) {
-        relative = relative.substring(1);
+    // Strip the base directory prefix iteratively — background_downloader
+    // recovery paths can contain the base dir doubled (e.g.
+    // /data/.../app_flutter/data/.../app_flutter/downloads/...).
+    var result = absolutePath;
+    while (result.startsWith(baseDir.path)) {
+      result = result.substring(baseDir.path.length);
+      if (result.startsWith('/') || result.startsWith('\\')) {
+        result = result.substring(1);
       }
-      return relative;
     }
+    if (result != absolutePath) return result;
 
     // Already relative or from a different base - return as-is
     return absolutePath;
@@ -392,25 +399,73 @@ class DownloadStorageService {
   }
 
   /// Convert a potentially absolute path (from old database entries) to absolute
-  /// This handles both old absolute paths and new relative paths
+  /// This handles both old absolute paths and new relative paths, including
+  /// corrupted paths that contain nested base-dir fragments without a leading slash
+  /// (e.g. "data/user/0/.../app_flutter/downloads/...").
   Future<String> ensureAbsolutePath(String storedPath) async {
-    if (path.isAbsolute(storedPath)) {
-      // Already absolute - check if file exists at this path
-      if (await File(storedPath).exists()) {
-        return storedPath;
+    appLogger.d('ensureAbsolutePath: input="$storedPath", isAbsolute=${path.isAbsolute(storedPath)}');
+    final baseDir = await _getBaseAppDir();
+    final normalizedCandidates = <String>[];
+
+    void addCandidate(String candidate) {
+      if (candidate.isEmpty) return;
+      final normalized = path.normalize(candidate);
+      if (!normalizedCandidates.contains(normalized)) {
+        normalizedCandidates.add(normalized);
       }
-      // File doesn't exist at absolute path - try to reconstruct
-      // Extract the relative portion (everything after 'downloads/')
-      final downloadsIndex = storedPath.indexOf('downloads/');
+    }
+
+    String trimLeadingSeparators(String value) => value.replaceFirst(RegExp(r'^[\\/]+'), '');
+
+    if (path.isAbsolute(storedPath)) {
+      // Keep the original absolute path first (covers valid custom download paths).
+      addCandidate(storedPath);
+
+      // Recover from doubled app base path corruption:
+      // /data/.../app_flutter/data/.../app_flutter/downloads/...
+      final firstBaseIndex = storedPath.indexOf(baseDir.path);
+      final secondBaseIndex = storedPath.indexOf(baseDir.path, firstBaseIndex + baseDir.path.length);
+      if (firstBaseIndex != -1 && secondBaseIndex != -1) {
+        final tail = trimLeadingSeparators(storedPath.substring(secondBaseIndex + baseDir.path.length));
+        addCandidate(path.join(baseDir.path, tail));
+      }
+
+      // Recover from paths that contain downloads/ but wrong prefix.
+      final downloadsIndex = storedPath.lastIndexOf('downloads/');
       if (downloadsIndex != -1) {
         final relativePart = storedPath.substring(downloadsIndex);
-        return await toAbsolutePath(relativePart);
+        addCandidate(await toAbsolutePath(relativePart));
       }
-      // Can't reconstruct, return original
-      return storedPath;
+    } else {
+      // Normal relative path.
+      addCandidate(await toAbsolutePath(storedPath));
+
+      // Recover from nested base-dir fragment without leading slash.
+      final baseIndex = storedPath.indexOf(baseDir.path);
+      if (baseIndex > 0) {
+        final tail = trimLeadingSeparators(storedPath.substring(baseIndex + baseDir.path.length));
+        addCandidate(path.join(baseDir.path, tail));
+      }
+
+      // Recover from nested fragment containing downloads/.
+      final downloadsIndex = storedPath.lastIndexOf('downloads/');
+      if (downloadsIndex >= 0) {
+        addCandidate(await toAbsolutePath(storedPath.substring(downloadsIndex)));
+      }
     }
-    // Relative path - convert to absolute
-    return await toAbsolutePath(storedPath);
+
+    // Prefer the first candidate that exists on disk.
+    for (final candidate in normalizedCandidates) {
+      if (await File(candidate).exists()) {
+        appLogger.d('ensureAbsolutePath: resolved="$candidate"');
+        return candidate;
+      }
+    }
+
+    // Fall back to the most conservative candidate if none currently exist.
+    final fallback = normalizedCandidates.isNotEmpty ? normalizedCandidates.first : await toAbsolutePath(storedPath);
+    appLogger.d('ensureAbsolutePath: resolved="$fallback" (fallback)');
+    return fallback;
   }
 
   /// Calculate total storage used by downloads

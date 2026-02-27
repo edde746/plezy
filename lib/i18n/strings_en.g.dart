@@ -252,6 +252,21 @@ class TranslationsCommonEn {
 
 	/// en: 'View All'
 	String get viewAll => 'View All';
+
+	/// en: 'Checking network...'
+	String get checkingNetwork => 'Checking network...';
+
+	/// en: 'Refreshing servers...'
+	String get refreshingServers => 'Refreshing servers...';
+
+	/// en: 'Loading servers...'
+	String get loadingServers => 'Loading servers...';
+
+	/// en: 'Connecting to servers...'
+	String get connectingToServers => 'Connecting to servers...';
+
+	/// en: 'Starting offline mode...'
+	String get startingOfflineMode => 'Starting offline mode...';
 }
 
 // Path: screens
@@ -453,6 +468,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Display unwatched episode count on shows and seasons'
 	String get showUnwatchedCountDescription => 'Display unwatched episode count on shows and seasons';
+
+	/// en: 'Hide Spoilers for Unwatched Episodes'
+	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
+
+	/// en: 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet'
+	String get hideSpoilersDescription => 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet';
 
 	/// en: 'Player Backend'
 	String get playerBackend => 'Player Backend';
@@ -855,11 +876,14 @@ class TranslationsMediaMenuEn {
 	/// en: 'File Info'
 	String get fileInfo => 'File Info';
 
-	/// en: 'Are you sure you want to delete this item from your filesystem?'
-	String get confirmDelete => 'Are you sure you want to delete this item from your filesystem?';
+	/// en: 'Delete from server'
+	String get deleteFromServer => 'Delete from server';
 
-	/// en: 'Multiple items may be deleted.'
-	String get deleteMultipleWarning => 'Multiple items may be deleted.';
+	/// en: 'This will permanently delete this media and its files from your server. This cannot be undone.'
+	String get confirmDelete => 'This will permanently delete this media and its files from your server. This cannot be undone.';
+
+	/// en: 'This includes all episodes and their files.'
+	String get deleteMultipleWarning => 'This includes all episodes and their files.';
 
 	/// en: 'Media item deleted successfully'
 	String get mediaDeletedSuccessfully => 'Media item deleted successfully';
@@ -2249,6 +2273,9 @@ class TranslationsVideoSettingsEn {
 
 	/// en: 'Performance Overlay'
 	String get performanceOverlay => 'Performance Overlay';
+
+	/// en: 'Audio Passthrough'
+	String get audioPassthrough => 'Audio Passthrough';
 }
 
 // Path: externalPlayer
@@ -2691,20 +2718,11 @@ class TranslationsCompanionRemotePairingEn {
 
 	// Translations
 
-	/// en: 'Recent'
-	String get recent => 'Recent';
-
 	/// en: 'Scan'
 	String get scan => 'Scan';
 
 	/// en: 'Manual'
 	String get manual => 'Manual';
-
-	/// en: 'Recent Connections'
-	String get recentConnections => 'Recent Connections';
-
-	/// en: 'Quickly reconnect to previously paired devices'
-	String get quickReconnect => 'Quickly reconnect to previously paired devices';
 
 	/// en: 'Pair with Desktop'
 	String get pairWithDesktop => 'Pair with Desktop';
@@ -2745,20 +2763,8 @@ class TranslationsCompanionRemotePairingEn {
 	/// en: 'Point your camera at the QR code shown on your desktop'
 	String get scanInstruction => 'Point your camera at the QR code shown on your desktop';
 
-	/// en: 'No recent connections'
-	String get noRecentConnections => 'No recent connections';
-
-	/// en: 'Connect to a device using Manual entry to get started'
-	String get connectUsingManual => 'Connect to a device using Manual entry to get started';
-
 	/// en: 'Invalid QR code format'
 	String get invalidQrCode => 'Invalid QR code format';
-
-	/// en: 'Remove Recent Connection'
-	String get removeRecentConnection => 'Remove Recent Connection';
-
-	/// en: 'Remove "${name}" from recent connections?'
-	String removeConfirm({required Object name}) => 'Remove "${name}" from recent connections?';
 
 	/// en: 'Please enter host address'
 	String get validationHostRequired => 'Please enter host address';
@@ -2787,8 +2793,6 @@ class TranslationsCompanionRemotePairingEn {
 	/// en: 'Failed to connect: ${error}'
 	String failedToConnect({required Object error}) => 'Failed to connect: ${error}';
 
-	/// en: 'Failed to load recent sessions: ${error}'
-	String failedToLoadRecent({required Object error}) => 'Failed to load recent sessions: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -2944,6 +2948,11 @@ extension on Translations {
 			'common.dontAskAgain' => 'Don\'t ask again',
 			'common.exit' => 'Exit',
 			'common.viewAll' => 'View All',
+			'common.checkingNetwork' => 'Checking network...',
+			'common.refreshingServers' => 'Refreshing servers...',
+			'common.loadingServers' => 'Loading servers...',
+			'common.connectingToServers' => 'Connecting to servers...',
+			'common.startingOfflineMode' => 'Starting offline mode...',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -3002,6 +3011,8 @@ extension on Translations {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
 			'settings.showUnwatchedCountDescription' => 'Display unwatched episode count on shows and seasons',
+			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
+			'settings.hideSpoilersDescription' => 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet',
 			'settings.playerBackend' => 'Player Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Recommended)',
 			'settings.exoPlayerDescription' => 'Android native player with better hardware support',
@@ -3139,8 +3150,9 @@ extension on Translations {
 			'mediaMenu.goToSeason' => 'Go to season',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
 			'mediaMenu.fileInfo' => 'File Info',
-			'mediaMenu.confirmDelete' => 'Are you sure you want to delete this item from your filesystem?',
-			'mediaMenu.deleteMultipleWarning' => 'Multiple items may be deleted.',
+			'mediaMenu.deleteFromServer' => 'Delete from server',
+			'mediaMenu.confirmDelete' => 'This will permanently delete this media and its files from your server. This cannot be undone.',
+			'mediaMenu.deleteMultipleWarning' => 'This includes all episodes and their files.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
@@ -3550,11 +3562,8 @@ extension on Translations {
 			'companionRemote.session.copyToClipboard' => 'Copy to clipboard',
 			'companionRemote.session.newSession' => 'New Session',
 			'companionRemote.session.minimize' => 'Minimize',
-			'companionRemote.pairing.recent' => 'Recent',
 			'companionRemote.pairing.scan' => 'Scan',
 			'companionRemote.pairing.manual' => 'Manual',
-			'companionRemote.pairing.recentConnections' => 'Recent Connections',
-			'companionRemote.pairing.quickReconnect' => 'Quickly reconnect to previously paired devices',
 			'companionRemote.pairing.pairWithDesktop' => 'Pair with Desktop',
 			'companionRemote.pairing.enterSessionDetails' => 'Enter the session details shown on your desktop device',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3568,11 +3577,7 @@ extension on Translations {
 			'companionRemote.pairing.cameraPermissionRequired' => 'Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Could not start camera: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Point your camera at the QR code shown on your desktop',
-			'companionRemote.pairing.noRecentConnections' => 'No recent connections',
-			'companionRemote.pairing.connectUsingManual' => 'Connect to a device using Manual entry to get started',
 			'companionRemote.pairing.invalidQrCode' => 'Invalid QR code format',
-			'companionRemote.pairing.removeRecentConnection' => 'Remove Recent Connection',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Remove "${name}" from recent connections?',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Please enter a session ID',
@@ -3582,7 +3587,6 @@ extension on Translations {
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Please check the session ID and PIN.',
 			'companionRemote.pairing.sessionNotFound' => 'Could not find the session. Please check your credentials.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Failed to load recent sessions: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
@@ -3620,6 +3624,7 @@ extension on Translations {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
+			'videoSettings.audioPassthrough' => 'Audio Passthrough',
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in an external app instead of the built-in player',

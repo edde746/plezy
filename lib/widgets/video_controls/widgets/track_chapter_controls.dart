@@ -47,6 +47,7 @@ class TrackChapterControls extends StatelessWidget {
   final VoidCallback? onLoadSeekTimes;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
+  final void Function(String propertyName, int offset)? onSyncOffsetChanged;
   final String serverId;
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
@@ -103,6 +104,7 @@ class TrackChapterControls extends StatelessWidget {
     this.onLoadSeekTimes,
     this.onCancelAutoHide,
     this.onStartAutoHide,
+    this.onSyncOffsetChanged,
     this.focusNodes,
     this.onFocusChange,
     this.onNavigateLeft,
@@ -221,6 +223,9 @@ class TrackChapterControls extends StatelessWidget {
                       onShaderChanged: onShaderChanged,
                       isAmbientLightingEnabled: isAmbientLightingEnabled,
                       onToggleAmbientLighting: onToggleAmbientLighting,
+                      onCancelAutoHide: onCancelAutoHide,
+                      onStartAutoHide: onStartAutoHide,
+                      onSyncOffsetChanged: onSyncOffsetChanged,
                     ),
                   ).whenComplete(() {
                     onStartAutoHide?.call();

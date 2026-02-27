@@ -48,6 +48,12 @@ class FocusableListTile extends StatefulWidget {
   /// An optional color to display behind the menu item when being hovered.
   final Color? hoverColor;
 
+  /// An optional color for the text of the list tile.
+  final Color? textColor;
+
+  /// An optional color for the icon of the list tile.
+  final Color? iconColor;
+
   const FocusableListTile({
     super.key,
     this.title,
@@ -64,6 +70,8 @@ class FocusableListTile extends StatefulWidget {
     this.contentPadding,
     this.suppressInitialSelect = false,
     this.hoverColor,
+    this.textColor,
+    this.iconColor,
   });
 
   @override
@@ -89,6 +97,8 @@ class _FocusableListTileState extends State<FocusableListTile> {
       focusNode: widget.suppressInitialSelect ? null : widget.focusNode,
       autofocus: widget.suppressInitialSelect ? false : widget.autofocus,
       hoverColor: widget.hoverColor,
+      textColor: widget.textColor,
+      iconColor: widget.iconColor,
     );
 
     if (!widget.suppressInitialSelect) {

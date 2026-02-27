@@ -2,15 +2,16 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_button.dart';
+import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/snackbar_helper.dart';
-import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/desktop_app_bar.dart';
 
 class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});
@@ -21,11 +22,18 @@ class LogsScreen extends StatefulWidget {
 
 class _LogsScreenState extends State<LogsScreen> {
   List<LogEntry> _logs = [];
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _logs = MemoryLogOutput.getLogs();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _loadLogs() {
@@ -115,7 +123,7 @@ class _LogsScreenState extends State<LogsScreen> {
                 icon: const Icon(Icons.copy, size: 20),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: id));
-                  showSuccessSnackBar(ctx, t.messages.logsCopied);
+                  showSuccessSnackBar(context, t.messages.logsCopied);
                 },
               ),
             ],
@@ -156,178 +164,122 @@ class _LogsScreenState extends State<LogsScreen> {
     }
   }
 
-  IconData _getLevelIcon(Level level) {
-    switch (level) {
-      case Level.error:
-      case Level.fatal:
-        return Symbols.error_rounded;
-      case Level.warning:
-        return Symbols.warning_rounded;
-      case Level.info:
-        return Symbols.info_rounded;
-      case Level.debug:
-      case Level.trace:
-        return Symbols.bug_report_rounded;
-      default:
-        return Symbols.circle_rounded;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FocusedScrollScaffold(
-      title: Text(t.screens.logs),
-      actions: [
-        IconButton(
-          icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
-          onPressed: _loadLogs,
-          tooltip: t.common.refresh,
-        ),
-        IconButton(
-          icon: const AppIcon(Symbols.upload_rounded, fill: 1),
-          onPressed: _logs.isNotEmpty ? _uploadLogs : null,
-          tooltip: t.logs.uploadLogs,
-        ),
-        IconButton(
-          icon: const AppIcon(Symbols.content_copy_rounded, fill: 1),
-          onPressed: _logs.isNotEmpty ? _copyAllLogs : null,
-          tooltip: t.logs.copyLogs,
-        ),
-        IconButton(
-          icon: const AppIcon(Symbols.delete_outline_rounded, fill: 1),
-          onPressed: _logs.isNotEmpty ? _clearLogs : null,
-          tooltip: t.logs.clearLogs,
-        ),
-      ],
-      slivers: [
-        if (_logs.isEmpty)
-          SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
-        else
-          SliverPadding(
-            padding: const EdgeInsets.all(8),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final log = _logs[index];
-                return _LogEntryCard(
-                  log: log,
-                  formatTime: _formatTime,
-                  levelColor: _getLevelColor(log.level),
-                  levelIcon: _getLevelIcon(log.level),
-                );
-              }, childCount: _logs.length),
-            ),
-          ),
-      ],
+  void _scroll(double delta) {
+    final pos = _scrollController.position;
+    _scrollController.animateTo(
+      (pos.pixels + delta).clamp(pos.minScrollExtent, pos.maxScrollExtent),
+      duration: const Duration(milliseconds: 100),
+      curve: Curves.easeOut,
     );
   }
-}
 
-class _LogEntryCard extends StatefulWidget {
-  final LogEntry log;
-  final String Function(DateTime) formatTime;
-  final Color levelColor;
-  final IconData levelIcon;
-
-  const _LogEntryCard({required this.log, required this.formatTime, required this.levelColor, required this.levelIcon});
-
-  @override
-  State<_LogEntryCard> createState() => _LogEntryCardState();
-}
-
-class _LogEntryCardState extends State<_LogEntryCard> {
-  bool _isExpanded = false;
+  List<TextSpan> _buildLogSpans() {
+    final spans = <TextSpan>[];
+    for (var i = 0; i < _logs.length; i++) {
+      if (i > 0) spans.add(const TextSpan(text: '\n'));
+      final log = _logs[i];
+      final color = _getLevelColor(log.level);
+      spans.add(TextSpan(
+        text: '[${_formatTime(log.timestamp)}] ',
+        style: TextStyle(color: color.withValues(alpha: 0.6)),
+      ));
+      spans.add(TextSpan(
+        text: '[${log.level.name.toUpperCase()}] ',
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+      ));
+      spans.add(TextSpan(text: log.message));
+      if (log.error != null) {
+        spans.add(TextSpan(
+          text: '\n  Error: ${log.error}',
+          style: TextStyle(color: color),
+        ));
+      }
+      if (log.stackTrace != null) {
+        spans.add(TextSpan(
+          text: '\n  ${log.stackTrace.toString().replaceAll('\n', '\n  ')}',
+          style: TextStyle(color: Colors.grey.withValues(alpha: 0.7)),
+        ));
+      }
+    }
+    return spans;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final hasErrorOrStackTrace = widget.log.error != null || widget.log.stackTrace != null;
+    final theme = Theme.of(context);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: InkWell(
-        onTap: hasErrorOrStackTrace ? () => setState(() => _isExpanded = !_isExpanded) : null,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppIcon(widget.levelIcon, fill: 1, color: widget.levelColor, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              widget.log.level.name.toUpperCase(),
-                              style: TextStyle(fontWeight: FontWeight.bold, color: widget.levelColor, fontSize: 12),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              widget.formatTime(widget.log.timestamp),
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(widget.log.message, style: Theme.of(context).textTheme.bodyMedium),
-                      ],
+    return Focus(
+      canRequestFocus: false,
+      onKeyEvent: (node, event) {
+        final backResult = handleBackKeyNavigation(context, event);
+        if (backResult != KeyEventResult.ignored) return backResult;
+        if (event is KeyDownEvent || event is KeyRepeatEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            _scroll(80);
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            _scroll(-80);
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Scaffold(
+        body: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            CustomAppBar(
+              title: Text(t.screens.logs),
+              pinned: true,
+              actions: [
+                FocusableActionBar(
+                  actions: [
+                    FocusableAction(
+                      icon: Symbols.refresh_rounded,
+                      tooltip: t.common.refresh,
+                      onPressed: _loadLogs,
+                    ),
+                    FocusableAction(
+                      icon: Symbols.upload_rounded,
+                      tooltip: t.logs.uploadLogs,
+                      onPressed: _logs.isNotEmpty ? _uploadLogs : null,
+                    ),
+                    FocusableAction(
+                      icon: Symbols.content_copy_rounded,
+                      tooltip: t.logs.copyLogs,
+                      onPressed: _logs.isNotEmpty ? _copyAllLogs : null,
+                    ),
+                    FocusableAction(
+                      icon: Symbols.delete_outline_rounded,
+                      tooltip: t.logs.clearLogs,
+                      onPressed: _logs.isNotEmpty ? _clearLogs : null,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (_logs.isEmpty)
+              SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
+            else
+              SliverPadding(
+                padding: const EdgeInsets.all(12),
+                sliver: SliverToBoxAdapter(
+                  child: SelectableText.rich(
+                    TextSpan(
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        height: 1.5,
+                      ),
+                      children: _buildLogSpans(),
                     ),
                   ),
-                  if (hasErrorOrStackTrace)
-                    AppIcon(
-                      _isExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
-                      fill: 1,
-                      color: Theme.of(context).iconTheme.color?.withValues(alpha: 0.6),
-                    ),
-                ],
+                ),
               ),
-              if (_isExpanded && hasErrorOrStackTrace) ...[
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 8),
-                if (widget.log.error != null)
-                  _buildDetailSection(title: t.logs.error, content: widget.log.error.toString()),
-                if (widget.log.stackTrace != null) ...[
-                  const SizedBox(height: 12),
-                  _buildDetailSection(title: t.logs.stackTrace, content: widget.log.stackTrace.toString()),
-                ],
-              ],
-            ],
-          ),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDetailSection({required String title, required String content}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(color: widget.levelColor, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[200],
-            borderRadius: const BorderRadius.all(Radius.circular(4)),
-          ),
-          child: SelectableText(
-            content,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
-          ),
-        ),
-      ],
     );
   }
 }

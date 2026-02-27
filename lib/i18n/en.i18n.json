@@ -52,7 +52,12 @@
     "exitConfirmMessage": "Are you sure you want to exit?",
     "dontAskAgain": "Don't ask again",
     "exit": "Exit",
-    "viewAll": "View All"
+    "viewAll": "View All",
+    "checkingNetwork": "Checking network...",
+    "refreshingServers": "Refreshing servers...",
+    "loadingServers": "Loading servers...",
+    "connectingToServers": "Connecting to servers...",
+    "startingOfflineMode": "Starting offline mode..."
   },
   "screens": {
     "licenses": "Licenses",
@@ -117,6 +122,8 @@
     "alwaysKeepSidebarOpenDescription": "Sidebar stays expanded and content area adjusts to fit",
     "showUnwatchedCount": "Show Unwatched Count",
     "showUnwatchedCountDescription": "Display unwatched episode count on shows and seasons",
+    "hideSpoilers": "Hide Spoilers for Unwatched Episodes",
+    "hideSpoilersDescription": "Blur thumbnails and hide descriptions for episodes you haven't watched yet",
     "playerBackend": "Player Backend",
     "exoPlayer": "ExoPlayer (Recommended)",
     "exoPlayerDescription": "Android native player with better hardware support",
@@ -266,8 +273,9 @@
     "goToSeason": "Go to season",
     "shufflePlay": "Shuffle Play",
     "fileInfo": "File Info",
-    "confirmDelete": "Are you sure you want to delete this item from your filesystem?",
-    "deleteMultipleWarning": "Multiple items may be deleted.",
+    "deleteFromServer": "Delete from server",
+    "confirmDelete": "This will permanently delete this media and its files from your server. This cannot be undone.",
+    "deleteMultipleWarning": "This includes all episodes and their files.",
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate"
@@ -732,11 +740,8 @@
       "minimize": "Minimize"
     },
     "pairing": {
-      "recent": "Recent",
       "scan": "Scan",
       "manual": "Manual",
-      "recentConnections": "Recent Connections",
-      "quickReconnect": "Quickly reconnect to previously paired devices",
       "pairWithDesktop": "Pair with Desktop",
       "enterSessionDetails": "Enter the session details shown on your desktop device",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +755,7 @@
       "cameraPermissionRequired": "Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.",
       "cameraError": "Could not start camera: ${error}",
       "scanInstruction": "Point your camera at the QR code shown on your desktop",
-      "noRecentConnections": "No recent connections",
-      "connectUsingManual": "Connect to a device using Manual entry to get started",
       "invalidQrCode": "Invalid QR code format",
-      "removeRecentConnection": "Remove Recent Connection",
-      "removeConfirm": "Remove \"${name}\" from recent connections?",
       "validationHostRequired": "Please enter host address",
       "validationHostFormat": "Format must be IP:port (e.g., 192.168.1.100:48632)",
       "validationSessionIdRequired": "Please enter a session ID",
@@ -763,8 +764,7 @@
       "validationPinLength": "PIN must be 6 digits",
       "connectionTimedOut": "Connection timed out. Please check the session ID and PIN.",
       "sessionNotFound": "Could not find the session. Please check your credentials.",
-      "failedToConnect": "Failed to connect: ${error}",
-      "failedToLoadRecent": "Failed to load recent sessions: ${error}"
+      "failedToConnect": "Failed to connect: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Do you want to disconnect from the remote session?",
@@ -806,7 +806,8 @@
     "subtitleSync": "Subtitle Sync",
     "hdr": "HDR",
     "audioOutput": "Audio Output",
-    "performanceOverlay": "Performance Overlay"
+    "performanceOverlay": "Performance Overlay",
+    "audioPassthrough": "Audio Passthrough"
   },
   "externalPlayer": {
     "title": "External Player",

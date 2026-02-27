@@ -19,7 +19,7 @@ platform :android do
       UI.user_error!("Could not extract version from pubspec.yaml")
     end
 
-    debug_info_dir = "./build/debug-info/#{version_name}+#{version_code}"
+    debug_info_dir = "./debug-info/#{version_name}+#{version_code}"
 
     # Build the Flutter app
     sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true --obfuscate --split-debug-info=#{debug_info_dir}/aab")
@@ -40,7 +40,8 @@ platform :android do
         "../build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
       ],
       overwrite_upload: true,
-      overwrite_upload_mode: 'reuse'
+      overwrite_upload_mode: 'reuse',
+      changes_not_sent_for_review: true
     )
   end
 end

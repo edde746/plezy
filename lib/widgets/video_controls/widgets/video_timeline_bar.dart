@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../../mpv/mpv.dart';
@@ -36,8 +38,8 @@ class VideoTimelineBar extends StatelessWidget {
   /// Whether to show the estimated finish time next to the remaining timestamp (mobile).
   final bool showFinishTime;
 
-  /// Optional callback that returns a thumbnail URL for a given timestamp.
-  final String Function(Duration time)? thumbnailUrlBuilder;
+  /// Optional callback that returns thumbnail image bytes for a given timestamp.
+  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
   const VideoTimelineBar({
     super.key,
@@ -52,7 +54,7 @@ class VideoTimelineBar extends StatelessWidget {
     this.onFocusChange,
     this.enabled = true,
     this.showFinishTime = false,
-    this.thumbnailUrlBuilder,
+    this.thumbnailDataBuilder,
   });
 
   @override
@@ -144,7 +146,7 @@ class VideoTimelineBar extends StatelessWidget {
       onKeyEvent: onKeyEvent,
       onFocusChange: onFocusChange,
       enabled: enabled,
-      thumbnailUrlBuilder: thumbnailUrlBuilder,
+      thumbnailDataBuilder: thumbnailDataBuilder,
     );
   }
 }

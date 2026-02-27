@@ -37,8 +37,9 @@ class _MenuAction {
   final IconData icon;
   final String label;
   final Color? hoverColor;
+  final Color? foregroundColor;
 
-  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor});
+  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor, this.foregroundColor});
 }
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
@@ -284,9 +285,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'delete_media',
-            icon: Symbols.delete_rounded,
-            label: t.common.delete,
+            icon: Symbols.delete_forever_rounded,
+            label: t.mediaMenu.deleteFromServer,
             hoverColor: Theme.of(context).colorScheme.error,
+            foregroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -1137,8 +1139,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
       context,
-      title: t.common.delete,
-      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? "\n${t.mediaMenu.deleteMultipleWarning}" : ""}",
+      title: t.mediaMenu.deleteFromServer,
+      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? "\n\n${t.mediaMenu.deleteMultipleWarning}" : ""}",
+      confirmText: t.mediaMenu.deleteFromServer,
     );
 
     if (!confirmed || !context.mounted) return;
@@ -1330,6 +1333,8 @@ class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> 
                     title: Text(action.label),
                     onTap: () => OverlaySheetController.closeAdaptive(context, action.value),
                     hoverColor: action.hoverColor,
+                    textColor: action.foregroundColor,
+                    iconColor: action.foregroundColor,
                   );
                 }),
               ],
@@ -1435,6 +1440,8 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
                       title: Text(action.label),
                       onTap: () => Navigator.pop(context, action.value),
                       hoverColor: action.hoverColor,
+                      textColor: action.foregroundColor,
+                      iconColor: action.foregroundColor,
                     );
                   }).toList(),
                 ),

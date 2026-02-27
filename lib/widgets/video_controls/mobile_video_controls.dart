@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -43,8 +45,8 @@ class MobileVideoControls extends StatelessWidget {
   /// Notifier for whether first video frame has rendered (shows loading state when false).
   final ValueNotifier<bool>? hasFirstFrame;
 
-  /// Optional callback that returns a thumbnail URL for a given timestamp.
-  final String Function(Duration time)? thumbnailUrlBuilder;
+  /// Optional callback that returns thumbnail image bytes for a given timestamp.
+  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
   /// Whether this is a live TV stream
   final bool isLive;
@@ -73,7 +75,7 @@ class MobileVideoControls extends StatelessWidget {
     this.onSeekToNextChapter,
     this.canControl = true,
     this.hasFirstFrame,
-    this.thumbnailUrlBuilder,
+    this.thumbnailDataBuilder,
     this.isLive = false,
     this.liveChannelName,
   });
@@ -197,7 +199,7 @@ class MobileVideoControls extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: Colors.red, borderRadius: const BorderRadius.all(Radius.circular(4))),
+              decoration: const BoxDecoration(color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(4))),
               child: Text(
                 t.liveTv.live,
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
@@ -225,7 +227,7 @@ class MobileVideoControls extends StatelessWidget {
           horizontalLayout: false,
           enabled: canControl,
           showFinishTime: true,
-          thumbnailUrlBuilder: thumbnailUrlBuilder,
+          thumbnailDataBuilder: thumbnailDataBuilder,
         ),
       ),
     );

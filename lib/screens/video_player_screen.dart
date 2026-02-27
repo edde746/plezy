@@ -11,8 +11,9 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../mpv/mpv.dart';
-import '../mpv/player/player_android.dart';
+import '../mpv/player/platform/player_android.dart';
 
+import '../../services/bif_thumbnail_service.dart';
 import '../../services/plex_client.dart';
 import '../models/livetv_channel.dart';
 import '../services/plex_api_cache.dart';
@@ -20,11 +21,12 @@ import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_video_playback_data.dart';
 import '../utils/content_utils.dart';
+import '../utils/plex_cache_parser.dart';
 import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../models/companion_remote/remote_command_type.dart';
+import '../models/companion_remote/remote_command.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
@@ -138,8 +140,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
+  bool _isApplyingTrackSelection = false;
   bool _isHandlingBack = false;
-  bool _hasThumbnails = false;
+  BifThumbnailService? _bifService;
 
   // Live TV channel navigation
   int _liveChannelIndex = -1;
@@ -170,6 +173,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // Screen-level focus node: persists across loading/initialized phases so
   // key events never escape the video player route.
   late final FocusNode _screenFocusNode;
+  bool _reclaimingFocus = false;
+
+  // Cached setting: when false on Windows/Linux, ESC should not exit the player
+  bool _videoPlayerNavigationEnabled = false;
 
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
@@ -195,14 +202,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return context.getClientForServer(widget.metadata.serverId!);
   }
 
-  String? _buildThumbnailUrl(BuildContext context, Duration time) {
-    final partId = _currentMediaInfo?.partId;
-    if (partId == null || widget.isOffline) return null;
-    final client = _getClientForMetadata(context);
-    return '${client.config.baseUrl}/library/parts/$partId/indexes/sd/${time.inMilliseconds}'.withPlexToken(
-      client.config.token,
-    );
-  }
+  Uint8List? _getThumbnailData(Duration time) => _bifService?.getThumbnail(time);
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false); // Track if first video frame has rendered
@@ -393,6 +393,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       // Load buffer size from settings
       final settingsService = await SettingsService.getInstance();
+      _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
       final bufferSizeMB = settingsService.getBufferSize();
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
@@ -422,11 +423,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
       );
       await player!.setProperty('sub-ass-override', 'no');
+      await player!.setProperty('sub-ass-video-aspect-override', '1');
       await player!.setProperty('sub-pos', settingsService.getSubtitlePosition().toString());
 
       // Platform-specific settings
       if (Platform.isIOS) {
         await player!.setProperty('audio-exclusive', 'yes');
+      }
+
+      // Audio passthrough (desktop only - sends bitstream to receiver)
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        if (settingsService.getAudioPassthrough()) {
+          await player!.setAudioPassthrough(true);
+        }
       }
 
       // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
@@ -545,6 +554,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Listen to position for completion detection (fallback for unreliable MPV events)
       _positionSubscription = player!.streams.position.listen((position) {
+        // Fallback for cases where playbackRestart doesn't fire (observed on some
+        // offline Android playback flows). Prevents a permanent loading spinner.
+        if (!_hasFirstFrame.value && position.inMilliseconds > 0) {
+          _hasFirstFrame.value = true;
+        }
+
         final duration = player!.state.duration;
         if (duration.inMilliseconds > 0 &&
             position.inMilliseconds >= duration.inMilliseconds - 1000 &&
@@ -1015,17 +1030,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         setState(() {
           _availableVersions = result.availableVersions.cast();
           _currentMediaInfo = result.mediaInfo;
-          _hasThumbnails = false;
+          _bifService?.dispose();
+          _bifService = null;
         });
 
-        // Check whether any thumbnails exist by requesting the first one
+        // Download and cache BIF thumbnail file
         if (_currentMediaInfo?.partId != null && !widget.isOffline) {
           final partId = _currentMediaInfo!.partId!;
           final client = _getClientForMetadata(context);
-          client.checkThumbnailsAvailable(partId).then((available) {
-            // Guard against media having changed while the probe was in flight
+          final service = BifThumbnailService();
+          service.load(client, partId).then((_) {
+            // Guard against media having changed while the download was in flight
             if (mounted && _currentMediaInfo?.partId == partId) {
-              setState(() => _hasThumbnails = available);
+              setState(() => _bifService = service);
+            } else {
+              service.dispose();
             }
           });
         }
@@ -1083,10 +1102,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     } on PlaybackException catch (e) {
       if (mounted) {
+        _hasFirstFrame.value = true; // Hide spinner on error
         showErrorSnackBar(context, e.message);
       }
     } catch (e) {
       if (mounted) {
+        _hasFirstFrame.value = true; // Hide spinner on error
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
@@ -1131,10 +1152,29 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     appLogger.d('Starting offline playback: $videoPath');
 
+    // Load cached media info so track selection (audio language) works offline
+    PlexMediaInfo? mediaInfo;
+    try {
+      final serverId = widget.metadata.serverId;
+      if (serverId != null) {
+        final cached = await PlexApiCache.instance.get(serverId, '/library/metadata/${widget.metadata.ratingKey}');
+        final metadataJson = PlexCacheParser.extractFirstMetadata(cached);
+        if (metadataJson != null) {
+          mediaInfo = PlexMediaInfo.fromMetadataJson(metadataJson);
+        }
+        appLogger.d(
+          'Offline media info: cached=${cached != null}, hasMedia=${metadataJson?['Media'] != null}, '
+          'audioTracks=${mediaInfo?.audioTracks.length ?? 0}, subtitleTracks=${mediaInfo?.subtitleTracks.length ?? 0}',
+        );
+      }
+    } catch (e) {
+      appLogger.d('Could not load cached media info for offline playback', error: e);
+    }
+
     return PlaybackInitializationResult(
       availableVersions: [],
       videoUrl: videoPath.contains('://') ? videoPath : 'file://$videoPath',
-      mediaInfo: null,
+      mediaInfo: mediaInfo,
       externalSubtitles: const [],
       isOffline: true,
     );
@@ -1593,6 +1633,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _videoPIPManager?.onBeforeEnterPip = null;
     _videoFilterManager?.dispose();
 
+    // Release cached BIF thumbnail data
+    _bifService?.dispose();
+
     // Mark sleep timer for restart if truly exiting (not episode transition)
     if (!_isReplacingWithVideo) {
       SleepTimerService().markNeedsRestart();
@@ -1681,8 +1724,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// descendant has focus, so internal movement between child controls
   /// does NOT trigger this.
   void _onScreenFocusChanged() {
+    if (_reclaimingFocus) return;
     if (!_screenFocusNode.hasFocus && mounted && !_isExiting.value) {
+      _reclaimingFocus = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        _reclaimingFocus = false;
         if (mounted && !_isExiting.value && !_screenFocusNode.hasFocus) {
           _screenFocusNode.requestFocus();
         }
@@ -1694,6 +1740,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Toggle wakelock based on playback state
     if (isPlaying) {
       WakelockPlus.enable();
+      // Force a texture refresh on resume to unstick stale frames
+      // (Linux/macOS texture registrars can miss frame-available
+      // notifications after extended pause periods)
+      player?.updateFrame();
     } else {
       WakelockPlus.disable();
     }
@@ -2041,26 +2091,63 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
+  /// Wait briefly for profile settings to load in offline mode.
+  /// This prevents default-track fallback when playback starts before
+  /// UserProfileProvider finishes initialization.
+  Future<void> _waitForProfileSettingsIfNeeded() async {
+    if (!widget.isOffline || !mounted) return;
+
+    final provider = context.read<UserProfileProvider>();
+    if (provider.profileSettings != null) return;
+
+    final completer = Completer<void>();
+    late VoidCallback listener;
+    listener = () {
+      if (provider.profileSettings != null && !completer.isCompleted) {
+        completer.complete();
+      }
+    };
+
+    provider.addListener(listener);
+    try {
+      await Future.any<void>([completer.future, Future.delayed(const Duration(seconds: 2))]);
+    } finally {
+      provider.removeListener(listener);
+    }
+  }
+
   /// Apply track selection using the TrackSelectionService
   Future<void> _applyTrackSelection() async {
-    if (!mounted || player == null) return;
+    if (!mounted || player == null || _isApplyingTrackSelection) return;
 
-    final profileSettings = context.read<UserProfileProvider>().profileSettings;
-    final settingsService = await SettingsService.getInstance();
-    final trackService = TrackSelectionService(
-      player: player!,
-      profileSettings: profileSettings,
-      metadata: widget.metadata,
-      plexMediaInfo: _currentMediaInfo,
-    );
+    _isApplyingTrackSelection = true;
+    try {
+      await _waitForProfileSettingsIfNeeded();
+      if (!mounted || player == null) return;
 
-    await trackService.selectAndApplyTracks(
-      preferredAudioTrack: widget.preferredAudioTrack,
-      preferredSubtitleTrack: widget.preferredSubtitleTrack,
-      defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
-      onAudioTrackChanged: _onAudioTrackChanged,
-      onSubtitleTrackChanged: _onSubtitleTrackChanged,
-    );
+      final profileSettings = context.read<UserProfileProvider>().profileSettings;
+      final settingsService = await SettingsService.getInstance();
+      if (!mounted || player == null) return;
+
+      final trackService = TrackSelectionService(
+        player: player!,
+        profileSettings: profileSettings,
+        metadata: widget.metadata,
+        plexMediaInfo: _currentMediaInfo,
+      );
+
+      await trackService.selectAndApplyTracks(
+        preferredAudioTrack: widget.preferredAudioTrack,
+        preferredSubtitleTrack: widget.preferredSubtitleTrack,
+        defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
+        onAudioTrackChanged: _onAudioTrackChanged,
+        onSubtitleTrackChanged: _onSubtitleTrackChanged,
+      );
+    } catch (e) {
+      appLogger.w('Failed to apply track selection', error: e);
+    } finally {
+      _isApplyingTrackSelection = false;
+    }
   }
 
   /// Rating key used for series/movie level language preferences.
@@ -2327,7 +2414,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       canRequestFocus: isCurrentRoute,
       onKeyEvent: (node, event) {
         if (!isCurrentRoute) return KeyEventResult.ignored;
-        // Back keys always pass through — handled by PopScope (system back
+        // On Windows/Linux with navigation off, consume ESC so Flutter's
+        // DismissAction doesn't trigger a route pop. The video controls'
+        // global key handler manages fullscreen/controls toggle instead.
+        if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
+          return KeyEventResult.handled;
+        }
+        // Back keys pass through — handled by PopScope (system back
         // gesture) or overlay sheet's onKeyEvent.
         if (event.logicalKey.isBackKey) return KeyEventResult.ignored;
         // Self-heal: if this node itself has primary focus (no descendant
@@ -2484,9 +2577,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         shaderService: _shaderService,
                         // ignore: no-empty-block - setState triggers rebuild to reflect shader change
                         onShaderChanged: () => setState(() {}),
-                        thumbnailUrlBuilder: _hasThumbnails && _currentMediaInfo?.partId != null
-                            ? (Duration time) => _buildThumbnailUrl(context, time)!
-                            : null,
+                        thumbnailDataBuilder: _bifService?.isAvailable == true ? _getThumbnailData : null,
                         isLive: widget.isLive,
                         liveChannelName: _liveChannelName,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,

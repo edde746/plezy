@@ -52,7 +52,12 @@
     "exitConfirmMessage": "Möchtest du die App wirklich beenden?",
     "dontAskAgain": "Nicht erneut fragen",
     "exit": "Beenden",
-    "viewAll": "Alle anzeigen"
+    "viewAll": "Alle anzeigen",
+    "checkingNetwork": "Netzwerk wird geprüft...",
+    "refreshingServers": "Server werden aktualisiert...",
+    "loadingServers": "Server werden geladen...",
+    "connectingToServers": "Verbindung zu Servern...",
+    "startingOfflineMode": "Offlinemodus wird gestartet..."
   },
   "screens": {
     "licenses": "Lizenzen",
@@ -117,6 +122,8 @@
     "alwaysKeepSidebarOpenDescription": "Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an",
     "showUnwatchedCount": "Anzahl nicht gesehener Folgen anzeigen",
     "showUnwatchedCountDescription": "Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an",
+    "hideSpoilers": "Spoiler für nicht gesehene Episoden verbergen",
+    "hideSpoilersDescription": "Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden",
     "playerBackend": "Player-Backend",
     "exoPlayer": "ExoPlayer (Empfohlen)",
     "exoPlayerDescription": "Android-nativer Player mit besserer Hardware-Unterstützung",
@@ -266,8 +273,9 @@
     "goToSeason": "Zur Staffel",
     "shufflePlay": "Zufallswiedergabe",
     "fileInfo": "Dateiinfo",
-    "confirmDelete": "Sind Sie sicher, dass Sie dieses Element aus Ihrem Dateisystem löschen möchten?",
-    "deleteMultipleWarning": "Mehrere Elemente können gelöscht werden.",
+    "deleteFromServer": "Vom Server löschen",
+    "confirmDelete": "Dieses Medium und seine Dateien werden dauerhaft von Ihrem Server gelöscht. Dies kann nicht rückgängig gemacht werden.",
+    "deleteMultipleWarning": "Dies umfasst alle Episoden und deren Dateien.",
     "mediaDeletedSuccessfully": "Medienelement erfolgreich gelöscht",
     "mediaFailedToDelete": "Löschen des Medienelements fehlgeschlagen",
     "rate": "Bewerten"
@@ -732,11 +740,8 @@
       "minimize": "Minimieren"
     },
     "pairing": {
-      "recent": "Zuletzt",
       "scan": "Scannen",
       "manual": "Manuell",
-      "recentConnections": "Letzte Verbindungen",
-      "quickReconnect": "Schnell mit zuvor gekoppelten Geräten verbinden",
       "pairWithDesktop": "Mit Desktop koppeln",
       "enterSessionDetails": "Gib die Sitzungsdetails ein, die auf deinem Desktop-Gerät angezeigt werden",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +755,7 @@
       "cameraPermissionRequired": "Kameraberechtigung wird zum Scannen von QR-Codes benötigt.\nBitte erteile den Kamerazugriff in den Geräteeinstellungen.",
       "cameraError": "Kamera konnte nicht gestartet werden: ${error}",
       "scanInstruction": "Richte deine Kamera auf den QR-Code auf deinem Desktop",
-      "noRecentConnections": "Keine letzten Verbindungen",
-      "connectUsingManual": "Verbinde dich über die manuelle Eingabe, um loszulegen",
       "invalidQrCode": "Ungültiges QR-Code-Format",
-      "removeRecentConnection": "Letzte Verbindung entfernen",
-      "removeConfirm": "\"${name}\" aus den letzten Verbindungen entfernen?",
       "validationHostRequired": "Bitte Host-Adresse eingeben",
       "validationHostFormat": "Format muss IP:Port sein (z.B. 192.168.1.100:48632)",
       "validationSessionIdRequired": "Bitte Sitzungs-ID eingeben",
@@ -763,8 +764,7 @@
       "validationPinLength": "PIN muss 6 Ziffern haben",
       "connectionTimedOut": "Zeitüberschreitung. Bitte Sitzungs-ID und PIN überprüfen.",
       "sessionNotFound": "Sitzung nicht gefunden. Bitte Zugangsdaten überprüfen.",
-      "failedToConnect": "Verbindung fehlgeschlagen: ${error}",
-      "failedToLoadRecent": "Letzte Sitzungen konnten nicht geladen werden: ${error}"
+      "failedToConnect": "Verbindung fehlgeschlagen: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Möchtest du die Verbindung zur Fernsteuerungssitzung trennen?",
@@ -806,7 +806,8 @@
     "subtitleSync": "Untertitel-Synchronisation",
     "hdr": "HDR",
     "audioOutput": "Audioausgabe",
-    "performanceOverlay": "Leistungsanzeige"
+    "performanceOverlay": "Leistungsanzeige",
+    "audioPassthrough": "Audio-Durchleitung"
   },
   "externalPlayer": {
     "title": "Externer Player",

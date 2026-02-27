@@ -52,7 +52,12 @@
     "exitConfirmMessage": "Är du säker på att du vill avsluta?",
     "dontAskAgain": "Fråga inte igen",
     "exit": "Avsluta",
-    "viewAll": "Visa alla"
+    "viewAll": "Visa alla",
+    "checkingNetwork": "Kontrollerar nätverk...",
+    "refreshingServers": "Uppdaterar servrar...",
+    "loadingServers": "Laddar servrar...",
+    "connectingToServers": "Ansluter till servrar...",
+    "startingOfflineMode": "Startar offlineläge..."
   },
   "screens": {
     "licenses": "Licenser",
@@ -117,6 +122,8 @@
     "alwaysKeepSidebarOpenDescription": "Sidofältet förblir expanderat och innehållsytan anpassas",
     "showUnwatchedCount": "Visa antal osedda",
     "showUnwatchedCountDescription": "Visa antal osedda avsnitt för serier och säsonger",
+    "hideSpoilers": "Dölj spoilers för osedda avsnitt",
+    "hideSpoilersDescription": "Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu",
     "playerBackend": "Spelarmotor",
     "exoPlayer": "ExoPlayer (Rekommenderad)",
     "exoPlayerDescription": "Android-nativ spelare med bättre hårdvarustöd",
@@ -266,8 +273,9 @@
     "goToSeason": "Gå till säsong",
     "shufflePlay": "Blanda uppspelning",
     "fileInfo": "Filinformation",
-    "confirmDelete": "Är du säker på att du vill ta bort detta objekt från ditt filsystem?",
-    "deleteMultipleWarning": "Flera objekt kan komma att tas bort.",
+    "deleteFromServer": "Ta bort från servern",
+    "confirmDelete": "Detta kommer permanent ta bort detta media och dess filer från din server. Detta kan inte ångras.",
+    "deleteMultipleWarning": "Detta inkluderar alla avsnitt och deras filer.",
     "mediaDeletedSuccessfully": "Mediaobjekt borttaget",
     "mediaFailedToDelete": "Kunde inte ta bort mediaobjekt",
     "rate": "Betygsätt"
@@ -732,11 +740,8 @@
       "minimize": "Minimera"
     },
     "pairing": {
-      "recent": "Senaste",
       "scan": "Skanna",
       "manual": "Manuell",
-      "recentConnections": "Senaste anslutningar",
-      "quickReconnect": "Återanslut snabbt till tidigare parkopplade enheter",
       "pairWithDesktop": "Parkoppla med dator",
       "enterSessionDetails": "Ange sessionsuppgifterna som visas på din datorenhet",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +755,7 @@
       "cameraPermissionRequired": "Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.",
       "cameraError": "Kunde inte starta kameran: ${error}",
       "scanInstruction": "Rikta kameran mot QR-koden som visas på din dator",
-      "noRecentConnections": "Inga senaste anslutningar",
-      "connectUsingManual": "Anslut till en enhet via Manuell inmatning för att komma igång",
       "invalidQrCode": "Ogiltigt QR-kodformat",
-      "removeRecentConnection": "Ta bort senaste anslutning",
-      "removeConfirm": "Ta bort \"${name}\" från senaste anslutningar?",
       "validationHostRequired": "Ange en värdadress",
       "validationHostFormat": "Format måste vara IP:port (t.ex. 192.168.1.100:48632)",
       "validationSessionIdRequired": "Ange ett sessions-ID",
@@ -763,8 +764,7 @@
       "validationPinLength": "PIN måste vara 6 siffror",
       "connectionTimedOut": "Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.",
       "sessionNotFound": "Kunde inte hitta sessionen. Kontrollera dina uppgifter.",
-      "failedToConnect": "Kunde inte ansluta: ${error}",
-      "failedToLoadRecent": "Kunde inte ladda senaste sessioner: ${error}"
+      "failedToConnect": "Kunde inte ansluta: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Vill du koppla från fjärrsessionen?",
@@ -806,7 +806,8 @@
     "subtitleSync": "Undertextsynkronisering",
     "hdr": "HDR",
     "audioOutput": "Ljudutgång",
-    "performanceOverlay": "Prestandaöverlägg"
+    "performanceOverlay": "Prestandaöverlägg",
+    "audioPassthrough": "Ljudgenomkoppling"
   },
   "externalPlayer": {
     "title": "Extern spelare",

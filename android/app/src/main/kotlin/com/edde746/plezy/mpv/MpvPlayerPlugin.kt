@@ -125,14 +125,14 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 playerCore = MpvPlayerCore(currentActivity).apply {
                     delegate = this@MpvPlayerPlugin
                 }
-                val success = playerCore?.initialize() ?: false
 
-                // Start hidden - now safe because setVisible operates on the container,
-                // not the SurfaceView directly (matching ExoPlayer's approach)
-                playerCore?.setVisible(false)
-
-                Log.d(TAG, "Initialized: $success")
-                result.success(success)
+                playerCore?.initialize { success ->
+                    // Start hidden - now safe because setVisible operates on the container,
+                    // not the SurfaceView directly (matching ExoPlayer's approach)
+                    playerCore?.setVisible(false)
+                    Log.d(TAG, "Initialized: $success")
+                    result.success(success)
+                } ?: result.success(false)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to initialize: ${e.message}", e)
                 result.error("INIT_FAILED", e.message, null)

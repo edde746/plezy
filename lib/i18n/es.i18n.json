@@ -52,7 +52,12 @@
     "exitConfirmMessage": "¿Estás seguro de que quieres salir?",
     "dontAskAgain": "No volver a preguntar",
     "exit": "Salir",
-    "viewAll": "Ver todo"
+    "viewAll": "Ver todo",
+    "checkingNetwork": "Comprobando red...",
+    "refreshingServers": "Actualizando servidores...",
+    "loadingServers": "Cargando servidores...",
+    "connectingToServers": "Conectando a servidores...",
+    "startingOfflineMode": "Iniciando modo sin conexión..."
   },
   "screens": {
     "licenses": "Licencias",
@@ -117,6 +122,8 @@
     "alwaysKeepSidebarOpenDescription": "La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse",
     "showUnwatchedCount": "Mostrar conteo de no vistos",
     "showUnwatchedCountDescription": "Mostrar el conteo de episodios no vistos en series y temporadas",
+    "hideSpoilers": "Ocultar spoilers de episodios no vistos",
+    "hideSpoilersDescription": "Difuminar miniaturas y ocultar descripciones de episodios que aún no has visto",
     "playerBackend": "Reproductor",
     "exoPlayer": "ExoPlayer (Recomendado)",
     "exoPlayerDescription": "Reproductor nativo de Android con mejor soporte de hardware",
@@ -266,8 +273,9 @@
     "goToSeason": "Ir a la temporada",
     "shufflePlay": "Reproducción Aleatoria",
     "fileInfo": "Información del Archivo",
-    "confirmDelete": "¿Estás seguro de que quieres eliminar este elemento de tu sistema de archivos?",
-    "deleteMultipleWarning": "Es posible que se eliminen varios elementos.",
+    "deleteFromServer": "Eliminar del servidor",
+    "confirmDelete": "Esto eliminará permanentemente este contenido y sus archivos de tu servidor. Esta acción no se puede deshacer.",
+    "deleteMultipleWarning": "Esto incluye todos los episodios y sus archivos.",
     "mediaDeletedSuccessfully": "Elemento multimedia eliminado con éxito",
     "mediaFailedToDelete": "Error al eliminar el elemento multimedia",
     "rate": "Calificar"
@@ -732,11 +740,8 @@
       "minimize": "Minimizar"
     },
     "pairing": {
-      "recent": "Recientes",
       "scan": "Escanear",
       "manual": "Manual",
-      "recentConnections": "Conexiones recientes",
-      "quickReconnect": "Reconectar rápidamente con dispositivos emparejados anteriormente",
       "pairWithDesktop": "Emparejar con escritorio",
       "enterSessionDetails": "Introduce los datos de la sesión que aparecen en tu dispositivo de escritorio",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +755,7 @@
       "cameraPermissionRequired": "Se necesita permiso de cámara para escanear códigos QR.\nPor favor, concede acceso a la cámara en los ajustes de tu dispositivo.",
       "cameraError": "No se pudo iniciar la cámara: ${error}",
       "scanInstruction": "Apunta tu cámara al código QR que aparece en tu escritorio",
-      "noRecentConnections": "No hay conexiones recientes",
-      "connectUsingManual": "Conéctate a un dispositivo usando la entrada manual para empezar",
       "invalidQrCode": "Formato de código QR no válido",
-      "removeRecentConnection": "Eliminar conexión reciente",
-      "removeConfirm": "¿Eliminar \"${name}\" de las conexiones recientes?",
       "validationHostRequired": "Por favor, introduce la dirección del host",
       "validationHostFormat": "El formato debe ser IP:puerto (ej., 192.168.1.100:48632)",
       "validationSessionIdRequired": "Por favor, introduce un ID de sesión",
@@ -763,8 +764,7 @@
       "validationPinLength": "El PIN debe tener 6 dígitos",
       "connectionTimedOut": "Tiempo de conexión agotado. Verifica el ID de sesión y el PIN.",
       "sessionNotFound": "No se encontró la sesión. Verifica tus credenciales.",
-      "failedToConnect": "Error al conectar: ${error}",
-      "failedToLoadRecent": "Error al cargar sesiones recientes: ${error}"
+      "failedToConnect": "Error al conectar: ${error}"
     },
     "remote": {
       "disconnectConfirm": "¿Quieres desconectarte de la sesión remota?",
@@ -806,7 +806,8 @@
     "subtitleSync": "Sincronización de subtítulos",
     "hdr": "HDR",
     "audioOutput": "Salida de audio",
-    "performanceOverlay": "Indicador de rendimiento"
+    "performanceOverlay": "Indicador de rendimiento",
+    "audioPassthrough": "Audio Passthrough"
   },
   "externalPlayer": {
     "title": "Reproductor externo",

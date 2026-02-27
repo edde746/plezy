@@ -52,7 +52,12 @@
     "exitConfirmMessage": "Êtes-vous sûr de vouloir quitter ?",
     "dontAskAgain": "Ne plus demander",
     "exit": "Quitter",
-    "viewAll": "Tout afficher"
+    "viewAll": "Tout afficher",
+    "checkingNetwork": "Vérification du réseau...",
+    "refreshingServers": "Actualisation des serveurs...",
+    "loadingServers": "Chargement des serveurs...",
+    "connectingToServers": "Connexion aux serveurs...",
+    "startingOfflineMode": "Démarrage en mode hors-ligne..."
   },
   "screens": {
     "licenses": "Licenses",
@@ -117,6 +122,8 @@
     "alwaysKeepSidebarOpenDescription": "La barre latérale reste étendue et la zone de contenu s'adapte",
     "showUnwatchedCount": "Afficher le nombre non visionné",
     "showUnwatchedCountDescription": "Afficher le nombre d'épisodes non visionnés pour les séries et saisons",
+    "hideSpoilers": "Masquer les spoilers des épisodes non vus",
+    "hideSpoilersDescription": "Flouter les miniatures et masquer les descriptions des épisodes que vous n'avez pas encore regardés",
     "playerBackend": "Moteur de lecture",
     "exoPlayer": "ExoPlayer (Recommandé)",
     "exoPlayerDescription": "Lecteur natif Android avec meilleur support matériel",
@@ -266,8 +273,9 @@
     "goToSeason": "Aller à la saison",
     "shufflePlay": "Lecture aléatoire",
     "fileInfo": "Informations sur le fichier",
-    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet élément de votre système de fichiers?",
-    "deleteMultipleWarning": "Plusieurs éléments peuvent être supprimés.",
+    "deleteFromServer": "Supprimer du serveur",
+    "confirmDelete": "Cela supprimera définitivement ce média et ses fichiers de votre serveur. Cette action est irréversible.",
+    "deleteMultipleWarning": "Cela inclut tous les épisodes et leurs fichiers.",
     "mediaDeletedSuccessfully": "Élément média supprimé avec succès",
     "mediaFailedToDelete": "Échec de la suppression de l'élément média",
     "rate": "Noter"
@@ -732,11 +740,8 @@
       "minimize": "Réduire"
     },
     "pairing": {
-      "recent": "Récents",
       "scan": "Scanner",
       "manual": "Manuel",
-      "recentConnections": "Connexions récentes",
-      "quickReconnect": "Reconnexion rapide aux appareils précédemment jumelés",
       "pairWithDesktop": "Jumeler avec un bureau",
       "enterSessionDetails": "Saisissez les détails de la session affichés sur votre appareil de bureau",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +755,7 @@
       "cameraPermissionRequired": "L'autorisation de la caméra est requise pour scanner les QR codes.\nVeuillez accorder l'accès à la caméra dans les paramètres de votre appareil.",
       "cameraError": "Impossible de démarrer la caméra : ${error}",
       "scanInstruction": "Pointez votre caméra vers le QR code affiché sur votre bureau",
-      "noRecentConnections": "Aucune connexion récente",
-      "connectUsingManual": "Connectez-vous à un appareil via la saisie manuelle pour commencer",
       "invalidQrCode": "Format de QR code invalide",
-      "removeRecentConnection": "Supprimer la connexion récente",
-      "removeConfirm": "Supprimer \"${name}\" des connexions récentes ?",
       "validationHostRequired": "Veuillez saisir l'adresse de l'hôte",
       "validationHostFormat": "Le format doit être IP:port (ex : 192.168.1.100:48632)",
       "validationSessionIdRequired": "Veuillez saisir un ID de session",
@@ -763,8 +764,7 @@
       "validationPinLength": "Le PIN doit contenir 6 chiffres",
       "connectionTimedOut": "Délai de connexion expiré. Veuillez vérifier l'ID de session et le PIN.",
       "sessionNotFound": "Session introuvable. Veuillez vérifier vos identifiants.",
-      "failedToConnect": "Échec de la connexion : ${error}",
-      "failedToLoadRecent": "Échec du chargement des sessions récentes : ${error}"
+      "failedToConnect": "Échec de la connexion : ${error}"
     },
     "remote": {
       "disconnectConfirm": "Voulez-vous vous déconnecter de la session distante ?",
@@ -806,7 +806,8 @@
     "subtitleSync": "Synchronisation des sous-titres",
     "hdr": "HDR",
     "audioOutput": "Sortie audio",
-    "performanceOverlay": "Superposition de performance"
+    "performanceOverlay": "Superposition de performance",
+    "audioPassthrough": "Audio Pass-Through"
   },
   "externalPlayer": {
     "title": "Lecteur externe",

@@ -52,7 +52,12 @@
     "exitConfirmMessage": "确定要退出吗？",
     "dontAskAgain": "不再询问",
     "exit": "退出",
-    "viewAll": "查看全部"
+    "viewAll": "查看全部",
+    "checkingNetwork": "正在检查网络...",
+    "refreshingServers": "正在刷新服务器...",
+    "loadingServers": "正在加载服务器...",
+    "connectingToServers": "正在连接服务器...",
+    "startingOfflineMode": "正在启动离线模式..."
   },
   "screens": {
     "licenses": "许可证",
@@ -117,6 +122,8 @@
     "alwaysKeepSidebarOpenDescription": "侧边栏保持展开状态，内容区域自动调整",
     "showUnwatchedCount": "显示未观看数量",
     "showUnwatchedCountDescription": "在剧集和季上显示未观看的集数",
+    "hideSpoilers": "隐藏未看剧集的剧透内容",
+    "hideSpoilersDescription": "模糊未观看剧集的缩略图并隐藏其描述",
     "playerBackend": "播放器引擎",
     "exoPlayer": "ExoPlayer（推荐）",
     "exoPlayerDescription": "Android 原生播放器，硬件支持更好",
@@ -266,8 +273,9 @@
     "goToSeason": "转到季",
     "shufflePlay": "随机播放",
     "fileInfo": "文件信息",
-    "confirmDelete": "确定要从文件系统中删除此项吗？",
-    "deleteMultipleWarning": "可能会删除多个项目。",
+    "deleteFromServer": "从服务器删除",
+    "confirmDelete": "这将永久删除此媒体及其文件。此操作无法撤销。",
+    "deleteMultipleWarning": "这包括所有剧集及其文件。",
     "mediaDeletedSuccessfully": "媒体项已成功删除",
     "mediaFailedToDelete": "删除媒体项失败",
     "rate": "评分"
@@ -732,11 +740,8 @@
       "minimize": "最小化"
     },
     "pairing": {
-      "recent": "最近",
       "scan": "扫描",
       "manual": "手动",
-      "recentConnections": "最近连接",
-      "quickReconnect": "快速重新连接之前配对的设备",
       "pairWithDesktop": "与桌面配对",
       "enterSessionDetails": "输入桌面设备上显示的会话信息",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +755,7 @@
       "cameraPermissionRequired": "扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。",
       "cameraError": "无法启动相机：${error}",
       "scanInstruction": "将相机对准桌面上显示的 QR 码",
-      "noRecentConnections": "没有最近的连接",
-      "connectUsingManual": "使用手动输入连接设备以开始使用",
       "invalidQrCode": "无效的 QR 码格式",
-      "removeRecentConnection": "删除最近连接",
-      "removeConfirm": "确定要从最近连接中删除 \"${name}\" 吗？",
       "validationHostRequired": "请输入主机地址",
       "validationHostFormat": "格式必须为 IP:端口（例如 192.168.1.100:48632）",
       "validationSessionIdRequired": "请输入会话 ID",
@@ -763,8 +764,7 @@
       "validationPinLength": "PIN 必须为6位数字",
       "connectionTimedOut": "连接超时。请检查会话 ID 和 PIN。",
       "sessionNotFound": "找不到会话。请检查您的凭据。",
-      "failedToConnect": "连接失败：${error}",
-      "failedToLoadRecent": "加载最近会话失败：${error}"
+      "failedToConnect": "连接失败：${error}"
     },
     "remote": {
       "disconnectConfirm": "是否要断开远程会话的连接？",
@@ -806,7 +806,8 @@
     "subtitleSync": "字幕同步",
     "hdr": "HDR",
     "audioOutput": "音频输出",
-    "performanceOverlay": "性能监控"
+    "performanceOverlay": "性能监控",
+    "audioPassthrough": "音频直通"
   },
   "externalPlayer": {
     "title": "外部播放器",

@@ -151,6 +151,11 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get dontAskAgain => 'Niet meer vragen';
 	@override String get exit => 'Afsluiten';
 	@override String get viewAll => 'Alles weergeven';
+	@override String get checkingNetwork => 'Netwerk controleren...';
+	@override String get refreshingServers => 'Servers vernieuwen...';
+	@override String get loadingServers => 'Servers laden...';
+	@override String get connectingToServers => 'Verbinden met servers...';
+	@override String get startingOfflineMode => 'Offlinemodus starten...';
 }
 
 // Path: screens
@@ -236,6 +241,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan';
 	@override String get showUnwatchedCount => 'Aantal ongekeken tonen';
 	@override String get showUnwatchedCountDescription => 'Toon aantal ongekeken afleveringen bij series en seizoenen';
+	@override String get hideSpoilers => 'Spoilers voor ongekeken afleveringen verbergen';
+	@override String get hideSpoilersDescription => 'Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien';
 	@override String get playerBackend => 'Speler backend';
 	@override String get exoPlayer => 'ExoPlayer (Aanbevolen)';
 	@override String get exoPlayerDescription => 'Android-native speler met betere hardware-ondersteuning';
@@ -400,8 +407,9 @@ class _TranslationsMediaMenuNl implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Ga naar seizoen';
 	@override String get shufflePlay => 'Willekeurig afspelen';
 	@override String get fileInfo => 'Bestand info';
-	@override String get confirmDelete => 'Weet je zeker dat je dit item van je bestandssysteem wilt verwijderen?';
-	@override String get deleteMultipleWarning => 'Meerdere items kunnen worden verwijderd.';
+	@override String get deleteFromServer => 'Verwijderen van server';
+	@override String get confirmDelete => 'Dit zal deze media en de bijbehorende bestanden permanent van je server verwijderen. Dit kan niet ongedaan worden gemaakt.';
+	@override String get deleteMultipleWarning => 'Dit omvat alle afleveringen en hun bestanden.';
 	@override String get mediaDeletedSuccessfully => 'Media-item succesvol verwijderd';
 	@override String get mediaFailedToDelete => 'Verwijderen van media-item mislukt';
 	@override String get rate => 'Beoordelen';
@@ -1018,6 +1026,7 @@ class _TranslationsVideoSettingsNl implements TranslationsVideoSettingsEn {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Audio-uitvoer';
 	@override String get performanceOverlay => 'Prestatie-overlay';
+	@override String get audioPassthrough => 'Audio-doorvoer';
 }
 
 // Path: externalPlayer
@@ -1213,11 +1222,8 @@ class _TranslationsCompanionRemotePairingNl implements TranslationsCompanionRemo
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => 'Recent';
 	@override String get scan => 'Scannen';
 	@override String get manual => 'Handmatig';
-	@override String get recentConnections => 'Recente verbindingen';
-	@override String get quickReconnect => 'Snel opnieuw verbinden met eerder gekoppelde apparaten';
 	@override String get pairWithDesktop => 'Koppelen met desktop';
 	@override String get enterSessionDetails => 'Voer de sessiegegevens in die op je desktop-apparaat worden getoond';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1231,11 +1237,7 @@ class _TranslationsCompanionRemotePairingNl implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => 'Cameratoestemming is vereist om QR-codes te scannen.\nGeef cameratoegang in je apparaatinstellingen.';
 	@override String cameraError({required Object error}) => 'Kan camera niet starten: ${error}';
 	@override String get scanInstruction => 'Richt je camera op de QR-code die op je desktop wordt getoond';
-	@override String get noRecentConnections => 'Geen recente verbindingen';
-	@override String get connectUsingManual => 'Verbind met een apparaat via Handmatige invoer om te beginnen';
 	@override String get invalidQrCode => 'Ongeldig QR-codeformaat';
-	@override String get removeRecentConnection => 'Recente verbinding verwijderen';
-	@override String removeConfirm({required Object name}) => '"${name}" verwijderen uit recente verbindingen?';
 	@override String get validationHostRequired => 'Voer een hostadres in';
 	@override String get validationHostFormat => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)';
 	@override String get validationSessionIdRequired => 'Voer een sessie-ID in';
@@ -1245,7 +1247,6 @@ class _TranslationsCompanionRemotePairingNl implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => 'Verbinding verlopen. Controleer de sessie-ID en PIN.';
 	@override String get sessionNotFound => 'Kan de sessie niet vinden. Controleer je gegevens.';
 	@override String failedToConnect({required Object error}) => 'Verbinden mislukt: ${error}';
-	@override String failedToLoadRecent({required Object error}) => 'Kan recente sessies niet laden: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1343,6 +1344,11 @@ extension on TranslationsNl {
 			'common.dontAskAgain' => 'Niet meer vragen',
 			'common.exit' => 'Afsluiten',
 			'common.viewAll' => 'Alles weergeven',
+			'common.checkingNetwork' => 'Netwerk controleren...',
+			'common.refreshingServers' => 'Servers vernieuwen...',
+			'common.loadingServers' => 'Servers laden...',
+			'common.connectingToServers' => 'Verbinden met servers...',
+			'common.startingOfflineMode' => 'Offlinemodus starten...',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
@@ -1401,6 +1407,8 @@ extension on TranslationsNl {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan',
 			'settings.showUnwatchedCount' => 'Aantal ongekeken tonen',
 			'settings.showUnwatchedCountDescription' => 'Toon aantal ongekeken afleveringen bij series en seizoenen',
+			'settings.hideSpoilers' => 'Spoilers voor ongekeken afleveringen verbergen',
+			'settings.hideSpoilersDescription' => 'Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien',
 			'settings.playerBackend' => 'Speler backend',
 			'settings.exoPlayer' => 'ExoPlayer (Aanbevolen)',
 			'settings.exoPlayerDescription' => 'Android-native speler met betere hardware-ondersteuning',
@@ -1538,8 +1546,9 @@ extension on TranslationsNl {
 			'mediaMenu.goToSeason' => 'Ga naar seizoen',
 			'mediaMenu.shufflePlay' => 'Willekeurig afspelen',
 			'mediaMenu.fileInfo' => 'Bestand info',
-			'mediaMenu.confirmDelete' => 'Weet je zeker dat je dit item van je bestandssysteem wilt verwijderen?',
-			'mediaMenu.deleteMultipleWarning' => 'Meerdere items kunnen worden verwijderd.',
+			'mediaMenu.deleteFromServer' => 'Verwijderen van server',
+			'mediaMenu.confirmDelete' => 'Dit zal deze media en de bijbehorende bestanden permanent van je server verwijderen. Dit kan niet ongedaan worden gemaakt.',
+			'mediaMenu.deleteMultipleWarning' => 'Dit omvat alle afleveringen en hun bestanden.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media-item succesvol verwijderd',
 			'mediaMenu.mediaFailedToDelete' => 'Verwijderen van media-item mislukt',
 			'mediaMenu.rate' => 'Beoordelen',
@@ -1949,11 +1958,8 @@ extension on TranslationsNl {
 			'companionRemote.session.copyToClipboard' => 'Kopieer naar klembord',
 			'companionRemote.session.newSession' => 'Nieuwe sessie',
 			'companionRemote.session.minimize' => 'Minimaliseren',
-			'companionRemote.pairing.recent' => 'Recent',
 			'companionRemote.pairing.scan' => 'Scannen',
 			'companionRemote.pairing.manual' => 'Handmatig',
-			'companionRemote.pairing.recentConnections' => 'Recente verbindingen',
-			'companionRemote.pairing.quickReconnect' => 'Snel opnieuw verbinden met eerder gekoppelde apparaten',
 			'companionRemote.pairing.pairWithDesktop' => 'Koppelen met desktop',
 			'companionRemote.pairing.enterSessionDetails' => 'Voer de sessiegegevens in die op je desktop-apparaat worden getoond',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1967,11 +1973,7 @@ extension on TranslationsNl {
 			'companionRemote.pairing.cameraPermissionRequired' => 'Cameratoestemming is vereist om QR-codes te scannen.\nGeef cameratoegang in je apparaatinstellingen.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kan camera niet starten: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Richt je camera op de QR-code die op je desktop wordt getoond',
-			'companionRemote.pairing.noRecentConnections' => 'Geen recente verbindingen',
-			'companionRemote.pairing.connectUsingManual' => 'Verbind met een apparaat via Handmatige invoer om te beginnen',
 			'companionRemote.pairing.invalidQrCode' => 'Ongeldig QR-codeformaat',
-			'companionRemote.pairing.removeRecentConnection' => 'Recente verbinding verwijderen',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '"${name}" verwijderen uit recente verbindingen?',
 			'companionRemote.pairing.validationHostRequired' => 'Voer een hostadres in',
 			'companionRemote.pairing.validationHostFormat' => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Voer een sessie-ID in',
@@ -1981,7 +1983,6 @@ extension on TranslationsNl {
 			'companionRemote.pairing.connectionTimedOut' => 'Verbinding verlopen. Controleer de sessie-ID en PIN.',
 			'companionRemote.pairing.sessionNotFound' => 'Kan de sessie niet vinden. Controleer je gegevens.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Verbinden mislukt: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Kan recente sessies niet laden: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',
 			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Poging ${current} van 5',
@@ -2019,6 +2020,7 @@ extension on TranslationsNl {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audio-uitvoer',
 			'videoSettings.performanceOverlay' => 'Prestatie-overlay',
+			'videoSettings.audioPassthrough' => 'Audio-doorvoer',
 			'externalPlayer.title' => 'Externe speler',
 			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een externe app in plaats van de ingebouwde speler',

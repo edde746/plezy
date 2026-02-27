@@ -533,7 +533,7 @@ class GuideTabState extends State<GuideTab> {
               children: [
                 Row(
                   children: [
-                    SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
+                    const SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
                     Expanded(
                       child: SingleChildScrollView(
                         controller: _headerHorizontalController,

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../models/plex_first_character.dart';
+import '../../models/plex_first_character.dart';
 import 'alpha_jump_helper.dart';
 
 /// Vertical strip of letters for jumping through sorted library items.

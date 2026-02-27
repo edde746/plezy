@@ -70,6 +70,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyUseExoPlayer = 'use_exoplayer';
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const String _keyShowUnwatchedCount = 'show_unwatched_count';
+  static const String _keyHideSpoilers = 'hide_spoilers';
   static const String _keyGlobalShaderPreset = 'global_shader_preset';
   static const String _keyRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const String _keyUseExternalPlayer = 'use_external_player';
@@ -77,6 +78,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyCustomExternalPlayers = 'custom_external_players';
   static const String _keyConfirmExitOnBack = 'confirm_exit_on_back';
   static const String _keyAmbientLighting = 'ambient_lighting';
+  static const String _keyAudioPassthrough = 'audio_passthrough';
 
   SettingsService._();
 
@@ -397,27 +399,27 @@ class SettingsService extends BaseSharedPreferencesService {
   // HotKey Objects (New implementation)
   Map<String, HotKey> getDefaultKeyboardHotkeys() {
     return {
-      'play_pause': HotKey(key: PhysicalKeyboardKey.space),
-      'volume_up': HotKey(key: PhysicalKeyboardKey.arrowUp),
-      'volume_down': HotKey(key: PhysicalKeyboardKey.arrowDown),
-      'seek_forward': HotKey(key: PhysicalKeyboardKey.arrowRight),
-      'seek_backward': HotKey(key: PhysicalKeyboardKey.arrowLeft),
-      'seek_forward_large': HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.shift]),
-      'seek_backward_large': HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.shift]),
-      'fullscreen_toggle': HotKey(key: PhysicalKeyboardKey.keyF),
-      'mute_toggle': HotKey(key: PhysicalKeyboardKey.keyM),
-      'subtitle_toggle': HotKey(key: PhysicalKeyboardKey.keyS),
-      'audio_track_next': HotKey(key: PhysicalKeyboardKey.keyA),
-      'subtitle_track_next': HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
-      'chapter_next': HotKey(key: PhysicalKeyboardKey.keyN),
-      'chapter_previous': HotKey(key: PhysicalKeyboardKey.keyP),
-      'speed_increase': HotKey(key: PhysicalKeyboardKey.equal),
-      'speed_decrease': HotKey(key: PhysicalKeyboardKey.minus),
-      'speed_reset': HotKey(key: PhysicalKeyboardKey.keyR),
-      'sub_seek_next': HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
-      'sub_seek_prev': HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
-      'shader_toggle': HotKey(key: PhysicalKeyboardKey.keyG),
-      'skip_marker': HotKey(key: PhysicalKeyboardKey.enter),
+      'play_pause': const HotKey(key: PhysicalKeyboardKey.space),
+      'volume_up': const HotKey(key: PhysicalKeyboardKey.arrowUp),
+      'volume_down': const HotKey(key: PhysicalKeyboardKey.arrowDown),
+      'seek_forward': const HotKey(key: PhysicalKeyboardKey.arrowRight),
+      'seek_backward': const HotKey(key: PhysicalKeyboardKey.arrowLeft),
+      'seek_forward_large': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.shift]),
+      'seek_backward_large': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.shift]),
+      'fullscreen_toggle': const HotKey(key: PhysicalKeyboardKey.keyF),
+      'mute_toggle': const HotKey(key: PhysicalKeyboardKey.keyM),
+      'subtitle_toggle': const HotKey(key: PhysicalKeyboardKey.keyS),
+      'audio_track_next': const HotKey(key: PhysicalKeyboardKey.keyA),
+      'subtitle_track_next': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
+      'chapter_next': const HotKey(key: PhysicalKeyboardKey.keyN),
+      'chapter_previous': const HotKey(key: PhysicalKeyboardKey.keyP),
+      'speed_increase': const HotKey(key: PhysicalKeyboardKey.equal),
+      'speed_decrease': const HotKey(key: PhysicalKeyboardKey.minus),
+      'speed_reset': const HotKey(key: PhysicalKeyboardKey.keyR),
+      'sub_seek_next': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
+      'sub_seek_prev': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
+      'shader_toggle': const HotKey(key: PhysicalKeyboardKey.keyG),
+      'skip_marker': const HotKey(key: PhysicalKeyboardKey.enter),
     };
   }
 
@@ -1036,6 +1038,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyShowUnwatchedCount) ?? true; // Default: enabled (show counts)
   }
 
+  // Hide Spoilers (blur thumbnails and hide descriptions for unwatched episodes)
+  Future<void> setHideSpoilers(bool enabled) async {
+    await prefs.setBool(_keyHideSpoilers, enabled);
+  }
+
+  bool getHideSpoilers() {
+    return prefs.getBool(_keyHideSpoilers) ?? false; // Default: disabled
+  }
+
   // Global Shader Preset (for MPV video enhancement)
   Future<void> setGlobalShaderPreset(String presetId) async {
     await prefs.setString(_keyGlobalShaderPreset, presetId);
@@ -1129,6 +1140,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyAmbientLighting) ?? false;
   }
 
+  // Audio Passthrough
+  Future<void> setAudioPassthrough(bool enabled) async {
+    await prefs.setBool(_keyAudioPassthrough, enabled);
+  }
+
+  bool getAudioPassthrough() {
+    return prefs.getBool(_keyAudioPassthrough) ?? false;
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1177,6 +1197,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyUseExoPlayer),
       prefs.remove(_keyAlwaysKeepSidebarOpen),
       prefs.remove(_keyShowUnwatchedCount),
+      prefs.remove(_keyHideSpoilers),
       prefs.remove(_keyGlobalShaderPreset),
       prefs.remove(_keyRequireProfileSelectionOnOpen),
       prefs.remove(_keyUseExternalPlayer),
@@ -1184,6 +1205,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyCustomExternalPlayers),
       prefs.remove(_keyConfirmExitOnBack),
       prefs.remove(_keyAmbientLighting),
+      prefs.remove(_keyAudioPassthrough),
       prefs.remove(_keyBufferSizeMigratedToAuto),
     ]);
   }

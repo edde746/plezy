@@ -2,6 +2,7 @@
 <resources>
     <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/splash_background</item>
         <!-- Disable Android's default green focus highlight that appears during d-pad/keyboard navigation -->
         <item name="android:defaultFocusHighlightEnabled">false</item>
         <item name="android:colorControlHighlight">@android:color/transparent</item>
@@ -13,8 +14,30 @@
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowBackground">@color/splash_background</item>
         <!-- Disable Android's default green focus highlight that appears during d-pad/keyboard navigation -->
+        <item name="android:defaultFocusHighlightEnabled">false</item>
+        <item name="android:colorControlHighlight">@android:color/transparent</item>
+    </style>
+
+    <!-- Splash theme variants for setSplashScreenTheme -->
+    <style name="SplashTheme.Dark" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/splash_dark</item>
+        <item name="android:defaultFocusHighlightEnabled">false</item>
+        <item name="android:colorControlHighlight">@android:color/transparent</item>
+    </style>
+    <style name="SplashTheme.Oled" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/splash_oled</item>
+        <item name="android:defaultFocusHighlightEnabled">false</item>
+        <item name="android:colorControlHighlight">@android:color/transparent</item>
+    </style>
+    <style name="SplashTheme.Light" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/splash_light</item>
+        <item name="android:defaultFocusHighlightEnabled">false</item>
+        <item name="android:colorControlHighlight">@android:color/transparent</item>
+    </style>
+    <style name="SplashTheme.System" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/splash_background</item>
         <item name="android:defaultFocusHighlightEnabled">false</item>
         <item name="android:colorControlHighlight">@android:color/transparent</item>
     </style>

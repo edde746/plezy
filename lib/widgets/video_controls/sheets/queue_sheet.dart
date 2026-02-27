@@ -62,9 +62,7 @@ class QueueSheet extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                trailing: isCurrent
-                    ? const AppIcon(Symbols.play_circle_rounded, fill: 1, color: Colors.blue)
-                    : null,
+                trailing: isCurrent ? const AppIcon(Symbols.play_circle_rounded, fill: 1, color: Colors.blue) : null,
                 onTap: () {
                   onItemSelected(item);
                   OverlaySheetController.of(context).close();
@@ -74,11 +72,7 @@ class QueueSheet extends StatelessWidget {
           );
         }
 
-        return BaseVideoControlSheet(
-          title: t.videoControls.queue,
-          icon: Symbols.queue_music_rounded,
-          child: content,
-        );
+        return BaseVideoControlSheet(title: t.videoControls.queue, icon: Symbols.queue_music_rounded, child: content);
       },
     );
   }
@@ -109,9 +103,9 @@ class QueueSheet extends StatelessWidget {
           if (isCurrent)
             Positioned.fill(
               child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(4)),
-                  border: const Border.fromBorderSide(BorderSide(color: Colors.blue, width: 2)),
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(4)),
+                  border: Border.fromBorderSide(BorderSide(color: Colors.blue, width: 2)),
                 ),
               ),
             ),

@@ -2,7 +2,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../models/companion_remote/remote_command.dart';
-import '../../models/companion_remote/remote_command_type.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/key_event_simulator.dart';
 

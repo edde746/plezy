@@ -40,6 +40,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool _disposed = false;
   final _throttleSw = Stopwatch()..start();
   int _lastEmitMs = 0;
+  int _lastCacheStateMs = 0;
   int _positionMs = 0;
   int _nextPropId = 0;
   final Map<int, String> _propIdToName = {};
@@ -173,6 +174,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'demuxer-cache-time':
         if (value is num) {
+          final nowMs = _throttleSw.elapsedMilliseconds;
+          if (nowMs - _lastCacheStateMs < 250) break;
+          _lastCacheStateMs = nowMs;
           final buffer = Duration(milliseconds: (value * 1000).toInt());
           _state = _state.copyWith(buffer: buffer);
           bufferController.add(buffer);
@@ -274,6 +278,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (value is Map) {
       cacheState = value;
     } else if (value is String && value.isNotEmpty) {
+      // Throttle JSON parsing to avoid ANR on low-end devices
+      final nowMs = _throttleSw.elapsedMilliseconds;
+      if (nowMs - _lastCacheStateMs < 250) return;
+      _lastCacheStateMs = nowMs;
       try {
         final parsed = jsonDecode(value);
         if (parsed is Map) cacheState = parsed;
@@ -331,10 +339,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'playback-restart':
-        // Clear stale buffer ranges from before the seek; fresh ones will
-        // arrive shortly via the next demuxer-cache-state update.
-        _state = _state.copyWith(bufferRanges: const []);
-        bufferRangesController.add(const []);
         playbackRestartController.add(null);
         break;
 

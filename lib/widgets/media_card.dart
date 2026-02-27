@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:plezy/utils/content_utils.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -557,8 +559,8 @@ class _MediaCardList extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                   ],
-                  // Summary
-                  if (item.summary != null) ...[
+                  // Summary (hidden when spoiler protection is active)
+                  if (!(item is PlexMetadata && context.watch<SettingsProvider>().hideSpoilers && (item as PlexMetadata).shouldHideSpoiler) && item.summary != null) ...[
                     Text(
                       item.summary!,
                       maxLines: _summaryMaxLines,
@@ -605,12 +607,25 @@ Widget _buildPosterImage(
       localFilePath: localPosterPath,
     );
   } else if (item is PlexMetadata) {
-    final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
+    final settingsProvider = context.watch<SettingsProvider>();
+    final episodePosterMode = settingsProvider.episodePosterMode;
+    final shouldBlur = settingsProvider.hideSpoilers && item.shouldHideSpoiler;
     posterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
+
+    Widget image;
 
     // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
     if (item.usesWideAspectRatio(episodePosterMode, mixedHubContext: mixedHubContext)) {
-      return PlexOptimizedImage.thumb(
+      image = PlexOptimizedImage.thumb(
+        client: isOffline ? null : context.getClientWithFallback(item.serverId),
+        imagePath: posterUrl,
+        width: knownWidth ?? double.infinity,
+        height: knownHeight ?? double.infinity,
+        fit: BoxFit.cover,
+        localFilePath: localPosterPath,
+      );
+    } else {
+      image = PlexOptimizedImage.poster(
         client: isOffline ? null : context.getClientWithFallback(item.serverId),
         imagePath: posterUrl,
         width: knownWidth ?? double.infinity,
@@ -620,14 +635,15 @@ Widget _buildPosterImage(
       );
     }
 
-    return PlexOptimizedImage.poster(
-      client: isOffline ? null : context.getClientWithFallback(item.serverId),
-      imagePath: posterUrl,
-      width: knownWidth ?? double.infinity,
-      height: knownHeight ?? double.infinity,
-      fit: BoxFit.cover,
-      localFilePath: localPosterPath,
-    );
+    if (shouldBlur) {
+      return ClipRect(
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: image,
+        ),
+      );
+    }
+    return image;
   }
 
   return SkeletonLoader(
@@ -828,7 +844,7 @@ class _SkeletonLoaderState extends State<SkeletonLoader> with SingleTickerProvid
           identifier: "skeleton-loader",
           child: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: _animation.value),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: _animation.value * 0.15),
               borderRadius: widget.borderRadius ?? BorderRadius.circular(tokens(context).radiusSm),
             ),
             child: widget.child,

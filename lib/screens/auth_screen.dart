@@ -17,6 +17,7 @@ import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../focus/focusable_button.dart';
+import '../utils/navigation_transitions.dart';
 import 'main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -96,6 +97,7 @@ class _AuthScreenState extends State<AuthScreen> {
         multiServerProvider: context.read<MultiServerProvider>(),
         librariesProvider: context.read<LibrariesProvider>(),
         syncService: context.read<OfflineWatchSyncService>(),
+        clientIdentifier: _authService.clientIdentifier,
       );
 
       if (!result.hasConnections) {
@@ -112,10 +114,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await profileFuture;
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainScreen(client: result.firstClient!)),
-      );
+      Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!)));
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       setState(() {
@@ -454,7 +453,7 @@ class _AuthScreenState extends State<AuthScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
             ),
-            child: Text(t.auth.debugEnterToken, style: TextStyle(fontSize: 12)),
+            child: Text(t.auth.debugEnterToken, style: const TextStyle(fontSize: 12)),
           ),
         ],
         if (_errorMessage != null) ...[

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +15,8 @@ import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
+import '../providers/settings_provider.dart';
+import '../utils/content_utils.dart';
 import '../services/download_storage_service.dart';
 import '../widgets/collapsible_text.dart';
 import '../widgets/plex_optimized_image.dart';
@@ -58,7 +61,8 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   bool _suppressNextBackKeyUp = false;
   bool _routeSubscribed = false;
 
-  String _toGlobalKey(String ratingKey, {String? serverId}) => buildGlobalKey(serverId ?? widget.season.serverId ?? '', ratingKey);
+  String _toGlobalKey(String ratingKey, {String? serverId}) =>
+      buildGlobalKey(serverId ?? widget.season.serverId ?? '', ratingKey);
 
   // WatchStateAware: watch all episode ratingKeys
   @override
@@ -363,14 +367,18 @@ class _EpisodeCardState extends State<_EpisodeCard> {
     );
     return Row(
       children: [
-        if (widget.episode.duration != null) Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)), style: mutedStyle),
+        if (widget.episode.duration != null)
+          Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)), style: mutedStyle),
         if (widget.episode.originallyAvailableAt != null) ...[
           dot,
           Text(formatFullDate(widget.episode.originallyAvailableAt!), style: mutedStyle),
         ],
         if (widget.episode.userRating != null && widget.episode.userRating! > 0) ...[
           dot,
-          Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber)),
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
+          ),
           const SizedBox(width: 2),
           Text(
             (widget.episode.userRating! / 2) == (widget.episode.userRating! / 2).truncateToDouble()
@@ -385,6 +393,9 @@ class _EpisodeCardState extends State<_EpisodeCard> {
 
   @override
   Widget build(BuildContext context) {
+    final hideSpoilers = context.watch<SettingsProvider>().hideSpoilers;
+    final shouldBlur = hideSpoilers && widget.episode.shouldHideSpoiler;
+
     // Hide progress when offline (not tracked)
     final hasProgress =
         !widget.isOffline &&
@@ -432,7 +443,17 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                     children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.all(Radius.circular(6)),
-                        child: AspectRatio(aspectRatio: 16 / 9, child: _buildEpisodeThumbnail()),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: shouldBlur
+                              ? ClipRect(
+                                  child: ImageFiltered(
+                                    imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                    child: _buildEpisodeThumbnail(),
+                                  ),
+                                )
+                              : _buildEpisodeThumbnail(),
+                        ),
                       ),
 
                       // Play overlay
@@ -636,8 +657,8 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                         },
                       ),
 
-                      // Summary
-                      if (widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
+                      // Summary (hidden when spoiler protection is active)
+                      if (!shouldBlur && widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         if (PlatformDetector.isTV())
                           Text(

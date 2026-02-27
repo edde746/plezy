@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
-import '../models.dart';
-import 'player_base.dart';
+import '../../models.dart';
+import '../player_base.dart';
 
 /// Android implementation of [Player] using ExoPlayer.
 /// Provides hardware-accelerated playback with ASS subtitle support via libass-android.
@@ -33,12 +33,6 @@ class PlayerAndroid extends PlayerBase {
     if (name == 'backend-switched') {
       // Native player switched from ExoPlayer to MPV due to unsupported format
       backendSwitchedController.add(null);
-      return;
-    }
-
-    if (name == 'memory-pressure') {
-      // System memory is critically low — playback may be at risk of OOM crash
-      errorController.add('Low memory — playback may be unstable');
       return;
     }
 

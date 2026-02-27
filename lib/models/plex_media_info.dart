@@ -1,3 +1,4 @@
+import '../utils/app_logger.dart';
 import '../utils/codec_utils.dart';
 
 class PlexMediaInfo {
@@ -15,6 +16,63 @@ class PlexMediaInfo {
     this.partId,
   });
   int? getPartId() => partId;
+
+  /// Creates a [PlexMediaInfo] from cached metadata JSON (as stored by [PlexApiCache]).
+  /// Parses audio/subtitle tracks from `Media[0].Part[0].Stream[]` so that
+  /// offline playback can still apply language-based track selection.
+  static PlexMediaInfo? fromMetadataJson(Map<String, dynamic> metadata) {
+    final media = metadata['Media'] as List<dynamic>?;
+    if (media == null || media.isEmpty) return null;
+    final parts = media[0]['Part'] as List<dynamic>?;
+    if (parts == null || parts.isEmpty) return null;
+    final streams = parts[0]['Stream'] as List<dynamic>?;
+
+    final audioTracks = <PlexAudioTrack>[];
+    final subtitleTracks = <PlexSubtitleTrack>[];
+
+    if (streams != null) {
+      for (final s in streams) {
+        try {
+          final streamType = s['streamType'] as int?;
+          if (streamType == 2) {
+            audioTracks.add(PlexAudioTrack(
+              id: s['id'] as int,
+              index: s['index'] as int?,
+              codec: s['codec'] as String?,
+              language: s['language'] as String?,
+              languageCode: s['languageCode'] as String?,
+              title: s['title'] as String?,
+              displayTitle: s['displayTitle'] as String?,
+              channels: s['channels'] as int?,
+              selected: s['selected'] == 1 || s['selected'] == true,
+            ));
+          } else if (streamType == 3) {
+            subtitleTracks.add(PlexSubtitleTrack(
+              id: s['id'] as int,
+              index: s['index'] as int?,
+              codec: s['codec'] as String?,
+              language: s['language'] as String?,
+              languageCode: s['languageCode'] as String?,
+              title: s['title'] as String?,
+              displayTitle: s['displayTitle'] as String?,
+              selected: s['selected'] == 1 || s['selected'] == true,
+              forced: s['forced'] == 1,
+              key: s['key'] as String?,
+            ));
+          }
+        } catch (e) {
+          appLogger.d('Skipping malformed stream in cached metadata', error: e);
+        }
+      }
+    }
+
+    return PlexMediaInfo(
+      videoUrl: '',
+      audioTracks: audioTracks,
+      subtitleTracks: subtitleTracks,
+      chapters: const [],
+    );
+  }
 }
 
 /// Builds a track label from parts with the standard `' · '` joiner pattern.
@@ -173,7 +231,7 @@ class PlexMarker {
 
   bool containsPosition(Duration position) {
     final posMs = position.inMilliseconds;
-    return posMs >= startTimeOffset && posMs <= endTimeOffset;
+    return posMs >= startTimeOffset && posMs < endTimeOffset;
   }
 }
 

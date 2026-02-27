@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../models/plex_first_character.dart';
+import '../../models/plex_first_character.dart';
 import 'alpha_jump_helper.dart';
 
 /// Phone-optimized draggable scroll handle that appears on scroll and shows

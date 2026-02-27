@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../services/image_cache_service.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
 import 'media_card.dart';
@@ -338,6 +339,7 @@ class PlexOptimizedImage extends StatelessWidget {
       image: CachedNetworkImageProvider(
         imageUrl,
         cacheKey: effectiveCacheKey,
+        cacheManager: PlexImageCacheManager.instance,
         headers: const {'User-Agent': 'Plezy'},
         maxHeight: memHeight,
       ),
