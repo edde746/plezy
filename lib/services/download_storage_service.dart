@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import '../models/plex_metadata.dart';
+import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import 'settings_service.dart';
 import 'saf_storage_service.dart';
@@ -398,25 +399,42 @@ class DownloadStorageService {
   }
 
   /// Convert a potentially absolute path (from old database entries) to absolute
-  /// This handles both old absolute paths and new relative paths
+  /// This handles both old absolute paths and new relative paths, including
+  /// corrupted paths that contain nested base-dir fragments without a leading slash
+  /// (e.g. "data/user/0/.../app_flutter/downloads/...").
   Future<String> ensureAbsolutePath(String storedPath) async {
+    appLogger.d('ensureAbsolutePath: input="$storedPath", isAbsolute=${path.isAbsolute(storedPath)}');
+
+    String result;
     if (path.isAbsolute(storedPath)) {
       // Already absolute - check if file exists at this path
       if (await File(storedPath).exists()) {
-        return storedPath;
+        result = storedPath;
+      } else {
+        // File doesn't exist at absolute path - try to reconstruct
+        // Extract the relative portion (everything after 'downloads/')
+        final downloadsIndex = storedPath.indexOf('downloads/');
+        if (downloadsIndex != -1) {
+          final relativePart = storedPath.substring(downloadsIndex);
+          result = await toAbsolutePath(relativePart);
+        } else {
+          // Can't reconstruct, return original
+          result = storedPath;
+        }
       }
-      // File doesn't exist at absolute path - try to reconstruct
-      // Extract the relative portion (everything after 'downloads/')
+    } else {
+      // Relative path — if it contains a nested base-dir fragment
+      // (e.g. "data/.../app_flutter/downloads/..."), extract from downloads/ onward
       final downloadsIndex = storedPath.indexOf('downloads/');
-      if (downloadsIndex != -1) {
-        final relativePart = storedPath.substring(downloadsIndex);
-        return await toAbsolutePath(relativePart);
+      if (downloadsIndex > 0) {
+        result = await toAbsolutePath(storedPath.substring(downloadsIndex));
+      } else {
+        result = await toAbsolutePath(storedPath);
       }
-      // Can't reconstruct, return original
-      return storedPath;
     }
-    // Relative path - convert to absolute
-    return await toAbsolutePath(storedPath);
+
+    appLogger.d('ensureAbsolutePath: resolved="$result"');
+    return result;
   }
 
   /// Calculate total storage used by downloads

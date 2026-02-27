@@ -1,3 +1,4 @@
+import '../utils/app_logger.dart';
 import '../utils/codec_utils.dart';
 
 class PlexMediaInfo {
@@ -31,32 +32,36 @@ class PlexMediaInfo {
 
     if (streams != null) {
       for (final s in streams) {
-        final streamType = s['streamType'] as int?;
-        if (streamType == 2) {
-          audioTracks.add(PlexAudioTrack(
-            id: s['id'] as int,
-            index: s['index'] as int?,
-            codec: s['codec'] as String?,
-            language: s['language'] as String?,
-            languageCode: s['languageCode'] as String?,
-            title: s['title'] as String?,
-            displayTitle: s['displayTitle'] as String?,
-            channels: s['channels'] as int?,
-            selected: s['selected'] == 1 || s['selected'] == true,
-          ));
-        } else if (streamType == 3) {
-          subtitleTracks.add(PlexSubtitleTrack(
-            id: s['id'] as int,
-            index: s['index'] as int?,
-            codec: s['codec'] as String?,
-            language: s['language'] as String?,
-            languageCode: s['languageCode'] as String?,
-            title: s['title'] as String?,
-            displayTitle: s['displayTitle'] as String?,
-            selected: s['selected'] == 1 || s['selected'] == true,
-            forced: s['forced'] == 1,
-            key: s['key'] as String?,
-          ));
+        try {
+          final streamType = s['streamType'] as int?;
+          if (streamType == 2) {
+            audioTracks.add(PlexAudioTrack(
+              id: s['id'] as int,
+              index: s['index'] as int?,
+              codec: s['codec'] as String?,
+              language: s['language'] as String?,
+              languageCode: s['languageCode'] as String?,
+              title: s['title'] as String?,
+              displayTitle: s['displayTitle'] as String?,
+              channels: s['channels'] as int?,
+              selected: s['selected'] == 1 || s['selected'] == true,
+            ));
+          } else if (streamType == 3) {
+            subtitleTracks.add(PlexSubtitleTrack(
+              id: s['id'] as int,
+              index: s['index'] as int?,
+              codec: s['codec'] as String?,
+              language: s['language'] as String?,
+              languageCode: s['languageCode'] as String?,
+              title: s['title'] as String?,
+              displayTitle: s['displayTitle'] as String?,
+              selected: s['selected'] == 1 || s['selected'] == true,
+              forced: s['forced'] == 1,
+              key: s['key'] as String?,
+            ));
+          }
+        } catch (e) {
+          appLogger.d('Skipping malformed stream in cached metadata', error: e);
         }
       }
     }

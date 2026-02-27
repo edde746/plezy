@@ -1156,6 +1156,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (metadataJson != null) {
           mediaInfo = PlexMediaInfo.fromMetadataJson(metadataJson);
         }
+        appLogger.d('Offline media info: cached=${cached != null}, hasMedia=${metadataJson?['Media'] != null}, '
+            'audioTracks=${mediaInfo?.audioTracks.length ?? 0}, subtitleTracks=${mediaInfo?.subtitleTracks.length ?? 0}');
       }
     } catch (e) {
       appLogger.d('Could not load cached media info for offline playback', error: e);

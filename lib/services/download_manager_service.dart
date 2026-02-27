@@ -311,27 +311,41 @@ class DownloadManagerService {
 
       // One-time migration: normalize stored file paths that may contain a
       // doubled base-dir prefix from an earlier bug in the recovery callback.
+      // Re-run on v2 to also fix paths without a leading / that the v1 migration missed.
       final prefs = (await SettingsService.getInstance()).prefs;
-      if (!(prefs.getBool('download_paths_normalized') ?? false)) {
+      if ((prefs.getInt('download_paths_normalized_version') ?? 0) < 2) {
         final allItems = await _database.select(_database.downloadedMedia).get();
         var fixed = 0;
         for (final item in allItems) {
           if (item.videoFilePath != null) {
-            final normalized = await _storageService.toRelativePath(item.videoFilePath!);
-            if (normalized != item.videoFilePath) {
+            final vfp = item.videoFilePath!;
+            var normalized = await _storageService.toRelativePath(vfp);
+            // If toRelativePath didn't help, try extracting from downloads/ onward
+            // for paths that lack a leading / but contain nested base-dir fragments
+            if (normalized == vfp) {
+              final idx = vfp.indexOf('downloads/');
+              if (idx > 0) normalized = vfp.substring(idx);
+            }
+            appLogger.d('Path migration: videoFilePath="$vfp", normalized="$normalized"');
+            if (normalized != vfp) {
               await _database.updateVideoFilePath(item.globalKey, normalized);
               fixed++;
             }
           }
           if (item.thumbPath != null) {
-            final normalized = await _storageService.toRelativePath(item.thumbPath!);
-            if (normalized != item.thumbPath) {
+            final tp = item.thumbPath!;
+            var normalized = await _storageService.toRelativePath(tp);
+            if (normalized == tp) {
+              final idx = tp.indexOf('downloads/');
+              if (idx > 0) normalized = tp.substring(idx);
+            }
+            if (normalized != tp) {
               await _database.updateArtworkPaths(globalKey: item.globalKey, thumbPath: normalized);
             }
           }
         }
         if (fixed > 0) appLogger.i('Normalized $fixed corrupted download path(s)');
-        await prefs.setBool('download_paths_normalized', true);
+        await prefs.setInt('download_paths_normalized_version', 2);
       }
 
       // Scan drift for orphaned items stuck in 'downloading'
