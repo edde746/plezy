@@ -50,6 +50,9 @@ class MpvPlayerCore(private val activity: Activity) :
     private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? =
         null
     private var voInUse: String = "gpu"
+    @Volatile private var nativeReady: Boolean = false
+    @Volatile private var disposing: Boolean = false
+    private var pendingSurface: Surface? = null
     var delegate: MpvPlayerDelegate? = null
     var isInitialized: Boolean = false
         private set
@@ -189,6 +192,9 @@ class MpvPlayerCore(private val activity: Activity) :
         }
 
         try {
+            disposing = false
+            pendingSurface = null
+
             // Initialize AudioManager for audio focus handling
             audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
@@ -260,19 +266,50 @@ class MpvPlayerCore(private val activity: Activity) :
             Thread {
                 try {
                     synchronized(mpvLock) {
+                        if (disposing) {
+                            handler.post { onResult(false) }
+                            return@Thread
+                        }
                         MPVLib.create(ctx)
                         setupMpvDefaults()
                         MPVLib.init()
+                        nativeReady = true
                     }
                     handler.post {
+                        if (disposing) {
+                            if (nativeReady) {
+                                Thread {
+                                    synchronized(mpvLock) {
+                                        try {
+                                            MPVLib.destroy()
+                                        } catch (_: Exception) {
+                                        } finally {
+                                            nativeReady = false
+                                        }
+                                    }
+                                }.start()
+                            }
+                            onResult(false)
+                            return@post
+                        }
+
                         MPVLib.addObserver(this)
                         MPVLib.addLogObserver(this)
                         isInitialized = true
+
+                        // surfaceCreated can fire before MPV init finishes.
+                        // Defer attaching the surface until native init is ready.
+                        pendingSurface?.takeIf { it.isValid }?.let {
+                            attachSurfaceInternal(it)
+                        }
+                        pendingSurface = null
+
                         Log.d(TAG, "Initialized successfully")
                         onResult(true)
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to initialize native: ${e.message}", e)
+                    nativeReady = false
                     handler.post { onResult(false) }
                 }
             }.start()
@@ -360,25 +397,59 @@ class MpvPlayerCore(private val activity: Activity) :
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         Log.d(TAG, "Surface created")
-        MPVLib.attachSurface(holder.surface)
-        MPVLib.setOptionString("force-window", "yes")
-        // Restore video output after surface is available
-        MPVLib.setPropertyString("vo", voInUse)
+        if (disposing) return
+
+        val surface = holder.surface
+        if (!nativeReady) {
+            pendingSurface = surface
+            Log.d(TAG, "Deferring surface attach until MPV native init completes")
+            return
+        }
+
+        attachSurfaceInternal(surface)
         // Reassert overlay order whenever the surface is recreated
         ensureFlutterOverlayOnTop()
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         Log.d(TAG, "Surface changed: ${width}x${height}")
-        MPVLib.setPropertyString("android-surface-size", "${width}x${height}")
+        if (!nativeReady || disposing) return
+        try {
+            MPVLib.setPropertyString("android-surface-size", "${width}x${height}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to apply surface size to MPV", e)
+        }
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         Log.d(TAG, "Surface destroyed")
+        pendingSurface = null
+        if (!nativeReady || disposing) return
+        detachSurfaceInternal()
+    }
+
+    private fun attachSurfaceInternal(surface: Surface) {
+        if (!nativeReady || disposing || !surface.isValid) return
+        try {
+            MPVLib.attachSurface(surface)
+            MPVLib.setOptionString("force-window", "yes")
+            // Restore video output after surface is available
+            MPVLib.setPropertyString("vo", voInUse)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to attach MPV surface", e)
+        }
+    }
+
+    private fun detachSurfaceInternal() {
+        if (!nativeReady) return
         // Disable video output before detaching (like mpv-android)
-        MPVLib.setPropertyString("vo", "null")
-        MPVLib.setOptionString("force-window", "no")
-        MPVLib.detachSurface()
+        try {
+            MPVLib.setPropertyString("vo", "null")
+            MPVLib.setOptionString("force-window", "no")
+            MPVLib.detachSurface()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to detach MPV surface", e)
+        }
     }
 
     // MPVLib.EventObserver
@@ -713,6 +784,8 @@ class MpvPlayerCore(private val activity: Activity) :
     // Cleanup
 
     fun dispose() {
+        if (disposing) return
+        disposing = true
         Log.d(TAG, "Disposing")
 
         // Shutdown command executor
@@ -725,8 +798,15 @@ class MpvPlayerCore(private val activity: Activity) :
         abandonAudioFocus()
         audioManager = null
 
-        MPVLib.removeObserver(this)
-        MPVLib.removeLogObserver(this)
+        if (nativeReady) {
+            try {
+                MPVLib.removeObserver(this)
+                MPVLib.removeLogObserver(this)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to remove MPV observers during dispose", e)
+            }
+            detachSurfaceInternal()
+        }
 
         overlayLayoutListener?.let { listener ->
             val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
@@ -747,16 +827,25 @@ class MpvPlayerCore(private val activity: Activity) :
         }
         surfaceContainer = null
         surfaceView = null
+        pendingSurface = null
         isInitialized = false
 
         // Run native destroy on background thread to avoid ANR —
         // MPVLib.destroy() blocks on pthread_cond_wait while mpv's
         // internal threads (lua, demux, vo) shut down.
-        Thread {
-            synchronized(mpvLock) {
-                MPVLib.destroy()
-            }
-            Log.d(TAG, "Disposed (native)")
-        }.start()
+        if (nativeReady) {
+            Thread {
+                synchronized(mpvLock) {
+                    try {
+                        MPVLib.destroy()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "MPV destroy failed", e)
+                    } finally {
+                        nativeReady = false
+                    }
+                }
+                Log.d(TAG, "Disposed (native)")
+            }.start()
+        }
     }
 }

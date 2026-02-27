@@ -140,6 +140,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
+  bool _isApplyingTrackSelection = false;
   bool _isHandlingBack = false;
   BifThumbnailService? _bifService;
 
@@ -552,6 +553,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Listen to position for completion detection (fallback for unreliable MPV events)
       _positionSubscription = player!.streams.position.listen((position) {
+        // Fallback for cases where playbackRestart doesn't fire (observed on some
+        // offline Android playback flows). Prevents a permanent loading spinner.
+        if (!_hasFirstFrame.value && position.inMilliseconds > 0) {
+          _hasFirstFrame.value = true;
+        }
+
         final duration = player!.state.duration;
         if (duration.inMilliseconds > 0 &&
             position.inMilliseconds >= duration.inMilliseconds - 1000 &&
@@ -1149,16 +1156,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       final serverId = widget.metadata.serverId;
       if (serverId != null) {
-        final cached = await PlexApiCache.instance.get(
-          serverId,
-          '/library/metadata/${widget.metadata.ratingKey}',
-        );
+        final cached = await PlexApiCache.instance.get(serverId, '/library/metadata/${widget.metadata.ratingKey}');
         final metadataJson = PlexCacheParser.extractFirstMetadata(cached);
         if (metadataJson != null) {
           mediaInfo = PlexMediaInfo.fromMetadataJson(metadataJson);
         }
-        appLogger.d('Offline media info: cached=${cached != null}, hasMedia=${metadataJson?['Media'] != null}, '
-            'audioTracks=${mediaInfo?.audioTracks.length ?? 0}, subtitleTracks=${mediaInfo?.subtitleTracks.length ?? 0}');
+        appLogger.d(
+          'Offline media info: cached=${cached != null}, hasMedia=${metadataJson?['Media'] != null}, '
+          'audioTracks=${mediaInfo?.audioTracks.length ?? 0}, subtitleTracks=${mediaInfo?.subtitleTracks.length ?? 0}',
+        );
       }
     } catch (e) {
       appLogger.d('Could not load cached media info for offline playback', error: e);
@@ -2081,26 +2087,63 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
+  /// Wait briefly for profile settings to load in offline mode.
+  /// This prevents default-track fallback when playback starts before
+  /// UserProfileProvider finishes initialization.
+  Future<void> _waitForProfileSettingsIfNeeded() async {
+    if (!widget.isOffline || !mounted) return;
+
+    final provider = context.read<UserProfileProvider>();
+    if (provider.profileSettings != null) return;
+
+    final completer = Completer<void>();
+    late VoidCallback listener;
+    listener = () {
+      if (provider.profileSettings != null && !completer.isCompleted) {
+        completer.complete();
+      }
+    };
+
+    provider.addListener(listener);
+    try {
+      await Future.any<void>([completer.future, Future.delayed(const Duration(seconds: 2))]);
+    } finally {
+      provider.removeListener(listener);
+    }
+  }
+
   /// Apply track selection using the TrackSelectionService
   Future<void> _applyTrackSelection() async {
-    if (!mounted || player == null) return;
+    if (!mounted || player == null || _isApplyingTrackSelection) return;
 
-    final profileSettings = context.read<UserProfileProvider>().profileSettings;
-    final settingsService = await SettingsService.getInstance();
-    final trackService = TrackSelectionService(
-      player: player!,
-      profileSettings: profileSettings,
-      metadata: widget.metadata,
-      plexMediaInfo: _currentMediaInfo,
-    );
+    _isApplyingTrackSelection = true;
+    try {
+      await _waitForProfileSettingsIfNeeded();
+      if (!mounted || player == null) return;
 
-    await trackService.selectAndApplyTracks(
-      preferredAudioTrack: widget.preferredAudioTrack,
-      preferredSubtitleTrack: widget.preferredSubtitleTrack,
-      defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
-      onAudioTrackChanged: _onAudioTrackChanged,
-      onSubtitleTrackChanged: _onSubtitleTrackChanged,
-    );
+      final profileSettings = context.read<UserProfileProvider>().profileSettings;
+      final settingsService = await SettingsService.getInstance();
+      if (!mounted || player == null) return;
+
+      final trackService = TrackSelectionService(
+        player: player!,
+        profileSettings: profileSettings,
+        metadata: widget.metadata,
+        plexMediaInfo: _currentMediaInfo,
+      );
+
+      await trackService.selectAndApplyTracks(
+        preferredAudioTrack: widget.preferredAudioTrack,
+        preferredSubtitleTrack: widget.preferredSubtitleTrack,
+        defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
+        onAudioTrackChanged: _onAudioTrackChanged,
+        onSubtitleTrackChanged: _onSubtitleTrackChanged,
+      );
+    } catch (e) {
+      appLogger.w('Failed to apply track selection', error: e);
+    } finally {
+      _isApplyingTrackSelection = false;
+    }
   }
 
   /// Rating key used for series/movie level language preferences.

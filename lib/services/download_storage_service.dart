@@ -404,37 +404,68 @@ class DownloadStorageService {
   /// (e.g. "data/user/0/.../app_flutter/downloads/...").
   Future<String> ensureAbsolutePath(String storedPath) async {
     appLogger.d('ensureAbsolutePath: input="$storedPath", isAbsolute=${path.isAbsolute(storedPath)}');
+    final baseDir = await _getBaseAppDir();
+    final normalizedCandidates = <String>[];
 
-    String result;
-    if (path.isAbsolute(storedPath)) {
-      // Already absolute - check if file exists at this path
-      if (await File(storedPath).exists()) {
-        result = storedPath;
-      } else {
-        // File doesn't exist at absolute path - try to reconstruct
-        // Extract the relative portion (everything after 'downloads/')
-        final downloadsIndex = storedPath.indexOf('downloads/');
-        if (downloadsIndex != -1) {
-          final relativePart = storedPath.substring(downloadsIndex);
-          result = await toAbsolutePath(relativePart);
-        } else {
-          // Can't reconstruct, return original
-          result = storedPath;
-        }
-      }
-    } else {
-      // Relative path — if it contains a nested base-dir fragment
-      // (e.g. "data/.../app_flutter/downloads/..."), extract from downloads/ onward
-      final downloadsIndex = storedPath.indexOf('downloads/');
-      if (downloadsIndex > 0) {
-        result = await toAbsolutePath(storedPath.substring(downloadsIndex));
-      } else {
-        result = await toAbsolutePath(storedPath);
+    void addCandidate(String candidate) {
+      if (candidate.isEmpty) return;
+      final normalized = path.normalize(candidate);
+      if (!normalizedCandidates.contains(normalized)) {
+        normalizedCandidates.add(normalized);
       }
     }
 
-    appLogger.d('ensureAbsolutePath: resolved="$result"');
-    return result;
+    String trimLeadingSeparators(String value) => value.replaceFirst(RegExp(r'^[\\/]+'), '');
+
+    if (path.isAbsolute(storedPath)) {
+      // Keep the original absolute path first (covers valid custom download paths).
+      addCandidate(storedPath);
+
+      // Recover from doubled app base path corruption:
+      // /data/.../app_flutter/data/.../app_flutter/downloads/...
+      final firstBaseIndex = storedPath.indexOf(baseDir.path);
+      final secondBaseIndex = storedPath.indexOf(baseDir.path, firstBaseIndex + baseDir.path.length);
+      if (firstBaseIndex != -1 && secondBaseIndex != -1) {
+        final tail = trimLeadingSeparators(storedPath.substring(secondBaseIndex + baseDir.path.length));
+        addCandidate(path.join(baseDir.path, tail));
+      }
+
+      // Recover from paths that contain downloads/ but wrong prefix.
+      final downloadsIndex = storedPath.lastIndexOf('downloads/');
+      if (downloadsIndex != -1) {
+        final relativePart = storedPath.substring(downloadsIndex);
+        addCandidate(await toAbsolutePath(relativePart));
+      }
+    } else {
+      // Normal relative path.
+      addCandidate(await toAbsolutePath(storedPath));
+
+      // Recover from nested base-dir fragment without leading slash.
+      final baseIndex = storedPath.indexOf(baseDir.path);
+      if (baseIndex > 0) {
+        final tail = trimLeadingSeparators(storedPath.substring(baseIndex + baseDir.path.length));
+        addCandidate(path.join(baseDir.path, tail));
+      }
+
+      // Recover from nested fragment containing downloads/.
+      final downloadsIndex = storedPath.lastIndexOf('downloads/');
+      if (downloadsIndex >= 0) {
+        addCandidate(await toAbsolutePath(storedPath.substring(downloadsIndex)));
+      }
+    }
+
+    // Prefer the first candidate that exists on disk.
+    for (final candidate in normalizedCandidates) {
+      if (await File(candidate).exists()) {
+        appLogger.d('ensureAbsolutePath: resolved="$candidate"');
+        return candidate;
+      }
+    }
+
+    // Fall back to the most conservative candidate if none currently exist.
+    final fallback = normalizedCandidates.isNotEmpty ? normalizedCandidates.first : await toAbsolutePath(storedPath);
+    appLogger.d('ensureAbsolutePath: resolved="$fallback" (fallback)');
+    return fallback;
   }
 
   /// Calculate total storage used by downloads
