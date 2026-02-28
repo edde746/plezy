@@ -86,6 +86,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var subtitleView: SubtitleView? = null
     private var assHandler: AssHandler? = null
     private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
+    private var lastVideoSize: VideoSize? = null
     private var exoPlayer: ExoPlayer? = null
     private var trackSelector: DefaultTrackSelector? = null
     private var tunnelingDisabledForCodec: Boolean = false
@@ -282,6 +283,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             ensureFlutterOverlayOnTop()
             overlayLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
                 ensureFlutterOverlayOnTop()
+                // Recalculate surface size on layout change (orientation/PiP transitions)
+                lastVideoSize?.let { vs ->
+                    if (vs.width > 0 && vs.height > 0) {
+                        updateSurfaceViewSize(vs.width, vs.height, vs.pixelWidthHeightRatio)
+                    }
+                }
             }
             contentView.viewTreeObserver.addOnGlobalLayoutListener(overlayLayoutListener)
 
@@ -556,6 +563,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     override fun onVideoSizeChanged(videoSize: VideoSize) {
         Log.d(TAG, "Video size changed: ${videoSize.width}x${videoSize.height}, ratio: ${videoSize.pixelWidthHeightRatio}")
+        lastVideoSize = videoSize
         updateSurfaceViewSize(videoSize.width, videoSize.height, videoSize.pixelWidthHeightRatio)
     }
 

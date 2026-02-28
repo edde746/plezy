@@ -255,6 +255,15 @@ class MpvPlayerCore(private val activity: Activity) :
             ensureFlutterOverlayOnTop()
             overlayLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
                 ensureFlutterOverlayOnTop()
+                // Re-apply surface size on layout change (orientation transitions)
+                val sv = surfaceView
+                if (sv != null && nativeReady && !disposing && sv.width > 0 && sv.height > 0) {
+                    try {
+                        MPVLib.setPropertyString("android-surface-size", "${sv.width}x${sv.height}")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to update surface size on layout change", e)
+                    }
+                }
             }
             contentView.viewTreeObserver.addOnGlobalLayoutListener(overlayLayoutListener)
 
