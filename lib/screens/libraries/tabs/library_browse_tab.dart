@@ -392,6 +392,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       filterParams['sort'] = _selectedSort!.getSortKey(descending: _isSortDescending);
     }
 
+    filterParams['includeCollections'] = '1';
+
     return filterParams;
   }
 
@@ -797,6 +799,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     final client = getClientForLibrary();
     final filterParams = Map<String, String>.from(_selectedFilters);
     final typeId = _getGroupingTypeId();
+
+    filterParams['includeCollections'] = '1';
 
     try {
       final chars = await client.getFirstCharacters(
