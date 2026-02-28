@@ -1283,6 +1283,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // Determine content type label for chip
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
 
+    // Spoiler protection
+    final hideSpoilers = context.watch<SettingsProvider>().hideSpoilers;
+    final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
+
     // Build semantic label for hero item
     final heroLabel = isEpisode ? "${heroItem.grandparentTitle}, ${heroItem.title}" : heroItem.title;
 
@@ -1492,7 +1496,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     if (!isLargeScreen) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
 
                     // Summary with episode info (Apple TV style)
-                    if (heroItem.summary != null) ...[
+                    if (heroItem.summary != null && !shouldHideSpoiler) ...[
                       const SizedBox(height: 12),
                       RichText(
                         maxLines: 2,
@@ -1521,6 +1525,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   : 'No description available',
                             ),
                           ],
+                        ),
+                      ),
+                    ] else if (shouldHideSpoiler && isEpisode && heroItem.parentIndex != null && heroItem.index != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                        style: TextStyle(
+                          color: isLargeScreen
+                              ? Colors.white.withValues(alpha: 0.7)
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                          fontSize: 14,
+                          height: 1.4,
                         ),
                       ),
                     ],

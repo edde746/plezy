@@ -102,11 +102,13 @@ extension PlexMetadataType on PlexMetadata {
   bool get isVideoContent => ContentTypes.videoTypes.contains(_lowerType);
 
   /// Whether this episode should have spoiler protection applied.
-  /// True when the item is an unwatched episode with no active progress.
+  /// True when the item is an unwatched episode watched less than 50%.
   bool get shouldHideSpoiler {
     if (!isEpisode) return false;
     if (isWatched) return false;
-    if (viewOffset != null && viewOffset! > 0) return false;
+    if (viewOffset != null && viewOffset! > 0 && duration != null && duration! > 0) {
+      return viewOffset! / duration! < 0.5;
+    }
     return true;
   }
 }
