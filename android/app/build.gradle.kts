@@ -87,8 +87,8 @@ dependencies {
     // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
-    // libass-android for ASS/SSA subtitle rendering
-    implementation("io.github.peerless2012:ass-media:0.4.0-beta01")
+    // libass-android for ASS/SSA subtitle rendering (fork with font buffering fix)
+    implementation(files("libs/ass-media.aar"))
     // ass-kt core library (needed for AssRender.setFontScale)
     implementation("io.github.peerless2012:ass-kt:0.4.0-beta01")
 }
