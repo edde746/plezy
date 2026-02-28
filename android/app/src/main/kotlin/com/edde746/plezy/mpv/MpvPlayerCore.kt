@@ -49,10 +49,10 @@ class MpvPlayerCore(private val activity: Activity) :
     private var surfaceContainer: android.widget.FrameLayout? = null
     private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? =
         null
-    private var voInUse: String = "gpu"
     @Volatile private var nativeReady: Boolean = false
     @Volatile private var disposing: Boolean = false
     private var pendingSurface: Surface? = null
+    private var lastSurfaceSize: String? = null
     var delegate: MpvPlayerDelegate? = null
     var isInitialized: Boolean = false
         private set
@@ -125,7 +125,10 @@ class MpvPlayerCore(private val activity: Activity) :
         }
     }
 
+    private var flutterOverlayApplied = false
+
     private fun ensureFlutterOverlayOnTop() {
+        if (flutterOverlayApplied) return
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
             if (!isInitialized) return@post
@@ -153,6 +156,11 @@ class MpvPlayerCore(private val activity: Activity) :
             }
 
             flutterContainer?.let { container ->
+                // Skip if Flutter container is already the topmost child
+                if (contentView.getChildAt(contentView.childCount - 1) == container) {
+                    flutterOverlayApplied = true
+                    return@post
+                }
                 contentView.bringChildToFront(container)
                 for (j in 0 until container.childCount) {
                     val flutterChild = container.getChildAt(j)
@@ -167,6 +175,7 @@ class MpvPlayerCore(private val activity: Activity) :
                         break
                     }
                 }
+                flutterOverlayApplied = true
             }
         }
     }
@@ -244,13 +253,7 @@ class MpvPlayerCore(private val activity: Activity) :
                 ensureFlutterOverlayOnTop()
                 // Re-apply surface size on layout change (orientation transitions)
                 val sv = surfaceView
-                if (sv != null && nativeReady && !disposing && sv.width > 0 && sv.height > 0) {
-                    try {
-                        MPVLib.setPropertyString("android-surface-size", "${sv.width}x${sv.height}")
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to update surface size on layout change", e)
-                    }
-                }
+                if (sv != null) applySurfaceSize(sv.width, sv.height)
             }
             contentView.viewTreeObserver.addOnGlobalLayoutListener(overlayLayoutListener)
 
@@ -406,17 +409,13 @@ class MpvPlayerCore(private val activity: Activity) :
 
         attachSurfaceInternal(surface)
         // Reassert overlay order whenever the surface is recreated
+        flutterOverlayApplied = false
         ensureFlutterOverlayOnTop()
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         Log.d(TAG, "Surface changed: ${width}x${height}")
-        if (!nativeReady || disposing) return
-        try {
-            MPVLib.setPropertyString("android-surface-size", "${width}x${height}")
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to apply surface size to MPV", e)
-        }
+        applySurfaceSize(width, height)
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
@@ -432,13 +431,26 @@ class MpvPlayerCore(private val activity: Activity) :
             MPVLib.attachSurface(surface)
             MPVLib.setOptionString("force-window", "yes")
             // Restore video output after surface is available
-            MPVLib.setPropertyString("vo", voInUse)
+            MPVLib.setPropertyString("vo", "gpu")
         } catch (e: Exception) {
             Log.w(TAG, "Failed to attach MPV surface", e)
         }
     }
 
+    private fun applySurfaceSize(width: Int, height: Int) {
+        if (!nativeReady || disposing || width <= 0 || height <= 0) return
+        val size = "${width}x${height}"
+        if (size == lastSurfaceSize) return
+        lastSurfaceSize = size
+        try {
+            MPVLib.setPropertyString("android-surface-size", size)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to apply surface size to MPV", e)
+        }
+    }
+
     private fun detachSurfaceInternal() {
+        lastSurfaceSize = null
         if (!nativeReady) return
         // Disable video output before detaching (like mpv-android)
         try {

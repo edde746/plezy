@@ -478,7 +478,9 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun getMpvStats(): Map<String, Any?> {
         val mpv = mpvCore ?: return mapOf("playerType" to "mpv")
 
-        return mapOf(
+        val hasVideo = mpv.getProperty("video-params/w") != null
+
+        val stats = mutableMapOf<String, Any?>(
             "playerType" to "mpv",
             // Video metrics
             "video-codec" to mpv.getProperty("video-codec"),
@@ -495,27 +497,32 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "audio-bitrate" to mpv.getProperty("audio-bitrate"),
             // Performance metrics
             "total-avsync-change" to mpv.getProperty("total-avsync-change"),
-            "cache-used" to mpv.getProperty("cache-used"),
             "cache-speed" to mpv.getProperty("cache-speed"),
-            "display-fps" to mpv.getProperty("display-fps"),
             "frame-drop-count" to mpv.getProperty("frame-drop-count"),
             "decoder-frame-drop-count" to mpv.getProperty("decoder-frame-drop-count"),
             "demuxer-cache-duration" to mpv.getProperty("demuxer-cache-duration"),
-            // Color/Format properties
-            "video-params/pixelformat" to mpv.getProperty("video-params/pixelformat"),
-            "video-params/hw-pixelformat" to mpv.getProperty("video-params/hw-pixelformat"),
-            "video-params/colormatrix" to mpv.getProperty("video-params/colormatrix"),
-            "video-params/primaries" to mpv.getProperty("video-params/primaries"),
-            "video-params/gamma" to mpv.getProperty("video-params/gamma"),
-            // HDR metadata
-            "video-params/max-luma" to mpv.getProperty("video-params/max-luma"),
-            "video-params/min-luma" to mpv.getProperty("video-params/min-luma"),
-            "video-params/max-cll" to mpv.getProperty("video-params/max-cll"),
-            "video-params/max-fall" to mpv.getProperty("video-params/max-fall"),
-            // Other
-            "video-params/aspect-name" to mpv.getProperty("video-params/aspect-name"),
-            "video-params/rotate" to mpv.getProperty("video-params/rotate")
         )
+
+        // Only query properties that require an active video track
+        if (hasVideo) {
+            stats["display-fps"] = mpv.getProperty("display-fps")
+            // Color/Format properties
+            stats["video-params/pixelformat"] = mpv.getProperty("video-params/pixelformat")
+            stats["video-params/hw-pixelformat"] = mpv.getProperty("video-params/hw-pixelformat")
+            stats["video-params/colormatrix"] = mpv.getProperty("video-params/colormatrix")
+            stats["video-params/primaries"] = mpv.getProperty("video-params/primaries")
+            stats["video-params/gamma"] = mpv.getProperty("video-params/gamma")
+            // HDR metadata
+            stats["video-params/max-luma"] = mpv.getProperty("video-params/max-luma")
+            stats["video-params/min-luma"] = mpv.getProperty("video-params/min-luma")
+            stats["video-params/max-cll"] = mpv.getProperty("video-params/max-cll")
+            stats["video-params/max-fall"] = mpv.getProperty("video-params/max-fall")
+            // Other
+            stats["video-params/aspect-name"] = mpv.getProperty("video-params/aspect-name")
+            stats["video-params/rotate"] = mpv.getProperty("video-params/rotate")
+        }
+
+        return stats
     }
 
     // PiP Mode handling
@@ -605,7 +612,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     fallbackInProgress = false
 
                     // Configure basic MPV properties for Plex playback
-                    mpvCore?.setProperty("hwdec", "mediacodec,mediacodec-copy")
+                    mpvCore?.setProperty("hwdec", "auto")
                     mpvCore?.setProperty("vo", "gpu")
                     mpvCore?.setProperty("ao", "audiotrack")
 

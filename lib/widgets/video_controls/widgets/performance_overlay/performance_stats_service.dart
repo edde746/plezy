@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show ProcessInfo;
+import 'dart:io' show Platform, ProcessInfo;
 
 import 'package:flutter/scheduler.dart';
 
@@ -214,7 +214,7 @@ class PerformanceStatsService {
 
   /// Fetch stats from MPV via property queries.
   Future<void> _fetchMpvStats() async {
-    // Fetch all properties in parallel for efficiency
+    // Fetch core properties in parallel
     final results = await Future.wait([
       player.getProperty('video-codec'), // 0
       player.getProperty('video-params/w'), // 1
@@ -228,27 +228,48 @@ class PerformanceStatsService {
       player.getProperty('audio-params/hr-channels'), // 9
       player.getProperty('audio-bitrate'), // 10
       player.getProperty('total-avsync-change'), // 11
-      player.getProperty('cache-used'), // 12
-      player.getProperty('cache-speed'), // 13
-      player.getProperty('display-fps'), // 14
-      player.getProperty('frame-drop-count'), // 15
-      player.getProperty('decoder-frame-drop-count'), // 16
-      player.getProperty('demuxer-cache-duration'), // 17
-      // Color/Format properties
-      player.getProperty('video-params/pixelformat'), // 18
-      player.getProperty('video-params/hw-pixelformat'), // 19
-      player.getProperty('video-params/colormatrix'), // 20
-      player.getProperty('video-params/primaries'), // 21
-      player.getProperty('video-params/gamma'), // 22
-      // HDR metadata
-      player.getProperty('video-params/max-luma'), // 23
-      player.getProperty('video-params/min-luma'), // 24
-      player.getProperty('video-params/max-cll'), // 25
-      player.getProperty('video-params/max-fall'), // 26
-      // Other
-      player.getProperty('video-params/aspect-name'), // 27
-      player.getProperty('video-params/rotate'), // 28
+      player.getProperty('cache-speed'), // 12
+      player.getProperty('frame-drop-count'), // 13
+      player.getProperty('decoder-frame-drop-count'), // 14
+      player.getProperty('demuxer-cache-duration'), // 15
     ]);
+
+    final hasVideo = results[1] != null;
+
+    // Only query video-dependent properties when a video track is active.
+    // On Android, skip properties that are typically unavailable (display-fps,
+    // hw-pixelformat, HDR metadata) — MPV's native layer logs errors for these
+    // that we cannot suppress.
+    List<String?>? videoResults;
+    if (hasVideo) {
+      final isAndroid = Platform.isAndroid;
+      videoResults = await Future.wait([
+        isAndroid
+            ? Future.value(null)
+            : player.getProperty('display-fps'), // 0
+        player.getProperty('video-params/pixelformat'), // 1
+        isAndroid
+            ? Future.value(null)
+            : player.getProperty('video-params/hw-pixelformat'), // 2
+        player.getProperty('video-params/colormatrix'), // 3
+        player.getProperty('video-params/primaries'), // 4
+        player.getProperty('video-params/gamma'), // 5
+        isAndroid
+            ? Future.value(null)
+            : player.getProperty('video-params/max-luma'), // 6
+        isAndroid
+            ? Future.value(null)
+            : player.getProperty('video-params/min-luma'), // 7
+        isAndroid
+            ? Future.value(null)
+            : player.getProperty('video-params/max-cll'), // 8
+        isAndroid
+            ? Future.value(null)
+            : player.getProperty('video-params/max-fall'), // 9
+        player.getProperty('video-params/aspect-name'), // 10
+        player.getProperty('video-params/rotate'), // 11
+      ]);
+    }
 
     // Get app memory usage
     int? appMemory;
@@ -272,26 +293,23 @@ class PerformanceStatsService {
       audioChannels: results[9],
       audioBitrate: _parseInt(results[10]),
       avsyncChange: _parseDouble(results[11]),
-      cacheUsed: _parseInt(results[12]),
-      cacheSpeed: _parseDouble(results[13]),
-      displayFps: _parseDouble(results[14]),
-      frameDropCount: _parseInt(results[15]),
-      decoderFrameDropCount: _parseInt(results[16]),
-      cacheDuration: _parseDouble(results[17]),
-      // Color/Format properties
-      pixelformat: results[18],
-      hwPixelformat: results[19],
-      colormatrix: results[20],
-      primaries: results[21],
-      gamma: results[22],
-      // HDR metadata
-      maxLuma: _parseDouble(results[23]),
-      minLuma: _parseDouble(results[24]),
-      maxCll: _parseDouble(results[25]),
-      maxFall: _parseDouble(results[26]),
-      // Other
-      aspectName: results[27],
-      rotate: _parseInt(results[28]),
+      cacheSpeed: _parseDouble(results[12]),
+      frameDropCount: _parseInt(results[13]),
+      decoderFrameDropCount: _parseInt(results[14]),
+      cacheDuration: _parseDouble(results[15]),
+      // Video-dependent properties
+      displayFps: _parseDouble(videoResults?[0]),
+      pixelformat: videoResults?[1],
+      hwPixelformat: videoResults?[2],
+      colormatrix: videoResults?[3],
+      primaries: videoResults?[4],
+      gamma: videoResults?[5],
+      maxLuma: _parseDouble(videoResults?[6]),
+      minLuma: _parseDouble(videoResults?[7]),
+      maxCll: _parseDouble(videoResults?[8]),
+      maxFall: _parseDouble(videoResults?[9]),
+      aspectName: videoResults?[10],
+      rotate: _parseInt(videoResults?[11]),
       appMemoryBytes: appMemory,
       uiFps: _currentUiFps,
     );
