@@ -79,7 +79,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
     // For now we will check half a second, but this can probably be made higher.
     if (widget.thumbnailDataBuilder != null && _dragValue == null) {
       final delta = (widget.position.inMilliseconds - oldWidget.position.inMilliseconds).abs();
-      if (delta > 500) {
+      if (delta > 500 && widget.focusNode?.hasFocus == true) {
         _showKeySeekThumbnail = true;
         _resetKeySeekTimer();
       }
