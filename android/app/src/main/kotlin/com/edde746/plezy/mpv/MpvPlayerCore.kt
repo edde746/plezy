@@ -322,6 +322,9 @@ class MpvPlayerCore(private val activity: Activity) :
         MPVLib.setOptionString("opengl-es", "yes")
         // hwdec is set from Flutter via setProperty based on user preference
 
+        // Prevent crashes/artifacts from hardware film grain synthesis (mpv #14651)
+        MPVLib.setOptionString("vd-lavc-film-grain", "cpu")
+
         // Audio configuration
         MPVLib.setOptionString("ao", "audiotrack")
     }
