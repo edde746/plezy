@@ -39,6 +39,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
@@ -315,10 +316,19 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
             // Use DefaultRenderersFactory with FFmpeg fallback for unsupported audio codecs
             val renderersFactory = DefaultRenderersFactory(activity).apply {
-                // Enable decoder fallback - if MediaCodec fails, try FFmpeg
                 setEnableDecoderFallback(true)
-                // Use FFmpeg decoders as fallback (not preferred over native)
                 setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+                // Force FFmpeg for FLAC — hardware FLAC decoders (e.g. Samsung c2.sec.flac.decoder)
+                // have buggy 32KB input buffer limits causing InsufficientCapacityException.
+                setMediaCodecSelector { mimeType, requiresSecureDecoder, requiresTunnelingDecoder ->
+                    if (mimeType == MimeTypes.AUDIO_FLAC) {
+                        emptyList()
+                    } else {
+                        MediaCodecSelector.DEFAULT.getDecoderInfos(
+                            mimeType, requiresSecureDecoder, requiresTunnelingDecoder
+                        )
+                    }
+                }
             }
 
             // Create factories for buildWithAssSupport (like AndroidTV-FireTV)
@@ -722,6 +732,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     // Tunneling control — disabled when audio codec has no hardware decoder (requires FFmpeg)
 
     private fun hasHardwareAudioDecoder(mimeType: String): Boolean {
+        // FLAC hardware decoders are excluded via MediaCodecSelector (Samsung c2.sec.flac.decoder
+        // has buggy 32KB input buffer limits), so report no hardware decoder for tunneling purposes.
+        if (mimeType == MimeTypes.AUDIO_FLAC) return false
         try {
             val codecList = android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS)
             for (info in codecList.codecInfos) {
