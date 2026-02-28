@@ -48,7 +48,7 @@ class _CollapsibleTextState extends State<CollapsibleText> {
             TextSpan(
               children: [
                 TextSpan(text: displayText, style: style),
-                if (!_expanded) WidgetSpan(alignment: PlaceholderAlignment.middle, child: _buildBadge(context)),
+                if (!_expanded) WidgetSpan(alignment: widget.small ? PlaceholderAlignment.baseline : PlaceholderAlignment.middle, baseline: widget.small ? TextBaseline.alphabetic : null, child: _buildBadge(context)),
               ],
             ),
           ),
