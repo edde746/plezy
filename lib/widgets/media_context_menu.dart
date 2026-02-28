@@ -1381,74 +1381,89 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
     final screenSize = MediaQuery.of(context).size;
     const menuWidth = 220.0;
 
-    // Calculate menu position, keeping it on screen
-    double left = widget.position.dx;
-    double top = widget.position.dy;
+    // Clamp menu position to stay within screen bounds
+    const edgePadding = 8.0;
+    final left = widget.position.dx.clamp(edgePadding, screenSize.width - menuWidth - edgePadding);
 
-    // Adjust if menu would go off right edge
-    if (left + menuWidth > screenSize.width) {
-      left = screenSize.width - menuWidth - 8;
-    }
-
-    // Estimate menu height and adjust if would go off bottom
     final estimatedHeight = widget.actions.length * 48.0 + 16;
-    if (top + estimatedHeight > screenSize.height) {
-      top = screenSize.height - estimatedHeight - 8;
+    final spaceBelow = screenSize.height - widget.position.dy - edgePadding;
+    final spaceAbove = widget.position.dy - edgePadding;
+
+    // Place menu above the click point if it doesn't fit below and there's more room above
+    final double top;
+    final double maxHeight;
+    if (estimatedHeight <= spaceBelow) {
+      top = widget.position.dy;
+      maxHeight = spaceBelow;
+    } else if (spaceAbove > spaceBelow) {
+      final menuHeight = estimatedHeight.clamp(0.0, spaceAbove);
+      top = widget.position.dy - menuHeight;
+      maxHeight = menuHeight;
+    } else {
+      top = widget.position.dy;
+      maxHeight = spaceBelow;
     }
 
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onKeyEvent: (node, event) {
-        if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
-          return KeyEventResult.handled;
-        }
-        if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Stack(
-        children: [
-          // Barrier to close menu when clicking outside
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              behavior: HitTestBehavior.opaque,
-              child: Container(color: Colors.transparent),
+    return FocusScope(
+      // When opened via mouse, don't autofocus any item — let hover handle highlights.
+      // When opened via keyboard/dpad, autofocus is handled by _initialFocusNode.
+      autofocus: false,
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: (node, event) {
+          if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+            return KeyEventResult.handled;
+          }
+          if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Stack(
+          children: [
+            // Barrier to close menu when clicking outside
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                behavior: HitTestBehavior.opaque,
+                child: Container(color: Colors.transparent),
+              ),
             ),
-          ),
-          // Menu
-          Positioned(
-            left: left,
-            top: top,
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-              clipBehavior: Clip.antiAlias,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: widget.actions.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final action = entry.value;
-                    return FocusableListTile(
-                      focusNode: index == 0 ? _initialFocusNode : null,
-                      leading: AppIcon(action.icon, fill: 1, size: 20),
-                      title: Text(action.label),
-                      onTap: () => Navigator.pop(context, action.value),
-                      hoverColor: action.hoverColor,
-                      textColor: action.foregroundColor,
-                      iconColor: action.foregroundColor,
-                    );
-                  }).toList(),
+            // Menu
+            Positioned(
+              left: left,
+              top: top,
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                clipBehavior: Clip.antiAlias,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth, maxHeight: maxHeight),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: widget.actions.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final action = entry.value;
+                        return FocusableListTile(
+                          focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+                          leading: AppIcon(action.icon, fill: 1, size: 20),
+                          title: Text(action.label),
+                          onTap: () => Navigator.pop(context, action.value),
+                          hoverColor: action.hoverColor,
+                          textColor: action.foregroundColor,
+                          iconColor: action.foregroundColor,
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
