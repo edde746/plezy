@@ -135,14 +135,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     exoPlayer?.pause()
                 }
             }
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                 Log.d(TAG, "Audio focus lost transiently")
                 hasAudioFocus = false
                 if (isInitialized) {
                     wasPlayingBeforeFocusLoss = exoPlayer?.isPlaying == true
                     exoPlayer?.pause()
                 }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                Log.d(TAG, "Audio focus lost transiently (can duck), continuing playback")
+                // Don't pause — let the system handle volume ducking for notifications
             }
         }
     }
@@ -1105,7 +1108,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                         .build()
                 )
                 .setOnAudioFocusChangeListener(audioFocusChangeListener, handler)
-                .setWillPauseWhenDucked(true)
                 .build()
 
             audioFocusRequest = focusRequest

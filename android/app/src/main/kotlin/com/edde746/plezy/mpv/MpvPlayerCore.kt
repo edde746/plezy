@@ -119,21 +119,8 @@ class MpvPlayerCore(private val activity: Activity) :
                 }
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                Log.d(TAG, "Audio focus lost transiently (can duck)")
-                // For video content, we pause instead of ducking
-                // since dialogue is typically important
-                hasAudioFocus = false
-                if (isInitialized) {
-                    try {
-                        val isPaused = MPVLib.getPropertyBoolean("pause")
-                        wasPlayingBeforeFocusLoss = !isPaused
-                        if (!isPaused) {
-                            MPVLib.setPropertyBoolean("pause", true)
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to pause on duck focus loss", e)
-                    }
-                }
+                Log.d(TAG, "Audio focus lost transiently (can duck), continuing playback")
+                // Don't pause — let the system handle volume ducking for notifications
             }
         }
     }
@@ -361,7 +348,6 @@ class MpvPlayerCore(private val activity: Activity) :
                         .build()
                 )
                 .setOnAudioFocusChangeListener(audioFocusChangeListener, handler)
-                .setWillPauseWhenDucked(true)
                 .build()
 
             audioFocusRequest = focusRequest
