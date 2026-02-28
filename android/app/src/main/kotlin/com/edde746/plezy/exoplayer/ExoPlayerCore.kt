@@ -1390,23 +1390,21 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         trackSelector = null
         assHandler = null
 
-        surfaceView?.holder?.removeCallback(surfaceCallback)
+        val cb = surfaceCallback
+        val sv = surfaceView
         overlayLayoutListener?.let { listener ->
             val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
             contentView.viewTreeObserver.removeOnGlobalLayoutListener(listener)
         }
         overlayLayoutListener = null
 
-        // Remove SurfaceView from container synchronously — triggers
-        // onDetachedFromWindow which properly unregisters PositionUpdateListener
-        // and releases SurfaceControl before the render thread can access it.
+        // Defer all view removal to avoid AOSP bug where
+        // dispatchWindowVisibilityChanged iterates stale children array
+        // when removeView() runs during an active performTraversals pass.
         val container = surfaceContainer
-        surfaceView?.let { container?.removeView(it) }
-        subtitleView?.let { container?.removeView(it) }
-
-        // Defer empty container removal (plain FrameLayout, no SurfaceControl)
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
+            sv?.holder?.removeCallback(cb)
             container?.let { contentView.removeView(it) }
         }
         surfaceContainer = null

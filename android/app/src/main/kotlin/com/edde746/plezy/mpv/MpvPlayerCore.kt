@@ -809,15 +809,14 @@ class MpvPlayerCore(private val activity: Activity) :
         }
         overlayLayoutListener = null
 
-        // Remove SurfaceView synchronously (keep callback so surfaceDestroyed
-        // fires → MPVLib.detachSurface()), then remove callback after.
+        // Defer all view removal to avoid AOSP bug where
+        // dispatchWindowVisibilityChanged iterates stale children array
+        // when removeView() runs during an active performTraversals pass.
+        val sv = surfaceView
         val container = surfaceContainer
-        surfaceView?.let { container?.removeView(it) }
-        surfaceView?.holder?.removeCallback(this)
-
-        // Defer empty container removal (plain FrameLayout, no SurfaceControl)
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
+            sv?.holder?.removeCallback(this)
             container?.let { contentView.removeView(it) }
         }
         surfaceContainer = null
