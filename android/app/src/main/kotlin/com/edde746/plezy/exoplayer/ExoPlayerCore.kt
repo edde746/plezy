@@ -100,6 +100,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var frameWatchdogRunnable: Runnable? = null
     private var frameWatchdogStartTime: Long = 0L
     var delegate: ExoPlayerDelegate? = null
+    var debugLoggingEnabled: Boolean = false
     var isInitialized: Boolean = false
         private set
 
@@ -128,7 +129,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         when (focusChange) {
             AudioManager.AUDIOFOCUS_GAIN -> {
-                Log.d(TAG, "Audio focus gained")
+                emitLog("debug", "audio", "Focus gained")
                 hasAudioFocus = true
                 if (wasPlayingBeforeFocusLoss && isInitialized) {
                     exoPlayer?.play()
@@ -136,7 +137,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 }
             }
             AudioManager.AUDIOFOCUS_LOSS -> {
-                Log.d(TAG, "Audio focus lost permanently")
+                emitLog("debug", "audio", "Focus lost permanently")
                 hasAudioFocus = false
                 if (isInitialized) {
                     wasPlayingBeforeFocusLoss = exoPlayer?.isPlaying == true
@@ -144,7 +145,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 }
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                Log.d(TAG, "Audio focus lost transiently")
+                emitLog("debug", "audio", "Focus lost transiently")
                 hasAudioFocus = false
                 if (isInitialized) {
                     wasPlayingBeforeFocusLoss = exoPlayer?.isPlaying == true
@@ -152,9 +153,43 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 }
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                Log.d(TAG, "Audio focus lost transiently (can duck), continuing playback")
+                emitLog("debug", "audio", "Focus lost transiently (can duck)")
                 // Don't pause — let the system handle volume ducking for notifications
             }
+        }
+    }
+
+    private fun emitLog(level: String, prefix: String, message: String) {
+        when (level) {
+            "error" -> Log.e(TAG, "[$prefix] $message")
+            "warn"  -> Log.w(TAG, "[$prefix] $message")
+            "info"  -> Log.i(TAG, "[$prefix] $message")
+            else    -> Log.d(TAG, "[$prefix] $message")
+        }
+        if (debugLoggingEnabled) {
+            delegate?.onEvent("log-message", mapOf(
+                "prefix" to prefix, "level" to level, "text" to message
+            ))
+        }
+    }
+
+    private fun redactUri(uri: String): String {
+        return try {
+            val parsed = Uri.parse(uri)
+            val params = parsed.queryParameterNames
+            if (params.isEmpty()) return uri
+            val builder = parsed.buildUpon().clearQuery()
+            for (name in params) {
+                val lower = name.lowercase()
+                if (lower.contains("token") || lower.contains("key") || lower.contains("auth")) {
+                    builder.appendQueryParameter(name, "[REDACTED]")
+                } else {
+                    builder.appendQueryParameter(name, parsed.getQueryParameter(name))
+                }
+            }
+            builder.build().toString()
+        } catch (_: Exception) {
+            uri
         }
     }
 
@@ -398,7 +433,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     setBufferDurationsMs(30_000, 60_000, 2_500, 5_000)
                 }
             }.build()
-            Log.d(TAG, "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB")
+            emitLog("info", "init", "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB, tunneling=${tunnelingUserEnabled}")
 
             exoPlayer = ExoPlayer.Builder(activity)
                 .setTrackSelector(trackSelector!!)
@@ -446,16 +481,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     private val surfaceCallback = object : android.view.SurfaceHolder.Callback {
         override fun surfaceCreated(holder: android.view.SurfaceHolder) {
-            Log.d(TAG, "Surface created")
+            emitLog("debug", "surface", "Created")
             ensureFlutterOverlayOnTop()
         }
 
         override fun surfaceChanged(holder: android.view.SurfaceHolder, format: Int, width: Int, height: Int) {
-            Log.d(TAG, "Surface changed: ${width}x${height}")
+            emitLog("debug", "surface", "Changed: ${width}x${height}")
         }
 
         override fun surfaceDestroyed(holder: android.view.SurfaceHolder) {
-            Log.d(TAG, "Surface destroyed")
+            emitLog("debug", "surface", "Destroyed")
         }
     }
 
@@ -522,7 +557,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             Player.STATE_ENDED -> "ended"
             else -> "unknown"
         }
-        Log.d(TAG, "onPlaybackStateChanged: $stateStr")
+        emitLog("debug", "state", stateStr)
 
         when (state) {
             Player.STATE_BUFFERING -> {
@@ -534,7 +569,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 if (pendingStartPositionMs > 0L) {
                     val currentPos = exoPlayer?.currentPosition ?: 0L
                     if (currentPos < 1000L) {
-                        Log.w(TAG, "Position lost during init (at ${currentPos}ms, expected ${pendingStartPositionMs}ms) — restoring")
+                        emitLog("warn", "state", "Position lost (at ${currentPos}ms, expected ${pendingStartPositionMs}ms) — restoring")
                         exoPlayer?.seekTo(pendingStartPositionMs)
                     }
                     pendingStartPositionMs = 0L
@@ -556,12 +591,27 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     override fun onTracksChanged(tracks: Tracks) {
         Log.d(TAG, "onTracksChanged")
+        // Log selected video and audio track details
+        val videoGroup = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
+        val audioGroup = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_AUDIO && it.isSelected }
+        if (videoGroup != null) {
+            val vf = videoGroup.mediaTrackGroup.getFormat(0)
+            val hdr = vf.colorInfo?.let { ci ->
+                val transfer = ci.colorTransfer
+                if (transfer != null && transfer != 0) " HDR(transfer=$transfer)" else ""
+            } ?: ""
+            emitLog("info", "tracks", "Video: ${vf.codecs} ${vf.width}x${vf.height}$hdr")
+        }
+        if (audioGroup != null) {
+            val af = audioGroup.mediaTrackGroup.getFormat(0)
+            emitLog("info", "tracks", "Audio: ${af.codecs} ${af.channelCount}ch ${af.sampleRate}Hz")
+        }
         evaluateAudioCodecForTunneling()
         emitTrackList()
     }
 
     override fun onPlayerError(error: PlaybackException) {
-        Log.e(TAG, "Player error: ${error.message} (code: ${error.errorCode})", error)
+        emitLog("error", "player", "Error code=${error.errorCode}: ${error.message}, cause=${error.cause?.javaClass?.simpleName}")
         stopFrameWatchdog()
 
         if (currentMediaUri != null) {
@@ -780,7 +830,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val shouldTunnel = tunnelingUserEnabled && (currentSpeed == 1f) && !tunnelingDisabledForCodec
         val currentTunneling = selector.parameters.tunnelingEnabled
         if (shouldTunnel == currentTunneling) return  // No change needed
-        Log.d(TAG, "updateTunnelingState: tunneling $currentTunneling -> $shouldTunnel")
+        emitLog("info", "tunneling", "tunneling $currentTunneling -> $shouldTunnel (user=$tunnelingUserEnabled, speed=$currentSpeed, codecDisabled=$tunnelingDisabledForCodec)")
         selector.setParameters(
             selector.buildUponParameters()
                 .setTunnelingEnabled(shouldTunnel)
@@ -804,7 +854,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val newDisabled = !hasHardwareAudioDecoder(mimeType)
         if (newDisabled != tunnelingDisabledForCodec) {
             tunnelingDisabledForCodec = newDisabled
-            Log.i(TAG, "Audio codec ${format.codecs} ($mimeType): tunneling ${if (newDisabled) "DISABLED" else "enabled"}")
+            emitLog("info", "tunneling", "Audio codec ${format.codecs} ($mimeType): tunneling ${if (newDisabled) "DISABLED (no hw decoder)" else "enabled"}")
             updateTunnelingState()
         }
     }
@@ -814,6 +864,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     private fun startFrameWatchdog() {
         stopFrameWatchdog()
+        emitLog("debug", "watchdog", "Started (timeout=${WATCHDOG_TIMEOUT_MS}ms)")
         frameWatchdogStartTime = System.currentTimeMillis()
         frameWatchdogRunnable = object : Runnable {
             override fun run() {
@@ -821,7 +872,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 val renderedFrames = player.videoDecoderCounters?.renderedOutputBufferCount ?: 0
 
                 if (renderedFrames > 0) {
-                    Log.d(TAG, "Frame watchdog: $renderedFrames frames rendered, stopping watchdog")
+                    emitLog("debug", "watchdog", "$renderedFrames frames rendered, cleared")
                     stopFrameWatchdog()
                     return
                 }
@@ -834,7 +885,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 }
 
                 if (elapsed >= WATCHDOG_TIMEOUT_MS && player.isPlaying && hasVideoTrack) {
-                    Log.w(TAG, "Frame watchdog: 0 frames rendered after ${elapsed}ms with playing video — triggering MPV fallback")
+                    emitLog("warn", "watchdog", "0 frames rendered after ${elapsed}ms — triggering fallback")
                     stopFrameWatchdog()
                     // Trigger fallback via the same delegate path as player errors
                     val uri = currentMediaUri ?: return
@@ -894,7 +945,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 playWhenReady = autoPlay
             }
 
-            Log.d(TAG, "Opened live: $uri, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay")
+            emitLog("info", "media", "Opened live: ${redactUri(uri)}, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay")
             return
         }
 
@@ -917,7 +968,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             playWhenReady = autoPlay
         }
 
-        Log.d(TAG, "Opened: $uri, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay")
+        emitLog("info", "media", "Opened: ${redactUri(uri)}, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay, tunneling=$tunnelingUserEnabled")
     }
 
     fun play() {
@@ -1239,7 +1290,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             return
         }
 
-        Log.d(TAG, "setVideoFrameRate: fps=$fps, duration=${videoDurationMs}ms, API=${Build.VERSION.SDK_INT}")
+        emitLog("info", "framerate", "fps=$fps, duration=${videoDurationMs}ms, API=${Build.VERSION.SDK_INT}")
 
         when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> setFrameRateS(fps, surface, videoDurationMs)
@@ -1313,7 +1364,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
 
         if (seamless) {
-            Log.d(TAG, "Seamless switch available, using CHANGE_FRAME_RATE_ALWAYS")
+            emitLog("info", "framerate", "Seamless switch available for ${fps}fps")
             surface.setFrameRate(
                 fps,
                 Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,

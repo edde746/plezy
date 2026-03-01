@@ -368,4 +368,15 @@ class PlayerAndroid extends PlayerBase {
 
     await methodChannel.invokeMethod('abandonAudioFocus');
   }
+
+  // ============================================
+  // Log Level
+  // ============================================
+
+  @override
+  Future<void> setLogLevel(String level) async {
+    checkDisposed();
+    if (!initialized) return;
+    await methodChannel.invokeMethod('setLogLevel', {'level': level});
+  }
 }

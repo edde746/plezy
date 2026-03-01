@@ -35,6 +35,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private val nameToId = mutableMapOf<String, Int>()
     private var configuredBufferSizeBytes: Int? = null
     private var configuredTunnelingEnabled: Boolean = true
+    private var debugLoggingEnabled: Boolean = false
 
     // FlutterPlugin
 
@@ -131,6 +132,12 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             }
             "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
             "observeProperty" -> handleObserveProperty(call, result)
+            "setLogLevel" -> {
+                val level = call.argument<String>("level") ?: "warn"
+                debugLoggingEnabled = (level == "v" || level == "debug" || level == "trace")
+                playerCore?.debugLoggingEnabled = debugLoggingEnabled
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }
@@ -157,6 +164,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             try {
                 playerCore = ExoPlayerCore(currentActivity).apply {
                     delegate = this@ExoPlayerPlugin
+                    this.debugLoggingEnabled = this@ExoPlayerPlugin.debugLoggingEnabled
                 }
                 val success = playerCore?.initialize(
                     bufferSizeBytes = bufferSizeBytes,
@@ -593,6 +601,12 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         fallbackInProgress = true
 
         Log.i(TAG, "ExoPlayer error, switching to MPV fallback at ${positionMs}ms: $errorMessage")
+        if (debugLoggingEnabled) {
+            onEvent("log-message", mapOf(
+                "prefix" to "fallback", "level" to "warn",
+                "text" to "Switching to MPV at ${positionMs}ms: $errorMessage"
+            ))
+        }
 
         currentActivity.runOnUiThread {
             try {

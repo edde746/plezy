@@ -1,15 +1,19 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/desktop_app_bar.dart';
 
@@ -22,12 +26,41 @@ class LogsScreen extends StatefulWidget {
 
 class _LogsScreenState extends State<LogsScreen> {
   List<LogEntry> _logs = [];
+  String _deviceInfo = '';
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _logs = MemoryLogOutput.getLogs();
+    _loadDeviceInfo();
+  }
+
+  Future<void> _loadDeviceInfo() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    final deviceInfo = DeviceInfoPlugin();
+    final buffer = StringBuffer();
+    buffer.writeln('${t.app.title} v${packageInfo.version} (${packageInfo.buildNumber})');
+
+    if (Platform.isAndroid) {
+      final info = await deviceInfo.androidInfo;
+      buffer.writeln('Android ${info.version.release} (API ${info.version.sdkInt})');
+      buffer.writeln('${info.manufacturer} ${info.model}');
+      if (TvDetectionService.isTVSync()) buffer.writeln('TV mode: yes');
+    } else if (Platform.isIOS) {
+      final info = await deviceInfo.iosInfo;
+      buffer.writeln('iOS ${info.systemVersion}');
+      buffer.writeln(info.utsname.machine);
+    } else if (Platform.isMacOS) {
+      final info = await deviceInfo.macOsInfo;
+      buffer.writeln('macOS ${info.osRelease}');
+      buffer.writeln(info.model);
+    } else if (Platform.isLinux) {
+      final info = await deviceInfo.linuxInfo;
+      buffer.writeln('Linux ${info.versionId ?? info.id}');
+    }
+
+    if (mounted) setState(() => _deviceInfo = buffer.toString().trimRight());
   }
 
   @override
@@ -60,6 +93,10 @@ class _LogsScreenState extends State<LogsScreen> {
 
   String _formatAllLogs() {
     final buffer = StringBuffer();
+    if (_deviceInfo.isNotEmpty) {
+      buffer.writeln(_deviceInfo);
+      buffer.writeln('---');
+    }
     bool isFirst = true;
     for (final log in _logs.reversed) {
       if (!isFirst) {
@@ -175,6 +212,16 @@ class _LogsScreenState extends State<LogsScreen> {
 
   List<TextSpan> _buildLogSpans() {
     final spans = <TextSpan>[];
+    if (_deviceInfo.isNotEmpty) {
+      spans.add(TextSpan(
+        text: '$_deviceInfo\n',
+        style: TextStyle(color: Colors.grey.withValues(alpha: 0.6)),
+      ));
+      spans.add(TextSpan(
+        text: '---\n',
+        style: TextStyle(color: Colors.grey.withValues(alpha: 0.3)),
+      ));
+    }
     for (var i = 0; i < _logs.length; i++) {
       if (i > 0) spans.add(const TextSpan(text: '\n'));
       final log = _logs[i];
