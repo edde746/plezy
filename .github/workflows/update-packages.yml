@@ -1,4 +1,4 @@
-name: Update Homebrew Cask
+name: Update Packages
 
 on:
   release:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  update-cask:
+  update-homebrew:
     runs-on: macos-latest
     permissions:
       contents: write
@@ -43,3 +43,12 @@ jobs:
           else
             echo "No cask changes to commit."
           fi
+
+  update-winget:
+    runs-on: windows-latest
+    steps:
+      - uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: edde746.Plezy
+          installers-regex: 'plezy-windows-installer\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}

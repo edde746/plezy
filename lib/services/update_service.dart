@@ -36,7 +36,7 @@ class UpdateService {
   static bool get useNativeUpdater {
     if (!isUpdateCheckEnabled) return false;
     if (Platform.isMacOS) return !_isHomebrewInstall();
-    if (Platform.isWindows) return _isInstalledApp();
+    if (Platform.isWindows) return _isInstalledApp() && !_isWingetInstall();
     return false;
   }
 
@@ -72,6 +72,17 @@ class UpdateService {
     try {
       final execPath = Platform.resolvedExecutable;
       return execPath.contains('/Caskroom/') || execPath.contains('/homebrew/');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Check if the Windows app was installed via winget.
+  /// The Inno Setup installer writes a .winget marker file when invoked with /WINGET=1.
+  static bool _isWingetInstall() {
+    try {
+      final exeDir = File(Platform.resolvedExecutable).parent.path;
+      return File('$exeDir\\.winget').existsSync();
     } catch (_) {
       return false;
     }

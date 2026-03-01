@@ -156,6 +156,20 @@ function IsX64: Boolean;
 begin
   Result := not IsArm64;
 end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  MarkerPath: String;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    MarkerPath := ExpandConstant('{app}\.winget');
+    if ExpandConstant('{param:WINGET|0}') = '1' then
+      SaveStringToFile(MarkerPath, '', False)
+    else
+      DeleteFile(MarkerPath);
+  end;
+end;
 "@
 } else {
     # Single-arch installer (backward compatible, no Check: functions needed)
@@ -206,6 +220,21 @@ Name: "{autodesktop}\{#Name}"; Filename: "{app}\{#ExeName}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#Name}}"; Flags: nowait postinstall
+
+[Code]
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  MarkerPath: String;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    MarkerPath := ExpandConstant('{app}\.winget');
+    if ExpandConstant('{param:WINGET|0}') = '1' then
+      SaveStringToFile(MarkerPath, '', False)
+    else
+      DeleteFile(MarkerPath);
+  end;
+end;
 "@
 }
 
