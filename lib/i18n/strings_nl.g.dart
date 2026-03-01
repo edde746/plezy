@@ -1027,6 +1027,7 @@ class _TranslationsVideoSettingsNl implements TranslationsVideoSettingsEn {
 	@override String get audioOutput => 'Audio-uitvoer';
 	@override String get performanceOverlay => 'Prestatie-overlay';
 	@override String get audioPassthrough => 'Audio-doorvoer';
+	@override String get audioNormalization => 'Audionormalisatie';
 }
 
 // Path: externalPlayer
@@ -2021,6 +2022,7 @@ extension on TranslationsNl {
 			'videoSettings.audioOutput' => 'Audio-uitvoer',
 			'videoSettings.performanceOverlay' => 'Prestatie-overlay',
 			'videoSettings.audioPassthrough' => 'Audio-doorvoer',
+			'videoSettings.audioNormalization' => 'Audionormalisatie',
 			'externalPlayer.title' => 'Externe speler',
 			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een externe app in plaats van de ingebouwde speler',

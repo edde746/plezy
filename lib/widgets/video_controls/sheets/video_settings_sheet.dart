@@ -129,6 +129,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   bool _showPerformanceOverlay = false;
   bool _autoPlayNextEpisode = true;
   bool _audioPassthrough = false;
+  bool _audioNormalization = false;
 
   @override
   void initState() {
@@ -146,6 +147,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       _showPerformanceOverlay = settings.getShowPerformanceOverlay();
       _autoPlayNextEpisode = settings.getAutoPlayNextEpisode();
       _audioPassthrough = settings.getAudioPassthrough();
+      _audioNormalization = settings.getAudioNormalization();
     });
   }
 
@@ -190,6 +192,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       _audioPassthrough = newValue;
     });
     await widget.player.setAudioPassthrough(newValue);
+  }
+
+  Future<void> _toggleAudioNormalization() async {
+    final newValue = !_audioNormalization;
+    final settings = await SettingsService.getInstance();
+    await settings.setAudioNormalization(newValue);
+    if (!mounted) return;
+    setState(() {
+      _audioNormalization = newValue;
+    });
+    await widget.player.setProperty('af', newValue ? 'loudnorm=I=-14:TP=-3:LRA=4' : '');
   }
 
   void _navigateTo(_SettingsView view) {
@@ -425,6 +438,23 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               activeThumbColor: Colors.amber,
             ),
             onTap: _toggleAudioPassthrough,
+          ),
+
+        // Audio Normalization (MPV only)
+        if (widget.player.playerType == 'mpv')
+          ListTile(
+            leading: AppIcon(
+              Symbols.graphic_eq_rounded,
+              fill: 1,
+              color: _audioNormalization ? Colors.amber : tokens(context).textMuted,
+            ),
+            title: Text(t.videoSettings.audioNormalization),
+            trailing: Switch(
+              value: _audioNormalization,
+              onChanged: (_) => _toggleAudioNormalization(),
+              activeThumbColor: Colors.amber,
+            ),
+            onTap: _toggleAudioNormalization,
           ),
 
         // Shader Preset (MPV only)

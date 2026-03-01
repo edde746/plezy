@@ -2276,6 +2276,9 @@ class TranslationsVideoSettingsEn {
 
 	/// en: 'Audio Passthrough'
 	String get audioPassthrough => 'Audio Passthrough';
+
+	/// en: 'Audio Normalization'
+	String get audioNormalization => 'Audio Normalization';
 }
 
 // Path: externalPlayer
@@ -3625,6 +3628,7 @@ extension on Translations {
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioPassthrough' => 'Audio Passthrough',
+			'videoSettings.audioNormalization' => 'Audio Normalization',
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in an external app instead of the built-in player',

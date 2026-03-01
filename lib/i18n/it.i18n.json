@@ -807,7 +807,8 @@
     "hdr": "HDR",
     "audioOutput": "Uscita audio",
     "performanceOverlay": "Overlay prestazioni",
-    "audioPassthrough": "Audio Passthrough"
+    "audioPassthrough": "Audio Passthrough",
+    "audioNormalization": "Normalizzazione audio"
   },
   "externalPlayer": {
     "title": "Lettore esterno",

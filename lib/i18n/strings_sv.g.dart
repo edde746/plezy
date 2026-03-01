@@ -1027,6 +1027,7 @@ class _TranslationsVideoSettingsSv implements TranslationsVideoSettingsEn {
 	@override String get audioOutput => 'Ljudutgång';
 	@override String get performanceOverlay => 'Prestandaöverlägg';
 	@override String get audioPassthrough => 'Ljudgenomkoppling';
+	@override String get audioNormalization => 'Ljudnormalisering';
 }
 
 // Path: externalPlayer
@@ -2021,6 +2022,7 @@ extension on TranslationsSv {
 			'videoSettings.audioOutput' => 'Ljudutgång',
 			'videoSettings.performanceOverlay' => 'Prestandaöverlägg',
 			'videoSettings.audioPassthrough' => 'Ljudgenomkoppling',
+			'videoSettings.audioNormalization' => 'Ljudnormalisering',
 			'externalPlayer.title' => 'Extern spelare',
 			'externalPlayer.useExternalPlayer' => 'Använd extern spelare',
 			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en extern app istället för den inbyggda spelaren',

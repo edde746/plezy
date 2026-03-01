@@ -1027,6 +1027,7 @@ class _TranslationsVideoSettingsZh implements TranslationsVideoSettingsEn {
 	@override String get audioOutput => '音频输出';
 	@override String get performanceOverlay => '性能监控';
 	@override String get audioPassthrough => '音频直通';
+	@override String get audioNormalization => '音频标准化';
 }
 
 // Path: externalPlayer
@@ -2021,6 +2022,7 @@ extension on TranslationsZh {
 			'videoSettings.audioOutput' => '音频输出',
 			'videoSettings.performanceOverlay' => '性能监控',
 			'videoSettings.audioPassthrough' => '音频直通',
+			'videoSettings.audioNormalization' => '音频标准化',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在外部应用中打开视频，而不是使用内置播放器',

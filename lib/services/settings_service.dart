@@ -79,6 +79,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyConfirmExitOnBack = 'confirm_exit_on_back';
   static const String _keyAmbientLighting = 'ambient_lighting';
   static const String _keyAudioPassthrough = 'audio_passthrough';
+  static const String _keyAudioNormalization = 'audio_normalization';
 
   SettingsService._();
 
@@ -1149,6 +1150,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyAudioPassthrough) ?? false;
   }
 
+  // Audio Normalization
+  Future<void> setAudioNormalization(bool enabled) async {
+    await prefs.setBool(_keyAudioNormalization, enabled);
+  }
+
+  bool getAudioNormalization() {
+    return prefs.getBool(_keyAudioNormalization) ?? false;
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1206,6 +1216,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyConfirmExitOnBack),
       prefs.remove(_keyAmbientLighting),
       prefs.remove(_keyAudioPassthrough),
+      prefs.remove(_keyAudioNormalization),
       prefs.remove(_keyBufferSizeMigratedToAuto),
     ]);
   }

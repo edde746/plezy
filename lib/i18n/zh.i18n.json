@@ -807,7 +807,8 @@
     "hdr": "HDR",
     "audioOutput": "音频输出",
     "performanceOverlay": "性能监控",
-    "audioPassthrough": "音频直通"
+    "audioPassthrough": "音频直通",
+    "audioNormalization": "音频标准化"
   },
   "externalPlayer": {
     "title": "外部播放器",

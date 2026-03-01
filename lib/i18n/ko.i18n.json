@@ -807,7 +807,8 @@
     "hdr": "HDR",
     "audioOutput": "오디오 출력",
     "performanceOverlay": "성능 오버레이",
-    "audioPassthrough": "오디오 패스스루"
+    "audioPassthrough": "오디오 패스스루",
+    "audioNormalization": "오디오 정규화"
   },
   "externalPlayer": {
     "title": "외부 플레이어",
