@@ -120,7 +120,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
     }
 
     if (!program.isCurrentlyAiring && widget.onTuneChannel != null) {
-      buttons.add(const SizedBox(width: 8));
+      if (buttons.isNotEmpty) buttons.add(const SizedBox(width: 8));
       final idx = buttonIndex;
       buttons.add(
         FocusableButton(

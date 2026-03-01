@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../focus/dpad_navigator.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../focus/key_event_utils.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/livetv_channel.dart';
@@ -68,6 +69,7 @@ class GuideTabState extends State<GuideTab> {
 
   /// Focus into the guide content (called from tab bar navigation or initial load).
   void focusContent() {
+    if (!InputModeTracker.isKeyboardMode(context)) return;
     // If still loading programs, defer until the Focus widget is in the tree.
     if (_isLoading) {
       _pendingFocus = true;
@@ -999,16 +1001,16 @@ class GuideTabState extends State<GuideTab> {
     if (isFocused) {
       materialColor = theme.colorScheme.primary.withValues(alpha: 0.25);
     } else if (isCurrentlyAiring) {
-      materialColor = theme.colorScheme.primaryContainer;
+      materialColor = theme.colorScheme.onSurface;
     } else {
-      materialColor = theme.colorScheme.surfaceContainerHigh;
+      materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.12);
     }
 
     Color titleColor;
     if (isFocused) {
       titleColor = theme.colorScheme.primary;
     } else if (isCurrentlyAiring) {
-      titleColor = theme.colorScheme.onPrimaryContainer;
+      titleColor = theme.colorScheme.surface;
     } else {
       titleColor = theme.colorScheme.onSurface;
     }
@@ -1017,7 +1019,7 @@ class GuideTabState extends State<GuideTab> {
     if (isFocused) {
       subtitleColor = theme.colorScheme.primary.withValues(alpha: 0.7);
     } else if (isCurrentlyAiring) {
-      subtitleColor = theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7);
+      subtitleColor = theme.colorScheme.surface.withValues(alpha: 0.7);
     } else {
       subtitleColor = theme.colorScheme.onSurfaceVariant;
     }
@@ -1027,12 +1029,10 @@ class GuideTabState extends State<GuideTab> {
       child: Material(
         color: materialColor,
         shape: RoundedRectangleBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
           side: isFocused ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
         ),
         child: InkWell(
           canRequestFocus: false,
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
           onTap: () => _showProgramDetails(channel, program),
           child: Container(
             decoration: BoxDecoration(

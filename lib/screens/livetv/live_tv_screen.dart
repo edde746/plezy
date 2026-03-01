@@ -10,6 +10,7 @@ import '../../mixins/refreshable.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_tab_chip.dart';
@@ -267,7 +268,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                 ],
               )
             : Text(t.liveTv.title),
-        actions: [
+        actions: DesktopAppBarHelper.buildAdjustedActions([
           FocusableActionBar(
             key: _actionBarKey,
             onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
@@ -280,7 +281,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               ),
             ],
           ),
-        ],
+        ]),
       ),
       body: _buildLiveTvBody(theme, useSideNav),
     );
