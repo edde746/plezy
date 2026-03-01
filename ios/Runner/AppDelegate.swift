@@ -3,18 +3,11 @@ import UIKit
 import AVFoundation
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
-
-    // Register MPV player plugin
-    if let registrar = self.registrar(forPlugin: "MpvPlayerPlugin") {
-      MpvPlayerPlugin.register(with: registrar)
-    }
-
     // Configure audio session for media playback
     do {
       let session = AVAudioSession.sharedInstance()
@@ -27,5 +20,14 @@ import AVFoundation
     application.beginReceivingRemoteControlEvents()
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+
+    // Register MPV player plugin
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MpvPlayerPlugin") {
+      MpvPlayerPlugin.register(with: registrar)
+    }
   }
 }
