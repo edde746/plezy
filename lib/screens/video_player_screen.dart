@@ -458,6 +458,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await player!.setProperty('sub-delay', offsetSeconds.toString());
       }
 
+      // Apply audio normalization (loudnorm filter)
+      if (settingsService.getAudioNormalization()) {
+        await player!.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
+      }
+
       // Apply custom MPV config entries
       final customMpvConfig = settingsService.getEnabledMpvConfigEntries();
       for (final entry in customMpvConfig.entries) {
@@ -2927,7 +2932,7 @@ String _getHwdecValue(bool enabled) {
   if (Platform.isMacOS || Platform.isIOS) {
     return 'videotoolbox';
   } else if (Platform.isAndroid) {
-    return 'auto-safe';
+    return 'mediacodec,mediacodec-copy';
   } else {
     return 'auto'; // Windows, Linux
   }

@@ -612,7 +612,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     fallbackInProgress = false
 
                     // Configure basic MPV properties for Plex playback
-                    mpvCore?.setProperty("hwdec", "auto")
+                    mpvCore?.setProperty("hwdec", "mediacodec,mediacodec-copy")
                     mpvCore?.setProperty("vo", "gpu")
                     mpvCore?.setProperty("ao", "audiotrack")
 
