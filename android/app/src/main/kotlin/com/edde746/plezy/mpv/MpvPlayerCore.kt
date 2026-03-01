@@ -211,9 +211,6 @@ class MpvPlayerCore(private val activity: Activity) :
                     android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
                     android.widget.FrameLayout.LayoutParams.MATCH_PARENT
                 )
-                // Keep video composited in the normal view hierarchy (avoid hardware overlay promotion)
-                // so Flutter controls reliably draw above it in release builds.
-                alpha = 0.999f
                 holder.addCallback(this@MpvPlayerCore)
 
                 // Critical: Ensure SurfaceView renders BEHIND Flutter's view
