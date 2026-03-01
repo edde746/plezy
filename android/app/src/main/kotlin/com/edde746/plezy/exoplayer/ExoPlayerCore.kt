@@ -5,26 +5,19 @@ import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
-import android.hardware.display.DisplayManager
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
-import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Gravity
-import android.view.Surface
 import android.view.SurfaceView
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
-import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.annotation.OptIn
-import androidx.annotation.RequiresApi
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -48,14 +41,15 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
+import com.edde746.plezy.shared.AudioFocusManager
+import com.edde746.plezy.shared.FlutterOverlayHelper
+import com.edde746.plezy.shared.FrameRateManager
 import io.github.peerless2012.ass.media.AssHandler
 import io.github.peerless2012.ass.media.extractor.AssMatroskaExtractor
 import io.github.peerless2012.ass.media.factory.AssRenderersFactory
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
 import io.github.peerless2012.ass.media.widget.AssSubtitleView
-import java.math.BigDecimal
-import java.math.RoundingMode
 
 interface ExoPlayerDelegate {
     fun onPropertyChange(name: String, value: Any?)
@@ -79,7 +73,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     companion object {
         private const val TAG = "ExoPlayerCore"
-        private const val SHORT_VIDEO_LENGTH_MS = 300000L // 5 minutes
+
         private const val WATCHDOG_CHECK_INTERVAL_MS = 1000L
         private const val WATCHDOG_TIMEOUT_MS = 8000L
     }
@@ -105,15 +99,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         private set
 
     // Frame rate matching
-    private var currentVideoFps: Float = 0f
-    private var displayListener: DisplayManager.DisplayListener? = null
+    private var frameRateManager: FrameRateManager? = null
     private val handler = Handler(Looper.getMainLooper())
 
     // Audio focus
-    private var audioManager: AudioManager? = null
-    private var audioFocusRequest: AudioFocusRequest? = null
-    private var hasAudioFocus: Boolean = false
-    private var wasPlayingBeforeFocusLoss: Boolean = false
+    private var audioFocusManager: AudioFocusManager? = null
 
     // Track state for event emission
     private var lastPosition: Long = 0
@@ -125,39 +115,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private val externalSubtitles = mutableListOf<MediaItem.SubtitleConfiguration>()
     private var currentMediaUri: String? = null
     private var currentHeaders: Map<String, String>? = null
-
-    private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
-        when (focusChange) {
-            AudioManager.AUDIOFOCUS_GAIN -> {
-                emitLog("debug", "audio", "Focus gained")
-                hasAudioFocus = true
-                if (wasPlayingBeforeFocusLoss && isInitialized) {
-                    exoPlayer?.play()
-                    wasPlayingBeforeFocusLoss = false
-                }
-            }
-            AudioManager.AUDIOFOCUS_LOSS -> {
-                emitLog("debug", "audio", "Focus lost permanently")
-                hasAudioFocus = false
-                if (isInitialized) {
-                    wasPlayingBeforeFocusLoss = exoPlayer?.isPlaying == true
-                    exoPlayer?.pause()
-                }
-            }
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                emitLog("debug", "audio", "Focus lost transiently")
-                hasAudioFocus = false
-                if (isInitialized) {
-                    wasPlayingBeforeFocusLoss = exoPlayer?.isPlaying == true
-                    exoPlayer?.pause()
-                }
-            }
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                emitLog("debug", "audio", "Focus lost transiently (can duck)")
-                // Don't pause — let the system handle volume ducking for notifications
-            }
-        }
-    }
 
     private fun emitLog(level: String, prefix: String, message: String) {
         when (level) {
@@ -197,44 +154,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
             if (!isInitialized) return@post
-            var flutterContainer: ViewGroup? = null
-
-            for (i in 0 until contentView.childCount) {
-                val child = contentView.getChildAt(i)
-                if (child is ViewGroup && child.javaClass.name.contains("FlutterView")) {
-                    flutterContainer = child
-                    break
-                }
-            }
-
-            if (flutterContainer == null) {
-                for (i in contentView.childCount - 1 downTo 0) {
-                    val child = contentView.getChildAt(i)
-                    if (child is ViewGroup && child != surfaceContainer && child.childCount > 0) {
-                        flutterContainer = child
-                        break
-                    }
-                }
-            }
-
-            flutterContainer?.let { container ->
-                contentView.bringChildToFront(container)
-                for (j in 0 until container.childCount) {
-                    val flutterChild = container.getChildAt(j)
-                    if (flutterChild is SurfaceView) {
-                        // Don't use setZOrderOnTop - let Flutter render in normal view order
-                        // This allows SubtitleView (added via addContentView) to render above
-                        flutterChild.setZOrderOnTop(false)
-                        flutterChild.setZOrderMediaOverlay(true)
-                        flutterChild.holder.setFormat(PixelFormat.TRANSLUCENT)
-                        break
-                    } else if (flutterChild is TextureView) {
-                        flutterChild.isOpaque = false
-                        break
-                    }
-                }
-            }
-
+            val container = FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)
+                ?: return@post
+            FlutterOverlayHelper.configureFlutterZOrder(contentView, container, zOrderOnTop = false)
         }
     }
 
@@ -263,7 +185,25 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         tunnelingUserEnabled = tunnelingEnabled
 
         try {
-            audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            audioFocusManager = AudioFocusManager(
+                context = activity,
+                handler = handler,
+                onPause = { if (isInitialized) exoPlayer?.pause() },
+                onResume = { if (isInitialized) exoPlayer?.play() },
+                isPaused = { exoPlayer?.isPlaying != true },
+                log = { emitLog("debug", "audio", it) }
+            )
+            frameRateManager = FrameRateManager(
+                activity = activity,
+                handler = handler,
+                onDisplayChanged = {
+                    if (exoPlayer?.isPlaying == false && audioFocusManager?.wasPlayingBeforeFocusLoss == true) {
+                        Log.d(TAG, "Display changed, resuming playback")
+                        exoPlayer?.play()
+                    }
+                },
+                log = { emitLog("info", "framerate", it) }
+            )
 
             // Create FrameLayout container for video (enables centering for aspect ratio)
             surfaceContainer = FrameLayout(activity).apply {
@@ -307,25 +247,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             contentView.addView(surfaceContainer, 0)
 
             // Find FlutterView and configure z-order
-            // Video SurfaceView is at the bottom (setZOrderOnTop=false, setZOrderMediaOverlay=false)
-            // Flutter SurfaceView uses setZOrderMediaOverlay to render above video and subtitles
-            for (i in 0 until contentView.childCount) {
-                val child = contentView.getChildAt(i)
-                if (child is ViewGroup && child.javaClass.name.contains("FlutterView")) {
-                    contentView.bringChildToFront(child)
-                    for (j in 0 until child.childCount) {
-                        val flutterChild = child.getChildAt(j)
-                        if (flutterChild is SurfaceView) {
-                            // Use setZOrderMediaOverlay instead of setZOrderOnTop
-                            // This puts Flutter above video but below normal views
-                            flutterChild.setZOrderOnTop(false)
-                            flutterChild.setZOrderMediaOverlay(true)
-                            flutterChild.holder.setFormat(PixelFormat.TRANSLUCENT)
-                            break
-                        }
-                    }
-                    break
-                }
+            // Video SurfaceView is at the bottom, Flutter uses setZOrderMediaOverlay to render above
+            FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)?.let { container ->
+                FlutterOverlayHelper.configureFlutterZOrder(contentView, container, zOrderOnTop = false)
             }
 
             ensureFlutterOverlayOnTop()
@@ -1222,212 +1146,18 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     // Audio Focus
 
-    fun requestAudioFocus(): Boolean {
-        val am = audioManager ?: return false
+    fun requestAudioFocus(): Boolean = audioFocusManager?.requestAudioFocus() ?: false
 
-        Log.d(TAG, "Requesting audio focus")
-
-        val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
-                        .build()
-                )
-                .setOnAudioFocusChangeListener(audioFocusChangeListener, handler)
-                .build()
-
-            audioFocusRequest = focusRequest
-            am.requestAudioFocus(focusRequest)
-        } else {
-            @Suppress("DEPRECATION")
-            am.requestAudioFocus(
-                audioFocusChangeListener,
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN
-            )
-        }
-
-        hasAudioFocus = (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
-        Log.d(TAG, "Audio focus request result: $result, granted: $hasAudioFocus")
-        return hasAudioFocus
-    }
-
-    fun abandonAudioFocus() {
-        val am = audioManager ?: return
-
-        Log.d(TAG, "Abandoning audio focus")
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
-            audioFocusRequest = null
-        } else {
-            @Suppress("DEPRECATION")
-            am.abandonAudioFocus(audioFocusChangeListener)
-        }
-
-        hasAudioFocus = false
-        wasPlayingBeforeFocusLoss = false
-    }
+    fun abandonAudioFocus() { audioFocusManager?.abandonAudioFocus() }
 
     // Frame Rate Matching
 
-    private fun getDisplayManager(): DisplayManager {
-        return activity.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-    }
-
     fun setVideoFrameRate(fps: Float, videoDurationMs: Long) {
-        currentVideoFps = fps
-        if (fps <= 0f) {
-            Log.d(TAG, "setVideoFrameRate: Invalid fps ($fps), skipping")
-            return
-        }
-
-        val surface = surfaceView?.holder?.surface
-        if (surface == null) {
-            Log.d(TAG, "setVideoFrameRate: Surface not available")
-            return
-        }
-
-        emitLog("info", "framerate", "fps=$fps, duration=${videoDurationMs}ms, API=${Build.VERSION.SDK_INT}")
-
-        when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> setFrameRateS(fps, surface, videoDurationMs)
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> setFrameRateR(fps, surface)
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> setFrameRateM(fps)
-        }
+        frameRateManager?.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface)
     }
 
     fun clearVideoFrameRate() {
-        Log.d(TAG, "clearVideoFrameRate")
-        currentVideoFps = 0f
-        displayListener?.let {
-            getDisplayManager().unregisterDisplayListener(it)
-            displayListener = null
-        }
-    }
-
-    private fun registerDisplayListener() {
-        displayListener?.let {
-            getDisplayManager().unregisterDisplayListener(it)
-        }
-
-        displayListener = object : DisplayManager.DisplayListener {
-            override fun onDisplayAdded(displayId: Int) = Unit
-            override fun onDisplayRemoved(displayId: Int) = Unit
-            override fun onDisplayChanged(displayId: Int) {
-                handler.postDelayed({
-                    if (exoPlayer?.isPlaying == false && wasPlayingBeforeFocusLoss) {
-                        Log.d(TAG, "Display changed, resuming playback")
-                        exoPlayer?.play()
-                    }
-                }, 2000L)
-                getDisplayManager().unregisterDisplayListener(this)
-                displayListener = null
-            }
-        }
-        getDisplayManager().registerDisplayListener(displayListener, handler)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun setFrameRateR(fps: Float, surface: Surface) {
-        Log.d(TAG, "setFrameRateR: Setting frame rate to $fps")
-        surface.setFrameRate(fps, Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE)
-        registerDisplayListener()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun setFrameRateS(fps: Float, surface: Surface, videoDurationMs: Long) {
-        Log.d(TAG, "setFrameRateS: fps=$fps, duration=${videoDurationMs}ms")
-
-        if (videoDurationMs < SHORT_VIDEO_LENGTH_MS) {
-            Log.d(TAG, "Short video, using seamless-only switching")
-            surface.setFrameRate(
-                fps,
-                Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-                Surface.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
-            )
-            return
-        }
-
-        var seamless = false
-        activity.display?.mode?.alternativeRefreshRates?.let { refreshRates ->
-            for (rate in refreshRates) {
-                if (fps.toString().startsWith(rate.toString()) ||
-                    rate.toString().startsWith(fps.toString()) ||
-                    rate % fps == 0f) {
-                    seamless = true
-                    break
-                }
-            }
-        }
-
-        if (seamless) {
-            emitLog("info", "framerate", "Seamless switch available for ${fps}fps")
-            surface.setFrameRate(
-                fps,
-                Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-                Surface.CHANGE_FRAME_RATE_ALWAYS
-            )
-            registerDisplayListener()
-        } else {
-            val userPreference = getDisplayManager().matchContentFrameRateUserPreference
-            if (userPreference == DisplayManager.MATCH_CONTENT_FRAMERATE_ALWAYS) {
-                Log.d(TAG, "User preference allows non-seamless switch")
-                surface.setFrameRate(
-                    fps,
-                    Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-                    Surface.CHANGE_FRAME_RATE_ALWAYS
-                )
-                registerDisplayListener()
-            } else {
-                Log.d(TAG, "Non-seamless switch not allowed, using seamless-only")
-                surface.setFrameRate(
-                    fps,
-                    Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-                    Surface.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
-                )
-            }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun setFrameRateM(fps: Float) {
-        Log.d(TAG, "setFrameRateM: fps=$fps")
-        val wm = activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        @Suppress("DEPRECATION")
-        val display = wm.defaultDisplay ?: return
-
-        display.supportedModes?.let { supportedModes ->
-            val currentMode = display.mode
-            var modeToUse = currentMode
-
-            for (mode in supportedModes) {
-                if (mode.physicalHeight != currentMode.physicalHeight ||
-                    mode.physicalWidth != currentMode.physicalWidth) {
-                    continue
-                }
-
-                if (BigDecimal(fps.toString()).setScale(1, RoundingMode.FLOOR) ==
-                    BigDecimal(mode.refreshRate.toString()).setScale(1, RoundingMode.FLOOR)) {
-                    modeToUse = mode
-                    break
-                } else if (mode.refreshRate % fps == 0f) {
-                    modeToUse = mode
-                    break
-                }
-            }
-
-            if (modeToUse != currentMode) {
-                Log.d(TAG, "Switching to mode ${modeToUse.modeId} (${modeToUse.refreshRate}Hz)")
-                activity.window?.attributes?.let { attrs ->
-                    attrs.preferredDisplayModeId = modeToUse.modeId
-                    activity.window?.attributes = attrs
-                }
-                registerDisplayListener()
-            }
-        }
+        frameRateManager?.clearVideoFrameRate()
     }
 
     // Stats
@@ -1506,9 +1236,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
         stopFrameWatchdog()
         stopPositionUpdates()
-        clearVideoFrameRate()
-        abandonAudioFocus()
-        audioManager = null
+        frameRateManager?.clearVideoFrameRate()
+        frameRateManager = null
+        audioFocusManager?.release()
+        audioFocusManager = null
 
         tunnelingDisabledForCodec = false
         pendingStartPositionMs = 0L

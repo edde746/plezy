@@ -21,6 +21,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
+import com.edde746.plezy.shared.ThemeHelper
 import com.edde746.plezy.watchnext.WatchNextPlugin
 import java.io.File
 
@@ -37,17 +38,7 @@ class MainActivity : FlutterActivity() {
         // screen and Flutter's first frame for non-default themes (e.g. OLED).
         val prefs = getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE)
         val savedTheme = prefs.getString("splash_theme", null)
-        if (savedTheme != null) {
-            val color = when (savedTheme) {
-                "oled" -> android.graphics.Color.BLACK
-                "dark" -> android.graphics.Color.parseColor("#0E0F12")
-                "light" -> android.graphics.Color.parseColor("#F7F7F8")
-                else -> null
-            }
-            if (color != null) {
-                window.decorView.setBackgroundColor(color)
-            }
-        }
+        ThemeHelper.themeColor(savedTheme)?.let { window.decorView.setBackgroundColor(it) }
 
         super.onCreate(savedInstanceState)
 
@@ -187,15 +178,7 @@ class MainActivity : FlutterActivity() {
                     // Persist for next cold start & update window background now
                     getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE)
                         .edit().putString("splash_theme", mode).apply()
-                    val color = when (mode) {
-                        "oled" -> android.graphics.Color.BLACK
-                        "dark" -> android.graphics.Color.parseColor("#0E0F12")
-                        "light" -> android.graphics.Color.parseColor("#F7F7F8")
-                        else -> null
-                    }
-                    if (color != null) {
-                        window.decorView.setBackgroundColor(color)
-                    }
+                    ThemeHelper.themeColor(mode)?.let { window.decorView.setBackgroundColor(it) }
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         val themeId = when (mode) {
