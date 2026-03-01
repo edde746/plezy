@@ -316,6 +316,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
+	@override String get autoPip => '자동 PIP 모드';
+	@override String get autoPipDescription => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
 	@override String get matchContentFrameRateDescription => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
 	@override String get tunneledPlayback => 'Tunneled Playback';

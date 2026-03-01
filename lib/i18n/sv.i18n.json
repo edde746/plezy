@@ -197,6 +197,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
+    "autoPip": "Automatisk bild-i-bild",
+    "autoPipDescription": "Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning",
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
     "matchContentFrameRateDescription": "Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri",
     "tunneledPlayback": "Tunneled Playback",

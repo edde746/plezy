@@ -316,6 +316,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Zeige auf Discord, was du gerade schaust';
+	@override String get autoPip => 'Automatisches Bild-in-Bild';
+	@override String get autoPipDescription => 'Automatisch Bild-in-Bild aktivieren, wenn die App während der Wiedergabe verlassen wird';
 	@override String get matchContentFrameRate => 'Inhalts-Bildrate anpassen';
 	@override String get matchContentFrameRateDescription => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku';
 	@override String get tunneledPlayback => 'Tunneled Playback';

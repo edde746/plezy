@@ -64,6 +64,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
   static const String _keyMaxVolume = 'max_volume';
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
+  static const String _keyAutoPip = 'auto_pip';
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
   static const String _keyTunneledPlayback = 'tunneled_playback';
   static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
@@ -985,6 +986,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyEnableDiscordRPC) ?? false; // Default disabled
   }
 
+  // Auto Picture-in-Picture (Android only)
+  Future<void> setAutoPip(bool enabled) async {
+    await prefs.setBool(_keyAutoPip, enabled);
+  }
+
+  bool getAutoPip() {
+    return prefs.getBool(_keyAutoPip) ?? true; // Default enabled
+  }
+
   // Match Content Frame Rate (Android only)
   Future<void> setMatchContentFrameRate(bool enabled) async {
     await prefs.setBool(_keyMatchContentFrameRate, enabled);
@@ -1211,6 +1221,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyMpvConfigEntries),
       prefs.remove(_keyMpvConfigPresets),
       prefs.remove(_keyEnableDiscordRPC),
+      prefs.remove(_keyAutoPip),
       prefs.remove(_keyMatchContentFrameRate),
       prefs.remove(_keyTunneledPlayback),
       prefs.remove(_keyDefaultPlaybackSpeed),

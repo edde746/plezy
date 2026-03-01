@@ -22,20 +22,8 @@ class VideoPIPManager {
   /// Access PiP state from the service
   ValueNotifier<bool> get isPipActive => PipService().isPipActive;
 
-  /// Toggle native PiP
-  /// Returns a tuple of (success, error message) for error handling
-  Future<(bool success, String? error)> togglePIP() async {
-    final supported = await PipService.isSupported();
-    if (!supported) return (false, 'PiP not supported on this device');
-
-    // Reset video filter to contain mode BEFORE entering PiP
-    // This prevents the zoomed/cropped view from being shown in PiP
-    onBeforeEnterPip?.call();
-
-    // Wait a frame for the filter change to take effect
-    await Future.delayed(const Duration(milliseconds: 50));
-
-    // Get display dimensions for correct aspect ratio (accounts for pixel aspect ratio)
+  /// Get current video dimensions (display or storage or fallback to viewport)
+  Future<(int? width, int? height)> _getVideoDimensions() async {
     int? width;
     int? height;
 
@@ -46,11 +34,8 @@ class VideoPIPManager {
         width = int.tryParse(dwidth);
         height = int.tryParse(dheight);
       }
-    } catch (_) {
-      // Fall through to storage dimensions
-    }
+    } catch (_) {}
 
-    // Fallback to storage dimensions (less accurate for anamorphic content)
     if (width == null || height == null) {
       try {
         final videoWidth = await player.getProperty('width');
@@ -59,15 +44,44 @@ class VideoPIPManager {
           width = int.tryParse(videoWidth);
           height = int.tryParse(videoHeight);
         }
-      } catch (_) {
-        // Fall through to viewport size
-      }
+      } catch (_) {}
     }
 
-    // Fall back to viewport size if video dimensions unavailable
     width ??= _playerSize?.width.toInt();
     height ??= _playerSize?.height.toInt();
 
-    return await PipService.enter(width: width, height: height);
+    return (width, height);
+  }
+
+  /// Toggle native PiP
+  /// Returns a tuple of (success, error message) for error handling
+  Future<(bool success, String? error)> togglePIP() async {
+    final supported = await PipService.isSupported();
+    if (!supported) return (false, 'PiP not supported on this device');
+
+    // Reset video filter to contain mode BEFORE entering PiP
+    onBeforeEnterPip?.call();
+
+    // Wait a frame for the filter change to take effect
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    final dims = await _getVideoDimensions();
+    return await PipService.enter(width: dims.$1, height: dims.$2);
+  }
+
+  /// Update auto-PiP readiness on the native side
+  Future<void> updateAutoPipState({required bool isPlaying}) async {
+    if (!isPlaying) {
+      await PipService.setAutoPipReady(ready: false);
+      return;
+    }
+
+    final dims = await _getVideoDimensions();
+    await PipService.setAutoPipReady(ready: true, width: dims.$1, height: dims.$2);
+  }
+
+  /// Disable auto-PiP (called on dispose or when leaving player)
+  Future<void> disableAutoPip() async {
+    await PipService.setAutoPipReady(ready: false);
   }
 }

@@ -32,6 +32,11 @@ class MainActivity : FlutterActivity() {
     private val THEME_CHANNEL = "app.plezy/theme"
     private var watchNextPlugin: WatchNextPlugin? = null
 
+    // Auto PiP state
+    private var autoPipReady = false
+    private var autoPipWidth: Int = 16
+    private var autoPipHeight: Int = 9
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Apply persisted theme color to the window background before anything
         // else renders.  This prevents a white flash between the native splash
@@ -211,15 +216,7 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
 
-                    // Check if PiP permission is granted via AppOpsManager
-                    val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-                    val pipAllowed = appOpsManager.checkOpNoThrow(
-                        AppOpsManager.OPSTR_PICTURE_IN_PICTURE,
-                        applicationInfo.uid,
-                        packageName
-                    ) == AppOpsManager.MODE_ALLOWED
-
-                    if (!pipAllowed) {
+                    if (!isPipPermissionGranted()) {
                         result.success(mapOf("success" to false, "errorCode" to "permission_disabled"))
                         return@setMethodCallHandler
                     }
@@ -227,31 +224,10 @@ class MainActivity : FlutterActivity() {
                     try {
                         val width = call.argument<Int>("width") ?: 16
                         val height = call.argument<Int>("height") ?: 9
-
-                        // Android PiP requires aspect ratio between 0.418410 (5:12) and 2.39 (12:5)
-                        val ratio = width.toFloat() / height.toFloat()
-                        val clampedWidth: Int
-                        val clampedHeight: Int
-
-                        when {
-                            ratio < 0.42f -> {
-                                // Too tall - clamp to minimum ratio (5:12)
-                                clampedWidth = 5
-                                clampedHeight = 12
-                            }
-                            ratio > 2.39f -> {
-                                // Too wide - clamp to maximum ratio (12:5)
-                                clampedWidth = 12
-                                clampedHeight = 5
-                            }
-                            else -> {
-                                clampedWidth = width
-                                clampedHeight = height
-                            }
-                        }
+                        val clamped = clampAspectRatio(width, height)
 
                         val params = PictureInPictureParams.Builder()
-                            .setAspectRatio(Rational(clampedWidth, clampedHeight))
+                            .setAspectRatio(Rational(clamped.first, clamped.second))
                             .build()
                         val success = enterPictureInPictureMode(params)
                         if (success) {
@@ -264,7 +240,25 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Exception) {
                         result.success(mapOf("success" to false, "errorCode" to "unknown", "errorMessage" to (e.message ?: "Unknown error")))
                     }
-                } else -> result.notImplemented()
+                }
+                "setAutoPipReady" -> {
+                    autoPipReady = call.argument<Boolean>("ready") ?: false
+                    autoPipWidth = call.argument<Int>("width") ?: 16
+                    autoPipHeight = call.argument<Int>("height") ?: 9
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        try {
+                            val clamped = clampAspectRatio(autoPipWidth, autoPipHeight)
+                            val params = PictureInPictureParams.Builder()
+                                .setAspectRatio(Rational(clamped.first, clamped.second))
+                                .setAutoEnterEnabled(autoPipReady)
+                                .build()
+                            setPictureInPictureParams(params)
+                        } catch (_: Exception) {}
+                    }
+                    result.success(true)
+                }
+                else -> result.notImplemented()
             }
         }
     }
@@ -276,6 +270,44 @@ class MainActivity : FlutterActivity() {
         // Notify ExoPlayer plugin to resize video surface for PiP
         flutterEngine?.plugins?.get(ExoPlayerPlugin::class.java)?.let { plugin ->
             (plugin as? ExoPlayerPlugin)?.onPipModeChanged(isInPictureInPictureMode)
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        // Auto PiP for API 26-30 (API 31+ uses setAutoEnterEnabled)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S &&
+            autoPipReady && isPipPermissionGranted()) {
+            try {
+                // Notify Flutter to prepare video filter before PiP
+                flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+                    MethodChannel(messenger, PIP_CHANNEL).invokeMethod("onAutoPipEntering", null)
+                }
+                val clamped = clampAspectRatio(autoPipWidth, autoPipHeight)
+                val params = PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(clamped.first, clamped.second))
+                    .build()
+                enterPictureInPictureMode(params)
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun isPipPermissionGranted(): Boolean {
+        val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        return appOpsManager.checkOpNoThrow(
+            AppOpsManager.OPSTR_PICTURE_IN_PICTURE,
+            applicationInfo.uid,
+            packageName
+        ) == AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun clampAspectRatio(width: Int, height: Int): Pair<Int, Int> {
+        val ratio = width.toFloat() / height.toFloat()
+        return when {
+            ratio < 0.42f -> Pair(5, 12)
+            ratio > 2.39f -> Pair(12, 5)
+            else -> Pair(width, height)
         }
     }
 }

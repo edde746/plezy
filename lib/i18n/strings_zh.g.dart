@@ -316,6 +316,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord 动态状态';
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
+	@override String get autoPip => '自动画中画';
+	@override String get autoPipDescription => '在播放期间离开应用时自动进入画中画模式';
 	@override String get matchContentFrameRate => '匹配内容帧率';
 	@override String get matchContentFrameRateDescription => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量';
 	@override String get tunneledPlayback => 'Tunneled Playback';

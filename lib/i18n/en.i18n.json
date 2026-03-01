@@ -197,6 +197,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Show what you're watching on Discord",
+    "autoPip": "Auto Picture-in-Picture",
+    "autoPipDescription": "Automatically enter picture-in-picture when leaving the app during playback",
     "matchContentFrameRate": "Match Content Frame Rate",
     "matchContentFrameRateDescription": "Adjust display refresh rate to match video content, reducing judder and saving battery",
     "tunneledPlayback": "Tunneled Playback",

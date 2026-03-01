@@ -180,6 +180,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
+  bool _autoPipEnabled = false;
 
   // Services
   MediaControlsManager? _mediaControlsManager;
@@ -315,7 +316,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       case AppLifecycleState.hidden:
         // App is being hidden (user is switching away)
         // Pause video since we don't support background playback (mobile only)
+        // Skip if entering PiP mode - video should keep playing
         if (PlatformDetector.isMobile(context)) {
+          if (Platform.isAndroid && PipService().isPipActive.value) break;
           if (player != null && _isPlayerInitialized) {
             _wasPlayingBeforeInactive = player!.state.playing;
             if (_wasPlayingBeforeInactive) {
@@ -326,6 +329,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
         break;
       case AppLifecycleState.paused:
+        // Skip if in PiP mode - video should keep playing
+        if (Platform.isAndroid && PipService().isPipActive.value) break;
         // Clear media controls when app truly goes to background
         // (we don't support background playback)
         OsMediaControls.clear();
@@ -394,6 +399,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Load buffer size from settings
       final settingsService = await SettingsService.getInstance();
       _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
+      if (Platform.isAndroid) {
+        _autoPipEnabled = settingsService.getAutoPip();
+      }
       final bufferSizeMB = settingsService.getBufferSize();
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
@@ -1075,6 +1083,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           };
           _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
 
+          // Auto-PiP: set up callback for API 26-30 path and initial state
+          if (Platform.isAndroid && _autoPipEnabled) {
+            PipService.onAutoPipEntering = () {
+              _videoFilterManager?.enterPipMode();
+            };
+            if (player!.state.playing) {
+              _videoPIPManager!.updateAutoPipState(isPlaying: true);
+            }
+          }
+
           // Shader Service (MPV only)
           _shaderService = ShaderService(player!);
           if (_shaderService!.isSupported) {
@@ -1637,9 +1655,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _sendLiveTimeline('stopped');
     _stopLiveTimelineUpdates();
 
-    // Remove PiP state listener, clear callback, and dispose video filter manager
+    // Remove PiP state listener, clear callbacks, disable auto-PiP, and dispose video filter manager
     _videoPIPManager?.isPipActive.removeListener(_onPipStateChanged);
     _videoPIPManager?.onBeforeEnterPip = null;
+    _videoPIPManager?.disableAutoPip();
+    PipService.onAutoPipEntering = null;
     _videoFilterManager?.dispose();
 
     // Release cached BIF thumbnail data
@@ -1768,6 +1788,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       DiscordRPCService.instance.resumePlayback();
     } else {
       DiscordRPCService.instance.pausePlayback();
+    }
+
+    // Update auto-PiP readiness on Android
+    if (Platform.isAndroid && _autoPipEnabled) {
+      _videoPIPManager?.updateAutoPipState(isPlaying: isPlaying);
     }
   }
 

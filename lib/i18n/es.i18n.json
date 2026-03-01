@@ -197,6 +197,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Presencia de Discord",
     "discordRichPresenceDescription": "Mostrar lo que estás viendo en Discord",
+    "autoPip": "Imagen en imagen automática",
+    "autoPipDescription": "Activar automáticamente imagen en imagen al salir de la app durante la reproducción",
     "matchContentFrameRate": "Ajustar frecuencia de actualización",
     "matchContentFrameRateDescription": "Ajustar la frecuencia de actualización de la pantalla para que coincida con el video, reduciendo tirones y ahorrando batería",
     "tunneledPlayback": "Tunneled Playback",

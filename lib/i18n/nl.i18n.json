@@ -197,6 +197,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent",
+    "autoPip": "Automatische beeld-in-beeld",
+    "autoPipDescription": "Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen",
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
     "matchContentFrameRateDescription": "Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij",
     "tunneledPlayback": "Tunneled Playback",

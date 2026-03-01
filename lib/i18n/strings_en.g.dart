@@ -694,6 +694,12 @@ class TranslationsSettingsEn {
 	/// en: 'Show what you're watching on Discord'
 	String get discordRichPresenceDescription => 'Show what you\'re watching on Discord';
 
+	/// en: 'Auto Picture-in-Picture'
+	String get autoPip => 'Auto Picture-in-Picture';
+
+	/// en: 'Automatically enter picture-in-picture when leaving the app during playback'
+	String get autoPipDescription => 'Automatically enter picture-in-picture when leaving the app during playback';
+
 	/// en: 'Match Content Frame Rate'
 	String get matchContentFrameRate => 'Match Content Frame Rate';
 
@@ -3095,6 +3101,8 @@ extension on Translations {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
+			'settings.autoPip' => 'Auto Picture-in-Picture',
+			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when leaving the app during playback',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
 			'settings.matchContentFrameRateDescription' => 'Adjust display refresh rate to match video content, reducing judder and saving battery',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
