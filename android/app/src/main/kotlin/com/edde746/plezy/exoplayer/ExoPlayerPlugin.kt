@@ -34,6 +34,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var activityBinding: ActivityPluginBinding? = null
     private val nameToId = mutableMapOf<String, Int>()
     private var configuredBufferSizeBytes: Int? = null
+    private var configuredTunnelingEnabled: Boolean = true
 
     // FlutterPlugin
 
@@ -148,14 +149,19 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         val bufferSizeBytes = call.argument<Int>("bufferSizeBytes")
+        val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: true
         configuredBufferSizeBytes = bufferSizeBytes
+        configuredTunnelingEnabled = tunnelingEnabled
 
         currentActivity.runOnUiThread {
             try {
                 playerCore = ExoPlayerCore(currentActivity).apply {
                     delegate = this@ExoPlayerPlugin
                 }
-                val success = playerCore?.initialize(bufferSizeBytes = bufferSizeBytes) ?: false
+                val success = playerCore?.initialize(
+                    bufferSizeBytes = bufferSizeBytes,
+                    tunnelingEnabled = tunnelingEnabled,
+                ) ?: false
 
                 // Start hidden
                 playerCore?.setVisible(false)

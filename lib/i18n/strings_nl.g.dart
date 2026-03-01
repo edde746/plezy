@@ -318,6 +318,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Toon op Discord wat je aan het kijken bent';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
 	@override String get matchContentFrameRateDescription => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij';
+	@override String get tunneledPlayback => 'Tunneled Playback';
+	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
 	@override String get confirmExitOnBack => 'Bevestigen voor afsluiten';
@@ -1485,6 +1487,8 @@ extension on TranslationsNl {
 			'settings.discordRichPresenceDescription' => 'Toon op Discord wat je aan het kijken bent',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
 			'settings.matchContentFrameRateDescription' => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
 			'settings.confirmExitOnBack' => 'Bevestigen voor afsluiten',

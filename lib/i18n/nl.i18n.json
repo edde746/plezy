@@ -199,6 +199,8 @@
     "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent",
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
     "matchContentFrameRateDescription": "Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij",
+    "tunneledPlayback": "Tunneled Playback",
+    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "Vraag om profiel bij openen",
     "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
     "confirmExitOnBack": "Bevestigen voor afsluiten",

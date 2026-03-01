@@ -700,6 +700,12 @@ class TranslationsSettingsEn {
 	/// en: 'Adjust display refresh rate to match video content, reducing judder and saving battery'
 	String get matchContentFrameRateDescription => 'Adjust display refresh rate to match video content, reducing judder and saving battery';
 
+	/// en: 'Tunneled Playback'
+	String get tunneledPlayback => 'Tunneled Playback';
+
+	/// en: 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content'
+	String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
+
 	/// en: 'Ask for profile on app open'
 	String get requireProfileSelectionOnOpen => 'Ask for profile on app open';
 
@@ -3091,6 +3097,8 @@ extension on Translations {
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
 			'settings.matchContentFrameRateDescription' => 'Adjust display refresh rate to match video content, reducing judder and saving battery',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.confirmExitOnBack' => 'Confirm before exiting',

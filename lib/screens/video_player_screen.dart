@@ -403,6 +403,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player = Player(useExoPlayer: useExoPlayer);
 
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
+      if (Platform.isAndroid && useExoPlayer) {
+        final tunneledPlayback = settingsService.getTunneledPlayback();
+        await player!.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
+      }
       if (bufferSizeMB > 0) {
         final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
         await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());

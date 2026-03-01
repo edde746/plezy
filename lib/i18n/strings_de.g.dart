@@ -318,6 +318,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Zeige auf Discord, was du gerade schaust';
 	@override String get matchContentFrameRate => 'Inhalts-Bildrate anpassen';
 	@override String get matchContentFrameRateDescription => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku';
+	@override String get tunneledPlayback => 'Tunneled Playback';
+	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
 	@override String get requireProfileSelectionOnOpen => 'Profil beim Öffnen abfragen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Profilauswahl bei jedem Öffnen der App anzeigen';
 	@override String get confirmExitOnBack => 'Vor dem Beenden bestätigen';
@@ -1485,6 +1487,8 @@ extension on TranslationsDe {
 			'settings.discordRichPresenceDescription' => 'Zeige auf Discord, was du gerade schaust',
 			'settings.matchContentFrameRate' => 'Inhalts-Bildrate anpassen',
 			'settings.matchContentFrameRateDescription' => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => 'Profil beim Öffnen abfragen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Profilauswahl bei jedem Öffnen der App anzeigen',
 			'settings.confirmExitOnBack' => 'Vor dem Beenden bestätigen',

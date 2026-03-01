@@ -80,6 +80,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     companion object {
         private const val TAG = "ExoPlayerCore"
         private const val SHORT_VIDEO_LENGTH_MS = 300000L // 5 minutes
+        private const val WATCHDOG_CHECK_INTERVAL_MS = 1000L
+        private const val WATCHDOG_TIMEOUT_MS = 8000L
     }
 
     private var surfaceView: SurfaceView? = null
@@ -90,8 +92,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var lastVideoSize: VideoSize? = null
     private var exoPlayer: ExoPlayer? = null
     private var trackSelector: DefaultTrackSelector? = null
+    private var tunnelingUserEnabled: Boolean = true
     private var tunnelingDisabledForCodec: Boolean = false
     private var pendingStartPositionMs: Long = 0L
+
+    // Frame watchdog: detects black screen (audio plays but 0 video frames rendered)
+    private var frameWatchdogRunnable: Runnable? = null
+    private var frameWatchdogStartTime: Long = 0L
     var delegate: ExoPlayerDelegate? = null
     var isInitialized: Boolean = false
         private set
@@ -212,11 +219,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
     }
 
-    fun initialize(bufferSizeBytes: Int? = null): Boolean {
+    fun initialize(bufferSizeBytes: Int? = null, tunnelingEnabled: Boolean = true): Boolean {
         if (isInitialized) {
             Log.d(TAG, "Already initialized")
             return true
         }
+
+        tunnelingUserEnabled = tunnelingEnabled
 
         try {
             audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -302,7 +311,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             trackSelector = DefaultTrackSelector(activity).apply {
                 setParameters(
                     buildUponParameters()
-                        .setTunnelingEnabled(true)
+                        .setTunnelingEnabled(tunnelingUserEnabled)
                         .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
                         .setPreferredTextLanguage("en")
                 )
@@ -533,8 +542,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 delegate?.onPropertyChange("paused-for-cache", false)
                 delegate?.onEvent("playback-restart", null)
                 emitTrackList()
+
+                // Start frame watchdog to detect black screen (HDR tunneling issue)
+                startFrameWatchdog()
             }
             Player.STATE_ENDED -> {
+                stopFrameWatchdog()
                 delegate?.onPropertyChange("eof-reached", true)
                 delegate?.onEvent("end-file", mapOf("reason" to "eof"))
             }
@@ -549,6 +562,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     override fun onPlayerError(error: PlaybackException) {
         Log.e(TAG, "Player error: ${error.message} (code: ${error.errorCode})", error)
+        stopFrameWatchdog()
 
         if (currentMediaUri != null) {
             Log.w(TAG, "ExoPlayer error (code ${error.errorCode}) - attempting fallback to MPV")
@@ -763,7 +777,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val selector = trackSelector ?: return
         val player = exoPlayer ?: return
         val currentSpeed = player.playbackParameters.speed
-        val shouldTunnel = (currentSpeed == 1f) && !tunnelingDisabledForCodec
+        val shouldTunnel = tunnelingUserEnabled && (currentSpeed == 1f) && !tunnelingDisabledForCodec
         val currentTunneling = selector.parameters.tunnelingEnabled
         if (shouldTunnel == currentTunneling) return  // No change needed
         Log.d(TAG, "updateTunnelingState: tunneling $currentTunneling -> $shouldTunnel")
@@ -793,6 +807,55 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             Log.i(TAG, "Audio codec ${format.codecs} ($mimeType): tunneling ${if (newDisabled) "DISABLED" else "enabled"}")
             updateTunnelingState()
         }
+    }
+
+    // Frame watchdog: detects when ExoPlayer plays audio but renders 0 video frames
+    // (common with HDR tunneling on unsupported devices — black screen, no error)
+
+    private fun startFrameWatchdog() {
+        stopFrameWatchdog()
+        frameWatchdogStartTime = System.currentTimeMillis()
+        frameWatchdogRunnable = object : Runnable {
+            override fun run() {
+                val player = exoPlayer ?: return
+                val renderedFrames = player.videoDecoderCounters?.renderedOutputBufferCount ?: 0
+
+                if (renderedFrames > 0) {
+                    Log.d(TAG, "Frame watchdog: $renderedFrames frames rendered, stopping watchdog")
+                    stopFrameWatchdog()
+                    return
+                }
+
+                val elapsed = System.currentTimeMillis() - frameWatchdogStartTime
+
+                // Check if we have a video track selected
+                val hasVideoTrack = player.currentTracks.groups.any {
+                    it.type == C.TRACK_TYPE_VIDEO && it.isSelected
+                }
+
+                if (elapsed >= WATCHDOG_TIMEOUT_MS && player.isPlaying && hasVideoTrack) {
+                    Log.w(TAG, "Frame watchdog: 0 frames rendered after ${elapsed}ms with playing video — triggering MPV fallback")
+                    stopFrameWatchdog()
+                    // Trigger fallback via the same delegate path as player errors
+                    val uri = currentMediaUri ?: return
+                    delegate?.onFormatUnsupported(
+                        uri = uri,
+                        headers = currentHeaders,
+                        positionMs = player.currentPosition,
+                        errorMessage = "Black screen detected: 0 video frames rendered after ${elapsed}ms"
+                    )
+                    return
+                }
+
+                handler.postDelayed(this, WATCHDOG_CHECK_INTERVAL_MS)
+            }
+        }
+        handler.postDelayed(frameWatchdogRunnable!!, WATCHDOG_CHECK_INTERVAL_MS)
+    }
+
+    private fun stopFrameWatchdog() {
+        frameWatchdogRunnable?.let { handler.removeCallbacks(it) }
+        frameWatchdogRunnable = null
     }
 
     // Public API
@@ -866,6 +929,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     fun stop() {
+        stopFrameWatchdog()
         exoPlayer?.stop()
         setVisible(false)
     }
@@ -910,7 +974,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             }
 
             val currentSpeed = player.playbackParameters.speed
-            val shouldTunnel = (currentSpeed == 1f) && !tunnelingDisabledForCodec
+            val shouldTunnel = tunnelingUserEnabled && (currentSpeed == 1f) && !tunnelingDisabledForCodec
 
             selector.parameters = selector.buildUponParameters()
                 .setOverrideForType(TrackSelectionOverride(group.mediaTrackGroup, 0))
@@ -1389,6 +1453,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     fun dispose() {
         Log.d(TAG, "Disposing")
 
+        stopFrameWatchdog()
         stopPositionUpdates()
         clearVideoFrameRate()
         abandonAudioFocus()

@@ -10,6 +10,7 @@ class PlayerAndroid extends PlayerBase {
   static const _eventChannel = EventChannel('com.plezy/exo_player/events');
 
   int? _bufferSizeBytes;
+  bool _tunnelingEnabled = true;
 
   @override
   MethodChannel get methodChannel => _methodChannel;
@@ -50,6 +51,7 @@ class PlayerAndroid extends PlayerBase {
     try {
       final result = await methodChannel.invokeMethod<bool>('initialize', {
         'bufferSizeBytes': _bufferSizeBytes,
+        'tunnelingEnabled': _tunnelingEnabled,
       });
       initialized = result == true;
       if (!initialized) {
@@ -187,6 +189,9 @@ class PlayerAndroid extends PlayerBase {
         break;
       case 'demuxer-max-bytes':
         _bufferSizeBytes = int.tryParse(value);
+        break;
+      case 'tunneled-playback':
+        _tunnelingEnabled = value != 'no';
         break;
       // Other properties are no-ops for ExoPlayer
     }

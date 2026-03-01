@@ -65,6 +65,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMaxVolume = 'max_volume';
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
+  static const String _keyTunneledPlayback = 'tunneled_playback';
   static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
   static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
   static const String _keyUseExoPlayer = 'use_exoplayer';
@@ -993,6 +994,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyMatchContentFrameRate) ?? false; // Default disabled
   }
 
+  // Tunneled Playback (Android ExoPlayer only)
+  Future<void> setTunneledPlayback(bool enabled) async {
+    await prefs.setBool(_keyTunneledPlayback, enabled);
+  }
+
+  bool getTunneledPlayback() {
+    return prefs.getBool(_keyTunneledPlayback) ?? true; // Default: enabled
+  }
+
   // Default Playback Speed (0.5 to 3.0)
   Future<void> setDefaultPlaybackSpeed(double speed) async {
     await prefs.setDouble(_keyDefaultPlaybackSpeed, speed.clamp(0.5, 3.0));
@@ -1202,6 +1212,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyMpvConfigPresets),
       prefs.remove(_keyEnableDiscordRPC),
       prefs.remove(_keyMatchContentFrameRate),
+      prefs.remove(_keyTunneledPlayback),
       prefs.remove(_keyDefaultPlaybackSpeed),
       prefs.remove(_keyAutoPlayNextEpisode),
       prefs.remove(_keyUseExoPlayer),

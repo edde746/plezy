@@ -199,6 +199,8 @@
     "discordRichPresenceDescription": "Mostra su Discord cosa stai guardando",
     "matchContentFrameRate": "Adatta frequenza fotogrammi",
     "matchContentFrameRateDescription": "Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria",
+    "tunneledPlayback": "Tunneled Playback",
+    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "Chiedi profilo all'apertura",
     "requireProfileSelectionOnOpenDescription": "Mostra la selezione del profilo ogni volta che l'app viene aperta",
     "confirmExitOnBack": "Conferma prima di uscire",

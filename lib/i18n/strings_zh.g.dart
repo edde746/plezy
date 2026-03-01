@@ -318,6 +318,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
 	@override String get matchContentFrameRate => '匹配内容帧率';
 	@override String get matchContentFrameRateDescription => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量';
+	@override String get tunneledPlayback => 'Tunneled Playback';
+	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
 	@override String get requireProfileSelectionOnOpen => '打开应用时询问配置文件';
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
 	@override String get confirmExitOnBack => '退出前确认';
@@ -1485,6 +1487,8 @@ extension on TranslationsZh {
 			'settings.discordRichPresenceDescription' => '在 Discord 上显示您正在观看的内容',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
 			'settings.matchContentFrameRateDescription' => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => '打开应用时询问配置文件',
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
 			'settings.confirmExitOnBack' => '退出前确认',

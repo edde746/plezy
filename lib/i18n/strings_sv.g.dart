@@ -318,6 +318,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Visa vad du tittar på i Discord';
 	@override String get matchContentFrameRate => 'Matcha innehållets bildfrekvens';
 	@override String get matchContentFrameRateDescription => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri';
+	@override String get tunneledPlayback => 'Tunneled Playback';
+	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
 	@override String get requireProfileSelectionOnOpen => 'Fråga efter profil vid appstart';
 	@override String get requireProfileSelectionOnOpenDescription => 'Visa profilval varje gång appen öppnas';
 	@override String get confirmExitOnBack => 'Bekräfta innan avslut';
@@ -1485,6 +1487,8 @@ extension on TranslationsSv {
 			'settings.discordRichPresenceDescription' => 'Visa vad du tittar på i Discord',
 			'settings.matchContentFrameRate' => 'Matcha innehållets bildfrekvens',
 			'settings.matchContentFrameRateDescription' => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => 'Fråga efter profil vid appstart',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Visa profilval varje gång appen öppnas',
 			'settings.confirmExitOnBack' => 'Bekräfta innan avslut',

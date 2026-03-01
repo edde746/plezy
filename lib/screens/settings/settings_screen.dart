@@ -78,6 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kExternalPlayer = 'external_player';
   static const _kHardwareDecoding = 'hardware_decoding';
   static const _kMatchContentFrameRate = 'match_content_frame_rate';
+  static const _kTunneledPlayback = 'tunneled_playback';
   static const _kBufferSize = 'buffer_size';
   static const _kSubtitleStyling = 'subtitle_styling';
   static const _kMpvConfig = 'mpv_config';
@@ -121,6 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   int _maxVolume = 100;
   bool _enableDiscordRPC = false;
   bool _matchContentFrameRate = false;
+  bool _tunneledPlayback = true;
   bool _useExoPlayer = true; // Android only: ExoPlayer vs MPV
   bool _requireProfileSelectionOnOpen = false;
   bool _useExternalPlayer = false;
@@ -195,6 +197,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _maxVolume = _settingsService.getMaxVolume();
       _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
       _matchContentFrameRate = _settingsService.getMatchContentFrameRate();
+      _tunneledPlayback = _settingsService.getTunneledPlayback();
       _useExoPlayer = _settingsService.getUseExoPlayer();
       _requireProfileSelectionOnOpen = _settingsService.getRequireProfileSelectionOnOpen();
       _useExternalPlayer = _settingsService.getUseExternalPlayer();
@@ -496,6 +499,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   _matchContentFrameRate = value;
                 });
                 await _settingsService.setMatchContentFrameRate(value);
+              },
+            ),
+          if (Platform.isAndroid && _useExoPlayer)
+            SwitchListTile(
+              focusNode: _focusTracker.get(_kTunneledPlayback),
+              secondary: const AppIcon(Symbols.tv_options_input_settings_rounded, fill: 1),
+              title: Text(t.settings.tunneledPlayback),
+              subtitle: Text(t.settings.tunneledPlaybackDescription),
+              value: _tunneledPlayback,
+              onChanged: (value) async {
+                setState(() {
+                  _tunneledPlayback = value;
+                });
+                await _settingsService.setTunneledPlayback(value);
               },
             ),
           ListTile(

@@ -199,6 +199,8 @@
     "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
     "matchContentFrameRateDescription": "Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri",
+    "tunneledPlayback": "Tunneled Playback",
+    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "Fråga efter profil vid appstart",
     "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas",
     "confirmExitOnBack": "Bekräfta innan avslut",

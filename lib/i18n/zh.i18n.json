@@ -199,6 +199,8 @@
     "discordRichPresenceDescription": "在 Discord 上显示您正在观看的内容",
     "matchContentFrameRate": "匹配内容帧率",
     "matchContentFrameRateDescription": "调整显示刷新率以匹配视频内容，减少画面抖动并节省电量",
+    "tunneledPlayback": "Tunneled Playback",
+    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "打开应用时询问配置文件",
     "requireProfileSelectionOnOpenDescription": "每次打开应用时显示配置文件选择",
     "confirmExitOnBack": "退出前确认",

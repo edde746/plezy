@@ -318,6 +318,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
 	@override String get matchContentFrameRateDescription => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
+	@override String get tunneledPlayback => 'Tunneled Playback';
+	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get confirmExitOnBack => '종료 전 확인';
@@ -1485,6 +1487,8 @@ extension on TranslationsKo {
 			'settings.discordRichPresenceDescription' => 'Discord에서 시청 중인 콘텐츠 표시',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
 			'settings.matchContentFrameRateDescription' => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.confirmExitOnBack' => '종료 전 확인',
