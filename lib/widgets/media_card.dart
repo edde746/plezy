@@ -609,7 +609,7 @@ Widget _buildPosterImage(
   } else if (item is PlexMetadata) {
     final settingsProvider = context.watch<SettingsProvider>();
     final episodePosterMode = settingsProvider.episodePosterMode;
-    final shouldBlur = settingsProvider.hideSpoilers && item.shouldHideSpoiler;
+    final shouldBlur = settingsProvider.hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
     posterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
 
     Widget image;
