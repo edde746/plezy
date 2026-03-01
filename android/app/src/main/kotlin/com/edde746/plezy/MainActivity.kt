@@ -11,6 +11,8 @@ import android.content.res.Configuration
 import android.util.Rational
 import android.view.KeyEvent
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import android.widget.FrameLayout
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.RenderMode
@@ -28,7 +30,6 @@ class MainActivity : FlutterActivity() {
     private val EXTERNAL_PLAYER_CHANNEL = "app.plezy/external_player"
     private val THEME_CHANNEL = "app.plezy/theme"
     private var watchNextPlugin: WatchNextPlugin? = null
-    private var cachedFlutterView: android.view.View? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Apply persisted theme color to the window background before anything
@@ -62,39 +63,39 @@ class MainActivity : FlutterActivity() {
             window.decorView.defaultFocusHighlightEnabled = false
         }
 
+        // Wrap the content view in a layout that intercepts DPAD key events
+        // before the IME input stage, which can consume DPAD direction events
+        // from virtual remotes before they reach Flutter's key handler.
+        val content = findViewById<ViewGroup>(android.R.id.content)
+        val wrapper = object : FrameLayout(this) {
+            override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
+                when (event.keyCode) {
+                    KeyEvent.KEYCODE_DPAD_UP,
+                    KeyEvent.KEYCODE_DPAD_DOWN,
+                    KeyEvent.KEYCODE_DPAD_LEFT,
+                    KeyEvent.KEYCODE_DPAD_RIGHT,
+                    KeyEvent.KEYCODE_DPAD_CENTER -> {
+                        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                        if (!imm.isAcceptingText) {
+                            super.dispatchKeyEvent(event)
+                            return true
+                        }
+                    }
+                }
+                return super.dispatchKeyEventPreIme(event)
+            }
+        }
+        while (content.childCount > 0) {
+            val child = content.getChildAt(0)
+            content.removeViewAt(0)
+            wrapper.addView(child)
+        }
+        content.addView(wrapper, ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT))
+
         // Handle Watch Next deep link from initial launch
         handleWatchNextIntent(intent)
-    }
-
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        // Ensure FlutterView has focus for DPAD events so they reach Flutter's
-        // key event system. Without this, Android's native focus navigation can
-        // consume DPAD direction events (especially from the Google TV virtual
-        // remote) before they reach Flutter.
-        when (event.keyCode) {
-            KeyEvent.KEYCODE_DPAD_UP,
-            KeyEvent.KEYCODE_DPAD_DOWN,
-            KeyEvent.KEYCODE_DPAD_LEFT,
-            KeyEvent.KEYCODE_DPAD_RIGHT,
-            KeyEvent.KEYCODE_DPAD_CENTER -> {
-                val fv = cachedFlutterView ?: findFlutterView(window.decorView)?.also { cachedFlutterView = it }
-                if (fv != null && !fv.hasFocus()) {
-                    fv.requestFocus()
-                }
-            }
-        }
-        return super.dispatchKeyEvent(event)
-    }
-
-    private fun findFlutterView(view: android.view.View): android.view.View? {
-        if (view.javaClass.name.contains("FlutterView")) return view
-        if (view is ViewGroup) {
-            for (i in 0 until view.childCount) {
-                val found = findFlutterView(view.getChildAt(i))
-                if (found != null) return found
-            }
-        }
-        return null
     }
 
     override fun onNewIntent(intent: Intent) {
