@@ -31,13 +31,12 @@ platform :android do
       aab: "../build/app/outputs/bundle/release/app-release.aab"
     )
 
-    # Build split-per-ABI APKs for Amazon Appstore (doesn't accept AABs)
-    sh("cd #{ENV['PWD']}/.. && flutter build apk --release --split-per-abi --obfuscate --split-debug-info=#{debug_info_dir}/apk")
+    # Build universal APK for Amazon Appstore (doesn't accept AABs, doesn't auto-target by ABI)
+    sh("cd #{ENV['PWD']}/.. && flutter build apk --release --target-platform android-arm,android-arm64 --obfuscate --split-debug-info=#{debug_info_dir}/apk")
 
     upload_to_amazon_appstore(
       apk_paths: [
-        "../build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk",
-        "../build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
+        "../build/app/outputs/flutter-apk/app-release.apk"
       ],
       overwrite_upload: true,
       overwrite_upload_mode: 'reuse',
