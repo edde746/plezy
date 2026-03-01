@@ -9,11 +9,7 @@ import '../i18n/strings.g.dart';
 import '../mixins/refreshable.dart';
 import '../models/plex_metadata.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/settings_provider.dart';
-import '../services/settings_service.dart' show ViewMode;
 import '../utils/app_logger.dart';
-import '../utils/grid_size_calculator.dart';
-import '../utils/sliver_adaptive_media_builder.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/focusable_media_card.dart';
@@ -130,7 +126,7 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
   /// Focus the search input field
   @override
   void focusSearchInput() {
-    FocusUtils.requestFocusAfterBuild(this, _searchFocusNode);
+    _searchFocusNode.requestFocus();
   }
 
   /// Set the search query externally (e.g. from companion remote)
@@ -196,130 +192,101 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
     return KeyEventResult.ignored;
   }
 
-  /// Calculate column count based on available width.
-  int _calculateColumnCount(double availableWidth, double maxCrossAxisExtent, double crossAxisSpacing) {
-    return ((availableWidth + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+  Widget _buildResultsList(BuildContext context) {
+    final multiServer = context.watch<MultiServerProvider>();
+    final showServerName = multiServer.totalServerCount > 1;
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final item = _searchResults[index];
+          return FocusableMediaCard(
+            key: Key(item.globalKey),
+            item: item,
+            forceListMode: true,
+            focusNode: index == 0 ? _firstResultFocusNode : null,
+            onListRefresh: () => updateItem(item.ratingKey),
+            onNavigateLeft: _navigateToSidebar,
+            onNavigateUp: index == 0 ? focusSearchInput : null,
+            showServerName: showServerName,
+          );
+        }, childCount: _searchResults.length),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use LayoutBuilder to get the actual available width (accounting for sidebar)
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth;
-
-        return Scaffold(
-          body: SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                DesktopSliverAppBar(title: Text(t.common.search), floating: true),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-                    child: Focus(
-                      onKeyEvent: _handleSearchInputKeyEvent,
-                      child: TextField(
-                        controller: _searchController,
-                        focusNode: _searchFocusNode,
-                        decoration: InputDecoration(
-                          hintText: t.search.hint,
-                          prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-                          suffixIcon: _searchController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: const AppIcon(Symbols.clear_rounded, fill: 1),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    // State update handled by listener
-                                  },
-                                )
-                              : null,
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(100)),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(100)),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(100)),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
+    return Scaffold(
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            DesktopSliverAppBar(title: Text(t.common.search), floating: true),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                child: Focus(
+                  onKeyEvent: _handleSearchInputKeyEvent,
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    decoration: InputDecoration(
+                      hintText: t.search.hint,
+                      prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const AppIcon(Symbols.clear_rounded, fill: 1),
+                              onPressed: () {
+                                _searchController.clear();
+                                // State update handled by listener
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(100)),
+                        borderSide: BorderSide.none,
                       ),
+                      enabledBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(100)),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(100)),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                   ),
                 ),
-                if (_isSearching)
-                  const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-                else if (!_hasSearched)
-                  SliverFillRemaining(
-                    child: StateMessageWidget(
-                      message: t.search.searchYourMedia,
-                      subtitle: t.search.enterTitleActorOrKeyword,
-                      icon: Symbols.search_rounded,
-                      iconSize: 80,
-                    ),
-                  )
-                else if (_searchResults.isEmpty)
-                  SliverFillRemaining(
-                    child: StateMessageWidget(
-                      message: t.messages.noResultsFound,
-                      subtitle: t.search.tryDifferentTerm,
-                      icon: Symbols.search_off_rounded,
-                      iconSize: 80,
-                    ),
-                  )
-                else
-                  Consumer<SettingsProvider>(
-                    builder: (context, settingsProvider, child) {
-                      final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(
-                        context,
-                        settingsProvider.libraryDensity,
-                      );
-                      const gridPadding = EdgeInsets.all(16);
-                      const crossAxisSpacing = 8.0;
-                      final gridAvailableWidth = availableWidth - gridPadding.left - gridPadding.right;
-                      final columnCount = _calculateColumnCount(
-                        gridAvailableWidth,
-                        maxCrossAxisExtent,
-                        crossAxisSpacing,
-                      );
-                      final isList = settingsProvider.viewMode == ViewMode.list;
-
-                      return buildAdaptiveMediaSliverBuilder<PlexMetadata>(
-                        context: context,
-                        items: _searchResults,
-                        itemBuilder: (context, item, index) {
-                          // In list view, all items are in the first column
-                          final isFirstColumn = isList || GridSizeCalculator.isFirstColumn(index, columnCount);
-                          final isFirstRow = isList ? index == 0 : GridSizeCalculator.isFirstRow(index, columnCount);
-                          return FocusableMediaCard(
-                            key: Key(item.ratingKey),
-                            item: item,
-                            focusNode: index == 0 ? _firstResultFocusNode : null,
-                            onListRefresh: () => updateItem(item.ratingKey),
-                            onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
-                            onNavigateUp: isFirstRow ? focusSearchInput : null,
-                          );
-                        },
-                        viewMode: settingsProvider.viewMode,
-                        density: settingsProvider.libraryDensity,
-                        padding: const EdgeInsets.all(16),
-                        childAspectRatio: 2 / 3.3,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                      );
-                    },
-                  ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+            if (_isSearching)
+              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+            else if (!_hasSearched)
+              SliverFillRemaining(
+                child: StateMessageWidget(
+                  message: t.search.searchYourMedia,
+                  subtitle: t.search.enterTitleActorOrKeyword,
+                  icon: Symbols.search_rounded,
+                  iconSize: 80,
+                ),
+              )
+            else if (_searchResults.isEmpty)
+              SliverFillRemaining(
+                child: StateMessageWidget(
+                  message: t.messages.noResultsFound,
+                  subtitle: t.search.tryDifferentTerm,
+                  icon: Symbols.search_off_rounded,
+                  iconSize: 80,
+                ),
+              )
+            else
+              _buildResultsList(context),
+          ],
+        ),
+      ),
     );
   }
 }
