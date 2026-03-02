@@ -271,7 +271,8 @@ class TrackChapterControls extends StatelessWidget {
         // Subtitles button
         if (_hasSubtitles(tracks)) {
           final currentIndex = buttonIndex;
-          final hasActiveSubtitle = tracks?.track.subtitle != null && tracks!.track.subtitle!.id != 'no';
+          final selectedSub = player.state.track.subtitle;
+          final hasActiveSubtitle = selectedSub != null && selectedSub.id != 'no';
           final isHidden = hasActiveSubtitle && !subtitlesVisible;
           buttons.add(
             _buildTrackButton(
