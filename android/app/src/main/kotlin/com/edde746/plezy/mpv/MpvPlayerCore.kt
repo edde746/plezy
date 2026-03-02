@@ -242,7 +242,7 @@ class MpvPlayerCore(private val activity: Activity) :
         MPVLib.setOptionString("vd-lavc-film-grain", "cpu")
 
         // Audio configuration
-        MPVLib.setOptionString("ao", "audiotrack")
+        MPVLib.setOptionString("ao", "audiotrack,opensles")
     }
 
     // Audio Focus
