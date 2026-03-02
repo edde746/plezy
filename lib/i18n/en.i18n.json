@@ -151,6 +151,8 @@
     "keyboardShortcutsDescription": "Customize keyboard shortcuts",
     "videoPlayerNavigation": "Video Player Navigation",
     "videoPlayerNavigationDescription": "Use arrow keys to navigate video player controls",
+    "crashReporting": "Crash Reporting",
+    "crashReportingDescription": "Send crash reports to help improve the app",
     "debugLogging": "Debug Logging",
     "debugLoggingDescription": "Enable detailed logging for troubleshooting",
     "viewLogs": "View Logs",

@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../models/hotkey_model.dart';
@@ -97,6 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
+  static const _kCrashReporting = 'crash_reporting';
   static const _kDebugLogging = 'debug_logging';
   static const _kViewLogs = 'view_logs';
   static const _kClearCache = 'clear_cache';
@@ -107,6 +110,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
   bool _isLoading = true;
 
+  bool _crashReporting = true;
   bool _enableDebugLogging = false;
   bool _enableHardwareDecoding = true;
   int _bufferSize = 0;
@@ -183,6 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
     if (!mounted) return;
     setState(() {
+      _crashReporting = _settingsService.getCrashReporting();
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _enableHardwareDecoding = _settingsService.getEnableHardwareDecoding();
       _bufferSize = _settingsService.getBufferSize();
@@ -490,7 +495,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               await _settingsService.setEnableHardwareDecoding(value);
             },
           ),
-          if (Platform.isAndroid)
+          if (Platform.isAndroid || Platform.isIOS)
             SwitchListTile(
               focusNode: _focusTracker.get(_kAutoPip),
               secondary: const AppIcon(Symbols.picture_in_picture_alt_rounded, fill: 1),
@@ -936,6 +941,19 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ),
           ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kCrashReporting),
+            secondary: const AppIcon(Symbols.monitoring_rounded, fill: 1),
+            title: Text(t.settings.crashReporting),
+            subtitle: Text(t.settings.crashReportingDescription),
+            value: _crashReporting,
+            onChanged: (value) async {
+              setState(() {
+                _crashReporting = value;
+              });
+              await _settingsService.setCrashReporting(value);
+            },
+          ),
+          SwitchListTile(
             focusNode: _focusTracker.get(_kDebugLogging),
             secondary: const AppIcon(Symbols.bug_report_rounded, fill: 1),
             title: Text(t.settings.debugLogging),
@@ -974,6 +992,17 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showResetSettingsDialog(),
           ),
+          if (kDebugMode)
+            ListTile(
+              leading: const AppIcon(Symbols.error_rounded, fill: 1),
+              title: const Text('Test Sentry'),
+              subtitle: const Text('Send a test error to Bugsink'),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () {
+                Sentry.captureException(Exception('Sentry test from settings'));
+                showSnackBar(context, 'Test error sent to Sentry');
+              },
+            ),
         ],
       ),
     );

@@ -151,6 +151,8 @@
     "keyboardShortcutsDescription": "Anpassa tangentbordsgenvägar",
     "videoPlayerNavigation": "Navigering i videospelaren",
     "videoPlayerNavigationDescription": "Använd piltangenter för att navigera videospelarens kontroller",
+    "crashReporting": "Kraschrapportering",
+    "crashReportingDescription": "Skicka kraschrapporter för att förbättra appen",
     "debugLogging": "Felsökningsloggning",
     "debugLoggingDescription": "Aktivera detaljerad loggning för felsökning",
     "viewLogs": "Visa loggar",

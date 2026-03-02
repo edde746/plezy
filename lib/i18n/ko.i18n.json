@@ -151,6 +151,8 @@
     "keyboardShortcutsDescription": "사용자 정의 키보드 단축키",
     "videoPlayerNavigation": "비디오 플레이어 탐색",
     "videoPlayerNavigationDescription": "방향 키를 사용하여 비디오 플레이어 컨트롤 탐색",
+    "crashReporting": "충돌 보고",
+    "crashReportingDescription": "앱 개선을 위해 충돌 보고서 전송",
     "debugLogging": "디버그 로깅",
     "debugLoggingDescription": "문제 해결을 위해 상세 로깅 활성화",
     "viewLogs": "로그 보기",

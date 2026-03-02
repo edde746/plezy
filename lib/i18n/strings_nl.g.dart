@@ -270,6 +270,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Pas toetsenbord sneltoetsen aan';
 	@override String get videoPlayerNavigation => 'Videospeler navigatie';
 	@override String get videoPlayerNavigationDescription => 'Gebruik pijltjestoetsen om door de videospeler bediening te navigeren';
+	@override String get crashReporting => 'Crashrapportage';
+	@override String get crashReportingDescription => 'Crashrapporten verzenden om de app te verbeteren';
 	@override String get debugLogging => 'Debug logging';
 	@override String get debugLoggingDescription => 'Schakel gedetailleerde logging in voor probleemoplossing';
 	@override String get viewLogs => 'Bekijk logs';
@@ -1441,6 +1443,8 @@ extension on TranslationsNl {
 			'settings.keyboardShortcutsDescription' => 'Pas toetsenbord sneltoetsen aan',
 			'settings.videoPlayerNavigation' => 'Videospeler navigatie',
 			'settings.videoPlayerNavigationDescription' => 'Gebruik pijltjestoetsen om door de videospeler bediening te navigeren',
+			'settings.crashReporting' => 'Crashrapportage',
+			'settings.crashReportingDescription' => 'Crashrapporten verzenden om de app te verbeteren',
 			'settings.debugLogging' => 'Debug logging',
 			'settings.debugLoggingDescription' => 'Schakel gedetailleerde logging in voor probleemoplossing',
 			'settings.viewLogs' => 'Bekijk logs',
@@ -1487,6 +1491,8 @@ extension on TranslationsNl {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Toon op Discord wat je aan het kijken bent',
+			'settings.autoPip' => 'Automatische beeld-in-beeld',
+			'settings.autoPipDescription' => 'Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
 			'settings.matchContentFrameRateDescription' => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
@@ -1808,6 +1814,8 @@ extension on TranslationsNl {
 			'liveTv.nowPlaying' => 'Nu aan het afspelen',
 			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NIEUW',
@@ -1822,8 +1830,6 @@ extension on TranslationsNl {
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',

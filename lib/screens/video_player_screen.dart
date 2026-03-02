@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -581,6 +582,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
+          Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player'));
 
           // Apply frame rate matching on Android if enabled
           if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
@@ -648,6 +650,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Set MPV video-sync mode for smoother playback when display is synced
       await player!.setProperty('video-sync', 'display-tempo');
 
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching: ${fps}fps', category: 'player'));
       appLogger.d('Frame rate matching: Set display to ${fps}fps (duration: ${durationMs}ms)');
     } catch (e) {
       appLogger.w('Failed to apply frame rate matching', error: e);
@@ -661,6 +664,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       await player!.clearVideoFrameRate();
       await player!.setProperty('video-sync', 'audio');
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching cleared', category: 'player'));
       appLogger.d('Frame rate matching: Cleared, restored default display mode');
     } catch (e) {
       appLogger.d('Failed to clear frame rate matching', error: e);
@@ -1764,6 +1768,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     }
 
+    Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
     player?.dispose();
     if (_activeRatingKey == widget.metadata.ratingKey) {
       _activeRatingKey = null;

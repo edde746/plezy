@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -5,6 +7,7 @@ import 'dart:io' show Platform;
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
@@ -48,6 +51,7 @@ import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'utils/navigation_transitions.dart';
+import 'utils/log_redaction_manager.dart';
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
@@ -70,69 +74,115 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
 
-  // Initialize settings first to get saved locale
-  final settings = await SettingsService.getInstance();
-  final savedLocale = settings.getAppLocale();
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = 'https://7aa61595518d4770a4d5ea412982dcd7@bugs.plezy.app/1';
+      options.sendDefaultPii = true;
+      options.tracesSampleRate = 0;
+      options.anrEnabled = true;
+      options.anrTimeoutInterval = const Duration(seconds: 5);
+      options.attachStacktrace = true;
+      options.beforeSend = _beforeSend;
+    },
+    appRunner: () async {
+      // Initialize settings first to get saved locale
+      final settings = await SettingsService.getInstance();
+      final savedLocale = settings.getAppLocale();
 
-  // Initialize localization with saved locale
-  LocaleSettings.setLocale(savedLocale);
+      // Initialize localization with saved locale
+      LocaleSettings.setLocale(savedLocale);
 
-  // Needed for formatting dates in different locales
-  await initializeDateFormatting(savedLocale.languageCode, null);
+      // Needed for formatting dates in different locales
+      await initializeDateFormatting(savedLocale.languageCode, null);
 
-  // Configure image cache for large libraries
-  PaintingBinding.instance.imageCache.maximumSize = 2000; // default 1000
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300MB
+      // Configure image cache for large libraries
+      PaintingBinding.instance.imageCache.maximumSize = 2000; // default 1000
+      PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300MB
 
-  // Initialize services in parallel where possible
-  final futures = <Future<void>>[];
+      // Initialize services in parallel where possible
+      final futures = <Future<void>>[];
 
-  // Initialize window_manager for desktop platforms
-  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    futures.add(windowManager.ensureInitialized());
+      // Initialize window_manager for desktop platforms
+      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+        futures.add(windowManager.ensureInitialized());
+      }
+
+      // Initialize TV detection and PiP service for Android
+      if (Platform.isAndroid) {
+        futures.add(TvDetectionService.getInstance());
+        // Initialize PiP service to listen for PiP state changes
+        PipService();
+      }
+
+      // Configure macOS window with custom titlebar (depends on window manager)
+      futures.add(MacOSWindowService.setupCustomTitlebar());
+
+      // Initialize storage service
+      futures.add(StorageService.getInstance());
+
+      // Initialize language codes for track selection
+      futures.add(LanguageCodes.initialize());
+
+      // Wait for all parallel services to complete
+      await Future.wait(futures);
+
+      // Initialize logger level based on debug setting
+      final debugEnabled = settings.getEnableDebugLogging();
+      setLoggerLevel(debugEnabled);
+
+      // Initialize download storage service with settings
+      await DownloadStorageService.instance.initialize(settings);
+
+      // Start global fullscreen state monitoring
+      FullscreenStateManager().startMonitoring();
+
+      // Initialize gamepad service for desktop platforms
+      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+        GamepadService.instance.start();
+        DiscordRPCService.instance.initialize();
+      }
+
+      // DTD service is available for MCP tooling connection if needed
+
+      // Register bundled shader licenses
+      _registerShaderLicenses();
+
+      runApp(const MainApp());
+    },
+  );
+}
+
+FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint hint) {
+  // Drop event if user opted out of crash reporting
+  final instance = SettingsService.instanceOrNull;
+  if (instance != null && !instance.getCrashReporting()) return null;
+
+  // Scrub Plex tokens and server URLs from exception messages
+  var exceptions = event.exceptions;
+  if (exceptions != null) {
+    exceptions = exceptions.map((e) {
+      final value = e.value;
+      if (value != null) {
+        return e.copyWith(value: LogRedactionManager.redact(value));
+      }
+      return e;
+    }).toList();
   }
 
-  // Initialize TV detection and PiP service for Android
-  if (Platform.isAndroid) {
-    futures.add(TvDetectionService.getInstance());
-    // Initialize PiP service to listen for PiP state changes
-    PipService();
+  // Scrub breadcrumb messages and data
+  var breadcrumbs = event.breadcrumbs;
+  if (breadcrumbs != null) {
+    breadcrumbs = breadcrumbs.map((b) {
+      final message = b.message;
+      final data = b.data;
+      return b.copyWith(
+        message: message != null ? LogRedactionManager.redact(message) : null,
+        data: data?.map((k, v) => MapEntry(k, v is String ? LogRedactionManager.redact(v) : v)),
+      );
+    }).toList();
   }
 
-  // Configure macOS window with custom titlebar (depends on window manager)
-  futures.add(MacOSWindowService.setupCustomTitlebar());
-
-  // Initialize storage service
-  futures.add(StorageService.getInstance());
-
-  // Initialize language codes for track selection
-  futures.add(LanguageCodes.initialize());
-
-  // Wait for all parallel services to complete
-  await Future.wait(futures);
-
-  // Initialize logger level based on debug setting
-  final debugEnabled = settings.getEnableDebugLogging();
-  setLoggerLevel(debugEnabled);
-
-  // Initialize download storage service with settings
-  await DownloadStorageService.instance.initialize(settings);
-
-  // Start global fullscreen state monitoring
-  FullscreenStateManager().startMonitoring();
-
-  // Initialize gamepad service for desktop platforms
-  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    GamepadService.instance.start();
-    DiscordRPCService.instance.initialize();
-  }
-
-  // DTD service is available for MCP tooling connection if needed
-
-  // Register bundled shader licenses
-  _registerShaderLicenses();
-
-  runApp(const MainApp());
+  return event.copyWith(exceptions: exceptions, breadcrumbs: breadcrumbs);
 }
 
 void _registerShaderLicenses() {

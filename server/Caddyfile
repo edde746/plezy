@@ -1,0 +1,9 @@
+ice.plezy.app {
+	reverse_proxy relay:8080
+}
+
+bugs.plezy.app {
+	reverse_proxy bugsink:8000 {
+		header_up X-Real-IP {remote_host}
+	}
+}

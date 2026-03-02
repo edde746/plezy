@@ -151,6 +151,8 @@
     "keyboardShortcutsDescription": "Pas toetsenbord sneltoetsen aan",
     "videoPlayerNavigation": "Videospeler navigatie",
     "videoPlayerNavigationDescription": "Gebruik pijltjestoetsen om door de videospeler bediening te navigeren",
+    "crashReporting": "Crashrapportage",
+    "crashReportingDescription": "Crashrapporten verzenden om de app te verbeteren",
     "debugLogging": "Debug logging",
     "debugLoggingDescription": "Schakel gedetailleerde logging in voor probleemoplossing",
     "viewLogs": "Bekijk logs",

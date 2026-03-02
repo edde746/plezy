@@ -10,6 +10,7 @@
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
 #include <os_media_controls/os_media_controls_plugin_c_api.h>
 #include <screen_retriever_windows/screen_retriever_windows_plugin_c_api.h>
+#include <sentry_flutter/sentry_flutter_plugin.h>
 #include <sqlite3_flutter_libs/sqlite3_flutter_libs_plugin.h>
 #include <universal_gamepad/gamepad_plugin_c_api.h>
 #include <url_launcher_windows/url_launcher_windows.h>
@@ -24,6 +25,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("OsMediaControlsPluginCApi"));
   ScreenRetrieverWindowsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ScreenRetrieverWindowsPluginCApi"));
+  SentryFlutterPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("SentryFlutterPlugin"));
   Sqlite3FlutterLibsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("Sqlite3FlutterLibsPlugin"));
   GamepadPluginCApiRegisterWithRegistrar(

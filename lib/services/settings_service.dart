@@ -19,6 +19,7 @@ enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 class SettingsService extends BaseSharedPreferencesService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
+  static const String _keyCrashReporting = 'crash_reporting';
   static const String _keyBufferSize = 'buffer_size';
   static const String _keyBufferSizeMigratedToAuto = 'buffer_size_migrated_to_auto';
   static const String _keyKeyboardShortcuts = 'keyboard_shortcuts';
@@ -85,9 +86,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   SettingsService._();
 
-  static Future<SettingsService> getInstance() {
-    return BaseSharedPreferencesService.initializeInstance(() => SettingsService._());
+  static SettingsService? _cachedInstance;
+
+  static Future<SettingsService> getInstance() async {
+    _cachedInstance ??= await BaseSharedPreferencesService.initializeInstance(() => SettingsService._());
+    return _cachedInstance!;
   }
+
+  /// Synchronous access to the singleton, or null if not yet initialized.
+  static SettingsService? get instanceOrNull => _cachedInstance;
 
   /// Generic helper to get an enum value from preferences
   T _getEnumValue<T extends Enum>(String key, List<T> values, T defaultValue) {
@@ -119,6 +126,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getEnableDebugLogging() {
     return prefs.getBool(_keyEnableDebugLogging) ?? false;
+  }
+
+  // Crash Reporting
+  Future<void> setCrashReporting(bool enabled) async {
+    await prefs.setBool(_keyCrashReporting, enabled);
+  }
+
+  bool getCrashReporting() {
+    return prefs.getBool(_keyCrashReporting) ?? true; // Default enabled
   }
 
   // Buffer Size (in MB)

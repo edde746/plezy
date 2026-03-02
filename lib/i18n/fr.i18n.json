@@ -151,6 +151,8 @@
     "keyboardShortcutsDescription": "Personnaliser les raccourcis clavier",
     "videoPlayerNavigation": "Navigation dans le lecteur vidéo",
     "videoPlayerNavigationDescription": "Utilisez les touches fléchées pour naviguer dans les commandes du lecteur vidéo.",
+    "crashReporting": "Rapports de plantage",
+    "crashReportingDescription": "Envoyer des rapports de plantage pour améliorer l'application",
     "debugLogging": "Journalisation de débogage",
     "debugLoggingDescription": "Activer la journalisation détaillée pour le dépannage",
     "viewLogs": "Voir les logs",

@@ -270,6 +270,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Anpassa tangentbordsgenvägar';
 	@override String get videoPlayerNavigation => 'Navigering i videospelaren';
 	@override String get videoPlayerNavigationDescription => 'Använd piltangenter för att navigera videospelarens kontroller';
+	@override String get crashReporting => 'Kraschrapportering';
+	@override String get crashReportingDescription => 'Skicka kraschrapporter för att förbättra appen';
 	@override String get debugLogging => 'Felsökningsloggning';
 	@override String get debugLoggingDescription => 'Aktivera detaljerad loggning för felsökning';
 	@override String get viewLogs => 'Visa loggar';
@@ -1441,6 +1443,8 @@ extension on TranslationsSv {
 			'settings.keyboardShortcutsDescription' => 'Anpassa tangentbordsgenvägar',
 			'settings.videoPlayerNavigation' => 'Navigering i videospelaren',
 			'settings.videoPlayerNavigationDescription' => 'Använd piltangenter för att navigera videospelarens kontroller',
+			'settings.crashReporting' => 'Kraschrapportering',
+			'settings.crashReportingDescription' => 'Skicka kraschrapporter för att förbättra appen',
 			'settings.debugLogging' => 'Felsökningsloggning',
 			'settings.debugLoggingDescription' => 'Aktivera detaljerad loggning för felsökning',
 			'settings.viewLogs' => 'Visa loggar',
@@ -1487,6 +1491,8 @@ extension on TranslationsSv {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Visa vad du tittar på i Discord',
+			'settings.autoPip' => 'Automatisk bild-i-bild',
+			'settings.autoPipDescription' => 'Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning',
 			'settings.matchContentFrameRate' => 'Matcha innehållets bildfrekvens',
 			'settings.matchContentFrameRateDescription' => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
@@ -1808,6 +1814,8 @@ extension on TranslationsSv {
 			'liveTv.nowPlaying' => 'Spelas nu',
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
@@ -1822,8 +1830,6 @@ extension on TranslationsSv {
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',

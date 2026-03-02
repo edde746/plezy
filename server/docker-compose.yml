@@ -1,0 +1,36 @@
+services:
+  relay:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - logs:/data/logs
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  bugsink:
+    image: bugsink/bugsink
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SECRET_KEY: ${BUGSINK_SECRET_KEY}
+      CREATE_SUPERUSER: ${BUGSINK_SUPERUSER}
+      PORT: 8000
+      BEHIND_HTTPS_PROXY: "True"
+    expose:
+      - "8000"
+
+volumes:
+  logs:
+  caddy_data:
+  caddy_config:

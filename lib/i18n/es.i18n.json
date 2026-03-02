@@ -151,6 +151,8 @@
     "keyboardShortcutsDescription": "Personalizar los atajos de teclado",
     "videoPlayerNavigation": "Navegación del Reproductor de Video",
     "videoPlayerNavigationDescription": "Usar las teclas de flecha para navegar por los controles del reproductor",
+    "crashReporting": "Informes de Errores",
+    "crashReportingDescription": "Enviar informes de errores para mejorar la aplicación",
     "debugLogging": "Registro de Depuración",
     "debugLoggingDescription": "Habilitar registros detallados para resolución de problemas",
     "viewLogs": "Ver Logs",

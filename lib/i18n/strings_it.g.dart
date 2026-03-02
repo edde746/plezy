@@ -270,6 +270,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Personalizza le scorciatoie da tastiera';
 	@override String get videoPlayerNavigation => 'Navigazione del lettore video';
 	@override String get videoPlayerNavigationDescription => 'Usa i tasti freccia per navigare nei controlli del lettore video';
+	@override String get crashReporting => 'Segnalazione errori';
+	@override String get crashReportingDescription => 'Invia segnalazioni di errori per migliorare l\'app';
 	@override String get debugLogging => 'Log di debug';
 	@override String get debugLoggingDescription => 'Abilita il logging dettagliato per la risoluzione dei problemi';
 	@override String get viewLogs => 'Visualizza log';
@@ -1441,6 +1443,8 @@ extension on TranslationsIt {
 			'settings.keyboardShortcutsDescription' => 'Personalizza le scorciatoie da tastiera',
 			'settings.videoPlayerNavigation' => 'Navigazione del lettore video',
 			'settings.videoPlayerNavigationDescription' => 'Usa i tasti freccia per navigare nei controlli del lettore video',
+			'settings.crashReporting' => 'Segnalazione errori',
+			'settings.crashReportingDescription' => 'Invia segnalazioni di errori per migliorare l\'app',
 			'settings.debugLogging' => 'Log di debug',
 			'settings.debugLoggingDescription' => 'Abilita il logging dettagliato per la risoluzione dei problemi',
 			'settings.viewLogs' => 'Visualizza log',
@@ -1487,6 +1491,8 @@ extension on TranslationsIt {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Mostra su Discord cosa stai guardando',
+			'settings.autoPip' => 'Picture-in-Picture automatico',
+			'settings.autoPipDescription' => 'Attiva automaticamente il picture-in-picture quando si esce dall\'app durante la riproduzione',
 			'settings.matchContentFrameRate' => 'Adatta frequenza fotogrammi',
 			'settings.matchContentFrameRateDescription' => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
@@ -1808,6 +1814,8 @@ extension on TranslationsIt {
 			'liveTv.nowPlaying' => 'In riproduzione',
 			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
 			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.live' => 'IN DIRETTA',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NUOVO',
@@ -1822,8 +1830,6 @@ extension on TranslationsIt {
 			'liveTv.evening' => 'Sera',
 			'liveTv.lateNight' => 'Notte tarda',
 			'liveTv.whatsOn' => 'In onda ora',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Guarda canale',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
