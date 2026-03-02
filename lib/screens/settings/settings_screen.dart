@@ -495,7 +495,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               await _settingsService.setEnableHardwareDecoding(value);
             },
           ),
-          if (Platform.isAndroid || Platform.isIOS)
+          if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)
             SwitchListTile(
               focusNode: _focusTracker.get(_kAutoPip),
               secondary: const AppIcon(Symbols.picture_in_picture_alt_rounded, fill: 1),

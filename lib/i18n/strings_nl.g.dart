@@ -506,6 +506,7 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Videotijdlijn';
 	@override String get volumeSlider => 'Volumeniveau';
 	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
+	@override String get pipActive => 'Playing in Picture-in-Picture';
 	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
 	@override late final _TranslationsVideoControlsPipErrorsNl pipErrors = _TranslationsVideoControlsPipErrorsNl._(_root);
 	@override String get chapters => 'Hoofdstukken';
@@ -1627,6 +1628,7 @@ extension on TranslationsNl {
 			'videoControls.timelineSlider' => 'Videotijdlijn',
 			'videoControls.volumeSlider' => 'Volumeniveau',
 			'videoControls.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
+			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
 			'videoControls.pipErrors.iosVersion' => 'Vereist iOS 15.0 of nieuwer',
@@ -1815,9 +1817,9 @@ extension on TranslationsNl {
 			'liveTv.noDvr' => 'Geen DVR geconfigureerd op een server',
 			'liveTv.tuneFailed' => 'Kan zender niet afstemmen',
 			'liveTv.loading' => 'Zenders laden...',
-			'liveTv.nowPlaying' => 'Nu aan het afspelen',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.nowPlaying' => 'Nu aan het afspelen',
 			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
 			'liveTv.live' => 'LIVE',

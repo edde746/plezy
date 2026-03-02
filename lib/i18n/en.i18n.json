@@ -351,6 +351,7 @@
     "timelineSlider": "Video timeline",
     "volumeSlider": "Volume level",
     "endsAt": "Ends at ${time}",
+    "pipActive": "Playing in Picture-in-Picture",
     "pipFailed": "Picture-in-picture failed to start",
     "pipErrors": {
       "androidVersion": "Requires Android 8.0 or newer",

@@ -351,6 +351,7 @@
     "timelineSlider": "Video-Zeitleiste",
     "volumeSlider": "Lautstärkepegel",
     "endsAt": "Endet um ${time}",
+    "pipActive": "Wiedergabe im Bild-in-Bild-Modus",
     "pipFailed": "Bild-in-Bild konnte nicht gestartet werden",
     "pipErrors": {
       "androidVersion": "Erfordert Android 8.0 oder neuer",

@@ -188,7 +188,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// iOS auto-PiP is system-initiated during the background transition, so
   /// isPipActive may not be true yet — we also check the auto-PiP setting.
   bool get _shouldSkipForPip =>
-      PipService().isPipActive.value || (Platform.isIOS && _autoPipEnabled);
+      PipService().isPipActive.value ||
+      ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled);
 
   // Services
   MediaControlsManager? _mediaControlsManager;
@@ -2567,6 +2568,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           },
           child: Stack(
             children: [
+              // macOS PiP placeholder — video is in PiP window, show background with icon
+              // Placed before Video so controls render on top
+              if (Platform.isMacOS)
+                ValueListenableBuilder<bool>(
+                  valueListenable: PipService().isPipActive,
+                  builder: (context, isInPip, child) {
+                    if (!isInPip) return const SizedBox.shrink();
+                    return Positioned.fill(
+                      child: Container(
+                        color: Colors.black,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
+                              const SizedBox(height: 12),
+                              Text(
+                                t.videoControls.pipActive,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               // Video player
               Center(
                 child: LayoutBuilder(

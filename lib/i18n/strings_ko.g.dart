@@ -506,6 +506,7 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '타임라인';
 	@override String get volumeSlider => '볼륨 조절';
 	@override String endsAt({required Object time}) => '${time}에 종료';
+	@override String get pipActive => 'Playing in Picture-in-Picture';
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 	@override String get chapters => '챕터';
@@ -1627,6 +1628,7 @@ extension on TranslationsKo {
 			'videoControls.timelineSlider' => '타임라인',
 			'videoControls.volumeSlider' => '볼륨 조절',
 			'videoControls.endsAt' => ({required Object time}) => '${time}에 종료',
+			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
@@ -1815,9 +1817,9 @@ extension on TranslationsKo {
 			'liveTv.noDvr' => '서버에 DVR이 구성되어 있지 않습니다',
 			'liveTv.tuneFailed' => '채널 튜닝에 실패했습니다',
 			'liveTv.loading' => '채널 로딩 중...',
-			'liveTv.nowPlaying' => '현재 재생 중',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.nowPlaying' => '현재 재생 중',
 			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
 			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
 			'liveTv.live' => '실시간',

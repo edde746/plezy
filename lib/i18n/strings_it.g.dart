@@ -506,6 +506,7 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Timeline video';
 	@override String get volumeSlider => 'Livello volume';
 	@override String endsAt({required Object time}) => 'Finisce alle ${time}';
+	@override String get pipActive => 'Playing in Picture-in-Picture';
 	@override String get pipFailed => 'Impossibile avviare la modalità Picture-in-Picture';
 	@override late final _TranslationsVideoControlsPipErrorsIt pipErrors = _TranslationsVideoControlsPipErrorsIt._(_root);
 	@override String get chapters => 'Capitoli';
@@ -1627,6 +1628,7 @@ extension on TranslationsIt {
 			'videoControls.timelineSlider' => 'Timeline video',
 			'videoControls.volumeSlider' => 'Livello volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Finisce alle ${time}',
+			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Impossibile avviare la modalità Picture-in-Picture',
 			'videoControls.pipErrors.androidVersion' => 'Richiede Android 8.0 o versioni successive',
 			'videoControls.pipErrors.iosVersion' => 'Richiede iOS 15.0 o versioni successive',
@@ -1815,9 +1817,9 @@ extension on TranslationsIt {
 			'liveTv.noDvr' => 'Nessun DVR configurato su nessun server',
 			'liveTv.tuneFailed' => 'Impossibile sintonizzare il canale',
 			'liveTv.loading' => 'Caricamento canali...',
-			'liveTv.nowPlaying' => 'In riproduzione',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.nowPlaying' => 'In riproduzione',
 			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
 			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
 			'liveTv.live' => 'IN DIRETTA',

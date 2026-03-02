@@ -63,7 +63,7 @@ class VideoPIPManager {
 
     // Reset video filter to contain mode BEFORE entering PiP (Android only —
     // iOS switches VO entirely so the filter is irrelevant)
-    if (!Platform.isIOS) {
+    if (Platform.isAndroid) {
       onBeforeEnterPip?.call();
       // Wait a frame for the filter change to take effect
       await Future.delayed(const Duration(milliseconds: 50));

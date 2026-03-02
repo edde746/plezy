@@ -351,6 +351,7 @@
     "timelineSlider": "Timeline vidéo",
     "volumeSlider": "Niveau sonore",
     "endsAt": "Fin à ${time}",
+    "pipActive": "Lecture en mode image dans l'image",
     "pipFailed": "Échec du démarrage du mode image dans l'image",
     "pipErrors": {
       "androidVersion": "Nécessite Android 8.0 ou plus récent",

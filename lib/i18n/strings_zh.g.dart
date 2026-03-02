@@ -506,6 +506,7 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '视频时间轴';
 	@override String get volumeSlider => '音量调节';
 	@override String endsAt({required Object time}) => '${time} 结束';
+	@override String get pipActive => 'Playing in Picture-in-Picture';
 	@override String get pipFailed => '画中画启动失败';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
@@ -1627,6 +1628,7 @@ extension on TranslationsZh {
 			'videoControls.timelineSlider' => '视频时间轴',
 			'videoControls.volumeSlider' => '音量调节',
 			'videoControls.endsAt' => ({required Object time}) => '${time} 结束',
+			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
 			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
@@ -1815,9 +1817,9 @@ extension on TranslationsZh {
 			'liveTv.noDvr' => '没有服务器配置了DVR',
 			'liveTv.tuneFailed' => '无法调谐频道',
 			'liveTv.loading' => '正在加载频道...',
-			'liveTv.nowPlaying' => '正在播放',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.nowPlaying' => '正在播放',
 			'liveTv.noPrograms' => '没有可用的节目数据',
 			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			'liveTv.live' => '直播',

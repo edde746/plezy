@@ -1009,8 +1009,9 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   bool getAutoPip() {
-    if (!Platform.isAndroid && !Platform.isIOS) return false;
-    return prefs.getBool(_keyAutoPip) ?? true; // Default enabled
+    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) return false;
+    // Default enabled on mobile, disabled on macOS
+    return prefs.getBool(_keyAutoPip) ?? !Platform.isMacOS;
   }
 
   // Match Content Frame Rate (Android only)

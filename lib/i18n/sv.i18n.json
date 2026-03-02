@@ -351,6 +351,7 @@
     "timelineSlider": "Videotidslinje",
     "volumeSlider": "Volymnivå",
     "endsAt": "Slutar ${time}",
+    "pipActive": "Spelar i bild-i-bild",
     "pipFailed": "Bild-i-bild kunde inte starta",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",

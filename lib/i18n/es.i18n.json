@@ -351,6 +351,7 @@
     "timelineSlider": "Línea de tiempo del video",
     "volumeSlider": "Nivel de volumen",
     "endsAt": "Termina a las ${time}",
+    "pipActive": "Reproduciendo en Imagen en Imagen",
     "pipFailed": "Error al iniciar Imagen en Imagen",
     "pipErrors": {
       "androidVersion": "Requiere Android 8.0 o más reciente",

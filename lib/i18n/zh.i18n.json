@@ -351,6 +351,7 @@
     "timelineSlider": "视频时间轴",
     "volumeSlider": "音量调节",
     "endsAt": "${time} 结束",
+    "pipActive": "正在画中画模式中播放",
     "pipFailed": "画中画启动失败",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",

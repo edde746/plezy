@@ -351,6 +351,7 @@
     "timelineSlider": "타임라인",
     "volumeSlider": "볼륨 조절",
     "endsAt": "${time}에 종료",
+    "pipActive": "화면 속 화면으로 재생 중",
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
     "pipErrors": {
       "androidVersion": "Android 8.0 이상이 필요합니다",

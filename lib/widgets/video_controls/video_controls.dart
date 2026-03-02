@@ -198,6 +198,7 @@ class PlexVideoControls extends StatefulWidget {
 
 class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListener, WidgetsBindingObserver {
   bool _showControls = true;
+  bool _forceShowControls = false;
   List<PlexChapter> _chapters = [];
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
@@ -296,6 +297,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     widget.hasFirstFrame?.addListener(_onFirstFrameReady);
     // Listen for external requests to show controls (e.g. screen-level focus recovery)
     widget.controlsVisible?.addListener(_onControlsVisibleExternal);
+    // On macOS, show controls and disable auto-hide when PiP activates
+    if (Platform.isMacOS) {
+      _pipService.isPipActive.addListener(_onMacPipChanged);
+    }
 
     // Defer context-dependent initialization to after first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -621,6 +626,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.removeListener(this);
     }
+    if (Platform.isMacOS) {
+      _pipService.isPipActive.removeListener(_onMacPipChanged);
+    }
     super.dispose();
   }
 
@@ -685,7 +693,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   /// Shared hide logic: hides controls, notifies parent, updates traffic lights, restores focus.
   void _hideControls() {
-    if (!mounted || !_showControls) return;
+    if (!mounted || !_showControls || _forceShowControls) return;
     setState(() {
       _showControls = false;
       // Dismiss skip button with controls — after this it only re-appears with controls
@@ -721,6 +729,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final hasFrame = widget.hasFirstFrame?.value ?? true;
     if (!hasFrame) return;
 
+    if (_forceShowControls) return;
+
     // Only auto-hide if playing
     if (widget.player.state.playing) {
       _hideTimer = Timer(_hideDelay, () {
@@ -736,6 +746,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Auto-hide controls after pause (does not check playing state in callback).
   void _startPausedHideTimer() {
     _hideTimer?.cancel();
+    if (_forceShowControls) return;
     _hideTimer = Timer(_hideDelay, () {
       _hideControls();
     });
@@ -830,13 +841,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // user can reach them without the controls-hide-on-mouse-leave race.
     // In normal windowed mode, toggle with controls as before.
     final isMaximizedOrFullscreen = await windowManager.isMaximized() || await windowManager.isFullScreen();
-    final visible = isMaximizedOrFullscreen ? true : _showControls;
+    final visible = isMaximizedOrFullscreen || _forceShowControls ? true : _showControls;
     await MacOSWindowService.setTrafficLightsVisible(visible);
   }
 
   /// Check whether PiP is supported on this device
   Future<void> _checkPipSupport() async {
-    if (!Platform.isAndroid && !Platform.isIOS) {
+    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) {
       return;
     }
 
@@ -849,6 +860,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       }
     } catch (e) {
       return;
+    }
+  }
+
+  /// macOS PiP changed — force controls visible while PiP is active
+  void _onMacPipChanged() {
+    if (!mounted) return;
+    final inPip = _pipService.isPipActive.value;
+    setState(() => _forceShowControls = inPip);
+    if (inPip) {
+      _hideTimer?.cancel();
+      widget.controlsVisible?.value = true;
+    } else {
+      _startHideTimer();
     }
   }
 
@@ -952,7 +976,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
-      onTogglePIPMode: (_isPipSupported && (Platform.isAndroid || Platform.isIOS)) ? widget.onTogglePIPMode : null,
+      onTogglePIPMode: (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) ? widget.onTogglePIPMode : null,
       onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
       onToggleRotationLock: _toggleRotationLock,
       onToggleFullscreen: _toggleFullscreen,
@@ -1583,11 +1607,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Use desktop controls for desktop platforms AND Android TV
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
 
-    // Hide ALL controls when in PiP mode
+    // Hide ALL controls when in PiP mode (except macOS where main window stays visible)
     return ValueListenableBuilder<bool>(
       valueListenable: _pipService.isPipActive,
       builder: (context, isInPip, _) {
-        if (isInPip) return const SizedBox.shrink();
+        if (isInPip && !Platform.isMacOS) return const SizedBox.shrink();
         return Focus(
           focusNode: _focusNode,
           autofocus: true,
@@ -1716,7 +1740,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             onPointerHover: (_) => _showControlsFromPointerActivity(),
             onPointerSignal: _handlePointerSignal,
             child: MouseRegion(
-              cursor: _showControls ? SystemMouseCursors.basic : SystemMouseCursors.none,
+              cursor: (_showControls || _forceShowControls) ? SystemMouseCursors.basic : SystemMouseCursors.none,
               onHover: (_) => _showControlsFromPointerActivity(),
               onExit: (_) => _hideControlsFromPointerExit(),
               child: Stack(
@@ -1825,9 +1849,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                       ignoring: !_showControls,
                       child: FocusScope(
                         // Prevent focus from entering controls when hidden
-                        canRequestFocus: _showControls,
+                        canRequestFocus: _showControls || _forceShowControls,
                         child: AnimatedOpacity(
-                          opacity: _showControls ? 1.0 : 0.0,
+                          opacity: (_showControls || _forceShowControls) ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 200),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
@@ -1946,7 +1970,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   Widget _buildDesktopControlsListener() {
-    final pipMode = (_isPipSupported && (Platform.isAndroid || Platform.isIOS)) ? widget.onTogglePIPMode : null;
+    final pipMode = (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) ? widget.onTogglePIPMode : null;
     final boxFitMode = widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null;
     final playbackState = context.watch<PlaybackStateProvider>();
 
@@ -1982,7 +2006,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         onTogglePIPMode: pipMode,
         onCycleBoxFitMode: boxFitMode,
         onToggleFullscreen: _toggleFullscreen,
-        onToggleAlwaysOnTop: _toggleAlwaysOnTop,
+        onToggleAlwaysOnTop: Platform.isMacOS ? null : _toggleAlwaysOnTop,
         onSwitchVersion: _switchMediaVersion,
         onAudioTrackChanged: widget.onAudioTrackChanged,
         onSubtitleTrackChanged: widget.onSubtitleTrackChanged,

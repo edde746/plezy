@@ -506,6 +506,7 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Volymnivå';
 	@override String endsAt({required Object time}) => 'Slutar ${time}';
+	@override String get pipActive => 'Playing in Picture-in-Picture';
 	@override String get pipFailed => 'Bild-i-bild kunde inte starta';
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
 	@override String get chapters => 'Kapitel';
@@ -1627,6 +1628,7 @@ extension on TranslationsSv {
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Volymnivå',
 			'videoControls.endsAt' => ({required Object time}) => 'Slutar ${time}',
+			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
 			'videoControls.pipErrors.iosVersion' => 'Kräver iOS 15.0 eller nyare',
@@ -1815,9 +1817,9 @@ extension on TranslationsSv {
 			'liveTv.noDvr' => 'Ingen DVR konfigurerad på någon server',
 			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
 			'liveTv.loading' => 'Laddar kanaler...',
-			'liveTv.nowPlaying' => 'Spelas nu',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.nowPlaying' => 'Spelas nu',
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',

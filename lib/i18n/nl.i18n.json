@@ -351,6 +351,7 @@
     "timelineSlider": "Videotijdlijn",
     "volumeSlider": "Volumeniveau",
     "endsAt": "Eindigt om ${time}",
+    "pipActive": "Afspelen in beeld-in-beeld",
     "pipFailed": "Beeld-in-beeld kon niet worden gestart",
     "pipErrors": {
       "androidVersion": "Vereist Android 8.0 of nieuwer",

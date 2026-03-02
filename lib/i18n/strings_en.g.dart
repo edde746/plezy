@@ -1119,6 +1119,9 @@ class TranslationsVideoControlsEn {
 	/// en: 'Ends at ${time}'
 	String endsAt({required Object time}) => 'Ends at ${time}';
 
+	/// en: 'Playing in Picture-in-Picture'
+	String get pipActive => 'Playing in Picture-in-Picture';
+
 	/// en: 'Picture-in-picture failed to start'
 	String get pipFailed => 'Picture-in-picture failed to start';
 
@@ -3248,6 +3251,7 @@ extension on Translations {
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
+			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
 			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
@@ -3436,9 +3440,9 @@ extension on Translations {
 			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.tuneFailed' => 'Failed to tune channel',
 			'liveTv.loading' => 'Loading channels...',
-			'liveTv.nowPlaying' => 'Now Playing',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.nowPlaying' => 'Now Playing',
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'LIVE',
