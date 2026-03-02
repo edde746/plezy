@@ -27,7 +27,7 @@
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
-		6AB6B0952EDB27C100EAC8DB /* MPVKit-GPL in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB6B0942EDB27C100EAC8DB /* MPVKit-GPL */; };
+		6AB6B0952EDB27C100EAC8DB /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB6B0942EDB27C100EAC8DB /* MPVKit */; };
 		6AC86ED72EA70B4C0067BC66 /* plezy.icon in Resources */ = {isa = PBXBuildFile; fileRef = 6AC86ED62EA70B4C0067BC66 /* plezy.icon */; };
 		6AD8B1612ED7B50000E9E1B4 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */; };
 		6AD8B1622ED7B50000E9E1B4 /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */; };
@@ -112,7 +112,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6AB6B0952EDB27C100EAC8DB /* MPVKit-GPL in Frameworks */,
+				6AB6B0952EDB27C100EAC8DB /* MPVKit in Frameworks */,
 				DF7527C52F58F90C45939A79 /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -831,16 +831,16 @@
 			repositoryURL = "https://github.com/edde746/MPVKit";
 			requirement = {
 				kind = revision;
-				revision = 86035ac4a2544e7a9b3cc0ffde5bef4549d4869a;
+				revision = b2179eec26c6ceda339e6c6b512e457341768761;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		6AB6B0942EDB27C100EAC8DB /* MPVKit-GPL */ = {
+		6AB6B0942EDB27C100EAC8DB /* MPVKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 6AB6B0932EDB27C100EAC8DB /* XCRemoteSwiftPackageReference "MPVKit" */;
-			productName = "MPVKit-GPL";
+			productName = "MPVKit";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

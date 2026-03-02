@@ -51,6 +51,7 @@
 	<string>Main</string>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>audio</string>
 		<string>fetch</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>

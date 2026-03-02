@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../mpv/mpv.dart';
 import '../services/pip_service.dart';
@@ -59,11 +61,13 @@ class VideoPIPManager {
     final supported = await PipService.isSupported();
     if (!supported) return (false, 'PiP not supported on this device');
 
-    // Reset video filter to contain mode BEFORE entering PiP
-    onBeforeEnterPip?.call();
-
-    // Wait a frame for the filter change to take effect
-    await Future.delayed(const Duration(milliseconds: 50));
+    // Reset video filter to contain mode BEFORE entering PiP (Android only —
+    // iOS switches VO entirely so the filter is irrelevant)
+    if (!Platform.isIOS) {
+      onBeforeEnterPip?.call();
+      // Wait a frame for the filter change to take effect
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
 
     final dims = await _getVideoDimensions();
     return await PipService.enter(width: dims.$1, height: dims.$2);

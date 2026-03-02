@@ -1164,8 +1164,10 @@ class _TranslationsVideoControlsPipErrorsSv implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Kräver Android 8.0 eller nyare';
+	@override String get iosVersion => 'Requires iOS 15.0 or newer';
 	@override String get permissionDisabled => 'Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild';
 	@override String get notSupported => 'Denna enhet stöder inte bild-i-bild-läge';
+	@override String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
 	@override String get failed => 'Bild-i-bild kunde inte starta';
 	@override String unknown({required Object error}) => 'Ett fel uppstod: ${error}';
 }
@@ -1627,8 +1629,10 @@ extension on TranslationsSv {
 			'videoControls.endsAt' => ({required Object time}) => 'Slutar ${time}',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
+			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild',
 			'videoControls.pipErrors.notSupported' => 'Denna enhet stöder inte bild-i-bild-läge',
+			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
 			'videoControls.pipErrors.failed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ett fel uppstod: ${error}',
 			'videoControls.chapters' => 'Kapitel',

@@ -2616,11 +2616,17 @@ class TranslationsVideoControlsPipErrorsEn {
 	/// en: 'Requires Android 8.0 or newer'
 	String get androidVersion => 'Requires Android 8.0 or newer';
 
+	/// en: 'Requires iOS 15.0 or newer'
+	String get iosVersion => 'Requires iOS 15.0 or newer';
+
 	/// en: 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture'
 	String get permissionDisabled => 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture';
 
 	/// en: 'Device doesn't support picture-in-picture mode'
 	String get notSupported => 'Device doesn\'t support picture-in-picture mode';
+
+	/// en: 'Failed to switch video output for picture-in-picture'
+	String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
 
 	/// en: 'Picture-in-picture failed to start'
 	String get failed => 'Picture-in-picture failed to start';
@@ -3244,8 +3250,10 @@ extension on Translations {
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
+			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture',
 			'videoControls.pipErrors.notSupported' => 'Device doesn\'t support picture-in-picture mode',
+			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
 			'videoControls.pipErrors.failed' => 'Picture-in-picture failed to start',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'An error occurred: ${error}',
 			'videoControls.chapters' => 'Chapters',

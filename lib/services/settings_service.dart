@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
 import 'package:plezy/utils/app_logger.dart';
@@ -1002,12 +1003,13 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyEnableDiscordRPC) ?? false; // Default disabled
   }
 
-  // Auto Picture-in-Picture (Android only)
+  // Auto Picture-in-Picture (Android & iOS)
   Future<void> setAutoPip(bool enabled) async {
     await prefs.setBool(_keyAutoPip, enabled);
   }
 
   bool getAutoPip() {
+    if (!Platform.isAndroid && !Platform.isIOS) return false;
     return prefs.getBool(_keyAutoPip) ?? true; // Default enabled
   }
 

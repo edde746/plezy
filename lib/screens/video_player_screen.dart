@@ -184,6 +184,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _wasPlayingBeforeInactive = false;
   bool _autoPipEnabled = false;
 
+  /// Whether to skip lifecycle actions because PiP is active or about to start.
+  /// iOS auto-PiP is system-initiated during the background transition, so
+  /// isPipActive may not be true yet — we also check the auto-PiP setting.
+  bool get _shouldSkipForPip =>
+      PipService().isPipActive.value || (Platform.isIOS && _autoPipEnabled);
+
   // Services
   MediaControlsManager? _mediaControlsManager;
   PlaybackProgressTracker? _progressTracker;
@@ -318,9 +324,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       case AppLifecycleState.hidden:
         // App is being hidden (user is switching away)
         // Pause video since we don't support background playback (mobile only)
-        // Skip if entering PiP mode - video should keep playing
         if (PlatformDetector.isMobile(context)) {
-          if (Platform.isAndroid && PipService().isPipActive.value) break;
+          if (_shouldSkipForPip) break;
           if (player != null && _isPlayerInitialized) {
             _wasPlayingBeforeInactive = player!.state.playing;
             if (_wasPlayingBeforeInactive) {
@@ -331,8 +336,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
         break;
       case AppLifecycleState.paused:
-        // Skip if in PiP mode - video should keep playing
-        if (Platform.isAndroid && PipService().isPipActive.value) break;
+        if (_shouldSkipForPip) break;
         // Clear media controls when app truly goes to background
         // (we don't support background playback)
         OsMediaControls.clear();
@@ -401,9 +405,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Load buffer size from settings
       final settingsService = await SettingsService.getInstance();
       _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
-      if (Platform.isAndroid) {
-        _autoPipEnabled = settingsService.getAutoPip();
-      }
+      _autoPipEnabled = settingsService.getAutoPip();
       final bufferSizeMB = settingsService.getBufferSize();
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
@@ -1115,7 +1117,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
 
           // Auto-PiP: set up callback for API 26-30 path and initial state
-          if (Platform.isAndroid && _autoPipEnabled) {
+          if (_autoPipEnabled) {
             PipService.onAutoPipEntering = () {
               _videoFilterManager?.enterPipMode();
             };
@@ -1822,8 +1824,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       DiscordRPCService.instance.pausePlayback();
     }
 
-    // Update auto-PiP readiness on Android
-    if (Platform.isAndroid && _autoPipEnabled) {
+    // Update auto-PiP readiness
+    if (_autoPipEnabled) {
       _videoPIPManager?.updateAutoPipState(isPlaying: isPlaying);
     }
   }

@@ -1164,8 +1164,10 @@ class _TranslationsVideoControlsPipErrorsKo implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Android 8.0 이상이 필요합니다';
+	@override String get iosVersion => 'Requires iOS 15.0 or newer';
 	@override String get permissionDisabled => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요';
 	@override String get notSupported => '이 기기는 화면 속 화면 모드를 지원하지 않습니다';
+	@override String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
 	@override String get failed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override String unknown({required Object error}) => '오류가 발생했습니다: ${error}';
 }
@@ -1627,8 +1629,10 @@ extension on TranslationsKo {
 			'videoControls.endsAt' => ({required Object time}) => '${time}에 종료',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
+			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요',
 			'videoControls.pipErrors.notSupported' => '이 기기는 화면 속 화면 모드를 지원하지 않습니다',
+			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
 			'videoControls.pipErrors.failed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '오류가 발생했습니다: ${error}',
 			'videoControls.chapters' => '챕터',

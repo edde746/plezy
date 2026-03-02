@@ -1164,8 +1164,10 @@ class _TranslationsVideoControlsPipErrorsFr implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Nécessite Android 8.0 ou plus récent';
+	@override String get iosVersion => 'Requires iOS 15.0 or newer';
 	@override String get permissionDisabled => 'L\'autorisation Image dans l\'image est désactivée. Activez-la dans Paramètres > Applications > Plezy > Image dans l\'image';
 	@override String get notSupported => 'Cet appareil ne prend pas en charge le mode image dans l\'image';
+	@override String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
 	@override String get failed => 'Échec du démarrage du mode image dans l\'image';
 	@override String unknown({required Object error}) => 'Une erreur s\'est produite : ${error}';
 }
@@ -1627,8 +1629,10 @@ extension on TranslationsFr {
 			'videoControls.endsAt' => ({required Object time}) => 'Fin à ${time}',
 			'videoControls.pipFailed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.pipErrors.androidVersion' => 'Nécessite Android 8.0 ou plus récent',
+			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'L\'autorisation Image dans l\'image est désactivée. Activez-la dans Paramètres > Applications > Plezy > Image dans l\'image',
 			'videoControls.pipErrors.notSupported' => 'Cet appareil ne prend pas en charge le mode image dans l\'image',
+			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
 			'videoControls.pipErrors.failed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Une erreur s\'est produite : ${error}',
 			'videoControls.chapters' => 'Chapitres',

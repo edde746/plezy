@@ -1164,8 +1164,10 @@ class _TranslationsVideoControlsPipErrorsNl implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Vereist Android 8.0 of nieuwer';
+	@override String get iosVersion => 'Requires iOS 15.0 or newer';
 	@override String get permissionDisabled => 'Beeld-in-beeld toestemming is uitgeschakeld. Schakel deze in via Instellingen > Apps > Plezy > Beeld-in-beeld';
 	@override String get notSupported => 'Dit apparaat ondersteunt geen beeld-in-beeld modus';
+	@override String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
 	@override String get failed => 'Beeld-in-beeld kon niet worden gestart';
 	@override String unknown({required Object error}) => 'Er is een fout opgetreden: ${error}';
 }
@@ -1627,8 +1629,10 @@ extension on TranslationsNl {
 			'videoControls.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
+			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Beeld-in-beeld toestemming is uitgeschakeld. Schakel deze in via Instellingen > Apps > Plezy > Beeld-in-beeld',
 			'videoControls.pipErrors.notSupported' => 'Dit apparaat ondersteunt geen beeld-in-beeld modus',
+			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
 			'videoControls.pipErrors.failed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Er is een fout opgetreden: ${error}',
 			'videoControls.chapters' => 'Hoofdstukken',

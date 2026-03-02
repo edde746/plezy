@@ -51,6 +51,10 @@ class MpvPlayerCore: NSObject {
     private(set) var isInitialized = false
     private var isDisposing = false  // Flag to prevent race conditions during disposal
 
+    // PiP state
+    var isPipActive = false
+    var isPipStarting = false  // VO switched for PiP, waiting for first frame
+
     // HDR settings
     private var hdrEnabled = true  // User preference for HDR
     private var lastSigPeak: Double = 0.0  // Last known sig-peak for re-evaluation
@@ -89,9 +93,6 @@ class MpvPlayerCore: NSObject {
 
         // Add container view to window (behind Flutter's root view controller)
         window.insertSubview(container, at: 0)
-
-        print(
-            "[MpvPlayerCore] Metal layer added to window via container view, frame: \(layer.frame)")
 
         // Initialize MPV with this Metal layer
         guard setupMpv() else {
@@ -161,7 +162,6 @@ class MpvPlayerCore: NSObject {
         // Observe video-params/sig-peak for HDR detection
         mpv_observe_property(mpv, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
 
-        print("[MpvPlayerCore] MPV initialized successfully")
         return true
     }
 
@@ -183,6 +183,10 @@ class MpvPlayerCore: NSObject {
     }
 
     @objc private func enterBackground() {
+        if isPipActive || isPipStarting {
+            print("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
+            return
+        }
         // Disable video output to fix black screen when returning from background
         print("[MpvPlayerCore] Entering background - disabling video")
         if mpv != nil {
@@ -191,6 +195,11 @@ class MpvPlayerCore: NSObject {
     }
 
     @objc private func enterForeground() {
+        // Skip if PiP is active - video is already enabled
+        if isPipActive {
+            print("[MpvPlayerCore] Entering foreground - PiP active, skipping vid restore")
+            return
+        }
         // Re-enable video output
         print("[MpvPlayerCore] Entering foreground - enabling video")
         if mpv != nil {
@@ -305,6 +314,98 @@ class MpvPlayerCore: NSObject {
         }
     }
 
+    // MARK: - PiP VO Switching
+
+    /// Switch from gpu-next to vo_pip for PiP rendering.
+    /// vo_pip feeds VideoToolbox CVPixelBuffers to an AVSampleBufferDisplayLayer
+    /// which is required by AVPictureInPictureController.
+    ///
+    /// Strategy: disable the video track (`vid=no`) to tear down the active VO,
+    /// then set `wid` and `vo` while no VO is running, then re-enable video.
+    /// This avoids the crash where gpu-next calls `drawableSize` on an
+    /// AVSampleBufferDisplayLayer, and ensures the new VO reads `wid` at init.
+    func switchToPipVO(layerPtr: UnsafeMutableRawPointer) -> Bool {
+        guard let mpv = mpv else { return false }
+
+        print("[MpvPlayerCore] Switching to pip VO for PiP")
+
+        // Detach the Metal layer from the view hierarchy on the main thread BEFORE
+        // vid=no, so the 'vo' thread VO uninit has no UIKit work to do (avoids
+        // "layout engine from background thread" crash).
+        metalLayer?.removeFromSuperlayer()
+
+        // 1. Disable video track — tears down the current VO completely
+        mpv_set_property_string(mpv, "vid", "no")
+
+        // 2. Point wid at the PiP sample-buffer layer (safe — no active VO)
+        var ptr = Int64(Int(bitPattern: layerPtr))
+        mpv_set_property(mpv, "wid", MPV_FORMAT_INT64, &ptr)
+
+        // 3. Set VO to pip (stored, not yet created)
+        mpv_set_property_string(mpv, "vo", "pip")
+
+        // 4. Re-enable video — creates pip VO with our layer as wid
+        mpv_set_property_string(mpv, "vid", "auto")
+
+        print("[MpvPlayerCore] Switched to pip VO successfully")
+        return true
+    }
+
+    /// Switch back from vo_pip to gpu-next VO for normal rendering.
+    /// Same strategy: vid=no → reconfigure → vid=auto.
+    func switchToGpuNextVO() -> Bool {
+        guard let mpv = mpv, let metalLayer = metalLayer else { return false }
+
+        print("[MpvPlayerCore] Switching back to gpu-next VO")
+
+        // 1. Disable video track — tears down pip VO
+        mpv_set_property_string(mpv, "vid", "no")
+
+        // 2. Point wid back at the Metal layer (safe — no active VO)
+        var layer = metalLayer
+        mpv_set_property(mpv, "wid", MPV_FORMAT_INT64, &layer)
+
+        // 3. Restore gpu-next + Vulkan/MoltenVK settings (read at VO creation)
+        mpv_set_property_string(mpv, "gpu-api", "vulkan")
+        mpv_set_property_string(mpv, "gpu-context", "moltenvk")
+        mpv_set_property_string(mpv, "vo", "gpu-next")
+
+        // 4. Re-enable video — creates gpu-next VO with Metal layer as wid
+        mpv_set_property_string(mpv, "vid", "auto")
+
+        // Re-attach the Metal layer to the view hierarchy (was detached in switchToPipVO)
+        if metalLayer.superlayer == nil, let container = containerView {
+            container.layer.addSublayer(metalLayer)
+        }
+
+        print("[MpvPlayerCore] Switched back to gpu-next VO successfully")
+        return true
+    }
+
+    /// Whether mpv is currently paused
+    var isPaused: Bool {
+        guard let mpv = mpv else { return true }
+        var flag: Int32 = 0
+        mpv_get_property(mpv, "pause", MPV_FORMAT_FLAG, &flag)
+        return flag != 0
+    }
+
+    /// Current playback duration in seconds
+    var duration: Double {
+        guard let mpv = mpv else { return 0 }
+        var value: Double = 0
+        mpv_get_property(mpv, "duration", MPV_FORMAT_DOUBLE, &value)
+        return value
+    }
+
+    /// Current playback time in seconds
+    var timePos: Double {
+        guard let mpv = mpv else { return 0 }
+        var value: Double = 0
+        mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &value)
+        return value
+    }
+
     // MARK: - Visibility
 
     func setVisible(_ visible: Bool) {
@@ -317,7 +418,6 @@ class MpvPlayerCore: NSObject {
         }
 
         container.isHidden = !visible
-        print("[MpvPlayerCore] setVisible(\(visible))")
     }
 
     func updateFrame(_ frame: CGRect? = nil) {
@@ -337,8 +437,6 @@ class MpvPlayerCore: NSObject {
             width: metalLayer.frame.width * scale,
             height: metalLayer.frame.height * scale
         )
-
-        print("[MpvPlayerCore] updateFrame: \(container.frame)")
     }
 
     // MARK: - Private Helpers

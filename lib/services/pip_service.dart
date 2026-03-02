@@ -60,8 +60,10 @@ class PipService {
   static String _getLocalizedError(String errorCode, String? errorMessage) {
     return switch (errorCode) {
       'android_version' => t.videoControls.pipErrors.androidVersion,
+      'ios_version' => t.videoControls.pipErrors.iosVersion,
       'permission_disabled' => t.videoControls.pipErrors.permissionDisabled,
       'not_supported' => t.videoControls.pipErrors.notSupported,
+      'vo_switch_failed' => t.videoControls.pipErrors.voSwitchFailed,
       'failed' => t.videoControls.pipErrors.failed,
       _ => t.videoControls.pipErrors.unknown(error: errorMessage ?? 'Unknown error'),
     };

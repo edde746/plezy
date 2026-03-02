@@ -836,7 +836,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   /// Check whether PiP is supported on this device
   Future<void> _checkPipSupport() async {
-    if (!Platform.isAndroid) {
+    if (!Platform.isAndroid && !Platform.isIOS) {
       return;
     }
 
@@ -952,7 +952,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
-      onTogglePIPMode: (_isPipSupported && Platform.isAndroid) ? widget.onTogglePIPMode : null,
+      onTogglePIPMode: (_isPipSupported && (Platform.isAndroid || Platform.isIOS)) ? widget.onTogglePIPMode : null,
       onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
       onToggleRotationLock: _toggleRotationLock,
       onToggleFullscreen: _toggleFullscreen,
@@ -1583,7 +1583,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Use desktop controls for desktop platforms AND Android TV
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
 
-    // Hide ALL controls when in PiP mode (Android only)
+    // Hide ALL controls when in PiP mode
     return ValueListenableBuilder<bool>(
       valueListenable: _pipService.isPipActive,
       builder: (context, isInPip, _) {
@@ -1946,7 +1946,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   Widget _buildDesktopControlsListener() {
-    final pipMode = (_isPipSupported && Platform.isAndroid) ? widget.onTogglePIPMode : null;
+    final pipMode = (_isPipSupported && (Platform.isAndroid || Platform.isIOS)) ? widget.onTogglePIPMode : null;
     final boxFitMode = widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null;
     final playbackState = context.watch<PlaybackStateProvider>();
 
