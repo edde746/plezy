@@ -471,8 +471,11 @@ class MpvPlayerCore(private val activity: Activity) :
 
     // Cleanup
 
-    fun dispose() {
-        if (disposing) return
+    fun dispose(onComplete: (() -> Unit)? = null) {
+        if (disposing) {
+            onComplete?.invoke()
+            return
+        }
         disposing = true
         Log.d(TAG, "Disposing")
 
@@ -519,6 +522,10 @@ class MpvPlayerCore(private val activity: Activity) :
         // Run native destroy on background thread to avoid ANR —
         // MPVLib.destroy() blocks on pthread_cond_wait while mpv's
         // internal threads (lua, demux, vo) shut down.
+        // The completion callback is posted to the main thread so the
+        // caller (MpvPlayerPlugin) can defer result.success() until
+        // native resources are fully released, preventing a new mpv
+        // instance from being created while the old one still holds memory.
         if (nativeReady) {
             Thread {
                 synchronized(mpvLock) {
@@ -531,7 +538,10 @@ class MpvPlayerCore(private val activity: Activity) :
                     }
                 }
                 Log.d(TAG, "Disposed (native)")
+                onComplete?.let { Handler(Looper.getMainLooper()).post(it) }
             }.start()
+        } else {
+            onComplete?.invoke()
         }
     }
 }

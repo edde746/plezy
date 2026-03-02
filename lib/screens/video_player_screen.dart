@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -418,6 +419,29 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (bufferSizeMB > 0) {
         final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
         await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
+        // Set back-buffer to 1/4 of forward buffer
+        final backBytes = bufferSizeBytes ~/ 4;
+        await player!.setProperty('demuxer-max-back-bytes', backBytes.toString());
+      }
+      if (Platform.isAndroid) {
+        // Cap demuxer buffers based on device heap to prevent OOM crashes.
+        // Without limits, mpv defaults can consume 225MB+ just for demuxer
+        // buffering, which combined with decoded frames and GPU textures
+        // exhausts the process address space on memory-constrained devices.
+        final heapMB = await PlayerAndroid.getHeapSize();
+        if (heapMB > 0) {
+          final autoBackMB = heapMB <= 256 ? 16 : (heapMB <= 512 ? 32 : 48);
+          if (bufferSizeMB == 0) {
+            // Auto mode: cap both forward and back buffer based on heap
+            final autoForwardMB = heapMB <= 256 ? 32 : (heapMB <= 512 ? 64 : 100);
+            await player!.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
+            await player!.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
+          } else {
+            // Manual mode: cap back-buffer relative to heap if 1/4 ratio is too high
+            final maxBackBytes = min(bufferSizeMB * 1024 * 1024 ~/ 4, autoBackMB * 1024 * 1024);
+            await player!.setProperty('demuxer-max-back-bytes', maxBackBytes.toString());
+          }
+        }
       }
       await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
       await player!.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');

@@ -142,10 +142,14 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
     private fun handleDispose(result: MethodChannel.Result) {
         activity?.runOnUiThread {
-            playerCore?.dispose()
-            playerCore = null
-            Log.d(TAG, "Disposed")
-            result.success(null)
+            playerCore?.dispose {
+                playerCore = null
+                Log.d(TAG, "Disposed")
+                result.success(null)
+            } ?: run {
+                playerCore = null
+                result.success(null)
+            }
         } ?: result.success(null)
     }
 
