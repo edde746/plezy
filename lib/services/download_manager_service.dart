@@ -246,6 +246,10 @@ class DownloadManagerService {
   // UI progress streams are still real-time; only the DB write is debounced.
   final Map<String, Timer> _progressDebounceTimers = {};
 
+  // App-level auto-retry timers for downloads that exhausted native retries.
+  // Keyed by globalKey; each timer fires a fresh re-enqueue after a delay.
+  final Map<String, Timer> _autoRetryTimers = {};
+
   /// Public method to check if downloads should be blocked due to cellular-only setting
   /// Can be used by DownloadProvider to show user-friendly error
   static Future<bool> shouldBlockDownloadOnCellular() async {
@@ -618,7 +622,7 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: 3,
+          retries: 5,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -659,7 +663,7 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: 3,
+          retries: 5,
           allowPause: true,
           metaData: globalKey,
           displayName: displayName,
@@ -745,7 +749,7 @@ class DownloadManagerService {
         case TaskStatus.failed:
           _onDownloadFailed(globalKey, update.exception?.description ?? 'Download failed');
         case TaskStatus.notFound:
-          _onDownloadFailed(globalKey, 'File not found (404)');
+          _onDownloadPermanentlyFailed(globalKey, 'File not found (404)');
         case TaskStatus.canceled:
           if (_pausingKeys.contains(globalKey)) {
             // Expected cancel from holding-queue promotion during pause — ignore
@@ -778,16 +782,69 @@ class DownloadManagerService {
     }
   }
 
-  /// Handle a permanently failed download
+  /// Handle a failed download — auto-retry if retries remain, otherwise permanently fail.
+  /// Native retries (Range-based resume) are already exhausted at this point.
   Future<void> _onDownloadFailed(String globalKey, String errorMessage) async {
     _pendingDownloadContext.remove(globalKey);
-    appLogger.e('Download failed for $globalKey: $errorMessage');
+
+    final existing = await _database.getDownloadedMedia(globalKey);
+    final retryCount = existing?.retryCount ?? 0;
+
+    if (retryCount < 3 && _lastClient != null) {
+      // App-level auto-retry: schedule a fresh download after a delay.
+      // Each new task gets 5 native retries with Range-based resume.
+      appLogger.w(
+        'Download failed for $globalKey (attempt ${retryCount + 1}/3), '
+        'scheduling auto-retry in 30s: $errorMessage',
+      );
+      await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
+      await _database.updateDownloadError(globalKey, errorMessage);
+      await _database.removeFromQueue(globalKey);
+      _autoRetryTimers[globalKey]?.cancel();
+      _autoRetryTimers[globalKey] = Timer(const Duration(seconds: 30), () {
+        _autoRetryTimers.remove(globalKey);
+        _performAutoRetry(globalKey);
+      });
+
+      // Advance the queue while we wait for the retry timer
+      if (_lastClient != null) _processQueue(_lastClient!);
+    } else {
+      await _onDownloadPermanentlyFailed(globalKey, errorMessage);
+    }
+  }
+
+  /// Handle a non-retryable failure (e.g. 404) — fail immediately without auto-retry.
+  Future<void> _onDownloadPermanentlyFailed(String globalKey, String errorMessage) async {
+    _pendingDownloadContext.remove(globalKey);
+    appLogger.e('Download permanently failed for $globalKey: $errorMessage');
     await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
     await _database.updateDownloadError(globalKey, errorMessage);
     await _database.removeFromQueue(globalKey);
 
     // Try to enqueue more items from the queue
     if (_lastClient != null) _processQueue(_lastClient!);
+  }
+
+  /// Execute an app-level auto-retry: transition back to queued and re-enqueue.
+  Future<void> _performAutoRetry(String globalKey) async {
+    if (_disposed) return;
+    final client = _lastClient;
+    if (client == null) {
+      appLogger.w('Cannot auto-retry $globalKey: no client available');
+      return;
+    }
+
+    final existing = await _database.getDownloadedMedia(globalKey);
+    if (existing == null || existing.status != DownloadStatus.failed.index) {
+      // Download was cancelled/deleted/retried by user during the delay
+      return;
+    }
+
+    appLogger.i('Auto-retrying download for $globalKey');
+    await _database.updateBgTaskId(globalKey, null);
+    await _transitionStatus(globalKey, DownloadStatus.queued);
+    await _database.addToQueue(mediaGlobalKey: globalKey);
+    _processQueue(client);
   }
 
   /// Handle a completed video download — store path, download supplementary content, mark done.
@@ -1219,6 +1276,7 @@ class DownloadManagerService {
 
   /// Retry a failed download
   Future<void> retryDownload(String globalKey, PlexClient client) async {
+    _autoRetryTimers.remove(globalKey)?.cancel();
     await _database.clearDownloadError(globalKey);
     await _database.updateBgTaskId(globalKey, null);
     await _transitionStatus(globalKey, DownloadStatus.queued);
@@ -1228,6 +1286,7 @@ class DownloadManagerService {
 
   /// Cancel a download
   Future<void> cancelDownload(String globalKey) async {
+    _autoRetryTimers.remove(globalKey)?.cancel();
     final bgTaskId = await _database.getBgTaskId(globalKey);
     if (bgTaskId != null) {
       await FileDownloader().cancelTaskWithId(bgTaskId);
@@ -1239,6 +1298,7 @@ class DownloadManagerService {
 
   /// Delete a downloaded item and its files
   Future<void> deleteDownload(String globalKey) async {
+    _autoRetryTimers.remove(globalKey)?.cancel();
     // Cancel if actively downloading via background_downloader
     final bgTaskId = await _database.getBgTaskId(globalKey);
     if (bgTaskId != null) {
@@ -1748,6 +1808,10 @@ class DownloadManagerService {
       timer.cancel();
     }
     _progressDebounceTimers.clear();
+    for (final timer in _autoRetryTimers.values) {
+      timer.cancel();
+    }
+    _autoRetryTimers.clear();
     _progressController.close();
     _deletionProgressController.close();
   }
