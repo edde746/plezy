@@ -99,7 +99,11 @@ class OfflineWatchProvider extends ChangeNotifier {
     final episodes = _downloadProvider.getDownloadedEpisodesForShow(showRatingKey);
     if (episodes.isEmpty) return episodes;
 
+    // Sort Season 0 (Specials) to the end so regular seasons play first
     episodes.sort((a, b) {
+      final aIsSpecial = (a.parentIndex ?? 0) == 0;
+      final bIsSpecial = (b.parentIndex ?? 0) == 0;
+      if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
       final seasonCompare = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
       if (seasonCompare != 0) return seasonCompare;
       return (a.index ?? 0).compareTo(b.index ?? 0);

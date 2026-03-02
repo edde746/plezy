@@ -910,9 +910,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (episodes.isEmpty) return;
 
-      // Sort by season then episode number
+      // Sort by season then episode number, with Season 0 (Specials) at the end
       final sorted = List<PlexMetadata>.from(episodes)
         ..sort((a, b) {
+          final aIsSpecial = (a.parentIndex ?? 0) == 0;
+          final bIsSpecial = (b.parentIndex ?? 0) == 0;
+          if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
           final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
           if (seasonCmp != 0) return seasonCmp;
           return (a.index ?? 0).compareTo(b.index ?? 0);

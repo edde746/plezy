@@ -1677,8 +1677,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         return;
       }
 
-      // Get the first season (usually Season 1, but could be Season 0 for specials)
-      final firstSeason = _seasons.first;
+      // Skip Season 0 (Specials) — prefer the first regular season
+      final firstSeason = _seasons.firstWhere(
+        (s) => (s.index ?? 0) > 0,
+        orElse: () => _seasons.first,
+      );
 
       // Get episodes of the first season
       List<PlexMetadata> episodes;
