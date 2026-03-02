@@ -130,6 +130,7 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get delete => 'Elimina';
 	@override String get shuffle => 'Casuale';
 	@override String get addTo => 'Aggiungi a...';
+	@override String get createNew => 'Crea';
 	@override String get remove => 'Rimuovi';
 	@override String get paste => 'Incolla';
 	@override String get connect => 'Connetti';
@@ -506,7 +507,7 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Timeline video';
 	@override String get volumeSlider => 'Livello volume';
 	@override String endsAt({required Object time}) => 'Finisce alle ${time}';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => 'Riproduzione in Picture-in-Picture';
 	@override String get pipFailed => 'Impossibile avviare la modalità Picture-in-Picture';
 	@override late final _TranslationsVideoControlsPipErrorsIt pipErrors = _TranslationsVideoControlsPipErrorsIt._(_root);
 	@override String get chapters => 'Capitoli';
@@ -888,7 +889,6 @@ class _TranslationsPlaylistsIt implements TranslationsPlaylistsEn {
 	@override String get itemAdded => 'Aggiunto alla playlist';
 	@override String get itemRemoved => 'Rimosso dalla playlist';
 	@override String get selectPlaylist => 'Seleziona playlist';
-	@override String get createNewPlaylist => 'Crea nuova playlist';
 	@override String get errorCreating => 'Errore durante la creazione della playlist';
 	@override String get errorDeleting => 'Errore durante l\'eliminazione della playlist';
 	@override String get errorLoading => 'Errore durante il caricamento delle playlist';
@@ -916,7 +916,6 @@ class _TranslationsCollectionsIt implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => 'Impossibile eliminare la raccolta: ${error}';
 	@override String failedToLoadItems({required Object error}) => 'Impossibile caricare gli elementi della raccolta: ${error}';
 	@override String get selectCollection => 'Seleziona raccolta';
-	@override String get createNewCollection => 'Crea nuova raccolta';
 	@override String get collectionName => 'Nome raccolta';
 	@override String get enterCollectionName => 'Inserisci nome raccolta';
 	@override String get addedToCollection => 'Aggiunto alla raccolta';
@@ -1333,6 +1332,7 @@ extension on TranslationsIt {
 			'common.delete' => 'Elimina',
 			'common.shuffle' => 'Casuale',
 			'common.addTo' => 'Aggiungi a...',
+			'common.createNew' => 'Crea',
 			'common.remove' => 'Rimuovi',
 			'common.paste' => 'Incolla',
 			'common.connect' => 'Connetti',
@@ -1628,7 +1628,7 @@ extension on TranslationsIt {
 			'videoControls.timelineSlider' => 'Timeline video',
 			'videoControls.volumeSlider' => 'Livello volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Finisce alle ${time}',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => 'Riproduzione in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Impossibile avviare la modalità Picture-in-Picture',
 			'videoControls.pipErrors.androidVersion' => 'Richiede Android 8.0 o versioni successive',
 			'videoControls.pipErrors.iosVersion' => 'Richiede iOS 15.0 o versioni successive',
@@ -1816,9 +1816,9 @@ extension on TranslationsIt {
 			'liveTv.noChannels' => 'Nessun canale disponibile',
 			'liveTv.noDvr' => 'Nessun DVR configurato su nessun server',
 			'liveTv.tuneFailed' => 'Impossibile sintonizzare il canale',
-			'liveTv.loading' => 'Caricamento canali...',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.loading' => 'Caricamento canali...',
 			'liveTv.nowPlaying' => 'In riproduzione',
 			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
 			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
@@ -1873,7 +1873,6 @@ extension on TranslationsIt {
 			'playlists.itemAdded' => 'Aggiunto alla playlist',
 			'playlists.itemRemoved' => 'Rimosso dalla playlist',
 			'playlists.selectPlaylist' => 'Seleziona playlist',
-			'playlists.createNewPlaylist' => 'Crea nuova playlist',
 			'playlists.errorCreating' => 'Errore durante la creazione della playlist',
 			'playlists.errorDeleting' => 'Errore durante l\'eliminazione della playlist',
 			'playlists.errorLoading' => 'Errore durante il caricamento delle playlist',
@@ -1892,7 +1891,6 @@ extension on TranslationsIt {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Impossibile eliminare la raccolta: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Impossibile caricare gli elementi della raccolta: ${error}',
 			'collections.selectCollection' => 'Seleziona raccolta',
-			'collections.createNewCollection' => 'Crea nuova raccolta',
 			'collections.collectionName' => 'Nome raccolta',
 			'collections.enterCollectionName' => 'Inserisci nome raccolta',
 			'collections.addedToCollection' => 'Aggiunto alla raccolta',

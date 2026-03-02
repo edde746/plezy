@@ -190,6 +190,9 @@ class TranslationsCommonEn {
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
 
+	/// en: 'Create new'
+	String get createNew => 'Create new';
+
 	/// en: 'Remove'
 	String get remove => 'Remove';
 
@@ -1871,9 +1874,6 @@ class TranslationsCollectionsEn {
 	/// en: 'Select Collection'
 	String get selectCollection => 'Select Collection';
 
-	/// en: 'Create New Collection'
-	String get createNewCollection => 'Create New Collection';
-
 	/// en: 'Collection Name'
 	String get collectionName => 'Collection Name';
 
@@ -1969,9 +1969,6 @@ class TranslationsPlaylistsEn {
 
 	/// en: 'Select Playlist'
 	String get selectPlaylist => 'Select Playlist';
-
-	/// en: 'Create New Playlist'
-	String get createNewPlaylist => 'Create New Playlist';
 
 	/// en: 'Failed to create playlist'
 	String get errorCreating => 'Failed to create playlist';
@@ -2956,6 +2953,7 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.shuffle' => 'Shuffle',
 			'common.addTo' => 'Add to...',
+			'common.createNew' => 'Create new',
 			'common.remove' => 'Remove',
 			'common.paste' => 'Paste',
 			'common.connect' => 'Connect',
@@ -3439,9 +3437,9 @@ extension on Translations {
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.tuneFailed' => 'Failed to tune channel',
-			'liveTv.loading' => 'Loading channels...',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.loading' => 'Loading channels...',
 			'liveTv.nowPlaying' => 'Now Playing',
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
@@ -3471,7 +3469,6 @@ extension on Translations {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Failed to delete collection: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Failed to load collection items: ${error}',
 			'collections.selectCollection' => 'Select Collection',
-			'collections.createNewCollection' => 'Create New Collection',
 			'collections.collectionName' => 'Collection Name',
 			'collections.enterCollectionName' => 'Enter collection name',
 			'collections.addedToCollection' => 'Added to collection',
@@ -3501,7 +3498,6 @@ extension on Translations {
 			'playlists.itemAdded' => 'Added to playlist',
 			'playlists.itemRemoved' => 'Removed from playlist',
 			'playlists.selectPlaylist' => 'Select Playlist',
-			'playlists.createNewPlaylist' => 'Create New Playlist',
 			'playlists.errorCreating' => 'Failed to create playlist',
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',

@@ -130,6 +130,7 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get delete => 'Supprimer';
 	@override String get shuffle => 'Mélanger';
 	@override String get addTo => 'Ajouter à...';
+	@override String get createNew => 'Créer';
 	@override String get remove => 'Supprimer';
 	@override String get paste => 'Coller';
 	@override String get connect => 'Connecter';
@@ -506,7 +507,7 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Timeline vidéo';
 	@override String get volumeSlider => 'Niveau sonore';
 	@override String endsAt({required Object time}) => 'Fin à ${time}';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => 'Lecture en mode image dans l\'image';
 	@override String get pipFailed => 'Échec du démarrage du mode image dans l\'image';
 	@override late final _TranslationsVideoControlsPipErrorsFr pipErrors = _TranslationsVideoControlsPipErrorsFr._(_root);
 	@override String get chapters => 'Chapitres';
@@ -854,7 +855,6 @@ class _TranslationsCollectionsFr implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => 'Échec de la suppression de la collection: ${error}';
 	@override String failedToLoadItems({required Object error}) => 'Échec du chargement des éléments de la collection: ${error}';
 	@override String get selectCollection => 'Sélectionner une collection';
-	@override String get createNewCollection => 'Créer une nouvelle collection';
 	@override String get collectionName => 'Nom de la collection';
 	@override String get enterCollectionName => 'Entrez le nom de la collection';
 	@override String get addedToCollection => 'Ajouté à la collection';
@@ -893,7 +893,6 @@ class _TranslationsPlaylistsFr implements TranslationsPlaylistsEn {
 	@override String get itemAdded => 'Ajouté à la playlist';
 	@override String get itemRemoved => 'Retiré de la playlist';
 	@override String get selectPlaylist => 'Select Playlist';
-	@override String get createNewPlaylist => 'Créer une nouvelle playlist';
 	@override String get errorCreating => 'Échec de la création de playlist';
 	@override String get errorDeleting => 'Échec de suppression de playlist';
 	@override String get errorLoading => 'Échec de chargement de playlists';
@@ -1333,6 +1332,7 @@ extension on TranslationsFr {
 			'common.delete' => 'Supprimer',
 			'common.shuffle' => 'Mélanger',
 			'common.addTo' => 'Ajouter à...',
+			'common.createNew' => 'Créer',
 			'common.remove' => 'Supprimer',
 			'common.paste' => 'Coller',
 			'common.connect' => 'Connecter',
@@ -1628,7 +1628,7 @@ extension on TranslationsFr {
 			'videoControls.timelineSlider' => 'Timeline vidéo',
 			'videoControls.volumeSlider' => 'Niveau sonore',
 			'videoControls.endsAt' => ({required Object time}) => 'Fin à ${time}',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => 'Lecture en mode image dans l\'image',
 			'videoControls.pipFailed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.pipErrors.androidVersion' => 'Nécessite Android 8.0 ou plus récent',
 			'videoControls.pipErrors.iosVersion' => 'Nécessite iOS 15.0 ou plus récent',
@@ -1816,9 +1816,9 @@ extension on TranslationsFr {
 			'liveTv.noChannels' => 'Aucune chaîne disponible',
 			'liveTv.noDvr' => 'Aucun DVR configuré sur les serveurs',
 			'liveTv.tuneFailed' => 'Impossible de syntoniser la chaîne',
-			'liveTv.loading' => 'Chargement des chaînes...',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.loading' => 'Chargement des chaînes...',
 			'liveTv.nowPlaying' => 'En cours de lecture',
 			'liveTv.noPrograms' => 'Aucune donnée de programme disponible',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
@@ -1848,7 +1848,6 @@ extension on TranslationsFr {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Échec de la suppression de la collection: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Échec du chargement des éléments de la collection: ${error}',
 			'collections.selectCollection' => 'Sélectionner une collection',
-			'collections.createNewCollection' => 'Créer une nouvelle collection',
 			'collections.collectionName' => 'Nom de la collection',
 			'collections.enterCollectionName' => 'Entrez le nom de la collection',
 			'collections.addedToCollection' => 'Ajouté à la collection',
@@ -1878,7 +1877,6 @@ extension on TranslationsFr {
 			'playlists.itemAdded' => 'Ajouté à la playlist',
 			'playlists.itemRemoved' => 'Retiré de la playlist',
 			'playlists.selectPlaylist' => 'Select Playlist',
-			'playlists.createNewPlaylist' => 'Créer une nouvelle playlist',
 			'playlists.errorCreating' => 'Échec de la création de playlist',
 			'playlists.errorDeleting' => 'Échec de suppression de playlist',
 			'playlists.errorLoading' => 'Échec de chargement de playlists',

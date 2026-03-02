@@ -130,6 +130,7 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get delete => '删除';
 	@override String get shuffle => '随机播放';
 	@override String get addTo => '添加到...';
+	@override String get createNew => '新建';
 	@override String get remove => '删除';
 	@override String get paste => '粘贴';
 	@override String get connect => '连接';
@@ -506,7 +507,7 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '视频时间轴';
 	@override String get volumeSlider => '音量调节';
 	@override String endsAt({required Object time}) => '${time} 结束';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => '正在画中画模式中播放';
 	@override String get pipFailed => '画中画启动失败';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
@@ -888,7 +889,6 @@ class _TranslationsPlaylistsZh implements TranslationsPlaylistsEn {
 	@override String get itemAdded => '已添加到播放列表';
 	@override String get itemRemoved => '已从播放列表中移除';
 	@override String get selectPlaylist => '选择播放列表';
-	@override String get createNewPlaylist => '创建新播放列表';
 	@override String get errorCreating => '创建播放列表失败';
 	@override String get errorDeleting => '删除播放列表失败';
 	@override String get errorLoading => '加载播放列表失败';
@@ -916,7 +916,6 @@ class _TranslationsCollectionsZh implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => '删除合集失败：${error}';
 	@override String failedToLoadItems({required Object error}) => '加载合集项目失败：${error}';
 	@override String get selectCollection => '选择合集';
-	@override String get createNewCollection => '创建新合集';
 	@override String get collectionName => '合集名称';
 	@override String get enterCollectionName => '输入合集名称';
 	@override String get addedToCollection => '已添加到合集';
@@ -1333,6 +1332,7 @@ extension on TranslationsZh {
 			'common.delete' => '删除',
 			'common.shuffle' => '随机播放',
 			'common.addTo' => '添加到...',
+			'common.createNew' => '新建',
 			'common.remove' => '删除',
 			'common.paste' => '粘贴',
 			'common.connect' => '连接',
@@ -1628,7 +1628,7 @@ extension on TranslationsZh {
 			'videoControls.timelineSlider' => '视频时间轴',
 			'videoControls.volumeSlider' => '音量调节',
 			'videoControls.endsAt' => ({required Object time}) => '${time} 结束',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => '正在画中画模式中播放',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
 			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
@@ -1816,9 +1816,9 @@ extension on TranslationsZh {
 			'liveTv.noChannels' => '没有可用的频道',
 			'liveTv.noDvr' => '没有服务器配置了DVR',
 			'liveTv.tuneFailed' => '无法调谐频道',
-			'liveTv.loading' => '正在加载频道...',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.loading' => '正在加载频道...',
 			'liveTv.nowPlaying' => '正在播放',
 			'liveTv.noPrograms' => '没有可用的节目数据',
 			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
@@ -1873,7 +1873,6 @@ extension on TranslationsZh {
 			'playlists.itemAdded' => '已添加到播放列表',
 			'playlists.itemRemoved' => '已从播放列表中移除',
 			'playlists.selectPlaylist' => '选择播放列表',
-			'playlists.createNewPlaylist' => '创建新播放列表',
 			'playlists.errorCreating' => '创建播放列表失败',
 			'playlists.errorDeleting' => '删除播放列表失败',
 			'playlists.errorLoading' => '加载播放列表失败',
@@ -1892,7 +1891,6 @@ extension on TranslationsZh {
 			'collections.deleteFailedWithError' => ({required Object error}) => '删除合集失败：${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => '加载合集项目失败：${error}',
 			'collections.selectCollection' => '选择合集',
-			'collections.createNewCollection' => '创建新合集',
 			'collections.collectionName' => '合集名称',
 			'collections.enterCollectionName' => '输入合集名称',
 			'collections.addedToCollection' => '已添加到合集',

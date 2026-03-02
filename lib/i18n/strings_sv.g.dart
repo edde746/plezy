@@ -130,6 +130,7 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get delete => 'Ta bort';
 	@override String get shuffle => 'Blanda';
 	@override String get addTo => 'Lägg till i...';
+	@override String get createNew => 'Skapa ny';
 	@override String get remove => 'Ta bort';
 	@override String get paste => 'Klistra in';
 	@override String get connect => 'Anslut';
@@ -506,7 +507,7 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Volymnivå';
 	@override String endsAt({required Object time}) => 'Slutar ${time}';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => 'Spelar i bild-i-bild';
 	@override String get pipFailed => 'Bild-i-bild kunde inte starta';
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
 	@override String get chapters => 'Kapitel';
@@ -888,7 +889,6 @@ class _TranslationsPlaylistsSv implements TranslationsPlaylistsEn {
 	@override String get itemAdded => 'Tillagd i spellista';
 	@override String get itemRemoved => 'Borttagen från spellista';
 	@override String get selectPlaylist => 'Välj spellista';
-	@override String get createNewPlaylist => 'Skapa ny spellista';
 	@override String get errorCreating => 'Det gick inte att skapa spellista';
 	@override String get errorDeleting => 'Det gick inte att ta bort spellista';
 	@override String get errorLoading => 'Det gick inte att ladda spellistor';
@@ -916,7 +916,6 @@ class _TranslationsCollectionsSv implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}';
 	@override String failedToLoadItems({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}';
 	@override String get selectCollection => 'Välj samling';
-	@override String get createNewCollection => 'Skapa ny samling';
 	@override String get collectionName => 'Samlingsnamn';
 	@override String get enterCollectionName => 'Ange samlingsnamn';
 	@override String get addedToCollection => 'Tillagd i samling';
@@ -1333,6 +1332,7 @@ extension on TranslationsSv {
 			'common.delete' => 'Ta bort',
 			'common.shuffle' => 'Blanda',
 			'common.addTo' => 'Lägg till i...',
+			'common.createNew' => 'Skapa ny',
 			'common.remove' => 'Ta bort',
 			'common.paste' => 'Klistra in',
 			'common.connect' => 'Anslut',
@@ -1628,7 +1628,7 @@ extension on TranslationsSv {
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Volymnivå',
 			'videoControls.endsAt' => ({required Object time}) => 'Slutar ${time}',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => 'Spelar i bild-i-bild',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
 			'videoControls.pipErrors.iosVersion' => 'Kräver iOS 15.0 eller nyare',
@@ -1816,9 +1816,9 @@ extension on TranslationsSv {
 			'liveTv.noChannels' => 'Inga kanaler tillgängliga',
 			'liveTv.noDvr' => 'Ingen DVR konfigurerad på någon server',
 			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
-			'liveTv.loading' => 'Laddar kanaler...',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.loading' => 'Laddar kanaler...',
 			'liveTv.nowPlaying' => 'Spelas nu',
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
@@ -1873,7 +1873,6 @@ extension on TranslationsSv {
 			'playlists.itemAdded' => 'Tillagd i spellista',
 			'playlists.itemRemoved' => 'Borttagen från spellista',
 			'playlists.selectPlaylist' => 'Välj spellista',
-			'playlists.createNewPlaylist' => 'Skapa ny spellista',
 			'playlists.errorCreating' => 'Det gick inte att skapa spellista',
 			'playlists.errorDeleting' => 'Det gick inte att ta bort spellista',
 			'playlists.errorLoading' => 'Det gick inte att ladda spellistor',
@@ -1892,7 +1891,6 @@ extension on TranslationsSv {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
 			'collections.selectCollection' => 'Välj samling',
-			'collections.createNewCollection' => 'Skapa ny samling',
 			'collections.collectionName' => 'Samlingsnamn',
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
 			'collections.addedToCollection' => 'Tillagd i samling',

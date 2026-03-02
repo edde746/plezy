@@ -130,6 +130,7 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get delete => 'Verwijderen';
 	@override String get shuffle => 'Willekeurig';
 	@override String get addTo => 'Toevoegen aan...';
+	@override String get createNew => 'Nieuw aanmaken';
 	@override String get remove => 'Verwijderen';
 	@override String get paste => 'Plakken';
 	@override String get connect => 'Verbinden';
@@ -506,7 +507,7 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Videotijdlijn';
 	@override String get volumeSlider => 'Volumeniveau';
 	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => 'Afspelen in beeld-in-beeld';
 	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
 	@override late final _TranslationsVideoControlsPipErrorsNl pipErrors = _TranslationsVideoControlsPipErrorsNl._(_root);
 	@override String get chapters => 'Hoofdstukken';
@@ -888,7 +889,6 @@ class _TranslationsPlaylistsNl implements TranslationsPlaylistsEn {
 	@override String get itemAdded => 'Toegevoegd aan afspeellijst';
 	@override String get itemRemoved => 'Verwijderd uit afspeellijst';
 	@override String get selectPlaylist => 'Selecteer afspeellijst';
-	@override String get createNewPlaylist => 'Nieuwe afspeellijst maken';
 	@override String get errorCreating => 'Fout bij maken afspeellijst';
 	@override String get errorDeleting => 'Fout bij verwijderen afspeellijst';
 	@override String get errorLoading => 'Fout bij laden afspeellijsten';
@@ -916,7 +916,6 @@ class _TranslationsCollectionsNl implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => 'Collectie verwijderen mislukt: ${error}';
 	@override String failedToLoadItems({required Object error}) => 'Collectie-items laden mislukt: ${error}';
 	@override String get selectCollection => 'Selecteer collectie';
-	@override String get createNewCollection => 'Nieuwe collectie maken';
 	@override String get collectionName => 'Collectienaam';
 	@override String get enterCollectionName => 'Voer collectienaam in';
 	@override String get addedToCollection => 'Toegevoegd aan collectie';
@@ -1333,6 +1332,7 @@ extension on TranslationsNl {
 			'common.delete' => 'Verwijderen',
 			'common.shuffle' => 'Willekeurig',
 			'common.addTo' => 'Toevoegen aan...',
+			'common.createNew' => 'Nieuw aanmaken',
 			'common.remove' => 'Verwijderen',
 			'common.paste' => 'Plakken',
 			'common.connect' => 'Verbinden',
@@ -1628,7 +1628,7 @@ extension on TranslationsNl {
 			'videoControls.timelineSlider' => 'Videotijdlijn',
 			'videoControls.volumeSlider' => 'Volumeniveau',
 			'videoControls.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => 'Afspelen in beeld-in-beeld',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
 			'videoControls.pipErrors.iosVersion' => 'Vereist iOS 15.0 of nieuwer',
@@ -1816,9 +1816,9 @@ extension on TranslationsNl {
 			'liveTv.noChannels' => 'Geen zenders beschikbaar',
 			'liveTv.noDvr' => 'Geen DVR geconfigureerd op een server',
 			'liveTv.tuneFailed' => 'Kan zender niet afstemmen',
-			'liveTv.loading' => 'Zenders laden...',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.loading' => 'Zenders laden...',
 			'liveTv.nowPlaying' => 'Nu aan het afspelen',
 			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
@@ -1873,7 +1873,6 @@ extension on TranslationsNl {
 			'playlists.itemAdded' => 'Toegevoegd aan afspeellijst',
 			'playlists.itemRemoved' => 'Verwijderd uit afspeellijst',
 			'playlists.selectPlaylist' => 'Selecteer afspeellijst',
-			'playlists.createNewPlaylist' => 'Nieuwe afspeellijst maken',
 			'playlists.errorCreating' => 'Fout bij maken afspeellijst',
 			'playlists.errorDeleting' => 'Fout bij verwijderen afspeellijst',
 			'playlists.errorLoading' => 'Fout bij laden afspeellijsten',
@@ -1892,7 +1891,6 @@ extension on TranslationsNl {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
 			'collections.selectCollection' => 'Selecteer collectie',
-			'collections.createNewCollection' => 'Nieuwe collectie maken',
 			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer collectienaam in',
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',

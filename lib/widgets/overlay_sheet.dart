@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -60,6 +61,7 @@ class OverlaySheetController {
     bool barrierDismissible = true,
     FocusNode? initialFocusNode,
     Alignment alignment = Alignment.bottomCenter,
+    bool showDragHandle = false,
   }) {
     return _state._show<T>(
       builder: builder,
@@ -68,6 +70,7 @@ class OverlaySheetController {
       barrierDismissible: barrierDismissible,
       initialFocusNode: initialFocusNode,
       alignment: alignment,
+      showDragHandle: showDragHandle,
     );
   }
 
@@ -104,6 +107,7 @@ class OverlaySheetController {
     bool isScrollControlled = false,
     FocusNode? initialFocusNode,
     Alignment alignment = Alignment.bottomCenter,
+    bool showDragHandle = false,
   }) {
     final controller = maybeOf(context);
     if (controller != null) {
@@ -114,6 +118,7 @@ class OverlaySheetController {
         barrierDismissible: barrierDismissible,
         initialFocusNode: initialFocusNode,
         alignment: alignment,
+        showDragHandle: showDragHandle,
       );
     }
     return showModalBottomSheet<T>(
@@ -193,6 +198,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   bool _isOpen = false;
   bool _isClosing = false;
   bool _barrierDismissible = true;
+  bool _showDragHandle = false;
   BoxConstraints? _constraints;
   Color? _explicitBackgroundColor;
   Alignment _alignment = Alignment.bottomCenter;
@@ -200,6 +206,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   // Drag-to-dismiss state
   double _dragOffset = 0;
   bool _isDragging = false;
+  final _sheetKey = GlobalKey();
 
   @override
   void initState() {
@@ -240,6 +247,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     bool barrierDismissible = true,
     FocusNode? initialFocusNode,
     Alignment alignment = Alignment.bottomCenter,
+    bool showDragHandle = false,
   }) {
     // If already open, close first (instant)
     if (_isOpen) {
@@ -260,6 +268,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       _isOpen = true;
       _isClosing = false;
       _barrierDismissible = barrierDismissible;
+      _showDragHandle = showDragHandle;
       _constraints = constraints;
       _explicitBackgroundColor = backgroundColor;
       _alignment = alignment;
@@ -458,10 +467,28 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     );
   }
 
+  double _getSheetHeight() {
+    final renderBox = _sheetKey.currentContext?.findRenderObject() as RenderBox?;
+    return renderBox?.size.height ?? 300;
+  }
+
+  void _checkDismiss(double velocity) {
+    final sheetHeight = _getSheetHeight();
+    if (_dragOffset > sheetHeight * 0.25 || velocity > 500) {
+      _close();
+    } else {
+      setState(() {
+        _dragOffset = 0;
+      });
+    }
+  }
+
   Widget _buildSheet(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width > 600;
     final isTop = _alignment.y < 0;
+    final isTV = PlatformDetector.isTV();
+    final showHandle = _showDragHandle && !isTV && !isTop;
 
     final effectiveConstraints =
         _constraints ??
@@ -472,6 +499,73 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final borderRadius = isTop
         ? const BorderRadius.vertical(bottom: Radius.circular(16))
         : const BorderRadius.vertical(top: Radius.circular(16));
+
+    final colorScheme = Theme.of(context).colorScheme;
+
+    Widget content = _pageStack.isNotEmpty ? _pageStack.last.builder(context) : const SizedBox.shrink();
+
+    // Wrap content in NotificationListener for scroll-aware drag-to-dismiss
+    if (showHandle) {
+      content = NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is OverscrollNotification) {
+            // Android (ClampingScrollPhysics): overscroll fires reliably
+            if (notification.overscroll < 0) {
+              setState(() {
+                _dragOffset += -notification.overscroll;
+              });
+              return true;
+            }
+          } else if (notification is ScrollUpdateNotification) {
+            // iOS (BouncingScrollPhysics): pixels go negative when bouncing past top
+            if (notification.metrics.pixels < 0) {
+              setState(() {
+                _dragOffset = -notification.metrics.pixels;
+              });
+              return true;
+            }
+            // If user scrolled back down from overscroll, reset drag offset
+            if (_dragOffset > 0 && notification.metrics.pixels >= 0) {
+              setState(() {
+                _dragOffset = 0;
+              });
+            }
+          } else if (notification is ScrollEndNotification) {
+            if (_dragOffset > 0) {
+              _checkDismiss(0);
+              return true;
+            }
+          }
+          return false;
+        },
+        child: content,
+      );
+    }
+
+    // Build the sheet content column (handle + content)
+    Widget sheetContent;
+    if (showHandle) {
+      sheetContent = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // M3 drag handle: 32x4, rounded, with 12dp top / 4dp bottom margin
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 4),
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: const BorderRadius.all(Radius.circular(2)),
+              ),
+            ),
+          ),
+          Flexible(child: content),
+        ],
+      );
+    } else {
+      sheetContent = content;
+    }
 
     Widget sheet = FocusScope(
       node: _sheetFocusScopeNode,
@@ -493,15 +587,16 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
             child: Transform.translate(
               offset: Offset(0, _dragOffset.clamp(0, double.infinity)),
               child: Material(
-                color: _explicitBackgroundColor ?? Theme.of(context).colorScheme.surface,
+                key: _sheetKey,
+                color: _explicitBackgroundColor ?? colorScheme.surface,
                 borderRadius: borderRadius,
                 clipBehavior: Clip.antiAlias,
                 child: SafeArea(
-                  top: !isTop,
-                  bottom: isTop,
+                  top: isTop,
+                  bottom: !isTop,
                   child: ConstrainedBox(
                     constraints: effectiveConstraints,
-                    child: _pageStack.isNotEmpty ? _pageStack.last.builder(context) : const SizedBox.shrink(),
+                    child: sheetContent,
                   ),
                 ),
               ),
@@ -511,33 +606,31 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       ),
     );
 
-    // Swipe-down-to-dismiss (skip on TV and for top-aligned sheets)
-    if (!PlatformDetector.isTV() && !isTop) {
-      sheet = GestureDetector(
-        onVerticalDragStart: (_) {
-          _isDragging = true;
-          _dragOffset = 0;
-        },
-        onVerticalDragUpdate: (details) {
-          if (!_isDragging) return;
-          setState(() {
-            _dragOffset += details.delta.dy;
-          });
-        },
-        onVerticalDragEnd: (details) {
-          if (!_isDragging) return;
-          _isDragging = false;
-
-          final sheetHeight = effectiveConstraints.minHeight;
-          final velocity = details.primaryVelocity ?? 0;
-
-          if (_dragOffset > sheetHeight * 0.25 || velocity > 500) {
-            _close();
-          } else {
-            setState(() {
-              _dragOffset = 0;
-            });
-          }
+    // Swipe-down-to-dismiss on non-scrollable areas (skip on TV and top-aligned)
+    if (showHandle) {
+      sheet = RawGestureDetector(
+        gestures: <Type, GestureRecognizerFactory>{
+          VerticalDragGestureRecognizer: GestureRecognizerFactoryWithHandlers<VerticalDragGestureRecognizer>(
+            () => VerticalDragGestureRecognizer()..onlyAcceptDragOnThreshold = true,
+            (instance) {
+              instance
+                ..onStart = (_) {
+                  _isDragging = true;
+                  _dragOffset = 0;
+                }
+                ..onUpdate = (details) {
+                  if (!_isDragging) return;
+                  setState(() {
+                    _dragOffset += details.delta.dy;
+                  });
+                }
+                ..onEnd = (details) {
+                  if (!_isDragging) return;
+                  _isDragging = false;
+                  _checkDismiss(details.primaryVelocity ?? 0);
+                };
+            },
+          ),
         },
         child: sheet,
       );

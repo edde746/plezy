@@ -130,6 +130,7 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get delete => 'Löschen';
 	@override String get shuffle => 'Zufall';
 	@override String get addTo => 'Hinzufügen zu...';
+	@override String get createNew => 'Neu erstellen';
 	@override String get remove => 'Entfernen';
 	@override String get paste => 'Einfügen';
 	@override String get connect => 'Verbinden';
@@ -506,7 +507,7 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Video-Zeitleiste';
 	@override String get volumeSlider => 'Lautstärkepegel';
 	@override String endsAt({required Object time}) => 'Endet um ${time}';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => 'Wiedergabe im Bild-in-Bild-Modus';
 	@override String get pipFailed => 'Bild-in-Bild konnte nicht gestartet werden';
 	@override late final _TranslationsVideoControlsPipErrorsDe pipErrors = _TranslationsVideoControlsPipErrorsDe._(_root);
 	@override String get chapters => 'Kapitel';
@@ -888,7 +889,6 @@ class _TranslationsPlaylistsDe implements TranslationsPlaylistsEn {
 	@override String get itemAdded => 'Zur Wiedergabeliste hinzugefügt';
 	@override String get itemRemoved => 'Aus Wiedergabeliste entfernt';
 	@override String get selectPlaylist => 'Wiedergabeliste auswählen';
-	@override String get createNewPlaylist => 'Neue Wiedergabeliste erstellen';
 	@override String get errorCreating => 'Wiedergabeliste konnte nicht erstellt werden';
 	@override String get errorDeleting => 'Wiedergabeliste konnte nicht gelöscht werden';
 	@override String get errorLoading => 'Wiedergabelisten konnten nicht geladen werden';
@@ -916,7 +916,6 @@ class _TranslationsCollectionsDe implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => 'Sammlung konnte nicht gelöscht werden: ${error}';
 	@override String failedToLoadItems({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}';
 	@override String get selectCollection => 'Sammlung auswählen';
-	@override String get createNewCollection => 'Neue Sammlung erstellen';
 	@override String get collectionName => 'Sammlungsname';
 	@override String get enterCollectionName => 'Sammlungsnamen eingeben';
 	@override String get addedToCollection => 'Zur Sammlung hinzugefügt';
@@ -1333,6 +1332,7 @@ extension on TranslationsDe {
 			'common.delete' => 'Löschen',
 			'common.shuffle' => 'Zufall',
 			'common.addTo' => 'Hinzufügen zu...',
+			'common.createNew' => 'Neu erstellen',
 			'common.remove' => 'Entfernen',
 			'common.paste' => 'Einfügen',
 			'common.connect' => 'Verbinden',
@@ -1628,7 +1628,7 @@ extension on TranslationsDe {
 			'videoControls.timelineSlider' => 'Video-Zeitleiste',
 			'videoControls.volumeSlider' => 'Lautstärkepegel',
 			'videoControls.endsAt' => ({required Object time}) => 'Endet um ${time}',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => 'Wiedergabe im Bild-in-Bild-Modus',
 			'videoControls.pipFailed' => 'Bild-in-Bild konnte nicht gestartet werden',
 			'videoControls.pipErrors.androidVersion' => 'Erfordert Android 8.0 oder neuer',
 			'videoControls.pipErrors.iosVersion' => 'Erfordert iOS 15.0 oder neuer',
@@ -1816,9 +1816,9 @@ extension on TranslationsDe {
 			'liveTv.noChannels' => 'Keine Kanäle verfügbar',
 			'liveTv.noDvr' => 'Kein DVR auf einem Server konfiguriert',
 			'liveTv.tuneFailed' => 'Kanal konnte nicht eingestellt werden',
-			'liveTv.loading' => 'Kanäle werden geladen...',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.loading' => 'Kanäle werden geladen...',
 			'liveTv.nowPlaying' => 'Läuft gerade',
 			'liveTv.noPrograms' => 'Keine Programmdaten verfügbar',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
@@ -1873,7 +1873,6 @@ extension on TranslationsDe {
 			'playlists.itemAdded' => 'Zur Wiedergabeliste hinzugefügt',
 			'playlists.itemRemoved' => 'Aus Wiedergabeliste entfernt',
 			'playlists.selectPlaylist' => 'Wiedergabeliste auswählen',
-			'playlists.createNewPlaylist' => 'Neue Wiedergabeliste erstellen',
 			'playlists.errorCreating' => 'Wiedergabeliste konnte nicht erstellt werden',
 			'playlists.errorDeleting' => 'Wiedergabeliste konnte nicht gelöscht werden',
 			'playlists.errorLoading' => 'Wiedergabelisten konnten nicht geladen werden',
@@ -1892,7 +1891,6 @@ extension on TranslationsDe {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Sammlung konnte nicht gelöscht werden: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}',
 			'collections.selectCollection' => 'Sammlung auswählen',
-			'collections.createNewCollection' => 'Neue Sammlung erstellen',
 			'collections.collectionName' => 'Sammlungsname',
 			'collections.enterCollectionName' => 'Sammlungsnamen eingeben',
 			'collections.addedToCollection' => 'Zur Sammlung hinzugefügt',

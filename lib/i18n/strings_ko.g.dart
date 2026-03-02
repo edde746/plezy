@@ -130,6 +130,7 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get delete => '삭제';
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
+	@override String get createNew => '새로 만들기';
 	@override String get remove => '삭제';
 	@override String get paste => '붙여넣기';
 	@override String get connect => '연결';
@@ -506,7 +507,7 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '타임라인';
 	@override String get volumeSlider => '볼륨 조절';
 	@override String endsAt({required Object time}) => '${time}에 종료';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => '화면 속 화면으로 재생 중';
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 	@override String get chapters => '챕터';
@@ -854,7 +855,6 @@ class _TranslationsCollectionsKo implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => '컬렉션 삭제 실패: ${error}';
 	@override String failedToLoadItems({required Object error}) => '컬렉션 항목 로드 실패: ${error}';
 	@override String get selectCollection => '컬렉션 선택';
-	@override String get createNewCollection => '새 컬렉션 생성';
 	@override String get collectionName => '컬렉션 이름';
 	@override String get enterCollectionName => '컬렉션 이름 입력';
 	@override String get addedToCollection => '컬렉션에 추가됨';
@@ -893,7 +893,6 @@ class _TranslationsPlaylistsKo implements TranslationsPlaylistsEn {
 	@override String get itemAdded => '재생 목록에 추가 되었습니다';
 	@override String get itemRemoved => '재생 목록에서 제거됨';
 	@override String get selectPlaylist => '재생 목록 선택';
-	@override String get createNewPlaylist => '새 재생 목록 생성';
 	@override String get errorCreating => '재생 목록 생성 실패';
 	@override String get errorDeleting => '재생 목록 삭제 실패';
 	@override String get errorLoading => '재생 목록 로드 실패';
@@ -1333,6 +1332,7 @@ extension on TranslationsKo {
 			'common.delete' => '삭제',
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
+			'common.createNew' => '새로 만들기',
 			'common.remove' => '삭제',
 			'common.paste' => '붙여넣기',
 			'common.connect' => '연결',
@@ -1628,7 +1628,7 @@ extension on TranslationsKo {
 			'videoControls.timelineSlider' => '타임라인',
 			'videoControls.volumeSlider' => '볼륨 조절',
 			'videoControls.endsAt' => ({required Object time}) => '${time}에 종료',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => '화면 속 화면으로 재생 중',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
@@ -1816,9 +1816,9 @@ extension on TranslationsKo {
 			'liveTv.noChannels' => '사용 가능한 채널이 없습니다',
 			'liveTv.noDvr' => '서버에 DVR이 구성되어 있지 않습니다',
 			'liveTv.tuneFailed' => '채널 튜닝에 실패했습니다',
-			'liveTv.loading' => '채널 로딩 중...',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.loading' => '채널 로딩 중...',
 			'liveTv.nowPlaying' => '현재 재생 중',
 			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
 			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
@@ -1848,7 +1848,6 @@ extension on TranslationsKo {
 			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => '컬렉션 항목 로드 실패: ${error}',
 			'collections.selectCollection' => '컬렉션 선택',
-			'collections.createNewCollection' => '새 컬렉션 생성',
 			'collections.collectionName' => '컬렉션 이름',
 			'collections.enterCollectionName' => '컬렉션 이름 입력',
 			'collections.addedToCollection' => '컬렉션에 추가됨',
@@ -1878,7 +1877,6 @@ extension on TranslationsKo {
 			'playlists.itemAdded' => '재생 목록에 추가 되었습니다',
 			'playlists.itemRemoved' => '재생 목록에서 제거됨',
 			'playlists.selectPlaylist' => '재생 목록 선택',
-			'playlists.createNewPlaylist' => '새 재생 목록 생성',
 			'playlists.errorCreating' => '재생 목록 생성 실패',
 			'playlists.errorDeleting' => '재생 목록 삭제 실패',
 			'playlists.errorLoading' => '재생 목록 로드 실패',
