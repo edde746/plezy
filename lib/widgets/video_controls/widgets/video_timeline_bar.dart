@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../../mpv/mpv.dart';
@@ -36,8 +38,8 @@ class VideoTimelineBar extends StatelessWidget {
   /// Whether to show the estimated finish time next to the remaining timestamp (mobile).
   final bool showFinishTime;
 
-  /// Optional callback that returns a thumbnail URL for a given timestamp.
-  final String Function(Duration time)? thumbnailUrlBuilder;
+  /// Optional callback that returns thumbnail image bytes for a given timestamp.
+  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
   const VideoTimelineBar({
     super.key,
@@ -52,7 +54,7 @@ class VideoTimelineBar extends StatelessWidget {
     this.onFocusChange,
     this.enabled = true,
     this.showFinishTime = false,
-    this.thumbnailUrlBuilder,
+    this.thumbnailDataBuilder,
   });
 
   @override
@@ -65,35 +67,42 @@ class VideoTimelineBar extends StatelessWidget {
           stream: player.streams.duration,
           initialData: player.state.duration,
           builder: (context, durationSnapshot) {
-            final position = positionSnapshot.data ?? Duration.zero;
-            final duration = durationSnapshot.data ?? Duration.zero;
-            final remaining = position - duration; // We want this to be negative
+            return StreamBuilder<List<BufferRange>>(
+              stream: player.streams.bufferRanges,
+              initialData: player.state.bufferRanges,
+              builder: (context, bufferRangesSnapshot) {
+                final position = positionSnapshot.data ?? Duration.zero;
+                final duration = durationSnapshot.data ?? Duration.zero;
+                final bufferRanges = bufferRangesSnapshot.data ?? const [];
+                final remaining = position - duration; // We want this to be negative
 
-            return horizontalLayout
-                ? _buildHorizontalLayout(position, duration, remaining)
-                : _buildVerticalLayout(position, duration, remaining);
+                return horizontalLayout
+                    ? _buildHorizontalLayout(position, duration, remaining, bufferRanges)
+                    : _buildVerticalLayout(position, duration, remaining, bufferRanges);
+              },
+            );
           },
         );
       },
     );
   }
 
-  Widget _buildHorizontalLayout(Duration position, Duration duration, Duration remaining) {
+  Widget _buildHorizontalLayout(Duration position, Duration duration, Duration remaining, List<BufferRange> bufferRanges) {
     return Row(
       children: [
         _buildTimestamp(position),
         const SizedBox(width: 12),
-        Expanded(child: _buildSlider(position, duration)),
+        Expanded(child: _buildSlider(position, duration, bufferRanges)),
         const SizedBox(width: 12),
         _buildTimestamp(remaining),
       ],
     );
   }
 
-  Widget _buildVerticalLayout(Duration position, Duration duration, Duration remaining) {
+  Widget _buildVerticalLayout(Duration position, Duration duration, Duration remaining, List<BufferRange> bufferRanges) {
     return Column(
       children: [
-        _buildSlider(position, duration),
+        _buildSlider(position, duration, bufferRanges),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
@@ -118,16 +127,17 @@ class VideoTimelineBar extends StatelessWidget {
       initialData: player.state.rate,
       builder: (context, rateSnap) {
         final rate = rateSnap.data ?? 1.0;
-        final text = '${formatDurationTimestamp(remaining)} · ${formatFinishTime(remaining.abs(), rate: rate)}';
+        final text = '${formatDurationTimestamp(remaining)} · ${formatFinishTime(remaining.abs(), rate: rate, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))}';
         return Text(text, style: const TextStyle(color: Colors.white, fontSize: 14));
       },
     );
   }
 
-  Widget _buildSlider(Duration position, Duration duration) {
+  Widget _buildSlider(Duration position, Duration duration, List<BufferRange> bufferRanges) {
     return TimelineSlider(
       position: position,
       duration: duration,
+      bufferRanges: bufferRanges,
       chapters: chapters,
       chaptersLoaded: chaptersLoaded,
       onSeek: onSeek,
@@ -136,7 +146,7 @@ class VideoTimelineBar extends StatelessWidget {
       onKeyEvent: onKeyEvent,
       onFocusChange: onFocusChange,
       enabled: enabled,
-      thumbnailUrlBuilder: thumbnailUrlBuilder,
+      thumbnailDataBuilder: thumbnailDataBuilder,
     );
   }
 }

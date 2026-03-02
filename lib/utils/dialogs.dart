@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 
 /// Utility functions for showing common dialogs
@@ -24,18 +25,24 @@ Future<bool> showConfirmDialog(
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(
+          FocusableButton(
             autofocus: true,
             onPressed: () => Navigator.pop(dialogContext, false),
-            style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
-            child: Text(cancelText ?? t.common.cancel),
+            child: TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+              child: Text(cancelText ?? t.common.cancel),
+            ),
           ),
-          FilledButton(
+          FocusableButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            style: isDestructive
-                ? FilledButton.styleFrom(backgroundColor: colorScheme.error, foregroundColor: colorScheme.onError)
-                : null,
-            child: Text(confirmText),
+            child: FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: isDestructive
+                  ? FilledButton.styleFrom(backgroundColor: colorScheme.error, foregroundColor: colorScheme.onError)
+                  : null,
+              child: Text(confirmText),
+            ),
           ),
         ],
       );
@@ -80,15 +87,21 @@ Future<({bool confirmed, bool checked})> showConfirmDialogWithCheckbox(
               ],
             ),
             actions: [
-              TextButton(
+              FocusableButton(
                 autofocus: true,
                 onPressed: () => Navigator.pop(dialogContext, false),
-                style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
-                child: Text(cancelText ?? t.common.cancel),
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+                  child: Text(cancelText ?? t.common.cancel),
+                ),
               ),
-              FilledButton(
+              FocusableButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(confirmText),
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: Text(confirmText),
+                ),
               ),
             ],
           );
@@ -102,8 +115,8 @@ Future<({bool confirmed, bool checked})> showConfirmDialogWithCheckbox(
 
 /// Shows a delete confirmation dialog.
 /// Convenience wrapper around [showConfirmDialog] with destructive styling.
-Future<bool> showDeleteConfirmation(BuildContext context, {required String title, required String message}) {
-  return showConfirmDialog(context, title: title, message: message, confirmText: t.common.delete, isDestructive: true);
+Future<bool> showDeleteConfirmation(BuildContext context, {required String title, required String message, String? confirmText}) {
+  return showConfirmDialog(context, title: title, message: message, confirmText: confirmText ?? t.common.delete, isDestructive: true);
 }
 
 /// Shows a text input dialog for creating/naming items
@@ -122,6 +135,81 @@ Future<String?> showTextInputDialog(
   );
 }
 
+/// Shows a multiline text input dialog for editing longer text like summaries.
+/// Returns the entered text, or null if cancelled.
+/// Allows empty text to be submitted (for clearing fields).
+Future<String?> showMultilineTextInputDialog(
+  BuildContext context, {
+  required String title,
+  required String labelText,
+  String? initialValue,
+}) {
+  return showDialog<String>(
+    context: context,
+    builder: (context) => _MultilineTextInputDialog(title: title, labelText: labelText, initialValue: initialValue),
+  );
+}
+
+class _MultilineTextInputDialog extends StatefulWidget {
+  final String title;
+  final String labelText;
+  final String? initialValue;
+
+  const _MultilineTextInputDialog({required this.title, required this.labelText, this.initialValue});
+
+  @override
+  State<_MultilineTextInputDialog> createState() => _MultilineTextInputDialogState();
+}
+
+class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog> {
+  late final TextEditingController _controller;
+  final _saveFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _saveFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: 400,
+        child: TextField(
+          controller: _controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: widget.labelText),
+          maxLines: 8,
+          minLines: 3,
+        ),
+      ),
+      actions: [
+        FocusableButton(
+          onPressed: () => Navigator.pop(context),
+          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+        ),
+        FocusableButton(
+          focusNode: _saveFocusNode,
+          onPressed: () => Navigator.pop(context, _controller.text),
+          child: TextButton(
+            onPressed: () => Navigator.pop(context, _controller.text),
+            child: Text(t.common.save),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _TextInputDialog extends StatefulWidget {
   final String title;
   final String labelText;
@@ -136,6 +224,7 @@ class _TextInputDialog extends StatefulWidget {
 
 class _TextInputDialogState extends State<_TextInputDialog> {
   late final TextEditingController _controller;
+  final _saveFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -146,6 +235,7 @@ class _TextInputDialogState extends State<_TextInputDialog> {
   @override
   void dispose() {
     _controller.dispose();
+    _saveFocusNode.dispose();
     super.dispose();
   }
 
@@ -163,11 +253,19 @@ class _TextInputDialogState extends State<_TextInputDialog> {
         controller: _controller,
         autofocus: true,
         decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText),
-        onSubmitted: (_) => _submit(),
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _saveFocusNode.requestFocus(),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        TextButton(onPressed: _submit, child: Text(t.common.save)),
+        FocusableButton(
+          onPressed: () => Navigator.pop(context),
+          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+        ),
+        FocusableButton(
+          focusNode: _saveFocusNode,
+          onPressed: _submit,
+          child: TextButton(onPressed: _submit, child: Text(t.common.save)),
+        ),
       ],
     );
   }

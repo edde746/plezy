@@ -83,6 +83,62 @@ KeyEventResult handleBackKeyNavigation<T>(BuildContext context, KeyEvent event, 
   return handleBackKeyAction(event, () => Navigator.pop(context, result));
 }
 
+/// Creates a [FocusOnKeyEventCallback] that dispatches d-pad / arrow keys to
+/// the provided directional callbacks.
+///
+/// Each callback is optional. Directions without a callback are ignored
+/// (passed through to the framework). Directions mapped to a callback
+/// automatically return [KeyEventResult.handled].
+///
+/// Only [KeyDownEvent] and [KeyRepeatEvent] are handled (via [isActionable]).
+///
+/// ```dart
+/// Focus(
+///   onKeyEvent: dpadKeyHandler(
+///     onUp: () => _focusAppBar(),
+///     onDown: () => _focusContent(),
+///     onLeft: () => _navigateToSidebar(),
+///     onSelect: () => _play(),
+///   ),
+///   child: ...
+/// )
+/// ```
+FocusOnKeyEventCallback dpadKeyHandler({
+  VoidCallback? onUp,
+  VoidCallback? onDown,
+  VoidCallback? onLeft,
+  VoidCallback? onRight,
+  VoidCallback? onSelect,
+}) {
+  return (FocusNode _, KeyEvent event) {
+    if (!event.isActionable) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    if (key.isUpKey && onUp != null) {
+      onUp();
+      return KeyEventResult.handled;
+    }
+    if (key.isDownKey && onDown != null) {
+      onDown();
+      return KeyEventResult.handled;
+    }
+    if (key.isLeftKey && onLeft != null) {
+      onLeft();
+      return KeyEventResult.handled;
+    }
+    if (key.isRightKey && onRight != null) {
+      onRight();
+      return KeyEventResult.handled;
+    }
+    if (key.isSelectKey && onSelect != null) {
+      onSelect();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  };
+}
+
 /// Navigator observer that automatically suppresses stray back KeyUp events
 /// after any route pop caused by a back key press.
 ///

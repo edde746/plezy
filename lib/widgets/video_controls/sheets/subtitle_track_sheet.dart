@@ -7,16 +7,19 @@ import '../../../utils/track_label_builder.dart';
 import 'track_selection_sheet.dart';
 
 /// Bottom sheet for selecting subtitle tracks
-class SubtitleTrackSheet {
-  static void show(
-    BuildContext context,
-    Player player, {
-    Function(SubtitleTrack)? onTrackChanged,
-    VoidCallback? onOpen,
-    VoidCallback? onClose,
-  }) {
-    TrackSelectionSheet.show<SubtitleTrack>(
-      context: context,
+class SubtitleTrackSheet extends StatelessWidget {
+  final Player player;
+  final Function(SubtitleTrack)? onTrackChanged;
+
+  const SubtitleTrackSheet({
+    super.key,
+    required this.player,
+    this.onTrackChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TrackSelectionSheet<SubtitleTrack>(
       player: player,
       title: t.videoControls.subtitlesLabel,
       icon: Symbols.subtitles_rounded,
@@ -33,8 +36,6 @@ class SubtitleTrackSheet {
       showOffOption: true,
       createOffTrack: () => SubtitleTrack.off,
       isOffTrack: (track) => track.id == 'no',
-      onOpen: onOpen,
-      onClose: onClose,
     );
   }
 }

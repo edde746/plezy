@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import '../models/download_settings.dart';
 import '../models/hotkey_model.dart';
@@ -20,7 +21,9 @@ enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 class SettingsService extends BaseSharedPreferencesService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
+  static const String _keyCrashReporting = 'crash_reporting';
   static const String _keyBufferSize = 'buffer_size';
+  static const String _keyBufferSizeMigratedToAuto = 'buffer_size_migrated_to_auto';
   static const String _keyKeyboardShortcuts = 'keyboard_shortcuts';
   static const String _keyKeyboardHotkeys = 'keyboard_hotkeys';
   static const String _keyEnableHardwareDecoding = 'enable_hardware_decoding';
@@ -64,12 +67,16 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
   static const String _keyMaxVolume = 'max_volume';
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
+  static const String _keyAutoPip = 'auto_pip';
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
+  static const String _keyTunneledPlayback = 'tunneled_playback';
   static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
+  static const String _keyDefaultBoxFitMode = 'default_box_fit_mode';
   static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
   static const String _keyUseExoPlayer = 'use_exoplayer';
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const String _keyShowUnwatchedCount = 'show_unwatched_count';
+  static const String _keyHideSpoilers = 'hide_spoilers';
   static const String _keyGlobalShaderPreset = 'global_shader_preset';
   static const String _keyRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const String _keyUseExternalPlayer = 'use_external_player';
@@ -81,12 +88,21 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyPerItemDownloadSettings = 'per_item_download_settings';
   static const String _keyLastUsedDownloadSettings = 'last_used_download_settings';
   static const String _keyWatchedTimestamps = 'watched_timestamps';
+  static const String _keyAmbientLighting = 'ambient_lighting';
+  static const String _keyAudioPassthrough = 'audio_passthrough';
+  static const String _keyAudioNormalization = 'audio_normalization';
 
   SettingsService._();
 
-  static Future<SettingsService> getInstance() {
-    return BaseSharedPreferencesService.initializeInstance(() => SettingsService._());
+  static SettingsService? _cachedInstance;
+
+  static Future<SettingsService> getInstance() async {
+    _cachedInstance ??= await BaseSharedPreferencesService.initializeInstance(() => SettingsService._());
+    return _cachedInstance!;
   }
+
+  /// Synchronous access to the singleton, or null if not yet initialized.
+  static SettingsService? get instanceOrNull => _cachedInstance;
 
   /// Generic helper to get an enum value from preferences
   T _getEnumValue<T extends Enum>(String key, List<T> values, T defaultValue) {
@@ -120,13 +136,29 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyEnableDebugLogging) ?? false;
   }
 
+  // Crash Reporting
+  Future<void> setCrashReporting(bool enabled) async {
+    await prefs.setBool(_keyCrashReporting, enabled);
+  }
+
+  bool getCrashReporting() {
+    return prefs.getBool(_keyCrashReporting) ?? true; // Default enabled
+  }
+
   // Buffer Size (in MB)
   Future<void> setBufferSize(int sizeInMB) async {
     await prefs.setInt(_keyBufferSize, sizeInMB);
   }
 
   int getBufferSize() {
-    return prefs.getInt(_keyBufferSize) ?? 128; // Default 128MB
+    // One-time migration: reset existing users to Auto.
+    // SharedPreferences updates in-memory cache synchronously, so the
+    // unawaited disk-flush futures are safe here (idempotent if re-run).
+    if (prefs.getBool(_keyBufferSizeMigratedToAuto) != true) {
+      prefs.remove(_keyBufferSize);
+      prefs.setBool(_keyBufferSizeMigratedToAuto, true);
+    }
+    return prefs.getInt(_keyBufferSize) ?? 0; // 0 = Auto
   }
 
   // Hardware Decoding
@@ -394,27 +426,27 @@ class SettingsService extends BaseSharedPreferencesService {
   // HotKey Objects (New implementation)
   Map<String, HotKey> getDefaultKeyboardHotkeys() {
     return {
-      'play_pause': HotKey(key: PhysicalKeyboardKey.space),
-      'volume_up': HotKey(key: PhysicalKeyboardKey.arrowUp),
-      'volume_down': HotKey(key: PhysicalKeyboardKey.arrowDown),
-      'seek_forward': HotKey(key: PhysicalKeyboardKey.arrowRight),
-      'seek_backward': HotKey(key: PhysicalKeyboardKey.arrowLeft),
-      'seek_forward_large': HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.shift]),
-      'seek_backward_large': HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.shift]),
-      'fullscreen_toggle': HotKey(key: PhysicalKeyboardKey.keyF),
-      'mute_toggle': HotKey(key: PhysicalKeyboardKey.keyM),
-      'subtitle_toggle': HotKey(key: PhysicalKeyboardKey.keyS),
-      'audio_track_next': HotKey(key: PhysicalKeyboardKey.keyA),
-      'subtitle_track_next': HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
-      'chapter_next': HotKey(key: PhysicalKeyboardKey.keyN),
-      'chapter_previous': HotKey(key: PhysicalKeyboardKey.keyP),
-      'speed_increase': HotKey(key: PhysicalKeyboardKey.equal),
-      'speed_decrease': HotKey(key: PhysicalKeyboardKey.minus),
-      'speed_reset': HotKey(key: PhysicalKeyboardKey.keyR),
-      'sub_seek_next': HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
-      'sub_seek_prev': HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
-      'shader_toggle': HotKey(key: PhysicalKeyboardKey.keyG),
-      'skip_marker': HotKey(key: PhysicalKeyboardKey.enter),
+      'play_pause': const HotKey(key: PhysicalKeyboardKey.space),
+      'volume_up': const HotKey(key: PhysicalKeyboardKey.arrowUp),
+      'volume_down': const HotKey(key: PhysicalKeyboardKey.arrowDown),
+      'seek_forward': const HotKey(key: PhysicalKeyboardKey.arrowRight),
+      'seek_backward': const HotKey(key: PhysicalKeyboardKey.arrowLeft),
+      'seek_forward_large': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.shift]),
+      'seek_backward_large': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.shift]),
+      'fullscreen_toggle': const HotKey(key: PhysicalKeyboardKey.keyF),
+      'mute_toggle': const HotKey(key: PhysicalKeyboardKey.keyM),
+      'subtitle_toggle': const HotKey(key: PhysicalKeyboardKey.keyS),
+      'audio_track_next': const HotKey(key: PhysicalKeyboardKey.keyA),
+      'subtitle_track_next': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
+      'chapter_next': const HotKey(key: PhysicalKeyboardKey.keyN),
+      'chapter_previous': const HotKey(key: PhysicalKeyboardKey.keyP),
+      'speed_increase': const HotKey(key: PhysicalKeyboardKey.equal),
+      'speed_decrease': const HotKey(key: PhysicalKeyboardKey.minus),
+      'speed_reset': const HotKey(key: PhysicalKeyboardKey.keyR),
+      'sub_seek_next': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
+      'sub_seek_prev': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
+      'shader_toggle': const HotKey(key: PhysicalKeyboardKey.keyG),
+      'skip_marker': const HotKey(key: PhysicalKeyboardKey.enter),
     };
   }
 
@@ -427,7 +459,7 @@ class SettingsService extends BaseSharedPreferencesService {
     final jsonString = prefs.getString(_keyKeyboardShortcuts);
     if (jsonString == null) return getDefaultKeyboardShortcuts();
 
-    final decoded = _decodeJsonStringToMap(jsonString);
+    final decoded = decodeJsonStringToMap(jsonString);
     if (decoded.isEmpty) return getDefaultKeyboardShortcuts();
 
     final shortcuts = decoded.map((key, value) => MapEntry(key, value.toString()));
@@ -491,6 +523,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
       return result;
     } catch (e) {
+      appLogger.d('Failed to parse keyboard hotkeys', error: e);
       return getDefaultKeyboardHotkeys();
     }
   }
@@ -801,17 +834,8 @@ class SettingsService extends BaseSharedPreferencesService {
     final jsonString = prefs.getString(_keyMediaVersionPreferences);
     if (jsonString == null) return {};
 
-    final decoded = _decodeJsonStringToMap(jsonString);
+    final decoded = decodeJsonStringToMap(jsonString);
     return decoded.map((key, value) => MapEntry(key, value as int));
-  }
-
-  /// Helper to decode JSON string to Map with error handling
-  Map<String, dynamic> _decodeJsonStringToMap(String jsonString) {
-    try {
-      return json.decode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      return {};
-    }
   }
 
   // App Locale
@@ -1004,6 +1028,17 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyEnableDiscordRPC) ?? false; // Default disabled
   }
 
+  // Auto Picture-in-Picture (Android & iOS)
+  Future<void> setAutoPip(bool enabled) async {
+    await prefs.setBool(_keyAutoPip, enabled);
+  }
+
+  bool getAutoPip() {
+    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) return false;
+    // Default enabled on mobile, disabled on macOS
+    return prefs.getBool(_keyAutoPip) ?? !Platform.isMacOS;
+  }
+
   // Match Content Frame Rate (Android only)
   Future<void> setMatchContentFrameRate(bool enabled) async {
     await prefs.setBool(_keyMatchContentFrameRate, enabled);
@@ -1013,6 +1048,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyMatchContentFrameRate) ?? false; // Default disabled
   }
 
+  // Tunneled Playback (Android ExoPlayer only)
+  Future<void> setTunneledPlayback(bool enabled) async {
+    await prefs.setBool(_keyTunneledPlayback, enabled);
+  }
+
+  bool getTunneledPlayback() {
+    return prefs.getBool(_keyTunneledPlayback) ?? true; // Default: enabled
+  }
+
   // Default Playback Speed (0.5 to 3.0)
   Future<void> setDefaultPlaybackSpeed(double speed) async {
     await prefs.setDouble(_keyDefaultPlaybackSpeed, speed.clamp(0.5, 3.0));
@@ -1020,6 +1064,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   double getDefaultPlaybackSpeed() {
     return prefs.getDouble(_keyDefaultPlaybackSpeed) ?? 1.0; // Default: normal speed
+  }
+
+  // Default BoxFit Mode (0=contain, 1=cover, 2=fill)
+  Future<void> setDefaultBoxFitMode(int mode) async {
+    await prefs.setInt(_keyDefaultBoxFitMode, mode.clamp(0, 2));
+  }
+
+  int getDefaultBoxFitMode() {
+    return prefs.getInt(_keyDefaultBoxFitMode) ?? 0; // Default: contain
   }
 
   // Auto-Play Next Episode
@@ -1059,6 +1112,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyShowUnwatchedCount) ?? true; // Default: enabled (show counts)
   }
 
+  // Hide Spoilers (blur thumbnails and hide descriptions for unwatched episodes)
+  Future<void> setHideSpoilers(bool enabled) async {
+    await prefs.setBool(_keyHideSpoilers, enabled);
+  }
+
+  bool getHideSpoilers() {
+    return prefs.getBool(_keyHideSpoilers) ?? false; // Default: disabled
+  }
+
   // Global Shader Preset (for MPV video enhancement)
   Future<void> setGlobalShaderPreset(String presetId) async {
     await prefs.setString(_keyGlobalShaderPreset, presetId);
@@ -1095,7 +1157,8 @@ class SettingsService extends BaseSharedPreferencesService {
     if (jsonString == null) return KnownPlayers.systemDefault;
     try {
       return ExternalPlayer.fromJsonString(jsonString);
-    } catch (_) {
+    } catch (e) {
+      appLogger.d('Failed to parse external player', error: e);
       return KnownPlayers.systemDefault;
     }
   }
@@ -1111,7 +1174,8 @@ class SettingsService extends BaseSharedPreferencesService {
     try {
       final List<dynamic> decoded = json.decode(jsonString);
       return decoded.map((e) => ExternalPlayer.fromJson(e as Map<String, dynamic>)).toList();
-    } catch (_) {
+    } catch (e) {
+      appLogger.d('Failed to parse custom external players', error: e);
       return [];
     }
   }
@@ -1209,6 +1273,33 @@ class SettingsService extends BaseSharedPreferencesService {
     if (jsonString == null) return {};
     return _decodeJsonStringToMap(jsonString);
   }
+  
+  // Ambient Lighting
+  Future<void> setAmbientLighting(bool enabled) async {
+    await prefs.setBool(_keyAmbientLighting, enabled);
+  }
+
+  bool getAmbientLighting() {
+    return prefs.getBool(_keyAmbientLighting) ?? false;
+  }
+
+  // Audio Passthrough
+  Future<void> setAudioPassthrough(bool enabled) async {
+    await prefs.setBool(_keyAudioPassthrough, enabled);
+  }
+
+  bool getAudioPassthrough() {
+    return prefs.getBool(_keyAudioPassthrough) ?? false;
+  }
+
+  // Audio Normalization
+  Future<void> setAudioNormalization(bool enabled) async {
+    await prefs.setBool(_keyAudioNormalization, enabled);
+  }
+
+  bool getAudioNormalization() {
+    return prefs.getBool(_keyAudioNormalization) ?? false;
+  }
 
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
@@ -1252,12 +1343,16 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyMpvConfigEntries),
       prefs.remove(_keyMpvConfigPresets),
       prefs.remove(_keyEnableDiscordRPC),
+      prefs.remove(_keyAutoPip),
       prefs.remove(_keyMatchContentFrameRate),
+      prefs.remove(_keyTunneledPlayback),
       prefs.remove(_keyDefaultPlaybackSpeed),
+      prefs.remove(_keyDefaultBoxFitMode),
       prefs.remove(_keyAutoPlayNextEpisode),
       prefs.remove(_keyUseExoPlayer),
       prefs.remove(_keyAlwaysKeepSidebarOpen),
       prefs.remove(_keyShowUnwatchedCount),
+      prefs.remove(_keyHideSpoilers),
       prefs.remove(_keyGlobalShaderPreset),
       prefs.remove(_keyRequireProfileSelectionOnOpen),
       prefs.remove(_keyUseExternalPlayer),
@@ -1267,6 +1362,10 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyPerItemDownloadSettings),
       prefs.remove(_keyLastUsedDownloadSettings),
       prefs.remove(_keyWatchedTimestamps),
+      prefs.remove(_keyAmbientLighting),
+      prefs.remove(_keyAudioPassthrough),
+      prefs.remove(_keyAudioNormalization),
+      prefs.remove(_keyBufferSizeMigratedToAuto),
     ]);
   }
 

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,15 +9,20 @@ import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../main.dart';
 import '../focus/focusable_wrapper.dart';
+import '../utils/global_key_utils.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
+import '../providers/settings_provider.dart';
+import '../utils/content_utils.dart';
 import '../services/download_storage_service.dart';
+import '../widgets/collapsible_text.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/formatters.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -55,7 +61,8 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   bool _suppressNextBackKeyUp = false;
   bool _routeSubscribed = false;
 
-  String _toGlobalKey(String ratingKey, {String? serverId}) => '${serverId ?? widget.season.serverId ?? ''}:$ratingKey';
+  String _toGlobalKey(String ratingKey, {String? serverId}) =>
+      buildGlobalKey(serverId ?? widget.season.serverId ?? '', ratingKey);
 
   // WatchStateAware: watch all episode ratingKeys
   @override
@@ -270,7 +277,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                   String? localPosterPath;
                   if (widget.isOffline && episode.serverId != null) {
                     final downloadProvider = context.read<DownloadProvider>();
-                    final globalKey = '${episode.serverId}:${episode.ratingKey}';
+                    final globalKey = episode.globalKey;
                     // Get the artwork reference and convert to local file path
                     final artworkRef = downloadProvider.getArtworkPaths(globalKey);
                     localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, episode.serverId!);
@@ -342,30 +349,42 @@ class _EpisodeCard extends StatefulWidget {
 
 class _EpisodeCardState extends State<_EpisodeCard> {
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
+  Offset? _tapPosition;
+
+  void _storeTapPosition(TapDownDetails details) {
+    _tapPosition = details.globalPosition;
+  }
 
   void _showContextMenu() {
-    _contextMenuKey.currentState?.showContextMenu(context);
+    _contextMenuKey.currentState?.showContextMenu(context, position: _tapPosition);
   }
 
   Widget _buildEpisodeMetaRow(BuildContext context) {
+    final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12);
+    final dot = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Text('•', style: mutedStyle),
+    );
     return Row(
       children: [
         if (widget.episode.duration != null)
-          Text(
-            formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
-          ),
+          Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)), style: mutedStyle),
         if (widget.episode.originallyAvailableAt != null) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Text(
-              '•',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
-            ),
+          dot,
+          Text(formatFullDate(widget.episode.originallyAvailableAt!), style: mutedStyle),
+        ],
+        if (widget.episode.userRating != null && widget.episode.userRating! > 0) ...[
+          dot,
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
           ),
+          const SizedBox(width: 2),
           Text(
-            formatFullDate(widget.episode.originallyAvailableAt!),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
+            (widget.episode.userRating! / 2) == (widget.episode.userRating! / 2).truncateToDouble()
+                ? '${(widget.episode.userRating! / 2).toInt()}'
+                : (widget.episode.userRating! / 2).toStringAsFixed(1),
+            style: mutedStyle,
           ),
         ],
       ],
@@ -374,6 +393,9 @@ class _EpisodeCardState extends State<_EpisodeCard> {
 
   @override
   Widget build(BuildContext context) {
+    final hideSpoilers = context.watch<SettingsProvider>().hideSpoilers;
+    final shouldBlur = hideSpoilers && widget.episode.shouldHideSpoiler;
+
     // Hide progress when offline (not tracked)
     final hasProgress =
         !widget.isOffline &&
@@ -401,6 +423,10 @@ class _EpisodeCardState extends State<_EpisodeCard> {
         child: InkWell(
           key: Key(widget.episode.ratingKey),
           onTap: widget.onTap,
+          onTapDown: _storeTapPosition,
+          onLongPress: _showContextMenu,
+          onSecondaryTapDown: _storeTapPosition,
+          onSecondaryTap: _showContextMenu,
           hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
           child: Container(
             decoration: BoxDecoration(
@@ -417,7 +443,17 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                     children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.all(Radius.circular(6)),
-                        child: AspectRatio(aspectRatio: 16 / 9, child: _buildEpisodeThumbnail()),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: shouldBlur
+                              ? ClipRect(
+                                  child: ImageFiltered(
+                                    imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                    child: _buildEpisodeThumbnail(),
+                                  ),
+                                )
+                              : _buildEpisodeThumbnail(),
+                        ),
                       ),
 
                       // Play overlay
@@ -496,7 +532,7 @@ class _EpisodeCardState extends State<_EpisodeCard> {
 
                           // Only show download status in online mode
                           if (!widget.isOffline && widget.episode.serverId != null) {
-                            final globalKey = '${widget.episode.serverId}:${widget.episode.ratingKey}';
+                            final globalKey = widget.episode.globalKey;
                             final progress = downloadProvider.getProgress(globalKey);
                             final isQueueing = downloadProvider.isQueueing(globalKey);
 
@@ -621,17 +657,27 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                         },
                       ),
 
-                      // Summary
-                      if (widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
+                      // Summary (hidden when spoiler protection is active)
+                      if (!shouldBlur && widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text(
-                          widget.episode.summary!,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        if (PlatformDetector.isTV())
+                          Text(
+                            widget.episode.summary!,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        else
+                          CollapsibleText(
+                            text: widget.episode.summary!,
+                            maxLines: 3,
+                            small: true,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
+                          ),
                       ],
 
                       // Metadata row (duration, watched status)

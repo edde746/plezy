@@ -43,6 +43,9 @@ class PlaybackProgressTracker {
   /// Timer ticks to skip before retrying after failures (exponential backoff).
   int _ticksToSkip = 0;
 
+  /// Counts timer ticks while paused to send periodic "paused" heartbeats.
+  int _pausedTickCounter = 0;
+
   PlaybackProgressTracker({
     required this.client,
     required this.metadata,
@@ -70,6 +73,7 @@ class PlaybackProgressTracker {
 
     _progressTimer = Timer.periodic(updateInterval, (timer) {
       if (player.state.playing) {
+        _pausedTickCounter = 0;
         // Skip ticks when backing off after consecutive failures to avoid
         // flooding the network with doomed requests during an outage.
         if (_ticksToSkip > 0) {
@@ -77,6 +81,18 @@ class PlaybackProgressTracker {
           return;
         }
         _sendProgress('playing');
+      } else {
+        // Send periodic "paused" updates to keep the Plex session alive
+        // (~60s with default 10s interval)
+        _pausedTickCounter++;
+        if (_pausedTickCounter >= 6) {
+          _pausedTickCounter = 0;
+          if (_ticksToSkip > 0) {
+            _ticksToSkip--;
+            return;
+          }
+          _sendProgress('paused');
+        }
       }
     });
 

@@ -1,8 +1,12 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
+
 import '../utils/app_logger.dart';
 import 'plex_auth_service.dart';
 import 'storage_service.dart';
+
+enum ServerRefreshResult { success, networkError, authError, noToken }
 
 /// Centralized server configuration registry
 /// Manages which servers are available and their configurations
@@ -95,13 +99,15 @@ class ServerRegistry {
     appLogger.i('Cleared all servers from registry');
   }
 
-  /// Refresh servers from Plex API and update storage
-  /// This updates connection info (IPs, ports) that may have changed
-  Future<void> refreshServersFromApi() async {
+  /// Refresh servers from Plex API and update storage.
+  /// This updates connection info (IPs, ports) that may have changed.
+  /// Returns [ServerRefreshResult.authError] when the stored token is rejected
+  /// (e.g. after removing a Plex profile PIN), so the caller can redirect to re-auth.
+  Future<ServerRefreshResult> refreshServersFromApi() async {
     final token = _storage.getPlexToken();
     if (token == null || token.isEmpty) {
       appLogger.d('No Plex token available, skipping server refresh');
-      return;
+      return ServerRefreshResult.noToken;
     }
 
     try {
@@ -111,7 +117,7 @@ class ServerRegistry {
 
       if (freshServers.isEmpty) {
         appLogger.w('API returned no servers, keeping existing data');
-        return;
+        return ServerRefreshResult.success;
       }
 
       // Get existing servers to preserve any local-only data
@@ -133,9 +139,17 @@ class ServerRegistry {
 
       await saveServers(updatedServers);
       appLogger.i('Refreshed ${updatedServers.length} servers from API');
+      return ServerRefreshResult.success;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        appLogger.w('Plex token is invalid (401), re-authentication required');
+        return ServerRefreshResult.authError;
+      }
+      appLogger.w('Failed to refresh servers from API, using cached data', error: e);
+      return ServerRefreshResult.networkError;
     } catch (e, stackTrace) {
       appLogger.w('Failed to refresh servers from API, using cached data', error: e, stackTrace: stackTrace);
-      // Don't rethrow - we can continue with cached servers
+      return ServerRefreshResult.networkError;
     }
   }
 }

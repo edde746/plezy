@@ -9,12 +9,14 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"golang.org/x/crypto/acme/autocert"
 )
 
 const (
@@ -29,13 +31,16 @@ const (
 	pingInterval       = 30 * time.Second
 	maxMessageSize     = 64 * 1024
 	maxLogSize         = 1 * 1024 * 1024 // 1MB
-	logMaxAge          = 7 * 24 * time.Hour
+	logMaxAge          = 3 * 24 * time.Hour
 	logIDLength        = 5
 	logRateInterval    = 1 * time.Minute
+	maxLogEntries      = 500
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 // --- Rate limiter (token bucket) ---
@@ -150,21 +155,36 @@ func (r *Room) sendTo(targetID string, msg serverMsg) bool {
 // --- Log store ---
 
 type logEntry struct {
-	Text      string
+	Size      int
 	ExpiresAt time.Time
 }
 
 type logStore struct {
 	entries   map[string]logEntry
 	rateLimit map[string]time.Time // IP -> last upload time
+	dir       string
 	mu        sync.RWMutex
 }
 
-func newLogStore() *logStore {
-	return &logStore{
+func newLogStore(dir string) *logStore {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Fatalf("failed to create log dir %s: %v", dir, err)
+	}
+	ls := &logStore{
 		entries:   make(map[string]logEntry),
 		rateLimit: make(map[string]time.Time),
+		dir:       dir,
 	}
+	// Clean orphaned files from prior runs
+	files, _ := os.ReadDir(dir)
+	for _, f := range files {
+		os.Remove(filepath.Join(dir, f.Name()))
+	}
+	return ls
+}
+
+func (ls *logStore) filePath(id string) string {
+	return filepath.Join(ls.dir, id+".log")
 }
 
 const logIDChars = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -184,6 +204,7 @@ func (ls *logStore) cleanup() {
 	now := time.Now()
 	for id, entry := range ls.entries {
 		if now.After(entry.ExpiresAt) {
+			os.Remove(ls.filePath(id))
 			delete(ls.entries, id)
 		}
 	}
@@ -202,8 +223,8 @@ type Server struct {
 	mu    sync.RWMutex
 }
 
-func newServer() *Server {
-	s := &Server{rooms: make(map[string]*Room), logs: newLogStore()}
+func newServer(logDir string) *Server {
+	s := &Server{rooms: make(map[string]*Room), logs: newLogStore(logDir)}
 	go s.cleanupLoop()
 	return s
 }
@@ -271,10 +292,24 @@ func (s *Server) handlePostLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.logs.mu.Lock()
+	if len(s.logs.entries) >= maxLogEntries {
+		s.logs.mu.Unlock()
+		http.Error(w, "Log store full", http.StatusServiceUnavailable)
+		return
+	}
+	s.logs.mu.Unlock()
+
 	id := generateLogID()
+	if err := os.WriteFile(s.logs.filePath(id), body, 0644); err != nil {
+		log.Printf("logs: failed to write %s: %v", id, err)
+		http.Error(w, "Failed to store log", http.StatusInternalServerError)
+		return
+	}
+
 	s.logs.mu.Lock()
 	s.logs.entries[id] = logEntry{
-		Text:      string(body),
+		Size:      len(body),
 		ExpiresAt: time.Now().Add(logMaxAge),
 	}
 	s.logs.mu.Unlock()
@@ -306,8 +341,15 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data, err := os.ReadFile(s.logs.filePath(id))
+	if err != nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Write([]byte(entry.Text))
+	w.Header().Set("Content-Length", strconv.Itoa(entry.Size))
+	w.Write(data)
 }
 
 func (s *Server) sendError(conn *websocket.Conn, code, message string) {
@@ -485,11 +527,11 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	dev := flag.Bool("dev", false, "Run in development mode (plain HTTP on :8080)")
-	host := flag.String("host", "ice.plezy.app", "Hostname for TLS autocert")
+	addr := flag.String("addr", ":8080", "Listen address")
+	logDir := flag.String("log-dir", "/data/logs", "Directory for log file storage")
 	flag.Parse()
 
-	srv := newServer()
+	srv := newServer(*logDir)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/relay", srv.handleWS)
@@ -500,29 +542,6 @@ func main() {
 	mux.HandleFunc("/logs", srv.handlePostLogs)
 	mux.HandleFunc("/logs/", srv.handleGetLogs)
 
-	if *dev {
-		log.Println("Starting dev server on :8080")
-		log.Fatal(http.ListenAndServe(":8080", mux))
-	} else {
-		certManager := autocert.Manager{
-			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(*host),
-			Cache:      autocert.DirCache("/var/lib/plezy-relay/certs"),
-		}
-
-		server := &http.Server{
-			Addr:      ":443",
-			Handler:   mux,
-			TLSConfig: certManager.TLSConfig(),
-		}
-
-		// HTTP challenge server for Let's Encrypt
-		go func() {
-			log.Println("Starting HTTP challenge server on :80")
-			log.Fatal(http.ListenAndServe(":80", certManager.HTTPHandler(nil)))
-		}()
-
-		log.Printf("Starting relay server on :443 (host=%s)", *host)
-		log.Fatal(server.ListenAndServeTLS("", ""))
-	}
+	log.Printf("Starting relay server on %s", *addr)
+	log.Fatal(http.ListenAndServe(*addr, mux))
 }

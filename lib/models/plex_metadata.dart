@@ -1,8 +1,10 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import '../services/settings_service.dart' show EpisodePosterMode;
+import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
 import 'mixins/multi_server_fields.dart';
 import 'plex_role.dart';
+import '../utils/global_key_utils.dart';
 
 part 'plex_metadata.g.dart';
 
@@ -32,6 +34,18 @@ enum PlexMediaType {
 
   /// Whether this type can be played directly
   bool get isPlayable => isVideo || this == track;
+
+  /// Plex API type number for metadata editing endpoints
+  int get typeNumber => switch (this) {
+    PlexMediaType.movie => 1,
+    PlexMediaType.show => 2,
+    PlexMediaType.season => 3,
+    PlexMediaType.episode => 4,
+    PlexMediaType.artist => 8,
+    PlexMediaType.album => 9,
+    PlexMediaType.track => 10,
+    _ => 0,
+  };
 }
 
 @JsonSerializable()
@@ -47,6 +61,7 @@ class PlexMetadata with MultiServerFields {
   final String? summary;
   final double? rating;
   final double? audienceRating;
+  final double? userRating;
   final int? year;
   final String? originallyAvailableAt; // Full release date (YYYY-MM-DD)
   final String? thumb;
@@ -77,8 +92,11 @@ class PlexMetadata with MultiServerFields {
   final int? playlistItemID; // Playlist item ID (for dumb playlists only)
   final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
   final int? librarySectionID; // Library section ID this item belongs to
+  final String? librarySectionTitle; // Library section title this item belongs to
   final String? ratingImage; // Rating source URI (e.g. rottentomatoes://image.rating.ripe)
   final String? audienceRatingImage; // Audience rating source URI
+  final String? tagline;
+  final String? originalTitle;
   final String? subtype; // Clip subtype: "trailer", "behindTheScenes", "deleted", etc.
   final int? extraType; // Numeric extra type identifier
   final String? primaryExtraKey; // Points to main trailer (e.g., "/library/metadata/52601")
@@ -94,8 +112,11 @@ class PlexMetadata with MultiServerFields {
   // Clear logo URL (extracted from Image array, but serialized for offline storage)
   final String? clearLogo;
 
+  // Square background art URL (extracted from Image array, used for near-square hero layouts)
+  final String? backgroundSquare;
+
   /// Global unique identifier across all servers (serverId:ratingKey)
-  String get globalKey => serverId != null ? '$serverId:$ratingKey' : ratingKey;
+  String get globalKey => serverId != null ? buildGlobalKey(serverId!, ratingKey) : ratingKey;
 
   /// Parsed media type enum for type-safe comparisons
   PlexMediaType get mediaType {
@@ -127,6 +148,7 @@ class PlexMetadata with MultiServerFields {
     this.summary,
     this.rating,
     this.audienceRating,
+    this.userRating,
     this.year,
     this.originallyAvailableAt,
     this.thumb,
@@ -156,14 +178,18 @@ class PlexMetadata with MultiServerFields {
     this.playlistItemID,
     this.playQueueItemID,
     this.librarySectionID,
+    this.librarySectionTitle,
     this.ratingImage,
     this.audienceRatingImage,
+    this.tagline,
+    this.originalTitle,
     this.subtype,
     this.extraType,
     this.primaryExtraKey,
     this.serverId,
     this.serverName,
     this.clearLogo,
+    this.backgroundSquare,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -179,6 +205,7 @@ class PlexMetadata with MultiServerFields {
     String? summary,
     double? rating,
     double? audienceRating,
+    double? userRating,
     int? year,
     String? originallyAvailableAt,
     String? thumb,
@@ -208,14 +235,18 @@ class PlexMetadata with MultiServerFields {
     int? playlistItemID,
     int? playQueueItemID,
     int? librarySectionID,
+    String? librarySectionTitle,
     String? ratingImage,
     String? audienceRatingImage,
+    String? tagline,
+    String? originalTitle,
     String? subtype,
     int? extraType,
     String? primaryExtraKey,
     String? serverId,
     String? serverName,
     String? clearLogo,
+    String? backgroundSquare,
   }) {
     return PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -229,6 +260,7 @@ class PlexMetadata with MultiServerFields {
       summary: summary ?? this.summary,
       rating: rating ?? this.rating,
       audienceRating: audienceRating ?? this.audienceRating,
+      userRating: userRating ?? this.userRating,
       year: year ?? this.year,
       originallyAvailableAt: originallyAvailableAt ?? this.originallyAvailableAt,
       thumb: thumb ?? this.thumb,
@@ -258,41 +290,57 @@ class PlexMetadata with MultiServerFields {
       playlistItemID: playlistItemID ?? this.playlistItemID,
       playQueueItemID: playQueueItemID ?? this.playQueueItemID,
       librarySectionID: librarySectionID ?? this.librarySectionID,
+      librarySectionTitle: librarySectionTitle ?? this.librarySectionTitle,
       ratingImage: ratingImage ?? this.ratingImage,
       audienceRatingImage: audienceRatingImage ?? this.audienceRatingImage,
+      tagline: tagline ?? this.tagline,
+      originalTitle: originalTitle ?? this.originalTitle,
       subtype: subtype ?? this.subtype,
       extraType: extraType ?? this.extraType,
       primaryExtraKey: primaryExtraKey ?? this.primaryExtraKey,
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
       clearLogo: clearLogo ?? this.clearLogo,
+      backgroundSquare: backgroundSquare ?? this.backgroundSquare,
     );
   }
 
-  /// Extract clearLogo from Image array in raw JSON
-  static String? _extractClearLogoFromJson(Map<String, dynamic> json) {
+  /// Extract an image URL by type from the Image array in raw JSON
+  static String? _extractImageFromJson(Map<String, dynamic> json, String imageType) {
     if (!json.containsKey('Image')) return null;
 
     final images = json['Image'] as List?;
     if (images == null) return null;
 
     for (var image in images) {
-      if (image is Map && image['type'] == 'clearLogo') {
+      if (image is Map && image['type'] == imageType) {
         return image['url'] as String?;
       }
     }
     return null;
   }
 
-  /// Create from JSON with clearLogo extracted from Image array
+  /// Create from JSON with Image array fields extracted
   factory PlexMetadata.fromJsonWithImages(Map<String, dynamic> json) {
-    // Extract clearLogo before parsing
-    final clearLogoUrl = _extractClearLogoFromJson(json);
-    // Add it to the json so it gets parsed
+    final clearLogoUrl = _extractImageFromJson(json, 'clearLogo');
     if (clearLogoUrl != null) {
       json['clearLogo'] = clearLogoUrl;
     }
+    final backgroundSquareUrl = _extractImageFromJson(json, 'backgroundSquare');
+    if (backgroundSquareUrl != null) {
+      json['backgroundSquare'] = backgroundSquareUrl;
+    }
     return PlexMetadata.fromJson(json);
+  }
+
+  /// Returns the best hero art path based on the container's aspect ratio.
+  /// Uses backgroundSquare when the container is closer to 1:1 than 16:9.
+  String? heroArt({required double containerAspectRatio}) {
+    // Threshold = midpoint of 1:1 (1.0) and 16:9 (~1.78) ≈ 1.39
+    if (containerAspectRatio < 1.39 && backgroundSquare != null) {
+      return backgroundSquare;
+    }
+    return art;
   }
 
   // Helper to get the display title (show name for episodes/seasons, title otherwise)
@@ -400,7 +448,16 @@ class PlexMetadata with MultiServerFields {
     return viewCount != null && viewCount! > 0;
   }
 
-  factory PlexMetadata.fromJson(Map<String, dynamic> json) => _$PlexMetadataFromJson(json);
+  factory PlexMetadata.fromJson(Map<String, dynamic> json) =>
+      _$PlexMetadataFromJson(kBlurArtwork ? _obfuscateJson(json) : json);
+
+  static Map<String, dynamic> _obfuscateJson(Map<String, dynamic> json) {
+    final copy = Map<String, dynamic>.from(json);
+    for (final key in const ['title', 'summary', 'tagline', 'grandparentTitle', 'parentTitle', 'studio']) {
+      if (copy[key] is String) copy[key] = obfuscateText(copy[key] as String);
+    }
+    return copy;
+  }
 
   Map<String, dynamic> toJson() => _$PlexMetadataToJson(this);
 }

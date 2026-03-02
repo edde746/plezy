@@ -57,6 +57,12 @@ class PlaybackStateProvider with ChangeNotifier {
   /// Current play queue ID
   int? get playQueueId => _playQueueId;
 
+  /// The currently loaded queue items (windowed subset of full queue)
+  List<PlexMetadata> get loadedItems => List.unmodifiable(_loadedItems);
+
+  /// The current play queue item ID
+  int? get currentPlayQueueItemID => _currentPlayQueueItemID;
+
   /// Total number of items in the play queue
   int get queueLength => _playQueueTotalCount;
 

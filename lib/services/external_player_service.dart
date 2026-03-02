@@ -47,7 +47,7 @@ class ExternalPlayerService {
       final player = settings.getSelectedExternalPlayer();
 
       // On Android, always use native intent to avoid url_launcher opening in browser
-      if (Platform.isAndroid) {
+      if (Platform.isAndroid && context.mounted) {
         return _launchAndroidNative(resolvedUrl, player, context);
       }
 

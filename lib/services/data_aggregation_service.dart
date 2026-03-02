@@ -5,6 +5,7 @@ import '../models/plex_hub.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
+import '../utils/global_key_utils.dart';
 import 'multi_server_manager.dart';
 import 'plex_auth_service.dart';
 
@@ -45,7 +46,7 @@ class DataAggregationService {
       filteredOnDeck = allOnDeck.where((item) {
         final librarySectionId = item.librarySectionID;
         if (librarySectionId == null) return true; // Keep if no section ID
-        final globalKey = '${item.serverId}:$librarySectionId';
+        final globalKey = buildGlobalKey(item.serverId!, librarySectionId.toString());
         return !hiddenLibraryKeys.contains(globalKey);
       }).toList();
     }
@@ -83,8 +84,13 @@ class DataAggregationService {
       return [];
     }
 
+    // For global hubs, fetch libraries to split "Recently Added" hubs by library
+    final libraries = useGlobalHubs
+        ? (librariesByServer ?? groupLibrariesByServer(await getLibrariesFromAllServers()))
+        : librariesByServer;
+
     return useGlobalHubs
-        ? _fetchGlobalHubs(clients, limit: limit, hiddenLibraryKeys: hiddenLibraryKeys)
+        ? _fetchGlobalHubs(clients, limit: limit, hiddenLibraryKeys: hiddenLibraryKeys, librariesByServer: libraries)
         : _fetchLibraryHubs(
             clients,
             limit: limit,
@@ -98,6 +104,7 @@ class DataAggregationService {
     Map<String, PlexClient> clients, {
     int? limit,
     Set<String>? hiddenLibraryKeys,
+    Map<String, List<PlexLibrary>>? librariesByServer,
   }) async {
     appLogger.d('Fetching global hubs from ${clients.length} servers');
 
@@ -118,7 +125,7 @@ class DataAggregationService {
                   // Build the global key for the item's library section
                   final librarySectionId = item.librarySectionID;
                   if (librarySectionId == null) return true; // Keep if no section ID
-                  final globalKey = '$serverId:$librarySectionId';
+                  final globalKey = buildGlobalKey(serverId, librarySectionId.toString());
                   return !hiddenLibraryKeys.contains(globalKey);
                 }).toList();
 
@@ -149,7 +156,9 @@ class DataAggregationService {
     });
 
     final results = await Future.wait(hubFutures);
-    final result = _collectAndLimitResults(results, limit);
+    // Split "Recently Added" hubs that combine items from multiple libraries
+    final splitResults = results.map((hubs) => _splitRecentlyAddedHubs(hubs, librariesByServer)).toList();
+    final result = _collectAndLimitResults(splitResults, limit);
 
     appLogger.i('Fetched ${result.length} global hubs from all servers');
 
@@ -297,6 +306,103 @@ class DataAggregationService {
       all.addAll(items);
     }
     return limit != null && limit < all.length ? all.sublist(0, limit) : all;
+  }
+
+  /// Split "Recently Added" hubs that contain items from multiple libraries
+  /// into separate per-library hubs, matching the official Plex client behavior.
+  List<PlexHub> _splitRecentlyAddedHubs(
+    List<PlexHub> hubs,
+    Map<String, List<PlexLibrary>>? librariesByServer,
+  ) {
+    final result = <PlexHub>[];
+
+    for (final hub in hubs) {
+      final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+      if (!hubId.contains('.recent')) {
+        result.add(hub);
+        continue;
+      }
+
+      // Group items by librarySectionID
+      final groups = <int, List<PlexMetadata>>{};
+      final ungrouped = <PlexMetadata>[];
+
+      for (final item in hub.items) {
+        final sectionId = item.librarySectionID;
+        if (sectionId == null) {
+          ungrouped.add(item);
+        } else {
+          groups.putIfAbsent(sectionId, () => []).add(item);
+        }
+      }
+
+      // Single library (or no groupable items) — keep hub unchanged
+      if (groups.length <= 1) {
+        result.add(hub);
+        continue;
+      }
+
+      // Multiple libraries — create one hub per library
+      for (final entry in groups.entries) {
+        final items = entry.value;
+        final libraryName = _resolveLibraryName(items.first, librariesByServer);
+        final title = libraryName != null ? 'Recently Added in $libraryName' : hub.title;
+
+        result.add(PlexHub(
+          hubKey: hub.hubKey,
+          title: title,
+          type: hub.type,
+          hubIdentifier: '${hub.hubIdentifier}_${entry.key}',
+          size: items.length,
+          more: hub.more,
+          items: items,
+          serverId: hub.serverId,
+          serverName: hub.serverName,
+        ));
+      }
+
+      // Keep ungrouped items in a hub with the original title
+      if (ungrouped.isNotEmpty) {
+        result.add(PlexHub(
+          hubKey: hub.hubKey,
+          title: hub.title,
+          type: hub.type,
+          hubIdentifier: hub.hubIdentifier,
+          size: ungrouped.length,
+          more: hub.more,
+          items: ungrouped,
+          serverId: hub.serverId,
+          serverName: hub.serverName,
+        ));
+      }
+    }
+
+    return result;
+  }
+
+  /// Resolve library name from item metadata or library lookup map.
+  String? _resolveLibraryName(
+    PlexMetadata item,
+    Map<String, List<PlexLibrary>>? librariesByServer,
+  ) {
+    // Try librarySectionTitle from the item itself (Plex API often includes it)
+    if (item.librarySectionTitle != null && item.librarySectionTitle!.isNotEmpty) {
+      return item.librarySectionTitle;
+    }
+
+    // Fall back to library lookup
+    if (librariesByServer != null && item.serverId != null && item.librarySectionID != null) {
+      final serverLibraries = librariesByServer[item.serverId];
+      if (serverLibraries != null) {
+        for (final lib in serverLibraries) {
+          if (lib.key == item.librarySectionID.toString()) {
+            return lib.title;
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   /// Base helper for per-server fan-out operations

@@ -17,18 +17,21 @@ import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
 import '../utils/focus_utils.dart';
 import '../services/external_player_service.dart';
+import '../focus/focusable_button.dart';
 import '../focus/dpad_navigator.dart';
 import '../screens/media_detail_screen.dart';
+import '../screens/metadata_edit_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
 import '../widgets/file_info_bottom_sheet.dart';
-import '../widgets/focusable_bottom_sheet.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../utils/content_utils.dart';
 import '../services/auto_download_service.dart';
 import '../widgets/download_settings_dialog.dart';
+import '../widgets/overlay_sheet.dart';
+import '../widgets/rating_bottom_sheet.dart';
 import '../i18n/strings.g.dart';
 
 /// Helper class to store menu action data
@@ -37,8 +40,9 @@ class _MenuAction {
   final IconData icon;
   final String label;
   final Color? hoverColor;
+  final Color? foregroundColor;
 
-  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor});
+  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor, this.foregroundColor});
 }
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
@@ -71,10 +75,6 @@ class MediaContextMenu extends StatefulWidget {
 
 class MediaContextMenuState extends State<MediaContextMenu> {
   Offset? _tapPosition;
-
-  void _storeTapPosition(TapDownDetails details) {
-    _tapPosition = details.globalPosition;
-  }
 
   bool _openedFromKeyboard = false;
   bool _isContextMenuOpen = false;
@@ -109,11 +109,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Get the correct PlexClient for this item's server
   PlexClient _getClientForItem() => context.getClientWithFallback(_itemServerId);
-
-  void _handleTap() {
-    if (_isContextMenuOpen) return;
-    widget.onTap?.call();
-  }
 
   void _showContextMenu(BuildContext context) async {
     if (_isContextMenuOpen) return;
@@ -190,6 +185,24 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
+      // Rate (for movies, shows, seasons, and episodes)
+      if (mediaType == PlexMediaType.movie ||
+          mediaType == PlexMediaType.show ||
+          mediaType == PlexMediaType.season ||
+          mediaType == PlexMediaType.episode) {
+        menuActions.add(_MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate));
+      }
+
+      // Edit Metadata (for movies, shows, seasons, and episodes)
+      if (mediaType == PlexMediaType.movie ||
+          mediaType == PlexMediaType.show ||
+          mediaType == PlexMediaType.season ||
+          mediaType == PlexMediaType.episode) {
+        menuActions.add(
+          _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
+        );
+      }
+
       // Remove from Collection (only when viewing items within a collection)
       if (widget.collectionId != null) {
         menuActions.add(
@@ -243,7 +256,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           mediaType == PlexMediaType.show ||
           mediaType == PlexMediaType.season) {
         final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-        final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+        final globalKey = metadata.globalKey;
         final isDownloaded = downloadProvider.isDownloaded(globalKey);
 
         if (isDownloaded) {
@@ -286,9 +299,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'delete_media',
-            icon: Symbols.delete_rounded,
-            label: t.common.delete,
+            icon: Symbols.delete_forever_rounded,
+            label: t.mediaMenu.deleteFromServer,
             hoverColor: Theme.of(context).colorScheme.error,
+            foregroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -300,9 +314,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _openedFromKeyboard = false;
 
     if (useBottomSheet) {
-      // Show bottom sheet on mobile
-      selected = await showModalBottomSheet<String>(
-        context: context,
+      selected = await OverlaySheetController.showAdaptive<String>(
+        context,
         builder: (context) => _FocusableContextMenuSheet(
           title: widget.item.title,
           actions: menuActions,
@@ -397,6 +410,23 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             if (context.mounted) {
               showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
             }
+          }
+          break;
+
+        case 'rate':
+          if (context.mounted) {
+            await _showRatingSheet(context, metadata!, client);
+          }
+          break;
+
+        case 'edit_metadata':
+          didNavigate = true;
+          if (context.mounted) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: metadata!)),
+            );
+            widget.onRefresh?.call(metadata!.ratingKey);
           }
           break;
 
@@ -557,8 +587,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (fileInfo != null && context.mounted) {
         // Show file info bottom sheet
-        await showModalBottomSheet(
-          context: context,
+        await OverlaySheetController.showAdaptive(
+          context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
           builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
@@ -602,48 +632,51 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       _MenuAction(value: 'collection', icon: Symbols.collections_rounded, label: t.collections.collection),
     ];
 
-    final selected = useBottomSheet
-        ? await showModalBottomSheet<String>(
-            context: context,
-            builder: (context) => SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(t.common.addTo, style: Theme.of(context).textTheme.titleMedium),
-                  ),
-                  ...submenuActions.map((action) {
-                    return ListTile(
-                      leading: AppIcon(action.icon, fill: 1),
-                      title: Text(action.label),
-                      onTap: () => Navigator.pop(context, action.value),
-                    );
-                  }),
-                  const SizedBox(height: 8),
-                ],
+    String? selected;
+    if (useBottomSheet) {
+      selected = await OverlaySheetController.pushAdaptive<String>(
+        context,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(t.common.addTo, style: Theme.of(context).textTheme.titleMedium),
               ),
+              ...submenuActions.map((action) {
+                return ListTile(
+                  leading: AppIcon(action.icon, fill: 1),
+                  title: Text(action.label),
+                  onTap: () => OverlaySheetController.popAdaptive(context, action.value),
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      );
+    } else {
+      selected = await showMenu<String>(
+        context: context,
+        position: RelativeRect.fromLTRB(
+          _tapPosition?.dx ?? 0,
+          _tapPosition?.dy ?? 0,
+          _tapPosition?.dx ?? 0,
+          _tapPosition?.dy ?? 0,
+        ),
+        items: submenuActions.map((action) {
+          return PopupMenuItem<String>(
+            value: action.value,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [AppIcon(action.icon, fill: 1, size: 20), const SizedBox(width: 12), Text(action.label)],
             ),
-          )
-        : await showMenu<String>(
-            context: context,
-            position: RelativeRect.fromLTRB(
-              _tapPosition?.dx ?? 0,
-              _tapPosition?.dy ?? 0,
-              _tapPosition?.dx ?? 0,
-              _tapPosition?.dy ?? 0,
-            ),
-            items: submenuActions.map((action) {
-              return PopupMenuItem<String>(
-                value: action.value,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [AppIcon(action.icon, fill: 1, size: 20), const SizedBox(width: 12), Text(action.label)],
-                ),
-              );
-            }).toList(),
           );
+        }).toList(),
+      );
+    }
 
     // Handle the submenu selection
     if (selected == 'playlist' && context.mounted) {
@@ -909,6 +942,27 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Handle remove from collection action
+  Future<void> _showRatingSheet(BuildContext context, PlexMetadata metadata, PlexClient client) async {
+    final currentStarValue = (metadata.userRating != null && metadata.userRating! > 0)
+        ? metadata.userRating! / 2.0
+        : 0.0;
+    await showModalBottomSheet(
+      context: context,
+      builder: (context) => RatingBottomSheet(
+        currentRating: currentStarValue,
+        onRate: (stars) async {
+          final plexRating = stars * 2.0;
+          final success = await client.rateItem(metadata.ratingKey, plexRating);
+          if (success) widget.onRefresh?.call(metadata.ratingKey);
+        },
+        onClear: () async {
+          final success = await client.rateItem(metadata.ratingKey, -1);
+          if (success) widget.onRefresh?.call(metadata.ratingKey);
+        },
+      ),
+    );
+  }
+
   Future<void> _handleRemoveFromCollection(BuildContext context, PlexMetadata metadata) async {
     final client = _getClientForItem();
 
@@ -1030,10 +1084,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     // Check if the item is downloaded and use local file path if available
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+    final globalKey = metadata.globalKey;
     if (downloadProvider.isDownloaded(globalKey)) {
       final videoPath = await downloadProvider.getVideoFilePath(globalKey);
-      if (videoPath != null) {
+      if (videoPath != null && context.mounted) {
         final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
         await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
         return;
@@ -1041,6 +1095,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
 
     final client = _getClientForItem();
+    if (!context.mounted) return;
     await ExternalPlayerService.launch(context: context, metadata: metadata, client: client);
   }
 
@@ -1104,7 +1159,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _handleDeleteDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final metadata = widget.item as PlexMetadata;
-    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+    final globalKey = metadata.globalKey;
 
     // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
@@ -1143,8 +1198,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
       context,
-      title: t.common.delete,
-      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? "\n${t.mediaMenu.deleteMultipleWarning}" : ""}",
+      title: t.mediaMenu.deleteFromServer,
+      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? "\n\n${t.mediaMenu.deleteMultipleWarning}" : ""}",
+      confirmText: t.mediaMenu.deleteFromServer,
     );
 
     if (!confirmed || !context.mounted) return;
@@ -1174,14 +1230,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _handleTap,
-      onTapDown: _storeTapPosition,
-      onLongPress: () => _showContextMenu(context),
-      onSecondaryTapDown: _storeTapPosition,
-      onSecondaryTap: () => _showContextMenu(context),
-      child: widget.child,
-    );
+    // GestureDetector wrapping removed — gesture callbacks are now on InkWell
+    // directly in the card widgets, saving 1 element level. The context menu
+    // is still accessible programmatically via showContextMenu().
+    return widget.child;
   }
 }
 
@@ -1228,7 +1280,13 @@ class _PlaylistSelectionDialog extends StatelessWidget {
           },
         ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
+      actions: [
+        FocusableButton(
+          autofocus: true,
+          onPressed: () => Navigator.pop(context),
+          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+        ),
+      ],
     );
   }
 }
@@ -1268,7 +1326,13 @@ class _CollectionSelectionDialog extends StatelessWidget {
           },
         ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
+      actions: [
+        FocusableButton(
+          autofocus: true,
+          onPressed: () => Navigator.pop(context),
+          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+        ),
+      ],
     );
   }
 }
@@ -1302,44 +1366,41 @@ class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> 
 
   @override
   Widget build(BuildContext context) {
-    return FocusableBottomSheet(
-      initialFocusNode: widget.focusFirstItem ? _initialFocusNode : null,
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                widget.title,
-                style: Theme.of(context).textTheme.titleMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Flexible(
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ...widget.actions.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final action = entry.value;
-                      return FocusableListTile(
-                        focusNode: index == 0 ? _initialFocusNode : null,
-                        leading: AppIcon(action.icon, fill: 1),
-                        title: Text(action.label),
-                        onTap: () => Navigator.pop(context, action.value),
-                        hoverColor: action.hoverColor,
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            widget.title,
+            style: Theme.of(context).textTheme.titleMedium,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-      ),
+        Flexible(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...widget.actions.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final action = entry.value;
+                  return FocusableListTile(
+                    focusNode: index == 0 ? _initialFocusNode : null,
+                    leading: AppIcon(action.icon, fill: 1),
+                    title: Text(action.label),
+                    onTap: () => OverlaySheetController.closeAdaptive(context, action.value),
+                    hoverColor: action.hoverColor,
+                    textColor: action.foregroundColor,
+                    iconColor: action.foregroundColor,
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1379,72 +1440,89 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
     final screenSize = MediaQuery.of(context).size;
     const menuWidth = 220.0;
 
-    // Calculate menu position, keeping it on screen
-    double left = widget.position.dx;
-    double top = widget.position.dy;
+    // Clamp menu position to stay within screen bounds
+    const edgePadding = 8.0;
+    final left = widget.position.dx.clamp(edgePadding, screenSize.width - menuWidth - edgePadding);
 
-    // Adjust if menu would go off right edge
-    if (left + menuWidth > screenSize.width) {
-      left = screenSize.width - menuWidth - 8;
-    }
-
-    // Estimate menu height and adjust if would go off bottom
     final estimatedHeight = widget.actions.length * 48.0 + 16;
-    if (top + estimatedHeight > screenSize.height) {
-      top = screenSize.height - estimatedHeight - 8;
+    final spaceBelow = screenSize.height - widget.position.dy - edgePadding;
+    final spaceAbove = widget.position.dy - edgePadding;
+
+    // Place menu above the click point if it doesn't fit below and there's more room above
+    final double top;
+    final double maxHeight;
+    if (estimatedHeight <= spaceBelow) {
+      top = widget.position.dy;
+      maxHeight = spaceBelow;
+    } else if (spaceAbove > spaceBelow) {
+      final menuHeight = estimatedHeight.clamp(0.0, spaceAbove);
+      top = widget.position.dy - menuHeight;
+      maxHeight = menuHeight;
+    } else {
+      top = widget.position.dy;
+      maxHeight = spaceBelow;
     }
 
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onKeyEvent: (node, event) {
-        if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
-          return KeyEventResult.handled;
-        }
-        if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Stack(
-        children: [
-          // Barrier to close menu when clicking outside
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              behavior: HitTestBehavior.opaque,
-              child: Container(color: Colors.transparent),
+    return FocusScope(
+      // When opened via mouse, don't autofocus any item — let hover handle highlights.
+      // When opened via keyboard/dpad, autofocus is handled by _initialFocusNode.
+      autofocus: false,
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: (node, event) {
+          if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+            return KeyEventResult.handled;
+          }
+          if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Stack(
+          children: [
+            // Barrier to close menu when clicking outside
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                behavior: HitTestBehavior.opaque,
+                child: Container(color: Colors.transparent),
+              ),
             ),
-          ),
-          // Menu
-          Positioned(
-            left: left,
-            top: top,
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-              clipBehavior: Clip.antiAlias,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: widget.actions.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final action = entry.value;
-                    return FocusableListTile(
-                      focusNode: index == 0 ? _initialFocusNode : null,
-                      leading: AppIcon(action.icon, fill: 1, size: 20),
-                      title: Text(action.label),
-                      onTap: () => Navigator.pop(context, action.value),
-                      hoverColor: action.hoverColor,
-                    );
-                  }).toList(),
+            // Menu
+            Positioned(
+              left: left,
+              top: top,
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                clipBehavior: Clip.antiAlias,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth, maxHeight: maxHeight),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: widget.actions.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final action = entry.value;
+                        return FocusableListTile(
+                          focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+                          leading: AppIcon(action.icon, fill: 1, size: 20),
+                          title: Text(action.label),
+                          onTap: () => Navigator.pop(context, action.value),
+                          hoverColor: action.hoverColor,
+                          textColor: action.foregroundColor,
+                          iconColor: action.foregroundColor,
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

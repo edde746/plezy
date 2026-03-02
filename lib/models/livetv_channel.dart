@@ -34,7 +34,7 @@ class LiveTvChannel {
 
   factory LiveTvChannel.fromJson(Map<String, dynamic> json) {
     return LiveTvChannel(
-      key: json['key'] as String? ?? json['ratingKey'] as String? ?? '',
+      key: json['key'] as String? ?? json['ratingKey'] as String? ?? json['identifier'] as String? ?? json['channelIdentifier'] as String? ?? '',
       identifier: json['identifier'] as String? ?? json['channelIdentifier'] as String?,
       callSign: json['callSign'] as String?,
       title: json['title'] as String? ?? json['callSign'] as String?,

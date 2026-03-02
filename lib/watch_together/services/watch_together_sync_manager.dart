@@ -54,6 +54,14 @@ class WatchTogetherSyncManager {
   // Whether the first coordinated play has completed (after this, late joiners catch up via positionSync)
   bool _firstPlayCompleted = false;
 
+  // Clock offset estimation (NTP-style)
+  // Offset = how far ahead the host's clock is vs ours (in ms)
+  int _clockOffset = 0;
+  bool _hasClockOffset = false;
+  int? _pendingPingTimestamp;
+  Timer? _clockSyncTimer;
+  static const Duration _clockSyncInterval = Duration(seconds: 5);
+
   // Track last known state to avoid duplicate broadcasts
   bool _lastKnownPlaying = false;
   double _lastKnownRate = 1.0;
@@ -116,6 +124,7 @@ class WatchTogetherSyncManager {
     // popping out of the previous player).
     if (!_session.isHost) {
       _peerService.broadcast(SyncMessage.requestSessionConfig(peerId: _peerService.myPeerId));
+      _startClockSync();
     }
 
     appLogger.d('WatchTogether: Player attached, isHost: ${_session.isHost}');
@@ -150,6 +159,11 @@ class WatchTogetherSyncManager {
     _hasAnnouncedReady = false;
     _deferredPlay = false;
     _deferredPlayPosition = null;
+    _clockSyncTimer?.cancel();
+    _clockSyncTimer = null;
+    _clockOffset = 0;
+    _hasClockOffset = false;
+    _pendingPingTimestamp = null;
 
     _playingSubscription?.cancel();
     _bufferingSubscription?.cancel();
@@ -247,6 +261,69 @@ class WatchTogetherSyncManager {
         );
       }
     });
+  }
+
+  /// Start NTP-style clock offset measurement (guest only)
+  void _startClockSync() {
+    _clockSyncTimer?.cancel();
+    _hasClockOffset = false;
+    _clockOffset = 0;
+    _pendingPingTimestamp = null;
+
+    // Initial burst of 3 pings for fast convergence
+    int burstCount = 0;
+    Timer.periodic(const Duration(milliseconds: 200), (timer) {
+      if (burstCount >= 3 || _player == null) {
+        timer.cancel();
+        return;
+      }
+      _sendClockPing();
+      burstCount++;
+    });
+
+    // Then continue at regular interval
+    _clockSyncTimer = Timer.periodic(_clockSyncInterval, (_) {
+      if (_player != null) _sendClockPing();
+    });
+  }
+
+  /// Send a clock-sync ping (guest only)
+  void _sendClockPing() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    _pendingPingTimestamp = now;
+    _peerService.broadcast(SyncMessage.ping(now, peerId: _peerService.myPeerId));
+  }
+
+  /// Process a clock-sync pong and update clock offset (guest only)
+  void _processClockPong(SyncMessage message) {
+    if (_pendingPingTimestamp == null || message.pingId != _pendingPingTimestamp) {
+      return; // Not our ping, or stale
+    }
+    _pendingPingTimestamp = null;
+
+    final t1 = message.pingId!; // Our original send timestamp
+    final t2 = message.timestamp; // Host's timestamp when it created the pong
+    final t3 = DateTime.now().millisecondsSinceEpoch;
+
+    final rtt = t3 - t1;
+    if (rtt < 0 || rtt > 10000) {
+      appLogger.w('WatchTogether: Discarding clock sample with RTT=${rtt}ms');
+      return;
+    }
+
+    // clockOffset = how far ahead host's clock is relative to ours
+    final sampleOffset = t2 - t1 - (rtt ~/ 2);
+
+    if (!_hasClockOffset) {
+      _clockOffset = sampleOffset;
+      _hasClockOffset = true;
+      appLogger.d('WatchTogether: Initial clock offset: ${_clockOffset}ms (RTT: ${rtt}ms)');
+    } else {
+      // Exponential moving average
+      const alpha = 0.3;
+      _clockOffset = (_clockOffset + (alpha * (sampleOffset - _clockOffset)).round());
+      appLogger.d('WatchTogether: Clock offset updated: ${_clockOffset}ms (sample: ${sampleOffset}ms, RTT: ${rtt}ms)');
+    }
   }
 
   /// Check if this peer can control playback
@@ -407,12 +484,19 @@ class WatchTogetherSyncManager {
 
       case SyncMessageType.ping:
         if (message.pingId != null) {
-          _peerService.broadcast(SyncMessage.pong(message.pingId!, peerId: _peerService.myPeerId));
+          final pong = SyncMessage.pong(message.pingId!, peerId: _peerService.myPeerId);
+          if (message.peerId != null) {
+            _peerService.sendTo(message.peerId!, pong);
+          } else {
+            _peerService.broadcast(pong);
+          }
         }
         break;
 
       case SyncMessageType.pong:
-        // Could be used for latency measurement
+        if (message.pingId != null && !_session.isHost) {
+          _processClockPong(message);
+        }
         break;
 
       case SyncMessageType.mediaSwitch:
@@ -522,7 +606,15 @@ class WatchTogetherSyncManager {
     if (_player == null || _session.isHost) return;
 
     final localPosition = _player!.state.position;
-    final networkDelay = DateTime.now().millisecondsSinceEpoch - remoteTimestamp;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    // Translate host's timestamp to our local time frame using clock offset
+    // _clockOffset = hostClock - localClock, so localEquivalent = remoteTimestamp - _clockOffset
+    final adjustedRemoteTimestamp = remoteTimestamp - _clockOffset;
+    final rawDelay = now - adjustedRemoteTimestamp;
+
+    // Before clock offset is available, use 0 (compare positions directly)
+    final networkDelay = _hasClockOffset ? rawDelay.clamp(0, 5000) : 0;
 
     // Estimate where remote should be now, accounting for playback time elapsed
     Duration estimatedRemoteNow = remotePosition;
@@ -682,6 +774,7 @@ class WatchTogetherSyncManager {
 
   /// Dispose resources
   void dispose() {
+    _clockSyncTimer?.cancel();
     detachPlayer();
     _peerReady.clear();
     _hasAnnouncedReady = false;

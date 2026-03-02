@@ -1,6 +1,7 @@
 import '../models/plex_metadata.dart';
 import 'app_logger.dart';
 import 'base_notifier.dart';
+import 'global_key_utils.dart';
 import 'hierarchical_event_mixin.dart';
 
 /// Types of watch state changes
@@ -47,7 +48,7 @@ class WatchStateEvent with HierarchicalEventMixin {
     required this.mediaType,
     this.viewOffset,
     this.isNowWatched,
-  }) : globalKey = '$serverId:$ratingKey';
+  }) : globalKey = buildGlobalKey(serverId, ratingKey);
 
   @override
   String toString() => 'WatchStateEvent($changeType, $globalKey, parents: $parentChain)';

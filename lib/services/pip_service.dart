@@ -17,17 +17,32 @@ class PipService {
   /// ValueNotifier for PiP state - widgets can listen to this
   final ValueNotifier<bool> isPipActive = ValueNotifier<bool>(false);
 
+  /// Callback invoked when native side is about to auto-enter PiP (API 26-30 path)
+  static VoidCallback? onAutoPipEntering;
+
   Future<dynamic> _handleMethodCall(MethodCall call) async {
     switch (call.method) {
       case 'onPipChanged':
         final isInPip = call.arguments as bool;
         isPipActive.value = isInPip;
         break;
+      case 'onAutoPipEntering':
+        onAutoPipEntering?.call();
+        break;
     }
   }
 
   static Future<bool> isSupported() async {
     return await _channel.invokeMethod<bool>('isSupported') ?? false;
+  }
+
+  /// Tell the native side whether auto-PiP is ready and the current video dimensions
+  static Future<void> setAutoPipReady({required bool ready, int? width, int? height}) async {
+    await _channel.invokeMethod('setAutoPipReady', {
+      'ready': ready,
+      'width': width,
+      'height': height,
+    });
   }
 
   static Future<(bool success, String? error)> enter({int? width, int? height}) async {
@@ -45,8 +60,11 @@ class PipService {
   static String _getLocalizedError(String errorCode, String? errorMessage) {
     return switch (errorCode) {
       'android_version' => t.videoControls.pipErrors.androidVersion,
+      'ios_version' => t.videoControls.pipErrors.iosVersion,
+      'macos_version' => t.videoControls.pipErrors.notSupported,
       'permission_disabled' => t.videoControls.pipErrors.permissionDisabled,
       'not_supported' => t.videoControls.pipErrors.notSupported,
+      'vo_switch_failed' => t.videoControls.pipErrors.voSwitchFailed,
       'failed' => t.videoControls.pipErrors.failed,
       _ => t.videoControls.pipErrors.unknown(error: errorMessage ?? 'Unknown error'),
     };

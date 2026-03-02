@@ -3,7 +3,6 @@
 #include <flutter_linux/flutter_linux.h>
 #include <epoxy/gl.h>
 #include <epoxy/egl.h>
-#include <epoxy/glx.h>
 #include <gdk/gdk.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
@@ -15,24 +14,10 @@
 #include <cstring>
 #include <string>
 
-// Static helper to get proc address - must be defined outside the namespace
-// to have the correct function signature.
+// Flutter on Linux uses EGL (OpenGL ES) for both X11 and Wayland.
 static void* get_opengl_proc_address(void* ctx, const char* name) {
   (void)ctx;
-#ifdef GDK_WINDOWING_WAYLAND
-  // On Wayland, use EGL
-  if (epoxy_has_egl()) {
-    return reinterpret_cast<void*>(eglGetProcAddress(name));
-  }
-#endif
-#ifdef GDK_WINDOWING_X11
-  // On X11, use GLX
-  return reinterpret_cast<void*>(glXGetProcAddressARB(
-      reinterpret_cast<const GLubyte*>(name)));
-#else
-  // Fallback: try EGL
   return reinterpret_cast<void*>(eglGetProcAddress(name));
-#endif
 }
 
 namespace mpv {
@@ -102,6 +87,54 @@ bool MpvPlayer::InitRenderContext() {
     return false;
   }
 
+  // Capture Flutter's EGL display and create an isolated EGL context.
+  // Flutter on Linux uses EGL for both X11 and Wayland.  Running mpv in
+  // an isolated context prevents OpenGL state pollution between mpv and
+  // Flutter, which caused corrupted/blank video on some drivers.
+  EGLDisplay flutter_display = eglGetCurrentDisplay();
+  EGLContext flutter_context = eglGetCurrentContext();
+
+  if (flutter_display == EGL_NO_DISPLAY || flutter_context == EGL_NO_CONTEXT) {
+    g_warning("MPV: No EGL context available");
+    return false;
+  }
+
+  egl_display_ = flutter_display;
+
+  // Query Flutter's EGL config and reuse it for compatibility
+  EGLConfig config = nullptr;
+  EGLint config_id = 0;
+
+  if (!eglQueryContext(egl_display_, flutter_context, EGL_CONFIG_ID, &config_id)) {
+    g_warning("MPV: Failed to query Flutter's EGL config ID");
+    return false;
+  }
+
+  EGLint num_configs = 0;
+  EGLint config_attribs[] = { EGL_CONFIG_ID, config_id, EGL_NONE };
+  if (!eglChooseConfig(egl_display_, config_attribs, &config, 1, &num_configs) || num_configs == 0) {
+    g_warning("MPV: Failed to get Flutter's EGL config");
+    return false;
+  }
+
+  // Create isolated EGL context (NOT shared with Flutter) to prevent
+  // GL state pollution
+  eglBindAPI(EGL_OPENGL_ES_API);
+  EGLint context_attribs[] = {
+      EGL_CONTEXT_CLIENT_VERSION, 2,
+      EGL_NONE,
+  };
+  egl_context_ = eglCreateContext(egl_display_, config, EGL_NO_CONTEXT, context_attribs);
+  if (egl_context_ == EGL_NO_CONTEXT) {
+    g_warning("MPV: Failed to create isolated EGL context: 0x%x", eglGetError());
+    return false;
+  }
+
+  // Make the isolated context current for mpv render context creation
+  EGLSurface flutter_draw = eglGetCurrentSurface(EGL_DRAW);
+  EGLSurface flutter_read = eglGetCurrentSurface(EGL_READ);
+  eglMakeCurrent(egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context_);
+
   // Set up OpenGL parameters for mpv.
   mpv_opengl_init_params gl_init_params{
       .get_proc_address = get_opengl_proc_address,
@@ -112,31 +145,67 @@ bool MpvPlayer::InitRenderContext() {
       {MPV_RENDER_PARAM_API_TYPE,
        const_cast<char*>(MPV_RENDER_API_TYPE_OPENGL)},
       {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
+      {MPV_RENDER_PARAM_INVALID, nullptr},  // slot for X11/Wayland display
       {MPV_RENDER_PARAM_INVALID, nullptr},
   };
 
+  // Pass X11/Wayland display for VAAPI hardware acceleration
+  GdkDisplay* gdk_display = gdk_display_get_default();
+#ifdef GDK_WINDOWING_WAYLAND
+  if (GDK_IS_WAYLAND_DISPLAY(gdk_display)) {
+    params[2].type = MPV_RENDER_PARAM_WL_DISPLAY;
+    params[2].data = gdk_wayland_display_get_wl_display(gdk_display);
+  }
+#endif
+#ifdef GDK_WINDOWING_X11
+  if (GDK_IS_X11_DISPLAY(gdk_display)) {
+    params[2].type = MPV_RENDER_PARAM_X11_DISPLAY;
+    params[2].data = gdk_x11_display_get_xdisplay(gdk_display);
+  }
+#endif
+
   int err = mpv_render_context_create(&mpv_gl_, mpv_, params);
+
+  // Restore Flutter's context
+  eglMakeCurrent(egl_display_, flutter_draw, flutter_read, flutter_context);
+
   if (err < 0) {
     g_warning("MPV: mpv_render_context_create() failed: %s",
               mpv_error_string(err));
+    eglDestroyContext(egl_display_, egl_context_);
+    egl_context_ = EGL_NO_CONTEXT;
     return false;
   }
 
   // Set up render update callback.
   mpv_render_context_set_update_callback(mpv_gl_, OnMpvRenderUpdate, this);
 
-  g_message("MPV: Render context created successfully");
+  g_message("MPV: Render context created with isolated EGL context");
   return true;
 }
 
 void MpvPlayer::Dispose() {
-  std::lock_guard<std::mutex> lock(callback_mutex_);
-
+  // 1. Set disposed flag atomically FIRST — all callback paths check this
   if (disposed_.exchange(true)) {
     return;
   }
 
-  // Cancel pending async commands
+  // 2. Clear mpv's native callbacks to prevent new ones from firing
+  if (mpv_gl_) {
+    mpv_render_context_set_update_callback(mpv_gl_, nullptr, nullptr);
+  }
+  if (mpv_) {
+    mpv_set_wakeup_callback(mpv_, nullptr, nullptr);
+  }
+
+  // 3. Briefly hold mutex to null our callbacks
+  {
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    redraw_callback_ = nullptr;
+    event_callback_ = nullptr;
+  }
+
+  // 4. Cancel pending async commands
   {
     std::lock_guard<std::mutex> cmd_lock(pending_commands_mutex_);
     for (auto& pair : pending_commands_) {
@@ -145,32 +214,64 @@ void MpvPlayer::Dispose() {
     pending_commands_.clear();
   }
 
-  // Clear mpv callbacks BEFORE freeing
-  if (mpv_gl_) {
-    mpv_render_context_set_update_callback(mpv_gl_, nullptr, nullptr);
-  }
-  if (mpv_) {
-    mpv_set_wakeup_callback(mpv_, nullptr, nullptr);
-  }
-
-  // Remove pending idle callbacks
+  // 5. Remove pending idle callbacks
   if (event_source_id_ != 0) {
     g_source_remove(event_source_id_);
     event_source_id_ = 0;
   }
 
-  if (mpv_gl_) {
-    mpv_render_context_free(mpv_gl_);
-    mpv_gl_ = nullptr;
-  }
+  // 6. Free render context and mpv handle in a background thread.
+  //    mpv_render_context_free() can block waiting for mpv's render/VO thread,
+  //    and mpv_terminate_destroy() can block on demuxer/network I/O.
+  //    Running these off the main thread prevents stalling the GLib main loop.
+  auto* gl = mpv_gl_;
+  auto* handle = mpv_;
+  auto egl_display = egl_display_;
+  auto egl_context = egl_context_;
+  mpv_gl_ = nullptr;
+  mpv_ = nullptr;
+  egl_display_ = EGL_NO_DISPLAY;
+  egl_context_ = EGL_NO_CONTEXT;
 
-  if (mpv_) {
-    mpv_terminate_destroy(mpv_);
-    mpv_ = nullptr;
-  }
+  std::thread([gl, handle, egl_display, egl_context]() {
+    if (gl) {
+      // mpv render context must be freed with its EGL context current
+      if (egl_context != EGL_NO_CONTEXT) {
+        eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context);
+      }
+      mpv_render_context_free(gl);
+    }
+    if (handle) {
+      mpv_terminate_destroy(handle);
+    }
+    if (egl_context != EGL_NO_CONTEXT) {
+      eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+      eglDestroyContext(egl_display, egl_context);
+    }
+  }).detach();
 
   observed_properties_.clear();
-  redraw_callback_ = nullptr;
+}
+
+void MpvPlayer::Render(int width, int height, int fbo) {
+  if (disposed_ || !mpv_gl_) return;
+
+  mpv_opengl_fbo mpv_fbo{
+      .fbo = fbo,
+      .w = width,
+      .h = height,
+      .internal_format = 0,
+  };
+
+  int flip_y = 0;
+
+  mpv_render_param params[] = {
+      {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
+      {MPV_RENDER_PARAM_FLIP_Y, &flip_y},
+      {MPV_RENDER_PARAM_INVALID, nullptr},
+  };
+
+  mpv_render_context_render(mpv_gl_, params);
 }
 
 void MpvPlayer::Command(const std::vector<std::string>& args) {
@@ -264,27 +365,6 @@ void MpvPlayer::ObserveProperty(const std::string& name,
   mpv_observe_property(mpv_, userdata, name.c_str(), mpv_fmt);
 }
 
-void MpvPlayer::Render(int width, int height, int fbo) {
-  if (disposed_ || !mpv_gl_) return;
-
-  mpv_opengl_fbo mpv_fbo{
-      .fbo = fbo,
-      .w = width,
-      .h = height,
-      .internal_format = 0,
-  };
-
-  int flip_y = 0;
-
-  mpv_render_param params[] = {
-      {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
-      {MPV_RENDER_PARAM_FLIP_Y, &flip_y},
-      {MPV_RENDER_PARAM_INVALID, nullptr},
-  };
-
-  mpv_render_context_render(mpv_gl_, params);
-}
-
 void MpvPlayer::ReportMouseMove(int x, int y) {
   if (disposed_ || !mpv_) return;
   std::string x_str = std::to_string(x);
@@ -336,11 +416,23 @@ void MpvPlayer::OnMpvRenderUpdate(void* ctx) {
     return;
   }
 
-  // Call the redraw callback to notify MpvTexture via the registrar
-  std::lock_guard<std::mutex> lock(player->callback_mutex_);
-  if (player->redraw_callback_) {
-    player->redraw_callback_();
-  }
+  // Schedule redraw on main thread. Calling Flutter's
+  // fl_texture_registrar_mark_texture_frame_available directly from mpv's
+  // render/VO thread can deadlock during disposal on Wayland: the main thread
+  // blocks in mpv_render_context_free() waiting for the VO thread, while the
+  // VO thread blocks in the Flutter registrar waiting for the main thread.
+  g_idle_add(
+      [](gpointer data) -> gboolean {
+        auto* player = static_cast<MpvPlayer*>(data);
+        if (player->disposed_) return G_SOURCE_REMOVE;
+
+        std::lock_guard<std::mutex> lock(player->callback_mutex_);
+        if (player->redraw_callback_) {
+          player->redraw_callback_();
+        }
+        return G_SOURCE_REMOVE;
+      },
+      player);
 }
 
 bool MpvPlayer::ProcessEvents() {

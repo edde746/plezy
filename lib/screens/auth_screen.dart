@@ -16,6 +16,8 @@ import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
+import '../focus/focusable_button.dart';
+import '../utils/navigation_transitions.dart';
 import 'main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -95,6 +97,7 @@ class _AuthScreenState extends State<AuthScreen> {
         multiServerProvider: context.read<MultiServerProvider>(),
         librariesProvider: context.read<LibrariesProvider>(),
         syncService: context.read<OfflineWatchSyncService>(),
+        clientIdentifier: _authService.clientIdentifier,
       );
 
       if (!result.hasConnections) {
@@ -111,10 +114,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await profileFuture;
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainScreen(client: result.firstClient!)),
-      );
+      Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!)));
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       setState(() {
@@ -398,7 +398,7 @@ class _AuthScreenState extends State<AuthScreen> {
       children: [
         if (isTV) ...[
           // On TV: QR is primary, browser is secondary
-          ElevatedButton(
+          FocusableButton(
             autofocus: true,
             onPressed: () {
               setState(() {
@@ -406,14 +406,25 @@ class _AuthScreenState extends State<AuthScreen> {
               });
               _startAuthentication();
             },
-            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            child: Text(t.auth.showQRCode),
+            child: ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _useQrFlow = true;
+                });
+                _startAuthentication();
+              },
+              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              child: Text(t.auth.showQRCode),
+            ),
           ),
           const SizedBox(height: 12),
-          OutlinedButton(
+          FocusableButton(
             onPressed: _startAuthentication,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            child: Text(t.auth.useBrowser),
+            child: OutlinedButton(
+              onPressed: _startAuthentication,
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              child: Text(t.auth.useBrowser),
+            ),
           ),
         ] else ...[
           // On other platforms: Browser is primary, QR is secondary
@@ -442,7 +453,7 @@ class _AuthScreenState extends State<AuthScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
             ),
-            child: Text(t.auth.debugEnterToken, style: TextStyle(fontSize: 12)),
+            child: Text(t.auth.debugEnterToken, style: const TextStyle(fontSize: 12)),
           ),
         ],
         if (_errorMessage != null) ...[
@@ -500,22 +511,33 @@ class _AuthScreenState extends State<AuthScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              OutlinedButton(
+              FocusableButton(
                 autofocus: true,
                 onPressed: _retryAuthentication,
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-                child: Text(t.common.retry),
+                child: OutlinedButton(
+                  onPressed: _retryAuthentication,
+                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
+                  child: Text(t.common.retry),
+                ),
               ),
               const SizedBox(width: 16),
-              OutlinedButton(
+              FocusableButton(
                 onPressed: () {
                   setState(() {
                     _useQrFlow = false;
                   });
                   _startAuthentication();
                 },
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-                child: Text(t.auth.useBrowser),
+                child: OutlinedButton(
+                  onPressed: () {
+                    setState(() {
+                      _useQrFlow = false;
+                    });
+                    _startAuthentication();
+                  },
+                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
+                  child: Text(t.auth.useBrowser),
+                ),
               ),
             ],
           ),

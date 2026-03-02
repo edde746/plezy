@@ -7,16 +7,19 @@ import '../../../utils/track_label_builder.dart';
 import 'track_selection_sheet.dart';
 
 /// Bottom sheet for selecting audio tracks
-class AudioTrackSheet {
-  static void show(
-    BuildContext context,
-    Player player, {
-    Function(AudioTrack)? onTrackChanged,
-    VoidCallback? onOpen,
-    VoidCallback? onClose,
-  }) {
-    TrackSelectionSheet.show<AudioTrack>(
-      context: context,
+class AudioTrackSheet extends StatelessWidget {
+  final Player player;
+  final Function(AudioTrack)? onTrackChanged;
+
+  const AudioTrackSheet({
+    super.key,
+    required this.player,
+    this.onTrackChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TrackSelectionSheet<AudioTrack>(
       player: player,
       title: t.videoControls.audioLabel,
       icon: Symbols.audiotrack_rounded,
@@ -31,8 +34,6 @@ class AudioTrackSheet {
       ),
       setTrack: (track) => player.selectAudioTrack(track),
       onTrackChanged: onTrackChanged,
-      onOpen: onOpen,
-      onClose: onClose,
     );
   }
 }

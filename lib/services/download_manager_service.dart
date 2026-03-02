@@ -244,6 +244,7 @@ class DownloadManagerService {
 
   // Prevents concurrent _processQueue calls
   bool _isProcessingQueue = false;
+  bool _disposed = false;
 
   // Debounce timers for DB progress writes (keyed by globalKey).
   // UI progress streams are still real-time; only the DB write is debounced.
@@ -316,9 +317,47 @@ class DownloadManagerService {
         appLogger.i('Rescheduled ${rescheduled.length} killed download task(s)');
       }
 
+      // One-time migration: normalize stored file paths that may contain a
+      // doubled base-dir prefix from an earlier bug in the recovery callback.
+      // Re-run on v2 to also fix paths without a leading / that the v1 migration missed.
+      final prefs = (await SettingsService.getInstance()).prefs;
+      if ((prefs.getInt('download_paths_normalized_version') ?? 0) < 2) {
+        final allItems = await _database.select(_database.downloadedMedia).get();
+        var fixed = 0;
+        for (final item in allItems) {
+          if (item.videoFilePath != null) {
+            final vfp = item.videoFilePath!;
+            var normalized = await _storageService.toRelativePath(vfp);
+            // If toRelativePath didn't help, try extracting from downloads/ onward
+            // for paths that lack a leading / but contain nested base-dir fragments
+            if (normalized == vfp) {
+              final idx = vfp.indexOf('downloads/');
+              if (idx > 0) normalized = vfp.substring(idx);
+            }
+            appLogger.d('Path migration: videoFilePath="$vfp", normalized="$normalized"');
+            if (normalized != vfp) {
+              await _database.updateVideoFilePath(item.globalKey, normalized);
+              fixed++;
+            }
+          }
+          if (item.thumbPath != null) {
+            final tp = item.thumbPath!;
+            var normalized = await _storageService.toRelativePath(tp);
+            if (normalized == tp) {
+              final idx = tp.indexOf('downloads/');
+              if (idx > 0) normalized = tp.substring(idx);
+            }
+            if (normalized != tp) {
+              await _database.updateArtworkPaths(globalKey: item.globalKey, thumbPath: normalized);
+            }
+          }
+        }
+        if (fixed > 0) appLogger.i('Normalized $fixed corrupted download path(s)');
+        await prefs.setInt('download_paths_normalized_version', 2);
+      }
+
       // Scan drift for orphaned items stuck in 'downloading'
       final allDownloads = await _database.select(_database.downloadedMedia).get();
-
       for (final item in allDownloads) {
         if (item.status == DownloadStatus.downloading.index) {
           // Video already downloaded but post-processing didn't complete
@@ -438,7 +477,7 @@ class DownloadManagerService {
     bool downloadArtwork = true,
     String? transcodeQuality,
   }) async {
-    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+    final globalKey = metadata.globalKey;
 
     // Check if already downloading or completed
     final existing = await _database.getDownloadedMedia(globalKey);
@@ -459,9 +498,15 @@ class DownloadManagerService {
       status: DownloadStatus.queued.index,
     );
 
-    // Pin the already-cached API response for offline use
-    // (getMetadataWithImages was already called by download_provider, which cached with chapters/markers)
-    await _apiCache.pinForOffline(metadata.serverId!, metadata.ratingKey);
+    // Ensure metadata is in cache before pinning.
+    // Normally getMetadataWithImages already cached the full API response (with chapters/markers),
+    // but if the network failed during the provider's fetch, the cache entry may not exist.
+    final cached = await _apiCache.get(metadata.serverId!, '/library/metadata/${metadata.ratingKey}');
+    if (cached == null) {
+      await _cacheMetadataForOffline(metadata.serverId!, metadata.ratingKey, metadata);
+    } else {
+      await _apiCache.pinForOffline(metadata.serverId!, metadata.ratingKey);
+    }
 
     // Add to queue
     await _database.addToQueue(
@@ -510,11 +555,31 @@ class DownloadManagerService {
       final serverId = parsed.serverId;
       final ratingKey = parsed.ratingKey;
 
-      final metadata = await _apiCache.getMetadata(serverId, ratingKey);
-      if (metadata == null) throw Exception('Metadata not found in cache for $globalKey');
+      var metadata = await _apiCache.getMetadata(serverId, ratingKey);
+      if (metadata == null) {
+        // Cache miss — try re-fetching from server (cache may have been cleared between queue and prepare)
+        appLogger.w('Cache miss for $globalKey, attempting network re-fetch');
+        try {
+          final fetched = await client.getMetadataWithImages(ratingKey);
+          if (fetched != null) metadata = fetched.copyWith(serverId: serverId);
+        } catch (e) {
+          appLogger.w('Network re-fetch failed for $globalKey', error: e);
+        }
+        if (metadata == null) {
+          throw Exception('Metadata not found in cache and could not be fetched for $globalKey');
+        }
+      }
 
-      final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
-      if (playbackData.videoUrl == null) throw Exception('Could not get video URL');
+      var playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+      if (playbackData.videoUrl == null) {
+        // Cache may contain a synthetic entry (from _cacheMetadataForOffline) without
+        // Media/Part data. Force a fresh network fetch to populate the cache properly.
+        appLogger.w('No video URL from cache for $globalKey, retrying via network');
+        final fetched = await client.getMetadataWithImages(ratingKey);
+        if (fetched != null) metadata = fetched.copyWith(serverId: serverId);
+        playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+        if (playbackData.videoUrl == null) throw Exception('Could not get video URL for $globalKey');
+      }
 
       // Determine download URL and extension based on transcode settings
       String downloadUrl;
@@ -705,6 +770,7 @@ class DownloadManagerService {
 
   /// Callback: background_downloader progress update
   void _onTaskProgress(TaskProgressUpdate update) {
+    if (_disposed) return;
     final globalKey = update.task.metaData;
     if (globalKey.isEmpty) return;
 
@@ -769,44 +835,49 @@ class DownloadManagerService {
 
   /// Callback: background_downloader status change
   void _onTaskStatusChanged(TaskStatusUpdate update) {
+    if (_disposed) return;
     final globalKey = update.task.metaData;
     if (globalKey.isEmpty) return;
 
     appLogger.d('Background task status: ${update.status} for $globalKey');
 
-    switch (update.status) {
-      case TaskStatus.complete:
-        _onDownloadComplete(globalKey, update.task);
-      case TaskStatus.failed:
-        _onDownloadFailed(globalKey, update.exception?.description ?? 'Download failed');
-      case TaskStatus.notFound:
-        _onDownloadFailed(globalKey, 'File not found (404)');
-      case TaskStatus.canceled:
-        if (_pausingKeys.contains(globalKey)) {
-          // Expected cancel from holding-queue promotion during pause — ignore
+    try {
+      switch (update.status) {
+        case TaskStatus.complete:
+          _onDownloadComplete(globalKey, update.task);
+        case TaskStatus.failed:
+          _onDownloadFailed(globalKey, update.exception?.description ?? 'Download failed');
+        case TaskStatus.notFound:
+          _onDownloadFailed(globalKey, 'File not found (404)');
+        case TaskStatus.canceled:
+          if (_pausingKeys.contains(globalKey)) {
+            // Expected cancel from holding-queue promotion during pause — ignore
+            break;
+          }
+          final ctx = _pendingDownloadContext.remove(globalKey);
+          if (ctx != null) {
+            // Context still present → OS cancelled the task, not user code
+            // (user-initiated pause/cancel/delete removes context before cancellation completes)
+            appLogger.w('Download cancelled by system for $globalKey, re-queuing');
+            _database.updateBgTaskId(globalKey, null);
+            _transitionStatus(globalKey, DownloadStatus.queued);
+            _database.addToQueue(mediaGlobalKey: globalKey);
+            if (_lastClient != null) _processQueue(_lastClient!);
+          }
+        case TaskStatus.paused:
+          appLogger.d('Download paused by system for $globalKey');
+        case TaskStatus.waitingToRetry:
+          appLogger.d('Download waiting to retry for $globalKey');
+        case TaskStatus.enqueued:
+        case TaskStatus.running:
+          // If this item is being paused, the holding queue promoted it — cancel it
+          if (_pausingKeys.contains(globalKey)) {
+            FileDownloader().cancelTaskWithId(update.task.taskId);
+          }
           break;
-        }
-        final ctx = _pendingDownloadContext.remove(globalKey);
-        if (ctx != null) {
-          // Context still present → OS cancelled the task, not user code
-          // (user-initiated pause/cancel/delete removes context before cancellation completes)
-          appLogger.w('Download cancelled by system for $globalKey, re-queuing');
-          _database.updateBgTaskId(globalKey, null);
-          _transitionStatus(globalKey, DownloadStatus.queued);
-          _database.addToQueue(mediaGlobalKey: globalKey);
-          if (_lastClient != null) _processQueue(_lastClient!);
-        }
-      case TaskStatus.paused:
-        appLogger.d('Download paused by system for $globalKey');
-      case TaskStatus.waitingToRetry:
-        appLogger.d('Download waiting to retry for $globalKey');
-      case TaskStatus.enqueued:
-      case TaskStatus.running:
-        // If this item is being paused, the holding queue promoted it — cancel it
-        if (_pausingKeys.contains(globalKey)) {
-          FileDownloader().cancelTaskWithId(update.task.taskId);
-        }
-        break;
+      }
+    } catch (e) {
+      appLogger.e('Error handling download status change for $globalKey', error: e);
     }
   }
 
@@ -994,6 +1065,11 @@ class DownloadManagerService {
         await _downloadSingleArtwork(serverId, metadata.art!, client);
       }
 
+      // Download square background art
+      if (metadata.backgroundSquare != null) {
+        await _downloadSingleArtwork(serverId, metadata.backgroundSquare!, client);
+      }
+
       // Store thumb reference in database (primary artwork for display)
       await _database.updateArtworkPaths(globalKey: globalKey, thumbPath: metadata.thumb);
 
@@ -1054,6 +1130,11 @@ class DownloadManagerService {
     // Download background art
     if (metadata.art != null) {
       await _downloadSingleArtwork(serverId, metadata.art!, client);
+    }
+
+    // Download square background art
+    if (metadata.backgroundSquare != null) {
+      await _downloadSingleArtwork(serverId, metadata.backgroundSquare!, client);
     }
   }
 
@@ -1387,12 +1468,13 @@ class DownloadManagerService {
 
       if (metadata == null) {
         // Fallback: Try database record
-        final downloadRecord = await _database.getDownloadedMedia('$serverId:$ratingKey');
+        final gk = buildGlobalKey(serverId, ratingKey);
+        final downloadRecord = await _database.getDownloadedMedia(gk);
         if (downloadRecord?.videoFilePath != null) {
           await _deleteByFilePath(downloadRecord!);
           return;
         }
-        appLogger.w('Cannot delete - no metadata for $serverId:$ratingKey');
+        appLogger.w('Cannot delete - no metadata for $gk');
         return;
       }
 
@@ -1568,12 +1650,12 @@ class DownloadManagerService {
   }) async {
     for (int i = 0; i < episodes.length; i++) {
       final episode = episodes[i];
-      final episodeGlobalKey = '$serverId:${episode.ratingKey}';
+      final episodeGlobalKey = buildGlobalKey(serverId, episode.ratingKey);
 
       // Emit progress update
       _emitDeletionProgress(
         DeletionProgress(
-          globalKey: '$serverId:$parentKey',
+          globalKey: buildGlobalKey(serverId, parentKey),
           itemTitle: parentTitle,
           currentItem: i + 1,
           totalItems: episodes.length,
@@ -1686,7 +1768,7 @@ class DownloadManagerService {
     final otherEpisodes = await _database.getEpisodesBySeason(seasonKey);
 
     // Check if any episodes besides this one
-    return otherEpisodes.any((e) => e.globalKey != '${episode.serverId}:${episode.ratingKey}');
+    return otherEpisodes.any((e) => e.globalKey != episode.globalKey);
   }
 
   /// Check if show artwork is in use
@@ -1697,7 +1779,7 @@ class DownloadManagerService {
     final showEpisodes = await _database.getEpisodesByShow(showKey);
 
     // Check if any episodes belong to this show besides the current item
-    return showEpisodes.any((item) => item.globalKey != '${metadata.serverId}:${metadata.ratingKey}');
+    return showEpisodes.any((item) => item.globalKey != metadata.globalKey);
   }
 
   /// Find file with any extension
@@ -1803,6 +1885,7 @@ class DownloadManagerService {
   }
 
   void dispose() {
+    _disposed = true;
     for (final timer in _progressDebounceTimers.values) {
       timer.cancel();
     }

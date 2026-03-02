@@ -1,6 +1,7 @@
 import 'plex_client.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_video_playback_data.dart';
 import '../models/download_models.dart';
 import '../mpv/mpv.dart';
 import '../utils/app_logger.dart';
@@ -75,10 +76,12 @@ class PlaybackInitializationService {
   ///
   /// Returns a PlaybackInitializationResult with video URL and available versions
   /// If [preferOffline] is true and offline content is available, uses local file
+  /// If [playbackData] is provided, skips the network call to fetch it again.
   Future<PlaybackInitializationResult> getPlaybackData({
     required PlexMetadata metadata,
     required int selectedMediaIndex,
     bool preferOffline = false,
+    PlexVideoPlaybackData? playbackData,
   }) async {
     try {
       // Check for offline content first if preferOffline is enabled
@@ -94,16 +97,17 @@ class PlaybackInitializationService {
         // For offline playback, we still need to fetch media info for subtitles
         // but use the local file path for video
         try {
-          final playbackData = await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
+          final data =
+              playbackData ?? await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
 
           // Build list of external subtitle tracks
-          final externalSubtitles = _buildExternalSubtitles(playbackData.mediaInfo);
+          final externalSubtitles = _buildExternalSubtitles(data.mediaInfo);
 
           // Return result with local file path
           return PlaybackInitializationResult(
-            availableVersions: playbackData.availableVersions,
+            availableVersions: data.availableVersions,
             videoUrl: _formatVideoUrl(offlineVideoPath),
-            mediaInfo: playbackData.mediaInfo,
+            mediaInfo: data.mediaInfo,
             externalSubtitles: externalSubtitles,
             isOffline: true,
           );
@@ -120,21 +124,22 @@ class PlaybackInitializationService {
         }
       }
 
-      // Fall back to network streaming
-      final playbackData = await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
+      // Use pre-parsed data or fall back to network streaming
+      final data =
+          playbackData ?? await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
 
-      if (!playbackData.hasValidVideoUrl) {
+      if (!data.hasValidVideoUrl) {
         throw PlaybackException(t.messages.fileInfoNotAvailable);
       }
 
       // Build list of external subtitle tracks
-      final externalSubtitles = _buildExternalSubtitles(playbackData.mediaInfo);
+      final externalSubtitles = _buildExternalSubtitles(data.mediaInfo);
 
       // Return result with available versions and video URL
       return PlaybackInitializationResult(
-        availableVersions: playbackData.availableVersions,
-        videoUrl: playbackData.videoUrl,
-        mediaInfo: playbackData.mediaInfo,
+        availableVersions: data.availableVersions,
+        videoUrl: data.videoUrl,
+        mediaInfo: data.mediaInfo,
         externalSubtitles: externalSubtitles,
         isOffline: false,
       );

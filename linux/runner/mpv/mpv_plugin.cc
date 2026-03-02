@@ -38,11 +38,8 @@ static void send_event(MpvPlugin* self, FlValue* event) {
 static void mpv_plugin_dispose(GObject* object) {
   MpvPlugin* self = MPV_PLUGIN(object);
 
-  if (self->player) {
-    self->player->Dispose();
-    self->player.reset();
-  }
-
+  // Texture must be disposed BEFORE player — mpv_texture_dispose needs
+  // the player's EGL context to clean up GL resources.
   if (self->texture) {
     mpv_texture_dispose(self->texture);
     if (self->texture_registrar) {
@@ -51,6 +48,11 @@ static void mpv_plugin_dispose(GObject* object) {
     }
     g_object_unref(self->texture);
     self->texture = nullptr;
+  }
+
+  if (self->player) {
+    self->player->Dispose();
+    self->player.reset();
   }
 
   g_clear_object(&self->method_channel);
@@ -123,8 +125,8 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
       response = FL_METHOD_RESPONSE(fl_method_success_response_new(
           fl_value_new_int(mpv_texture_get_id(self->texture))));
     } else {
-      // Create player if it was disposed
-      if (!self->player) {
+      // Create player if it was disposed or doesn't exist
+      if (!self->player || self->player->IsDisposed()) {
         self->player = std::make_unique<mpv::MpvPlayer>();
       }
 
@@ -136,6 +138,11 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
 
         fl_texture_registrar_register_texture(
             self->texture_registrar, FL_TEXTURE(self->texture));
+
+        // Create the render context eagerly — mpv needs it BEFORE any
+        // file is loaded, otherwise VO init fails with "No render context
+        // set" and the video track is dropped entirely.
+        self->player->InitRenderContext();
 
         // Set redraw callback: when mpv has a frame, mark texture available
         MpvTexture* tex = self->texture;
@@ -159,16 +166,20 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
       }
     }
   } else if (strcmp(method, "dispose") == 0) {
-    if (self->player) {
-      self->player->Dispose();
-      self->player.reset();
-    }
+    // Disconnect and unregister texture FIRST — this stops Flutter from
+    // calling populate(), preventing concurrent mpv_render_context_render()
+    // during player disposal.
     if (self->texture) {
       mpv_texture_dispose(self->texture);
       fl_texture_registrar_unregister_texture(self->texture_registrar,
                                               FL_TEXTURE(self->texture));
       g_object_unref(self->texture);
       self->texture = nullptr;
+    }
+    if (self->player) {
+      self->player->Dispose();
+      // Don't reset player here — stray g_idle callbacks still reference it.
+      // It will be replaced on next initialize() call.
     }
     self->initialized = FALSE;
     self->visible = FALSE;
@@ -313,6 +324,11 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
 
       response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
     }
+  } else if (strcmp(method, "updateFrame") == 0) {
+    if (self->visible && self->texture) {
+      mpv_texture_mark_frame_available(self->texture);
+    }
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   } else if (strcmp(method, "isInitialized") == 0) {
     gboolean initialized = self->player && self->initialized;
     response = FL_METHOD_RESPONSE(

@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../focus/dpad_navigator.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../focus/key_event_utils.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/livetv_channel.dart';
@@ -17,6 +18,7 @@ import '../../../utils/formatters.dart';
 import '../../../utils/plex_image_helper.dart';
 import '../../../utils/live_tv_player_navigation.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/plex_optimized_image.dart';
 import '../program_details_sheet.dart';
 
@@ -67,6 +69,7 @@ class GuideTabState extends State<GuideTab> {
 
   /// Focus into the guide content (called from tab bar navigation or initial load).
   void focusContent() {
+    if (!InputModeTracker.isKeyboardMode(context)) return;
     // If still loading programs, defer until the Focus widget is in the tree.
     if (_isLoading) {
       _pendingFocus = true;
@@ -375,15 +378,21 @@ class GuideTabState extends State<GuideTab> {
           });
           _scrollToProgramTime(program);
         }
+      } else {
+        // Already in program column — move to next program
+        _navigateToAdjacentProgram(_gridChannelIndex, forward: true);
       }
       return KeyEventResult.handled;
     }
     if (key.isLeftKey) {
       if (_gridColumn == 1) {
-        setState(() {
-          _gridColumn = 0;
-          _focusedProgram = null;
-        });
+        // Try moving to previous program; if at first program, go back to channel column
+        if (!_navigateToAdjacentProgram(_gridChannelIndex, forward: false)) {
+          setState(() {
+            _gridColumn = 0;
+            _focusedProgram = null;
+          });
+        }
       } else {
         widget.onBack?.call();
       }
@@ -424,6 +433,27 @@ class GuideTabState extends State<GuideTab> {
     return programs.firstOrNull;
   }
 
+  /// Navigate to the next or previous program on the same channel.
+  /// Returns true if navigation succeeded, false if at the boundary.
+  bool _navigateToAdjacentProgram(int channelIndex, {required bool forward}) {
+    if (channelIndex < 0 || channelIndex >= widget.channels.length) return false;
+    final channel = widget.channels[channelIndex];
+    final programs = _getProgramsForChannel(channel);
+    if (programs.isEmpty || _focusedProgram == null) return false;
+
+    final currentIndex = programs.indexWhere((p) => identical(p, _focusedProgram));
+    if (currentIndex < 0) return false;
+
+    final nextIndex = forward ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex < 0 || nextIndex >= programs.length) return false;
+
+    setState(() {
+      _focusedProgram = programs[nextIndex];
+    });
+    _scrollToProgramTime(_focusedProgram);
+    return true;
+  }
+
   void _scrollToChannel(int index) {
     if (!_gridVerticalController.hasClients) return;
     final targetTop = index * _rowHeight;
@@ -440,9 +470,13 @@ class GuideTabState extends State<GuideTab> {
 
     if (newOffset != null) {
       final clamped = newOffset.clamp(0.0, _gridVerticalController.position.maxScrollExtent);
-      _gridVerticalController.jumpTo(clamped);
+      _gridVerticalController.animateTo(clamped, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
       if (_channelVerticalController.hasClients) {
-        _channelVerticalController.jumpTo(clamped.clamp(0.0, _channelVerticalController.position.maxScrollExtent));
+        _channelVerticalController.animateTo(
+          clamped.clamp(0.0, _channelVerticalController.position.maxScrollExtent),
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+        );
       }
     }
   }
@@ -477,11 +511,13 @@ class GuideTabState extends State<GuideTab> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Focus(
-      focusNode: _guideFocusNode,
-      onFocusChange: (hasFocus) => setState(() => _hasFocus = hasFocus),
-      onKeyEvent: _handleKeyEvent,
-      child: _buildGuideGrid(theme),
+    return OverlaySheetHost(
+      child: Focus(
+        focusNode: _guideFocusNode,
+        onFocusChange: (hasFocus) => setState(() => _hasFocus = hasFocus),
+        onKeyEvent: _handleKeyEvent,
+        child: _buildGuideGrid(theme),
+      ),
     );
   }
 
@@ -499,7 +535,7 @@ class GuideTabState extends State<GuideTab> {
               children: [
                 Row(
                   children: [
-                    SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
+                    const SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
                     Expanded(
                       child: SingleChildScrollView(
                         controller: _headerHorizontalController,
@@ -809,11 +845,12 @@ class GuideTabState extends State<GuideTab> {
   // ---------------------------------------------------------------------------
 
   Widget _buildTimeHeader(ThemeData theme) {
+    final is24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
     final slots = <Widget>[];
     var current = _gridStart;
 
     while (current.isBefore(_gridEnd)) {
-      final timeStr = '${current.hour.toString().padLeft(2, '0')}:${current.minute.toString().padLeft(2, '0')}';
+      final timeStr = formatClockTime(current, is24Hour: is24Hour);
       slots.add(
         SizedBox(
           width: _slotWidth,
@@ -965,16 +1002,16 @@ class GuideTabState extends State<GuideTab> {
     if (isFocused) {
       materialColor = theme.colorScheme.primary.withValues(alpha: 0.25);
     } else if (isCurrentlyAiring) {
-      materialColor = theme.colorScheme.primaryContainer;
+      materialColor = theme.colorScheme.onSurface;
     } else {
-      materialColor = theme.colorScheme.surfaceContainerHigh;
+      materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.12);
     }
 
     Color titleColor;
     if (isFocused) {
       titleColor = theme.colorScheme.primary;
     } else if (isCurrentlyAiring) {
-      titleColor = theme.colorScheme.onPrimaryContainer;
+      titleColor = theme.colorScheme.surface;
     } else {
       titleColor = theme.colorScheme.onSurface;
     }
@@ -983,7 +1020,7 @@ class GuideTabState extends State<GuideTab> {
     if (isFocused) {
       subtitleColor = theme.colorScheme.primary.withValues(alpha: 0.7);
     } else if (isCurrentlyAiring) {
-      subtitleColor = theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7);
+      subtitleColor = theme.colorScheme.surface.withValues(alpha: 0.7);
     } else {
       subtitleColor = theme.colorScheme.onSurfaceVariant;
     }
@@ -993,12 +1030,10 @@ class GuideTabState extends State<GuideTab> {
       child: Material(
         color: materialColor,
         shape: RoundedRectangleBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
           side: isFocused ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
         ),
         child: InkWell(
           canRequestFocus: false,
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
           onTap: () => _showProgramDetails(channel, program),
           child: Container(
             decoration: BoxDecoration(
@@ -1030,7 +1065,7 @@ class GuideTabState extends State<GuideTab> {
                   ),
                 if (program.startTime != null)
                   Text(
-                    '${program.startTime!.hour.toString().padLeft(2, '0')}:${program.startTime!.minute.toString().padLeft(2, '0')} · ${formatDurationTextual(program.durationMinutes * 60000)}',
+                    '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60000)}',
                     style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
                     maxLines: 1,
                   ),

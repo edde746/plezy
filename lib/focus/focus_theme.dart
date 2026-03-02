@@ -29,8 +29,9 @@ class FocusTheme {
     BuildContext context, {
     required bool isFocused,
     double borderRadius = defaultBorderRadius,
+    Color? color,
   }) {
-    final focusColor = getFocusBorderColor(context);
+    final focusColor = color ?? getFocusBorderColor(context);
 
     return BoxDecoration(
       borderRadius: BorderRadius.circular(borderRadius),

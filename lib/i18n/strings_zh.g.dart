@@ -74,6 +74,7 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCompanionRemoteZh companionRemote = _TranslationsCompanionRemoteZh._(_root);
 	@override late final _TranslationsVideoSettingsZh videoSettings = _TranslationsVideoSettingsZh._(_root);
 	@override late final _TranslationsExternalPlayerZh externalPlayer = _TranslationsExternalPlayerZh._(_root);
+	@override late final _TranslationsMetadataEditZh metadataEdit = _TranslationsMetadataEditZh._(_root);
 }
 
 // Path: app
@@ -149,6 +150,12 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get exitConfirmMessage => '确定要退出吗？';
 	@override String get dontAskAgain => '不再询问';
 	@override String get exit => '退出';
+	@override String get viewAll => '查看全部';
+	@override String get checkingNetwork => '正在检查网络...';
+	@override String get refreshingServers => '正在刷新服务器...';
+	@override String get loadingServers => '正在加载服务器...';
+	@override String get connectingToServers => '正在连接服务器...';
+	@override String get startingOfflineMode => '正在启动离线模式...';
 }
 
 // Path: screens
@@ -234,6 +241,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => '侧边栏保持展开状态，内容区域自动调整';
 	@override String get showUnwatchedCount => '显示未观看数量';
 	@override String get showUnwatchedCountDescription => '在剧集和季上显示未观看的集数';
+	@override String get hideSpoilers => '隐藏未看剧集的剧透内容';
+	@override String get hideSpoilersDescription => '模糊未观看剧集的缩略图并隐藏其描述';
 	@override String get playerBackend => '播放器引擎';
 	@override String get exoPlayer => 'ExoPlayer（推荐）';
 	@override String get exoPlayerDescription => 'Android 原生播放器，硬件支持更好';
@@ -243,6 +252,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
 	@override String get bufferSize => '缓冲区大小';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get bufferSizeAuto => '自动（推荐）';
+	@override String bufferSizeWarning({required Object heap, required Object size}) => '您的设备有 ${heap}MB 内存。${size}MB 的缓冲区可能导致播放问题。';
 	@override String get subtitleStyling => '字幕样式';
 	@override String get subtitleStylingDescription => '调整字幕外观';
 	@override String get smallSkipDuration => '短跳过时长';
@@ -259,6 +270,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => '自定义键盘快捷键';
 	@override String get videoPlayerNavigation => '视频播放器导航';
 	@override String get videoPlayerNavigationDescription => '使用方向键导航视频播放器控件';
+	@override String get crashReporting => '崩溃报告';
+	@override String get crashReportingDescription => '发送崩溃报告以帮助改进应用';
 	@override String get debugLogging => '调试日志';
 	@override String get debugLoggingDescription => '启用详细日志记录以便故障排除';
 	@override String get viewLogs => '查看日志';
@@ -305,8 +318,12 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord 动态状态';
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
+	@override String get autoPip => '自动画中画';
+	@override String get autoPipDescription => '在播放期间离开应用时自动进入画中画模式';
 	@override String get matchContentFrameRate => '匹配内容帧率';
 	@override String get matchContentFrameRateDescription => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量';
+	@override String get tunneledPlayback => 'Tunneled Playback';
+	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
 	@override String get requireProfileSelectionOnOpen => '打开应用时询问配置文件';
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
 	@override String get confirmExitOnBack => '退出前确认';
@@ -396,10 +413,12 @@ class _TranslationsMediaMenuZh implements TranslationsMediaMenuEn {
 	@override String get goToSeason => '转到季';
 	@override String get shufflePlay => '随机播放';
 	@override String get fileInfo => '文件信息';
-	@override String get confirmDelete => '确定要从文件系统中删除此项吗？';
-	@override String get deleteMultipleWarning => '可能会删除多个项目。';
+	@override String get deleteFromServer => '从服务器删除';
+	@override String get confirmDelete => '这将永久删除此媒体及其文件。此操作无法撤销。';
+	@override String get deleteMultipleWarning => '这包括所有剧集及其文件。';
 	@override String get mediaDeletedSuccessfully => '媒体项已成功删除';
 	@override String get mediaFailedToDelete => '删除媒体项失败';
+	@override String get rate => '评分';
 }
 
 // Path: accessibility
@@ -455,6 +474,9 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get timerActive => '定时器已激活';
 	@override String playbackWillPauseIn({required Object duration}) => '播放将在 ${duration} 后暂停';
 	@override String get sleepTimerCompleted => '睡眠定时器已完成 - 播放已暂停';
+	@override String get stillWatching => '还在看吗？';
+	@override String pausingIn({required Object seconds}) => '${seconds}秒后暂停';
+	@override String get continueWatching => '继续';
 	@override String get autoPlayNext => '自动播放下一集';
 	@override String get playNext => '播放下一集';
 	@override String get playButton => '播放';
@@ -474,6 +496,9 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get versionsButton => '视频版本';
 	@override String get pipButton => '画中画模式';
 	@override String get aspectRatioButton => '宽高比';
+	@override String get ambientLighting => '氛围灯光';
+	@override String get ambientLightingOn => '开启氛围灯光';
+	@override String get ambientLightingOff => '关闭氛围灯光';
 	@override String get fullscreenButton => '进入全屏';
 	@override String get exitFullscreenButton => '退出全屏';
 	@override String get alwaysOnTopButton => '置顶窗口';
@@ -481,10 +506,13 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '视频时间轴';
 	@override String get volumeSlider => '音量调节';
 	@override String endsAt({required Object time}) => '${time} 结束';
+	@override String get pipActive => 'Playing in Picture-in-Picture';
 	@override String get pipFailed => '画中画启动失败';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
 	@override String get noChaptersAvailable => '没有可用的章节';
+	@override String get queue => 'Queue';
+	@override String get noQueueItems => 'No items in queue';
 }
 
 // Path: userStatus
@@ -784,29 +812,17 @@ class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
 	@override String get title => '电视直播';
 	@override String get channels => '频道';
 	@override String get guide => '节目指南';
-	@override String get recordings => '录制';
-	@override String get subscriptions => '录制规则';
-	@override String get scheduled => '已计划';
 	@override String get noChannels => '没有可用的频道';
 	@override String get noDvr => '没有服务器配置了DVR';
 	@override String get tuneFailed => '无法调谐频道';
 	@override String get loading => '正在加载频道...';
 	@override String get nowPlaying => '正在播放';
-	@override String get record => '录制';
-	@override String get recordSeries => '录制系列';
-	@override String get cancelRecording => '取消录制';
-	@override String get deleteSubscription => '删除录制规则';
-	@override String get deleteSubscriptionConfirm => '确定要删除此录制规则吗？';
-	@override String get subscriptionDeleted => '录制规则已删除';
 	@override String get noPrograms => '没有可用的节目数据';
-	@override String get noRecordings => '没有计划的录制';
-	@override String get noSubscriptions => '没有录制规则';
 	@override String channelNumber({required Object number}) => '频道 ${number}';
 	@override String get live => '直播';
 	@override String get hd => '高清';
 	@override String get premiere => '新';
 	@override String get reloadGuide => '重新加载节目指南';
-	@override String get guideReloaded => '节目指南已重新加载';
 	@override String get allChannels => '所有频道';
 	@override String get now => '现在';
 	@override String get today => '今天';
@@ -1034,6 +1050,8 @@ class _TranslationsVideoSettingsZh implements TranslationsVideoSettingsEn {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => '音频输出';
 	@override String get performanceOverlay => '性能监控';
+	@override String get audioPassthrough => '音频直通';
+	@override String get audioNormalization => '音频标准化';
 }
 
 // Path: externalPlayer
@@ -1058,6 +1076,74 @@ class _TranslationsExternalPlayerZh implements TranslationsExternalPlayerEn {
 	@override String get launchFailed => '无法打开外部播放器';
 	@override String appNotInstalled({required Object name}) => '${name} 未安装';
 	@override String get playInExternalPlayer => '在外部播放器中播放';
+}
+
+// Path: metadataEdit
+class _TranslationsMetadataEditZh implements TranslationsMetadataEditEn {
+	_TranslationsMetadataEditZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get editMetadata => '编辑...';
+	@override String get screenTitle => '编辑元数据';
+	@override String get basicInfo => '基本信息';
+	@override String get artwork => '封面图片';
+	@override String get advancedSettings => '高级设置';
+	@override String get title => '标题';
+	@override String get sortTitle => '排序标题';
+	@override String get originalTitle => '原始标题';
+	@override String get releaseDate => '上映日期';
+	@override String get contentRating => '内容分级';
+	@override String get studio => '制片厂';
+	@override String get tagline => '标语';
+	@override String get summary => '简介';
+	@override String get poster => '海报';
+	@override String get background => '背景';
+	@override String get selectPoster => '选择海报';
+	@override String get selectBackground => '选择背景';
+	@override String get fromUrl => '从 URL';
+	@override String get uploadFile => '上传文件';
+	@override String get enterImageUrl => '输入图片 URL';
+	@override String get imageUrl => '图片 URL';
+	@override String get metadataUpdated => '元数据已更新';
+	@override String get metadataUpdateFailed => '元数据更新失败';
+	@override String get artworkUpdated => '封面图片已更新';
+	@override String get artworkUpdateFailed => '封面图片更新失败';
+	@override String get noArtworkAvailable => '没有可用的封面图片';
+	@override String get notSet => '未设置';
+	@override String get libraryDefault => '媒体库默认';
+	@override String get accountDefault => '账户默认';
+	@override String get seriesDefault => '剧集默认';
+	@override String get episodeSorting => '剧集排序';
+	@override String get oldestFirst => '最旧优先';
+	@override String get newestFirst => '最新优先';
+	@override String get keep => '保留';
+	@override String get allEpisodes => '所有剧集';
+	@override String latestEpisodes({required Object count}) => '最新 ${count} 集';
+	@override String get latestEpisode => '最新一集';
+	@override String episodesAddedPastDays({required Object count}) => '过去 ${count} 天内添加的剧集';
+	@override String get deleteAfterPlaying => '播放后删除剧集';
+	@override String get never => '从不';
+	@override String get afterADay => '一天后';
+	@override String get afterAWeek => '一周后';
+	@override String get afterAMonth => '一个月后';
+	@override String get onNextRefresh => '下次刷新时';
+	@override String get seasons => '季';
+	@override String get show => '显示';
+	@override String get hide => '隐藏';
+	@override String get episodeOrdering => '剧集排列顺序';
+	@override String get tmdbAiring => 'The Movie Database（播出顺序）';
+	@override String get tvdbAiring => 'TheTVDB（播出顺序）';
+	@override String get tvdbAbsolute => 'TheTVDB（绝对顺序）';
+	@override String get metadataLanguage => '元数据语言';
+	@override String get useOriginalTitle => '使用原始标题';
+	@override String get preferredAudioLanguage => '首选音频语言';
+	@override String get preferredSubtitleLanguage => '首选字幕语言';
+	@override String get subtitleMode => '自动选择字幕模式';
+	@override String get manuallySelected => '手动选择';
+	@override String get shownWithForeignAudio => '外语音频时显示';
+	@override String get alwaysEnabled => '始终启用';
 }
 
 // Path: hotkeys.actions
@@ -1096,8 +1182,10 @@ class _TranslationsVideoControlsPipErrorsZh implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => '需要 Android 8.0 或更高版本';
+	@override String get iosVersion => '需要 iOS 15.0 或更高版本';
 	@override String get permissionDisabled => '画中画权限已禁用。请在设置 > 应用 > Plezy > 画中画中启用';
 	@override String get notSupported => '此设备不支持画中画模式';
+	@override String get voSwitchFailed => '无法切换画中画的视频输出';
 	@override String get failed => '画中画启动失败';
 	@override String unknown({required Object error}) => '发生错误：${error}';
 }
@@ -1161,11 +1249,8 @@ class _TranslationsCompanionRemotePairingZh implements TranslationsCompanionRemo
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => '最近';
 	@override String get scan => '扫描';
 	@override String get manual => '手动';
-	@override String get recentConnections => '最近连接';
-	@override String get quickReconnect => '快速重新连接之前配对的设备';
 	@override String get pairWithDesktop => '与桌面配对';
 	@override String get enterSessionDetails => '输入桌面设备上显示的会话信息';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1179,11 +1264,7 @@ class _TranslationsCompanionRemotePairingZh implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => '扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。';
 	@override String cameraError({required Object error}) => '无法启动相机：${error}';
 	@override String get scanInstruction => '将相机对准桌面上显示的 QR 码';
-	@override String get noRecentConnections => '没有最近的连接';
-	@override String get connectUsingManual => '使用手动输入连接设备以开始使用';
 	@override String get invalidQrCode => '无效的 QR 码格式';
-	@override String get removeRecentConnection => '删除最近连接';
-	@override String removeConfirm({required Object name}) => '确定要从最近连接中删除 "${name}" 吗？';
 	@override String get validationHostRequired => '请输入主机地址';
 	@override String get validationHostFormat => '格式必须为 IP:端口（例如 192.168.1.100:48632）';
 	@override String get validationSessionIdRequired => '请输入会话 ID';
@@ -1193,7 +1274,6 @@ class _TranslationsCompanionRemotePairingZh implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => '连接超时。请检查会话 ID 和 PIN。';
 	@override String get sessionNotFound => '找不到会话。请检查您的凭据。';
 	@override String failedToConnect({required Object error}) => '连接失败：${error}';
-	@override String failedToLoadRecent({required Object error}) => '加载最近会话失败：${error}';
 }
 
 // Path: companionRemote.remote
@@ -1290,6 +1370,12 @@ extension on TranslationsZh {
 			'common.exitConfirmMessage' => '确定要退出吗？',
 			'common.dontAskAgain' => '不再询问',
 			'common.exit' => '退出',
+			'common.viewAll' => '查看全部',
+			'common.checkingNetwork' => '正在检查网络...',
+			'common.refreshingServers' => '正在刷新服务器...',
+			'common.loadingServers' => '正在加载服务器...',
+			'common.connectingToServers' => '正在连接服务器...',
+			'common.startingOfflineMode' => '正在启动离线模式...',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -1348,6 +1434,8 @@ extension on TranslationsZh {
 			'settings.alwaysKeepSidebarOpenDescription' => '侧边栏保持展开状态，内容区域自动调整',
 			'settings.showUnwatchedCount' => '显示未观看数量',
 			'settings.showUnwatchedCountDescription' => '在剧集和季上显示未观看的集数',
+			'settings.hideSpoilers' => '隐藏未看剧集的剧透内容',
+			'settings.hideSpoilersDescription' => '模糊未观看剧集的缩略图并隐藏其描述',
 			'settings.playerBackend' => '播放器引擎',
 			'settings.exoPlayer' => 'ExoPlayer（推荐）',
 			'settings.exoPlayerDescription' => 'Android 原生播放器，硬件支持更好',
@@ -1357,6 +1445,8 @@ extension on TranslationsZh {
 			'settings.hardwareDecodingDescription' => '如果可用，使用硬件加速',
 			'settings.bufferSize' => '缓冲区大小',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
+			'settings.bufferSizeAuto' => '自动（推荐）',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '您的设备有 ${heap}MB 内存。${size}MB 的缓冲区可能导致播放问题。',
 			'settings.subtitleStyling' => '字幕样式',
 			'settings.subtitleStylingDescription' => '调整字幕外观',
 			'settings.smallSkipDuration' => '短跳过时长',
@@ -1373,6 +1463,8 @@ extension on TranslationsZh {
 			'settings.keyboardShortcutsDescription' => '自定义键盘快捷键',
 			'settings.videoPlayerNavigation' => '视频播放器导航',
 			'settings.videoPlayerNavigationDescription' => '使用方向键导航视频播放器控件',
+			'settings.crashReporting' => '崩溃报告',
+			'settings.crashReportingDescription' => '发送崩溃报告以帮助改进应用',
 			'settings.debugLogging' => '调试日志',
 			'settings.debugLoggingDescription' => '启用详细日志记录以便故障排除',
 			'settings.viewLogs' => '查看日志',
@@ -1419,8 +1511,12 @@ extension on TranslationsZh {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord 动态状态',
 			'settings.discordRichPresenceDescription' => '在 Discord 上显示您正在观看的内容',
+			'settings.autoPip' => '自动画中画',
+			'settings.autoPipDescription' => '在播放期间离开应用时自动进入画中画模式',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
 			'settings.matchContentFrameRateDescription' => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => '打开应用时询问配置文件',
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
 			'settings.confirmExitOnBack' => '退出前确认',
@@ -1483,10 +1579,12 @@ extension on TranslationsZh {
 			'mediaMenu.goToSeason' => '转到季',
 			'mediaMenu.shufflePlay' => '随机播放',
 			'mediaMenu.fileInfo' => '文件信息',
-			'mediaMenu.confirmDelete' => '确定要从文件系统中删除此项吗？',
-			'mediaMenu.deleteMultipleWarning' => '可能会删除多个项目。',
+			'mediaMenu.deleteFromServer' => '从服务器删除',
+			'mediaMenu.confirmDelete' => '这将永久删除此媒体及其文件。此操作无法撤销。',
+			'mediaMenu.deleteMultipleWarning' => '这包括所有剧集及其文件。',
 			'mediaMenu.mediaDeletedSuccessfully' => '媒体项已成功删除',
 			'mediaMenu.mediaFailedToDelete' => '删除媒体项失败',
+			'mediaMenu.rate' => '评分',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1515,6 +1613,9 @@ extension on TranslationsZh {
 			'videoControls.timerActive' => '定时器已激活',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '播放将在 ${duration} 后暂停',
 			'videoControls.sleepTimerCompleted' => '睡眠定时器已完成 - 播放已暂停',
+			'videoControls.stillWatching' => '还在看吗？',
+			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}秒后暂停',
+			'videoControls.continueWatching' => '继续',
 			'videoControls.autoPlayNext' => '自动播放下一集',
 			'videoControls.playNext' => '播放下一集',
 			'videoControls.playButton' => '播放',
@@ -1534,6 +1635,9 @@ extension on TranslationsZh {
 			'videoControls.versionsButton' => '视频版本',
 			'videoControls.pipButton' => '画中画模式',
 			'videoControls.aspectRatioButton' => '宽高比',
+			'videoControls.ambientLighting' => '氛围灯光',
+			'videoControls.ambientLightingOn' => '开启氛围灯光',
+			'videoControls.ambientLightingOff' => '关闭氛围灯光',
 			'videoControls.fullscreenButton' => '进入全屏',
 			'videoControls.exitFullscreenButton' => '退出全屏',
 			'videoControls.alwaysOnTopButton' => '置顶窗口',
@@ -1541,14 +1645,19 @@ extension on TranslationsZh {
 			'videoControls.timelineSlider' => '视频时间轴',
 			'videoControls.volumeSlider' => '音量调节',
 			'videoControls.endsAt' => ({required Object time}) => '${time} 结束',
+			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
+			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
 			'videoControls.pipErrors.permissionDisabled' => '画中画权限已禁用。请在设置 > 应用 > Plezy > 画中画中启用',
 			'videoControls.pipErrors.notSupported' => '此设备不支持画中画模式',
+			'videoControls.pipErrors.voSwitchFailed' => '无法切换画中画的视频输出',
 			'videoControls.pipErrors.failed' => '画中画启动失败',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '发生错误：${error}',
 			'videoControls.chapters' => '章节',
 			'videoControls.noChaptersAvailable' => '没有可用的章节',
+			'videoControls.queue' => 'Queue',
+			'videoControls.noQueueItems' => 'No items in queue',
 			'userStatus.admin' => '管理员',
 			'userStatus.restricted' => '受限',
 			'userStatus.protected' => '受保护',
@@ -1721,29 +1830,19 @@ extension on TranslationsZh {
 			'liveTv.title' => '电视直播',
 			'liveTv.channels' => '频道',
 			'liveTv.guide' => '节目指南',
-			'liveTv.recordings' => '录制',
-			'liveTv.subscriptions' => '录制规则',
-			'liveTv.scheduled' => '已计划',
 			'liveTv.noChannels' => '没有可用的频道',
 			'liveTv.noDvr' => '没有服务器配置了DVR',
 			'liveTv.tuneFailed' => '无法调谐频道',
 			'liveTv.loading' => '正在加载频道...',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.nowPlaying' => '正在播放',
-			'liveTv.record' => '录制',
-			'liveTv.recordSeries' => '录制系列',
-			'liveTv.cancelRecording' => '取消录制',
-			'liveTv.deleteSubscription' => '删除录制规则',
-			'liveTv.deleteSubscriptionConfirm' => '确定要删除此录制规则吗？',
-			'liveTv.subscriptionDeleted' => '录制规则已删除',
 			'liveTv.noPrograms' => '没有可用的节目数据',
-			'liveTv.noRecordings' => '没有计划的录制',
-			'liveTv.noSubscriptions' => '没有录制规则',
 			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			'liveTv.live' => '直播',
 			'liveTv.hd' => '高清',
 			'liveTv.premiere' => '新',
 			'liveTv.reloadGuide' => '重新加载节目指南',
-			'liveTv.guideReloaded' => '节目指南已重新加载',
 			'liveTv.allChannels' => '所有频道',
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
@@ -1754,8 +1853,6 @@ extension on TranslationsZh {
 			'liveTv.evening' => '晚上',
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '正在播出',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => '观看频道',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
@@ -1914,11 +2011,8 @@ extension on TranslationsZh {
 			'companionRemote.session.copyToClipboard' => '复制到剪贴板',
 			'companionRemote.session.newSession' => '新建会话',
 			'companionRemote.session.minimize' => '最小化',
-			'companionRemote.pairing.recent' => '最近',
 			'companionRemote.pairing.scan' => '扫描',
 			'companionRemote.pairing.manual' => '手动',
-			'companionRemote.pairing.recentConnections' => '最近连接',
-			'companionRemote.pairing.quickReconnect' => '快速重新连接之前配对的设备',
 			'companionRemote.pairing.pairWithDesktop' => '与桌面配对',
 			'companionRemote.pairing.enterSessionDetails' => '输入桌面设备上显示的会话信息',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1932,11 +2026,7 @@ extension on TranslationsZh {
 			'companionRemote.pairing.cameraPermissionRequired' => '扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => '无法启动相机：${error}',
 			'companionRemote.pairing.scanInstruction' => '将相机对准桌面上显示的 QR 码',
-			'companionRemote.pairing.noRecentConnections' => '没有最近的连接',
-			'companionRemote.pairing.connectUsingManual' => '使用手动输入连接设备以开始使用',
 			'companionRemote.pairing.invalidQrCode' => '无效的 QR 码格式',
-			'companionRemote.pairing.removeRecentConnection' => '删除最近连接',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '确定要从最近连接中删除 "${name}" 吗？',
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
 			'companionRemote.pairing.validationHostFormat' => '格式必须为 IP:端口（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.validationSessionIdRequired' => '请输入会话 ID',
@@ -1946,7 +2036,6 @@ extension on TranslationsZh {
 			'companionRemote.pairing.connectionTimedOut' => '连接超时。请检查会话 ID 和 PIN。',
 			'companionRemote.pairing.sessionNotFound' => '找不到会话。请检查您的凭据。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => '加载最近会话失败：${error}',
 			'companionRemote.remote.disconnectConfirm' => '是否要断开远程会话的连接？',
 			'companionRemote.remote.reconnecting' => '重新连接中...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '第 ${current} 次尝试，共 5 次',
@@ -1984,6 +2073,8 @@ extension on TranslationsZh {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => '音频输出',
 			'videoSettings.performanceOverlay' => '性能监控',
+			'videoSettings.audioPassthrough' => '音频直通',
+			'videoSettings.audioNormalization' => '音频标准化',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在外部应用中打开视频，而不是使用内置播放器',
@@ -1999,6 +2090,65 @@ extension on TranslationsZh {
 			'externalPlayer.launchFailed' => '无法打开外部播放器',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
 			'externalPlayer.playInExternalPlayer' => '在外部播放器中播放',
+			'metadataEdit.editMetadata' => '编辑...',
+			'metadataEdit.screenTitle' => '编辑元数据',
+			'metadataEdit.basicInfo' => '基本信息',
+			'metadataEdit.artwork' => '封面图片',
+			'metadataEdit.advancedSettings' => '高级设置',
+			'metadataEdit.title' => '标题',
+			'metadataEdit.sortTitle' => '排序标题',
+			'metadataEdit.originalTitle' => '原始标题',
+			'metadataEdit.releaseDate' => '上映日期',
+			'metadataEdit.contentRating' => '内容分级',
+			'metadataEdit.studio' => '制片厂',
+			'metadataEdit.tagline' => '标语',
+			'metadataEdit.summary' => '简介',
+			'metadataEdit.poster' => '海报',
+			'metadataEdit.background' => '背景',
+			'metadataEdit.selectPoster' => '选择海报',
+			'metadataEdit.selectBackground' => '选择背景',
+			'metadataEdit.fromUrl' => '从 URL',
+			'metadataEdit.uploadFile' => '上传文件',
+			'metadataEdit.enterImageUrl' => '输入图片 URL',
+			'metadataEdit.imageUrl' => '图片 URL',
+			'metadataEdit.metadataUpdated' => '元数据已更新',
+			'metadataEdit.metadataUpdateFailed' => '元数据更新失败',
+			'metadataEdit.artworkUpdated' => '封面图片已更新',
+			'metadataEdit.artworkUpdateFailed' => '封面图片更新失败',
+			'metadataEdit.noArtworkAvailable' => '没有可用的封面图片',
+			'metadataEdit.notSet' => '未设置',
+			'metadataEdit.libraryDefault' => '媒体库默认',
+			'metadataEdit.accountDefault' => '账户默认',
+			'metadataEdit.seriesDefault' => '剧集默认',
+			'metadataEdit.episodeSorting' => '剧集排序',
+			'metadataEdit.oldestFirst' => '最旧优先',
+			'metadataEdit.newestFirst' => '最新优先',
+			'metadataEdit.keep' => '保留',
+			'metadataEdit.allEpisodes' => '所有剧集',
+			'metadataEdit.latestEpisodes' => ({required Object count}) => '最新 ${count} 集',
+			'metadataEdit.latestEpisode' => '最新一集',
+			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => '过去 ${count} 天内添加的剧集',
+			'metadataEdit.deleteAfterPlaying' => '播放后删除剧集',
+			'metadataEdit.never' => '从不',
+			'metadataEdit.afterADay' => '一天后',
+			'metadataEdit.afterAWeek' => '一周后',
+			'metadataEdit.afterAMonth' => '一个月后',
+			'metadataEdit.onNextRefresh' => '下次刷新时',
+			'metadataEdit.seasons' => '季',
+			'metadataEdit.show' => '显示',
+			'metadataEdit.hide' => '隐藏',
+			'metadataEdit.episodeOrdering' => '剧集排列顺序',
+			'metadataEdit.tmdbAiring' => 'The Movie Database（播出顺序）',
+			'metadataEdit.tvdbAiring' => 'TheTVDB（播出顺序）',
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB（绝对顺序）',
+			'metadataEdit.metadataLanguage' => '元数据语言',
+			'metadataEdit.useOriginalTitle' => '使用原始标题',
+			'metadataEdit.preferredAudioLanguage' => '首选音频语言',
+			'metadataEdit.preferredSubtitleLanguage' => '首选字幕语言',
+			'metadataEdit.subtitleMode' => '自动选择字幕模式',
+			'metadataEdit.manuallySelected' => '手动选择',
+			'metadataEdit.shownWithForeignAudio' => '外语音频时显示',
+			'metadataEdit.alwaysEnabled' => '始终启用',
 			_ => null,
 		};
 	}

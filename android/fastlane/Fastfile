@@ -4,60 +4,43 @@ Dotenv.load("../../.env")
 default_platform(:android)
 
 platform :android do
-  desc "Deploy a new version to the Google Play"
-  lane :deploy do
-    gradle(task: "clean bundleRelease")
-
-    # Get version code from pubspec.yaml
-    pubspec_path = "#{ENV['PWD']}/../pubspec.yaml"
-    pubspec_content = File.read(pubspec_path)
-    version_match = pubspec_content.match(/version:\s*(.+)\+(\d+)/)
-
-    if version_match
-      version_code = version_match[2].to_i
-      UI.message("Using version code: #{version_code}")
-    else
-      UI.user_error!("Could not extract version code from pubspec.yaml")
-    end
-
-    upload_to_play_store(
-      version_code: version_code,
-      skip_upload_changelogs: true,
-      skip_upload_metadata: true,
-      skip_upload_images: true,
-      skip_upload_screenshots: true
-    )
-  end
-
-  desc "Build release AAB"
-  lane :build do
-    # Navigate to Flutter project root and build
-    sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true")
-  end
-
   desc "Build and deploy to Google Play Store"
   lane :release do
-    # Build the Flutter app
-    sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true")
-
-    # Get version code from pubspec.yaml
+    # Get version from pubspec.yaml
     pubspec_path = "#{ENV['PWD']}/../pubspec.yaml"
     pubspec_content = File.read(pubspec_path)
     version_match = pubspec_content.match(/version:\s*(.+)\+(\d+)/)
 
     if version_match
+      version_name = version_match[1].strip
       version_code = version_match[2].to_i
-      UI.message("Using version code: #{version_code}")
+      UI.message("Using version: #{version_name}+#{version_code}")
     else
-      UI.user_error!("Could not extract version code from pubspec.yaml")
+      UI.user_error!("Could not extract version from pubspec.yaml")
     end
 
-    # Upload to Play Store
-    upload_to_play_store(
-      track: "internal",
-      release_status: "draft",
-      version_code: version_code,
-      aab: "../build/app/outputs/bundle/release/app-release.aab"
+    debug_info_dir = "./debug-info/#{version_name}+#{version_code}"
+
+    # Build the Flutter app
+    # sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true --obfuscate --split-debug-info=#{debug_info_dir}/aab")
+
+    # upload_to_play_store(
+    #   track: "production",
+    #   release_status: "completed",
+    #   version_code: version_code,
+    #   aab: "../build/app/outputs/bundle/release/app-release.aab"
+    # )
+
+    # Build universal APK for Amazon Appstore (doesn't accept AABs, excludes x86 via env var)
+    sh("cd #{ENV['PWD']}/.. && AMAZON=1 flutter build apk --release --obfuscate --split-debug-info=#{debug_info_dir}/apk")
+
+    upload_to_amazon_appstore(
+      apk_paths: [
+        "../build/app/outputs/flutter-apk/app-release.apk"
+      ],
+      overwrite_upload: true,
+      overwrite_upload_mode: 'reuse',
+      changes_not_sent_for_review: true
     )
   end
 end

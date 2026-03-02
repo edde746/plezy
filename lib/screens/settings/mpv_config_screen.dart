@@ -3,10 +3,11 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/mpv_config_models.dart';
+import '../../focus/focusable_button.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../services/settings_service.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 
 class MpvConfigScreen extends StatefulWidget {
   const MpvConfigScreen({super.key});
@@ -110,15 +111,25 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          TextButton(
+          FocusableButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
+          ),
+          FocusableButton(
             focusNode: saveFocusNode,
             onPressed: () {
               if (keyController.text.isNotEmpty && valueController.text.isNotEmpty) {
                 Navigator.pop(context, true);
               }
             },
-            child: Text(t.common.save),
+            child: TextButton(
+              onPressed: () {
+                if (keyController.text.isNotEmpty && valueController.text.isNotEmpty) {
+                  Navigator.pop(context, true);
+                }
+              },
+              child: Text(t.common.save),
+            ),
           ),
         ],
       ),
@@ -163,6 +174,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
     if (_entries.isEmpty) return;
 
     final nameController = TextEditingController();
+    final saveFocusNode = FocusNode();
 
     final result = await showDialog<bool>(
       context: context,
@@ -172,20 +184,35 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
           controller: nameController,
           decoration: InputDecoration(labelText: t.mpvConfig.presetName, hintText: t.mpvConfig.presetNameHint),
           autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => saveFocusNode.requestFocus(),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          TextButton(
+          FocusableButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
+          ),
+          FocusableButton(
+            focusNode: saveFocusNode,
             onPressed: () {
               if (nameController.text.isNotEmpty) {
                 Navigator.pop(context, true);
               }
             },
-            child: Text(t.common.save),
+            child: FilledButton(
+              onPressed: () {
+                if (nameController.text.isNotEmpty) {
+                  Navigator.pop(context, true);
+                }
+              },
+              child: Text(t.common.save),
+            ),
           ),
         ],
       ),
     );
+
+    saveFocusNode.dispose();
 
     if (result == true) {
       await _settingsService.saveMpvPreset(nameController.text.trim(), _entries);
@@ -235,27 +262,23 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(title: Text(t.screens.mpvConfig), pinned: true),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildPresetsCard(),
-                const SizedBox(height: 16),
-                _buildEntriesCard(),
-                const SizedBox(height: 24),
-              ]),
-            ),
-          ),
-        ],
-      ),
+    return FocusedScrollScaffold(
+      title: Text(t.screens.mpvConfig),
+      slivers: _isLoading
+          ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
+          : [
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildPresetsCard(),
+                    const SizedBox(height: 16),
+                    _buildEntriesCard(),
+                    const SizedBox(height: 24),
+                  ]),
+                ),
+              ),
+            ],
     );
   }
 

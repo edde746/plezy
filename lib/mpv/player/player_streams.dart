@@ -50,6 +50,9 @@ class PlayerStreams {
   /// Stream that emits when playback restarts (first frame ready after load/seek).
   final Stream<void> playbackRestart;
 
+  /// Stream of seekable buffer ranges from the demuxer cache.
+  final Stream<List<BufferRange>> bufferRanges;
+
   /// Stream that emits when the native player backend switches (e.g., ExoPlayer to MPV).
   /// Only emitted on Android when ExoPlayer encounters an unsupported format.
   final Stream<void> backendSwitched;
@@ -69,6 +72,7 @@ class PlayerStreams {
     required this.error,
     required this.audioDevice,
     required this.audioDevices,
+    required this.bufferRanges,
     required this.playbackRestart,
     required this.backendSwitched,
   });

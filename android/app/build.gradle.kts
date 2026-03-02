@@ -30,6 +30,13 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        if (System.getenv("AMAZON") != null) {
+            versionCode = (flutter.versionCode ?: 0) + 3000
+            ndk {
+                abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+            }
+        }
     }
 
     signingConfigs {
@@ -55,6 +62,9 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             // If key.properties doesn't exist, it will use debug signing for CI builds
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
         }
     }
 
@@ -77,16 +87,15 @@ dependencies {
     implementation("androidx.tvprovider:tvprovider:1.0.0")
 
     // Media3 ExoPlayer for Android
-    implementation("androidx.media3:media3-exoplayer:1.5.1")
-    implementation("androidx.media3:media3-ui:1.5.1")
-    implementation("androidx.media3:media3-common:1.5.1")
-    implementation("androidx.media3:media3-session:1.5.1")
+    implementation("androidx.media3:media3-exoplayer:1.9.2")
+    implementation("androidx.media3:media3-ui:1.9.2")
+    implementation("androidx.media3:media3-common:1.9.2")
 
     // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
-    // libass-android for ASS/SSA subtitle rendering
-    implementation("io.github.peerless2012:ass-media:0.4.0-beta01")
+    // libass-android for ASS/SSA subtitle rendering (fork with font buffering fix)
+    implementation(files("libs/ass-media.aar"))
     // ass-kt core library (needed for AssRender.setFontScale)
     implementation("io.github.peerless2012:ass-kt:0.4.0-beta01")
 }

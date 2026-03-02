@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 
@@ -43,8 +44,7 @@ class WatchTogetherOverlay extends StatelessWidget {
   }
 
   void _showSessionMenu(BuildContext context, WatchTogetherProvider provider) {
-    showModalBottomSheet(
-      context: context,
+    OverlaySheetController.of(context).show(
       builder: (context) => _SessionMenuSheet(provider: provider, onLeaveSession: onLeaveSession),
     );
   }
@@ -249,7 +249,7 @@ class _SessionMenuSheet extends StatelessWidget {
                 style: TextStyle(color: theme.colorScheme.error),
               ),
               onTap: () {
-                Navigator.pop(context);
+                OverlaySheetController.of(context).close();
                 _confirmLeave(context);
               },
               contentPadding: EdgeInsets.zero,

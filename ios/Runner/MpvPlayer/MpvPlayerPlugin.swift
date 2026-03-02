@@ -1,5 +1,6 @@
 import UIKit
 import Flutter
+import AVKit
 
 /// Flutter plugin that bridges MPV player to Dart via method and event channels
 class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerDelegate {
@@ -11,41 +12,47 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
     private weak var registrar: FlutterPluginRegistrar?
     private var nameToId: [String: Int] = [:]
 
+    // PiP
+    private var pipController: MpvPipController?
+    private var pipChannel: FlutterMethodChannel?
+    private var autoPipEnabled = false
+    private var isManualPipRequest = false
+    private var pipTimebaseSyncTimer: Timer?
+
     // MARK: - FlutterPlugin Registration
 
     static func register(with registrar: FlutterPluginRegistrar) {
-        // Method channel for commands
         let methodChannel = FlutterMethodChannel(
             name: "com.plezy/mpv_player",
             binaryMessenger: registrar.messenger()
         )
-
-        // Event channel for state updates
         let eventChannel = FlutterEventChannel(
             name: "com.plezy/mpv_player/events",
+            binaryMessenger: registrar.messenger()
+        )
+        let pipChannel = FlutterMethodChannel(
+            name: "app.plezy/pip",
             binaryMessenger: registrar.messenger()
         )
 
         let instance = MpvPlayerPlugin()
         instance.registrar = registrar
+        instance.pipChannel = pipChannel
 
         registrar.addMethodCallDelegate(instance, channel: methodChannel)
         eventChannel.setStreamHandler(instance)
-
-        print("[MpvPlayerPlugin] Registered with Flutter")
+        pipChannel.setMethodCallHandler(instance.handlePipCall)
     }
 
     // MARK: - FlutterStreamHandler
 
     func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         self.eventSink = events
-        print("[MpvPlayerPlugin] Event stream connected")
         return nil
     }
 
     func onCancel(withArguments arguments: Any?) -> FlutterError? {
         self.eventSink = nil
-        print("[MpvPlayerPlugin] Event stream disconnected")
         return nil
     }
 
@@ -55,34 +62,147 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         switch call.method {
         case "initialize":
             handleInitialize(result: result)
-
         case "dispose":
             handleDispose(result: result)
-
         case "setProperty":
             handleSetProperty(call: call, result: result)
-
         case "getProperty":
             handleGetProperty(call: call, result: result)
-
         case "observeProperty":
             handleObserveProperty(call: call, result: result)
-
         case "command":
             handleCommand(call: call, result: result)
-
         case "setVisible":
             handleSetVisible(call: call, result: result)
-
         case "isInitialized":
             result(playerCore?.isInitialized ?? false)
-
         case "updateFrame":
             handleUpdateFrame(result: result)
-
+        case "setLogLevel":
+            handleSetLogLevel(call: call, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+
+    // MARK: - PiP
+
+    private func ensurePipController() -> MpvPipController {
+        if let existing = pipController { return existing }
+        let controller = MpvPipController()
+        controller.delegate = self
+        pipController = controller
+        return controller
+    }
+
+    private func handlePipCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        switch call.method {
+        case "isSupported":
+            result(MpvPipController.isSupported)
+        case "enter":
+            enterPip(manual: true, result: result)
+        case "setAutoPipReady":
+            if let args = call.arguments as? [String: Any], let ready = args["ready"] as? Bool {
+                autoPipEnabled = ready
+                if ready {
+                    let pip = ensurePipController()
+                    pip.setAutoStart(true)
+                    // Warm the layer so the system considers PiP possible
+                    if let pc = playerCore {
+                        pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
+                    }
+                    NotificationCenter.default.removeObserver(self, name: UIScene.didActivateNotification, object: nil)
+                    NotificationCenter.default.addObserver(self, selector: #selector(sceneDidActivate), name: UIScene.didActivateNotification, object: nil)
+                } else {
+                    pipController?.setAutoStart(false)
+                    NotificationCenter.default.removeObserver(self, name: UIScene.didActivateNotification, object: nil)
+                }
+            }
+            result(nil)
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+
+    /// Switch to PiP VO and prepare the sample buffer layer for PiP display.
+    /// Returns the MpvPipController on success, nil on failure.
+    @discardableResult
+    private func switchToPipAndPrepare() -> MpvPipController? {
+        guard let playerCore = playerCore else { return nil }
+        let pip = ensurePipController()
+        guard playerCore.switchToPipVO(layerPtr: pip.layerPointer) else { return nil }
+        playerCore.isPipStarting = true
+        pip.pushBlankFrame()
+        pip.syncTimebase(currentTime: playerCore.timePos, isPlaying: !playerCore.isPaused)
+        pip.invalidatePlaybackState()
+        return pip
+    }
+
+    /// Manual PiP entry (button press). Auto-PiP is handled by the system via
+    /// canStartPictureInPictureAutomaticallyFromInline + pipWillStart delegate.
+    private func enterPip(manual: Bool, result: FlutterResult? = nil) {
+        guard MpvPipController.isSupported else {
+            result?(["success": false, "errorCode": "ios_version", "errorMessage": "Requires iOS 15.0+"])
+            return
+        }
+        guard playerCore != nil else {
+            result?(["success": false, "errorCode": "failed", "errorMessage": "Player not initialized"])
+            return
+        }
+        guard let pip = switchToPipAndPrepare() else {
+            result?(["success": false, "errorCode": "vo_switch_failed", "errorMessage": "Failed to switch VO"])
+            return
+        }
+
+        isManualPipRequest = manual
+        pip.startPip(waitForFrame: manual) { [weak self] started in
+            if started {
+                result?(["success": true])
+            } else {
+                self?.cleanupPip(notify: false)
+                result?(["success": false, "errorCode": "failed", "errorMessage": "PiP failed to start"])
+            }
+        }
+    }
+
+    /// Unified cleanup for all PiP exit paths
+    private func cleanupPip(notify: Bool, pause: Bool = false) {
+        playerCore?.isPipStarting = false
+        playerCore?.isPipActive = false
+        isManualPipRequest = false
+        stopPipTimebaseSync()
+        _ = playerCore?.switchToGpuNextVO()
+        if pause { playerCore?.setProperty("pause", value: "yes") }
+        if notify { pipChannel?.invokeMethod("onPipChanged", arguments: false) }
+    }
+
+    /// Scene became active — re-warm the layer so auto-PiP stays possible
+    @objc private func sceneDidActivate() {
+        if autoPipEnabled, let pip = pipController, let pc = playerCore, !pc.isPipActive {
+            pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
+        }
+    }
+
+    // MARK: - Timebase Sync
+
+    private func syncPipTimebase() {
+        guard let playerCore = playerCore, let pipController = pipController else { return }
+        pipController.syncTimebase(
+            currentTime: playerCore.timePos,
+            isPlaying: !playerCore.isPaused
+        )
+    }
+
+    private func startPipTimebaseSync() {
+        stopPipTimebaseSync()
+        pipTimebaseSyncTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            self?.syncPipTimebase()
+        }
+    }
+
+    private func stopPipTimebaseSync() {
+        pipTimebaseSyncTimer?.invalidate()
+        pipTimebaseSyncTimer = nil
     }
 
     // MARK: - Method Handlers
@@ -94,45 +214,40 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
                 return
             }
 
-            // Check if already initialized
             if self.playerCore?.isInitialized == true {
-                print("[MpvPlayerPlugin] Already initialized")
                 result(true)
                 return
             }
 
-            // Find the key window
             guard let window = self.findKeyWindow() else {
-                print("[MpvPlayerPlugin] Failed to find key window")
                 result(FlutterError(code: "NO_WINDOW", message: "Could not find key window", details: nil))
                 return
             }
 
-            // Create and initialize player core
             let core = MpvPlayerCore()
             core.delegate = self
 
             guard core.initialize(in: window) else {
-                print("[MpvPlayerPlugin] Failed to initialize MPV")
                 result(FlutterError(code: "MPV_INIT_FAILED", message: "Failed to initialize MPV", details: nil))
                 return
             }
 
             self.playerCore = core
-
-            // Start hidden
             core.setVisible(false)
-
-            print("[MpvPlayerPlugin] Initialized successfully")
             result(true)
         }
     }
 
     private func handleDispose(result: @escaping FlutterResult) {
         DispatchQueue.main.async { [weak self] in
-            self?.playerCore?.dispose()
-            self?.playerCore = nil
-            print("[MpvPlayerPlugin] Disposed")
+            guard let self = self else { result(nil); return }
+            self.pipController?.teardown()
+            self.pipController = nil
+            self.autoPipEnabled = false
+            NotificationCenter.default.removeObserver(self, name: UIScene.didActivateNotification, object: nil)
+            self.stopPipTimebaseSync()
+            self.playerCore?.dispose()
+            self.playerCore = nil
             result(nil)
         }
     }
@@ -146,6 +261,12 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         }
 
         playerCore?.setProperty(name, value: value)
+
+        if name == "pause" {
+            pipController?.invalidatePlaybackState()
+            if playerCore?.isPipActive == true { syncPipTimebase() }
+        }
+
         result(nil)
     }
 
@@ -155,9 +276,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             result(FlutterError(code: "INVALID_ARGS", message: "Missing 'name' argument", details: nil))
             return
         }
-
-        let value = playerCore?.getProperty(name)
-        result(value)
+        result(playerCore?.getProperty(name))
     }
 
     private func handleObserveProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -181,7 +300,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             return
         }
 
-        // Use async command to prevent UI blocking during network operations
         playerCore?.commandAsync(commandArgs) { commandResult in
             switch commandResult {
             case .success:
@@ -201,12 +319,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
 
         DispatchQueue.main.async { [weak self] in
             self?.playerCore?.setVisible(visible)
-
-            // Update frame when becoming visible
-            if visible {
-                self?.playerCore?.updateFrame()
-            }
-
+            if visible { self?.playerCore?.updateFrame() }
             result(nil)
         }
     }
@@ -218,24 +331,27 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         }
     }
 
+    private func handleSetLogLevel(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let level = args["level"] as? String else {
+            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'level'", details: nil))
+            return
+        }
+        playerCore?.setLogLevel(level)
+        result(nil)
+    }
+
     // MARK: - MpvPlayerDelegate
 
     func onPropertyChange(name: String, value: Any?) {
-        guard let eventSink = eventSink else { return }
-
-        if let propId = nameToId[name] {
-            eventSink([propId, value as Any])
-        }
+        guard let eventSink = eventSink, let propId = nameToId[name] else { return }
+        eventSink([propId, value as Any])
     }
 
     func onEvent(name: String, data: [String: Any]?) {
         guard let eventSink = eventSink else { return }
-
         var event: [String: Any] = ["type": "event", "name": name]
-        if let data = data {
-            event["data"] = data
-        }
-
+        if let data = data { event["data"] = data }
         eventSink(event)
     }
 
@@ -248,4 +364,59 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         }
         return window
     }
+}
+
+// MARK: - MpvPipDelegate
+
+extension MpvPlayerPlugin: MpvPipDelegate {
+
+    func pipWillStart() {
+        // If PiP was system-initiated (not via our enterPip), switch VO now
+        guard let playerCore = playerCore, !playerCore.isPipStarting else { return }
+        print("[MpvPlayerPlugin] System-initiated PiP detected, switching VO")
+        if switchToPipAndPrepare() == nil {
+            print("[MpvPlayerPlugin] VO switch failed for system-initiated PiP")
+            pipController?.stopPip()
+        }
+    }
+
+    func pipDidStart() {
+        playerCore?.isPipStarting = false
+        playerCore?.isPipActive = true
+        pipChannel?.invokeMethod("onPipChanged", arguments: true)
+        syncPipTimebase()
+        startPipTimebaseSync()
+
+        if isManualPipRequest {
+            isManualPipRequest = false
+            UIControl().sendAction(#selector(URLSessionTask.suspend), to: UIApplication.shared, for: nil)
+        }
+    }
+
+    func pipDidStop(restored: Bool) {
+        cleanupPip(notify: true, pause: !restored)
+    }
+
+    func pipDidFailToStart(error: Error?) {
+        cleanupPip(notify: true)
+    }
+
+    func pipSetPlaying(_ playing: Bool) {
+        playerCore?.setProperty("pause", value: playing ? "no" : "yes")
+        pipController?.invalidatePlaybackState()
+        syncPipTimebase()
+    }
+
+    func pipSkip(byInterval seconds: Double) {
+        guard let playerCore = playerCore else { return }
+        let newTime = max(0, playerCore.timePos + seconds)
+        playerCore.command(["seek", String(newTime), "absolute"])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.syncPipTimebase()
+            self?.pipController?.invalidatePlaybackState()
+        }
+    }
+
+    var isPipPlaying: Bool { !(playerCore?.isPaused ?? true) }
+    var pipDuration: Double { playerCore?.duration ?? 0 }
 }

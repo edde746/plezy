@@ -36,9 +36,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   int? get textureId => null;
 
   StreamSubscription? _eventSubscription;
+  StreamSubscription? _logSubscription;
   bool _disposed = false;
   final _throttleSw = Stopwatch()..start();
   int _lastEmitMs = 0;
+  int _lastCacheStateMs = 0;
   int _positionMs = 0;
   int _nextPropId = 0;
   final Map<int, String> _propIdToName = {};
@@ -63,7 +65,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   PlayerBase() {
     _streams = createStreams();
     _setupEventListener();
-    logController.stream.listen(_forwardToAppLogger);
+    _logSubscription = logController.stream.listen(_forwardToAppLogger);
   }
 
   void _forwardToAppLogger(PlayerLog log) {
@@ -89,6 +91,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     _eventSubscription = eventChannel.receiveBroadcastStream().listen(
       _handleEvent,
       onError: (error) {
+        if (_disposed) return;
         errorController.add(error.toString());
       },
     );
@@ -108,8 +111,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   void _handleEvent(dynamic event) {
+    if (_disposed) return;
     if (event is List && event.length == 2) {
-      final name = _propIdToName[event[0] as int];
+      final name = _propIdToName[event.first as int];
       if (name != null) {
         handlePropertyChange(name, event[1]);
       }
@@ -125,6 +129,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// Handle a property change event from the platform.
   /// Subclasses can override this to handle platform-specific properties.
   void handlePropertyChange(String name, dynamic value) {
+    if (_disposed) return;
     switch (name) {
       case 'pause':
         final playing = value == false;
@@ -169,10 +174,22 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'demuxer-cache-time':
         if (value is num) {
+          final nowMs = _throttleSw.elapsedMilliseconds;
+          if (nowMs - _lastCacheStateMs < 250) break;
+          _lastCacheStateMs = nowMs;
           final buffer = Duration(milliseconds: (value * 1000).toInt());
           _state = _state.copyWith(buffer: buffer);
           bufferController.add(buffer);
+          // Synthesize a single range for players without demuxer-cache-state (ExoPlayer).
+          // ExoPlayer only buffers ahead of the current position, so use position as start.
+          final ranges = [BufferRange(start: _state.position, end: buffer)];
+          _state = _state.copyWith(bufferRanges: ranges);
+          bufferRangesController.add(ranges);
         }
+        break;
+
+      case 'demuxer-cache-state':
+        _handleDemuxerCacheState(value);
         break;
 
       case 'volume':
@@ -255,9 +272,56 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
+  /// Parse demuxer-cache-state property to extract seekable ranges and buffer end.
+  void _handleDemuxerCacheState(dynamic value) {
+    Map? cacheState;
+    if (value is Map) {
+      cacheState = value;
+    } else if (value is String && value.isNotEmpty) {
+      // Throttle JSON parsing to avoid ANR on low-end devices
+      final nowMs = _throttleSw.elapsedMilliseconds;
+      if (nowMs - _lastCacheStateMs < 250) return;
+      _lastCacheStateMs = nowMs;
+      try {
+        final parsed = jsonDecode(value);
+        if (parsed is Map) cacheState = parsed;
+      } catch (_) {}
+    }
+    if (cacheState == null) return;
+
+    // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
+    final cacheEnd = cacheState['cache-end'] as num?;
+    if (cacheEnd != null) {
+      final buffer = Duration(milliseconds: (cacheEnd * 1000).toInt());
+      _state = _state.copyWith(buffer: buffer);
+      bufferController.add(buffer);
+    }
+
+    // Extract seekable-ranges array
+    final seekableRanges = cacheState['seekable-ranges'];
+    if (seekableRanges is List) {
+      final ranges = <BufferRange>[];
+      for (final range in seekableRanges) {
+        if (range is Map) {
+          final start = range['start'] as num?;
+          final end = range['end'] as num?;
+          if (start != null && end != null) {
+            ranges.add(BufferRange(
+              start: Duration(milliseconds: (start * 1000).toInt()),
+              end: Duration(milliseconds: (end * 1000).toInt()),
+            ));
+          }
+        }
+      }
+      _state = _state.copyWith(bufferRanges: ranges);
+      bufferRangesController.add(ranges);
+    }
+  }
+
   /// Handle a player event from the platform.
   /// Subclasses can override this to handle platform-specific events.
   void handlePlayerEvent(String name, Map? data) {
+    if (_disposed) return;
     switch (name) {
       case 'end-file':
         final reason = data?['reason'] as String?;
@@ -450,6 +514,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     _disposed = true;
 
     await _eventSubscription?.cancel();
+    await _logSubscription?.cancel();
     await methodChannel.invokeMethod('dispose');
     await closeStreamControllers();
   }

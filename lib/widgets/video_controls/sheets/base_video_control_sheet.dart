@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../../focus/key_event_utils.dart';
+import '../../../focus/dpad_navigator.dart';
 import 'video_sheet_header.dart';
 
 /// Base class for video control bottom sheets providing common UI structure
@@ -18,50 +21,34 @@ class BaseVideoControlSheet extends StatelessWidget {
     this.onBack,
   });
 
-  /// Get consistent bottom sheet constraints across all video control sheets
-  static BoxConstraints getBottomSheetConstraints(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 600;
-
-    return BoxConstraints(
-      maxWidth: isDesktop ? 700 : double.infinity,
-      maxHeight: isDesktop ? 400 : size.height * 0.75,
-      minHeight: isDesktop ? 300 : size.height * 0.5,
-    );
-  }
-
-  /// Helper method to show a modal bottom sheet with consistent styling
-  static Future<T?> showSheet<T>({
-    required BuildContext context,
-    required WidgetBuilder builder,
-    VoidCallback? onOpen,
-    VoidCallback? onClose,
-  }) {
-    onOpen?.call();
-    return showModalBottomSheet<T>(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: getBottomSheetConstraints(context),
-      builder: builder,
-    ).whenComplete(() {
-      onClose?.call();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    Widget content = Column(
+      children: [
+        VideoSheetHeader(title: title, icon: icon, iconColor: iconColor, onBack: onBack),
+        Divider(color: Theme.of(context).dividerColor, height: 1),
+        Expanded(child: child),
+      ],
+    );
+
+    // Intercept back key at the sub-page level so it triggers onBack
+    // instead of bubbling up to OverlaySheetHost which would close the sheet.
+    if (onBack != null) {
+      content = Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: (node, event) {
+          if (event.logicalKey.isBackKey) {
+            return handleBackKeyAction(event, onBack!);
+          }
+          return KeyEventResult.ignored;
+        },
+        child: content,
+      );
+    }
+
     return SafeArea(
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.75,
-        child: Column(
-          children: [
-            VideoSheetHeader(title: title, icon: icon, iconColor: iconColor, onBack: onBack),
-            const Divider(color: Colors.white24, height: 1),
-            Expanded(child: child),
-          ],
-        ),
-      ),
+      child: SizedBox(height: MediaQuery.of(context).size.height * 0.75, child: content),
     );
   }
 }

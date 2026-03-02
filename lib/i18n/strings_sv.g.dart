@@ -74,6 +74,7 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsCompanionRemoteSv companionRemote = _TranslationsCompanionRemoteSv._(_root);
 	@override late final _TranslationsVideoSettingsSv videoSettings = _TranslationsVideoSettingsSv._(_root);
 	@override late final _TranslationsExternalPlayerSv externalPlayer = _TranslationsExternalPlayerSv._(_root);
+	@override late final _TranslationsMetadataEditSv metadataEdit = _TranslationsMetadataEditSv._(_root);
 }
 
 // Path: app
@@ -149,6 +150,12 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get exitConfirmMessage => 'Är du säker på att du vill avsluta?';
 	@override String get dontAskAgain => 'Fråga inte igen';
 	@override String get exit => 'Avsluta';
+	@override String get viewAll => 'Visa alla';
+	@override String get checkingNetwork => 'Kontrollerar nätverk...';
+	@override String get refreshingServers => 'Uppdaterar servrar...';
+	@override String get loadingServers => 'Laddar servrar...';
+	@override String get connectingToServers => 'Ansluter till servrar...';
+	@override String get startingOfflineMode => 'Startar offlineläge...';
 }
 
 // Path: screens
@@ -234,6 +241,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidofältet förblir expanderat och innehållsytan anpassas';
 	@override String get showUnwatchedCount => 'Visa antal osedda';
 	@override String get showUnwatchedCountDescription => 'Visa antal osedda avsnitt för serier och säsonger';
+	@override String get hideSpoilers => 'Dölj spoilers för osedda avsnitt';
+	@override String get hideSpoilersDescription => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu';
 	@override String get playerBackend => 'Spelarmotor';
 	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
 	@override String get exoPlayerDescription => 'Android-nativ spelare med bättre hårdvarustöd';
@@ -243,6 +252,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
 	@override String get bufferSize => 'Bufferstorlek';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get bufferSizeAuto => 'Auto (Rekommenderat)';
+	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Din enhet har ${heap}MB minne. En buffert på ${size}MB kan orsaka uppspelningsproblem.';
 	@override String get subtitleStyling => 'Undertext-styling';
 	@override String get subtitleStylingDescription => 'Anpassa undertextutseende';
 	@override String get smallSkipDuration => 'Kort hoppvaraktighet';
@@ -259,6 +270,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Anpassa tangentbordsgenvägar';
 	@override String get videoPlayerNavigation => 'Navigering i videospelaren';
 	@override String get videoPlayerNavigationDescription => 'Använd piltangenter för att navigera videospelarens kontroller';
+	@override String get crashReporting => 'Kraschrapportering';
+	@override String get crashReportingDescription => 'Skicka kraschrapporter för att förbättra appen';
 	@override String get debugLogging => 'Felsökningsloggning';
 	@override String get debugLoggingDescription => 'Aktivera detaljerad loggning för felsökning';
 	@override String get viewLogs => 'Visa loggar';
@@ -305,8 +318,12 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Visa vad du tittar på i Discord';
+	@override String get autoPip => 'Automatisk bild-i-bild';
+	@override String get autoPipDescription => 'Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning';
 	@override String get matchContentFrameRate => 'Matcha innehållets bildfrekvens';
 	@override String get matchContentFrameRateDescription => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri';
+	@override String get tunneledPlayback => 'Tunneled Playback';
+	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
 	@override String get requireProfileSelectionOnOpen => 'Fråga efter profil vid appstart';
 	@override String get requireProfileSelectionOnOpenDescription => 'Visa profilval varje gång appen öppnas';
 	@override String get confirmExitOnBack => 'Bekräfta innan avslut';
@@ -396,10 +413,12 @@ class _TranslationsMediaMenuSv implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Gå till säsong';
 	@override String get shufflePlay => 'Blanda uppspelning';
 	@override String get fileInfo => 'Filinformation';
-	@override String get confirmDelete => 'Är du säker på att du vill ta bort detta objekt från ditt filsystem?';
-	@override String get deleteMultipleWarning => 'Flera objekt kan komma att tas bort.';
+	@override String get deleteFromServer => 'Ta bort från servern';
+	@override String get confirmDelete => 'Detta kommer permanent ta bort detta media och dess filer från din server. Detta kan inte ångras.';
+	@override String get deleteMultipleWarning => 'Detta inkluderar alla avsnitt och deras filer.';
 	@override String get mediaDeletedSuccessfully => 'Mediaobjekt borttaget';
 	@override String get mediaFailedToDelete => 'Kunde inte ta bort mediaobjekt';
+	@override String get rate => 'Betygsätt';
 }
 
 // Path: accessibility
@@ -455,6 +474,9 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
 	@override String get sleepTimerCompleted => 'Sovtimer slutförd - uppspelning pausad';
+	@override String get stillWatching => 'Tittar du fortfarande?';
+	@override String pausingIn({required Object seconds}) => 'Pausar om ${seconds}s';
+	@override String get continueWatching => 'Fortsätt';
 	@override String get autoPlayNext => 'Spela nästa automatiskt';
 	@override String get playNext => 'Spela nästa';
 	@override String get playButton => 'Spela';
@@ -474,6 +496,9 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get versionsButton => 'Videoversioner';
 	@override String get pipButton => 'Bild-i-bild läge';
 	@override String get aspectRatioButton => 'Bildförhållande';
+	@override String get ambientLighting => 'Ambientbelysning';
+	@override String get ambientLightingOn => 'Aktivera ambientbelysning';
+	@override String get ambientLightingOff => 'Inaktivera ambientbelysning';
 	@override String get fullscreenButton => 'Aktivera helskärm';
 	@override String get exitFullscreenButton => 'Avsluta helskärm';
 	@override String get alwaysOnTopButton => 'Alltid överst';
@@ -481,10 +506,13 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Volymnivå';
 	@override String endsAt({required Object time}) => 'Slutar ${time}';
+	@override String get pipActive => 'Playing in Picture-in-Picture';
 	@override String get pipFailed => 'Bild-i-bild kunde inte starta';
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
 	@override String get chapters => 'Kapitel';
 	@override String get noChaptersAvailable => 'Inga kapitel tillgängliga';
+	@override String get queue => 'Queue';
+	@override String get noQueueItems => 'No items in queue';
 }
 
 // Path: userStatus
@@ -784,29 +812,17 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get title => 'Live-TV';
 	@override String get channels => 'Kanaler';
 	@override String get guide => 'Programguide';
-	@override String get recordings => 'Inspelningar';
-	@override String get subscriptions => 'Inspelningsregler';
-	@override String get scheduled => 'Schemalagda';
 	@override String get noChannels => 'Inga kanaler tillgängliga';
 	@override String get noDvr => 'Ingen DVR konfigurerad på någon server';
 	@override String get tuneFailed => 'Kunde inte ställa in kanalen';
 	@override String get loading => 'Laddar kanaler...';
 	@override String get nowPlaying => 'Spelas nu';
-	@override String get record => 'Spela in';
-	@override String get recordSeries => 'Spela in serie';
-	@override String get cancelRecording => 'Avbryt inspelning';
-	@override String get deleteSubscription => 'Ta bort inspelningsregel';
-	@override String get deleteSubscriptionConfirm => 'Är du säker på att du vill ta bort denna inspelningsregel?';
-	@override String get subscriptionDeleted => 'Inspelningsregel borttagen';
 	@override String get noPrograms => 'Ingen programdata tillgänglig';
-	@override String get noRecordings => 'Inga inspelningar schemalagda';
-	@override String get noSubscriptions => 'Inga inspelningsregler';
 	@override String channelNumber({required Object number}) => 'Kanal ${number}';
 	@override String get live => 'LIVE';
 	@override String get hd => 'HD';
 	@override String get premiere => 'NY';
 	@override String get reloadGuide => 'Ladda om programguide';
-	@override String get guideReloaded => 'Programdata omladdad';
 	@override String get allChannels => 'Alla kanaler';
 	@override String get now => 'Nu';
 	@override String get today => 'Idag';
@@ -1034,6 +1050,8 @@ class _TranslationsVideoSettingsSv implements TranslationsVideoSettingsEn {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Ljudutgång';
 	@override String get performanceOverlay => 'Prestandaöverlägg';
+	@override String get audioPassthrough => 'Ljudgenomkoppling';
+	@override String get audioNormalization => 'Ljudnormalisering';
 }
 
 // Path: externalPlayer
@@ -1058,6 +1076,74 @@ class _TranslationsExternalPlayerSv implements TranslationsExternalPlayerEn {
 	@override String get launchFailed => 'Kunde inte öppna extern spelare';
 	@override String appNotInstalled({required Object name}) => '${name} är inte installerad';
 	@override String get playInExternalPlayer => 'Spela i extern spelare';
+}
+
+// Path: metadataEdit
+class _TranslationsMetadataEditSv implements TranslationsMetadataEditEn {
+	_TranslationsMetadataEditSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get editMetadata => 'Redigera...';
+	@override String get screenTitle => 'Redigera metadata';
+	@override String get basicInfo => 'Grundläggande info';
+	@override String get artwork => 'Artwork';
+	@override String get advancedSettings => 'Avancerade inställningar';
+	@override String get title => 'Titel';
+	@override String get sortTitle => 'Sorteringstitel';
+	@override String get originalTitle => 'Originaltitel';
+	@override String get releaseDate => 'Utgivningsdatum';
+	@override String get contentRating => 'Åldersgräns';
+	@override String get studio => 'Studio';
+	@override String get tagline => 'Tagline';
+	@override String get summary => 'Sammanfattning';
+	@override String get poster => 'Poster';
+	@override String get background => 'Bakgrund';
+	@override String get selectPoster => 'Välj poster';
+	@override String get selectBackground => 'Välj bakgrund';
+	@override String get fromUrl => 'Från URL';
+	@override String get uploadFile => 'Ladda upp fil';
+	@override String get enterImageUrl => 'Ange bild-URL';
+	@override String get imageUrl => 'Bild-URL';
+	@override String get metadataUpdated => 'Metadata uppdaterad';
+	@override String get metadataUpdateFailed => 'Kunde inte uppdatera metadata';
+	@override String get artworkUpdated => 'Artwork uppdaterad';
+	@override String get artworkUpdateFailed => 'Kunde inte uppdatera artwork';
+	@override String get noArtworkAvailable => 'Ingen artwork tillgänglig';
+	@override String get notSet => 'Inte angiven';
+	@override String get libraryDefault => 'Biblioteksstandard';
+	@override String get accountDefault => 'Kontostandard';
+	@override String get seriesDefault => 'Seriestandard';
+	@override String get episodeSorting => 'Avsnittsortering';
+	@override String get oldestFirst => 'Äldst först';
+	@override String get newestFirst => 'Nyast först';
+	@override String get keep => 'Behåll';
+	@override String get allEpisodes => 'Alla avsnitt';
+	@override String latestEpisodes({required Object count}) => '${count} senaste avsnitten';
+	@override String get latestEpisode => 'Senaste avsnittet';
+	@override String episodesAddedPastDays({required Object count}) => 'Avsnitt tillagda de senaste ${count} dagarna';
+	@override String get deleteAfterPlaying => 'Ta bort avsnitt efter uppspelning';
+	@override String get never => 'Aldrig';
+	@override String get afterADay => 'Efter en dag';
+	@override String get afterAWeek => 'Efter en vecka';
+	@override String get afterAMonth => 'Efter en månad';
+	@override String get onNextRefresh => 'Vid nästa uppdatering';
+	@override String get seasons => 'Säsonger';
+	@override String get show => 'Visa';
+	@override String get hide => 'Dölj';
+	@override String get episodeOrdering => 'Avsnittsordning';
+	@override String get tmdbAiring => 'The Movie Database (Sändning)';
+	@override String get tvdbAiring => 'TheTVDB (Sändning)';
+	@override String get tvdbAbsolute => 'TheTVDB (Absolut)';
+	@override String get metadataLanguage => 'Metadataspråk';
+	@override String get useOriginalTitle => 'Använd originaltitel';
+	@override String get preferredAudioLanguage => 'Föredraget ljudspråk';
+	@override String get preferredSubtitleLanguage => 'Föredraget undertextspråk';
+	@override String get subtitleMode => 'Automatiskt val av undertexter';
+	@override String get manuallySelected => 'Manuellt vald';
+	@override String get shownWithForeignAudio => 'Visas vid främmande ljud';
+	@override String get alwaysEnabled => 'Alltid aktiverad';
 }
 
 // Path: hotkeys.actions
@@ -1096,8 +1182,10 @@ class _TranslationsVideoControlsPipErrorsSv implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Kräver Android 8.0 eller nyare';
+	@override String get iosVersion => 'Kräver iOS 15.0 eller nyare';
 	@override String get permissionDisabled => 'Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild';
 	@override String get notSupported => 'Denna enhet stöder inte bild-i-bild-läge';
+	@override String get voSwitchFailed => 'Kunde inte byta videoutgång för bild-i-bild';
 	@override String get failed => 'Bild-i-bild kunde inte starta';
 	@override String unknown({required Object error}) => 'Ett fel uppstod: ${error}';
 }
@@ -1161,11 +1249,8 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => 'Senaste';
 	@override String get scan => 'Skanna';
 	@override String get manual => 'Manuell';
-	@override String get recentConnections => 'Senaste anslutningar';
-	@override String get quickReconnect => 'Återanslut snabbt till tidigare parkopplade enheter';
 	@override String get pairWithDesktop => 'Parkoppla med dator';
 	@override String get enterSessionDetails => 'Ange sessionsuppgifterna som visas på din datorenhet';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1179,11 +1264,7 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.';
 	@override String cameraError({required Object error}) => 'Kunde inte starta kameran: ${error}';
 	@override String get scanInstruction => 'Rikta kameran mot QR-koden som visas på din dator';
-	@override String get noRecentConnections => 'Inga senaste anslutningar';
-	@override String get connectUsingManual => 'Anslut till en enhet via Manuell inmatning för att komma igång';
 	@override String get invalidQrCode => 'Ogiltigt QR-kodformat';
-	@override String get removeRecentConnection => 'Ta bort senaste anslutning';
-	@override String removeConfirm({required Object name}) => 'Ta bort "${name}" från senaste anslutningar?';
 	@override String get validationHostRequired => 'Ange en värdadress';
 	@override String get validationHostFormat => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)';
 	@override String get validationSessionIdRequired => 'Ange ett sessions-ID';
@@ -1193,7 +1274,6 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.';
 	@override String get sessionNotFound => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.';
 	@override String failedToConnect({required Object error}) => 'Kunde inte ansluta: ${error}';
-	@override String failedToLoadRecent({required Object error}) => 'Kunde inte ladda senaste sessioner: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1290,6 +1370,12 @@ extension on TranslationsSv {
 			'common.exitConfirmMessage' => 'Är du säker på att du vill avsluta?',
 			'common.dontAskAgain' => 'Fråga inte igen',
 			'common.exit' => 'Avsluta',
+			'common.viewAll' => 'Visa alla',
+			'common.checkingNetwork' => 'Kontrollerar nätverk...',
+			'common.refreshingServers' => 'Uppdaterar servrar...',
+			'common.loadingServers' => 'Laddar servrar...',
+			'common.connectingToServers' => 'Ansluter till servrar...',
+			'common.startingOfflineMode' => 'Startar offlineläge...',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -1348,6 +1434,8 @@ extension on TranslationsSv {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidofältet förblir expanderat och innehållsytan anpassas',
 			'settings.showUnwatchedCount' => 'Visa antal osedda',
 			'settings.showUnwatchedCountDescription' => 'Visa antal osedda avsnitt för serier och säsonger',
+			'settings.hideSpoilers' => 'Dölj spoilers för osedda avsnitt',
+			'settings.hideSpoilersDescription' => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu',
 			'settings.playerBackend' => 'Spelarmotor',
 			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
 			'settings.exoPlayerDescription' => 'Android-nativ spelare med bättre hårdvarustöd',
@@ -1357,6 +1445,8 @@ extension on TranslationsSv {
 			'settings.hardwareDecodingDescription' => 'Använd hårdvaruacceleration när tillgängligt',
 			'settings.bufferSize' => 'Bufferstorlek',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
+			'settings.bufferSizeAuto' => 'Auto (Rekommenderat)',
+			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Din enhet har ${heap}MB minne. En buffert på ${size}MB kan orsaka uppspelningsproblem.',
 			'settings.subtitleStyling' => 'Undertext-styling',
 			'settings.subtitleStylingDescription' => 'Anpassa undertextutseende',
 			'settings.smallSkipDuration' => 'Kort hoppvaraktighet',
@@ -1373,6 +1463,8 @@ extension on TranslationsSv {
 			'settings.keyboardShortcutsDescription' => 'Anpassa tangentbordsgenvägar',
 			'settings.videoPlayerNavigation' => 'Navigering i videospelaren',
 			'settings.videoPlayerNavigationDescription' => 'Använd piltangenter för att navigera videospelarens kontroller',
+			'settings.crashReporting' => 'Kraschrapportering',
+			'settings.crashReportingDescription' => 'Skicka kraschrapporter för att förbättra appen',
 			'settings.debugLogging' => 'Felsökningsloggning',
 			'settings.debugLoggingDescription' => 'Aktivera detaljerad loggning för felsökning',
 			'settings.viewLogs' => 'Visa loggar',
@@ -1419,8 +1511,12 @@ extension on TranslationsSv {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Visa vad du tittar på i Discord',
+			'settings.autoPip' => 'Automatisk bild-i-bild',
+			'settings.autoPipDescription' => 'Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning',
 			'settings.matchContentFrameRate' => 'Matcha innehållets bildfrekvens',
 			'settings.matchContentFrameRateDescription' => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => 'Fråga efter profil vid appstart',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Visa profilval varje gång appen öppnas',
 			'settings.confirmExitOnBack' => 'Bekräfta innan avslut',
@@ -1483,10 +1579,12 @@ extension on TranslationsSv {
 			'mediaMenu.goToSeason' => 'Gå till säsong',
 			'mediaMenu.shufflePlay' => 'Blanda uppspelning',
 			'mediaMenu.fileInfo' => 'Filinformation',
-			'mediaMenu.confirmDelete' => 'Är du säker på att du vill ta bort detta objekt från ditt filsystem?',
-			'mediaMenu.deleteMultipleWarning' => 'Flera objekt kan komma att tas bort.',
+			'mediaMenu.deleteFromServer' => 'Ta bort från servern',
+			'mediaMenu.confirmDelete' => 'Detta kommer permanent ta bort detta media och dess filer från din server. Detta kan inte ångras.',
+			'mediaMenu.deleteMultipleWarning' => 'Detta inkluderar alla avsnitt och deras filer.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Mediaobjekt borttaget',
 			'mediaMenu.mediaFailedToDelete' => 'Kunde inte ta bort mediaobjekt',
+			'mediaMenu.rate' => 'Betygsätt',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1515,6 +1613,9 @@ extension on TranslationsSv {
 			'videoControls.timerActive' => 'Timer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Uppspelningen pausas om ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Sovtimer slutförd - uppspelning pausad',
+			'videoControls.stillWatching' => 'Tittar du fortfarande?',
+			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausar om ${seconds}s',
+			'videoControls.continueWatching' => 'Fortsätt',
 			'videoControls.autoPlayNext' => 'Spela nästa automatiskt',
 			'videoControls.playNext' => 'Spela nästa',
 			'videoControls.playButton' => 'Spela',
@@ -1534,6 +1635,9 @@ extension on TranslationsSv {
 			'videoControls.versionsButton' => 'Videoversioner',
 			'videoControls.pipButton' => 'Bild-i-bild läge',
 			'videoControls.aspectRatioButton' => 'Bildförhållande',
+			'videoControls.ambientLighting' => 'Ambientbelysning',
+			'videoControls.ambientLightingOn' => 'Aktivera ambientbelysning',
+			'videoControls.ambientLightingOff' => 'Inaktivera ambientbelysning',
 			'videoControls.fullscreenButton' => 'Aktivera helskärm',
 			'videoControls.exitFullscreenButton' => 'Avsluta helskärm',
 			'videoControls.alwaysOnTopButton' => 'Alltid överst',
@@ -1541,14 +1645,19 @@ extension on TranslationsSv {
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Volymnivå',
 			'videoControls.endsAt' => ({required Object time}) => 'Slutar ${time}',
+			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
+			'videoControls.pipErrors.iosVersion' => 'Kräver iOS 15.0 eller nyare',
 			'videoControls.pipErrors.permissionDisabled' => 'Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild',
 			'videoControls.pipErrors.notSupported' => 'Denna enhet stöder inte bild-i-bild-läge',
+			'videoControls.pipErrors.voSwitchFailed' => 'Kunde inte byta videoutgång för bild-i-bild',
 			'videoControls.pipErrors.failed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ett fel uppstod: ${error}',
 			'videoControls.chapters' => 'Kapitel',
 			'videoControls.noChaptersAvailable' => 'Inga kapitel tillgängliga',
+			'videoControls.queue' => 'Queue',
+			'videoControls.noQueueItems' => 'No items in queue',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Begränsad',
 			'userStatus.protected' => 'Skyddad',
@@ -1721,29 +1830,19 @@ extension on TranslationsSv {
 			'liveTv.title' => 'Live-TV',
 			'liveTv.channels' => 'Kanaler',
 			'liveTv.guide' => 'Programguide',
-			'liveTv.recordings' => 'Inspelningar',
-			'liveTv.subscriptions' => 'Inspelningsregler',
-			'liveTv.scheduled' => 'Schemalagda',
 			'liveTv.noChannels' => 'Inga kanaler tillgängliga',
 			'liveTv.noDvr' => 'Ingen DVR konfigurerad på någon server',
 			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
 			'liveTv.loading' => 'Laddar kanaler...',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.nowPlaying' => 'Spelas nu',
-			'liveTv.record' => 'Spela in',
-			'liveTv.recordSeries' => 'Spela in serie',
-			'liveTv.cancelRecording' => 'Avbryt inspelning',
-			'liveTv.deleteSubscription' => 'Ta bort inspelningsregel',
-			'liveTv.deleteSubscriptionConfirm' => 'Är du säker på att du vill ta bort denna inspelningsregel?',
-			'liveTv.subscriptionDeleted' => 'Inspelningsregel borttagen',
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
-			'liveTv.noRecordings' => 'Inga inspelningar schemalagda',
-			'liveTv.noSubscriptions' => 'Inga inspelningsregler',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Ladda om programguide',
-			'liveTv.guideReloaded' => 'Programdata omladdad',
 			'liveTv.allChannels' => 'Alla kanaler',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
@@ -1754,8 +1853,6 @@ extension on TranslationsSv {
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
@@ -1914,11 +2011,8 @@ extension on TranslationsSv {
 			'companionRemote.session.copyToClipboard' => 'Kopiera till urklipp',
 			'companionRemote.session.newSession' => 'Ny session',
 			'companionRemote.session.minimize' => 'Minimera',
-			'companionRemote.pairing.recent' => 'Senaste',
 			'companionRemote.pairing.scan' => 'Skanna',
 			'companionRemote.pairing.manual' => 'Manuell',
-			'companionRemote.pairing.recentConnections' => 'Senaste anslutningar',
-			'companionRemote.pairing.quickReconnect' => 'Återanslut snabbt till tidigare parkopplade enheter',
 			'companionRemote.pairing.pairWithDesktop' => 'Parkoppla med dator',
 			'companionRemote.pairing.enterSessionDetails' => 'Ange sessionsuppgifterna som visas på din datorenhet',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1932,11 +2026,7 @@ extension on TranslationsSv {
 			'companionRemote.pairing.cameraPermissionRequired' => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kunde inte starta kameran: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Rikta kameran mot QR-koden som visas på din dator',
-			'companionRemote.pairing.noRecentConnections' => 'Inga senaste anslutningar',
-			'companionRemote.pairing.connectUsingManual' => 'Anslut till en enhet via Manuell inmatning för att komma igång',
 			'companionRemote.pairing.invalidQrCode' => 'Ogiltigt QR-kodformat',
-			'companionRemote.pairing.removeRecentConnection' => 'Ta bort senaste anslutning',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Ta bort "${name}" från senaste anslutningar?',
 			'companionRemote.pairing.validationHostRequired' => 'Ange en värdadress',
 			'companionRemote.pairing.validationHostFormat' => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Ange ett sessions-ID',
@@ -1946,7 +2036,6 @@ extension on TranslationsSv {
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.',
 			'companionRemote.pairing.sessionNotFound' => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Kunde inte ladda senaste sessioner: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
 			'companionRemote.remote.reconnecting' => 'Återansluter...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Försök ${current} av 5',
@@ -1984,6 +2073,8 @@ extension on TranslationsSv {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Ljudutgång',
 			'videoSettings.performanceOverlay' => 'Prestandaöverlägg',
+			'videoSettings.audioPassthrough' => 'Ljudgenomkoppling',
+			'videoSettings.audioNormalization' => 'Ljudnormalisering',
 			'externalPlayer.title' => 'Extern spelare',
 			'externalPlayer.useExternalPlayer' => 'Använd extern spelare',
 			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en extern app istället för den inbyggda spelaren',
@@ -1999,6 +2090,65 @@ extension on TranslationsSv {
 			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
 			'externalPlayer.playInExternalPlayer' => 'Spela i extern spelare',
+			'metadataEdit.editMetadata' => 'Redigera...',
+			'metadataEdit.screenTitle' => 'Redigera metadata',
+			'metadataEdit.basicInfo' => 'Grundläggande info',
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Avancerade inställningar',
+			'metadataEdit.title' => 'Titel',
+			'metadataEdit.sortTitle' => 'Sorteringstitel',
+			'metadataEdit.originalTitle' => 'Originaltitel',
+			'metadataEdit.releaseDate' => 'Utgivningsdatum',
+			'metadataEdit.contentRating' => 'Åldersgräns',
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
+			'metadataEdit.summary' => 'Sammanfattning',
+			'metadataEdit.poster' => 'Poster',
+			'metadataEdit.background' => 'Bakgrund',
+			'metadataEdit.selectPoster' => 'Välj poster',
+			'metadataEdit.selectBackground' => 'Välj bakgrund',
+			'metadataEdit.fromUrl' => 'Från URL',
+			'metadataEdit.uploadFile' => 'Ladda upp fil',
+			'metadataEdit.enterImageUrl' => 'Ange bild-URL',
+			'metadataEdit.imageUrl' => 'Bild-URL',
+			'metadataEdit.metadataUpdated' => 'Metadata uppdaterad',
+			'metadataEdit.metadataUpdateFailed' => 'Kunde inte uppdatera metadata',
+			'metadataEdit.artworkUpdated' => 'Artwork uppdaterad',
+			'metadataEdit.artworkUpdateFailed' => 'Kunde inte uppdatera artwork',
+			'metadataEdit.noArtworkAvailable' => 'Ingen artwork tillgänglig',
+			'metadataEdit.notSet' => 'Inte angiven',
+			'metadataEdit.libraryDefault' => 'Biblioteksstandard',
+			'metadataEdit.accountDefault' => 'Kontostandard',
+			'metadataEdit.seriesDefault' => 'Seriestandard',
+			'metadataEdit.episodeSorting' => 'Avsnittsortering',
+			'metadataEdit.oldestFirst' => 'Äldst först',
+			'metadataEdit.newestFirst' => 'Nyast först',
+			'metadataEdit.keep' => 'Behåll',
+			'metadataEdit.allEpisodes' => 'Alla avsnitt',
+			'metadataEdit.latestEpisodes' => ({required Object count}) => '${count} senaste avsnitten',
+			'metadataEdit.latestEpisode' => 'Senaste avsnittet',
+			'metadataEdit.episodesAddedPastDays' => ({required Object count}) => 'Avsnitt tillagda de senaste ${count} dagarna',
+			'metadataEdit.deleteAfterPlaying' => 'Ta bort avsnitt efter uppspelning',
+			'metadataEdit.never' => 'Aldrig',
+			'metadataEdit.afterADay' => 'Efter en dag',
+			'metadataEdit.afterAWeek' => 'Efter en vecka',
+			'metadataEdit.afterAMonth' => 'Efter en månad',
+			'metadataEdit.onNextRefresh' => 'Vid nästa uppdatering',
+			'metadataEdit.seasons' => 'Säsonger',
+			'metadataEdit.show' => 'Visa',
+			'metadataEdit.hide' => 'Dölj',
+			'metadataEdit.episodeOrdering' => 'Avsnittsordning',
+			'metadataEdit.tmdbAiring' => 'The Movie Database (Sändning)',
+			'metadataEdit.tvdbAiring' => 'TheTVDB (Sändning)',
+			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
+			'metadataEdit.metadataLanguage' => 'Metadataspråk',
+			'metadataEdit.useOriginalTitle' => 'Använd originaltitel',
+			'metadataEdit.preferredAudioLanguage' => 'Föredraget ljudspråk',
+			'metadataEdit.preferredSubtitleLanguage' => 'Föredraget undertextspråk',
+			'metadataEdit.subtitleMode' => 'Automatiskt val av undertexter',
+			'metadataEdit.manuallySelected' => 'Manuellt vald',
+			'metadataEdit.shownWithForeignAudio' => 'Visas vid främmande ljud',
+			'metadataEdit.alwaysEnabled' => 'Alltid aktiverad',
 			_ => null,
 		};
 	}

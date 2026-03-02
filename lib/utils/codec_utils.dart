@@ -17,9 +17,8 @@ class CodecUtils {
       case 'srt':
         return 'srt';
       case 'ass':
-        return 'ass';
       case 'ssa':
-        return 'ssa';
+        return 'ass';
       case 'webvtt':
       case 'vtt':
         return 'vtt';

@@ -83,7 +83,7 @@ class MultiServerManager {
     final cachedEndpoint = storage.getServerEndpoint(serverId);
 
     // Find best working connection, passing cached endpoint for fast-path
-    final streamIterator = StreamIterator(server.findBestWorkingConnection(preferredUri: cachedEndpoint));
+    final streamIterator = StreamIterator(server.findBestWorkingConnection(preferredUri: cachedEndpoint, clientIdentifier: clientIdentifier));
 
     if (!await streamIterator.moveNext()) {
       throw Exception('No working connection found');
@@ -288,7 +288,9 @@ class MultiServerManager {
     }
   }
 
-  /// Test connection health for all servers
+  /// Test connection health for all servers.
+  /// Uses [PlexClient.isHealthy] which checks for HTTP 200, so servers with
+  /// invalid tokens (401) are correctly reported as offline.
   Future<void> checkServerHealth() async {
     appLogger.d('Checking health for ${_clients.length} servers');
 
@@ -296,13 +298,10 @@ class MultiServerManager {
       final serverId = entry.key;
       final client = entry.value;
 
-      try {
-        // Simple ping by fetching server identity
-        await client.getServerIdentity();
-        updateServerStatus(serverId, true);
-      } catch (e) {
-        appLogger.w('Server $serverId health check failed: $e');
-        updateServerStatus(serverId, false);
+      final healthy = await client.isHealthy();
+      updateServerStatus(serverId, healthy);
+      if (!healthy) {
+        appLogger.w('Server $serverId health check failed');
       }
     });
 
@@ -389,7 +388,7 @@ class MultiServerManager {
     try {
       appLogger.d('Starting connection optimization for ${server.name}', error: {'reason': reason});
 
-      await for (final connection in server.findBestWorkingConnection(preferredUri: cachedEndpoint)) {
+      await for (final connection in server.findBestWorkingConnection(preferredUri: cachedEndpoint, clientIdentifier: _clientIdentifier)) {
         final newUrl = connection.uri;
 
         // Check if this is actually a better connection than current

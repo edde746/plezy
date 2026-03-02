@@ -176,50 +176,20 @@ DurationLocale _getDurationLocale() {
   }
 }
 
-/// Formats the clock time at which media will finish playing, given the remaining duration.
-/// Returns a localized time string like "6:12 PM" or "18:12" depending on locale.
-String formatFinishTime(Duration remaining, {double rate = 1.0}) {
-  final adjustedRemaining = remaining * (1.0 / rate);
-  final finishTime = DateTime.now().add(adjustedRemaining);
-  final formatter = DateFormat.jm(LocaleSettings.currentLocale.languageCode);
-  return formatter.format(finishTime);
+/// Formats a [DateTime] as a clock time string, respecting the system 24-hour preference.
+/// Uses `DateFormat.Hm` for 24-hour format and `DateFormat.jm` for 12-hour format.
+String formatClockTime(DateTime time, {required bool is24Hour}) {
+  final locale = LocaleSettings.currentLocale.languageCode;
+  final formatter = is24Hour ? DateFormat.Hm(locale) : DateFormat.jm(locale);
+  return formatter.format(time);
 }
 
-/// Formats a DateTime as a relative time string (e.g., "just now", "5m", "3h", "2d", or a full date).
-/// Uses the `duration` package for localized unit names.
-///
-/// Used for: recent connections timestamps.
-String formatRelativeTime(DateTime date) {
-  final now = DateTime.now();
-  final difference = now.difference(date);
-
-  if (difference.inMinutes < 1) {
-    return prettyDuration(
-      Duration.zero,
-      abbreviated: true,
-      locale: _getDurationLocale(),
-      tersity: DurationTersity.minute,
-      upperTersity: DurationTersity.minute,
-    );
-  } else if (difference.inDays < 7) {
-    return prettyDuration(
-      difference,
-      abbreviated: true,
-      locale: _getDurationLocale(),
-      delimiter: ' ',
-      spacer: '',
-      tersity: DurationTersity.minute,
-      upperTersity: () {
-        if (difference.inDays >= 1) return DurationTersity.day;
-        if (difference.inHours >= 1) return DurationTersity.hour;
-        return DurationTersity.minute;
-      }(),
-      maxUnits: 1,
-    );
-  } else {
-    final formatter = DateFormat.yMd(LocaleSettings.currentLocale.languageCode);
-    return formatter.format(date);
-  }
+/// Formats the clock time at which media will finish playing, given the remaining duration.
+/// Returns a localized time string like "6:12 PM" or "18:12" depending on system setting.
+String formatFinishTime(Duration remaining, {double rate = 1.0, required bool is24Hour}) {
+  final adjustedRemaining = remaining * (1.0 / rate);
+  final finishTime = DateTime.now().add(adjustedRemaining);
+  return formatClockTime(finishTime, is24Hour: is24Hour);
 }
 
 /// Takes a list of strings and returns one long string with each item in the list concatenated by a bullet

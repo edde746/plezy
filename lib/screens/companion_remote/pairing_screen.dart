@@ -7,8 +7,6 @@ import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
-import '../../utils/formatters.dart';
-import '../../models/companion_remote/recent_remote_session.dart';
 import '../../utils/app_logger.dart';
 
 class PairingScreen extends StatefulWidget {
@@ -24,8 +22,6 @@ class _PairingScreenState extends State<PairingScreen> {
   final _pinController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isConnecting = false;
-  String? _connectingSessionId;
-  bool _isDiscovering = false;
   String? _errorMessage;
   int _selectedTab = 0;
 
@@ -35,15 +31,9 @@ class _PairingScreenState extends State<PairingScreen> {
 
   bool get _isMobile => Platform.isAndroid || Platform.isIOS;
 
-  // Tab indices shift when scan tab is present
-  int get _scanTabIndex => _isMobile ? 1 : -1;
-  int get _manualTabIndex => _isMobile ? 2 : 1;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRecentSessions();
-  }
+  // Tab indices: mobile gets Scan (0) + Manual (1), desktop gets Manual (0)
+  int get _scanTabIndex => _isMobile ? 0 : -1;
+  int get _manualTabIndex => _isMobile ? 1 : 0;
 
   @override
   void dispose() {
@@ -52,51 +42,6 @@ class _PairingScreenState extends State<PairingScreen> {
     _pinController.dispose();
     _scannerController?.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadRecentSessions() async {
-    setState(() {
-      _isDiscovering = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await context.read<CompanionRemoteProvider>().loadRecentSessions();
-      if (!mounted) return;
-      setState(() {
-        _isDiscovering = false;
-      });
-    } catch (e) {
-      appLogger.e('Failed to load recent sessions', error: e);
-      if (!mounted) return;
-      setState(() {
-        _isDiscovering = false;
-        _errorMessage = t.companionRemote.pairing.failedToLoadRecent(error: e.toString());
-      });
-    }
-  }
-
-  Future<void> _connectToRecentSession(RecentRemoteSession session) async {
-    setState(() {
-      _isConnecting = true;
-      _connectingSessionId = session.sessionId;
-      _errorMessage = null;
-    });
-
-    try {
-      await context.read<CompanionRemoteProvider>().connectToRecentSession(session);
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      appLogger.e('Failed to connect to recent session', error: e);
-      setState(() {
-        _isConnecting = false;
-        _connectingSessionId = null;
-        _errorMessage = _parseErrorMessage(e.toString());
-      });
-    }
   }
 
   Future<void> _connect() async {
@@ -143,22 +88,26 @@ class _PairingScreenState extends State<PairingScreen> {
     if (data == _lastScannedCode) return;
     _lastScannedCode = data;
 
-    // New format: ip|port|sessionId|pin (4 parts separated by pipe)
-    final parts = data.split('|');
+    // Strip URL wrapper if present (e.g. "https://plezy.app/scan#ip1,ip2|port|sid|pin")
+    final payload = data.contains('#') ? data.split('#').last : data;
+    final parts = payload.split('|');
     if (parts.length == 4) {
-      final ip = parts.first;
+      final ipsField = parts.first;
       final port = parts[1];
       final sessionId = parts[2];
       final pin = parts[3];
-      final hostAddress = '$ip:$port';
+
+      // Support comma-separated IPs (multi-NIC) or single IP (legacy)
+      final ips = ipsField.split(',');
+      final hostAddresses = ips.map((ip) => '$ip:$port').toList();
 
       _scannerController?.stop();
       setState(() {
         _errorMessage = null;
         _isConnecting = true;
       });
-      // Connect directly instead of going through _connect() which requires Form validation
-      _connectWithCredentials(sessionId, pin, hostAddress);
+
+      _connectWithCredentialsMulti(sessionId, pin, hostAddresses);
     } else {
       setState(() {
         _errorMessage = t.companionRemote.pairing.invalidQrCode;
@@ -166,10 +115,14 @@ class _PairingScreenState extends State<PairingScreen> {
     }
   }
 
-  Future<void> _connectWithCredentials(String sessionId, String pin, String hostAddress) async {
+  Future<void> _connectWithCredentialsMulti(String sessionId, String pin, List<String> hostAddresses) async {
     try {
       final provider = context.read<CompanionRemoteProvider>();
-      await provider.joinSession(sessionId.trim().toUpperCase(), pin.trim(), hostAddress.trim());
+      await provider.joinSessionMulti(
+        sessionId.trim().toUpperCase(),
+        pin.trim(),
+        hostAddresses.map((a) => a.trim()).toList(),
+      );
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -200,39 +153,30 @@ class _PairingScreenState extends State<PairingScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(t.companionRemote.connectToDevice),
-        actions: [
-          if (_selectedTab == 0)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _isDiscovering ? null : _loadRecentSessions,
-              tooltip: t.common.refresh,
-            ),
-        ],
       ),
       body: Column(
         children: [
-          SegmentedButton<int>(
-            segments: [
-              ButtonSegment(value: 0, label: Text(t.companionRemote.pairing.recent), icon: const Icon(Icons.history)),
-              if (_isMobile)
+          if (_isMobile)
+            SegmentedButton<int>(
+              segments: [
                 ButtonSegment(
                   value: _scanTabIndex,
                   label: Text(t.companionRemote.pairing.scan),
                   icon: const Icon(Icons.qr_code_scanner),
                 ),
-              ButtonSegment(
-                value: _manualTabIndex,
-                label: Text(t.companionRemote.pairing.manual),
-                icon: const Icon(Icons.keyboard),
-              ),
-            ],
-            selected: {_selectedTab},
-            onSelectionChanged: (Set<int> selection) {
-              setState(() {
-                _selectedTab = selection.first;
-              });
-            },
-          ),
+                ButtonSegment(
+                  value: _manualTabIndex,
+                  label: Text(t.companionRemote.pairing.manual),
+                  icon: const Icon(Icons.keyboard),
+                ),
+              ],
+              selected: {_selectedTab},
+              onSelectionChanged: (Set<int> selection) {
+                setState(() {
+                  _selectedTab = selection.first;
+                });
+              },
+            ),
           Expanded(child: _buildTabContent()),
         ],
       ),
@@ -240,8 +184,7 @@ class _PairingScreenState extends State<PairingScreen> {
   }
 
   Widget _buildTabContent() {
-    if (_selectedTab == 0) return _buildDiscoveryTab();
-    if (_selectedTab == _scanTabIndex) return _buildScanTab();
+    if (_selectedTab == _scanTabIndex && _isMobile) return _buildScanTab();
     return _buildManualEntryTab();
   }
 
@@ -326,129 +269,6 @@ class _PairingScreenState extends State<PairingScreen> {
         ),
       ],
     );
-  }
-
-  Widget _buildDiscoveryTab() {
-    return Consumer<CompanionRemoteProvider>(
-      builder: (context, provider, child) {
-        final sessions = provider.recentSessions;
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Icon(Icons.history, size: 64, color: Colors.blue),
-              const SizedBox(height: 24),
-              Text(
-                t.companionRemote.pairing.recentConnections,
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                t.companionRemote.pairing.quickReconnect,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              if (_isDiscovering) ...[
-                const Center(child: CircularProgressIndicator()),
-                const SizedBox(height: 16),
-                Text(t.common.loading, style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
-              ] else if (sessions.isEmpty) ...[
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      children: [
-                        Icon(Icons.devices_other, size: 48, color: Theme.of(context).colorScheme.outline),
-                        const SizedBox(height: 16),
-                        Text(
-                          t.companionRemote.pairing.noRecentConnections,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          t.companionRemote.pairing.connectUsingManual,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ] else ...[
-                ...sessions.map((session) {
-                  final isThisConnecting = _isConnecting && _connectingSessionId == session.sessionId;
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: const Icon(Icons.computer, size: 40),
-                      title: Text(session.deviceName),
-                      subtitle: Text(
-                        '${session.platform}\n'
-                        'Session: ${session.sessionId}\n'
-                        'Last used: ${_formatDate(session.lastConnected)}',
-                      ),
-                      isThreeLine: true,
-                      trailing: isThisConnecting
-                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.arrow_forward),
-                      onTap: _isConnecting ? null : () => _connectToRecentSession(session),
-                      onLongPress: () => _showRemoveSessionDialog(session),
-                    ),
-                  );
-                }),
-              ],
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Card(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onErrorContainer),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return formatRelativeTime(date);
-  }
-
-  Future<void> _showRemoveSessionDialog(RecentRemoteSession session) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.companionRemote.pairing.removeRecentConnection),
-        content: Text(t.companionRemote.pairing.removeConfirm(name: session.deviceName)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.remove)),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      await context.read<CompanionRemoteProvider>().removeRecentSession(session.sessionId);
-    }
   }
 
   Widget _buildManualEntryTab() {

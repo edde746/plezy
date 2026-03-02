@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/external_player_models.dart';
 import '../../services/settings_service.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 
 class ExternalPlayerScreen extends StatefulWidget {
   const ExternalPlayerScreen({super.key});
@@ -45,65 +46,66 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return FocusedScrollScaffold(
+        title: Text(t.externalPlayer.title),
+        slivers: [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
+      );
     }
 
     final knownPlayers = KnownPlayers.getForCurrentPlatform();
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(title: Text(t.externalPlayer.title), pinned: true),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
+    return FocusedScrollScaffold(
+      title: Text(t.externalPlayer.title),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              Card(
+                child: SwitchListTile(
+                  secondary: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
+                  title: Text(t.externalPlayer.useExternalPlayer),
+                  subtitle: Text(t.externalPlayer.useExternalPlayerDescription),
+                  value: _useExternalPlayer,
+                  onChanged: (value) async {
+                    setState(() => _useExternalPlayer = value);
+                    await _settingsService.setUseExternalPlayer(value);
+                  },
+                ),
+              ),
+              if (_useExternalPlayer) ...[
+                const SizedBox(height: 16),
                 Card(
-                  child: SwitchListTile(
-                    secondary: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
-                    title: Text(t.externalPlayer.useExternalPlayer),
-                    subtitle: Text(t.externalPlayer.useExternalPlayerDescription),
-                    value: _useExternalPlayer,
-                    onChanged: (value) async {
-                      setState(() => _useExternalPlayer = value);
-                      await _settingsService.setUseExternalPlayer(value);
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          t.externalPlayer.selectPlayer,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      // Known players
+                      ...knownPlayers.map((player) => _buildPlayerTile(player)),
+                      // Custom players
+                      if (_customPlayers.isNotEmpty) const Divider(),
+                      ..._customPlayers.map((player) => _buildPlayerTile(player, isCustom: true)),
+                      // Add custom player button
+                      const Divider(),
+                      ListTile(
+                        leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                        title: Text(t.externalPlayer.addCustomPlayer),
+                        onTap: _showAddCustomPlayerDialog,
+                      ),
+                    ],
                   ),
                 ),
-                if (_useExternalPlayer) ...[
-                  const SizedBox(height: 16),
-                  Card(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            t.externalPlayer.selectPlayer,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        // Known players
-                        ...knownPlayers.map((player) => _buildPlayerTile(player)),
-                        // Custom players
-                        if (_customPlayers.isNotEmpty) const Divider(),
-                        ..._customPlayers.map((player) => _buildPlayerTile(player, isCustom: true)),
-                        // Add custom player button
-                        const Divider(),
-                        ListTile(
-                          leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                          title: Text(t.externalPlayer.addCustomPlayer),
-                          onTap: _showAddCustomPlayerDialog,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ]),
-            ),
+              ],
+            ]),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -168,6 +170,8 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
   Future<void> _showAddCustomPlayerDialog() async {
     final nameController = TextEditingController();
     final valueController = TextEditingController();
+    final valueFocusNode = FocusNode();
+    final saveFocusNode = FocusNode();
     var selectedType = CustomPlayerType.command;
 
     final result = await showDialog<bool>(
@@ -200,6 +204,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
                     decoration: InputDecoration(labelText: t.externalPlayer.playerName, hintText: 'My Player'),
                     autofocus: true,
                     textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => primaryFocus?.nextFocus(),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -223,27 +228,43 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
                   const SizedBox(height: 16),
                   TextField(
                     controller: valueController,
+                    focusNode: valueFocusNode,
                     decoration: InputDecoration(labelText: fieldLabel, hintText: fieldHint),
                     textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => saveFocusNode.requestFocus(),
                   ),
                 ],
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-              FilledButton(
+              FocusableButton(
+                onPressed: () => Navigator.pop(context),
+                child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+              ),
+              FocusableButton(
+                focusNode: saveFocusNode,
                 onPressed: () {
                   if (nameController.text.isNotEmpty && valueController.text.isNotEmpty) {
                     Navigator.pop(context, true);
                   }
                 },
-                child: Text(t.common.save),
+                child: FilledButton(
+                  onPressed: () {
+                    if (nameController.text.isNotEmpty && valueController.text.isNotEmpty) {
+                      Navigator.pop(context, true);
+                    }
+                  },
+                  child: Text(t.common.save),
+                ),
               ),
             ],
           );
         },
       ),
     );
+
+    valueFocusNode.dispose();
+    saveFocusNode.dispose();
 
     if (result != true) return;
 

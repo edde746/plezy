@@ -6,6 +6,7 @@ import '../../../mpv/mpv.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/overlay_sheet.dart';
 import '../../../i18n/strings.g.dart';
 
 /// Widget displaying list of sleep timer durations for selection
@@ -35,17 +36,14 @@ class SleepTimerDurationList extends StatelessWidget {
         );
 
         return ListTile(
-          leading: const AppIcon(Symbols.timer_rounded, fill: 1, color: Colors.white70),
-          title: Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.normal),
-          ),
+          leading: AppIcon(Symbols.timer_rounded, fill: 1, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          title: Text(label),
           onTap: () {
             sleepTimer.startTimer(Duration(minutes: minutes), () {
               // Pause playback when timer completes
               player.pause();
             });
-            Navigator.pop(context);
+            OverlaySheetController.closeAdaptive(context);
 
             // Show confirmation snackbar
             showSuccessSnackBar(context, t.messages.sleepTimerSet(label: label));

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../focus/focusable_action_bar.dart';
 import '../models/plex_metadata.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../i18n/strings.g.dart';
@@ -39,9 +40,6 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   bool get hasItems => items.isNotEmpty;
 
   @override
-  int get appBarButtonCount => items.isNotEmpty ? 3 : 1; // play, shuffle, delete (or just delete if empty)
-
-  @override
   void dispose() {
     disposeFocusResources();
     super.dispose();
@@ -69,23 +67,14 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   }
 
   @override
-  List<AppBarButtonConfig> getAppBarButtons() {
-    final buttons = <AppBarButtonConfig>[];
-    if (items.isNotEmpty) {
-      buttons.add(AppBarButtonConfig(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems));
-      buttons.add(
-        AppBarButtonConfig(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
-      );
-    }
-    buttons.add(
-      AppBarButtonConfig(
-        icon: Symbols.delete_rounded,
-        tooltip: t.common.delete,
-        onPressed: _deleteCollection,
-        color: Colors.red,
-      ),
-    );
-    return buttons;
+  List<FocusableAction> getAppBarActions() {
+    return [
+      if (items.isNotEmpty) ...[
+        FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
+        FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
+      ],
+      FocusableAction(icon: Symbols.delete_rounded, tooltip: t.common.delete, onPressed: _deleteCollection, iconColor: Colors.red),
+    ];
   }
 
   Future<void> _deleteCollection() async {

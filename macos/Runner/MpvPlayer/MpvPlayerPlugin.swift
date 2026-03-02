@@ -11,6 +11,12 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
     private weak var registrar: FlutterPluginRegistrar?
     private var nameToId: [String: Int] = [:]
 
+    // PiP
+    private var pipController: MpvPipController?
+    private var pipChannel: FlutterMethodChannel?
+    private var autoPipEnabled = false
+    private var enteredPipViaAuto = false
+
     // MARK: - FlutterPlugin Registration
 
     static func register(with registrar: FlutterPluginRegistrar) {
@@ -26,11 +32,18 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             binaryMessenger: registrar.messenger
         )
 
+        let pipChannel = FlutterMethodChannel(
+            name: "app.plezy/pip",
+            binaryMessenger: registrar.messenger
+        )
+
         let instance = MpvPlayerPlugin()
         instance.registrar = registrar
+        instance.pipChannel = pipChannel
 
         registrar.addMethodCallDelegate(instance, channel: methodChannel)
         eventChannel.setStreamHandler(instance)
+        pipChannel.setMethodCallHandler(instance.handlePipCall)
 
         print("[MpvPlayerPlugin] Registered with Flutter")
     }
@@ -88,6 +101,99 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         }
     }
 
+    // MARK: - PiP
+
+    private func ensurePipController() -> MpvPipController {
+        if let existing = pipController { return existing }
+        let controller = MpvPipController()
+        controller.delegate = self
+        pipController = controller
+        return controller
+    }
+
+    private func handlePipCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        switch call.method {
+        case "isSupported":
+            result(MpvPipController.isSupported)
+        case "enter":
+            enterPip(manual: true, result: result)
+        case "setAutoPipReady":
+            if let args = call.arguments as? [String: Any], let ready = args["ready"] as? Bool {
+                autoPipEnabled = ready
+                let pip = ensurePipController()
+                pip.setAutoStart(ready)
+                if ready {
+                    // Observe app resigning active to auto-enter PiP
+                    NotificationCenter.default.removeObserver(self, name: NSApplication.didResignActiveNotification, object: nil)
+                    NotificationCenter.default.addObserver(self, selector: #selector(appDidResignActive), name: NSApplication.didResignActiveNotification, object: nil)
+                    // Observe app becoming active to auto-exit PiP
+                    NotificationCenter.default.removeObserver(self, name: NSApplication.didBecomeActiveNotification, object: nil)
+                    NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: NSApplication.didBecomeActiveNotification, object: nil)
+                } else {
+                    NotificationCenter.default.removeObserver(self, name: NSApplication.didResignActiveNotification, object: nil)
+                    NotificationCenter.default.removeObserver(self, name: NSApplication.didBecomeActiveNotification, object: nil)
+                }
+            }
+            result(nil)
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+
+    /// Enter PiP by moving the Metal rendering layer to a PiP window.
+    /// No VO switching — mpv keeps rendering to the same Metal layer.
+    private func enterPip(manual: Bool, result: FlutterResult? = nil) {
+        guard let playerCore = playerCore else {
+            result?(["success": false, "errorCode": "failed", "errorMessage": "Player not initialized"])
+            return
+        }
+        guard let metalLayer = playerCore.videoLayer else {
+            result?(["success": false, "errorCode": "failed", "errorMessage": "No video layer"])
+            return
+        }
+        guard let window = findFlutterWindow()?.0 else {
+            result?(["success": false, "errorCode": "failed", "errorMessage": "No window"])
+            return
+        }
+
+        let pip = ensurePipController()
+        guard !pip.isActive else {
+            result?(["success": false, "errorCode": "failed", "errorMessage": "PiP already active"])
+            return
+        }
+
+        // Get video dimensions for aspect ratio
+        var aspectRatio = NSSize(width: 16, height: 9) // default
+        if let w = playerCore.getProperty("width"), let h = playerCore.getProperty("height"),
+           let width = Double(w), let height = Double(h), width > 0 && height > 0 {
+            aspectRatio = NSSize(width: width, height: height)
+        }
+
+        enteredPipViaAuto = !manual
+        playerCore.isPipActive = true
+        pip.startPip(metalLayer: metalLayer, window: window, aspectRatio: aspectRatio)
+        pipChannel?.invokeMethod("onPipChanged", arguments: true)
+        result?(["success": true])
+    }
+
+    /// App resigned active — auto-enter PiP if enabled and playing
+    @objc private func appDidResignActive() {
+        guard autoPipEnabled,
+              let pc = playerCore,
+              !pc.isPipActive,
+              !pc.isPaused,
+              pipController?.autoPipEnabled == true else { return }
+        print("[MpvPlayerPlugin] Auto-PiP: app resigned active, entering PiP")
+        enterPip(manual: false)
+    }
+
+    /// App became active — auto-exit PiP if it was entered automatically
+    @objc private func appDidBecomeActive() {
+        guard enteredPipViaAuto, let pip = pipController, pip.isActive else { return }
+        print("[MpvPlayerPlugin] Auto-PiP: app became active, exiting PiP")
+        pip.stopPip()
+    }
+
     // MARK: - Method Handlers
 
     private func handleInitialize(result: @escaping FlutterResult) {
@@ -133,8 +239,17 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
 
     private func handleDispose(result: @escaping FlutterResult) {
         DispatchQueue.main.async { [weak self] in
-            self?.playerCore?.dispose()
-            self?.playerCore = nil
+            guard let self = self else { result(nil); return }
+            if let pip = self.pipController, pip.isActive {
+                pip.stopPip()
+                pip.detachLayer()
+            }
+            self.pipController = nil
+            self.autoPipEnabled = false
+            NotificationCenter.default.removeObserver(self, name: NSApplication.didResignActiveNotification, object: nil)
+            NotificationCenter.default.removeObserver(self, name: NSApplication.didBecomeActiveNotification, object: nil)
+            self.playerCore?.dispose()
+            self.playerCore = nil
             print("[MpvPlayerPlugin] Disposed")
             result(nil)
         }
@@ -149,6 +264,12 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         }
 
         playerCore?.setProperty(name, value: value)
+
+        if name == "pause" {
+            let isPlaying = value == "no"
+            pipController?.setPlaying(isPlaying)
+        }
+
         result(nil)
     }
 
@@ -279,4 +400,43 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
 
         return nil
     }
+}
+
+// MARK: - MpvPipDelegate
+
+extension MpvPlayerPlugin: MpvPipDelegate {
+
+    func pipWillStart() {
+        print("[MpvPlayerPlugin] PiP will start")
+    }
+
+    func pipDidStart() {
+        print("[MpvPlayerPlugin] PiP did start")
+    }
+
+    func pipDidStop(restored: Bool) {
+        print("[MpvPlayerPlugin] PiP did stop (restored: \(restored))")
+        playerCore?.isPipActive = false
+        enteredPipViaAuto = false
+
+        // Detach the Metal layer from the PiP wrapper view
+        pipController?.detachLayer()
+
+        // Re-attach the Metal layer to the main window
+        playerCore?.reattachMetalLayer()
+
+        // Force a redraw if paused (prevents black frame after PiP exit)
+        if playerCore?.isPaused == true {
+            playerCore?.forceDraw()
+        }
+
+        pipChannel?.invokeMethod("onPipChanged", arguments: false)
+    }
+
+    func pipSetPlaying(_ playing: Bool) {
+        playerCore?.setProperty("pause", value: playing ? "no" : "yes")
+        pipController?.setPlaying(playing)
+    }
+
+    var isPipPlaying: Bool { !(playerCore?.isPaused ?? true) }
 }

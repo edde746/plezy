@@ -217,11 +217,19 @@ jobs:
 
           APP_PATH="build/macos/Build/Products/Release/Plezy.app"
 
-          # Sign all frameworks and dylibs first (inside-out signing)
-          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -o -name "*.dylib" | while read framework; do
-            echo "Signing: $framework"
-            codesign --force --sign "$IDENTITY" --timestamp --options runtime "$framework"
-          done
+          # Deep sign everything inside-out: executables, dylibs, XPC services, app bundles, frameworks
+          find "$APP_PATH/Contents/Frameworks" \( -name "*.xpc" -o -name "*.app" -o -name "*.framework" -o -name "*.dylib" \) -print0 \
+            | sort -zr \
+            | while IFS= read -r -d '' item; do
+              echo "Signing: $item"
+              codesign --force --sign "$IDENTITY" --timestamp --options runtime "$item"
+            done
+
+          # Sign any remaining bare executables (e.g. Sparkle's Autoupdate)
+          find "$APP_PATH/Contents/Frameworks" -type f -perm +111 ! -name "*.dylib" ! -path "*/Headers/*" ! -path "*/Modules/*" -print0 \
+            | while IFS= read -r -d '' exe; do
+              codesign --force --sign "$IDENTITY" --timestamp --options runtime "$exe" 2>/dev/null || true
+            done
 
           # Sign the app bundle itself
           echo "Signing app bundle: $APP_PATH"
@@ -269,16 +277,37 @@ jobs:
           ln -s /Applications dmg-staging/Applications
           hdiutil create -format ULMO -srcfolder dmg-staging -volname "Plezy" plezy-macos.dmg
 
+      - name: Sign DMG for Sparkle (EdDSA)
+        if: env.SPARKLE_PRIVATE_KEY != ''
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          printf -- "-----BEGIN ED25519 PRIVATE KEY-----\n%s\n-----END ED25519 PRIVATE KEY-----\n" "$SPARKLE_PRIVATE_KEY" > ed25519_key.pem
+          OUTPUT=$(dart run auto_updater:sign_update plezy-macos.dmg ed25519_key.pem)
+          rm ed25519_key.pem
+          # Extract edSignature value from output like: sparkle:edSignature="..." length="..."
+          SIGNATURE=$(echo "$OUTPUT" | grep -o 'edSignature="[^"]*"' | sed 's/edSignature="//;s/"//')
+          echo "MACOS_ED_SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
+          echo "MACOS_DMG_SIZE=$(stat -f%z plezy-macos.dmg)" >> $GITHUB_ENV
+
       - name: Attest macOS DMG
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: plezy-macos.dmg
 
+      - name: Write macOS signature metadata
+        run: |
+          echo "${{ env.MACOS_ED_SIGNATURE }}" > macos-ed-signature.txt
+          echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
+
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
           name: macos-dmg
-          path: plezy-macos.dmg
+          path: |
+            plezy-macos.dmg
+            macos-ed-signature.txt
+            macos-dmg-size.txt
 
   build-windows-x64:
     runs-on: windows-latest
@@ -361,6 +390,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
       - name: Download x64 build
         uses: actions/download-artifact@v4
         with:
@@ -373,8 +405,34 @@ jobs:
           name: windows-arm64-build
           path: build-arm64
 
+      - name: Read version from pubspec
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value -replace '\+.*'
+          echo "version=$v" >> $env:GITHUB_OUTPUT
+
       - name: Build installer and portables
-        run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64"
+        run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
+
+      - name: Sign installer for WinSparkle (EdDSA)
+        if: env.SPARKLE_PRIVATE_KEY != ''
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        shell: pwsh
+        run: |
+          mkdir _signer | Out-Null
+          @{name="signer"; environment=@{sdk=">=3.0.0 <4.0.0"}; dependencies=@{cryptography="^2.7.0"}} | ConvertTo-Json -Depth 3 | Out-File _signer/pubspec.yaml
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/edde746/auto_updater/main/packages/auto_updater/bin/sign_update.dart" -OutFile _signer/sign.dart
+          Push-Location _signer
+          dart pub get
+          Set-Content -Path ed25519_key.pem -Value $env:SPARKLE_PRIVATE_KEY -Encoding ascii -NoNewline
+          $output = dart run sign.dart ../plezy-windows-installer.exe ed25519_key.pem
+          Pop-Location
+          Remove-Item _signer -Recurse -Force
+          $sig = [regex]::Match($output, 'edSignature="([^"]*)"').Groups[1].Value
+          Set-Content -Path win-ed-signature.txt -Value $sig -Encoding ascii -NoNewline
+          Set-Content -Path win-installer-size.txt -Value (Get-Item plezy-windows-installer.exe).Length.ToString() -Encoding ascii -NoNewline
 
       - name: Attest Windows artifacts
         uses: actions/attest-build-provenance@v2
@@ -400,7 +458,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: plezy-windows-installer.exe
+          path: |
+            plezy-windows-installer.exe
+            win-ed-signature.txt
+            win-installer-size.txt
 
   build-linux-x64:
     runs-on: ubuntu-latest
@@ -429,13 +490,13 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          sudo apt-get install -y clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
 
       - name: Cache libmpv build
         id: libmpv-cache
@@ -537,13 +598,13 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          sudo apt-get install -y clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
 
       - name: Cache libmpv build
         id: libmpv-cache
@@ -634,6 +695,11 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: pubspec.yaml
+          sparse-checkout-cone-mode: false
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -641,6 +707,80 @@ jobs:
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
+
+      - name: Read version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate appcast.xml
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Read macOS signature metadata (may be empty if secrets not configured)
+          MACOS_ED_SIG=""
+          MACOS_DMG_SIZE="0"
+          if [ -f artifacts/macos-dmg/macos-ed-signature.txt ]; then
+            MACOS_ED_SIG=$(cat artifacts/macos-dmg/macos-ed-signature.txt)
+          fi
+          if [ -f artifacts/macos-dmg/macos-dmg-size.txt ]; then
+            MACOS_DMG_SIZE=$(cat artifacts/macos-dmg/macos-dmg-size.txt)
+          fi
+
+          # Read Windows signature metadata (may be empty if secrets not configured)
+          WIN_ED_SIG=""
+          WIN_INSTALLER_SIZE="0"
+          if [ -f artifacts/windows-installer/win-ed-signature.txt ]; then
+            WIN_ED_SIG=$(cat artifacts/windows-installer/win-ed-signature.txt)
+          fi
+          if [ -f artifacts/windows-installer/win-installer-size.txt ]; then
+            WIN_INSTALLER_SIZE=$(cat artifacts/windows-installer/win-installer-size.txt)
+          fi
+
+          cat > appcast.xml << XMLEOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+            <channel>
+              <title>Plezy Updates</title>
+              <item>
+                <title>Version ${VERSION}</title>
+                <sparkle:version>${VERSION}</sparkle:version>
+                <sparkle:releaseNotesLink>https://gh-html.edde746.dev/edde746/plezy/${VERSION}</sparkle:releaseNotesLink>
+          XMLEOF
+
+          # macOS enclosure
+          if [ -n "$MACOS_ED_SIG" ]; then
+            cat >> appcast.xml << XMLEOF
+                <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-macos.dmg"
+                           length="${MACOS_DMG_SIZE}" type="application/octet-stream"
+                           sparkle:edSignature="${MACOS_ED_SIG}"
+                           sparkle:os="macos" />
+          XMLEOF
+          fi
+
+          # Windows enclosure
+          if [ -n "$WIN_ED_SIG" ]; then
+            cat >> appcast.xml << XMLEOF
+                <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-windows-installer.exe"
+                           length="${WIN_INSTALLER_SIZE}" type="application/octet-stream"
+                           sparkle:edSignature="${WIN_ED_SIG}"
+                           sparkle:installerArguments="/SILENT /SP-"
+                           sparkle:os="windows" />
+          XMLEOF
+          fi
+
+          cat >> appcast.xml << 'XMLEOF'
+              </item>
+            </channel>
+          </rss>
+          XMLEOF
+
+          # Clean up leading whitespace from heredoc indentation
+          sed -i 's/^          //' appcast.xml
+
+          echo "Generated appcast.xml:"
+          cat appcast.xml
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -656,6 +796,7 @@ jobs:
             artifacts/windows-installer/plezy-windows-installer.exe
             artifacts/linux-x64/*
             artifacts/linux-arm64/*
+            appcast.xml
           draft: true
           prerelease: false
           generate_release_notes: true

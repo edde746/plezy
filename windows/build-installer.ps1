@@ -149,12 +149,31 @@ Name: "{group}\{cm:UninstallProgram,{#Name}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#Name}"; Filename: "{app}\{#ExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#Name}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#Name}}"; Flags: nowait postinstall; Check: not IsNoRun
 
 [Code]
+function IsNoRun: Boolean;
+begin
+  Result := ExpandConstant('{param:NORUN|0}') = '1';
+end;
+
 function IsX64: Boolean;
 begin
   Result := not IsArm64;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  MarkerPath: String;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    MarkerPath := ExpandConstant('{app}\.winget');
+    if ExpandConstant('{param:WINGET|0}') = '1' then
+      SaveStringToFile(MarkerPath, '', False)
+    else
+      DeleteFile(MarkerPath);
+  end;
 end;
 "@
 } else {
@@ -205,7 +224,27 @@ Name: "{group}\{cm:UninstallProgram,{#Name}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#Name}"; Filename: "{app}\{#ExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#Name}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#Name}}"; Flags: nowait postinstall; Check: not IsNoRun
+
+[Code]
+function IsNoRun: Boolean;
+begin
+  Result := ExpandConstant('{param:NORUN|0}') = '1';
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  MarkerPath: String;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    MarkerPath := ExpandConstant('{app}\.winget');
+    if ExpandConstant('{param:WINGET|0}') = '1' then
+      SaveStringToFile(MarkerPath, '', False)
+    else
+      DeleteFile(MarkerPath);
+  end;
+end;
 "@
 }
 

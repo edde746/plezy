@@ -8,10 +8,12 @@ import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../theme/mono_tokens.dart';
+import '../../utils/formatters.dart';
 import '../../utils/live_tv_player_navigation.dart';
 import '../../utils/plex_image_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/overlay_sheet.dart';
 import 'program_details_sheet.dart';
 
 /// Shows all upcoming airings of a show, matching the Plex "upcoming episodes" view.
@@ -126,39 +128,41 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusedScrollScaffold(
-      title: Text(widget.showTitle),
-      slivers: [
-        if (_isLoading)
-          const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-        else if (_programs.isEmpty)
-          SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
-        else
-          SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final program = _programs[index];
-              final channel = _findChannel(program.channelIdentifier);
-              void onTap() {
-                if (program.isCurrentlyAiring && channel != null) {
-                  _tuneChannel(channel);
-                } else {
-                  _showProgramDetails(program, channel);
+    return OverlaySheetHost(
+      child: FocusedScrollScaffold(
+        title: Text(widget.showTitle),
+        slivers: [
+          if (_isLoading)
+            const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+          else if (_programs.isEmpty)
+            SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final program = _programs[index];
+                final channel = _findChannel(program.channelIdentifier);
+                void onTap() {
+                  if (program.isCurrentlyAiring && channel != null) {
+                    _tuneChannel(channel);
+                  } else {
+                    _showProgramDetails(program, channel);
+                  }
                 }
-              }
 
-              return FocusableWrapper(
-                autofocus: index == 0,
-                autoScroll: true,
-                useComfortableZone: true,
-                useBackgroundFocus: true,
-                disableScale: true,
-                onSelect: onTap,
-                onBack: () => Navigator.pop(context),
-                child: _ScheduleListTile(program: program, channel: channel, onTap: onTap),
-              );
-            }, childCount: _programs.length),
-          ),
-      ],
+                return FocusableWrapper(
+                  autofocus: index == 0,
+                  autoScroll: true,
+                  useComfortableZone: true,
+                  useBackgroundFocus: true,
+                  disableScale: true,
+                  onSelect: onTap,
+                  onBack: () => Navigator.pop(context),
+                  child: _ScheduleListTile(program: program, channel: channel, onTap: onTap),
+                );
+              }, childCount: _programs.length),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -170,7 +174,7 @@ class _ScheduleListTile extends StatelessWidget {
 
   const _ScheduleListTile({required this.program, required this.channel, required this.onTap});
 
-  String _formatTimeInfo() {
+  String _formatTimeInfo({required bool is24Hour}) {
     final now = DateTime.now();
     final start = program.startTime;
     final end = program.endTime;
@@ -184,16 +188,16 @@ class _ScheduleListTile extends StatelessWidget {
     final minutesUntil = start.difference(now).inMinutes;
     if (minutesUntil <= 0) {
       // Just started
-      return _formatAbsoluteTime(start, now);
+      return _formatAbsoluteTime(start, now, is24Hour: is24Hour);
     } else if (minutesUntil < 90) {
       return 'Starting in ${minutesUntil}min';
     } else {
-      return _formatAbsoluteTime(start, now);
+      return _formatAbsoluteTime(start, now, is24Hour: is24Hour);
     }
   }
 
-  String _formatAbsoluteTime(DateTime start, DateTime now) {
-    final time = '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+  String _formatAbsoluteTime(DateTime start, DateTime now, {required bool is24Hour}) {
+    final time = formatClockTime(start, is24Hour: is24Hour);
     final today = DateTime(now.year, now.month, now.day);
     final startDay = DateTime(start.year, start.month, start.day);
     final diff = startDay.difference(today).inDays;
@@ -214,7 +218,7 @@ class _ScheduleListTile extends StatelessWidget {
         ? 'S${program.parentIndex} · E${program.index} — ${program.title}'
         : program.title;
 
-    final timeInfo = _formatTimeInfo();
+    final timeInfo = _formatTimeInfo(is24Hour: MediaQuery.alwaysUse24HourFormatOf(context));
     final subtitle = [
       timeInfo,
       if (program.summary != null && program.summary!.isNotEmpty) program.summary!,

@@ -1,7 +1,7 @@
 import 'dart:io' show Platform;
 
 import '../models.dart';
-import 'player_android.dart';
+import 'platform/player_android.dart';
 import 'player_native.dart';
 import 'player_state.dart';
 import 'player_streams.dart';

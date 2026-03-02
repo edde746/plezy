@@ -10,12 +10,14 @@ import '../../services/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
+import '../focus/focusable_button.dart';
 import '../utils/dialogs.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
+import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
@@ -193,6 +195,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     if (!mounted) return;
 
+    // Native updater (Sparkle/WinSparkle) handles everything — skip Flutter dialog
+    if (UpdateService.useNativeUpdater) {
+      await UpdateService.checkForUpdatesNative(inBackground: true);
+      return;
+    }
+
     try {
       final updateInfo = await UpdateService.checkForUpdatesOnStartup();
 
@@ -226,27 +234,36 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
             ],
           ),
           actions: [
-            TextButton(
+            FocusableButton(
               autofocus: true,
               onPressed: () => Navigator.pop(dialogContext),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: const StadiumBorder(),
+              child: TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(t.common.later),
               ),
-              child: Text(t.common.later),
             ),
-            TextButton(
+            FocusableButton(
               onPressed: () async {
                 await UpdateService.skipVersion(updateInfo['latestVersion']);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: const StadiumBorder(),
+              child: TextButton(
+                onPressed: () async {
+                  await UpdateService.skipVersion(updateInfo['latestVersion']);
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(t.update.skipVersion),
               ),
-              child: Text(t.update.skipVersion),
             ),
-            FilledButton(
+            FocusableButton(
               onPressed: () async {
                 final url = Uri.parse(updateInfo['releaseUrl']);
                 if (await canLaunchUrl(url)) {
@@ -254,7 +271,16 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                 }
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
-              child: Text(t.update.viewRelease),
+              child: FilledButton(
+                onPressed: () async {
+                  final url = Uri.parse(updateInfo['releaseUrl']);
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                },
+                child: Text(t.update.viewRelease),
+              ),
             ),
           ],
         );
@@ -505,7 +531,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && !_isOffline && !_isShowingProfileSelection) {
-      _showProfileSelectionOnResume();
+      // Only show profile selection on resume for mobile platforms.
+      // On desktop, "resumed" fires on every window focus gain (alt-tab, click),
+      // which is too frequent — the initial prompt on startup is sufficient.
+      if (Platform.isAndroid || Platform.isIOS) {
+        _showProfileSelectionOnResume();
+      }
     }
   }
 
@@ -667,6 +698,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     if (_currentIndex == 1 && !_isOffline) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_librariesKey.currentState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
+        }
+      });
+    }
+    // When content regains focus while on Live TV, focus the active guide/whats-on tab
+    final liveTvIndex = NavigationTab.indexFor(NavigationTabId.liveTv, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
+    if (_currentIndex == liveTvIndex && liveTvIndex >= 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_liveTvKey.currentState case final FocusableTab focusable) {
           focusable.focusActiveTabIfReady();
         }
       });
@@ -876,6 +916,13 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
           focusable.focusActiveTabIfReady();
         }
       }
+      // Ensure the Live TV screen applies focus when brought into view
+      final liveTvIdx = NavigationTab.indexFor(NavigationTabId.liveTv, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
+      if (index == liveTvIdx && liveTvIdx >= 0 && previousIndex != liveTvIdx) {
+        if (_liveTvKey.currentState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
+        }
+      }
       // Focus search input when selecting Search tab
       if (NavigationTab.isTabAtIndex(NavigationTabId.search, index, isOffline: _isOffline, hasLiveTv: _hasLiveTv)) {
         if (_searchKey.currentState case final SearchInputFocusable searchable) {
@@ -941,6 +988,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   Widget build(BuildContext context) {
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
 
+    return _buildContent(context, useSideNav);
+  }
+
+  Widget _buildContent(BuildContext context, bool useSideNav) {
     if (useSideNav) {
       return Consumer<SettingsProvider>(
         builder: (context, settingsProvider, child) {
@@ -949,62 +1000,64 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
               ? SideNavigationRailState.expandedWidth
               : SideNavigationRailState.collapsedWidth;
 
-          return PopScope(
-            canPop: false, // Prevent system back from popping on Android TV
-            // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
-            onPopInvokedWithResult: (didPop, result) {},
-            child: Focus(
-              onKeyEvent: (node, event) => _handleBackKey(event),
-              child: MainScreenFocusScope(
-                focusSidebar: _focusSidebar,
-                focusContent: _focusContent,
-                isSidebarFocused: _isSidebarFocused,
-                child: SideNavigationScope(
-                  child: Stack(
-                    children: [
-                      // Content with animated left padding based on sidebar state
-                      Positioned.fill(
-                        child: AnimatedPadding(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOutCubic,
-                          padding: EdgeInsets.only(left: contentLeftPadding),
+          return OverlaySheetHost(
+            child: PopScope(
+              canPop: false, // Prevent system back from popping on Android TV
+              // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
+              onPopInvokedWithResult: (didPop, result) {},
+              child: Focus(
+                onKeyEvent: (node, event) => _handleBackKey(event),
+                child: MainScreenFocusScope(
+                  focusSidebar: _focusSidebar,
+                  focusContent: _focusContent,
+                  isSidebarFocused: _isSidebarFocused,
+                  child: SideNavigationScope(
+                    child: Stack(
+                      children: [
+                        // Content with animated left padding based on sidebar state
+                        Positioned.fill(
+                          child: AnimatedPadding(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOutCubic,
+                            padding: EdgeInsets.only(left: contentLeftPadding),
+                            child: FocusScope(
+                              node: _contentFocusScope,
+                              // No autofocus - we control focus programmatically to prevent
+                              // autofocus from stealing focus back after setState() rebuilds
+                              child: IndexedStack(index: _currentIndex, children: _screens),
+                            ),
+                          ),
+                        ),
+                        // Sidebar overlays content when expanded (unless always expanded)
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: 0,
                           child: FocusScope(
-                            node: _contentFocusScope,
-                            // No autofocus - we control focus programmatically to prevent
-                            // autofocus from stealing focus back after setState() rebuilds
-                            child: IndexedStack(index: _currentIndex, children: _screens),
+                            node: _sidebarFocusScope,
+                            child: SideNavigationRail(
+                              key: _sideNavKey,
+                              selectedIndex: _currentIndex,
+                              selectedLibraryKey: _selectedLibraryGlobalKey,
+                              isOfflineMode: _isOffline,
+                              isSidebarFocused: _isSidebarFocused,
+                              alwaysExpanded: alwaysExpanded,
+                              isReconnecting: _isReconnecting,
+                              onDestinationSelected: (index) {
+                                _selectTab(index);
+                                _focusContent();
+                              },
+                              onLibrarySelected: (key) {
+                                _selectLibrary(key);
+                                _focusContent();
+                              },
+                              onNavigateToContent: _focusContent,
+                              onReconnect: _triggerReconnect,
+                            ),
                           ),
                         ),
-                      ),
-                      // Sidebar overlays content when expanded (unless always expanded)
-                      Positioned(
-                        top: 0,
-                        bottom: 0,
-                        left: 0,
-                        child: FocusScope(
-                          node: _sidebarFocusScope,
-                          child: SideNavigationRail(
-                            key: _sideNavKey,
-                            selectedIndex: _currentIndex,
-                            selectedLibraryKey: _selectedLibraryGlobalKey,
-                            isOfflineMode: _isOffline,
-                            isSidebarFocused: _isSidebarFocused,
-                            alwaysExpanded: alwaysExpanded,
-                            isReconnecting: _isReconnecting,
-                            onDestinationSelected: (index) {
-                              _selectTab(index);
-                              _focusContent();
-                            },
-                            onLibrarySelected: (key) {
-                              _selectLibrary(key);
-                              _focusContent();
-                            },
-                            onNavigateToContent: _focusContent,
-                            onReconnect: _triggerReconnect,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1014,53 +1067,55 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       );
     }
 
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Reconnect bar when offline
-          if (_isOffline)
-            Material(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: InkWell(
-                onTap: _isReconnecting ? null : _triggerReconnect,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_isReconnecting)
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+    return OverlaySheetHost(
+      child: Scaffold(
+        body: IndexedStack(index: _currentIndex, children: _screens),
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Reconnect bar when offline
+            if (_isOffline)
+              Material(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: InkWell(
+                  onTap: _isReconnecting ? null : _triggerReconnect,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_isReconnecting)
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          )
+                        else
+                          Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          t.common.reconnect,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                             color: Theme.of(context).colorScheme.primary,
                           ),
-                        )
-                      else
-                        Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Text(
-                        t.common.reconnect,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Theme.of(context).colorScheme.primary,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
+            NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: _selectTab,
+              destinations: _buildNavDestinations(_isOffline),
             ),
-          NavigationBar(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: _selectTab,
-            destinations: _buildNavDestinations(_isOffline),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

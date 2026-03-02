@@ -5,6 +5,7 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/plex_api_cache.dart';
 import '../utils/watch_state_notifier.dart';
 import 'download_provider.dart';
+import '../utils/global_key_utils.dart';
 
 /// Provider for offline watch status UI state.
 ///
@@ -98,7 +99,11 @@ class OfflineWatchProvider extends ChangeNotifier {
     final episodes = _downloadProvider.getDownloadedEpisodesForShow(showRatingKey);
     if (episodes.isEmpty) return episodes;
 
+    // Sort Season 0 (Specials) to the end so regular seasons play first
     episodes.sort((a, b) {
+      final aIsSpecial = (a.parentIndex ?? 0) == 0;
+      final bIsSpecial = (b.parentIndex ?? 0) == 0;
+      if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
       final seasonCompare = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
       if (seasonCompare != 0) return seasonCompare;
       return (a.index ?? 0).compareTo(b.index ?? 0);
@@ -174,7 +179,7 @@ class OfflineWatchProvider extends ChangeNotifier {
     required bool isNowWatched,
     required WatchStateChangeType changeType,
   }) {
-    final globalKey = '$serverId:$ratingKey';
+    final globalKey = buildGlobalKey(serverId, ratingKey);
     final metadata = _downloadProvider.getMetadata(globalKey);
     if (metadata != null) {
       WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: isNowWatched);

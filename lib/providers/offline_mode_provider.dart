@@ -28,7 +28,9 @@ class OfflineModeProvider extends ChangeNotifier {
 
   /// Updates network and server connection flags
   Future<void> _updateConnectionFlags() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
+    final connectivityResult = await Connectivity()
+        .checkConnectivity()
+        .timeout(const Duration(seconds: 3), onTimeout: () => [ConnectivityResult.other]);
     _hasNetworkConnection = !connectivityResult.contains(ConnectivityResult.none);
     _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
   }

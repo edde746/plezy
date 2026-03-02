@@ -3,9 +3,11 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  auto_updater_windows
   connectivity_plus
   os_media_controls
   screen_retriever_windows
+  sentry_flutter
   sqlite3_flutter_libs
   universal_gamepad
   url_launcher_windows

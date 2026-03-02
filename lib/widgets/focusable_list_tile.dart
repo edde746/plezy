@@ -48,6 +48,12 @@ class FocusableListTile extends StatefulWidget {
   /// An optional color to display behind the menu item when being hovered.
   final Color? hoverColor;
 
+  /// An optional color for the text of the list tile.
+  final Color? textColor;
+
+  /// An optional color for the icon of the list tile.
+  final Color? iconColor;
+
   const FocusableListTile({
     super.key,
     this.title,
@@ -64,6 +70,8 @@ class FocusableListTile extends StatefulWidget {
     this.contentPadding,
     this.suppressInitialSelect = false,
     this.hoverColor,
+    this.textColor,
+    this.iconColor,
   });
 
   @override
@@ -72,23 +80,36 @@ class FocusableListTile extends StatefulWidget {
 
 class _FocusableListTileState extends State<FocusableListTile> {
   bool _suppressionConsumed = false;
+  bool _isHoveredOrFocused = false;
 
   @override
   Widget build(BuildContext context) {
-    final tile = ListTile(
-      title: widget.title,
-      subtitle: widget.subtitle,
-      leading: widget.leading,
-      trailing: widget.trailing,
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      dense: widget.dense,
-      enabled: widget.enabled,
-      selected: widget.selected,
-      contentPadding: widget.contentPadding,
-      focusNode: widget.suppressInitialSelect ? null : widget.focusNode,
-      autofocus: widget.suppressInitialSelect ? false : widget.autofocus,
-      hoverColor: widget.hoverColor,
+    // When hovered/focused with a custom hoverColor, use onError-style foreground
+    // to keep text readable against the colored background.
+    final needsContrastSwap = _isHoveredOrFocused && widget.hoverColor != null && widget.textColor != null;
+    final textColor = needsContrastSwap ? Theme.of(context).colorScheme.onError : widget.textColor;
+    final iconColor = needsContrastSwap ? Theme.of(context).colorScheme.onError : widget.iconColor;
+
+    Widget tile = MouseRegion(
+      onEnter: widget.hoverColor != null ? (_) => setState(() => _isHoveredOrFocused = true) : null,
+      onExit: widget.hoverColor != null ? (_) => setState(() => _isHoveredOrFocused = false) : null,
+      child: ListTile(
+        title: widget.title,
+        subtitle: widget.subtitle,
+        leading: widget.leading,
+        trailing: widget.trailing,
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        dense: widget.dense,
+        enabled: widget.enabled,
+        selected: widget.selected,
+        contentPadding: widget.contentPadding,
+        focusNode: widget.suppressInitialSelect ? null : widget.focusNode,
+        autofocus: widget.suppressInitialSelect ? false : widget.autofocus,
+        hoverColor: widget.hoverColor,
+        textColor: textColor,
+        iconColor: iconColor,
+      ),
     );
 
     if (!widget.suppressInitialSelect) {
@@ -116,7 +137,7 @@ class _FocusableListTileState extends State<FocusableListTile> {
 /// A RadioListTile that accepts a FocusNode for keyboard/controller navigation.
 ///
 /// Uses Flutter's native RadioListTile focus support - no custom styling wrapper.
-/// Can be used standalone with [groupValue]/[onChanged] or inside a [RadioGroup].
+/// Requires a [RadioGroup] ancestor to manage selection state.
 class FocusableRadioListTile<T> extends StatelessWidget {
   /// The primary content of the list tile.
   final Widget? title;
@@ -129,14 +150,6 @@ class FocusableRadioListTile<T> extends StatelessWidget {
 
   /// The value represented by this radio button.
   final T value;
-
-  /// The currently selected value for the group.
-  /// When provided, the widget works without a [RadioGroup] ancestor.
-  final T? groupValue;
-
-  /// Called when this radio button is selected.
-  /// When provided, the widget works without a [RadioGroup] ancestor.
-  final ValueChanged<T?>? onChanged;
 
   /// Whether this radio button is part of a vertically dense list.
   final bool dense;
@@ -156,8 +169,6 @@ class FocusableRadioListTile<T> extends StatelessWidget {
     this.subtitle,
     this.secondary,
     required this.value,
-    this.groupValue,
-    this.onChanged,
     this.dense = false,
     this.focusNode,
     this.autofocus = false,
@@ -171,8 +182,6 @@ class FocusableRadioListTile<T> extends StatelessWidget {
       subtitle: subtitle,
       secondary: secondary,
       value: value,
-      groupValue: groupValue,
-      onChanged: onChanged,
       dense: dense,
       focusNode: focusNode,
       autofocus: autofocus,

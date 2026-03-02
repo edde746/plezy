@@ -13,7 +13,8 @@ private class MetalLayer: CAMetalLayer {
     override var drawableSize: CGSize {
         get { return super.drawableSize }
         set {
-            if Int(newValue.width) > 1 && Int(newValue.height) > 1 {
+            // Allow .zero (auto-derive from bounds) or valid sizes > 1x1
+            if newValue == .zero || (Int(newValue.width) > 1 && Int(newValue.height) > 1) {
                 super.drawableSize = newValue
             }
         }
@@ -43,10 +44,14 @@ class MpvPlayerCore: NSObject {
     private var mpv: OpaquePointer?
     private weak var window: NSWindow?
     private lazy var queue = DispatchQueue(label: "mpv", qos: .userInitiated)
+    private var playbackActivity: NSObjectProtocol?
 
     weak var delegate: MpvPlayerDelegate?
 
     private(set) var isInitialized = false
+
+    // PiP state
+    var isPipActive = false
 
     // HDR settings
     private var hdrEnabled = true  // User preference for HDR
@@ -79,6 +84,7 @@ class MpvPlayerCore: NSObject {
             layer.contentsScale = screen.backingScaleFactor
         }
         layer.framebufferOnly = true
+        layer.isOpaque = true
         layer.backgroundColor = NSColor.black.cgColor
         layer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
 
@@ -117,25 +123,25 @@ class MpvPlayerCore: NSObject {
     // MARK: - Fullscreen Transition Handling
 
     @objc private func windowWillEnterFullScreen(_ notification: Notification) {
-        guard mpv != nil else { return }
+        guard mpv != nil, !isPipActive else { return }
         print("[MpvPlayerCore] willEnterFullScreen — disabling video output")
         mpv_set_property_string(mpv, "vid", "no")
     }
 
     @objc private func windowDidEnterFullScreen(_ notification: Notification) {
-        guard mpv != nil else { return }
+        guard mpv != nil, !isPipActive else { return }
         print("[MpvPlayerCore] didEnterFullScreen — re-enabling video output")
         mpv_set_property_string(mpv, "vid", "auto")
     }
 
     @objc private func windowWillExitFullScreen(_ notification: Notification) {
-        guard mpv != nil else { return }
+        guard mpv != nil, !isPipActive else { return }
         print("[MpvPlayerCore] willExitFullScreen — disabling video output")
         mpv_set_property_string(mpv, "vid", "no")
     }
 
     @objc private func windowDidExitFullScreen(_ notification: Notification) {
-        guard mpv != nil else { return }
+        guard mpv != nil, !isPipActive else { return }
         print("[MpvPlayerCore] didExitFullScreen — re-enabling video output")
         mpv_set_property_string(mpv, "vid", "auto")
     }
@@ -165,7 +171,9 @@ class MpvPlayerCore: NSObject {
         checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
         checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
+        checkError(mpv_set_option_string(mpv, "ao", "avfoundation,coreaudio"))
         checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "yes"))
+        checkError(mpv_set_option_string(mpv, "vulkan-swap-mode", "mailbox"))
 
         // Initialize MPV
         let initResult = mpv_initialize(mpv)
@@ -296,10 +304,64 @@ class MpvPlayerCore: NSObject {
         }
     }
 
+    // MARK: - PiP Support
+
+    /// The Metal layer used for video rendering, exposed for PiP.
+    /// PiP moves this layer to its own window; mpv continues rendering to it.
+    var videoLayer: CAMetalLayer? { metalLayer }
+
+    /// Re-attach the Metal layer to the main window after PiP exits.
+    func reattachMetalLayer() {
+        guard let metalLayer = metalLayer, let contentView = window?.contentView else { return }
+        if metalLayer.superlayer == nil {
+            contentView.wantsLayer = true
+            contentView.layer?.insertSublayer(metalLayer, at: 0)
+            metalLayer.frame = contentView.bounds
+            if let screen = window?.screen ?? NSScreen.main {
+                metalLayer.contentsScale = screen.backingScaleFactor
+                metalLayer.drawableSize = CGSize(
+                    width: contentView.bounds.width * screen.backingScaleFactor,
+                    height: contentView.bounds.height * screen.backingScaleFactor
+                )
+            }
+        }
+        print("[MpvPlayerCore] Metal layer reattached to window")
+    }
+
+    /// Force a redraw (useful after PiP exit when paused).
+    /// Uses a seek to the current position to trigger a frame render.
+    func forceDraw() {
+        command(["seek", "0", "relative+exact"])
+    }
+
+    /// Whether mpv is currently paused
+    var isPaused: Bool {
+        guard let mpv = mpv else { return true }
+        var flag: Int32 = 0
+        mpv_get_property(mpv, "pause", MPV_FORMAT_FLAG, &flag)
+        return flag != 0
+    }
+
+    /// Current playback duration in seconds
+    var duration: Double {
+        guard let mpv = mpv else { return 0 }
+        var value: Double = 0
+        mpv_get_property(mpv, "duration", MPV_FORMAT_DOUBLE, &value)
+        return value
+    }
+
+    /// Current playback time in seconds
+    var timePos: Double {
+        guard let mpv = mpv else { return 0 }
+        var value: Double = 0
+        mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &value)
+        return value
+    }
+
     // MARK: - Visibility
 
     func setVisible(_ visible: Bool) {
-        guard let layer = metalLayer else { return }
+        guard let layer = metalLayer, !isPipActive else { return }
 
         if visible {
             // Re-insert after background layer but before Flutter control views
@@ -307,6 +369,9 @@ class MpvPlayerCore: NSObject {
             if let superlayer = window?.contentView?.layer {
                 superlayer.insertSublayer(layer, at: 0)
             }
+            beginPlaybackActivity()
+        } else {
+            endPlaybackActivity()
         }
 
         layer.isHidden = !visible
@@ -314,7 +379,7 @@ class MpvPlayerCore: NSObject {
     }
 
     func updateFrame(_ frame: CGRect? = nil) {
-        guard let metalLayer = metalLayer else { return }
+        guard let metalLayer = metalLayer, !isPipActive else { return }
 
         if let frame = frame {
             metalLayer.frame = frame
@@ -547,9 +612,28 @@ class MpvPlayerCore: NSObject {
         }
     }
 
+    // MARK: - Power Management
+
+    private func beginPlaybackActivity() {
+        guard playbackActivity == nil else { return }
+        playbackActivity = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiated, .latencyCritical],
+            reason: "Video playback"
+        )
+        print("[MpvPlayerCore] Began playback activity assertion")
+    }
+
+    private func endPlaybackActivity() {
+        guard let activity = playbackActivity else { return }
+        ProcessInfo.processInfo.endActivity(activity)
+        playbackActivity = nil
+        print("[MpvPlayerCore] Ended playback activity assertion")
+    }
+
     // MARK: - Cleanup
 
     func dispose() {
+        endPlaybackActivity()
         NotificationCenter.default.removeObserver(self)
 
         // Cancel any pending async commands

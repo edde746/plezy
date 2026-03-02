@@ -8,6 +8,7 @@ import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
@@ -100,9 +101,18 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
           ],
         ),
         actions: [
-          TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
+          FocusableButton(
+            onPressed: _cancel,
+            child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
+          ),
           if (!isMobile)
-            FilledButton(onPressed: () => _pinInputKey.currentState?._trySubmit(), child: Text(t.common.submit)),
+            FocusableButton(
+              onPressed: () => _pinInputKey.currentState?._trySubmit(),
+              child: FilledButton(
+                onPressed: () => _pinInputKey.currentState?._trySubmit(),
+                child: Text(t.common.submit),
+              ),
+            ),
         ],
       ),
     );
@@ -355,7 +365,7 @@ class _TvPinInputState extends State<_TvPinInput> {
       _digits[index] = digit;
       _activeIndex = index;
       _mobileControllers[index].text = digit.toString();
-      _mobileControllers[index].selection = TextSelection.collapsed(offset: 1);
+      _mobileControllers[index].selection = const TextSelection.collapsed(offset: 1);
     });
 
     if (index < 3) {
@@ -426,12 +436,12 @@ class _TvPinInputState extends State<_TvPinInput> {
               maxLength: 2, // allow overwrite
               obscureText: true,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 counterText: '',
                 border: OutlineInputBorder(
-                  borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
+                  borderRadius: BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: EdgeInsets.symmetric(vertical: 14),
               ),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (value) => _onMobileDigitChanged(i, value),

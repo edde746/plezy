@@ -76,7 +76,8 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
 
   // Focus management
   bool _hasLoadedData = false;
-  bool _hasFocused = false;
+  @protected
+  bool hasFocused = false;
 
   // Getters for subclasses
   List<T> get items => _items;
@@ -122,7 +123,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     // Reload if library changed
     if (oldWidget.library.globalKey != widget.library.globalKey) {
       // Reset focus state for new library
-      _hasFocused = false;
+      hasFocused = false;
       _hasLoadedData = false;
       // Immediately clear stale data before async load
       _items = [];
@@ -164,8 +165,8 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     // Don't auto-focus if suppressed (e.g., when navigating via tab bar)
     if (widget.suppressAutoFocus) return;
 
-    if (widget.isActive && _hasLoadedData && !_hasFocused && _items.isNotEmpty) {
-      _hasFocused = true;
+    if (widget.isActive && _hasLoadedData && !hasFocused && _items.isNotEmpty) {
+      hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           focusFirstItem();

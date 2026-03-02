@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'mixins/multi_server_fields.dart';
+import '../utils/global_key_utils.dart';
 
 part 'plex_library.g.dart';
 
@@ -26,7 +27,7 @@ class PlexLibrary with MultiServerFields {
   final String? serverName;
 
   /// Global unique identifier across all servers (serverId:key)
-  String get globalKey => serverId != null ? '$serverId:$key' : key;
+  String get globalKey => serverId != null ? buildGlobalKey(serverId!, key) : key;
 
   PlexLibrary({
     required this.key,

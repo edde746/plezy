@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex client for Flutter"
 publish_to: "none"
-version: 1.17.0+38
+version: 1.23.0+50
 
 environment:
   sdk: ^3.8.1
@@ -14,6 +14,8 @@ dependencies:
   json_annotation: ^4.9.0
   shared_preferences: ^2.2.2
   cached_network_image: ^3.4.1
+  flutter_cache_manager: ^3.4.1
+  http: ^1.2.0
   url_launcher: ^6.3.0
   uuid: ^4.4.0
   window_manager: ^0.5.1
@@ -38,7 +40,7 @@ dependencies:
       path: wakelock_plus
   path_provider: ^2.1.0
   path: ^1.9.0
-  universal_gamepad: ^1.4.4
+  universal_gamepad: ^1.5.0
   drift: ^2.28.2
   sqlite3_flutter_libs: ^0.5.41
   workmanager: ^0.9.0+3
@@ -54,6 +56,11 @@ dependencies:
   mobile_scanner: ^6.0.2
   android_intent_plus: ^5.0.2
   background_downloader: ^9.5.2
+  sentry_flutter: ^8.12.0
+  auto_updater:
+    git:
+      url: https://github.com/edde746/auto_updater
+      path: packages/auto_updater
 
 dev_dependencies:
   flutter_test:
@@ -61,32 +68,24 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
-  flutter_launcher_icons: ^0.14.4
   slang_build_runner: ^4.12.0
   dart_code_linter: ^3.2.1
   drift_dev: ^2.14.0
+
+dependency_overrides:
+  auto_updater_windows:
+    git:
+      url: https://github.com/edde746/auto_updater
+      path: packages/auto_updater_windows
 
 flutter:
   uses-material-design: true
   assets:
     - lib/data/iso_639_codes.json
     - assets/plezy.png
+    - assets/plezy_adaptive_foreground.svg
     - assets/go-noto-current-regular.ttf
     - assets/shaders/nvscaler/
     - assets/shaders/anime4k/
     - assets/player_icons/
     - assets/rating_icons/
-
-flutter_launcher_icons:
-  android: true
-  ios: false
-  image_path: "assets/plezy.png"
-  adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/plezy_android_foreground.png"
-  adaptive_icon_monochrome: "assets/plezy_monochrome.png"
-  macos:
-    generate: false
-  windows:
-    generate: true
-  linux:
-    generate: true

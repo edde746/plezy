@@ -6,6 +6,7 @@
 #include <mpv/render_gl.h>
 #include <gtk/gtk.h>
 #include <epoxy/gl.h>
+#include <epoxy/egl.h>
 
 #include <atomic>
 #include <functional>
@@ -49,11 +50,20 @@ class MpvPlayer {
   /// Returns true if the render context has been created.
   bool HasRenderContext() const { return mpv_gl_ != nullptr; }
 
+  /// Returns the isolated EGL display used for mpv rendering.
+  EGLDisplay GetEglDisplay() const { return egl_display_; }
+
+  /// Returns the isolated EGL context used for mpv rendering.
+  EGLContext GetEglContext() const { return egl_context_; }
+
   /// Disposes mpv and releases resources.
   void Dispose();
 
   /// Returns true if mpv is initialized (has both mpv handle and render context).
   bool IsInitialized() const { return mpv_ != nullptr && mpv_gl_ != nullptr; }
+
+  /// Returns true if this player has been disposed.
+  bool IsDisposed() const { return disposed_.load(); }
 
   /// Returns true if mpv handle exists (even without render context).
   bool HasMpvHandle() const { return mpv_ != nullptr; }
@@ -122,6 +132,10 @@ class MpvPlayer {
 
   mpv_handle* mpv_ = nullptr;
   mpv_render_context* mpv_gl_ = nullptr;
+
+  // Isolated EGL context for mpv rendering (not shared with Flutter)
+  EGLDisplay egl_display_ = EGL_NO_DISPLAY;
+  EGLContext egl_context_ = EGL_NO_CONTEXT;
 
   std::atomic<bool> needs_redraw_{false};
   std::atomic<bool> disposed_{false};

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -7,23 +8,27 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../mpv/mpv.dart';
-import '../mpv/player/player_android.dart';
+import '../mpv/player/platform/player_android.dart';
 
+import '../../services/bif_thumbnail_service.dart';
 import '../../services/plex_client.dart';
 import '../models/livetv_channel.dart';
 import '../services/plex_api_cache.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_video_playback_data.dart';
 import '../utils/content_utils.dart';
+import '../utils/plex_cache_parser.dart';
 import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../models/companion_remote/remote_command_type.dart';
+import '../models/companion_remote/remote_command.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
@@ -36,9 +41,11 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/track_selection_service.dart';
+import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_pip_manager.dart';
 import '../services/pip_service.dart';
+import '../models/shader_preset.dart';
 import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
 import '../providers/user_profile_provider.dart';
@@ -53,8 +60,9 @@ import '../utils/snackbar_helper.dart';
 import '../utils/track_label_builder.dart' as tlb;
 import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
+import '../widgets/overlay_sheet.dart';
 import '../widgets/video_controls/video_controls.dart';
-import '../focus/focusable_wrapper.dart';
+import '../focus/focusable_button.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
@@ -68,6 +76,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final SubtitleTrack? preferredSubtitleTrack;
   final int selectedMediaIndex;
   final bool isOffline;
+  final PlexVideoPlaybackData? playbackData;
 
   // Live TV fields
   final bool isLive;
@@ -87,6 +96,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredSubtitleTrack,
     this.selectedMediaIndex = 0,
     this.isOffline = false,
+    this.playbackData,
     this.isLive = false,
     this.liveChannelName,
     this.liveStreamUrl,
@@ -132,8 +142,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
+  bool _isApplyingTrackSelection = false;
   bool _isHandlingBack = false;
-  bool _hasThumbnails = false;
+  BifThumbnailService? _bifService;
 
   // Live TV channel navigation
   int _liveChannelIndex = -1;
@@ -154,12 +165,31 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late final FocusNode _playNextCancelFocusNode;
   late final FocusNode _playNextConfirmFocusNode;
 
+  // "Still watching?" prompt (sleep timer)
+  bool _showStillWatchingPrompt = false;
+  int _stillWatchingCountdown = 30;
+  Timer? _stillWatchingTimer;
+  late final FocusNode _stillWatchingPauseFocusNode;
+  late final FocusNode _stillWatchingContinueFocusNode;
+
   // Screen-level focus node: persists across loading/initialized phases so
   // key events never escape the video player route.
   late final FocusNode _screenFocusNode;
+  bool _reclaimingFocus = false;
+
+  // Cached setting: when false on Windows/Linux, ESC should not exit the player
+  bool _videoPlayerNavigationEnabled = false;
 
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
+  bool _autoPipEnabled = false;
+
+  /// Whether to skip lifecycle actions because PiP is active or about to start.
+  /// iOS auto-PiP is system-initiated during the background transition, so
+  /// isPipActive may not be true yet — we also check the auto-PiP setting.
+  bool get _shouldSkipForPip =>
+      PipService().isPipActive.value ||
+      ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled);
 
   // Services
   MediaControlsManager? _mediaControlsManager;
@@ -167,6 +197,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   VideoFilterManager? _videoFilterManager;
   VideoPIPManager? _videoPIPManager;
   ShaderService? _shaderService;
+  AmbientLightingService? _ambientLightingService;
   final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
   // Watch Together provider reference (stored early to use in dispose)
@@ -181,14 +212,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return context.getClientForServer(widget.metadata.serverId!);
   }
 
-  String? _buildThumbnailUrl(BuildContext context, Duration time) {
-    final partId = _currentMediaInfo?.partId;
-    if (partId == null || widget.isOffline) return null;
-    final client = _getClientForMetadata(context);
-    return '${client.config.baseUrl}/library/parts/$partId/indexes/sd/${time.inMilliseconds}'.withPlexToken(
-      client.config.token,
-    );
-  }
+  Uint8List? _getThumbnailData(Duration time) => _bifService?.getThumbnail(time);
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false); // Track if first video frame has rendered
@@ -213,6 +237,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Initialize Play Next dialog focus nodes
     _playNextCancelFocusNode = FocusNode(debugLabel: 'PlayNextCancel');
     _playNextConfirmFocusNode = FocusNode(debugLabel: 'PlayNextConfirm');
+
+    // Initialize "Still watching?" dialog focus nodes
+    _stillWatchingPauseFocusNode = FocusNode(debugLabel: 'StillWatchingPause');
+    _stillWatchingContinueFocusNode = FocusNode(debugLabel: 'StillWatchingContinue');
 
     // Screen-level focus node that wraps the entire build output.
     // Ensures a single stable focus target across loading → initialized phases.
@@ -258,9 +286,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Wire companion remote playback callbacks
     _setupCompanionRemoteCallbacks();
 
-    // Exit the player when the sleep timer completes so the device can auto-lock
-    _sleepTimerSubscription = SleepTimerService().onCompleted.listen((_) {
-      if (mounted) _handleBackButton();
+    // Show "Still watching?" prompt when sleep timer fires
+    _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
+      if (mounted) _showStillWatchingDialog();
     });
 
     // Initialize player asynchronously with buffer size from settings
@@ -298,6 +326,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // App is being hidden (user is switching away)
         // Pause video since we don't support background playback (mobile only)
         if (PlatformDetector.isMobile(context)) {
+          if (_shouldSkipForPip) break;
           if (player != null && _isPlayerInitialized) {
             _wasPlayingBeforeInactive = player!.state.playing;
             if (_wasPlayingBeforeInactive) {
@@ -308,6 +337,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
         break;
       case AppLifecycleState.paused:
+        if (_shouldSkipForPip) break;
         // Clear media controls when app truly goes to background
         // (we don't support background playback)
         OsMediaControls.clear();
@@ -375,8 +405,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       // Load buffer size from settings
       final settingsService = await SettingsService.getInstance();
+      _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
+      _autoPipEnabled = settingsService.getAutoPip();
       final bufferSizeMB = settingsService.getBufferSize();
-      final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
       final useExoPlayer = settingsService.getUseExoPlayer();
@@ -385,7 +416,37 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player = Player(useExoPlayer: useExoPlayer);
 
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
-      await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
+      if (Platform.isAndroid && useExoPlayer) {
+        final tunneledPlayback = settingsService.getTunneledPlayback();
+        await player!.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
+      }
+      if (bufferSizeMB > 0) {
+        final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
+        await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
+        // Set back-buffer to 1/4 of forward buffer
+        final backBytes = bufferSizeBytes ~/ 4;
+        await player!.setProperty('demuxer-max-back-bytes', backBytes.toString());
+      }
+      if (Platform.isAndroid) {
+        // Cap demuxer buffers based on device heap to prevent OOM crashes.
+        // Without limits, mpv defaults can consume 225MB+ just for demuxer
+        // buffering, which combined with decoded frames and GPU textures
+        // exhausts the process address space on memory-constrained devices.
+        final heapMB = await PlayerAndroid.getHeapSize();
+        if (heapMB > 0) {
+          final autoBackMB = heapMB <= 256 ? 16 : (heapMB <= 512 ? 32 : 48);
+          if (bufferSizeMB == 0) {
+            // Auto mode: cap both forward and back buffer based on heap
+            final autoForwardMB = heapMB <= 256 ? 32 : (heapMB <= 512 ? 64 : 100);
+            await player!.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
+            await player!.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
+          } else {
+            // Manual mode: cap back-buffer relative to heap if 1/4 ratio is too high
+            final maxBackBytes = min(bufferSizeMB * 1024 * 1024 ~/ 4, autoBackMB * 1024 * 1024);
+            await player!.setProperty('demuxer-max-back-bytes', maxBackBytes.toString());
+          }
+        }
+      }
       await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
       await player!.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
       await player!.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
@@ -402,11 +463,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
       );
       await player!.setProperty('sub-ass-override', 'no');
+      await player!.setProperty('sub-ass-video-aspect-override', '1');
       await player!.setProperty('sub-pos', settingsService.getSubtitlePosition().toString());
 
       // Platform-specific settings
       if (Platform.isIOS) {
         await player!.setProperty('audio-exclusive', 'yes');
+      }
+
+      // Audio passthrough (desktop only - sends bitstream to receiver)
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        if (settingsService.getAudioPassthrough()) {
+          await player!.setAudioPassthrough(true);
+        }
       }
 
       // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
@@ -427,6 +496,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (subtitleSyncOffset != 0) {
         final offsetSeconds = subtitleSyncOffset / 1000.0;
         await player!.setProperty('sub-delay', offsetSeconds.toString());
+      }
+
+      // Apply audio normalization (loudnorm filter)
+      if (settingsService.getAudioNormalization()) {
+        await player!.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
       }
 
       // Apply custom MPV config entries
@@ -453,6 +527,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         setState(() {
           _isPlayerInitialized = true;
         });
+
+        // Restart sleep timer if we're starting a new playback session
+        final p = player;
+        if (p != null) {
+          SleepTimerService().restartIfNeeded(() => p.pause());
+        }
 
         // Enable wakelock to prevent screen from turning off during playback
         WakelockPlus.enable();
@@ -505,6 +585,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
+          Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player'));
 
           // Apply frame rate matching on Android if enabled
           if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
@@ -519,6 +600,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Listen to position for completion detection (fallback for unreliable MPV events)
       _positionSubscription = player!.streams.position.listen((position) {
+        // Fallback for cases where playbackRestart doesn't fire (observed on some
+        // offline Android playback flows). Prevents a permanent loading spinner.
+        if (!_hasFirstFrame.value && position.inMilliseconds > 0) {
+          _hasFirstFrame.value = true;
+        }
+
         final duration = player!.state.duration;
         if (duration.inMilliseconds > 0 &&
             position.inMilliseconds >= duration.inMilliseconds - 1000 &&
@@ -566,6 +653,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Set MPV video-sync mode for smoother playback when display is synced
       await player!.setProperty('video-sync', 'display-tempo');
 
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching: ${fps}fps', category: 'player'));
       appLogger.d('Frame rate matching: Set display to ${fps}fps (duration: ${durationMs}ms)');
     } catch (e) {
       appLogger.w('Failed to apply frame rate matching', error: e);
@@ -579,6 +667,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       await player!.clearVideoFrameRate();
       await player!.setProperty('video-sync', 'audio');
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching cleared', category: 'player'));
       appLogger.d('Frame rate matching: Cleared, restored default display mode');
     } catch (e) {
       appLogger.d('Failed to clear frame rate matching', error: e);
@@ -824,9 +913,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (episodes.isEmpty) return;
 
-      // Sort by season then episode number
+      // Sort by season then episode number, with Season 0 (Specials) at the end
       final sorted = List<PlexMetadata>.from(episodes)
         ..sort((a, b) {
+          final aIsSpecial = (a.parentIndex ?? 0) == 0;
+          final bIsSpecial = (b.parentIndex ?? 0) == 0;
+          if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
           final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
           if (seasonCmp != 0) return seasonCmp;
           return (a.index ?? 0).compareTo(b.index ?? 0);
@@ -924,6 +1016,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           metadata: widget.metadata,
           selectedMediaIndex: widget.selectedMediaIndex,
           preferOffline: true, // Use downloaded file if available
+          playbackData: widget.playbackData,
         );
       }
 
@@ -941,7 +1034,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // since the user may have watched further since downloading.
         Duration? resumePosition;
         if (widget.isOffline) {
-          final globalKey = '${widget.metadata.serverId}:${widget.metadata.ratingKey}';
+          final globalKey = widget.metadata.globalKey;
           final localOffset = await offlineWatchService!.getLocalViewOffset(globalKey);
           if (localOffset != null && localOffset > 0) {
             resumePosition = Duration(milliseconds: localOffset);
@@ -988,27 +1081,34 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         setState(() {
           _availableVersions = result.availableVersions.cast();
           _currentMediaInfo = result.mediaInfo;
-          _hasThumbnails = false;
+          _bifService?.dispose();
+          _bifService = null;
         });
 
-        // Check whether any thumbnails exist by requesting the first one
+        // Download and cache BIF thumbnail file
         if (_currentMediaInfo?.partId != null && !widget.isOffline) {
           final partId = _currentMediaInfo!.partId!;
           final client = _getClientForMetadata(context);
-          client.checkThumbnailsAvailable(partId).then((available) {
-            // Guard against media having changed while the probe was in flight
+          final service = BifThumbnailService();
+          service.load(client, partId).then((_) {
+            // Guard against media having changed while the download was in flight
             if (mounted && _currentMediaInfo?.partId == partId) {
-              setState(() => _hasThumbnails = available);
+              setState(() => _bifService = service);
+            } else {
+              service.dispose();
             }
           });
         }
 
         // Initialize video PIP and filter manager with player and available versions
         if (player != null) {
+          final settings = await SettingsService.getInstance();
           _videoFilterManager = VideoFilterManager(
             player: player!,
             availableVersions: _availableVersions,
             selectedMediaIndex: widget.selectedMediaIndex,
+            initialBoxFitMode: settings.getDefaultBoxFitMode(),
+            onBoxFitModeChanged: (mode) => settings.setDefaultBoxFitMode(mode),
           );
           // Update video filter once dimensions are available
           _videoFilterManager!.updateVideoFilter();
@@ -1020,10 +1120,26 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           };
           _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
 
+          // Auto-PiP: set up callback for API 26-30 path and initial state
+          if (_autoPipEnabled) {
+            PipService.onAutoPipEntering = () {
+              _videoFilterManager?.enterPipMode();
+            };
+            if (player!.state.playing) {
+              _videoPIPManager!.updateAutoPipState(isPlaying: true);
+            }
+          }
+
           // Shader Service (MPV only)
           _shaderService = ShaderService(player!);
           if (_shaderService!.isSupported) {
+            // Ambient Lighting Service
+            _ambientLightingService = AmbientLightingService(player!);
+            _shaderService!.ambientLightingService = _ambientLightingService;
+            _videoFilterManager?.ambientLightingService = _ambientLightingService;
+
             await _applySavedShaderPreset();
+            await _restoreAmbientLighting();
           }
         }
 
@@ -1050,10 +1166,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     } on PlaybackException catch (e) {
       if (mounted) {
+        _hasFirstFrame.value = true; // Hide spinner on error
         showErrorSnackBar(context, e.message);
       }
     } catch (e) {
       if (mounted) {
+        _hasFirstFrame.value = true; // Hide spinner on error
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
@@ -1087,7 +1205,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Debug: log metadata info
     appLogger.d('Offline playback - serverId: ${widget.metadata.serverId}, ratingKey: ${widget.metadata.ratingKey}');
 
-    final globalKey = '${widget.metadata.serverId}:${widget.metadata.ratingKey}';
+    final globalKey = widget.metadata.globalKey;
     appLogger.d('Looking up video with globalKey: $globalKey');
 
     final videoPath = await downloadProvider.getVideoFilePath(globalKey);
@@ -1098,10 +1216,29 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     appLogger.d('Starting offline playback: $videoPath');
 
+    // Load cached media info so track selection (audio language) works offline
+    PlexMediaInfo? mediaInfo;
+    try {
+      final serverId = widget.metadata.serverId;
+      if (serverId != null) {
+        final cached = await PlexApiCache.instance.get(serverId, '/library/metadata/${widget.metadata.ratingKey}');
+        final metadataJson = PlexCacheParser.extractFirstMetadata(cached);
+        if (metadataJson != null) {
+          mediaInfo = PlexMediaInfo.fromMetadataJson(metadataJson);
+        }
+        appLogger.d(
+          'Offline media info: cached=${cached != null}, hasMedia=${metadataJson?['Media'] != null}, '
+          'audioTracks=${mediaInfo?.audioTracks.length ?? 0}, subtitleTracks=${mediaInfo?.subtitleTracks.length ?? 0}',
+        );
+      }
+    } catch (e) {
+      appLogger.d('Could not load cached media info for offline playback', error: e);
+    }
+
     return PlaybackInitializationResult(
       availableVersions: [],
       videoUrl: videoPath.contains('://') ? videoPath : 'file://$videoPath',
-      mediaInfo: null,
+      mediaInfo: mediaInfo,
       externalSubtitles: const [],
       isOffline: true,
     );
@@ -1121,29 +1258,127 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final isInPip = _videoPIPManager!.isPipActive.value;
     // Only handle exit - entry is handled by onBeforeEnterPip callback
     if (!isInPip) {
+      final restoreAmbient = _videoFilterManager!.hadAmbientLightingBeforePip;
       _videoFilterManager!.exitPipMode();
+      // Restore ambient lighting if it was active before PiP
+      if (restoreAmbient) {
+        _videoFilterManager!.clearPipAmbientLightingFlag();
+        _restoreAmbientLighting();
+      }
     }
   }
 
-  /// Apply the saved shader preset on playback start
+  /// Apply the saved shader preset on playback start.
+  /// Reads directly from SettingsService (synchronous SharedPreferences) to
+  /// avoid a race with ShaderProvider's async initialization.
   Future<void> _applySavedShaderPreset() async {
     if (_shaderService == null || !_shaderService!.isSupported) return;
 
     try {
-      final shaderProvider = context.read<ShaderProvider>();
-      final preset = shaderProvider.savedPreset;
+      final settings = await SettingsService.getInstance();
+      final presetId = settings.getGlobalShaderPreset();
+      final preset = ShaderPreset.fromId(presetId) ?? ShaderPreset.none;
       await _shaderService!.applyPreset(preset);
-      shaderProvider.setCurrentPreset(preset);
+      context.read<ShaderProvider>().setCurrentPreset(preset);
     } catch (e) {
       appLogger.d('Could not apply shader preset', error: e);
     }
   }
 
+  /// Restore ambient lighting from persisted setting
+  Future<void> _restoreAmbientLighting() async {
+    final shaderProvider = context.read<ShaderProvider>();
+    final settings = await SettingsService.getInstance();
+    if (!settings.getAmbientLighting()) return;
+
+    final ambientLighting = _ambientLightingService;
+    if (ambientLighting == null || !ambientLighting.isSupported) return;
+
+    // Same enable logic as _toggleAmbientLighting
+    final dwidth = await player?.getProperty('dwidth');
+    final dheight = await player?.getProperty('dheight');
+    if (dwidth == null || dheight == null) return;
+    final w = double.tryParse(dwidth);
+    final h = double.tryParse(dheight);
+    if (w == null || h == null || h == 0) return;
+    final videoAspect = w / h;
+
+    final playerSize = _videoFilterManager?.playerSize;
+    if (playerSize == null || playerSize.height == 0) return;
+    final outputAspect = playerSize.width / playerSize.height;
+
+    // Clear shaders — ambient lighting and shaders are mutually exclusive
+    if (shaderProvider.isShaderEnabled) {
+      await _shaderService!.applyPreset(ShaderPreset.none);
+      shaderProvider.setCurrentPreset(ShaderPreset.none);
+    }
+
+    _videoFilterManager?.resetToContain();
+    await ambientLighting.enable(videoAspect, outputAspect);
+    if (mounted) setState(() {});
+  }
+
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void _cycleBoxFitMode() {
+    // Disable ambient lighting when switching boxfit modes
+    // (cover/fill change the video rect, making the baked-in shader incorrect)
+    _ambientLightingService?.disable();
     setState(() {
       _videoFilterManager?.cycleBoxFitMode();
     });
+  }
+
+  /// Update video-aspect-override when player size changes.
+  /// The shader adapts automatically via built-in target_size uniform.
+  void _updateAmbientLightingOnResize(Size newSize) {
+    final ambientLighting = _ambientLightingService;
+    if (ambientLighting == null || !ambientLighting.isEnabled) return;
+    if (newSize.height == 0) return;
+
+    ambientLighting.updateOutputAspect(newSize.width / newSize.height);
+  }
+
+  /// Toggle ambient lighting effect on/off
+  Future<void> _toggleAmbientLighting() async {
+    final ambientLighting = _ambientLightingService;
+    if (ambientLighting == null || !ambientLighting.isSupported) return;
+    final shaderProvider = context.read<ShaderProvider>();
+
+    if (ambientLighting.isEnabled) {
+      await ambientLighting.disable();
+      _videoFilterManager?.updateVideoFilter();
+    } else {
+      // Get video display aspect ratio
+      final dwidth = await player?.getProperty('dwidth');
+      final dheight = await player?.getProperty('dheight');
+      if (dwidth == null || dheight == null) return;
+      final w = double.tryParse(dwidth);
+      final h = double.tryParse(dheight);
+      if (w == null || h == null || h == 0) return;
+      final videoAspect = w / h;
+
+      // Get player widget aspect ratio
+      final playerSize = _videoFilterManager?.playerSize;
+      if (playerSize == null || playerSize.height == 0) return;
+      final outputAspect = playerSize.width / playerSize.height;
+
+      // Clear shaders — ambient lighting and shaders are mutually exclusive
+      if (shaderProvider.isShaderEnabled) {
+        await _shaderService!.applyPreset(ShaderPreset.none);
+        shaderProvider.setCurrentPreset(ShaderPreset.none);
+      }
+
+      // Force contain mode when enabling ambient lighting
+      _videoFilterManager?.resetToContain();
+
+      await ambientLighting.enable(videoAspect, outputAspect);
+    }
+
+    // Persist ambient lighting state
+    final settings = await SettingsService.getInstance();
+    settings.setAmbientLighting(ambientLighting.isEnabled);
+
+    if (mounted) setState(() {});
   }
 
   /// Toggle between contain and cover modes only (for pinch gesture)
@@ -1460,10 +1695,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _sendLiveTimeline('stopped');
     _stopLiveTimelineUpdates();
 
-    // Remove PiP state listener, clear callback, and dispose video filter manager
+    // Remove PiP state listener, clear callbacks, disable auto-PiP, and dispose video filter manager
     _videoPIPManager?.isPipActive.removeListener(_onPipStateChanged);
     _videoPIPManager?.onBeforeEnterPip = null;
+    _videoPIPManager?.disableAutoPip();
+    PipService.onAutoPipEntering = null;
     _videoFilterManager?.dispose();
+
+    // Release cached BIF thumbnail data
+    _bifService?.dispose();
+
+    // Mark sleep timer for restart if truly exiting (not episode transition)
+    if (!_isReplacingWithVideo) {
+      SleepTimerService().markNeedsRestart();
+    }
 
     // Cancel stream subscriptions
     _playingSubscription?.cancel();
@@ -1480,9 +1725,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
 
+    // Cancel still watching timer
+    _stillWatchingTimer?.cancel();
+
     // Dispose Play Next dialog focus nodes
     _playNextCancelFocusNode.dispose();
     _playNextConfirmFocusNode.dispose();
+
+    // Dispose "Still watching?" dialog focus nodes
+    _stillWatchingPauseFocusNode.dispose();
+    _stillWatchingContinueFocusNode.dispose();
 
     // Dispose screen-level focus node
     _screenFocusNode.removeListener(_onScreenFocusChanged);
@@ -1528,6 +1780,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     }
 
+    Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
     player?.dispose();
     if (_activeRatingKey == widget.metadata.ratingKey) {
       _activeRatingKey = null;
@@ -1541,8 +1794,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// descendant has focus, so internal movement between child controls
   /// does NOT trigger this.
   void _onScreenFocusChanged() {
+    if (_reclaimingFocus) return;
     if (!_screenFocusNode.hasFocus && mounted && !_isExiting.value) {
+      _reclaimingFocus = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        _reclaimingFocus = false;
         if (mounted && !_isExiting.value && !_screenFocusNode.hasFocus) {
           _screenFocusNode.requestFocus();
         }
@@ -1554,6 +1810,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Toggle wakelock based on playback state
     if (isPlaying) {
       WakelockPlus.enable();
+      // Force a texture refresh on resume to unstick stale frames
+      // (Linux/macOS texture registrars can miss frame-available
+      // notifications after extended pause periods)
+      player?.updateFrame();
     } else {
       WakelockPlus.disable();
     }
@@ -1570,10 +1830,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     } else {
       DiscordRPCService.instance.pausePlayback();
     }
+
+    // Update auto-PiP readiness
+    if (_autoPipEnabled) {
+      _videoPIPManager?.updateAutoPipState(isPlaying: isPlaying);
+    }
   }
 
   void _onVideoCompleted(bool completed) async {
-    if (completed && _nextEpisode != null && !_showPlayNextDialog && !_completionTriggered) {
+    if (completed &&
+        _nextEpisode != null &&
+        !_showPlayNextDialog &&
+        !_showStillWatchingPrompt &&
+        !_completionTriggered) {
       _completionTriggered = true;
 
       // Capture keyboard mode before async gap
@@ -1638,6 +1907,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Cancel auto-play timer if running
     _autoPlayTimer?.cancel();
+    _dismissStillWatching();
 
     // Notify Watch Together of episode change before navigating
     _notifyWatchTogetherMediaChange(metadata: _nextEpisode);
@@ -1657,6 +1927,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _notifyWatchTogetherMediaChange(metadata: _previousEpisode);
 
     await _navigateToEpisode(_previousEpisode!);
+  }
+
+  /// Navigate to a specific queue item (called from QueueSheet)
+  Future<void> navigateToQueueItem(PlexMetadata metadata) async {
+    _notifyWatchTogetherMediaChange(metadata: metadata);
+    await _navigateToEpisode(metadata);
   }
 
   bool _isSwitchingChannel = false;
@@ -1823,129 +2099,252 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     });
   }
 
+  // -- "Still watching?" prompt --
+
+  void _showStillWatchingDialog() {
+    // Don't show if auto-play dialog is already visible
+    if (_showPlayNextDialog) return;
+
+    final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
+
+    setState(() {
+      _showStillWatchingPrompt = true;
+      _stillWatchingCountdown = 30;
+    });
+
+    if (isKeyboardMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _stillWatchingContinueFocusNode.requestFocus();
+      });
+    }
+
+    _stillWatchingTimer?.cancel();
+    _stillWatchingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _stillWatchingCountdown--;
+      });
+      if (_stillWatchingCountdown <= 0) {
+        timer.cancel();
+        _onStillWatchingTimeout();
+      }
+    });
+  }
+
+  void _onStillWatchingTimeout() {
+    player?.pause();
+    setState(() {
+      _showStillWatchingPrompt = false;
+    });
+  }
+
+  void _onStillWatchingContinue() {
+    _stillWatchingTimer?.cancel();
+    SleepTimerService().restartTimer();
+    setState(() {
+      _showStillWatchingPrompt = false;
+    });
+  }
+
+  void _onStillWatchingPause() {
+    _stillWatchingTimer?.cancel();
+    player?.pause();
+    setState(() {
+      _showStillWatchingPrompt = false;
+    });
+  }
+
+  void _dismissStillWatching() {
+    _stillWatchingTimer?.cancel();
+    if (_showStillWatchingPrompt) {
+      setState(() {
+        _showStillWatchingPrompt = false;
+      });
+    }
+  }
+
+  /// Wait briefly for profile settings to load in offline mode.
+  /// This prevents default-track fallback when playback starts before
+  /// UserProfileProvider finishes initialization.
+  Future<void> _waitForProfileSettingsIfNeeded() async {
+    if (!widget.isOffline || !mounted) return;
+
+    final provider = context.read<UserProfileProvider>();
+    if (provider.profileSettings != null) return;
+
+    final completer = Completer<void>();
+    late VoidCallback listener;
+    listener = () {
+      if (provider.profileSettings != null && !completer.isCompleted) {
+        completer.complete();
+      }
+    };
+
+    provider.addListener(listener);
+    try {
+      await Future.any<void>([completer.future, Future.delayed(const Duration(seconds: 2))]);
+    } finally {
+      provider.removeListener(listener);
+    }
+  }
+
   /// Apply track selection using the TrackSelectionService
   Future<void> _applyTrackSelection() async {
-    if (!mounted || player == null) return;
+    if (!mounted || player == null || _isApplyingTrackSelection) return;
 
-    final profileSettings = context.read<UserProfileProvider>().profileSettings;
-    final settingsService = await SettingsService.getInstance();
-    final trackService = TrackSelectionService(
-      player: player!,
-      profileSettings: profileSettings,
-      metadata: widget.metadata,
-      plexMediaInfo: _currentMediaInfo,
-    );
+    _isApplyingTrackSelection = true;
+    try {
+      await _waitForProfileSettingsIfNeeded();
+      if (!mounted || player == null) return;
 
-    await trackService.selectAndApplyTracks(
-      preferredAudioTrack: widget.preferredAudioTrack,
-      preferredSubtitleTrack: widget.preferredSubtitleTrack,
-      defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
-      onAudioTrackChanged: _onAudioTrackChanged,
-      onSubtitleTrackChanged: _onSubtitleTrackChanged,
-    );
+      final profileSettings = context.read<UserProfileProvider>().profileSettings;
+      final settingsService = await SettingsService.getInstance();
+      if (!mounted || player == null) return;
+
+      final trackService = TrackSelectionService(
+        player: player!,
+        profileSettings: profileSettings,
+        metadata: widget.metadata,
+        plexMediaInfo: _currentMediaInfo,
+      );
+
+      await trackService.selectAndApplyTracks(
+        preferredAudioTrack: widget.preferredAudioTrack,
+        preferredSubtitleTrack: widget.preferredSubtitleTrack,
+        defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
+        onAudioTrackChanged: _onAudioTrackChanged,
+        onSubtitleTrackChanged: _onSubtitleTrackChanged,
+      );
+    } catch (e) {
+      appLogger.w('Failed to apply track selection', error: e);
+    } finally {
+      _isApplyingTrackSelection = false;
+    }
+  }
+
+  /// Rating key used for series/movie level language preferences.
+  String get _preferenceRatingKey {
+    return widget.metadata.isEpisode
+        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
+        : widget.metadata.ratingKey;
+  }
+
+  /// Common guard checks for track change handlers.
+  /// Returns the part ID if all checks pass, or null if the change should be skipped.
+  Future<int?> _guardTrackChange() async {
+    final settings = await SettingsService.getInstance();
+    if (!settings.getRememberTrackSelections()) return null;
+
+    if (_currentMediaInfo == null) {
+      appLogger.w('No media info available, cannot save stream selection');
+      return null;
+    }
+
+    final partId = _currentMediaInfo!.getPartId();
+    if (partId == null) {
+      appLogger.w('No part ID available, cannot save stream selection');
+    }
+    return partId;
+  }
+
+  /// Save language preference and stream selection to the server.
+  Future<void> _saveTrackPreferences({
+    required int partId,
+    required String trackType,
+    String? languageCode,
+    int? streamID,
+  }) async {
+    try {
+      if (!mounted) return;
+      final client = _getClientForMetadata(context);
+      final ratingKey = _preferenceRatingKey;
+
+      final futures = <Future>[];
+
+      if (languageCode != null && (trackType == 'subtitle' || languageCode.isNotEmpty)) {
+        futures.add(
+          trackType == 'audio'
+              ? client.setMetadataPreferences(ratingKey, audioLanguage: languageCode)
+              : client.setMetadataPreferences(ratingKey, subtitleLanguage: languageCode),
+        );
+      }
+      if (streamID != null) {
+        futures.add(
+          trackType == 'audio'
+              ? client.selectStreams(partId, audioStreamID: streamID, allParts: true)
+              : client.selectStreams(partId, subtitleStreamID: streamID, allParts: true),
+        );
+      }
+
+      await Future.wait(futures);
+      appLogger.d('Successfully saved $trackType preferences (language + stream)');
+    } catch (e) {
+      appLogger.e('Failed to save $trackType preferences', error: e);
+    }
+  }
+
+  /// Match an mpv track against Plex tracks by language and title.
+  int? _matchTrackByAttributes<T>({
+    required String? mpvLanguage,
+    required String? mpvTitle,
+    required List<T> plexTracks,
+    required String? Function(T) getLanguageCode,
+    required String? Function(T) getDisplayTitle,
+    required String? Function(T) getTitle,
+    required int Function(T) getId,
+  }) {
+    final normalizedLang = _iso6391ToPlex6392(mpvLanguage);
+
+    for (final plexTrack in plexTracks) {
+      final matchLang = getLanguageCode(plexTrack) == normalizedLang;
+      final matchTitle = (mpvTitle == null || mpvTitle.isEmpty)
+          ? true
+          : (getDisplayTitle(plexTrack) == mpvTitle || getTitle(plexTrack) == mpvTitle);
+
+      if (matchLang && matchTitle) {
+        return getId(plexTrack);
+      }
+    }
+    return null;
   }
 
   /// Handle audio track changes from the user - save both stream selection and language preference
   Future<void> _onAudioTrackChanged(AudioTrack track) async {
-    final settings = await SettingsService.getInstance();
+    final partId = await _guardTrackChange();
+    if (partId == null) return;
 
-    // Only save if remember track selections is enabled
-    if (!settings.getRememberTrackSelections()) {
-      return;
-    }
-    if (_currentMediaInfo == null) {
-      appLogger.w('No media info available, cannot save stream selection');
-      return;
-    }
-    final partId = _currentMediaInfo!.getPartId();
-    if (partId == null) {
-      appLogger.w('No part ID available, cannot save stream selection');
-      return;
-    }
+    int? streamID = _matchTrackByAttributes(
+      mpvLanguage: track.language,
+      mpvTitle: track.title,
+      plexTracks: _currentMediaInfo!.audioTracks,
+      getLanguageCode: (t) => t.languageCode,
+      getDisplayTitle: (t) => t.displayTitle,
+      getTitle: (t) => t.title,
+      getId: (t) => t.id,
+    );
 
-    final languageCode = track.language;
-    int? streamID;
-
-    // === Matching by attributes ===
-    PlexAudioTrack? matched;
-    final normalizedTrackLang = _iso6391ToPlex6392(track.language);
-
-    appLogger.d('Normalized media_kit language: ${track.language} -> $normalizedTrackLang');
-
-    for (final plexTrack in _currentMediaInfo!.audioTracks) {
-      final matchLang = plexTrack.languageCode == normalizedTrackLang;
-      final matchTitle = (track.title == null || track.title!.isEmpty)
-          ? true
-          : (plexTrack.displayTitle == track.title || plexTrack.title == track.title);
-
-      if (matchLang && matchTitle) {
-        matched = plexTrack;
-        appLogger.d('Matched audio by lang/title: streamID ${matched.id}');
-        break;
-      }
-    }
-
-    if (matched != null) {
-      streamID = matched.id;
+    if (streamID != null) {
       appLogger.d('Matched audio by lang/title: streamID $streamID');
     } else {
-      // Use property-based matching from track_selection_service
       final matchedPlex = findPlexTrackForMpvAudio(track, _currentMediaInfo!.audioTracks);
-
-      if (matchedPlex != null) {
-        streamID = matchedPlex.id;
+      streamID = matchedPlex?.id;
+      if (streamID != null) {
         appLogger.d('Matched audio by properties: streamID $streamID');
       } else {
         appLogger.e('Could not match audio track to any Plex track');
       }
     }
 
-    final isEpisode = widget.metadata.isEpisode;
-    final languagePrefRatingKey = isEpisode
-        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
-        : widget.metadata.ratingKey;
-
-    try {
-      if (!mounted) return;
-      final client = _getClientForMetadata(context);
-
-      final futures = <Future>[];
-
-      // 1. Language preference (series/movie level)
-      if (languageCode != null && languageCode.isNotEmpty) {
-        futures.add(client.setMetadataPreferences(languagePrefRatingKey, audioLanguage: languageCode));
-      }
-      // 2. Exact stream selection (part level)
-      if (streamID != null) {
-        futures.add(client.selectStreams(partId, audioStreamID: streamID, allParts: true));
-      }
-
-      await Future.wait(futures);
-      appLogger.d('Successfully saved audio preferences (language + stream)');
-    } catch (e) {
-      appLogger.e('Failed to save audio preferences', error: e);
-    }
+    await _saveTrackPreferences(partId: partId, trackType: 'audio', languageCode: track.language, streamID: streamID);
   }
 
   /// Handle subtitle track changes from the user - save both stream selection and language preference
   Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async {
-    final settings = await SettingsService.getInstance();
-
-    // Only save if remember track selections is enabled
-    if (!settings.getRememberTrackSelections()) {
-      return;
-    }
-
-    if (_currentMediaInfo == null) {
-      appLogger.w('No media info available, cannot save stream selection');
-      return;
-    }
-
-    final partId = _currentMediaInfo!.getPartId();
-    if (partId == null) {
-      appLogger.w('No part ID available, cannot save stream selection');
-      return;
-    }
+    final partId = await _guardTrackChange();
+    if (partId == null) return;
 
     String? languageCode;
     int? streamID;
@@ -1957,38 +2356,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     } else {
       languageCode = track.language;
 
-      // === Matching by attributes ===
-      PlexSubtitleTrack? matched;
-      final normalizedTrackLang = _iso6391ToPlex6392(track.language);
+      streamID = _matchTrackByAttributes(
+        mpvLanguage: track.language,
+        mpvTitle: track.title,
+        plexTracks: _currentMediaInfo!.subtitleTracks,
+        getLanguageCode: (t) => t.languageCode,
+        getDisplayTitle: (t) => t.displayTitle,
+        getTitle: (t) => t.title,
+        getId: (t) => t.id,
+      );
 
-      appLogger.d('Normalized media_kit language: ${track.language} -> $normalizedTrackLang');
-
-      for (final plexTrack in _currentMediaInfo!.subtitleTracks) {
-        final matchLang = plexTrack.languageCode == normalizedTrackLang;
-        final matchTitle = (track.title == null || track.title!.isEmpty)
-            ? true
-            : (plexTrack.displayTitle == track.title || plexTrack.title == track.title);
-
-        appLogger.d('Comparing with streamID ${plexTrack.id}:');
-        appLogger.d('  matchLang: $matchLang (${plexTrack.languageCode} == $normalizedTrackLang)');
-        appLogger.d('  matchTitle: $matchTitle');
-
-        if (matchLang && matchTitle) {
-          matched = plexTrack;
-          appLogger.d('  ✅ MATCHED!');
-          break;
-        }
-      }
-
-      if (matched != null) {
-        streamID = matched.id;
+      if (streamID != null) {
         appLogger.d('Matched subtitle by lang/title: streamID $streamID');
       } else {
-        // Use property-based matching from track_selection_service
         final matchedPlex = findPlexTrackForMpvSubtitle(track, _currentMediaInfo!.subtitleTracks);
-
-        if (matchedPlex != null) {
-          streamID = matchedPlex.id;
+        streamID = matchedPlex?.id;
+        if (streamID != null) {
           appLogger.d('Matched subtitle by properties: streamID $streamID');
         } else {
           appLogger.e('Could not match subtitle track to any Plex track');
@@ -1996,36 +2379,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     }
 
-    // Determine ratingKeys
-    final isEpisode = widget.metadata.isEpisode;
-    final languagePrefRatingKey = isEpisode
-        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
-        : widget.metadata.ratingKey;
-
-    appLogger.i(
-      'Saving subtitle preference: language=$languageCode (ratingKey: $languagePrefRatingKey), streamID=$streamID (partId: $partId)',
-    );
-
-    try {
-      if (!mounted) return;
-      final client = _getClientForMetadata(context);
-
-      final futures = <Future>[];
-
-      // 1. Save language preference at series/movie level
-      if (languageCode != null) {
-        futures.add(client.setMetadataPreferences(languagePrefRatingKey, subtitleLanguage: languageCode));
-      }
-      // 2. Save exact stream selection using part ID
-      if (streamID != null) {
-        futures.add(client.selectStreams(partId, subtitleStreamID: streamID, allParts: true));
-      }
-
-      await Future.wait(futures);
-      appLogger.d('Successfully saved subtitle preferences (language + stream)');
-    } catch (e) {
-      appLogger.e('Failed to save subtitle preferences', error: e);
-    }
+    await _saveTrackPreferences(partId: partId, trackType: 'subtitle', languageCode: languageCode, streamID: streamID);
   }
 
   /// Set flag to skip orientation restoration when replacing with another video
@@ -2126,23 +2480,27 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
     // Screen-level Focus wraps ALL phases (loading + initialized).
     // - autofocus: grabs focus when no deeper child claims it.
-    // - onKeyEvent: catch-all that consumes any event children didn't handle,
-    //   preventing leaks to previous routes.
+    // - onKeyEvent: self-heals when this node has primary focus (no descendant
+    //   focused). Nav keys are only consumed in that case; otherwise they pass
+    //   through so DirectionalFocusAction can drive dpad nav in overlay sheets.
     return Focus(
       focusNode: _screenFocusNode,
       autofocus: isCurrentRoute,
       canRequestFocus: isCurrentRoute,
       onKeyEvent: (node, event) {
         if (!isCurrentRoute) return KeyEventResult.ignored;
-        // Safety net: if this screen-level node itself has primary focus
-        // (no descendant focused, e.g. after controls auto-hide), self-heal.
-        // BACK is excluded: on Android TV the BACK button fires both a key event
-        // and a system back gesture. Handling it here would double-pop because
-        // PopScope.onPopInvokedWithResult also processes the system back gesture.
-        // PopScope handles BACK navigation exclusively.
-        if (node.hasPrimaryFocus && !event.logicalKey.isBackKey) {
-          // Redirect focus to the first traversable descendant (video controls)
-          // and show controls immediately so the first key press isn't swallowed.
+        // On Windows/Linux with navigation off, consume ESC so Flutter's
+        // DismissAction doesn't trigger a route pop. The video controls'
+        // global key handler manages fullscreen/controls toggle instead.
+        if (!_videoPlayerNavigationEnabled && (Platform.isWindows || Platform.isLinux) && event.logicalKey.isBackKey) {
+          return KeyEventResult.handled;
+        }
+        // Back keys pass through — handled by PopScope (system back
+        // gesture) or overlay sheet's onKeyEvent.
+        if (event.logicalKey.isBackKey) return KeyEventResult.ignored;
+        // Self-heal: if this node itself has primary focus (no descendant
+        // focused, e.g. after controls auto-hide), redirect to first descendant.
+        if (node.hasPrimaryFocus) {
           if (event.isActionable) {
             _controlsVisible.value = true;
             final descendants = node.traversalDescendants;
@@ -2150,12 +2508,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               descendants.first.requestFocus();
             }
           }
+          return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
         }
-        return event.logicalKey.isNavigationKey
-            ? KeyEventResult.handled
-            : KeyEventResult.ignored;
+        // A descendant has focus — let events pass through so
+        // DirectionalFocusAction / ActivateAction can process them.
+        return KeyEventResult.ignored;
       },
-      child: _isPlayerInitialized && player != null ? _buildVideoPlayer(context) : _buildLoadingSpinner(),
+      child: OverlaySheetHost(
+        child: Builder(
+          builder: (sheetContext) =>
+              _isPlayerInitialized && player != null ? _buildVideoPlayer(sheetContext) : _buildLoadingSpinner(),
+        ),
+      ),
     );
   }
 
@@ -2166,11 +2530,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return PopScope(
       canPop: false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
       onPopInvokedWithResult: (didPop, result) {
-        // Only process system-initiated back gestures (didPop: false).
-        // Programmatic Navigator.pop() triggers didPop: true — ignore it here
-        // to avoid consuming the BackKeyCoordinator flag before the system back
-        // gesture arrives (which would cause a double-pop on Android TV).
         if (!didPop) {
+          // If an overlay sheet is open, delegate back to it instead of
+          // exiting the player. This prevents the double-pop on Android TV
+          // where the system back gesture would otherwise reach both the
+          // sheet and the player's PopScope.
+          final sheetController = OverlaySheetController.maybeOf(context);
+          if (sheetController != null && sheetController.isOpen) {
+            sheetController.pop();
+            return;
+          }
           if (BackKeyCoordinator.consumeIfHandled()) return;
           BackKeyCoordinator.markHandled();
           _handleBackButton();
@@ -2205,6 +2574,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           },
           child: Stack(
             children: [
+              // macOS PiP placeholder — video is in PiP window, show background with icon
+              // Placed before Video so controls render on top
+              if (Platform.isMacOS)
+                ValueListenableBuilder<bool>(
+                  valueListenable: PipService().isPipActive,
+                  builder: (context, isInPip, child) {
+                    if (!isInPip) return const SizedBox.shrink();
+                    return Positioned.fill(
+                      child: Container(
+                        color: Colors.black,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
+                              const SizedBox(height: 12),
+                              Text(
+                                t.videoControls.pipActive,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               // Video player
               Center(
                 child: LayoutBuilder(
@@ -2217,6 +2616,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       if (mounted && player != null) {
                         _videoFilterManager?.updatePlayerSize(newSize);
                         _videoPIPManager?.updatePlayerSize(newSize);
+                        // Update ambient lighting shader if active (output aspect changed)
+                        _updateAmbientLightingOnResize(newSize);
                         // Update Metal layer frame on iOS/macOS for rotation
                         player!.updateFrame();
                       }
@@ -2281,11 +2682,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         shaderService: _shaderService,
                         // ignore: no-empty-block - setState triggers rebuild to reflect shader change
                         onShaderChanged: () => setState(() {}),
-                        thumbnailUrlBuilder: _hasThumbnails && _currentMediaInfo?.partId != null
-                            ? (Duration time) => _buildThumbnailUrl(context, time)!
-                            : null,
+                        thumbnailDataBuilder: _bifService?.isAvailable == true ? _getThumbnailData : null,
                         isLive: widget.isLive,
                         liveChannelName: _liveChannelName,
+                        isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
+                        onToggleAmbientLighting: _toggleAmbientLighting,
                       ),
                     );
                   },
@@ -2381,27 +2782,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                               Row(
                                 children: [
                                   Expanded(
-                                    child: FocusableWrapper(
+                                    child: FocusableButton(
                                       focusNode: _playNextCancelFocusNode,
-                                      onSelect: _cancelAutoPlay,
-                                      useBackgroundFocus: true,
+                                      onPressed: _cancelAutoPlay,
                                       autoScroll: false,
-                                      borderRadius: 20,
-                                      onKeyEvent: (node, event) {
-                                        if (event is KeyDownEvent) {
-                                          // RIGHT arrow moves focus to Play Next button
-                                          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                                            _playNextConfirmFocusNode.requestFocus();
-                                            return KeyEventResult.handled;
-                                          }
-                                          // Trap focus - consume UP/DOWN to prevent escape
-                                          if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                                              event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                            return KeyEventResult.handled;
-                                          }
-                                        }
-                                        return KeyEventResult.ignored;
-                                      },
+                                      onNavigateRight: () => _playNextConfirmFocusNode.requestFocus(),
+                                      onNavigateUp: () {}, // Trap focus
+                                      onNavigateDown: () {}, // Trap focus
                                       child: OutlinedButton(
                                         onPressed: _cancelAutoPlay,
                                         style: OutlinedButton.styleFrom(
@@ -2415,27 +2802,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: FocusableWrapper(
+                                    child: FocusableButton(
                                       focusNode: _playNextConfirmFocusNode,
-                                      onSelect: _playNext,
-                                      useBackgroundFocus: true,
+                                      onPressed: _playNext,
                                       autoScroll: false,
-                                      borderRadius: 20,
-                                      onKeyEvent: (node, event) {
-                                        if (event is KeyDownEvent) {
-                                          // LEFT arrow moves focus to Cancel button
-                                          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                                            _playNextCancelFocusNode.requestFocus();
-                                            return KeyEventResult.handled;
-                                          }
-                                          // Trap focus - consume UP/DOWN to prevent escape
-                                          if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                                              event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                            return KeyEventResult.handled;
-                                          }
-                                        }
-                                        return KeyEventResult.ignored;
-                                      },
+                                      onNavigateLeft: () => _playNextCancelFocusNode.requestFocus(),
+                                      onNavigateUp: () {}, // Trap focus
+                                      onNavigateDown: () {}, // Trap focus
                                       child: FilledButton(
                                         onPressed: _playNext,
                                         style: FilledButton.styleFrom(
@@ -2452,6 +2825,104 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                                               const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
                                             ] else
                                               Text(t.videoControls.playNext),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              // "Still watching?" overlay (hidden in PiP mode)
+              ValueListenableBuilder<bool>(
+                valueListenable: PipService().isPipActive,
+                builder: (context, isInPip, child) {
+                  if (isInPip || !_showStillWatchingPrompt) {
+                    return const SizedBox.shrink();
+                  }
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: _controlsVisible,
+                    builder: (context, controlsShown, child) {
+                      return AnimatedPositioned(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        right: 24,
+                        bottom: controlsShown ? 100 : 24,
+                        child: Container(
+                          width: 320,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.9),
+                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                t.videoControls.stillWatching,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                t.videoControls.pausingIn(seconds: '$_stillWatchingCountdown'),
+                                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: FocusableButton(
+                                      focusNode: _stillWatchingPauseFocusNode,
+                                      onPressed: _onStillWatchingPause,
+                                      autoScroll: false,
+                                      onNavigateRight: () => _stillWatchingContinueFocusNode.requestFocus(),
+                                      onNavigateUp: () {},
+                                      onNavigateDown: () {},
+                                      child: OutlinedButton(
+                                        onPressed: _onStillWatchingPause,
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                        child: Text(t.videoControls.pauseButton),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: FocusableButton(
+                                      focusNode: _stillWatchingContinueFocusNode,
+                                      onPressed: _onStillWatchingContinue,
+                                      autoScroll: false,
+                                      onNavigateLeft: () => _stillWatchingPauseFocusNode.requestFocus(),
+                                      onNavigateUp: () {},
+                                      onNavigateDown: () {},
+                                      child: FilledButton(
+                                        onPressed: _onStillWatchingContinue,
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: Colors.black,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text('$_stillWatchingCountdown'),
+                                            const SizedBox(width: 4),
+                                            Text(t.videoControls.continueWatching),
                                           ],
                                         ),
                                       ),
@@ -2561,7 +3032,7 @@ String _getHwdecValue(bool enabled) {
   if (Platform.isMacOS || Platform.isIOS) {
     return 'videotoolbox';
   } else if (Platform.isAndroid) {
-    return 'auto-safe';
+    return 'mediacodec,mediacodec-copy';
   } else {
     return 'auto'; // Windows, Linux
   }

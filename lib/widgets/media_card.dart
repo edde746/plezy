@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:plezy/utils/content_utils.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -27,10 +29,12 @@ class MediaCard extends StatefulWidget {
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh; // Callback to refresh the entire parent list
   final bool forceGridMode;
+  final bool forceListMode;
   final bool isInContinueWatching;
   final String? collectionId; // The collection ID if displaying within a collection
   final bool isOffline; // True for downloaded content without server access
   final bool mixedHubContext; // True when in a hub with mixed content (movies + episodes)
+  final bool showServerName; // Show server name in list view (multi-server)
 
   const MediaCard({
     super.key,
@@ -41,10 +45,12 @@ class MediaCard extends StatefulWidget {
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
     this.forceGridMode = false,
+    this.forceListMode = false,
     this.isInContinueWatching = false,
     this.collectionId,
     this.isOffline = false,
     this.mixedHubContext = false,
+    this.showServerName = false,
   });
 
   @override
@@ -53,9 +59,14 @@ class MediaCard extends StatefulWidget {
 
 class MediaCardState extends State<MediaCard> {
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
+  Offset? _tapPosition;
+
+  void _storeTapPosition(TapDownDetails details) {
+    _tapPosition = details.globalPosition;
+  }
 
   void _showContextMenu() {
-    _contextMenuKey.currentState?.showContextMenu(context);
+    _contextMenuKey.currentState?.showContextMenu(context, position: _tapPosition);
   }
 
   /// Public method to trigger tap action (for keyboard/gamepad SELECT)
@@ -65,7 +76,7 @@ class MediaCardState extends State<MediaCard> {
 
   /// Public method to show context menu (for keyboard/gamepad context menu key)
   void showContextMenu() {
-    _showContextMenu();
+    _contextMenuKey.currentState?.showContextMenu(context);
   }
 
   String _buildSemanticLabel() {
@@ -149,7 +160,7 @@ class MediaCardState extends State<MediaCard> {
     if (metadata.serverId == null) return null;
 
     final downloadProvider = context.read<DownloadProvider>();
-    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+    final globalKey = metadata.globalKey;
 
     // Get artwork reference and resolve to local path using hash (includes serverId)
     final artwork = downloadProvider.getArtworkPaths(globalKey);
@@ -159,34 +170,33 @@ class MediaCardState extends State<MediaCard> {
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
-    final viewMode = widget.forceGridMode ? ViewMode.grid : settingsProvider.viewMode;
+    final viewMode = widget.forceListMode
+        ? ViewMode.list
+        : widget.forceGridMode
+            ? ViewMode.grid
+            : settingsProvider.viewMode;
 
     final semanticLabel = _buildSemanticLabel();
     final localPosterPath = _getLocalPosterPath(context);
 
     final cardWidget = viewMode == ViewMode.grid
-        ? _MediaCardGrid(
-            item: widget.item,
-            width: widget.width,
-            height: widget.height,
-            semanticLabel: semanticLabel,
-            onTap: () => _handleTap(context),
-            onLongPress: _showContextMenu,
-            isOffline: widget.isOffline,
-            localPosterPath: localPosterPath,
-            mixedHubContext: widget.mixedHubContext,
-          )
+        ? _buildGridCard(context, semanticLabel, localPosterPath)
         : _MediaCardList(
             item: widget.item,
             semanticLabel: semanticLabel,
             onTap: () => _handleTap(context),
+            onTapDown: _storeTapPosition,
             onLongPress: _showContextMenu,
+            onSecondaryTapDown: _storeTapPosition,
+            onSecondaryTap: _showContextMenu,
             density: settingsProvider.libraryDensity,
             isOffline: widget.isOffline,
             localPosterPath: localPosterPath,
+            showServerName: widget.showServerName,
           );
 
-    // Use context menu for both PlexMetadata and PlexPlaylist items
+    // MediaContextMenu as a non-widget helper — only wrap with its key for
+    // programmatic context menu access; gesture callbacks are on InkWell directly.
     return MediaContextMenu(
       key: _contextMenuKey,
       item: widget.item,
@@ -199,94 +209,89 @@ class MediaCardState extends State<MediaCard> {
       child: cardWidget,
     );
   }
-}
 
-/// Grid layout for media cards
-class _MediaCardGrid extends StatelessWidget {
-  final dynamic item; // Can be PlexMetadata or PlexPlaylist
-  final double? width;
-  final double? height;
-  final String semanticLabel;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-  final bool isOffline;
-  final String? localPosterPath;
-  final bool mixedHubContext;
+  /// Grid layout — inlined from former _MediaCardGrid, _PosterOverlay, and
+  /// flattened Column. Semantics removed (InkWell provides button semantics).
+  Widget _buildGridCard(BuildContext context, String semanticLabel, String? localPosterPath) {
+    final item = widget.item;
+    // Compute actual poster dimensions from card dimensions
+    final posterWidth = widget.width != null ? widget.width! - 16 : null; // 8px padding each side
+    final posterHeight = widget.height;
 
-  const _MediaCardGrid({
-    required this.item,
-    this.width,
-    this.height,
-    required this.semanticLabel,
-    required this.onTap,
-    required this.onLongPress,
-    this.isOffline = false,
-    this.localPosterPath,
-    this.mixedHubContext = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return SizedBox(
-      width: width,
-      child: Semantics(
-        label: semanticLabel,
-        button: true,
-        child: InkWell(
-          canRequestFocus: false, // Keyboard handled by FocusableMediaCard
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Poster
-                if (height != null)
-                  SizedBox(width: double.infinity, height: height, child: _buildPosterWithOverlay(context))
-                else
-                  Expanded(child: _buildPosterWithOverlay(context)),
-                const SizedBox(height: 4),
-                // Text content
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      item is PlexPlaylist ? (item as PlexPlaylist).title : (item as PlexMetadata).displayTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
-                    ),
-                    if (item is PlexPlaylist)
-                      _MediaCardHelpers.buildPlaylistMeta(context, item as PlexPlaylist)
-                    else if (item is PlexMetadata)
-                      _MediaCardHelpers.buildMetadataSubtitle(context, item as PlexMetadata),
-                  ],
+      width: widget.width,
+      child: InkWell(
+        canRequestFocus: false,
+        onTap: () => _handleTap(context),
+        onTapDown: _storeTapPosition,
+        onLongPress: _showContextMenu,
+        onSecondaryTapDown: _storeTapPosition,
+        onSecondaryTap: _showContextMenu,
+        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Poster with overlay
+              if (posterHeight != null)
+                SizedBox(
+                  width: double.infinity,
+                  height: posterHeight,
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                        child: _buildPosterImage(
+                          context,
+                          item,
+                          isOffline: widget.isOffline,
+                          localPosterPath: localPosterPath,
+                          mixedHubContext: widget.mixedHubContext,
+                          knownWidth: posterWidth,
+                          knownHeight: posterHeight,
+                        ),
+                      ),
+                      // Inlined _PosterOverlay
+                      if (item is PlexMetadata) _MediaCardHelpers.buildWatchProgress(context, item),
+                    ],
+                  ),
+                )
+              else
+                Expanded(
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                        child: _buildPosterImage(
+                          context,
+                          item,
+                          isOffline: widget.isOffline,
+                          localPosterPath: localPosterPath,
+                          mixedHubContext: widget.mixedHubContext,
+                        ),
+                      ),
+                      if (item is PlexMetadata) _MediaCardHelpers.buildWatchProgress(context, item),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              const SizedBox(height: 4),
+              // Title (flattened — no inner Column)
+              Text(
+                item is PlexPlaylist ? item.title : (item as PlexMetadata).displayTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
+              ),
+              // Subtitle
+              if (item is PlexPlaylist)
+                _MediaCardHelpers.buildPlaylistMeta(context, item)
+              else if (item is PlexMetadata)
+                _MediaCardHelpers.buildMetadataSubtitle(context, item),
+            ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPosterWithOverlay(BuildContext context) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: _buildPosterImage(
-            context,
-            item,
-            isOffline: isOffline,
-            localPosterPath: localPosterPath,
-            mixedHubContext: mixedHubContext,
-          ),
-        ),
-        _PosterOverlay(item: item),
-      ],
     );
   }
 }
@@ -297,18 +302,26 @@ class _MediaCardList extends StatelessWidget {
   final String semanticLabel;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final void Function(TapDownDetails)? onTapDown;
+  final VoidCallback? onSecondaryTap;
+  final void Function(TapDownDetails)? onSecondaryTapDown;
   final LibraryDensity density;
   final bool isOffline;
   final String? localPosterPath;
+  final bool showServerName;
 
   const _MediaCardList({
     required this.item,
     required this.semanticLabel,
     required this.onTap,
     required this.onLongPress,
+    this.onTapDown,
+    this.onSecondaryTap,
+    this.onSecondaryTapDown,
     required this.density,
     this.isOffline = false,
     this.localPosterPath,
+    this.showServerName = false,
   });
 
   double _basePosterWidth() {
@@ -488,92 +501,121 @@ class _MediaCardList extends StatelessWidget {
     final metadataLine = _buildMetadataLine();
     final subtitle = _buildSubtitleText();
 
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      child: InkWell(
-        canRequestFocus: false, // Keyboard handled by FocusableMediaCard
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Poster (responsive size based on density)
-              SizedBox(
-                width: _posterWidth(context),
-                height: _posterHeight(context),
-                child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                      child: _buildPosterImage(context, item, isOffline: isOffline, localPosterPath: localPosterPath),
-                    ),
-                    _PosterOverlay(item: item),
-                  ],
-                ),
+    return InkWell(
+      canRequestFocus: false, // Keyboard handled by FocusableMediaCard
+      onTap: onTap,
+      onTapDown: onTapDown,
+      onLongPress: onLongPress,
+      onSecondaryTapDown: onSecondaryTapDown,
+      onSecondaryTap: onSecondaryTap,
+      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Poster (responsive size based on density)
+            SizedBox(
+              width: _posterWidth(context),
+              height: _posterHeight(context),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                    child: _buildPosterImage(context, item, isOffline: isOffline, localPosterPath: localPosterPath),
+                  ),
+                  if (item is PlexMetadata) _MediaCardHelpers.buildWatchProgress(context, item as PlexMetadata),
+                ],
               ),
-              const SizedBox(width: 12),
-              // Metadata
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    // Title
+            ),
+            const SizedBox(width: 12),
+            // Metadata
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    item.displayTitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
+                  ),
+                  const SizedBox(height: 4),
+                  // Metadata info line (rating, duration, score, studio)
+                  if (metadataLine.isNotEmpty) ...[
                     Text(
-                      item.displayTitle,
-                      maxLines: 2,
+                      metadataLine,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: tokens(context).textMuted.withValues(alpha: 0.9),
+                        fontSize: _metadataFontSize,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                  ],
+                  // Subtitle (S#E# or year/parent title)
+                  if (subtitle != null) ...[
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: tokens(context).textMuted.withValues(alpha: 0.85),
+                        fontSize: _subtitleFontSize,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    // Metadata info line (rating, duration, score, studio)
-                    if (metadataLine.isNotEmpty) ...[
-                      Text(
-                        metadataLine,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(context).textMuted.withValues(alpha: 0.9),
-                          fontSize: _metadataFontSize,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                    ],
-                    // Subtitle (S#E# or year/parent title)
-                    if (subtitle != null) ...[
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(context).textMuted.withValues(alpha: 0.85),
-                          fontSize: _subtitleFontSize,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                    // Summary
-                    if (item.summary != null) ...[
-                      Text(
-                        item.summary!,
-                        maxLines: _summaryMaxLines,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(context).textMuted.withValues(alpha: 0.7),
-                          fontSize: _summaryFontSize,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
                   ],
-                ),
+                  // Summary (hidden when spoiler protection is active)
+                  if (!(item is PlexMetadata &&
+                          context.watch<SettingsProvider>().hideSpoilers &&
+                          (item as PlexMetadata).shouldHideSpoiler) &&
+                      item.summary != null) ...[
+                    Text(
+                      item.summary!,
+                      maxLines: _summaryMaxLines,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: tokens(context).textMuted.withValues(alpha: 0.7),
+                        fontSize: _summaryFontSize,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                  // Server name (multi-server mode)
+                  if (showServerName && item is PlexMetadata && (item as PlexMetadata).serverName != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        AppIcon(
+                          Symbols.dns_rounded,
+                          fill: 1,
+                          size: _metadataFontSize + 2,
+                          color: tokens(context).textMuted.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            (item as PlexMetadata).serverName!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: tokens(context).textMuted.withValues(alpha: 0.6),
+                              fontSize: _metadataFontSize,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -586,6 +628,8 @@ Widget _buildPosterImage(
   bool isOffline = false,
   String? localPosterPath,
   bool mixedHubContext = false,
+  double? knownWidth,
+  double? knownHeight,
 }) {
   String? posterUrl;
   IconData fallbackIcon = Symbols.movie_rounded;
@@ -597,57 +641,54 @@ Widget _buildPosterImage(
     return PlexOptimizedImage.playlist(
       client: isOffline ? null : context.getClientWithFallback(item.serverId),
       imagePath: posterUrl,
-      width: double.infinity,
-      height: double.infinity,
+      width: knownWidth ?? double.infinity,
+      height: knownHeight ?? double.infinity,
       fit: BoxFit.cover,
       localFilePath: localPosterPath,
     );
   } else if (item is PlexMetadata) {
-    final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
+    final settingsProvider = context.watch<SettingsProvider>();
+    final episodePosterMode = settingsProvider.episodePosterMode;
+    final shouldBlur =
+        settingsProvider.hideSpoilers &&
+        item.shouldHideSpoiler &&
+        episodePosterMode == EpisodePosterMode.episodeThumbnail;
     posterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
+
+    Widget image;
 
     // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
     if (item.usesWideAspectRatio(episodePosterMode, mixedHubContext: mixedHubContext)) {
-      return PlexOptimizedImage.thumb(
+      image = PlexOptimizedImage.thumb(
         client: isOffline ? null : context.getClientWithFallback(item.serverId),
         imagePath: posterUrl,
-        width: double.infinity,
-        height: double.infinity,
+        width: knownWidth ?? double.infinity,
+        height: knownHeight ?? double.infinity,
+        fit: BoxFit.cover,
+        localFilePath: localPosterPath,
+      );
+    } else {
+      image = PlexOptimizedImage.poster(
+        client: isOffline ? null : context.getClientWithFallback(item.serverId),
+        imagePath: posterUrl,
+        width: knownWidth ?? double.infinity,
+        height: knownHeight ?? double.infinity,
         fit: BoxFit.cover,
         localFilePath: localPosterPath,
       );
     }
 
-    return PlexOptimizedImage.poster(
-      client: isOffline ? null : context.getClientWithFallback(item.serverId),
-      imagePath: posterUrl,
-      width: double.infinity,
-      height: double.infinity,
-      fit: BoxFit.cover,
-      localFilePath: localPosterPath,
-    );
+    if (shouldBlur) {
+      return ClipRect(
+        child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: image),
+      );
+    }
+    return image;
   }
 
   return SkeletonLoader(
     child: Center(child: AppIcon(fallbackIcon, fill: 1, size: 40, color: Colors.white54)),
   );
-}
-
-/// Overlay widget for poster showing watched indicator and progress bar
-class _PosterOverlay extends StatelessWidget {
-  final dynamic item; // Can be PlexMetadata or PlexPlaylist
-
-  const _PosterOverlay({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    // Only show overlays for PlexMetadata items
-    if (item is! PlexMetadata) {
-      return const SizedBox.shrink();
-    }
-
-    return _MediaCardHelpers.buildWatchProgress(context, item as PlexMetadata);
-  }
 }
 
 /// Helper methods for building media card metadata and subtitles
@@ -843,7 +884,7 @@ class _SkeletonLoaderState extends State<SkeletonLoader> with SingleTickerProvid
           identifier: "skeleton-loader",
           child: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: _animation.value),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: _animation.value * 0.15),
               borderRadius: widget.borderRadius ?? BorderRadius.circular(tokens(context).radiusSm),
             ),
             child: widget.child,

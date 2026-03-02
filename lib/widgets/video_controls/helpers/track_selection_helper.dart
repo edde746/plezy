@@ -21,7 +21,7 @@ class TrackSelectionHelper {
   /// Build a centered empty state widget
   static Widget buildEmptyState<T>() {
     return Center(
-      child: Text(getEmptyMessage<T>(), style: const TextStyle(color: Colors.white70)),
+      child: Text(getEmptyMessage<T>()),
     );
   }
 
@@ -63,7 +63,7 @@ class TrackSelectionHelper {
   }) {
     return FocusableListTile(
       focusNode: focusNode,
-      title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
+      title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : null)),
       trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
       onTap: onTap,
     );

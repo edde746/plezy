@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
@@ -10,8 +9,14 @@ import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
-import '../widgets/media_grid_sliver.dart';
-import '../widgets/focused_scroll_scaffold.dart';
+import '../utils/grid_size_calculator.dart';
+import '../widgets/focusable_media_card.dart';
+import '../widgets/media_grid_delegate.dart';
+import '../widgets/desktop_app_bar.dart';
+import '../widgets/overlay_sheet.dart';
+import '../focus/focusable_action_bar.dart';
+import '../focus/input_mode_tracker.dart';
+import '../mixins/grid_focus_node_mixin.dart';
 import 'libraries/sort_bottom_sheet.dart';
 import 'libraries/state_messages.dart';
 import '../mixins/refreshable.dart';
@@ -27,7 +32,7 @@ class HubDetailScreen extends StatefulWidget {
   State<HubDetailScreen> createState() => _HubDetailScreenState();
 }
 
-class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
+class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, GridFocusNodeMixin {
   PlexClient get client => _getClientForHub();
 
   List<PlexMetadata> _items = [];
@@ -37,6 +42,14 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
   bool _isSortDescending = false;
   bool _isLoading = false;
   String? _errorMessage;
+
+  late final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'hub_detail_first_item');
+  final _actionBarKey = GlobalKey<FocusableActionBarState>();
+  bool _isAppBarFocused = false;
+  bool _backHandledByKeyEvent = false;
+
+  /// Key for getting a context below OverlaySheetHost
+  final GlobalKey _overlayChildKey = GlobalKey();
 
   /// Get the correct PlexClient for this hub's server
   PlexClient _getClientForHub() {
@@ -55,7 +68,43 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
     }
     // Load sorts based on the library type
     _loadSorts();
+    // Auto-focus first grid item in keyboard mode after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (InputModeTracker.isKeyboardMode(context) && _filteredItems.isNotEmpty) {
+        _firstItemFocusNode.requestFocus();
+      }
+    });
   }
+
+  @override
+  void dispose() {
+    _firstItemFocusNode.dispose();
+    disposeGridFocusNodes();
+    super.dispose();
+  }
+
+  void _focusGrid() {
+    if (_filteredItems.isEmpty) return;
+    final targetIndex =
+        shouldRestoreGridFocus && lastFocusedGridIndex! < _filteredItems.length ? lastFocusedGridIndex! : 0;
+    if (targetIndex == 0) {
+      _firstItemFocusNode.requestFocus();
+    } else {
+      getGridItemFocusNode(targetIndex, prefix: 'hub_detail_item').requestFocus();
+    }
+  }
+
+  void _navigateToAppBar() {
+    setState(() => _isAppBarFocused = true);
+    _actionBarKey.currentState?.getFocusNode(0).requestFocus();
+  }
+
+  void _handleBackFromContent() {
+    _backHandledByKeyEvent = true;
+    _navigateToAppBar();
+  }
+
 
   Future<void> _loadSorts() async {
     try {
@@ -152,9 +201,8 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
   }
 
   void _showSortBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
+    final overlayContext = _overlayChildKey.currentContext ?? context;
+    OverlaySheetController.of(overlayContext).show(
       builder: (context) => SortBottomSheet(
         sortOptions: _sortOptions,
         selectedSort: _selectedSort,
@@ -231,57 +279,127 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   @override
   Widget build(BuildContext context) {
-    return FocusedScrollScaffold(
-      title: Text(widget.hub.title),
-      actions: [
-        IconButton(
-          icon: AppIcon(Symbols.swap_vert_rounded, fill: 1, semanticLabel: t.libraries.sort),
-          onPressed: _showSortBottomSheet,
-        ),
-      ],
-      slivers: [
-        if (_errorMessage != null)
-          SliverFillRemaining(
-            child: ErrorStateWidget(
-              message: _errorMessage!,
-              icon: Symbols.error_outline_rounded,
-              onRetry: _loadMoreItems,
-            ),
-          )
-        else if (_filteredItems.isEmpty && _isLoading)
-          const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-        else if (_filteredItems.isEmpty)
-          SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
-        else
-          Builder(
-            builder: (context) {
-              final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
+    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
-              // Determine hub content type for layout decisions
-              final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
-              final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
+    return PopScope(
+      canPop: !isKeyboardMode || _isAppBarFocused,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || _backHandledByKeyEvent) {
+          _backHandledByKeyEvent = false;
+          return;
+        }
+        _navigateToAppBar();
+      },
+      child: OverlaySheetHost(
+        child: Scaffold(
+          key: _overlayChildKey,
+          body: CustomScrollView(
+            clipBehavior: Clip.none,
+            slivers: [
+              CustomAppBar(
+                title: Text(widget.hub.title),
+                pinned: true,
+                actions: [
+                  FocusableActionBar(
+                    key: _actionBarKey,
+                    onNavigateDown: _focusGrid,
+                    onBack: () => Navigator.pop(context),
+                    actions: [
+                      FocusableAction(
+                        icon: Symbols.swap_vert_rounded,
+                        tooltip: t.libraries.sort,
+                        onPressed: _showSortBottomSheet,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              if (_errorMessage != null)
+                SliverFillRemaining(
+                  child: ErrorStateWidget(
+                    message: _errorMessage!,
+                    icon: Symbols.error_outline_rounded,
+                    onRetry: _loadMoreItems,
+                  ),
+                )
+              else if (_filteredItems.isEmpty && _isLoading)
+                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              else if (_filteredItems.isEmpty)
+                SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
+              else
+                Builder(
+                  builder: (context) {
+                    final settings = context.watch<SettingsProvider>();
+                    final episodePosterMode = settings.episodePosterMode;
 
-              // Mixed hub = has both episodes AND non-episodes
-              final isMixedHub = hasEpisodes && hasNonEpisodes;
+                    // Determine hub content type for layout decisions
+                    final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
+                    final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
 
-              // Episode-only = all items are episodes with thumbnails
-              final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
+                    // Mixed hub = has both episodes AND non-episodes
+                    final isMixedHub = hasEpisodes && hasNonEpisodes;
 
-              // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
-              final useWideLayout =
-                  episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
+                    // Episode-only = all items are episodes with thumbnails
+                    final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
 
-              return MediaGridSliver(
-                items: _filteredItems,
-                onRefresh: _handleItemRefresh,
-                usePaddingAwareExtent: true,
-                horizontalPadding: 16,
-                useWideAspectRatio: useWideLayout,
-                mixedHubContext: isMixedHub,
-              );
-            },
+                    // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
+                    final useWideLayout =
+                        episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
+
+                    return SliverPadding(
+                      padding: const EdgeInsets.all(8),
+                      sliver: SliverLayoutBuilder(
+                        builder: (context, constraints) {
+                          final maxExtent = GridSizeCalculator.getMaxCrossAxisExtentWithPadding(
+                            context,
+                            settings.libraryDensity,
+                            16,
+                          );
+                          final columnCount = GridSizeCalculator.getColumnCount(
+                            constraints.crossAxisExtent,
+                            useWideLayout ? maxExtent * 1.8 : maxExtent,
+                          );
+
+                          return SliverGrid(
+                            gridDelegate: MediaGridDelegate.createDelegate(
+                              context: context,
+                              density: settings.libraryDensity,
+                              usePaddingAware: true,
+                              horizontalPadding: 16,
+                              useWideAspectRatio: useWideLayout,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final item = _filteredItems[index];
+                                final focusNode = index == 0
+                                    ? _firstItemFocusNode
+                                    : getGridItemFocusNode(index, prefix: 'hub_detail_item');
+                                final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
+                                final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
+
+                                return FocusableMediaCard(
+                                  focusNode: focusNode,
+                                  item: item,
+                                  onRefresh: _handleItemRefresh,
+                                  onNavigateUp: isFirstRow ? _navigateToAppBar : null,
+                                  onNavigateLeft: isFirstColumn ? () {} : null,
+                                  onBack: _handleBackFromContent,
+                                  onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                                  mixedHubContext: isMixedHub,
+                                );
+                              },
+                              childCount: _filteredItems.length,
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+            ],
           ),
-      ],
+        ),
+      ),
     );
   }
 }

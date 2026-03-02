@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../models/plex_metadata.dart';
+import '../../services/play_queue_launcher.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/media_navigation_helper.dart';
 import '../../utils/provider_extensions.dart';
@@ -15,8 +16,17 @@ class FolderTreeView extends StatefulWidget {
   final String libraryKey;
   final String? serverId; // Server this library belongs to
   final void Function(String)? onRefresh;
+  final FocusNode? firstItemFocusNode;
+  final VoidCallback? onNavigateUp;
 
-  const FolderTreeView({super.key, required this.libraryKey, this.serverId, this.onRefresh});
+  const FolderTreeView({
+    super.key,
+    required this.libraryKey,
+    this.serverId,
+    this.onRefresh,
+    this.firstItemFocusNode,
+    this.onNavigateUp,
+  });
 
   @override
   State<FolderTreeView> createState() => _FolderTreeViewState();
@@ -134,6 +144,18 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     await navigateToMediaItem(context, item, onRefresh: widget.onRefresh);
   }
 
+  Future<void> _handleFolderPlay(PlexMetadata folder) async {
+    final client = context.getClientForServer(widget.serverId!);
+    final launcher = PlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
+    await launcher.launchFromFolder(folderKey: folder.key, shuffle: false);
+  }
+
+  Future<void> _handleFolderShuffle(PlexMetadata folder) async {
+    final client = context.getClientForServer(widget.serverId!);
+    final launcher = PlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
+    await launcher.launchFromFolder(folderKey: folder.key, shuffle: true);
+  }
+
   bool _isFolder(PlexMetadata item) {
     // Folders typically don't have a specific type or might have special indicators
     // Check for common folder indicators
@@ -152,6 +174,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       // Create a unique key path that includes parent hierarchy and index
       final itemPath = parentPath.isEmpty ? '$i' : '$parentPath-$i';
 
+      // First root item gets the external focus node and navigate-up callback
+      final isFirstRootItem = depth == 0 && i == 0;
+
       // Add the item itself
       widgets.add(
         FolderTreeItem(
@@ -163,6 +188,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
           isLoading: isLoading,
           onExpand: isFolder ? () => _toggleFolder(item) : null,
           onTap: !isFolder ? () => _handleItemTap(item) : null,
+          onPlayAll: isFolder ? () => _handleFolderPlay(item) : null,
+          onShuffle: isFolder ? () => _handleFolderShuffle(item) : null,
+          focusNode: isFirstRootItem ? widget.firstItemFocusNode : null,
+          onNavigateUp: isFirstRootItem ? widget.onNavigateUp : null,
         ),
       );
 
@@ -197,7 +226,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
     return RefreshIndicator(
       onRefresh: _loadRootFolders,
-      child: ListView(children: _buildTreeItems(_rootFolders, 0)),
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        children: _buildTreeItems(_rootFolders, 0),
+      ),
     );
   }
 }

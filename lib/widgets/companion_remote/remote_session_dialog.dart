@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
+import '../../focus/focusable_button.dart';
 import '../../utils/app_logger.dart';
 
 class RemoteSessionDialog extends StatefulWidget {
@@ -25,7 +26,7 @@ class RemoteSessionDialog extends StatefulWidget {
 class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
   bool _isCreatingSession = false;
   String? _errorMessage;
-  String? _hostAddress; // Format: "ip:port"
+  List<String>? _hostAddresses; // Each format: "ip:port"
 
   @override
   void initState() {
@@ -38,7 +39,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
     setState(() {
       _isCreatingSession = true;
       _errorMessage = null;
-      _hostAddress = null;
+      _hostAddresses = null;
     });
 
     try {
@@ -48,7 +49,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
       if (!mounted) return;
       setState(() {
         _isCreatingSession = false;
-        _hostAddress = result.address;
+        _hostAddresses = result.addresses;
       });
     } catch (e) {
       appLogger.e('Failed to create companion remote session', error: e);
@@ -110,7 +111,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
         }
 
         final session = provider.session;
-        if (session == null || _hostAddress == null) {
+        if (session == null || _hostAddresses == null || _hostAddresses!.isEmpty) {
           return AlertDialog(
             title: Text(t.common.error),
             content: Text(t.companionRemote.session.noSession),
@@ -118,13 +119,12 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
           );
         }
 
-        // Parse IP and port from hostAddress
-        final addressParts = _hostAddress!.split(':');
-        final ip = addressParts.first;
-        final port = addressParts[1];
+        // Extract port from first address (all share the same port)
+        final port = _hostAddresses!.first.split(':').last;
+        final ips = _hostAddresses!.map((a) => a.split(':').first).join(',');
 
-        // New QR format: ip|port|sessionId|pin (using pipe separator)
-        final qrData = '$ip|$port|${session.sessionId}|${session.pin}';
+        // URL-wrapped QR format: comma-separated IPs for multi-NIC support
+        final qrData = 'https://plezy.app/scan#$ips|$port|${session.sessionId}|${session.pin}';
 
         return Dialog(
           child: ConstrainedBox(
@@ -193,13 +193,17 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
-                    _buildCodeCard(
-                      context,
-                      t.companionRemote.session.hostAddress,
-                      _hostAddress!,
-                      onCopy: () => _copyToClipboard(_hostAddress!, t.companionRemote.session.hostAddress),
+                    ..._hostAddresses!.map(
+                      (addr) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildCodeCard(
+                          context,
+                          t.companionRemote.session.hostAddress,
+                          addr,
+                          onCopy: () => _copyToClipboard(addr, t.companionRemote.session.hostAddress),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 12),
                     _buildCodeCard(
                       context,
                       t.companionRemote.session.sessionId,
@@ -250,19 +254,30 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                           label: Text(t.companionRemote.session.newSession),
                         ),
                       const SizedBox(width: 8),
-                      TextButton(
+                      FocusableButton(
                         onPressed: () async {
                           await provider.leaveSession();
                           if (context.mounted) {
                             Navigator.of(context).pop();
                           }
                         },
-                        child: Text(t.common.disconnect),
+                        child: TextButton(
+                          onPressed: () async {
+                            await provider.leaveSession();
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
+                          },
+                          child: Text(t.common.disconnect),
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      FilledButton(
+                      FocusableButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: Text(t.companionRemote.session.minimize),
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(t.companionRemote.session.minimize),
+                        ),
                       ),
                     ],
                   ),

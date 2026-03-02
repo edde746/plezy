@@ -1,4 +1,6 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../services/settings_service.dart' as settings;
 import '../theme/mono_theme.dart';
@@ -24,6 +26,7 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> _initializeSettings() async {
     _settingsService = await settings.SettingsService.getInstance();
     _themeMode = _settingsService.getThemeMode();
+    _updateSplashTheme(_themeMode);
     notifyListeners();
   }
 
@@ -63,12 +66,26 @@ class ThemeProvider extends ChangeNotifier {
     }
   }
 
+  static const _themeChannel = MethodChannel('app.plezy/theme');
+
   Future<void> setThemeMode(settings.ThemeMode mode) async {
     if (_themeMode != mode) {
       _themeMode = mode;
       await _settingsService.setThemeMode(mode);
+      _updateSplashTheme(mode);
       notifyListeners();
     }
+  }
+
+  void _updateSplashTheme(settings.ThemeMode mode) {
+    if (!Platform.isAndroid) return;
+    final name = switch (mode) {
+      settings.ThemeMode.dark => 'dark',
+      settings.ThemeMode.oled => 'oled',
+      settings.ThemeMode.light => 'light',
+      settings.ThemeMode.system => 'system',
+    };
+    _themeChannel.invokeMethod('setSplashTheme', {'mode': name});
   }
 
   String get themeModeDisplayName {

@@ -21,10 +21,10 @@ class VideoSheetHeader extends StatelessWidget {
     return BottomSheetHeader(
       title: title,
       icon: icon,
-      iconColor: iconColor ?? Colors.white,
+      iconColor: iconColor,
       onBack: onBack,
       onClose: onClose,
-      titleStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+      titleStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       showBorder: false,
     );
   }

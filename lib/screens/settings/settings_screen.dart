@@ -1,15 +1,19 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../models/hotkey_model.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+
 import '../../focus/focus_memory_tracker.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../main_screen.dart';
 import '../../mixins/refreshable.dart';
@@ -20,11 +24,13 @@ import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
+import '../../mpv/player/platform/player_android.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/tv_number_spinner.dart';
 import 'hotkey_recorder_widget.dart';
 import '../../providers/companion_remote_provider.dart';
@@ -67,12 +73,15 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kShowServerNameOnHubs = 'show_server_name_on_hubs';
   static const _kAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const _kShowUnwatchedCount = 'show_unwatched_count';
+  static const _kHideSpoilers = 'hide_spoilers';
   static const _kRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const _kConfirmExitOnBack = 'confirm_exit_on_back';
   static const _kPlayerBackend = 'player_backend';
   static const _kExternalPlayer = 'external_player';
   static const _kHardwareDecoding = 'hardware_decoding';
+  static const _kAutoPip = 'auto_pip';
   static const _kMatchContentFrameRate = 'match_content_frame_rate';
+  static const _kTunneledPlayback = 'tunneled_playback';
   static const _kBufferSize = 'buffer_size';
   static const _kSubtitleStyling = 'subtitle_styling';
   static const _kMpvConfig = 'mpv_config';
@@ -90,6 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
+  static const _kCrashReporting = 'crash_reporting';
   static const _kDebugLogging = 'debug_logging';
   static const _kViewLogs = 'view_logs';
   static const _kClearCache = 'clear_cache';
@@ -100,9 +110,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
   bool _isLoading = true;
 
+  bool _crashReporting = true;
   bool _enableDebugLogging = false;
   bool _enableHardwareDecoding = true;
-  int _bufferSize = 128;
+  int _bufferSize = 0;
   int _seekTimeSmall = 10;
   int _seekTimeLarge = 30;
   int _sleepTimerDuration = 30;
@@ -115,7 +126,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _videoPlayerNavigationEnabled = false;
   int _maxVolume = 100;
   bool _enableDiscordRPC = false;
+  bool _autoPip = true;
   bool _matchContentFrameRate = false;
+  bool _tunneledPlayback = true;
   bool _useExoPlayer = true; // Android only: ExoPlayer vs MPV
   bool _requireProfileSelectionOnOpen = false;
   bool _useExternalPlayer = false;
@@ -147,7 +160,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
   @override
   void focusActiveTabIfReady() {
-    _focusTracker.restoreFocus(fallbackKey: _kTheme);
+    if (InputModeTracker.isKeyboardMode(context)) {
+      _focusTracker.restoreFocus(fallbackKey: _kTheme);
+    }
   }
 
   /// Navigate focus to the sidebar
@@ -172,6 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
     if (!mounted) return;
     setState(() {
+      _crashReporting = _settingsService.getCrashReporting();
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _enableHardwareDecoding = _settingsService.getEnableHardwareDecoding();
       _bufferSize = _settingsService.getBufferSize();
@@ -187,7 +203,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
       _maxVolume = _settingsService.getMaxVolume();
       _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
+      _autoPip = _settingsService.getAutoPip();
       _matchContentFrameRate = _settingsService.getMatchContentFrameRate();
+      _tunneledPlayback = _settingsService.getTunneledPlayback();
       _useExoPlayer = _settingsService.getUseExoPlayer();
       _requireProfileSelectionOnOpen = _settingsService.getRequireProfileSelectionOnOpen();
       _useExternalPlayer = _settingsService.getUseExternalPlayer();
@@ -208,7 +226,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         onKeyEvent: _handleKeyEvent,
         child: CustomScrollView(
           slivers: [
-            CustomAppBar(title: Text(t.settings.title), pinned: true),
+            ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
             SliverPadding(
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
@@ -377,6 +395,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               );
             },
           ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                focusNode: _focusTracker.get(_kHideSpoilers),
+                secondary: const AppIcon(Symbols.visibility_off_rounded, fill: 1),
+                title: Text(t.settings.hideSpoilers),
+                subtitle: Text(t.settings.hideSpoilersDescription),
+                value: settingsProvider.hideSpoilers,
+                onChanged: (value) async {
+                  await settingsProvider.setHideSpoilers(value);
+                },
+              );
+            },
+          ),
           Consumer<UserProfileProvider>(
             builder: (context, userProfileProvider, child) {
               if (!userProfileProvider.hasMultipleUsers) return const SizedBox.shrink();
@@ -463,6 +495,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               await _settingsService.setEnableHardwareDecoding(value);
             },
           ),
+          if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)
+            SwitchListTile(
+              focusNode: _focusTracker.get(_kAutoPip),
+              secondary: const AppIcon(Symbols.picture_in_picture_alt_rounded, fill: 1),
+              title: Text(t.settings.autoPip),
+              subtitle: Text(t.settings.autoPipDescription),
+              value: _autoPip,
+              onChanged: (value) async {
+                setState(() {
+                  _autoPip = value;
+                });
+                await _settingsService.setAutoPip(value);
+              },
+            ),
           if (Platform.isAndroid)
             SwitchListTile(
               focusNode: _focusTracker.get(_kMatchContentFrameRate),
@@ -477,11 +523,25 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 await _settingsService.setMatchContentFrameRate(value);
               },
             ),
+          if (Platform.isAndroid && _useExoPlayer)
+            SwitchListTile(
+              focusNode: _focusTracker.get(_kTunneledPlayback),
+              secondary: const AppIcon(Symbols.tv_options_input_settings_rounded, fill: 1),
+              title: Text(t.settings.tunneledPlayback),
+              subtitle: Text(t.settings.tunneledPlaybackDescription),
+              value: _tunneledPlayback,
+              onChanged: (value) async {
+                setState(() {
+                  _tunneledPlayback = value;
+                });
+                await _settingsService.setTunneledPlayback(value);
+              },
+            ),
           ListTile(
             focusNode: _focusTracker.get(_kBufferSize),
             leading: const AppIcon(Symbols.memory_rounded, fill: 1),
             title: Text(t.settings.bufferSize),
-            subtitle: Text(t.settings.bufferSizeMB(size: _bufferSize.toString())),
+            subtitle: Text(_bufferSize == 0 ? t.settings.bufferSizeAuto : t.settings.bufferSizeMB(size: _bufferSize.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showBufferSizeDialog(),
           ),
@@ -881,6 +941,19 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ),
           ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kCrashReporting),
+            secondary: const AppIcon(Symbols.monitoring_rounded, fill: 1),
+            title: Text(t.settings.crashReporting),
+            subtitle: Text(t.settings.crashReportingDescription),
+            value: _crashReporting,
+            onChanged: (value) async {
+              setState(() {
+                _crashReporting = value;
+              });
+              await _settingsService.setCrashReporting(value);
+            },
+          ),
+          SwitchListTile(
             focusNode: _focusTracker.get(_kDebugLogging),
             secondary: const AppIcon(Symbols.bug_report_rounded, fill: 1),
             title: Text(t.settings.debugLogging),
@@ -919,12 +992,48 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showResetSettingsDialog(),
           ),
+          if (kDebugMode)
+            ListTile(
+              leading: const AppIcon(Symbols.error_rounded, fill: 1),
+              title: const Text('Test Sentry'),
+              subtitle: const Text('Send a test error to Bugsink'),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () {
+                Sentry.captureException(Exception('Sentry test from settings'));
+                showSnackBar(context, 'Test error sent to Sentry');
+              },
+            ),
         ],
       ),
     );
   }
 
   Widget _buildUpdateSection() {
+    // Native updater: simple tile that triggers Sparkle/WinSparkle native dialog
+    if (UpdateService.useNativeUpdater) {
+      return Card(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                t.settings.updates,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              focusNode: _focusTracker.get(_kCheckForUpdates),
+              leading: const AppIcon(Symbols.system_update_rounded, fill: 1),
+              title: Text(t.settings.checkForUpdates),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => UpdateService.checkForUpdatesNative(inBackground: false),
+            ),
+          ],
+        ),
+      );
+    }
+
     final hasUpdate = _updateInfo != null && _updateInfo!['hasUpdate'] == true;
 
     return Card(
@@ -1052,7 +1161,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   }
 
   void _showBufferSizeDialog() {
-    final options = [64, 128, 256, 512, 1024];
+    final options = [0, 64, 128, 256, 512, 1024];
 
     showDialog(
       context: context,
@@ -1067,13 +1176,19 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   _bufferSize == size ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
                   fill: 1,
                 ),
-                title: Text('${size}MB'),
-                onTap: () {
+                title: Text(size == 0 ? t.settings.bufferSizeAuto : '${size}MB'),
+                onTap: () async {
                   setState(() {
                     _bufferSize = size;
                     _settingsService.setBufferSize(size);
                   });
                   Navigator.pop(context);
+                  if (Platform.isAndroid && size > 0) {
+                    final heapMB = await PlayerAndroid.getHeapSize();
+                    if (heapMB > 0 && size > heapMB ~/ 4 && mounted) {
+                      showAppSnackBar(this.context, t.settings.bufferSizeWarning(heap: heapMB.toString(), size: size.toString()));
+                    }
+                  }
                 },
               );
             }).toList(),
@@ -1096,9 +1211,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     required int currentValue,
     required Future<void> Function(int value) onSave,
   }) {
-    final isTV = PlatformDetector.isTV();
+    final useDpadControls = InputModeTracker.isKeyboardMode(context);
 
-    if (isTV) {
+    if (useDpadControls) {
       _showNumericInputDialogTV(
         title: title,
         suffixText: suffixText,
@@ -1405,7 +1520,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(t.settings.clearCache),
           content: Text(t.settings.clearCacheDescription),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+            TextButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(context),
+              child: Text(t.common.cancel),
+            ),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1431,7 +1550,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(t.settings.resetSettings),
           content: Text(t.settings.resetSettingsDescription),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+            TextButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(context),
+              child: Text(t.common.cancel),
+            ),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1440,7 +1563,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 if (mounted) {
                   navigator.pop();
                   showSuccessSnackBar(this.context, t.settings.resetSettingsSuccess);
-                  // Reload settings
                   _loadSettings();
                 }
               },
@@ -1578,7 +1700,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.close)),
+            TextButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(context),
+              child: Text(t.common.close),
+            ),
             FilledButton(
               onPressed: () async {
                 final url = Uri.parse(_updateInfo!['releaseUrl']);
@@ -1739,61 +1865,54 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    return FocusedScrollScaffold(
+      title: Text(t.settings.keyboardShortcuts),
+      actions: [
+        TextButton(
+          onPressed: () async {
+            await widget.keyboardService.resetToDefaults();
+            await _loadHotkeys();
+            if (mounted) {
+              showSuccessSnackBar(this.context, t.settings.shortcutsReset);
+            }
+          },
+          child: Text(t.common.reset),
+        ),
+      ],
+      slivers: _isLoading
+          ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
+          : [
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final actions = _hotkeys.keys.toList();
+                    final action = actions[index];
+                    final hotkey = _hotkeys[action]!;
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(
-            title: Text(t.settings.keyboardShortcuts),
-            pinned: true,
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  await widget.keyboardService.resetToDefaults();
-                  await _loadHotkeys();
-                  if (mounted) {
-                    showSuccessSnackBar(this.context, t.settings.shortcutsReset);
-                  }
-                },
-                child: Text(t.common.reset),
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        title: Text(widget.keyboardService.getActionDisplayName(action)),
+                        subtitle: Text(action),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
+                            borderRadius: const BorderRadius.all(Radius.circular(6)),
+                          ),
+                          child: Text(
+                            widget.keyboardService.formatHotkey(hotkey),
+                            style: const TextStyle(fontFamily: 'monospace'),
+                          ),
+                        ),
+                        onTap: () => _editHotkey(action, hotkey),
+                      ),
+                    );
+                  }, childCount: _hotkeys.length),
+                ),
               ),
             ],
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final actions = _hotkeys.keys.toList();
-                final action = actions[index];
-                final hotkey = _hotkeys[action]!;
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    title: Text(widget.keyboardService.getActionDisplayName(action)),
-                    subtitle: Text(action),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
-                        borderRadius: const BorderRadius.all(Radius.circular(6)),
-                      ),
-                      child: Text(
-                        widget.keyboardService.formatHotkey(hotkey),
-                        style: const TextStyle(fontFamily: 'monospace'),
-                      ),
-                    ),
-                    onTap: () => _editHotkey(action, hotkey),
-                  ),
-                );
-              }, childCount: _hotkeys.length),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
