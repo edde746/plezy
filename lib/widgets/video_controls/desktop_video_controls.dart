@@ -96,6 +96,9 @@ class DesktopVideoControls extends StatefulWidget {
   /// Called to toggle ambient lighting (passed to settings sheet)
   final VoidCallback? onToggleAmbientLighting;
 
+  /// Whether subtitles are currently visible (false = hidden via sub-visibility toggle)
+  final bool subtitlesVisible;
+
   /// Whether to show the queue button
   final bool showQueueButton;
 
@@ -151,6 +154,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.liveChannelName,
     this.isAmbientLightingEnabled = false,
     this.onToggleAmbientLighting,
+    this.subtitlesVisible = true,
     this.showQueueButton = false,
     this.onQueueItemSelected,
   });
@@ -697,6 +701,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 onNavigateLeft: navigateFromTrackToVolume,
                 canControl: widget.canControl,
                 isLive: widget.isLive,
+                subtitlesVisible: widget.subtitlesVisible,
                 showQueueButton: widget.showQueueButton,
                 onQueueItemSelected: widget.onQueueItemSelected,
                 shaderService: widget.shaderService,

@@ -12,6 +12,9 @@ class PlayerAndroid extends PlayerBase {
   int? _bufferSizeBytes;
   bool _tunnelingEnabled = true;
 
+  /// Stored subtitle track ID when subtitles are hidden via sub-visibility.
+  String? _hiddenSubtitleTrackId;
+
   @override
   MethodChannel get methodChannel => _methodChannel;
 
@@ -192,6 +195,29 @@ class PlayerAndroid extends PlayerBase {
         break;
       case 'tunneled-playback':
         _tunnelingEnabled = value != 'no';
+        break;
+      case 'sub-visibility':
+        if (value == 'no') {
+          // Store current subtitle track and disable
+          final current = state.track.subtitle;
+          if (current != null && current.id != 'no') {
+            _hiddenSubtitleTrackId = current.id;
+            await selectSubtitleTrack(SubtitleTrack.off);
+          }
+        } else {
+          // Restore previously hidden subtitle track
+          final storedId = _hiddenSubtitleTrackId;
+          if (storedId != null) {
+            _hiddenSubtitleTrackId = null;
+            final track = state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere(
+                  (t) => t?.id == storedId,
+                  orElse: () => null,
+                );
+            if (track != null) {
+              await selectSubtitleTrack(track);
+            }
+          }
+        }
         break;
       // Other properties are no-ops for ExoPlayer
     }

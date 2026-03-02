@@ -256,6 +256,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _showPerformanceOverlay = false;
   // Long-press 2x speed state
   bool _isLongPressing = false;
+  // Subtitle visibility toggle state
+  bool _subtitlesVisible = true;
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
   double? _rateBeforeLongPress;
@@ -551,8 +553,28 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
-  // ignore: no-empty-block - stub for future subtitle toggle implementation
-  void _toggleSubtitles() {}
+  void _toggleSubtitles() {
+    final currentTrack = widget.player.state.track.subtitle;
+    // No-op if no subtitle track is selected
+    if (currentTrack == null || currentTrack.id == 'no') return;
+
+    final newVisible = !_subtitlesVisible;
+    widget.player.setProperty('sub-visibility', newVisible ? 'yes' : 'no');
+    setState(() {
+      _subtitlesVisible = newVisible;
+    });
+  }
+
+  void _onSubtitleTrackChanged(SubtitleTrack track) {
+    // Reset visibility when user explicitly picks a new subtitle track
+    if (track.id != 'no' && !_subtitlesVisible) {
+      widget.player.setProperty('sub-visibility', 'yes');
+      setState(() {
+        _subtitlesVisible = true;
+      });
+    }
+    widget.onSubtitleTrackChanged?.call(track);
+  }
 
   void _toggleShader() {
     final shaderService = widget.shaderService;
@@ -982,7 +1004,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       onToggleFullscreen: _toggleFullscreen,
       onSwitchVersion: _switchMediaVersion,
       onAudioTrackChanged: widget.onAudioTrackChanged,
-      onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
+      onSubtitleTrackChanged: _onSubtitleTrackChanged,
+      subtitlesVisible: _subtitlesVisible,
       onLoadSeekTimes: () async {
         if (mounted) {
           await _loadSeekTimes();
@@ -2009,7 +2032,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         onToggleAlwaysOnTop: Platform.isMacOS ? null : _toggleAlwaysOnTop,
         onSwitchVersion: _switchMediaVersion,
         onAudioTrackChanged: widget.onAudioTrackChanged,
-        onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
+        onSubtitleTrackChanged: _onSubtitleTrackChanged,
+        subtitlesVisible: _subtitlesVisible,
         onLoadSeekTimes: () async {
           if (mounted) {
             await _loadSeekTimes();

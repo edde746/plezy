@@ -73,6 +73,9 @@ class TrackChapterControls extends StatelessWidget {
   /// Whether this is a live TV stream (hides speed settings).
   final bool isLive;
 
+  /// Whether subtitles are currently visible (false = hidden via sub-visibility toggle)
+  final bool subtitlesVisible;
+
   /// Whether to show the queue button
   final bool showQueueButton;
 
@@ -110,6 +113,7 @@ class TrackChapterControls extends StatelessWidget {
     this.onNavigateLeft,
     this.canControl = true,
     this.isLive = false,
+    this.subtitlesVisible = true,
     this.showQueueButton = false,
     this.onQueueItemSelected,
     this.shaderService,
@@ -267,10 +271,12 @@ class TrackChapterControls extends StatelessWidget {
         // Subtitles button
         if (_hasSubtitles(tracks)) {
           final currentIndex = buttonIndex;
+          final hasActiveSubtitle = tracks?.track.subtitle != null && tracks!.track.subtitle!.id != 'no';
+          final isHidden = hasActiveSubtitle && !subtitlesVisible;
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: Symbols.subtitles_rounded,
+              icon: isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded,
               tooltip: t.videoControls.subtitlesButton,
               semanticLabel: t.videoControls.subtitlesButton,
               tracks: tracks,
