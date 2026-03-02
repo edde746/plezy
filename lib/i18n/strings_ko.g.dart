@@ -1164,10 +1164,10 @@ class _TranslationsVideoControlsPipErrorsKo implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Android 8.0 이상이 필요합니다';
-	@override String get iosVersion => 'Requires iOS 15.0 or newer';
+	@override String get iosVersion => 'iOS 15.0 이상이 필요합니다';
 	@override String get permissionDisabled => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요';
 	@override String get notSupported => '이 기기는 화면 속 화면 모드를 지원하지 않습니다';
-	@override String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
+	@override String get voSwitchFailed => '화면 속 화면을 위한 비디오 출력 전환에 실패했습니다';
 	@override String get failed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override String unknown({required Object error}) => '오류가 발생했습니다: ${error}';
 }
@@ -1629,10 +1629,10 @@ extension on TranslationsKo {
 			'videoControls.endsAt' => ({required Object time}) => '${time}에 종료',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
-			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
+			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
 			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요',
 			'videoControls.pipErrors.notSupported' => '이 기기는 화면 속 화면 모드를 지원하지 않습니다',
-			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
+			'videoControls.pipErrors.voSwitchFailed' => '화면 속 화면을 위한 비디오 출력 전환에 실패했습니다',
 			'videoControls.pipErrors.failed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '오류가 발생했습니다: ${error}',
 			'videoControls.chapters' => '챕터',
@@ -1816,10 +1816,10 @@ extension on TranslationsKo {
 			'liveTv.tuneFailed' => '채널 튜닝에 실패했습니다',
 			'liveTv.loading' => '채널 로딩 중...',
 			'liveTv.nowPlaying' => '현재 재생 중',
-			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
-			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
+			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
 			'liveTv.live' => '실시간',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '신규',

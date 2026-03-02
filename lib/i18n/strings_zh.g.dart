@@ -1164,10 +1164,10 @@ class _TranslationsVideoControlsPipErrorsZh implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => '需要 Android 8.0 或更高版本';
-	@override String get iosVersion => 'Requires iOS 15.0 or newer';
+	@override String get iosVersion => '需要 iOS 15.0 或更高版本';
 	@override String get permissionDisabled => '画中画权限已禁用。请在设置 > 应用 > Plezy > 画中画中启用';
 	@override String get notSupported => '此设备不支持画中画模式';
-	@override String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
+	@override String get voSwitchFailed => '无法切换画中画的视频输出';
 	@override String get failed => '画中画启动失败';
 	@override String unknown({required Object error}) => '发生错误：${error}';
 }
@@ -1629,10 +1629,10 @@ extension on TranslationsZh {
 			'videoControls.endsAt' => ({required Object time}) => '${time} 结束',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
-			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
+			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
 			'videoControls.pipErrors.permissionDisabled' => '画中画权限已禁用。请在设置 > 应用 > Plezy > 画中画中启用',
 			'videoControls.pipErrors.notSupported' => '此设备不支持画中画模式',
-			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
+			'videoControls.pipErrors.voSwitchFailed' => '无法切换画中画的视频输出',
 			'videoControls.pipErrors.failed' => '画中画启动失败',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '发生错误：${error}',
 			'videoControls.chapters' => '章节',
@@ -1816,10 +1816,10 @@ extension on TranslationsZh {
 			'liveTv.tuneFailed' => '无法调谐频道',
 			'liveTv.loading' => '正在加载频道...',
 			'liveTv.nowPlaying' => '正在播放',
-			'liveTv.noPrograms' => '没有可用的节目数据',
-			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => '没有可用的节目数据',
+			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			'liveTv.live' => '直播',
 			'liveTv.hd' => '高清',
 			'liveTv.premiere' => '新',

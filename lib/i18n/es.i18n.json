@@ -354,8 +354,10 @@
     "pipFailed": "Error al iniciar Imagen en Imagen",
     "pipErrors": {
       "androidVersion": "Requiere Android 8.0 o más reciente",
+      "iosVersion": "Requiere iOS 15.0 o más reciente",
       "permissionDisabled": "El permiso de Imagen en Imagen está desactivado. Actívalo en Ajustes > Aplicaciones > Plezy > Imagen en Imagen",
       "notSupported": "El dispositivo no soporta el modo Imagen en Imagen",
+      "voSwitchFailed": "Error al cambiar la salida de video para Imagen en Imagen",
       "failed": "Error al iniciar Imagen en Imagen",
       "unknown": "Ocurrió un error: ${error}"
     },

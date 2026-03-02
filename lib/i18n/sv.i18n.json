@@ -354,8 +354,10 @@
     "pipFailed": "Bild-i-bild kunde inte starta",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",
+      "iosVersion": "Kräver iOS 15.0 eller nyare",
       "permissionDisabled": "Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild",
       "notSupported": "Denna enhet stöder inte bild-i-bild-läge",
+      "voSwitchFailed": "Kunde inte byta videoutgång för bild-i-bild",
       "failed": "Bild-i-bild kunde inte starta",
       "unknown": "Ett fel uppstod: ${error}"
     },

@@ -1164,10 +1164,10 @@ class _TranslationsVideoControlsPipErrorsIt implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Richiede Android 8.0 o versioni successive';
-	@override String get iosVersion => 'Requires iOS 15.0 or newer';
+	@override String get iosVersion => 'Richiede iOS 15.0 o versioni successive';
 	@override String get permissionDisabled => 'L\'autorizzazione Picture-in-Picture è disabilitata. Abilitala in Impostazioni > App > Plezy > Picture-in-Picture';
 	@override String get notSupported => 'Questo dispositivo non supporta la modalità Picture-in-Picture';
-	@override String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
+	@override String get voSwitchFailed => 'Impossibile cambiare l\'uscita video per Picture-in-Picture';
 	@override String get failed => 'Impossibile avviare la modalità Picture-in-Picture';
 	@override String unknown({required Object error}) => 'Si è verificato un errore: ${error}';
 }
@@ -1629,10 +1629,10 @@ extension on TranslationsIt {
 			'videoControls.endsAt' => ({required Object time}) => 'Finisce alle ${time}',
 			'videoControls.pipFailed' => 'Impossibile avviare la modalità Picture-in-Picture',
 			'videoControls.pipErrors.androidVersion' => 'Richiede Android 8.0 o versioni successive',
-			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
+			'videoControls.pipErrors.iosVersion' => 'Richiede iOS 15.0 o versioni successive',
 			'videoControls.pipErrors.permissionDisabled' => 'L\'autorizzazione Picture-in-Picture è disabilitata. Abilitala in Impostazioni > App > Plezy > Picture-in-Picture',
 			'videoControls.pipErrors.notSupported' => 'Questo dispositivo non supporta la modalità Picture-in-Picture',
-			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
+			'videoControls.pipErrors.voSwitchFailed' => 'Impossibile cambiare l\'uscita video per Picture-in-Picture',
 			'videoControls.pipErrors.failed' => 'Impossibile avviare la modalità Picture-in-Picture',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Si è verificato un errore: ${error}',
 			'videoControls.chapters' => 'Capitoli',
@@ -1816,10 +1816,10 @@ extension on TranslationsIt {
 			'liveTv.tuneFailed' => 'Impossibile sintonizzare il canale',
 			'liveTv.loading' => 'Caricamento canali...',
 			'liveTv.nowPlaying' => 'In riproduzione',
-			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
-			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
+			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
 			'liveTv.live' => 'IN DIRETTA',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NUOVO',

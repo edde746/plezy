@@ -354,8 +354,10 @@
     "pipFailed": "Bild-in-Bild konnte nicht gestartet werden",
     "pipErrors": {
       "androidVersion": "Erfordert Android 8.0 oder neuer",
+      "iosVersion": "Erfordert iOS 15.0 oder neuer",
       "permissionDisabled": "Bild-in-Bild-Berechtigung ist deaktiviert. Aktiviere sie unter Einstellungen > Apps > Plezy > Bild-in-Bild",
       "notSupported": "Dieses Gerät unterstützt den Bild-in-Bild-Modus nicht",
+      "voSwitchFailed": "Videoausgabe für Bild-in-Bild konnte nicht umgeschaltet werden",
       "failed": "Bild-in-Bild konnte nicht gestartet werden",
       "unknown": "Ein Fehler ist aufgetreten: ${error}"
     },

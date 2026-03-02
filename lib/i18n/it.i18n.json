@@ -354,8 +354,10 @@
     "pipFailed": "Impossibile avviare la modalità Picture-in-Picture",
     "pipErrors": {
       "androidVersion": "Richiede Android 8.0 o versioni successive",
+      "iosVersion": "Richiede iOS 15.0 o versioni successive",
       "permissionDisabled": "L'autorizzazione Picture-in-Picture è disabilitata. Abilitala in Impostazioni > App > Plezy > Picture-in-Picture",
       "notSupported": "Questo dispositivo non supporta la modalità Picture-in-Picture",
+      "voSwitchFailed": "Impossibile cambiare l'uscita video per Picture-in-Picture",
       "failed": "Impossibile avviare la modalità Picture-in-Picture",
       "unknown": "Si è verificato un errore: ${error}"
     },

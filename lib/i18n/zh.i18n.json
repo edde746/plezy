@@ -354,8 +354,10 @@
     "pipFailed": "画中画启动失败",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",
+      "iosVersion": "需要 iOS 15.0 或更高版本",
       "permissionDisabled": "画中画权限已禁用。请在设置 > 应用 > Plezy > 画中画中启用",
       "notSupported": "此设备不支持画中画模式",
+      "voSwitchFailed": "无法切换画中画的视频输出",
       "failed": "画中画启动失败",
       "unknown": "发生错误：${error}"
     },

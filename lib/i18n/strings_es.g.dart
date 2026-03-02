@@ -1164,10 +1164,10 @@ class _TranslationsVideoControlsPipErrorsEs implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Requiere Android 8.0 o más reciente';
-	@override String get iosVersion => 'Requires iOS 15.0 or newer';
+	@override String get iosVersion => 'Requiere iOS 15.0 o más reciente';
 	@override String get permissionDisabled => 'El permiso de Imagen en Imagen está desactivado. Actívalo en Ajustes > Aplicaciones > Plezy > Imagen en Imagen';
 	@override String get notSupported => 'El dispositivo no soporta el modo Imagen en Imagen';
-	@override String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
+	@override String get voSwitchFailed => 'Error al cambiar la salida de video para Imagen en Imagen';
 	@override String get failed => 'Error al iniciar Imagen en Imagen';
 	@override String unknown({required Object error}) => 'Ocurrió un error: ${error}';
 }
@@ -1629,10 +1629,10 @@ extension on TranslationsEs {
 			'videoControls.endsAt' => ({required Object time}) => 'Termina a las ${time}',
 			'videoControls.pipFailed' => 'Error al iniciar Imagen en Imagen',
 			'videoControls.pipErrors.androidVersion' => 'Requiere Android 8.0 o más reciente',
-			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
+			'videoControls.pipErrors.iosVersion' => 'Requiere iOS 15.0 o más reciente',
 			'videoControls.pipErrors.permissionDisabled' => 'El permiso de Imagen en Imagen está desactivado. Actívalo en Ajustes > Aplicaciones > Plezy > Imagen en Imagen',
 			'videoControls.pipErrors.notSupported' => 'El dispositivo no soporta el modo Imagen en Imagen',
-			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
+			'videoControls.pipErrors.voSwitchFailed' => 'Error al cambiar la salida de video para Imagen en Imagen',
 			'videoControls.pipErrors.failed' => 'Error al iniciar Imagen en Imagen',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ocurrió un error: ${error}',
 			'videoControls.chapters' => 'Capítulos',
@@ -1816,10 +1816,10 @@ extension on TranslationsEs {
 			'liveTv.tuneFailed' => 'Error al sintonizar el canal',
 			'liveTv.loading' => 'Cargando canales...',
 			'liveTv.nowPlaying' => 'Reproduciendo ahora',
-			'liveTv.noPrograms' => 'No hay datos de programación disponibles',
-			'liveTv.channelNumber' => ({required Object number}) => 'Canal ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'No hay datos de programación disponibles',
+			'liveTv.channelNumber' => ({required Object number}) => 'Canal ${number}',
 			'liveTv.live' => 'EN VIVO',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NUEVO',

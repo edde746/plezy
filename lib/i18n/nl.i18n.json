@@ -354,8 +354,10 @@
     "pipFailed": "Beeld-in-beeld kon niet worden gestart",
     "pipErrors": {
       "androidVersion": "Vereist Android 8.0 of nieuwer",
+      "iosVersion": "Vereist iOS 15.0 of nieuwer",
       "permissionDisabled": "Beeld-in-beeld toestemming is uitgeschakeld. Schakel deze in via Instellingen > Apps > Plezy > Beeld-in-beeld",
       "notSupported": "Dit apparaat ondersteunt geen beeld-in-beeld modus",
+      "voSwitchFailed": "Kan video-uitvoer niet wisselen voor beeld-in-beeld",
       "failed": "Beeld-in-beeld kon niet worden gestart",
       "unknown": "Er is een fout opgetreden: ${error}"
     },

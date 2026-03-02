@@ -1164,10 +1164,10 @@ class _TranslationsVideoControlsPipErrorsDe implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Erfordert Android 8.0 oder neuer';
-	@override String get iosVersion => 'Requires iOS 15.0 or newer';
+	@override String get iosVersion => 'Erfordert iOS 15.0 oder neuer';
 	@override String get permissionDisabled => 'Bild-in-Bild-Berechtigung ist deaktiviert. Aktiviere sie unter Einstellungen > Apps > Plezy > Bild-in-Bild';
 	@override String get notSupported => 'Dieses Gerät unterstützt den Bild-in-Bild-Modus nicht';
-	@override String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
+	@override String get voSwitchFailed => 'Videoausgabe für Bild-in-Bild konnte nicht umgeschaltet werden';
 	@override String get failed => 'Bild-in-Bild konnte nicht gestartet werden';
 	@override String unknown({required Object error}) => 'Ein Fehler ist aufgetreten: ${error}';
 }
@@ -1629,10 +1629,10 @@ extension on TranslationsDe {
 			'videoControls.endsAt' => ({required Object time}) => 'Endet um ${time}',
 			'videoControls.pipFailed' => 'Bild-in-Bild konnte nicht gestartet werden',
 			'videoControls.pipErrors.androidVersion' => 'Erfordert Android 8.0 oder neuer',
-			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
+			'videoControls.pipErrors.iosVersion' => 'Erfordert iOS 15.0 oder neuer',
 			'videoControls.pipErrors.permissionDisabled' => 'Bild-in-Bild-Berechtigung ist deaktiviert. Aktiviere sie unter Einstellungen > Apps > Plezy > Bild-in-Bild',
 			'videoControls.pipErrors.notSupported' => 'Dieses Gerät unterstützt den Bild-in-Bild-Modus nicht',
-			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
+			'videoControls.pipErrors.voSwitchFailed' => 'Videoausgabe für Bild-in-Bild konnte nicht umgeschaltet werden',
 			'videoControls.pipErrors.failed' => 'Bild-in-Bild konnte nicht gestartet werden',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ein Fehler ist aufgetreten: ${error}',
 			'videoControls.chapters' => 'Kapitel',
@@ -1816,10 +1816,10 @@ extension on TranslationsDe {
 			'liveTv.tuneFailed' => 'Kanal konnte nicht eingestellt werden',
 			'liveTv.loading' => 'Kanäle werden geladen...',
 			'liveTv.nowPlaying' => 'Läuft gerade',
-			'liveTv.noPrograms' => 'Keine Programmdaten verfügbar',
-			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'Keine Programmdaten verfügbar',
+			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEU',

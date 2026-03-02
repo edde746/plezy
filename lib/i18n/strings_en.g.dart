@@ -3437,10 +3437,10 @@ extension on Translations {
 			'liveTv.tuneFailed' => 'Failed to tune channel',
 			'liveTv.loading' => 'Loading channels...',
 			'liveTv.nowPlaying' => 'Now Playing',
-			'liveTv.noPrograms' => 'No program data available',
-			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'No program data available',
+			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEW',
