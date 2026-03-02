@@ -82,7 +82,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Used for keyboard/gamepad long-press activation.
   /// If [position] is null, the menu will appear at the center of this widget.
   void showContextMenu(BuildContext menuContext, {Offset? position}) {
-    _openedFromKeyboard = true;
+    _openedFromKeyboard = position == null;
     if (position != null) {
       _tapPosition = position;
     } else {
@@ -211,14 +211,26 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Go to Series (for episodes and seasons)
+      // Go to Series (for episodes and seasons) — hide if already on that series' detail screen,
+      // or on a season screen belonging to the same series
+      final ancestorMediaDetail = context.findAncestorWidgetOfExactType<MediaDetailScreen>();
+      final ancestorSeasonDetail = context.findAncestorWidgetOfExactType<SeasonDetailScreen>();
+      final ancestorSeriesKey =
+          ancestorMediaDetail?.metadata.ratingKey ?? ancestorSeasonDetail?.season.parentRatingKey;
+      // For episodes, the show key is grandparentRatingKey; for seasons, it's parentRatingKey
+      final itemSeriesKey =
+          mediaType == PlexMediaType.episode ? metadata.grandparentRatingKey : metadata.parentRatingKey;
       if ((mediaType == PlexMediaType.episode || mediaType == PlexMediaType.season) &&
-          metadata.grandparentTitle != null) {
+          itemSeriesKey != null &&
+          ancestorSeriesKey != itemSeriesKey) {
         menuActions.add(_MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries));
       }
 
-      // Go to Season (for episodes)
-      if (mediaType == PlexMediaType.episode && metadata.parentTitle != null) {
+      // Go to Season (for episodes) — hide if already on that season's detail screen
+      if (mediaType == PlexMediaType.episode &&
+          metadata.parentTitle != null &&
+          context.findAncestorWidgetOfExactType<SeasonDetailScreen>()?.season.ratingKey !=
+              metadata.parentRatingKey) {
         menuActions.add(
           _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
         );
@@ -424,7 +436,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           didNavigate = true;
           await _navigateToRelated(
             context,
-            metadata!.grandparentRatingKey,
+            metadata!.mediaType == PlexMediaType.season
+                ? metadata.parentRatingKey
+                : metadata.grandparentRatingKey,
             (metadata) => MediaDetailScreen(metadata: metadata),
             t.messages.errorLoadingSeries,
           );
@@ -1328,7 +1342,7 @@ class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> 
                   final index = entry.key;
                   final action = entry.value;
                   return FocusableListTile(
-                    focusNode: index == 0 ? _initialFocusNode : null,
+                    focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
                     leading: AppIcon(action.icon, fill: 1),
                     title: Text(action.label),
                     onTap: () => OverlaySheetController.closeAdaptive(context, action.value),
