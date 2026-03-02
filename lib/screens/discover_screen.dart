@@ -6,6 +6,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
+import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../utils/global_key_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -1186,6 +1187,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ),
               ),
               // Page indicators with animated progress and pause/play button
+              if (!InputModeTracker.isKeyboardMode(context))
               Positioned(
                 bottom: 16,
                 left: -26,
