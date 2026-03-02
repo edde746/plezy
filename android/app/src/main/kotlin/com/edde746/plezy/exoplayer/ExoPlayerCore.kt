@@ -88,6 +88,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var trackSelector: DefaultTrackSelector? = null
     private var tunnelingUserEnabled: Boolean = true
     private var tunnelingDisabledForCodec: Boolean = false
+    @Volatile private var disposing: Boolean = false
     private var pendingStartPositionMs: Long = 0L
 
     // Frame watchdog: detects black screen (audio plays but 0 video frames rendered)
@@ -151,9 +152,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     private fun ensureFlutterOverlayOnTop() {
+        if (disposing) return
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
-            if (!isInitialized) return@post
+            if (disposing || !isInitialized) return@post
             val container = FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)
                 ?: return@post
             FlutterOverlayHelper.configureFlutterZOrder(contentView, container, zOrderOnTop = false)
@@ -183,6 +185,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
 
         tunnelingUserEnabled = tunnelingEnabled
+        disposing = false
 
         try {
             audioFocusManager = AudioFocusManager(
@@ -405,6 +408,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     private val surfaceCallback = object : android.view.SurfaceHolder.Callback {
         override fun surfaceCreated(holder: android.view.SurfaceHolder) {
+            if (disposing) return
             emitLog("debug", "surface", "Created")
             ensureFlutterOverlayOnTop()
         }
@@ -569,6 +573,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     private fun updateSurfaceViewSize(videoWidth: Int, videoHeight: Int, pixelRatio: Float) {
+        if (disposing) return
         if (videoWidth == 0 || videoHeight == 0) return
 
         val surface = surfaceView ?: return
@@ -1057,7 +1062,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     fun setVisible(visible: Boolean) {
+        if (disposing) return
         activity.runOnUiThread {
+            if (disposing) return@runOnUiThread
             surfaceContainer?.visibility = if (visible) View.VISIBLE else View.INVISIBLE
             // subtitleView is inside surfaceContainer, inherits visibility
             Log.d(TAG, "setVisible($visible)")
@@ -1132,10 +1139,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     fun onPipModeChanged(isInPipMode: Boolean) {
+        if (disposing) return
         activity.runOnUiThread {
+            if (disposing) return@runOnUiThread
             // Force recalculation of surface size based on new container dimensions
             // Use a slight delay to allow the window to resize first
             handler.postDelayed({
+                if (disposing) return@postDelayed
                 val videoSize = exoPlayer?.videoSize
                 if (videoSize != null && videoSize.width > 0 && videoSize.height > 0) {
                     updateSurfaceViewSize(videoSize.width, videoSize.height, videoSize.pixelWidthHeightRatio)
@@ -1232,10 +1242,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     // Cleanup
 
     fun dispose() {
+        if (disposing) return
+        disposing = true
         Log.d(TAG, "Disposing")
 
         stopFrameWatchdog()
         stopPositionUpdates()
+        handler.removeCallbacksAndMessages(null)
         frameRateManager?.clearVideoFrameRate()
         frameRateManager = null
         audioFocusManager?.release()
@@ -1266,10 +1279,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         contentView.post {
             sv?.holder?.removeCallback(cb)
             container?.let { contentView.removeView(it) }
+            surfaceContainer = null
+            surfaceView = null
+            subtitleView = null
         }
-        surfaceContainer = null
-        surfaceView = null
-        subtitleView = null
 
         isInitialized = false
         Log.d(TAG, "Disposed")

@@ -62,10 +62,10 @@ class MpvPlayerCore(private val activity: Activity) :
     private var flutterOverlayApplied = false
 
     private fun ensureFlutterOverlayOnTop() {
-        if (flutterOverlayApplied) return
+        if (disposing || flutterOverlayApplied) return
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         contentView.post {
-            if (!isInitialized) return@post
+            if (disposing || !isInitialized) return@post
             val container = FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)
                 ?: return@post
             if (contentView.getChildAt(contentView.childCount - 1) == container) {
@@ -446,10 +446,9 @@ class MpvPlayerCore(private val activity: Activity) :
     }
 
     fun setVisible(visible: Boolean) {
+        if (disposing) return
         activity.runOnUiThread {
-            // Set visibility on the container, not the SurfaceView directly.
-            // This allows the SurfaceView surface to be created even when hidden,
-            // which is required with RenderMode.texture (TextureView mode).
+            if (disposing) return@runOnUiThread
             surfaceContainer?.visibility = if (visible) View.VISIBLE else View.INVISIBLE
             Log.d(TAG, "setVisible($visible)")
         }
@@ -481,6 +480,7 @@ class MpvPlayerCore(private val activity: Activity) :
 
         // Shutdown command executor
         commandExecutor.shutdown()
+        handler.removeCallbacksAndMessages(null)
 
         // Clean up frame rate and audio focus
         frameRateManager?.clearVideoFrameRate()
@@ -513,9 +513,9 @@ class MpvPlayerCore(private val activity: Activity) :
         contentView.post {
             sv?.holder?.removeCallback(this)
             container?.let { contentView.removeView(it) }
+            surfaceContainer = null
+            surfaceView = null
         }
-        surfaceContainer = null
-        surfaceView = null
         pendingSurface = null
         isInitialized = false
 
