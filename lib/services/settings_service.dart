@@ -1227,6 +1227,11 @@ class SettingsService extends BaseSharedPreferencesService {
     await prefs.setString(_keyPerItemDownloadSettings, json.encode(all));
   }
 
+  Map<String, dynamic> _decodeJsonStringToMap(String jsonString) {
+    final decoded = json.decode(jsonString);
+    return Map<String, dynamic>.from(decoded as Map);
+  }
+
   Map<String, dynamic> _getPerItemDownloadSettings() {
     final jsonString = prefs.getString(_keyPerItemDownloadSettings);
     if (jsonString == null) return {};
