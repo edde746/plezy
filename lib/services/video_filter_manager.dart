@@ -21,7 +21,7 @@ class VideoFilterManager {
   final int selectedMediaIndex;
 
   /// BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
-  int _boxFitMode = 0;
+  int _boxFitMode;
 
   /// Store the boxFitMode before entering PiP so it can be restored
   int? _prePipBoxFitMode;
@@ -41,7 +41,10 @@ class VideoFilterManager {
   /// Debounced video filter update with leading edge execution
   late final Debounce _debouncedUpdateVideoFilter;
 
-  VideoFilterManager({required this.player, required this.availableVersions, required this.selectedMediaIndex}) {
+  /// Callback invoked when boxFitMode changes, for external persistence
+  final void Function(int mode)? onBoxFitModeChanged;
+
+  VideoFilterManager({required this.player, required this.availableVersions, required this.selectedMediaIndex, int initialBoxFitMode = 0, this.onBoxFitModeChanged}) : _boxFitMode = initialBoxFitMode {
     _debouncedUpdateVideoFilter = debounce(
       updateVideoFilter,
       const Duration(milliseconds: 50),
@@ -59,6 +62,7 @@ class VideoFilterManager {
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void cycleBoxFitMode() {
     _boxFitMode = (_boxFitMode + 1) % 3;
+    onBoxFitModeChanged?.call(_boxFitMode);
     updateVideoFilter();
   }
 
@@ -73,6 +77,7 @@ class VideoFilterManager {
   /// Toggle between contain and cover modes only (for pinch gesture)
   void toggleContainCover() {
     _boxFitMode = _boxFitMode == 0 ? 1 : 0;
+    onBoxFitModeChanged?.call(_boxFitMode);
     updateVideoFilter();
   }
 

@@ -1106,6 +1106,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             player: player!,
             availableVersions: _availableVersions,
             selectedMediaIndex: widget.selectedMediaIndex,
+            initialBoxFitMode: settingsService.getDefaultBoxFitMode(),
+            onBoxFitModeChanged: (mode) => settingsService.setDefaultBoxFitMode(mode),
           );
           // Update video filter once dimensions are available
           _videoFilterManager!.updateVideoFilter();
@@ -1265,15 +1267,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  /// Apply the saved shader preset on playback start
+  /// Apply the saved shader preset on playback start.
+  /// Reads directly from SettingsService (synchronous SharedPreferences) to
+  /// avoid a race with ShaderProvider's async initialization.
   Future<void> _applySavedShaderPreset() async {
     if (_shaderService == null || !_shaderService!.isSupported) return;
 
     try {
-      final shaderProvider = context.read<ShaderProvider>();
-      final preset = shaderProvider.savedPreset;
+      final settings = await SettingsService.getInstance();
+      final presetId = settings.getGlobalShaderPreset();
+      final preset = ShaderPreset.fromId(presetId) ?? ShaderPreset.none;
       await _shaderService!.applyPreset(preset);
-      shaderProvider.setCurrentPreset(preset);
+      context.read<ShaderProvider>().setCurrentPreset(preset);
     } catch (e) {
       appLogger.d('Could not apply shader preset', error: e);
     }

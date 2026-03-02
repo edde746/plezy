@@ -70,6 +70,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
   static const String _keyTunneledPlayback = 'tunneled_playback';
   static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
+  static const String _keyDefaultBoxFitMode = 'default_box_fit_mode';
   static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
   static const String _keyUseExoPlayer = 'use_exoplayer';
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
@@ -1041,6 +1042,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getDouble(_keyDefaultPlaybackSpeed) ?? 1.0; // Default: normal speed
   }
 
+  // Default BoxFit Mode (0=contain, 1=cover, 2=fill)
+  Future<void> setDefaultBoxFitMode(int mode) async {
+    await prefs.setInt(_keyDefaultBoxFitMode, mode.clamp(0, 2));
+  }
+
+  int getDefaultBoxFitMode() {
+    return prefs.getInt(_keyDefaultBoxFitMode) ?? 0; // Default: contain
+  }
+
   // Auto-Play Next Episode
   Future<void> setAutoPlayNextEpisode(bool enabled) async {
     await prefs.setBool(_keyAutoPlayNextEpisode, enabled);
@@ -1244,6 +1254,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyMatchContentFrameRate),
       prefs.remove(_keyTunneledPlayback),
       prefs.remove(_keyDefaultPlaybackSpeed),
+      prefs.remove(_keyDefaultBoxFitMode),
       prefs.remove(_keyAutoPlayNextEpisode),
       prefs.remove(_keyUseExoPlayer),
       prefs.remove(_keyAlwaysKeepSidebarOpen),
