@@ -845,11 +845,12 @@ class GuideTabState extends State<GuideTab> {
   // ---------------------------------------------------------------------------
 
   Widget _buildTimeHeader(ThemeData theme) {
+    final is24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
     final slots = <Widget>[];
     var current = _gridStart;
 
     while (current.isBefore(_gridEnd)) {
-      final timeStr = '${current.hour.toString().padLeft(2, '0')}:${current.minute.toString().padLeft(2, '0')}';
+      final timeStr = formatClockTime(current, is24Hour: is24Hour);
       slots.add(
         SizedBox(
           width: _slotWidth,
@@ -1064,7 +1065,7 @@ class GuideTabState extends State<GuideTab> {
                   ),
                 if (program.startTime != null)
                   Text(
-                    '${program.startTime!.hour.toString().padLeft(2, '0')}:${program.startTime!.minute.toString().padLeft(2, '0')} · ${formatDurationTextual(program.durationMinutes * 60000)}',
+                    '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60000)}',
                     style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
                     maxLines: 1,
                   ),

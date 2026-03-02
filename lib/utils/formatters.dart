@@ -176,13 +176,20 @@ DurationLocale _getDurationLocale() {
   }
 }
 
+/// Formats a [DateTime] as a clock time string, respecting the system 24-hour preference.
+/// Uses `DateFormat.Hm` for 24-hour format and `DateFormat.jm` for 12-hour format.
+String formatClockTime(DateTime time, {required bool is24Hour}) {
+  final locale = LocaleSettings.currentLocale.languageCode;
+  final formatter = is24Hour ? DateFormat.Hm(locale) : DateFormat.jm(locale);
+  return formatter.format(time);
+}
+
 /// Formats the clock time at which media will finish playing, given the remaining duration.
-/// Returns a localized time string like "6:12 PM" or "18:12" depending on locale.
-String formatFinishTime(Duration remaining, {double rate = 1.0}) {
+/// Returns a localized time string like "6:12 PM" or "18:12" depending on system setting.
+String formatFinishTime(Duration remaining, {double rate = 1.0, required bool is24Hour}) {
   final adjustedRemaining = remaining * (1.0 / rate);
   final finishTime = DateTime.now().add(adjustedRemaining);
-  final formatter = DateFormat.jm(LocaleSettings.currentLocale.languageCode);
-  return formatter.format(finishTime);
+  return formatClockTime(finishTime, is24Hour: is24Hour);
 }
 
 /// Takes a list of strings and returns one long string with each item in the list concatenated by a bullet

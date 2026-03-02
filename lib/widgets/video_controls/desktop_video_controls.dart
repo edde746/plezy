@@ -633,7 +633,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                               final rate = rateSnap.data ?? 1.0;
                               if (remaining.inSeconds <= 0) return const SizedBox.shrink();
 
-                              final text = t.videoControls.endsAt(time: formatFinishTime(remaining, rate: rate));
+                              final text = t.videoControls.endsAt(time: formatFinishTime(remaining, rate: rate, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context)));
                               const style = TextStyle(color: Colors.white70, fontSize: 13);
 
                               return LayoutBuilder(

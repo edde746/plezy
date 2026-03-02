@@ -127,7 +127,7 @@ class VideoTimelineBar extends StatelessWidget {
       initialData: player.state.rate,
       builder: (context, rateSnap) {
         final rate = rateSnap.data ?? 1.0;
-        final text = '${formatDurationTimestamp(remaining)} · ${formatFinishTime(remaining.abs(), rate: rate)}';
+        final text = '${formatDurationTimestamp(remaining)} · ${formatFinishTime(remaining.abs(), rate: rate, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))}';
         return Text(text, style: const TextStyle(color: Colors.white, fontSize: 14));
       },
     );

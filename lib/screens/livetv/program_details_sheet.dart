@@ -194,7 +194,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                       [
                         if (channel != null) channel.displayName,
                         if (program.startTime != null && program.endTime != null)
-                          '${program.startTime!.hour.toString().padLeft(2, '0')}:${program.startTime!.minute.toString().padLeft(2, '0')} - ${program.endTime!.hour.toString().padLeft(2, '0')}:${program.endTime!.minute.toString().padLeft(2, '0')}',
+                          '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} - ${formatClockTime(program.endTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))}',
                         if (program.durationMinutes > 0) formatDurationTextual(program.durationMinutes * 60000),
                       ].join(' · '),
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
