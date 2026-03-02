@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
-import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/mpv_config_models.dart';
 import '../../focus/focusable_button.dart';

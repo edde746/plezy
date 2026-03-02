@@ -381,7 +381,7 @@ class PlayerAndroid extends PlayerBase {
   @override
   Future<bool> requestAudioFocus() async {
     checkDisposed();
-    if (!initialized) return false;
+    await _ensureInitialized();
 
     final result = await methodChannel.invokeMethod<bool>('requestAudioFocus');
     return result ?? false;

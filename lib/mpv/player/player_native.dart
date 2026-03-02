@@ -309,7 +309,7 @@ class PlayerNative extends PlayerBase {
   Future<bool> requestAudioFocus() async {
     checkDisposed();
     if (!Platform.isAndroid) return true;
-    if (!initialized) return false;
+    await _ensureInitialized();
 
     final result = await methodChannel.invokeMethod<bool>('requestAudioFocus');
     return result ?? false;
