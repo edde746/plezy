@@ -40,10 +40,9 @@ class LibraryContentResult {
   const LibraryContentResult({required this.items, required this.totalSize});
 }
 
-/// Process hub JSON response in an isolate.
+/// Process hub response in an isolate.
 /// Top-level function so it can be passed to [Isolate.run].
-List<PlexHub> _processHubResponse(String jsonStr, String serverId, String? serverName) {
-  final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+List<PlexHub> _processHubResponse(Map<String, dynamic> decoded, String serverId, String? serverName) {
   final container = decoded['MediaContainer'] as Map<String, dynamic>?;
   if (container == null || container['Hub'] == null) return [];
 
@@ -80,10 +79,9 @@ List<PlexHub> _processHubResponse(String jsonStr, String serverId, String? serve
   return hubs;
 }
 
-/// Process on-deck JSON response in an isolate.
+/// Process on-deck response in an isolate.
 /// Top-level function so it can be passed to [Isolate.run].
-List<PlexMetadata> _processOnDeckResponse(String jsonStr, String serverId, String? serverName) {
-  final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+List<PlexMetadata> _processOnDeckResponse(Map<String, dynamic> decoded, String serverId, String? serverName) {
   final container = decoded['MediaContainer'] as Map<String, dynamic>?;
   if (container == null || container['Metadata'] == null) return [];
 
@@ -170,6 +168,7 @@ class PlexClient {
         responseDecoder: _lenientUtf8Decoder,
       ),
     );
+    _dio.transformer = BackgroundTransformer();
 
     // Add interceptor for logging (optional, can be disabled in production)
     _dio.interceptors.add(
@@ -846,13 +845,10 @@ class PlexClient {
 
   /// Get on deck items (continue watching, filtered to video content only)
   Future<List<PlexMetadata>> getOnDeck() async {
-    final response = await _dio.get(
-      '/library/onDeck',
-      options: Options(responseType: ResponseType.plain),
-    );
+    final response = await _dio.get('/library/onDeck');
     final sid = serverId;
     final sname = serverName;
-    return Isolate.run(() => _processOnDeckResponse(response.data as String, sid, sname));
+    return Isolate.run(() => _processOnDeckResponse(response.data as Map<String, dynamic>, sid, sname));
   }
 
   /// Get on deck items filtered by a specific library section
@@ -1325,11 +1321,10 @@ class PlexClient {
       final response = await _dio.get(
         '/hubs/sections/$sectionId',
         queryParameters: {'count': limit, 'includeGuids': 1},
-        options: Options(responseType: ResponseType.plain),
       );
       final sid = serverId;
       final sname = serverName;
-      return Isolate.run(() => _processHubResponse(response.data as String, sid, sname));
+      return Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get library hubs: $e');
     }
@@ -1344,11 +1339,10 @@ class PlexClient {
       final response = await _dio.get(
         '/hubs',
         queryParameters: {'count': limit, 'includeGuids': 1},
-        options: Options(responseType: ResponseType.plain),
       );
       final sid = serverId;
       final sname = serverName;
-      return Isolate.run(() => _processHubResponse(response.data as String, sid, sname));
+      return Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get global hubs: $e');
     }
