@@ -1102,12 +1102,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
         // Initialize video PIP and filter manager with player and available versions
         if (player != null) {
+          final settings = await SettingsService.getInstance();
           _videoFilterManager = VideoFilterManager(
             player: player!,
             availableVersions: _availableVersions,
             selectedMediaIndex: widget.selectedMediaIndex,
-            initialBoxFitMode: settingsService.getDefaultBoxFitMode(),
-            onBoxFitModeChanged: (mode) => settingsService.setDefaultBoxFitMode(mode),
+            initialBoxFitMode: settings.getDefaultBoxFitMode(),
+            onBoxFitModeChanged: (mode) => settings.setDefaultBoxFitMode(mode),
           );
           // Update video filter once dimensions are available
           _videoFilterManager!.updateVideoFilter();
