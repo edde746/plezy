@@ -64,7 +64,7 @@
     "licenses": "Licenze",
     "switchProfile": "Cambia profilo",
     "subtitleStyling": "Stile sottotitoli",
-    "mpvConfig": "Configurazione MPV",
+    "mpvConfig": "mpv.conf",
     "logs": "Registro"
   },
   "update": {
@@ -128,7 +128,7 @@
     "playerBackend": "Motore di riproduzione",
     "exoPlayer": "ExoPlayer (Consigliato)",
     "exoPlayerDescription": "Lettore nativo Android con migliore supporto hardware",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Lettore avanzato con più funzionalità e supporto sottotitoli ASS",
     "hardwareDecoding": "Decodifica Hardware",
     "hardwareDecodingDescription": "Utilizza l'accelerazione hardware quando disponibile",
@@ -420,19 +420,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "Configurazione MPV",
+    "title": "Configurazione mpv",
     "description": "Impostazioni avanzate del lettore video",
-    "properties": "Proprietà",
     "presets": "Preset",
-    "noProperties": "Nessuna proprietà configurata",
     "noPresets": "Nessun preset salvato",
-    "addProperty": "Aggiungi proprietà",
-    "editProperty": "Modifica proprietà",
-    "deleteProperty": "Elimina proprietà",
-    "propertyKey": "Chiave proprietà",
-    "propertyKeyHint": "es. hwdec, demuxer-max-bytes",
-    "propertyValue": "Valore proprietà",
-    "propertyValueHint": "es. auto, 256000000",
     "saveAsPreset": "Salva come preset...",
     "presetName": "Nome preset",
     "presetNameHint": "Inserisci un nome per questo preset",
@@ -442,8 +433,7 @@
     "presetLoaded": "Preset caricato",
     "presetDeleted": "Preset eliminato",
     "confirmDeletePreset": "Sei sicuro di voler eliminare questo preset?",
-    "confirmDeleteProperty": "Sei sicuro di voler eliminare questa proprietà?",
-    "entriesCount": "${count} voci"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Conferma azione"

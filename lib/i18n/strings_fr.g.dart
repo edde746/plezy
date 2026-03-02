@@ -169,7 +169,7 @@ class _TranslationsScreensFr implements TranslationsScreensEn {
 	@override String get licenses => 'Licenses';
 	@override String get switchProfile => 'Changer de profil';
 	@override String get subtitleStyling => 'Configuration des sous-titres';
-	@override String get mpvConfig => 'Configuration MPV';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => 'Logs';
 }
 
@@ -247,7 +247,7 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get playerBackend => 'Moteur de lecture';
 	@override String get exoPlayer => 'ExoPlayer (Recommandé)';
 	@override String get exoPlayerDescription => 'Lecteur natif Android avec meilleur support matériel';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => 'Lecteur avancé avec plus de fonctionnalités et support des sous-titres ASS';
 	@override String get hardwareDecoding => 'Décodage matériel';
 	@override String get hardwareDecodingDescription => 'Utilisez l\'accélération matérielle lorsqu\'elle est disponible.';
@@ -595,19 +595,10 @@ class _TranslationsMpvConfigFr implements TranslationsMpvConfigEn {
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Configuration MPV';
+	@override String get title => 'Configuration mpv';
 	@override String get description => 'Paramètres avancés du lecteur vidéo';
-	@override String get properties => 'Propriétés';
 	@override String get presets => 'Préréglages';
-	@override String get noProperties => 'Aucune propriété configurée';
 	@override String get noPresets => 'Aucun préréglage enregistré';
-	@override String get addProperty => 'Ajouter une propriété';
-	@override String get editProperty => 'Modifier la propriété';
-	@override String get deleteProperty => 'Supprimer la propriété';
-	@override String get propertyKey => 'Clé';
-	@override String get propertyKeyHint => 'e.g., hwdec, demuxer-max-bytes';
-	@override String get propertyValue => 'Valeur';
-	@override String get propertyValueHint => 'e.g., auto, 256000000';
 	@override String get saveAsPreset => 'Enregistrer comme préréglage...';
 	@override String get presetName => 'Nom du préréglage';
 	@override String get presetNameHint => 'Entrez un nom pour ce préréglage';
@@ -617,8 +608,7 @@ class _TranslationsMpvConfigFr implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => 'Préréglage chargé';
 	@override String get presetDeleted => 'Préréglage supprimé';
 	@override String get confirmDeletePreset => 'Êtes-vous sûr de vouloir supprimer ce préréglage ?';
-	@override String get confirmDeleteProperty => 'Êtes-vous sûr de vouloir supprimer cette propriété ?';
-	@override String entriesCount({required Object count}) => '${count} entrées';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -1362,7 +1352,7 @@ extension on TranslationsFr {
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
-			'screens.mpvConfig' => 'Configuration MPV',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'Logs',
 			'update.available' => 'Mise à jour disponible',
 			'update.versionAvailable' => ({required Object version}) => 'Version ${version} disponible',
@@ -1422,7 +1412,7 @@ extension on TranslationsFr {
 			'settings.playerBackend' => 'Moteur de lecture',
 			'settings.exoPlayer' => 'ExoPlayer (Recommandé)',
 			'settings.exoPlayerDescription' => 'Lecteur natif Android avec meilleur support matériel',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => 'Lecteur avancé avec plus de fonctionnalités et support des sous-titres ASS',
 			'settings.hardwareDecoding' => 'Décodage matériel',
 			'settings.hardwareDecodingDescription' => 'Utilisez l\'accélération matérielle lorsqu\'elle est disponible.',
@@ -1686,19 +1676,10 @@ extension on TranslationsFr {
 			'subtitlingStyling.backgroundOpacity' => 'Opacité d\'arrière-plan',
 			'subtitlingStyling.backgroundColor' => 'Couleur d\'arrière-plan',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'Configuration MPV',
+			'mpvConfig.title' => 'Configuration mpv',
 			'mpvConfig.description' => 'Paramètres avancés du lecteur vidéo',
-			'mpvConfig.properties' => 'Propriétés',
 			'mpvConfig.presets' => 'Préréglages',
-			'mpvConfig.noProperties' => 'Aucune propriété configurée',
 			'mpvConfig.noPresets' => 'Aucun préréglage enregistré',
-			'mpvConfig.addProperty' => 'Ajouter une propriété',
-			'mpvConfig.editProperty' => 'Modifier la propriété',
-			'mpvConfig.deleteProperty' => 'Supprimer la propriété',
-			'mpvConfig.propertyKey' => 'Clé',
-			'mpvConfig.propertyKeyHint' => 'e.g., hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => 'Valeur',
-			'mpvConfig.propertyValueHint' => 'e.g., auto, 256000000',
 			'mpvConfig.saveAsPreset' => 'Enregistrer comme préréglage...',
 			'mpvConfig.presetName' => 'Nom du préréglage',
 			'mpvConfig.presetNameHint' => 'Entrez un nom pour ce préréglage',
@@ -1708,8 +1689,7 @@ extension on TranslationsFr {
 			'mpvConfig.presetLoaded' => 'Préréglage chargé',
 			'mpvConfig.presetDeleted' => 'Préréglage supprimé',
 			'mpvConfig.confirmDeletePreset' => 'Êtes-vous sûr de vouloir supprimer ce préréglage ?',
-			'mpvConfig.confirmDeleteProperty' => 'Êtes-vous sûr de vouloir supprimer cette propriété ?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entrées',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirmer l\'action',
 			'discover.title' => 'Découvrez',
 			'discover.switchProfile' => 'Changer de profil',
@@ -1816,8 +1796,6 @@ extension on TranslationsFr {
 			'liveTv.noChannels' => 'Aucune chaîne disponible',
 			'liveTv.noDvr' => 'Aucun DVR configuré sur les serveurs',
 			'liveTv.tuneFailed' => 'Impossible de syntoniser la chaîne',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.loading' => 'Chargement des chaînes...',
 			'liveTv.nowPlaying' => 'En cours de lecture',
 			'liveTv.noPrograms' => 'Aucune donnée de programme disponible',
@@ -1828,6 +1806,8 @@ extension on TranslationsFr {
 			'liveTv.reloadGuide' => 'Recharger le guide',
 			'liveTv.allChannels' => 'Toutes les chaînes',
 			'liveTv.now' => 'Maintenant',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'Aujourd\'hui',
 			'liveTv.midnight' => 'Minuit',
 			'liveTv.overnight' => 'Nuit',

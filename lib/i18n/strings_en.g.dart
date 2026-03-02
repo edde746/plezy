@@ -289,8 +289,8 @@ class TranslationsScreensEn {
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
-	/// en: 'MPV Configuration'
-	String get mpvConfig => 'MPV Configuration';
+	/// en: 'mpv.conf'
+	String get mpvConfig => 'mpv.conf';
 
 	/// en: 'Logs'
 	String get logs => 'Logs';
@@ -487,8 +487,8 @@ class TranslationsSettingsEn {
 	/// en: 'Android native player with better hardware support'
 	String get exoPlayerDescription => 'Android native player with better hardware support';
 
-	/// en: 'MPV'
-	String get mpv => 'MPV';
+	/// en: 'mpv'
+	String get mpv => 'mpv';
 
 	/// en: 'Advanced player with more features and ASS subtitle support'
 	String get mpvDescription => 'Advanced player with more features and ASS subtitle support';
@@ -1313,44 +1313,17 @@ class TranslationsMpvConfigEn {
 
 	// Translations
 
-	/// en: 'MPV Configuration'
-	String get title => 'MPV Configuration';
+	/// en: 'mpv.conf'
+	String get title => 'mpv.conf';
 
 	/// en: 'Advanced video player settings'
 	String get description => 'Advanced video player settings';
 
-	/// en: 'Properties'
-	String get properties => 'Properties';
-
 	/// en: 'Presets'
 	String get presets => 'Presets';
 
-	/// en: 'No properties configured'
-	String get noProperties => 'No properties configured';
-
 	/// en: 'No saved presets'
 	String get noPresets => 'No saved presets';
-
-	/// en: 'Add Property'
-	String get addProperty => 'Add Property';
-
-	/// en: 'Edit Property'
-	String get editProperty => 'Edit Property';
-
-	/// en: 'Delete Property'
-	String get deleteProperty => 'Delete Property';
-
-	/// en: 'Property Key'
-	String get propertyKey => 'Property Key';
-
-	/// en: 'e.g., hwdec, demuxer-max-bytes'
-	String get propertyKeyHint => 'e.g., hwdec, demuxer-max-bytes';
-
-	/// en: 'Property Value'
-	String get propertyValue => 'Property Value';
-
-	/// en: 'e.g., auto, 256000000'
-	String get propertyValueHint => 'e.g., auto, 256000000';
 
 	/// en: 'Save as Preset...'
 	String get saveAsPreset => 'Save as Preset...';
@@ -1379,11 +1352,8 @@ class TranslationsMpvConfigEn {
 	/// en: 'Are you sure you want to delete this preset?'
 	String get confirmDeletePreset => 'Are you sure you want to delete this preset?';
 
-	/// en: 'Are you sure you want to delete this property?'
-	String get confirmDeleteProperty => 'Are you sure you want to delete this property?';
-
-	/// en: '${count} entries'
-	String entriesCount({required Object count}) => '${count} entries';
+	/// en: 'gpu-api=vulkan hwdec=auto # comment'
+	String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -2983,7 +2953,7 @@ extension on Translations {
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
-			'screens.mpvConfig' => 'MPV Configuration',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'Logs',
 			'update.available' => 'Update Available',
 			'update.versionAvailable' => ({required Object version}) => 'Version ${version} is available',
@@ -3043,7 +3013,7 @@ extension on Translations {
 			'settings.playerBackend' => 'Player Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Recommended)',
 			'settings.exoPlayerDescription' => 'Android native player with better hardware support',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => 'Advanced player with more features and ASS subtitle support',
 			'settings.hardwareDecoding' => 'Hardware Decoding',
 			'settings.hardwareDecodingDescription' => 'Use hardware acceleration when available',
@@ -3307,19 +3277,10 @@ extension on Translations {
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
 			'subtitlingStyling.backgroundColor' => 'Background Color',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV Configuration',
+			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
-			'mpvConfig.properties' => 'Properties',
 			'mpvConfig.presets' => 'Presets',
-			'mpvConfig.noProperties' => 'No properties configured',
 			'mpvConfig.noPresets' => 'No saved presets',
-			'mpvConfig.addProperty' => 'Add Property',
-			'mpvConfig.editProperty' => 'Edit Property',
-			'mpvConfig.deleteProperty' => 'Delete Property',
-			'mpvConfig.propertyKey' => 'Property Key',
-			'mpvConfig.propertyKeyHint' => 'e.g., hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => 'Property Value',
-			'mpvConfig.propertyValueHint' => 'e.g., auto, 256000000',
 			'mpvConfig.saveAsPreset' => 'Save as Preset...',
 			'mpvConfig.presetName' => 'Preset Name',
 			'mpvConfig.presetNameHint' => 'Enter a name for this preset',
@@ -3329,8 +3290,7 @@ extension on Translations {
 			'mpvConfig.presetLoaded' => 'Preset loaded',
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
-			'mpvConfig.confirmDeleteProperty' => 'Are you sure you want to delete this property?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entries',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
 			'discover.title' => 'Discover',
 			'discover.switchProfile' => 'Switch Profile',
@@ -3437,8 +3397,6 @@ extension on Translations {
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.tuneFailed' => 'Failed to tune channel',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.loading' => 'Loading channels...',
 			'liveTv.nowPlaying' => 'Now Playing',
 			'liveTv.noPrograms' => 'No program data available',
@@ -3449,6 +3407,8 @@ extension on Translations {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.allChannels' => 'All Channels',
 			'liveTv.now' => 'Now',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',

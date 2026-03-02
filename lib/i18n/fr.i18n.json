@@ -64,7 +64,7 @@
     "licenses": "Licenses",
     "switchProfile": "Changer de profil",
     "subtitleStyling": "Configuration des sous-titres",
-    "mpvConfig": "Configuration MPV",
+    "mpvConfig": "mpv.conf",
     "logs": "Logs"
   },
   "update": {
@@ -128,7 +128,7 @@
     "playerBackend": "Moteur de lecture",
     "exoPlayer": "ExoPlayer (Recommandé)",
     "exoPlayerDescription": "Lecteur natif Android avec meilleur support matériel",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Lecteur avancé avec plus de fonctionnalités et support des sous-titres ASS",
     "hardwareDecoding": "Décodage matériel",
     "hardwareDecodingDescription": "Utilisez l'accélération matérielle lorsqu'elle est disponible.",
@@ -420,19 +420,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "Configuration MPV",
+    "title": "Configuration mpv",
     "description": "Paramètres avancés du lecteur vidéo",
-    "properties": "Propriétés",
     "presets": "Préréglages",
-    "noProperties": "Aucune propriété configurée",
     "noPresets": "Aucun préréglage enregistré",
-    "addProperty": "Ajouter une propriété",
-    "editProperty": "Modifier la propriété",
-    "deleteProperty": "Supprimer la propriété",
-    "propertyKey": "Clé",
-    "propertyKeyHint": "e.g., hwdec, demuxer-max-bytes",
-    "propertyValue": "Valeur",
-    "propertyValueHint": "e.g., auto, 256000000",
     "saveAsPreset": "Enregistrer comme préréglage...",
     "presetName": "Nom du préréglage",
     "presetNameHint": "Entrez un nom pour ce préréglage",
@@ -442,8 +433,7 @@
     "presetLoaded": "Préréglage chargé",
     "presetDeleted": "Préréglage supprimé",
     "confirmDeletePreset": "Êtes-vous sûr de vouloir supprimer ce préréglage ?",
-    "confirmDeleteProperty": "Êtes-vous sûr de vouloir supprimer cette propriété ?",
-    "entriesCount": "${count} entrées"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Confirmer l'action"

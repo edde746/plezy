@@ -64,7 +64,7 @@
     "licenses": "Licenser",
     "switchProfile": "Byt profil",
     "subtitleStyling": "Undertext-styling",
-    "mpvConfig": "MPV-konfiguration",
+    "mpvConfig": "mpv.conf",
     "logs": "Loggar"
   },
   "update": {
@@ -128,7 +128,7 @@
     "playerBackend": "Spelarmotor",
     "exoPlayer": "ExoPlayer (Rekommenderad)",
     "exoPlayerDescription": "Android-nativ spelare med bättre hårdvarustöd",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Avancerad spelare med fler funktioner och ASS-undertextstöd",
     "hardwareDecoding": "Hårdvaruavkodning",
     "hardwareDecodingDescription": "Använd hårdvaruacceleration när tillgängligt",
@@ -420,19 +420,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV-konfiguration",
+    "title": "mpv-konfiguration",
     "description": "Avancerade videospelares inställningar",
-    "properties": "Egenskaper",
     "presets": "Förval",
-    "noProperties": "Inga egenskaper konfigurerade",
     "noPresets": "Inga sparade förval",
-    "addProperty": "Lägg till egenskap",
-    "editProperty": "Redigera egenskap",
-    "deleteProperty": "Ta bort egenskap",
-    "propertyKey": "Egenskapsnyckel",
-    "propertyKeyHint": "t.ex. hwdec, demuxer-max-bytes",
-    "propertyValue": "Egenskapsvärde",
-    "propertyValueHint": "t.ex. auto, 256000000",
     "saveAsPreset": "Spara som förval...",
     "presetName": "Förvalnamn",
     "presetNameHint": "Ange ett namn för detta förval",
@@ -442,8 +433,7 @@
     "presetLoaded": "Förval laddat",
     "presetDeleted": "Förval borttaget",
     "confirmDeletePreset": "Är du säker på att du vill ta bort detta förval?",
-    "confirmDeleteProperty": "Är du säker på att du vill ta bort denna egenskap?",
-    "entriesCount": "${count} poster"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Bekräfta åtgärd"

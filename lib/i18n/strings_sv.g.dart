@@ -169,7 +169,7 @@ class _TranslationsScreensSv implements TranslationsScreensEn {
 	@override String get licenses => 'Licenser';
 	@override String get switchProfile => 'Byt profil';
 	@override String get subtitleStyling => 'Undertext-styling';
-	@override String get mpvConfig => 'MPV-konfiguration';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => 'Loggar';
 }
 
@@ -247,7 +247,7 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get playerBackend => 'Spelarmotor';
 	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
 	@override String get exoPlayerDescription => 'Android-nativ spelare med bättre hårdvarustöd';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => 'Avancerad spelare med fler funktioner och ASS-undertextstöd';
 	@override String get hardwareDecoding => 'Hårdvaruavkodning';
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
@@ -595,19 +595,10 @@ class _TranslationsMpvConfigSv implements TranslationsMpvConfigEn {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'MPV-konfiguration';
+	@override String get title => 'mpv-konfiguration';
 	@override String get description => 'Avancerade videospelares inställningar';
-	@override String get properties => 'Egenskaper';
 	@override String get presets => 'Förval';
-	@override String get noProperties => 'Inga egenskaper konfigurerade';
 	@override String get noPresets => 'Inga sparade förval';
-	@override String get addProperty => 'Lägg till egenskap';
-	@override String get editProperty => 'Redigera egenskap';
-	@override String get deleteProperty => 'Ta bort egenskap';
-	@override String get propertyKey => 'Egenskapsnyckel';
-	@override String get propertyKeyHint => 't.ex. hwdec, demuxer-max-bytes';
-	@override String get propertyValue => 'Egenskapsvärde';
-	@override String get propertyValueHint => 't.ex. auto, 256000000';
 	@override String get saveAsPreset => 'Spara som förval...';
 	@override String get presetName => 'Förvalnamn';
 	@override String get presetNameHint => 'Ange ett namn för detta förval';
@@ -617,8 +608,7 @@ class _TranslationsMpvConfigSv implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => 'Förval laddat';
 	@override String get presetDeleted => 'Förval borttaget';
 	@override String get confirmDeletePreset => 'Är du säker på att du vill ta bort detta förval?';
-	@override String get confirmDeleteProperty => 'Är du säker på att du vill ta bort denna egenskap?';
-	@override String entriesCount({required Object count}) => '${count} poster';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -1362,7 +1352,7 @@ extension on TranslationsSv {
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
-			'screens.mpvConfig' => 'MPV-konfiguration',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'Loggar',
 			'update.available' => 'Uppdatering tillgänglig',
 			'update.versionAvailable' => ({required Object version}) => 'Version ${version} är tillgänglig',
@@ -1422,7 +1412,7 @@ extension on TranslationsSv {
 			'settings.playerBackend' => 'Spelarmotor',
 			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
 			'settings.exoPlayerDescription' => 'Android-nativ spelare med bättre hårdvarustöd',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => 'Avancerad spelare med fler funktioner och ASS-undertextstöd',
 			'settings.hardwareDecoding' => 'Hårdvaruavkodning',
 			'settings.hardwareDecodingDescription' => 'Använd hårdvaruacceleration när tillgängligt',
@@ -1686,19 +1676,10 @@ extension on TranslationsSv {
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrundsopacitet',
 			'subtitlingStyling.backgroundColor' => 'Bakgrundsfärg',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV-konfiguration',
+			'mpvConfig.title' => 'mpv-konfiguration',
 			'mpvConfig.description' => 'Avancerade videospelares inställningar',
-			'mpvConfig.properties' => 'Egenskaper',
 			'mpvConfig.presets' => 'Förval',
-			'mpvConfig.noProperties' => 'Inga egenskaper konfigurerade',
 			'mpvConfig.noPresets' => 'Inga sparade förval',
-			'mpvConfig.addProperty' => 'Lägg till egenskap',
-			'mpvConfig.editProperty' => 'Redigera egenskap',
-			'mpvConfig.deleteProperty' => 'Ta bort egenskap',
-			'mpvConfig.propertyKey' => 'Egenskapsnyckel',
-			'mpvConfig.propertyKeyHint' => 't.ex. hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => 'Egenskapsvärde',
-			'mpvConfig.propertyValueHint' => 't.ex. auto, 256000000',
 			'mpvConfig.saveAsPreset' => 'Spara som förval...',
 			'mpvConfig.presetName' => 'Förvalnamn',
 			'mpvConfig.presetNameHint' => 'Ange ett namn för detta förval',
@@ -1708,8 +1689,7 @@ extension on TranslationsSv {
 			'mpvConfig.presetLoaded' => 'Förval laddat',
 			'mpvConfig.presetDeleted' => 'Förval borttaget',
 			'mpvConfig.confirmDeletePreset' => 'Är du säker på att du vill ta bort detta förval?',
-			'mpvConfig.confirmDeleteProperty' => 'Är du säker på att du vill ta bort denna egenskap?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} poster',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bekräfta åtgärd',
 			'discover.title' => 'Upptäck',
 			'discover.switchProfile' => 'Byt profil',
@@ -1816,8 +1796,6 @@ extension on TranslationsSv {
 			'liveTv.noChannels' => 'Inga kanaler tillgängliga',
 			'liveTv.noDvr' => 'Ingen DVR konfigurerad på någon server',
 			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.loading' => 'Laddar kanaler...',
 			'liveTv.nowPlaying' => 'Spelas nu',
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
@@ -1828,6 +1806,8 @@ extension on TranslationsSv {
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.allChannels' => 'Alla kanaler',
 			'liveTv.now' => 'Nu',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
 			'liveTv.overnight' => 'Natt',

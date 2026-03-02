@@ -169,7 +169,7 @@ class _TranslationsScreensZh implements TranslationsScreensEn {
 	@override String get licenses => '许可证';
 	@override String get switchProfile => '切换用户';
 	@override String get subtitleStyling => '字幕样式';
-	@override String get mpvConfig => 'MPV 配置';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => '日志';
 }
 
@@ -247,7 +247,7 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get playerBackend => '播放器引擎';
 	@override String get exoPlayer => 'ExoPlayer（推荐）';
 	@override String get exoPlayerDescription => 'Android 原生播放器，硬件支持更好';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => '功能更多的高级播放器，支持 ASS 字幕';
 	@override String get hardwareDecoding => '硬件解码';
 	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
@@ -595,19 +595,10 @@ class _TranslationsMpvConfigZh implements TranslationsMpvConfigEn {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'MPV 配置';
+	@override String get title => 'mpv 配置';
 	@override String get description => '高级视频播放器设置';
-	@override String get properties => '属性';
 	@override String get presets => '预设';
-	@override String get noProperties => '未配置任何属性';
 	@override String get noPresets => '没有保存的预设';
-	@override String get addProperty => '添加属性';
-	@override String get editProperty => '编辑属性';
-	@override String get deleteProperty => '删除属性';
-	@override String get propertyKey => '属性键';
-	@override String get propertyKeyHint => '例如 hwdec, demuxer-max-bytes';
-	@override String get propertyValue => '属性值';
-	@override String get propertyValueHint => '例如 auto, 256000000';
 	@override String get saveAsPreset => '保存为预设...';
 	@override String get presetName => '预设名称';
 	@override String get presetNameHint => '输入此预设的名称';
@@ -617,8 +608,7 @@ class _TranslationsMpvConfigZh implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => '预设已加载';
 	@override String get presetDeleted => '预设已删除';
 	@override String get confirmDeletePreset => '确定要删除此预设吗？';
-	@override String get confirmDeleteProperty => '确定要删除此属性吗？';
-	@override String entriesCount({required Object count}) => '${count} 条目';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -1362,7 +1352,7 @@ extension on TranslationsZh {
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
-			'screens.mpvConfig' => 'MPV 配置',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => '日志',
 			'update.available' => '有可用更新',
 			'update.versionAvailable' => ({required Object version}) => '版本 ${version} 已发布',
@@ -1422,7 +1412,7 @@ extension on TranslationsZh {
 			'settings.playerBackend' => '播放器引擎',
 			'settings.exoPlayer' => 'ExoPlayer（推荐）',
 			'settings.exoPlayerDescription' => 'Android 原生播放器，硬件支持更好',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => '功能更多的高级播放器，支持 ASS 字幕',
 			'settings.hardwareDecoding' => '硬件解码',
 			'settings.hardwareDecodingDescription' => '如果可用，使用硬件加速',
@@ -1686,19 +1676,10 @@ extension on TranslationsZh {
 			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
 			'subtitlingStyling.backgroundColor' => '背景颜色',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV 配置',
+			'mpvConfig.title' => 'mpv 配置',
 			'mpvConfig.description' => '高级视频播放器设置',
-			'mpvConfig.properties' => '属性',
 			'mpvConfig.presets' => '预设',
-			'mpvConfig.noProperties' => '未配置任何属性',
 			'mpvConfig.noPresets' => '没有保存的预设',
-			'mpvConfig.addProperty' => '添加属性',
-			'mpvConfig.editProperty' => '编辑属性',
-			'mpvConfig.deleteProperty' => '删除属性',
-			'mpvConfig.propertyKey' => '属性键',
-			'mpvConfig.propertyKeyHint' => '例如 hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => '属性值',
-			'mpvConfig.propertyValueHint' => '例如 auto, 256000000',
 			'mpvConfig.saveAsPreset' => '保存为预设...',
 			'mpvConfig.presetName' => '预设名称',
 			'mpvConfig.presetNameHint' => '输入此预设的名称',
@@ -1708,8 +1689,7 @@ extension on TranslationsZh {
 			'mpvConfig.presetLoaded' => '预设已加载',
 			'mpvConfig.presetDeleted' => '预设已删除',
 			'mpvConfig.confirmDeletePreset' => '确定要删除此预设吗？',
-			'mpvConfig.confirmDeleteProperty' => '确定要删除此属性吗？',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} 条目',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '确认操作',
 			'discover.title' => '发现',
 			'discover.switchProfile' => '切换用户',
@@ -1816,8 +1796,6 @@ extension on TranslationsZh {
 			'liveTv.noChannels' => '没有可用的频道',
 			'liveTv.noDvr' => '没有服务器配置了DVR',
 			'liveTv.tuneFailed' => '无法调谐频道',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.loading' => '正在加载频道...',
 			'liveTv.nowPlaying' => '正在播放',
 			'liveTv.noPrograms' => '没有可用的节目数据',
@@ -1828,6 +1806,8 @@ extension on TranslationsZh {
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.allChannels' => '所有频道',
 			'liveTv.now' => '现在',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
 			'liveTv.overnight' => '凌晨',

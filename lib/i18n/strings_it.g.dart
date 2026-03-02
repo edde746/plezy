@@ -169,7 +169,7 @@ class _TranslationsScreensIt implements TranslationsScreensEn {
 	@override String get licenses => 'Licenze';
 	@override String get switchProfile => 'Cambia profilo';
 	@override String get subtitleStyling => 'Stile sottotitoli';
-	@override String get mpvConfig => 'Configurazione MPV';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => 'Registro';
 }
 
@@ -247,7 +247,7 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get playerBackend => 'Motore di riproduzione';
 	@override String get exoPlayer => 'ExoPlayer (Consigliato)';
 	@override String get exoPlayerDescription => 'Lettore nativo Android con migliore supporto hardware';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => 'Lettore avanzato con più funzionalità e supporto sottotitoli ASS';
 	@override String get hardwareDecoding => 'Decodifica Hardware';
 	@override String get hardwareDecodingDescription => 'Utilizza l\'accelerazione hardware quando disponibile';
@@ -595,19 +595,10 @@ class _TranslationsMpvConfigIt implements TranslationsMpvConfigEn {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Configurazione MPV';
+	@override String get title => 'Configurazione mpv';
 	@override String get description => 'Impostazioni avanzate del lettore video';
-	@override String get properties => 'Proprietà';
 	@override String get presets => 'Preset';
-	@override String get noProperties => 'Nessuna proprietà configurata';
 	@override String get noPresets => 'Nessun preset salvato';
-	@override String get addProperty => 'Aggiungi proprietà';
-	@override String get editProperty => 'Modifica proprietà';
-	@override String get deleteProperty => 'Elimina proprietà';
-	@override String get propertyKey => 'Chiave proprietà';
-	@override String get propertyKeyHint => 'es. hwdec, demuxer-max-bytes';
-	@override String get propertyValue => 'Valore proprietà';
-	@override String get propertyValueHint => 'es. auto, 256000000';
 	@override String get saveAsPreset => 'Salva come preset...';
 	@override String get presetName => 'Nome preset';
 	@override String get presetNameHint => 'Inserisci un nome per questo preset';
@@ -617,8 +608,7 @@ class _TranslationsMpvConfigIt implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => 'Preset caricato';
 	@override String get presetDeleted => 'Preset eliminato';
 	@override String get confirmDeletePreset => 'Sei sicuro di voler eliminare questo preset?';
-	@override String get confirmDeleteProperty => 'Sei sicuro di voler eliminare questa proprietà?';
-	@override String entriesCount({required Object count}) => '${count} voci';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -1362,7 +1352,7 @@ extension on TranslationsIt {
 			'screens.licenses' => 'Licenze',
 			'screens.switchProfile' => 'Cambia profilo',
 			'screens.subtitleStyling' => 'Stile sottotitoli',
-			'screens.mpvConfig' => 'Configurazione MPV',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'Registro',
 			'update.available' => 'Aggiornamento disponibile',
 			'update.versionAvailable' => ({required Object version}) => 'Versione ${version} disponibile',
@@ -1422,7 +1412,7 @@ extension on TranslationsIt {
 			'settings.playerBackend' => 'Motore di riproduzione',
 			'settings.exoPlayer' => 'ExoPlayer (Consigliato)',
 			'settings.exoPlayerDescription' => 'Lettore nativo Android con migliore supporto hardware',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => 'Lettore avanzato con più funzionalità e supporto sottotitoli ASS',
 			'settings.hardwareDecoding' => 'Decodifica Hardware',
 			'settings.hardwareDecodingDescription' => 'Utilizza l\'accelerazione hardware quando disponibile',
@@ -1686,19 +1676,10 @@ extension on TranslationsIt {
 			'subtitlingStyling.backgroundOpacity' => 'Opacità sfondo',
 			'subtitlingStyling.backgroundColor' => 'Colore sfondo',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'Configurazione MPV',
+			'mpvConfig.title' => 'Configurazione mpv',
 			'mpvConfig.description' => 'Impostazioni avanzate del lettore video',
-			'mpvConfig.properties' => 'Proprietà',
 			'mpvConfig.presets' => 'Preset',
-			'mpvConfig.noProperties' => 'Nessuna proprietà configurata',
 			'mpvConfig.noPresets' => 'Nessun preset salvato',
-			'mpvConfig.addProperty' => 'Aggiungi proprietà',
-			'mpvConfig.editProperty' => 'Modifica proprietà',
-			'mpvConfig.deleteProperty' => 'Elimina proprietà',
-			'mpvConfig.propertyKey' => 'Chiave proprietà',
-			'mpvConfig.propertyKeyHint' => 'es. hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => 'Valore proprietà',
-			'mpvConfig.propertyValueHint' => 'es. auto, 256000000',
 			'mpvConfig.saveAsPreset' => 'Salva come preset...',
 			'mpvConfig.presetName' => 'Nome preset',
 			'mpvConfig.presetNameHint' => 'Inserisci un nome per questo preset',
@@ -1708,8 +1689,7 @@ extension on TranslationsIt {
 			'mpvConfig.presetLoaded' => 'Preset caricato',
 			'mpvConfig.presetDeleted' => 'Preset eliminato',
 			'mpvConfig.confirmDeletePreset' => 'Sei sicuro di voler eliminare questo preset?',
-			'mpvConfig.confirmDeleteProperty' => 'Sei sicuro di voler eliminare questa proprietà?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} voci',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Conferma azione',
 			'discover.title' => 'Esplora',
 			'discover.switchProfile' => 'Cambia profilo',
@@ -1816,8 +1796,6 @@ extension on TranslationsIt {
 			'liveTv.noChannels' => 'Nessun canale disponibile',
 			'liveTv.noDvr' => 'Nessun DVR configurato su nessun server',
 			'liveTv.tuneFailed' => 'Impossibile sintonizzare il canale',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.loading' => 'Caricamento canali...',
 			'liveTv.nowPlaying' => 'In riproduzione',
 			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
@@ -1828,6 +1806,8 @@ extension on TranslationsIt {
 			'liveTv.reloadGuide' => 'Ricarica guida',
 			'liveTv.allChannels' => 'Tutti i canali',
 			'liveTv.now' => 'Ora',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'Oggi',
 			'liveTv.midnight' => 'Mezzanotte',
 			'liveTv.overnight' => 'Notte',

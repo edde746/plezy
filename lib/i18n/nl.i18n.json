@@ -64,7 +64,7 @@
     "licenses": "Licenties",
     "switchProfile": "Wissel van profiel",
     "subtitleStyling": "Ondertitel opmaak",
-    "mpvConfig": "MPV-configuratie",
+    "mpvConfig": "mpv.conf",
     "logs": "Logbestanden"
   },
   "update": {
@@ -128,7 +128,7 @@
     "playerBackend": "Speler backend",
     "exoPlayer": "ExoPlayer (Aanbevolen)",
     "exoPlayerDescription": "Android-native speler met betere hardware-ondersteuning",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Geavanceerde speler met meer functies en ASS-ondertitelondersteuning",
     "hardwareDecoding": "Hardware decodering",
     "hardwareDecodingDescription": "Gebruik hardware versnelling indien beschikbaar",
@@ -420,19 +420,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV-configuratie",
+    "title": "mpv-configuratie",
     "description": "Geavanceerde videospeler-instellingen",
-    "properties": "Eigenschappen",
     "presets": "Voorinstellingen",
-    "noProperties": "Geen eigenschappen geconfigureerd",
     "noPresets": "Geen opgeslagen voorinstellingen",
-    "addProperty": "Eigenschap toevoegen",
-    "editProperty": "Eigenschap bewerken",
-    "deleteProperty": "Eigenschap verwijderen",
-    "propertyKey": "Eigenschapssleutel",
-    "propertyKeyHint": "bijv. hwdec, demuxer-max-bytes",
-    "propertyValue": "Eigenschapswaarde",
-    "propertyValueHint": "bijv. auto, 256000000",
     "saveAsPreset": "Opslaan als voorinstelling...",
     "presetName": "Naam voorinstelling",
     "presetNameHint": "Voer een naam in voor deze voorinstelling",
@@ -442,8 +433,7 @@
     "presetLoaded": "Voorinstelling geladen",
     "presetDeleted": "Voorinstelling verwijderd",
     "confirmDeletePreset": "Weet je zeker dat je deze voorinstelling wilt verwijderen?",
-    "confirmDeleteProperty": "Weet je zeker dat je deze eigenschap wilt verwijderen?",
-    "entriesCount": "${count} items"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Bevestig actie"

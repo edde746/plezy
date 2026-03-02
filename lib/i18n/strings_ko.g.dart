@@ -169,7 +169,7 @@ class _TranslationsScreensKo implements TranslationsScreensEn {
 	@override String get licenses => '라이선스';
 	@override String get switchProfile => '프로필 전환';
 	@override String get subtitleStyling => '자막 스타일 설정';
-	@override String get mpvConfig => 'MPV 설정';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => '로그';
 }
 
@@ -247,7 +247,7 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get playerBackend => '플레이어 백엔드';
 	@override String get exoPlayer => 'ExoPlayer (권장)';
 	@override String get exoPlayerDescription => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
@@ -595,19 +595,10 @@ class _TranslationsMpvConfigKo implements TranslationsMpvConfigEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'MPV 설정';
+	@override String get title => 'mpv 설정';
 	@override String get description => '고급 비디오 플레이어 설정';
-	@override String get properties => '속성';
 	@override String get presets => '사전 설정';
-	@override String get noProperties => '설정된 속성이 없습니다';
 	@override String get noPresets => '저장된 사전 설정이 없습니다';
-	@override String get addProperty => '속성 추가';
-	@override String get editProperty => '속성 편집';
-	@override String get deleteProperty => '속성 삭제';
-	@override String get propertyKey => '속성 키';
-	@override String get propertyKeyHint => '예: hwdec, demuxer-max-bytes';
-	@override String get propertyValue => '속성값';
-	@override String get propertyValueHint => '예: auto, 256000000';
 	@override String get saveAsPreset => '프리셋으로 저장...';
 	@override String get presetName => '프리셋 이름';
 	@override String get presetNameHint => '이 프리셋의 이름을 입력하세요';
@@ -617,8 +608,7 @@ class _TranslationsMpvConfigKo implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => '프리셋이 로드 되었습니다';
 	@override String get presetDeleted => '프리셋이 삭제 되었습니다';
 	@override String get confirmDeletePreset => '이 프리셋을 삭제 하시겠습니까?';
-	@override String get confirmDeleteProperty => '이 속성을 삭제 하시겠습니까?';
-	@override String entriesCount({required Object count}) => '${count} 항목';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -1362,7 +1352,7 @@ extension on TranslationsKo {
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
-			'screens.mpvConfig' => 'MPV 설정',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => '로그',
 			'update.available' => '사용 가능한 업데이트',
 			'update.versionAvailable' => ({required Object version}) => '버전 ${version} 출시됨',
@@ -1422,7 +1412,7 @@ extension on TranslationsKo {
 			'settings.playerBackend' => '플레이어 백엔드',
 			'settings.exoPlayer' => 'ExoPlayer (권장)',
 			'settings.exoPlayerDescription' => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어',
 			'settings.hardwareDecoding' => '하드웨어 디코딩',
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
@@ -1686,19 +1676,10 @@ extension on TranslationsKo {
 			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
 			'subtitlingStyling.backgroundColor' => '배경색',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV 설정',
+			'mpvConfig.title' => 'mpv 설정',
 			'mpvConfig.description' => '고급 비디오 플레이어 설정',
-			'mpvConfig.properties' => '속성',
 			'mpvConfig.presets' => '사전 설정',
-			'mpvConfig.noProperties' => '설정된 속성이 없습니다',
 			'mpvConfig.noPresets' => '저장된 사전 설정이 없습니다',
-			'mpvConfig.addProperty' => '속성 추가',
-			'mpvConfig.editProperty' => '속성 편집',
-			'mpvConfig.deleteProperty' => '속성 삭제',
-			'mpvConfig.propertyKey' => '속성 키',
-			'mpvConfig.propertyKeyHint' => '예: hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => '속성값',
-			'mpvConfig.propertyValueHint' => '예: auto, 256000000',
 			'mpvConfig.saveAsPreset' => '프리셋으로 저장...',
 			'mpvConfig.presetName' => '프리셋 이름',
 			'mpvConfig.presetNameHint' => '이 프리셋의 이름을 입력하세요',
@@ -1708,8 +1689,7 @@ extension on TranslationsKo {
 			'mpvConfig.presetLoaded' => '프리셋이 로드 되었습니다',
 			'mpvConfig.presetDeleted' => '프리셋이 삭제 되었습니다',
 			'mpvConfig.confirmDeletePreset' => '이 프리셋을 삭제 하시겠습니까?',
-			'mpvConfig.confirmDeleteProperty' => '이 속성을 삭제 하시겠습니까?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} 항목',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '확인',
 			'discover.title' => '발견',
 			'discover.switchProfile' => '사용자 전환',
@@ -1816,8 +1796,6 @@ extension on TranslationsKo {
 			'liveTv.noChannels' => '사용 가능한 채널이 없습니다',
 			'liveTv.noDvr' => '서버에 DVR이 구성되어 있지 않습니다',
 			'liveTv.tuneFailed' => '채널 튜닝에 실패했습니다',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.loading' => '채널 로딩 중...',
 			'liveTv.nowPlaying' => '현재 재생 중',
 			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
@@ -1828,6 +1806,8 @@ extension on TranslationsKo {
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.allChannels' => '전체 채널',
 			'liveTv.now' => '지금',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
 			'liveTv.overnight' => '심야',

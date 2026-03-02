@@ -64,7 +64,7 @@
     "licenses": "라이선스",
     "switchProfile": "프로필 전환",
     "subtitleStyling": "자막 스타일 설정",
-    "mpvConfig": "MPV 설정",
+    "mpvConfig": "mpv.conf",
     "logs": "로그"
   },
   "update": {
@@ -128,7 +128,7 @@
     "playerBackend": "플레이어 백엔드",
     "exoPlayer": "ExoPlayer (권장)",
     "exoPlayerDescription": "더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "더 많은 기능과 ASS 자막을 지원하는 고급 플레이어",
     "hardwareDecoding": "하드웨어 디코딩",
     "hardwareDecodingDescription": "가능한 경우 하드웨어 가속을 사용합니다",
@@ -420,19 +420,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV 설정",
+    "title": "mpv 설정",
     "description": "고급 비디오 플레이어 설정",
-    "properties": "속성",
     "presets": "사전 설정",
-    "noProperties": "설정된 속성이 없습니다",
     "noPresets": "저장된 사전 설정이 없습니다",
-    "addProperty": "속성 추가",
-    "editProperty": "속성 편집",
-    "deleteProperty": "속성 삭제",
-    "propertyKey": "속성 키",
-    "propertyKeyHint": "예: hwdec, demuxer-max-bytes",
-    "propertyValue": "속성값",
-    "propertyValueHint": "예: auto, 256000000",
     "saveAsPreset": "프리셋으로 저장...",
     "presetName": "프리셋 이름",
     "presetNameHint": "이 프리셋의 이름을 입력하세요",
@@ -442,8 +433,7 @@
     "presetLoaded": "프리셋이 로드 되었습니다",
     "presetDeleted": "프리셋이 삭제 되었습니다",
     "confirmDeletePreset": "이 프리셋을 삭제 하시겠습니까?",
-    "confirmDeleteProperty": "이 속성을 삭제 하시겠습니까?",
-    "entriesCount": "${count} 항목"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "확인"

@@ -62,7 +62,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
   static const String _keyVideoPlayerNavigationEnabled = 'video_player_navigation_enabled';
   static const String _keyShowPerformanceOverlay = 'show_performance_overlay';
-  static const String _keyMpvConfigEntries = 'mpv_config_entries';
+  static const String _keyMpvConfigEntries = 'mpv_config_entries'; // Legacy
+  static const String _keyMpvConfigText = 'mpv_config_text';
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
   static const String _keyMaxVolume = 'max_volume';
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
@@ -923,31 +924,61 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyDownloadOnWifiOnly) ?? false;
   }
 
-  // MPV Config Entries
+  // MPV Config (raw text)
 
-  /// Get all MPV config entries
-  List<MpvConfigEntry> getMpvConfigEntries() {
-    final jsonString = prefs.getString(_keyMpvConfigEntries);
-    if (jsonString == null) return [];
+  /// Get the raw MPV config text. Migrates from legacy JSON entries on first read.
+  String getMpvConfigText() {
+    final text = prefs.getString(_keyMpvConfigText);
+    if (text != null) return text;
 
-    try {
-      final List<dynamic> decoded = json.decode(jsonString);
-      return decoded.map((e) => MpvConfigEntry.fromJson(e as Map<String, dynamic>)).toList();
-    } catch (e) {
-      return [];
+    // Migrate from legacy JSON entries
+    final legacyJson = prefs.getString(_keyMpvConfigEntries);
+    if (legacyJson != null) {
+      try {
+        final List<dynamic> decoded = json.decode(legacyJson);
+        final lines = <String>[];
+        for (final item in decoded) {
+          if (item is Map<String, dynamic>) {
+            final key = item['key'] as String? ?? '';
+            final value = item['value'] as String? ?? '';
+            final enabled = item['isEnabled'] as bool? ?? true;
+            if (key.isNotEmpty) {
+              lines.add(enabled ? '$key=$value' : '#$key=$value');
+            }
+          }
+        }
+        final migrated = lines.join('\n');
+        prefs.setString(_keyMpvConfigText, migrated);
+        return migrated;
+      } catch (_) {}
     }
+
+    return '';
   }
 
-  /// Save all MPV config entries
-  Future<void> setMpvConfigEntries(List<MpvConfigEntry> entries) async {
-    final jsonString = json.encode(entries.map((e) => e.toJson()).toList());
-    await prefs.setString(_keyMpvConfigEntries, jsonString);
+  /// Save the raw MPV config text
+  Future<void> setMpvConfigText(String text) async {
+    await prefs.setString(_keyMpvConfigText, text);
   }
 
-  /// Get only enabled MPV config entries (for player initialization)
+  /// Parse raw config text into a Map<String, String> (skip blanks and # comments)
+  static Map<String, String> parseMpvConfigText(String text) {
+    final result = <String, String>{};
+    for (final line in text.split('\n')) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+      final eqIndex = trimmed.indexOf('=');
+      if (eqIndex <= 0) continue;
+      final key = trimmed.substring(0, eqIndex).trim();
+      final value = trimmed.substring(eqIndex + 1).trim();
+      if (key.isNotEmpty) result[key] = value;
+    }
+    return result;
+  }
+
+  /// Get enabled MPV config entries (for player initialization)
   Map<String, String> getEnabledMpvConfigEntries() {
-    final entries = getMpvConfigEntries();
-    return Map.fromEntries(entries.where((e) => e.isEnabled).map((e) => MapEntry(e.key, e.value)));
+    return parseMpvConfigText(getMpvConfigText());
   }
 
   // MPV Presets
@@ -959,20 +990,36 @@ class SettingsService extends BaseSharedPreferencesService {
 
     try {
       final List<dynamic> decoded = json.decode(jsonString);
-      return decoded.map((e) => MpvPreset.fromJson(e as Map<String, dynamic>)).toList();
+      return decoded.map((e) {
+        final map = e as Map<String, dynamic>;
+        // Migrate legacy presets with entries list to text
+        if (map.containsKey('entries') && !map.containsKey('text')) {
+          final entries = map['entries'] as List;
+          final lines = <String>[];
+          for (final item in entries) {
+            if (item is Map<String, dynamic>) {
+              final key = item['key'] as String? ?? '';
+              final value = item['value'] as String? ?? '';
+              final enabled = item['isEnabled'] as bool? ?? true;
+              if (key.isNotEmpty) {
+                lines.add(enabled ? '$key=$value' : '#$key=$value');
+              }
+            }
+          }
+          map['text'] = lines.join('\n');
+        }
+        return MpvPreset.fromJson(map);
+      }).toList();
     } catch (e) {
       return [];
     }
   }
 
   /// Save a new preset (overwrites existing with same name)
-  Future<void> saveMpvPreset(String name, List<MpvConfigEntry> entries) async {
+  Future<void> saveMpvPreset(String name, String text) async {
     final presets = getMpvPresets();
-
-    // Remove existing preset with same name
     presets.removeWhere((p) => p.name == name);
-
-    presets.add(MpvPreset(name: name, entries: entries, createdAt: DateTime.now()));
+    presets.add(MpvPreset(name: name, text: text, createdAt: DateTime.now()));
 
     final jsonString = json.encode(presets.map((p) => p.toJson()).toList());
     await prefs.setString(_keyMpvConfigPresets, jsonString);
@@ -987,12 +1034,12 @@ class SettingsService extends BaseSharedPreferencesService {
     await prefs.setString(_keyMpvConfigPresets, jsonString);
   }
 
-  /// Load a preset (replaces current entries)
+  /// Load a preset (replaces current config text)
   Future<void> loadMpvPreset(String name) async {
     final presets = getMpvPresets();
     final preset = presets.firstWhere((p) => p.name == name, orElse: () => throw Exception('Preset not found: $name'));
 
-    await setMpvConfigEntries(preset.entries);
+    await setMpvConfigText(preset.text);
   }
 
   // Discord Rich Presence
@@ -1248,6 +1295,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyVideoPlayerNavigationEnabled),
       prefs.remove(_keyShowPerformanceOverlay),
       prefs.remove(_keyMpvConfigEntries),
+      prefs.remove(_keyMpvConfigText),
       prefs.remove(_keyMpvConfigPresets),
       prefs.remove(_keyEnableDiscordRPC),
       prefs.remove(_keyAutoPip),
