@@ -264,7 +264,13 @@ class DownloadManagerService {
     final settings = await SettingsService.getInstance();
     if (!settings.getDownloadOnWifiOnly()) return false;
 
-    final connectivity = await Connectivity().checkConnectivity();
+    final List<ConnectivityResult> connectivity;
+    try {
+      connectivity = await Connectivity().checkConnectivity();
+    } catch (e) {
+      // connectivity_plus can throw PlatformException on Windows — don't block
+      return false;
+    }
     // Block if on cellular and NOT on WiFi (allow if both are available)
     return connectivity.contains(ConnectivityResult.mobile) &&
         !connectivity.contains(ConnectivityResult.wifi) &&
