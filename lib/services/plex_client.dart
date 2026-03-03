@@ -851,16 +851,6 @@ class PlexClient {
     return Isolate.run(() => _processOnDeckResponse(response.data as Map<String, dynamic>, sid, sname));
   }
 
-  /// Get on deck items filtered by a specific library section
-  Future<List<PlexMetadata>> getOnDeckForLibrary(String sectionId) async {
-    final allOnDeck = await getOnDeck();
-
-    // Filter items to only include those from the specified library section
-    return allOnDeck.where((item) {
-      return item.librarySectionID == int.tryParse(sectionId);
-    }).toList();
-  }
-
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)
   /// Uses cache when offline or as fallback on network error
   Future<List<PlexMetadata>> getChildren(String ratingKey) async {
