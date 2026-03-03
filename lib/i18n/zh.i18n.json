@@ -338,6 +338,7 @@
     "settingsButton": "视频设置",
     "audioTrackButton": "音轨",
     "subtitlesButton": "字幕",
+    "tracksButton": "音频和字幕",
     "chaptersButton": "章节",
     "versionsButton": "视频版本",
     "pipButton": "画中画模式",

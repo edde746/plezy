@@ -493,6 +493,7 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get settingsButton => 'Video-instellingen';
 	@override String get audioTrackButton => 'Audiosporen';
 	@override String get subtitlesButton => 'Ondertitels';
+	@override String get tracksButton => 'Audio en ondertitels';
 	@override String get chaptersButton => 'Hoofdstukken';
 	@override String get versionsButton => 'Videoversies';
 	@override String get pipButton => 'Beeld-in-beeld modus';
@@ -1604,6 +1605,7 @@ extension on TranslationsNl {
 			'videoControls.settingsButton' => 'Video-instellingen',
 			'videoControls.audioTrackButton' => 'Audiosporen',
 			'videoControls.subtitlesButton' => 'Ondertitels',
+			'videoControls.tracksButton' => 'Audio en ondertitels',
 			'videoControls.chaptersButton' => 'Hoofdstukken',
 			'videoControls.versionsButton' => 'Videoversies',
 			'videoControls.pipButton' => 'Beeld-in-beeld modus',
@@ -1805,9 +1807,9 @@ extension on TranslationsNl {
 			'liveTv.premiere' => 'NIEUW',
 			'liveTv.reloadGuide' => 'Gids herladen',
 			'liveTv.allChannels' => 'Alle zenders',
-			'liveTv.now' => 'Nu',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Vandaag',
 			'liveTv.midnight' => 'Middernacht',
 			'liveTv.overnight' => 'Nacht',

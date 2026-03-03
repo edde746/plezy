@@ -338,6 +338,7 @@
     "settingsButton": "Video settings",
     "audioTrackButton": "Audio tracks",
     "subtitlesButton": "Subtitles",
+    "tracksButton": "Audio & Subtitles",
     "chaptersButton": "Chapters",
     "versionsButton": "Video versions",
     "pipButton": "Picture-in-Picture mode",

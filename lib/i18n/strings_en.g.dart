@@ -1080,6 +1080,9 @@ class TranslationsVideoControlsEn {
 	/// en: 'Subtitles'
 	String get subtitlesButton => 'Subtitles';
 
+	/// en: 'Audio & Subtitles'
+	String get tracksButton => 'Audio & Subtitles';
+
 	/// en: 'Chapters'
 	String get chaptersButton => 'Chapters';
 
@@ -3205,6 +3208,7 @@ extension on Translations {
 			'videoControls.settingsButton' => 'Video settings',
 			'videoControls.audioTrackButton' => 'Audio tracks',
 			'videoControls.subtitlesButton' => 'Subtitles',
+			'videoControls.tracksButton' => 'Audio & Subtitles',
 			'videoControls.chaptersButton' => 'Chapters',
 			'videoControls.versionsButton' => 'Video versions',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
@@ -3406,9 +3410,9 @@ extension on Translations {
 			'liveTv.premiere' => 'NEW',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.allChannels' => 'All Channels',
-			'liveTv.now' => 'Now',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',

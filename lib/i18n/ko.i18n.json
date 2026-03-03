@@ -338,6 +338,7 @@
     "settingsButton": "동영상 설정",
     "audioTrackButton": "음원 트랙",
     "subtitlesButton": "자막",
+    "tracksButton": "오디오 및 자막",
     "chaptersButton": "챕터",
     "versionsButton": "동영상 버전",
     "pipButton": "픽처 인 픽처 모드",

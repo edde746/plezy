@@ -493,6 +493,7 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get settingsButton => 'Videoinställningar';
 	@override String get audioTrackButton => 'Ljudspår';
 	@override String get subtitlesButton => 'Undertexter';
+	@override String get tracksButton => 'Ljud och undertexter';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversioner';
 	@override String get pipButton => 'Bild-i-bild läge';
@@ -1604,6 +1605,7 @@ extension on TranslationsSv {
 			'videoControls.settingsButton' => 'Videoinställningar',
 			'videoControls.audioTrackButton' => 'Ljudspår',
 			'videoControls.subtitlesButton' => 'Undertexter',
+			'videoControls.tracksButton' => 'Ljud och undertexter',
 			'videoControls.chaptersButton' => 'Kapitel',
 			'videoControls.versionsButton' => 'Videoversioner',
 			'videoControls.pipButton' => 'Bild-i-bild läge',
@@ -1805,9 +1807,9 @@ extension on TranslationsSv {
 			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.allChannels' => 'Alla kanaler',
-			'liveTv.now' => 'Nu',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
 			'liveTv.overnight' => 'Natt',

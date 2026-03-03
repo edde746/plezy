@@ -493,6 +493,7 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get settingsButton => 'Videoeinstellungen';
 	@override String get audioTrackButton => 'Tonspuren';
 	@override String get subtitlesButton => 'Untertitel';
+	@override String get tracksButton => 'Audio und Untertitel';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversionen';
 	@override String get pipButton => 'Bild-in-Bild Modus';
@@ -1604,6 +1605,7 @@ extension on TranslationsDe {
 			'videoControls.settingsButton' => 'Videoeinstellungen',
 			'videoControls.audioTrackButton' => 'Tonspuren',
 			'videoControls.subtitlesButton' => 'Untertitel',
+			'videoControls.tracksButton' => 'Audio und Untertitel',
 			'videoControls.chaptersButton' => 'Kapitel',
 			'videoControls.versionsButton' => 'Videoversionen',
 			'videoControls.pipButton' => 'Bild-in-Bild Modus',
@@ -1805,9 +1807,9 @@ extension on TranslationsDe {
 			'liveTv.premiere' => 'NEU',
 			'liveTv.reloadGuide' => 'Programmführer neu laden',
 			'liveTv.allChannels' => 'Alle Kanäle',
-			'liveTv.now' => 'Jetzt',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => 'Jetzt',
 			'liveTv.today' => 'Heute',
 			'liveTv.midnight' => 'Mitternacht',
 			'liveTv.overnight' => 'Nacht',

@@ -338,6 +338,7 @@
     "settingsButton": "Videoeinstellungen",
     "audioTrackButton": "Tonspuren",
     "subtitlesButton": "Untertitel",
+    "tracksButton": "Audio und Untertitel",
     "chaptersButton": "Kapitel",
     "versionsButton": "Videoversionen",
     "pipButton": "Bild-in-Bild Modus",

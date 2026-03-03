@@ -493,6 +493,7 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get settingsButton => '동영상 설정';
 	@override String get audioTrackButton => '음원 트랙';
 	@override String get subtitlesButton => '자막';
+	@override String get tracksButton => '오디오 및 자막';
 	@override String get chaptersButton => '챕터';
 	@override String get versionsButton => '동영상 버전';
 	@override String get pipButton => '픽처 인 픽처 모드';
@@ -1604,6 +1605,7 @@ extension on TranslationsKo {
 			'videoControls.settingsButton' => '동영상 설정',
 			'videoControls.audioTrackButton' => '음원 트랙',
 			'videoControls.subtitlesButton' => '자막',
+			'videoControls.tracksButton' => '오디오 및 자막',
 			'videoControls.chaptersButton' => '챕터',
 			'videoControls.versionsButton' => '동영상 버전',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
@@ -1805,9 +1807,9 @@ extension on TranslationsKo {
 			'liveTv.premiere' => '신규',
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.allChannels' => '전체 채널',
-			'liveTv.now' => '지금',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
 			'liveTv.overnight' => '심야',

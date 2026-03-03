@@ -13,10 +13,9 @@ import '../../../utils/platform_detector.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../models/plex_metadata.dart';
-import '../sheets/audio_track_sheet.dart';
 import '../sheets/chapter_sheet.dart';
 import '../sheets/queue_sheet.dart';
-import '../sheets/subtitle_track_sheet.dart';
+import '../sheets/track_sheet.dart';
 import '../sheets/version_sheet.dart';
 import '../sheets/video_settings_sheet.dart';
 import '../../../services/shader_service.dart';
@@ -242,53 +241,32 @@ class TrackChapterControls extends StatelessWidget {
         );
         buttonIndex++;
 
-        // Audio track button
-        if (_hasMultipleAudioTracks(tracks)) {
+        // Combined audio & subtitles button
+        if (_hasMultipleAudioTracks(tracks) || _hasSubtitles(tracks)) {
           final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: Symbols.audiotrack_rounded,
-              tooltip: t.videoControls.audioTrackButton,
-              semanticLabel: t.videoControls.audioTrackButton,
-              tracks: tracks,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
-              onPressed: () {
-                onCancelAutoHide?.call();
-                OverlaySheetController.of(context).show(
-                  builder: (_) => AudioTrackSheet(
-                    player: player,
-                    onTrackChanged: onAudioTrackChanged,
-                  ),
-                ).whenComplete(() => onStartAutoHide?.call());
-              },
-            ),
-          );
-          buttonIndex++;
-        }
-
-        // Subtitles button
-        if (_hasSubtitles(tracks)) {
-          final currentIndex = buttonIndex;
+          final hasSubs = _hasSubtitles(tracks);
           final selectedSub = player.state.track.subtitle;
           final hasActiveSubtitle = selectedSub != null && selectedSub.id != 'no';
-          final isHidden = hasActiveSubtitle && !subtitlesVisible;
+          final isHidden = hasSubs && hasActiveSubtitle && !subtitlesVisible;
+          final icon = hasSubs
+              ? (isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded)
+              : Symbols.audiotrack_rounded;
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded,
-              tooltip: t.videoControls.subtitlesButton,
-              semanticLabel: t.videoControls.subtitlesButton,
+              icon: icon,
+              tooltip: t.videoControls.tracksButton,
+              semanticLabel: t.videoControls.tracksButton,
               tracks: tracks,
               isMobile: isMobile,
               isDesktop: isDesktop,
               onPressed: () {
                 onCancelAutoHide?.call();
                 OverlaySheetController.of(context).show(
-                  builder: (_) => SubtitleTrackSheet(
+                  builder: (_) => TrackSheet(
                     player: player,
-                    onTrackChanged: onSubtitleTrackChanged,
+                    onAudioTrackChanged: onAudioTrackChanged,
+                    onSubtitleTrackChanged: onSubtitleTrackChanged,
                   ),
                 ).whenComplete(() => onStartAutoHide?.call());
               },
@@ -475,8 +453,7 @@ class TrackChapterControls extends StatelessWidget {
   /// Calculate total button count for navigation
   int _getButtonCount(Tracks? tracks, bool isMobile, bool isDesktop) {
     int count = 1; // Settings button always shown
-    if (_hasMultipleAudioTracks(tracks)) count++;
-    if (_hasSubtitles(tracks)) count++;
+    if (_hasMultipleAudioTracks(tracks) || _hasSubtitles(tracks)) count++;
     if (chapters.isNotEmpty) count++;
     if (showQueueButton && onQueueItemSelected != null) count++;
     if (availableVersions.length > 1 && onSwitchVersion != null) count++;

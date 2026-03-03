@@ -493,6 +493,7 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get settingsButton => '视频设置';
 	@override String get audioTrackButton => '音轨';
 	@override String get subtitlesButton => '字幕';
+	@override String get tracksButton => '音频和字幕';
 	@override String get chaptersButton => '章节';
 	@override String get versionsButton => '视频版本';
 	@override String get pipButton => '画中画模式';
@@ -1604,6 +1605,7 @@ extension on TranslationsZh {
 			'videoControls.settingsButton' => '视频设置',
 			'videoControls.audioTrackButton' => '音轨',
 			'videoControls.subtitlesButton' => '字幕',
+			'videoControls.tracksButton' => '音频和字幕',
 			'videoControls.chaptersButton' => '章节',
 			'videoControls.versionsButton' => '视频版本',
 			'videoControls.pipButton' => '画中画模式',
@@ -1805,9 +1807,9 @@ extension on TranslationsZh {
 			'liveTv.premiere' => '新',
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.allChannels' => '所有频道',
-			'liveTv.now' => '现在',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
 			'liveTv.overnight' => '凌晨',
