@@ -22,14 +22,14 @@ platform :android do
     debug_info_dir = "./debug-info/#{version_name}+#{version_code}"
 
     # Build the Flutter app
-    # sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true --obfuscate --split-debug-info=#{debug_info_dir}/aab")
+    sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true --obfuscate --split-debug-info=#{debug_info_dir}/aab")
 
-    # upload_to_play_store(
-    #   track: "production",
-    #   release_status: "completed",
-    #   version_code: version_code,
-    #   aab: "../build/app/outputs/bundle/release/app-release.aab"
-    # )
+    upload_to_play_store(
+      track: "production",
+      release_status: "completed",
+      version_code: version_code,
+      aab: "../build/app/outputs/bundle/release/app-release.aab"
+    )
 
     # Build universal APK for Amazon Appstore (doesn't accept AABs, excludes x86 via env var)
     sh("cd #{ENV['PWD']}/.. && AMAZON=1 flutter build apk --release --obfuscate --split-debug-info=#{debug_info_dir}/apk")
