@@ -62,6 +62,9 @@ class WatchTogetherSyncManager {
   Timer? _clockSyncTimer;
   static const Duration _clockSyncInterval = Duration(seconds: 5);
 
+  // Timer for clearing sync indicator (prevents flicker from overlapping corrections)
+  Timer? _syncingTimer;
+
   // Track last known state to avoid duplicate broadcasts
   bool _lastKnownPlaying = false;
   double _lastKnownRate = 1.0;
@@ -159,6 +162,9 @@ class WatchTogetherSyncManager {
     _hasAnnouncedReady = false;
     _deferredPlay = false;
     _deferredPlayPosition = null;
+    _firstPlayCompleted = false;
+    _syncingTimer?.cancel();
+    _syncingTimer = null;
     _clockSyncTimer?.cancel();
     _clockSyncTimer = null;
     _clockOffset = 0;
@@ -631,13 +637,15 @@ class WatchTogetherSyncManager {
       appLogger.w('WatchTogether: Excessive drift (${drift.inSeconds}s), force syncing');
       _setSyncing(true);
       _applyRemoteSeek(estimatedRemoteNow);
-      Future.delayed(const Duration(milliseconds: 500), () => _setSyncing(false));
+      _syncingTimer?.cancel();
+      _syncingTimer = Timer(const Duration(milliseconds: 500), () => _setSyncing(false));
     } else if (drift > maxAllowedDrift) {
       // Normal drift correction
       appLogger.d('WatchTogether: Drift correction (${drift.inMilliseconds}ms)');
       _setSyncing(true);
       _applyRemoteSeek(estimatedRemoteNow);
-      Future.delayed(const Duration(milliseconds: 300), () => _setSyncing(false));
+      _syncingTimer?.cancel();
+      _syncingTimer = Timer(const Duration(milliseconds: 300), () => _setSyncing(false));
     }
   }
 
@@ -661,11 +669,6 @@ class WatchTogetherSyncManager {
 
         _peerService.sendTo(message.peerId!, SyncMessage.playerReady(peerId: _peerService.myPeerId!, ready: true));
       }
-      // Send host's join info so guest adds host to their participants list
-      _peerService.sendTo(
-        message.peerId!,
-        SyncMessage.join(peerId: _peerService.myPeerId!, displayName: displayName, isHost: true),
-      );
     }
   }
 
@@ -702,8 +705,9 @@ class WatchTogetherSyncManager {
         _lastKnownRate = message.rate!;
       }
 
-      // Match play/pause state (bufferingState is reused: false = playing)
-      if (message.bufferingState == false) {
+      // Match play/pause state (prefer isPlaying, fall back to legacy bufferingState encoding)
+      final hostIsPlaying = message.isPlaying ?? (message.bufferingState == false);
+      if (hostIsPlaying) {
         // Host was playing — defer until our video is loaded
         _deferredPlay = true;
         _deferredPlayPosition = message.position;
@@ -775,6 +779,7 @@ class WatchTogetherSyncManager {
   /// Dispose resources
   void dispose() {
     _clockSyncTimer?.cancel();
+    _syncingTimer?.cancel();
     detachPlayer();
     _peerReady.clear();
     _hasAnnouncedReady = false;

@@ -30,10 +30,10 @@ class Participant {
   final String peerId;
   final String displayName;
   final bool isHost;
-  Duration lastKnownPosition;
-  bool isBuffering;
+  final Duration lastKnownPosition;
+  final bool isBuffering;
 
-  Participant({
+  const Participant({
     required this.peerId,
     required this.displayName,
     required this.isHost,
