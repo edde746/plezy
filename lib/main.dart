@@ -81,6 +81,7 @@ void main() async {
       options.attachStacktrace = true;
       options.enableAutoSessionTracking = false;
       options.beforeSend = _beforeSend;
+      options.beforeBreadcrumb = _beforeBreadcrumb;
     },
     appRunner: () async {
       // Initialize settings first to get saved locale
@@ -147,6 +148,19 @@ void main() async {
 
       runApp(const MainApp());
     },
+  );
+}
+
+Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint hint) {
+  if (breadcrumb == null) return null;
+
+  final message = breadcrumb.message;
+  final data = breadcrumb.data;
+  if (message == null && (data == null || data.isEmpty)) return breadcrumb;
+
+  return breadcrumb.copyWith(
+    message: message != null ? LogRedactionManager.redact(message) : null,
+    data: data?.map((k, v) => MapEntry(k, v is String ? LogRedactionManager.redact(v) : v)),
   );
 }
 
