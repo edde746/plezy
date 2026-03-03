@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../models/hotkey_model.dart';
@@ -1000,7 +999,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
               onTap: () {
                 throw Exception("Example exception");
-                showSnackBar(context, 'Test error sent to Sentry');
               },
             ),
           if (kDebugMode)
