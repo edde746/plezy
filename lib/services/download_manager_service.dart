@@ -238,6 +238,9 @@ class DownloadManagerService {
   // Keys currently being paused — prevents holding queue from promoting them
   final Set<String> _pausingKeys = {};
 
+  // Keys whose completion callback is in-flight — prevents orphan scan from re-queuing them
+  final Set<String> _completingKeys = {};
+
   // Prevents concurrent _processQueue calls
   bool _isProcessingQueue = false;
   bool _disposed = false;
@@ -356,6 +359,12 @@ class DownloadManagerService {
       final allDownloads = await _database.select(_database.downloadedMedia).get();
       for (final item in allDownloads) {
         if (item.status == DownloadStatus.downloading.index) {
+          // Skip items whose completion callback is already in-flight (race with trackTasks)
+          if (_completingKeys.contains(item.globalKey)) {
+            appLogger.d('Skipping orphan check for ${item.globalKey}: completion in progress');
+            continue;
+          }
+
           // Video already downloaded but post-processing didn't complete
           if (item.videoFilePath != null) {
             appLogger.i('Download ${item.globalKey} has video but incomplete post-processing, completing');
@@ -541,6 +550,14 @@ class DownloadManagerService {
   /// Resolve metadata, video URL, and file path, then enqueue a background download task.
   Future<void> _prepareAndEnqueueDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
     try {
+      // Guard: don't re-enqueue an item that's already completed or was deleted
+      final existing = await _database.getDownloadedMedia(globalKey);
+      if (existing == null || existing.status == DownloadStatus.completed.index) {
+        appLogger.d('Skipping enqueue for $globalKey: already completed or deleted');
+        await _database.removeFromQueue(globalKey);
+        return;
+      }
+
       appLogger.i('Preparing download for $globalKey');
       await _transitionStatus(globalKey, DownloadStatus.downloading);
 
@@ -849,9 +866,22 @@ class DownloadManagerService {
 
   /// Handle a completed video download — store path, download supplementary content, mark done.
   Future<void> _onDownloadComplete(String globalKey, Task task) async {
+    // Prevent duplicate concurrent completions (e.g. trackTasks replaying events)
+    if (_completingKeys.contains(globalKey)) {
+      appLogger.d('Already processing completion for $globalKey, skipping');
+      return;
+    }
+    _completingKeys.add(globalKey);
     try {
       // Flush any pending debounced progress write before completing
       _progressDebounceTimers.remove(globalKey)?.cancel();
+
+      // Fresh DB check — bail if already completed (guards against race with orphan scan)
+      final existingCheck = await _database.getDownloadedMedia(globalKey);
+      if (existingCheck?.status == DownloadStatus.completed.index) {
+        appLogger.d('Download already completed for $globalKey, skipping');
+        return;
+      }
 
       final ctx = _pendingDownloadContext.remove(globalKey);
 
@@ -949,6 +979,7 @@ class DownloadManagerService {
       await _database.updateDownloadError(globalKey, 'Post-processing failed: $e');
       await _database.removeFromQueue(globalKey);
     } finally {
+      _completingKeys.remove(globalKey);
       // Always advance the queue, even after errors
       if (_lastClient != null) _processQueue(_lastClient!);
     }
