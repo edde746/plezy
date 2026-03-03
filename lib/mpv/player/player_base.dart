@@ -324,7 +324,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_disposed) return;
     switch (name) {
       case 'end-file':
-        final reason = data?['reason'] as String?;
+        final rawReason = data?['reason'];
+        final reason = switch (rawReason) {
+          0 => 'eof',
+          2 => 'stop',
+          3 => 'quit',
+          4 => 'error',
+          5 => 'redirect',
+          String s => s,
+          _ => null,
+        };
         if (reason == 'eof') {
           _state = _state.copyWith(completed: true);
           completedController.add(true);
