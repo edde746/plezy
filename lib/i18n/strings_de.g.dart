@@ -140,9 +140,9 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get resume => 'Fortsetzen';
 	@override String get error => 'Fehler';
 	@override String get search => 'Suche';
-	@override String get home => 'Startseite';
+	@override String get home => 'Start';
 	@override String get back => 'Zurück';
-	@override String get settings => 'Einstellungen';
+	@override String get settings => 'Optionen';
 	@override String get mute => 'Stumm';
 	@override String get ok => 'OK';
 	@override String get loading => 'Laden...';
@@ -789,7 +789,7 @@ class _TranslationsNavigationDe implements TranslationsNavigationEn {
 	final TranslationsDe _root; // ignore: unused_field
 
 	// Translations
-	@override String get libraries => 'Mediatheken';
+	@override String get libraries => 'Medien';
 	@override String get downloads => 'Downloads';
 	@override String get liveTv => 'Live-TV';
 }
@@ -1333,9 +1333,9 @@ extension on TranslationsDe {
 			'common.resume' => 'Fortsetzen',
 			'common.error' => 'Fehler',
 			'common.search' => 'Suche',
-			'common.home' => 'Startseite',
+			'common.home' => 'Start',
 			'common.back' => 'Zurück',
-			'common.settings' => 'Einstellungen',
+			'common.settings' => 'Optionen',
 			'common.mute' => 'Stumm',
 			'common.ok' => 'OK',
 			'common.loading' => 'Laden...',
@@ -1789,7 +1789,7 @@ extension on TranslationsDe {
 			'licenses.license' => 'Lizenz',
 			'licenses.licenseNumber' => ({required Object number}) => 'Lizenz ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} Lizenzen',
-			'navigation.libraries' => 'Mediatheken',
+			'navigation.libraries' => 'Medien',
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live-TV',
 			'liveTv.title' => 'Live-TV',

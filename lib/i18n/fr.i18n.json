@@ -44,7 +44,7 @@
     "search": "Recherche",
     "home": "Accueil",
     "back": "Retour",
-    "settings": "Paramètres",
+    "settings": "Réglages",
     "mute": "Muet",
     "ok": "OK",
     "loading": "Chargement...",
@@ -556,9 +556,9 @@
     "licensesCount": "${count} licences"
   },
   "navigation": {
-    "libraries": "Bibliothèques",
-    "downloads": "Téléchargements",
-    "liveTv": "TV en direct"
+    "libraries": "Medias",
+    "downloads": "Téléch.",
+    "liveTv": "TV direct"
   },
   "liveTv": {
     "title": "TV en direct",

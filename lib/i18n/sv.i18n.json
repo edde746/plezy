@@ -44,7 +44,7 @@
     "search": "Sök",
     "home": "Hem",
     "back": "Tillbaka",
-    "settings": "Inställningar",
+    "settings": "Mer",
     "mute": "Ljud av",
     "ok": "OK",
     "loading": "Laddar...",
@@ -557,7 +557,7 @@
   },
   "navigation": {
     "libraries": "Bibliotek",
-    "downloads": "Nedladdningar",
+    "downloads": "Nerladdat",
     "liveTv": "Live-TV"
   },
   "liveTv": {

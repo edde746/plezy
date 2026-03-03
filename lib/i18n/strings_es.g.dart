@@ -789,7 +789,7 @@ class _TranslationsNavigationEs implements TranslationsNavigationEn {
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get libraries => 'Bibliotecas';
+	@override String get libraries => 'Medios';
 	@override String get downloads => 'Descargas';
 	@override String get liveTv => 'TV en vivo';
 }
@@ -1789,7 +1789,7 @@ extension on TranslationsEs {
 			'licenses.license' => 'Licencia',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licencia ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licencias',
-			'navigation.libraries' => 'Bibliotecas',
+			'navigation.libraries' => 'Medios',
 			'navigation.downloads' => 'Descargas',
 			'navigation.liveTv' => 'TV en vivo',
 			'liveTv.title' => 'TV en vivo',

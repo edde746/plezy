@@ -44,7 +44,7 @@
     "search": "Zoeken",
     "home": "Home",
     "back": "Terug",
-    "settings": "Instellingen",
+    "settings": "Opties",
     "mute": "Dempen",
     "ok": "OK",
     "loading": "Laden...",
@@ -556,7 +556,7 @@
     "licensesCount": "${count} licenties"
   },
   "navigation": {
-    "libraries": "Bibliotheken",
+    "libraries": "Media",
     "downloads": "Downloads",
     "liveTv": "Live TV"
   },

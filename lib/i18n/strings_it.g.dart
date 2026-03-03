@@ -142,7 +142,7 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get search => 'Cerca';
 	@override String get home => 'Home';
 	@override String get back => 'Indietro';
-	@override String get settings => 'Impostazioni';
+	@override String get settings => 'Opzioni';
 	@override String get mute => 'Muto';
 	@override String get ok => 'OK';
 	@override String get loading => 'Caricamento...';
@@ -791,7 +791,7 @@ class _TranslationsNavigationIt implements TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Librerie';
 	@override String get downloads => 'Download';
-	@override String get liveTv => 'TV in diretta';
+	@override String get liveTv => 'TV Live';
 }
 
 // Path: liveTv
@@ -1335,7 +1335,7 @@ extension on TranslationsIt {
 			'common.search' => 'Cerca',
 			'common.home' => 'Home',
 			'common.back' => 'Indietro',
-			'common.settings' => 'Impostazioni',
+			'common.settings' => 'Opzioni',
 			'common.mute' => 'Muto',
 			'common.ok' => 'OK',
 			'common.loading' => 'Caricamento...',
@@ -1791,7 +1791,7 @@ extension on TranslationsIt {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenze',
 			'navigation.libraries' => 'Librerie',
 			'navigation.downloads' => 'Download',
-			'navigation.liveTv' => 'TV in diretta',
+			'navigation.liveTv' => 'TV Live',
 			'liveTv.title' => 'TV in diretta',
 			'liveTv.channels' => 'Canali',
 			'liveTv.guide' => 'Guida',

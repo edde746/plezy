@@ -44,7 +44,7 @@
     "search": "Cerca",
     "home": "Home",
     "back": "Indietro",
-    "settings": "Impostazioni",
+    "settings": "Opzioni",
     "mute": "Muto",
     "ok": "OK",
     "loading": "Caricamento...",
@@ -558,7 +558,7 @@
   "navigation": {
     "libraries": "Librerie",
     "downloads": "Download",
-    "liveTv": "TV in diretta"
+    "liveTv": "TV Live"
   },
   "liveTv": {
     "title": "TV in diretta",

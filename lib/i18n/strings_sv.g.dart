@@ -142,7 +142,7 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get search => 'Sök';
 	@override String get home => 'Hem';
 	@override String get back => 'Tillbaka';
-	@override String get settings => 'Inställningar';
+	@override String get settings => 'Mer';
 	@override String get mute => 'Ljud av';
 	@override String get ok => 'OK';
 	@override String get loading => 'Laddar...';
@@ -790,7 +790,7 @@ class _TranslationsNavigationSv implements TranslationsNavigationEn {
 
 	// Translations
 	@override String get libraries => 'Bibliotek';
-	@override String get downloads => 'Nedladdningar';
+	@override String get downloads => 'Nerladdat';
 	@override String get liveTv => 'Live-TV';
 }
 
@@ -1335,7 +1335,7 @@ extension on TranslationsSv {
 			'common.search' => 'Sök',
 			'common.home' => 'Hem',
 			'common.back' => 'Tillbaka',
-			'common.settings' => 'Inställningar',
+			'common.settings' => 'Mer',
 			'common.mute' => 'Ljud av',
 			'common.ok' => 'OK',
 			'common.loading' => 'Laddar...',
@@ -1790,7 +1790,7 @@ extension on TranslationsSv {
 			'licenses.licenseNumber' => ({required Object number}) => 'Licens ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenser',
 			'navigation.libraries' => 'Bibliotek',
-			'navigation.downloads' => 'Nedladdningar',
+			'navigation.downloads' => 'Nerladdat',
 			'navigation.liveTv' => 'Live-TV',
 			'liveTv.title' => 'Live-TV',
 			'liveTv.channels' => 'Kanaler',

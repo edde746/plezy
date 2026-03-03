@@ -142,7 +142,7 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get search => 'Recherche';
 	@override String get home => 'Accueil';
 	@override String get back => 'Retour';
-	@override String get settings => 'Paramètres';
+	@override String get settings => 'Réglages';
 	@override String get mute => 'Muet';
 	@override String get ok => 'OK';
 	@override String get loading => 'Chargement...';
@@ -789,9 +789,9 @@ class _TranslationsNavigationFr implements TranslationsNavigationEn {
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String get libraries => 'Bibliothèques';
-	@override String get downloads => 'Téléchargements';
-	@override String get liveTv => 'TV en direct';
+	@override String get libraries => 'Medias';
+	@override String get downloads => 'Téléch.';
+	@override String get liveTv => 'TV direct';
 }
 
 // Path: liveTv
@@ -1335,7 +1335,7 @@ extension on TranslationsFr {
 			'common.search' => 'Recherche',
 			'common.home' => 'Accueil',
 			'common.back' => 'Retour',
-			'common.settings' => 'Paramètres',
+			'common.settings' => 'Réglages',
 			'common.mute' => 'Muet',
 			'common.ok' => 'OK',
 			'common.loading' => 'Chargement...',
@@ -1789,9 +1789,9 @@ extension on TranslationsFr {
 			'licenses.license' => 'Licence',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licence ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licences',
-			'navigation.libraries' => 'Bibliothèques',
-			'navigation.downloads' => 'Téléchargements',
-			'navigation.liveTv' => 'TV en direct',
+			'navigation.libraries' => 'Medias',
+			'navigation.downloads' => 'Téléch.',
+			'navigation.liveTv' => 'TV direct',
 			'liveTv.title' => 'TV en direct',
 			'liveTv.channels' => 'Chaînes',
 			'liveTv.guide' => 'Guide',

@@ -42,9 +42,9 @@
     "resume": "Fortsetzen",
     "error": "Fehler",
     "search": "Suche",
-    "home": "Startseite",
+    "home": "Start",
     "back": "Zurück",
-    "settings": "Einstellungen",
+    "settings": "Optionen",
     "mute": "Stumm",
     "ok": "OK",
     "loading": "Laden...",
@@ -556,7 +556,7 @@
     "licensesCount": "${count} Lizenzen"
   },
   "navigation": {
-    "libraries": "Mediatheken",
+    "libraries": "Medien",
     "downloads": "Downloads",
     "liveTv": "Live-TV"
   },

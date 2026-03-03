@@ -142,7 +142,7 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get search => 'Zoeken';
 	@override String get home => 'Home';
 	@override String get back => 'Terug';
-	@override String get settings => 'Instellingen';
+	@override String get settings => 'Opties';
 	@override String get mute => 'Dempen';
 	@override String get ok => 'OK';
 	@override String get loading => 'Laden...';
@@ -789,7 +789,7 @@ class _TranslationsNavigationNl implements TranslationsNavigationEn {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get libraries => 'Bibliotheken';
+	@override String get libraries => 'Media';
 	@override String get downloads => 'Downloads';
 	@override String get liveTv => 'Live TV';
 }
@@ -1335,7 +1335,7 @@ extension on TranslationsNl {
 			'common.search' => 'Zoeken',
 			'common.home' => 'Home',
 			'common.back' => 'Terug',
-			'common.settings' => 'Instellingen',
+			'common.settings' => 'Opties',
 			'common.mute' => 'Dempen',
 			'common.ok' => 'OK',
 			'common.loading' => 'Laden...',
@@ -1789,7 +1789,7 @@ extension on TranslationsNl {
 			'licenses.license' => 'Licentie',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licentie ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenties',
-			'navigation.libraries' => 'Bibliotheken',
+			'navigation.libraries' => 'Media',
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live TV',
 			'liveTv.title' => 'Live TV',

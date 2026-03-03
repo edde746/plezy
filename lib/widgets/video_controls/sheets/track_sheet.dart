@@ -218,7 +218,7 @@ class _SubtitleColumn extends StatelessWidget {
               );
               return TrackSelectionHelper.buildTrackTile<SubtitleTrack>(
                 label: label,
-                isSelected: !isOffSelected && track.id == (selectedSub?.id ?? ''),
+                isSelected: !isOffSelected && track.id == selectedSub.id,
                 onTap: () {
                   player.selectSubtitleTrack(track);
                   onTrackChanged?.call(track);
