@@ -5,33 +5,27 @@ import 'platform_detector.dart';
 
 /// Utility class for calculating consistent grid sizes across the app
 class GridSizeCalculator {
-  /// Screen width breakpoint for tablet devices
-  static const double tabletBreakpoint = ScreenBreakpoints.tablet;
-
-  /// Screen width breakpoint for desktop devices
-  static const double desktopBreakpoint = ScreenBreakpoints.desktop;
-
   /// Calculates the maximum cross-axis extent for grid items based on screen size and density
   static double getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTV = PlatformDetector.isTV();
-    final isDesktop = screenWidth > desktopBreakpoint;
-    final isTablet = screenWidth > tabletBreakpoint && screenWidth <= desktopBreakpoint;
+    final isDesktopOrLarger = ScreenBreakpoints.isDesktopOrLarger(screenWidth);
+    final isTablet = ScreenBreakpoints.isTablet(screenWidth);
 
     switch (density) {
       case LibraryDensity.comfortable:
         if (isTV) return GridLayoutConstants.comfortableTV;
-        if (isDesktop) return GridLayoutConstants.comfortableDesktop;
+        if (isDesktopOrLarger) return GridLayoutConstants.comfortableDesktop;
         if (isTablet) return GridLayoutConstants.comfortableTablet;
         return GridLayoutConstants.comfortableMobile;
       case LibraryDensity.compact:
         if (isTV) return GridLayoutConstants.compactTV;
-        if (isDesktop) return GridLayoutConstants.compactDesktop;
+        if (isDesktopOrLarger) return GridLayoutConstants.compactDesktop;
         if (isTablet) return GridLayoutConstants.compactTablet;
         return GridLayoutConstants.compactMobile;
       case LibraryDensity.normal:
         if (isTV) return GridLayoutConstants.normalTV;
-        if (isDesktop) return GridLayoutConstants.normalDesktop;
+        if (isDesktopOrLarger) return GridLayoutConstants.normalDesktop;
         if (isTablet) return GridLayoutConstants.normalTablet;
         return GridLayoutConstants.normalMobile;
     }
@@ -104,22 +98,6 @@ class GridSizeCalculator {
       };
       return availableWidth / targetItemCount;
     }
-  }
-
-  /// Returns whether the current screen is a desktop-sized screen
-  static bool isDesktop(BuildContext context) {
-    return MediaQuery.of(context).size.width > desktopBreakpoint;
-  }
-
-  /// Returns whether the current screen is a tablet-sized screen
-  static bool isTablet(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    return screenWidth > tabletBreakpoint && screenWidth <= desktopBreakpoint;
-  }
-
-  /// Returns whether the current screen is a mobile-sized screen
-  static bool isMobile(BuildContext context) {
-    return MediaQuery.of(context).size.width <= tabletBreakpoint;
   }
 
   /// Calculates the number of columns for a given available width.

@@ -1270,14 +1270,14 @@ class _SkeletonCard extends StatelessWidget {
           // Poster area — matches the Expanded poster in _buildGridCard
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
               child: const SkeletonLoader(child: SizedBox.expand()),
             ),
           ),
           const SizedBox(height: 4),
           // Title bar
           SkeletonLoader(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: const BorderRadius.all(Radius.circular(4)),
             child: const SizedBox(height: 13, width: double.infinity),
           ),
           const SizedBox(height: 3),
@@ -1286,7 +1286,7 @@ class _SkeletonCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             widthFactor: 0.6,
             child: SkeletonLoader(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: const BorderRadius.all(Radius.circular(4)),
               child: const SizedBox(height: 11),
             ),
           ),

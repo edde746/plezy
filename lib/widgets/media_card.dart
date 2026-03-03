@@ -170,11 +170,14 @@ class MediaCardState extends State<MediaCard> {
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
-    final viewMode = widget.forceListMode
-        ? ViewMode.list
-        : widget.forceGridMode
-            ? ViewMode.grid
-            : settingsProvider.viewMode;
+    final ViewMode viewMode;
+    if (widget.forceListMode) {
+      viewMode = ViewMode.list;
+    } else if (widget.forceGridMode) {
+      viewMode = ViewMode.grid;
+    } else {
+      viewMode = settingsProvider.viewMode;
+    }
 
     final semanticLabel = _buildSemanticLabel();
     final localPosterPath = _getLocalPosterPath(context);

@@ -64,6 +64,11 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   String _toGlobalKey(String ratingKey, {String? serverId}) =>
       buildGlobalKey(serverId ?? widget.season.serverId ?? '', ratingKey);
 
+  /// Calls [setState] only if the widget is still mounted.
+  void _setStateIfMounted(VoidCallback fn) {
+    if (mounted) setState(fn);
+  }
+
   // WatchStateAware: watch all episode ratingKeys
   @override
   Set<String>? get watchedRatingKeys => _episodes.map((e) => e.ratingKey).toSet();
@@ -160,14 +165,12 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
       // Episodes are automatically tagged with server info by PlexClient
       final episodes = await _client!.getChildren(widget.season.ratingKey);
 
-      if (!mounted) return;
-      setState(() {
+      _setStateIfMounted(() {
         _episodes = episodes;
         _isLoadingEpisodes = false;
       });
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
+      _setStateIfMounted(() {
         _isLoadingEpisodes = false;
       });
     }
@@ -573,14 +576,14 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                                       value: 1.0,
                                       strokeWidth: 1.5,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        getMutedColor(Colors.blue).withValues(alpha: 0.3),
+                                        getMutedColor(Theme.of(context).colorScheme.primary).withValues(alpha: 0.3),
                                       ),
                                     ),
                                     // Progress circle
                                     CircularProgressIndicator(
                                       value: progress?.progressPercent,
                                       strokeWidth: 1.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(getMutedColor(Colors.blue)),
+                                      valueColor: AlwaysStoppedAnimation<Color>(getMutedColor(Theme.of(context).colorScheme.primary)),
                                     ),
                                   ],
                                 ),

@@ -155,6 +155,7 @@ class _AudioColumn extends StatelessWidget {
                 index: index,
               );
               return TrackSelectionHelper.buildTrackTile<AudioTrack>(
+                context: context,
                 label: label,
                 isSelected: track.id == selectedId,
                 onTap: () {
@@ -200,6 +201,7 @@ class _SubtitleColumn extends StatelessWidget {
             itemBuilder: (context, index) {
               if (index == 0) {
                 return TrackSelectionHelper.buildOffTile<SubtitleTrack>(
+                  context: context,
                   isSelected: isOffSelected,
                   onTap: () {
                     player.selectSubtitleTrack(SubtitleTrack.off);
@@ -217,6 +219,7 @@ class _SubtitleColumn extends StatelessWidget {
                 index: index - 1,
               );
               return TrackSelectionHelper.buildTrackTile<SubtitleTrack>(
+                context: context,
                 label: label,
                 isSelected: !isOffSelected && track.id == selectedSub.id,
                 onTap: () {

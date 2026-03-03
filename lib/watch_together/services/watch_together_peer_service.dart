@@ -4,23 +4,12 @@ import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../services/base_peer_service.dart';
 import '../../utils/app_logger.dart';
 import '../models/sync_message.dart';
 
-/// Error types that can occur in the peer service
-enum PeerErrorType { connectionFailed, peerDisconnected, dataChannelError, serverError, timeout, unknown }
-
-/// Represents an error in the peer service
-class PeerError {
-  final PeerErrorType type;
-  final String message;
-  final dynamic originalError;
-
-  const PeerError({required this.type, required this.message, this.originalError});
-
-  @override
-  String toString() => 'PeerError($type): $message';
-}
+// Re-export so existing callers that import from here keep working.
+export '../../services/base_peer_service.dart' show PeerError, PeerErrorType;
 
 /// Service for managing Watch Together connections via a WebSocket relay
 ///
@@ -29,7 +18,7 @@ class PeerError {
 /// - Joining sessions (as guest)
 /// - Sending/receiving sync messages through the relay server
 /// - Reconnection on WebSocket drops
-class WatchTogetherPeerService {
+class WatchTogetherPeerService with KeepaliveMixin {
   static const String _baseUrl = 'https://ice.plezy.app';
   static String get healthUrl => '$_baseUrl/health';
   static const String _relayUrl = 'wss://ice.plezy.app/relay';
@@ -53,11 +42,11 @@ class WatchTogetherPeerService {
   static const int _maxReconnectAttempts = 3;
   Timer? _reconnectTimer;
 
-  // Keepalive
-  Timer? _pingTimer;
-  Timer? _pongTimer;
-  static const Duration _pingInterval = Duration(seconds: 15);
-  static const Duration _pongTimeout = Duration(seconds: 30);
+  // Keepalive (via KeepaliveMixin)
+  @override
+  Duration get pingInterval => const Duration(seconds: 15);
+  @override
+  Duration get pongTimeout => const Duration(seconds: 30);
 
   /// Stream of peer IDs when a new peer connects
   Stream<String> get onPeerConnected => _peerConnectedController.stream;
@@ -111,7 +100,7 @@ class WatchTogetherPeerService {
     _channelSubscription?.cancel();
     _channelSubscription = channel.stream.listen(
       (data) {
-        _resetPongTimer();
+        resetPongTimer();
         _handleServerMessage(data as String, setupCompleter: setupCompleter);
       },
       onError: (error) {
@@ -203,7 +192,7 @@ class WatchTogetherPeerService {
           }
 
         case 'pong':
-          // Handled by _resetPongTimer already
+          // Handled by resetPongTimer() already
           break;
 
         default:
@@ -214,30 +203,15 @@ class WatchTogetherPeerService {
     }
   }
 
-  /// Start the keepalive ping timer.
-  void _startPingTimer() {
-    _pingTimer?.cancel();
-    _pingTimer = Timer.periodic(_pingInterval, (_) {
-      _sendRaw({'type': 'ping'});
-    });
-    _resetPongTimer();
-  }
+  @override
+  void sendPing() => _sendRaw({'type': 'ping'});
 
-  /// Reset the pong timeout timer (called on every incoming message).
-  void _resetPongTimer() {
-    _pongTimer?.cancel();
-    _pongTimer = Timer(_pongTimeout, () {
-      appLogger.w('WatchTogether: Pong timeout — closing WebSocket');
+  @override
+  void onPongTimeout() {
+    appLogger.w('WatchTogether: Pong timeout — closing WebSocket');
+    try {
       _channel?.sink.close();
-    });
-  }
-
-  /// Stop keepalive timers.
-  void _stopTimers() {
-    _pingTimer?.cancel();
-    _pingTimer = null;
-    _pongTimer?.cancel();
-    _pongTimer = null;
+    } catch (_) {}
   }
 
   /// Send a raw JSON map to the relay.
@@ -251,7 +225,7 @@ class WatchTogetherPeerService {
 
   /// Handle the WebSocket being closed unexpectedly — attempt reconnection.
   void _handleWebSocketClosed() {
-    _stopTimers();
+    stopKeepalive();
     _channelSubscription?.cancel();
     _channelSubscription = null;
     _channel = null;
@@ -295,7 +269,7 @@ class WatchTogetherPeerService {
 
         final completer = Completer<void>();
         _listenToChannel(channel, setupCompleter: completer);
-        _startPingTimer();
+        startKeepalive();
 
         // Re-send create or join
         if (_isHost) {
@@ -332,7 +306,7 @@ class WatchTogetherPeerService {
 
       final completer = Completer<void>();
       _listenToChannel(channel, setupCompleter: completer);
-      _startPingTimer();
+      startKeepalive();
 
       _sendRaw({'type': 'create', 'sessionId': _sessionId, 'peerId': _myPeerId});
 
@@ -369,7 +343,7 @@ class WatchTogetherPeerService {
 
       final completer = Completer<void>();
       _listenToChannel(channel, setupCompleter: completer);
-      _startPingTimer();
+      startKeepalive();
 
       _sendRaw({'type': 'join', 'sessionId': _sessionId, 'peerId': _myPeerId});
 
@@ -408,12 +382,14 @@ class WatchTogetherPeerService {
 
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
-    _stopTimers();
+    stopKeepalive();
 
     _channelSubscription?.cancel();
     _channelSubscription = null;
 
-    await _channel?.sink.close();
+    try {
+      await _channel?.sink.close();
+    } catch (_) {}
     _channel = null;
 
     _connectedPeers.clear();

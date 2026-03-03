@@ -41,30 +41,33 @@ class TrackSelectionHelper {
   }
 
   /// Build the "Off" list tile for track selection
-  static Widget buildOffTile<T>({required bool isSelected, required VoidCallback onTap, FocusNode? focusNode}) {
-    return _buildSelectableTile(label: 'Off', isSelected: isSelected, onTap: onTap, focusNode: focusNode);
+  static Widget buildOffTile<T>({required BuildContext context, required bool isSelected, required VoidCallback onTap, FocusNode? focusNode}) {
+    return _buildSelectableTile(context: context, label: 'Off', isSelected: isSelected, onTap: onTap, focusNode: focusNode);
   }
 
   /// Build a track selection list tile
   static Widget buildTrackTile<T>({
+    required BuildContext context,
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
     FocusNode? focusNode,
   }) {
-    return _buildSelectableTile(label: label, isSelected: isSelected, onTap: onTap, focusNode: focusNode);
+    return _buildSelectableTile(context: context, label: label, isSelected: isSelected, onTap: onTap, focusNode: focusNode);
   }
 
   static Widget _buildSelectableTile({
+    required BuildContext context,
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
     FocusNode? focusNode,
   }) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
     return FocusableListTile(
       focusNode: focusNode,
-      title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : null)),
-      trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
+      title: Text(label, style: TextStyle(color: isSelected ? primaryColor : null)),
+      trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primaryColor) : null,
       onTap: onTap,
     );
   }

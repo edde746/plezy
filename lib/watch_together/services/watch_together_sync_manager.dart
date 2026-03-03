@@ -28,11 +28,8 @@ class WatchTogetherSyncManager {
   bool _isRemoteAction = false; // Flag to prevent echo
   bool _isSyncing = false; // Flag for UI indicator during sync
 
-  // Stream subscriptions
-  StreamSubscription<bool>? _playingSubscription;
-  StreamSubscription<bool>? _bufferingSubscription;
-  StreamSubscription<double>? _rateSubscription;
-  StreamSubscription<SyncMessage>? _messageSubscription;
+  // Stream subscriptions (cancelled together in detachPlayer)
+  final List<StreamSubscription<dynamic>> _subscriptions = [];
 
   // Position sync timer (host broadcasts position periodically)
   Timer? _positionSyncTimer;
@@ -171,16 +168,11 @@ class WatchTogetherSyncManager {
     _hasClockOffset = false;
     _pendingPingTimestamp = null;
 
-    _playingSubscription?.cancel();
-    _bufferingSubscription?.cancel();
-    _rateSubscription?.cancel();
-    _messageSubscription?.cancel();
+    for (final subscription in _subscriptions) {
+      subscription.cancel();
+    }
+    _subscriptions.clear();
     _positionSyncTimer?.cancel();
-
-    _playingSubscription = null;
-    _bufferingSubscription = null;
-    _rateSubscription = null;
-    _messageSubscription = null;
     _positionSyncTimer = null;
 
     _player = null;
@@ -190,7 +182,7 @@ class WatchTogetherSyncManager {
   /// Set up subscriptions to player streams
   void _setupPlayerSubscriptions() {
     // Listen to playing state changes
-    _playingSubscription = _player!.streams.playing.listen((isPlaying) async {
+    _subscriptions.add(_player!.streams.playing.listen((isPlaying) async {
       if (_isRemoteAction) return;
       if (isPlaying == _lastKnownPlaying) return;
       _lastKnownPlaying = isPlaying;
@@ -212,10 +204,10 @@ class WatchTogetherSyncManager {
 
       if (!isPlaying) _deferredPlay = false;
       _broadcastPlayPause(isPlaying);
-    });
+    }));
 
     // Listen to buffering state changes
-    _bufferingSubscription = _player!.streams.buffering.listen((isBuffering) async {
+    _subscriptions.add(_player!.streams.buffering.listen((isBuffering) async {
       if (_isRemoteAction) return;
 
       // Announce ready when we stop buffering for the first time (video loaded)
@@ -232,10 +224,10 @@ class WatchTogetherSyncManager {
 
       // Broadcast for UI (peer buffering indicators) — no playback control
       _peerService.broadcast(SyncMessage.buffering(isBuffering, peerId: _peerService.myPeerId));
-    });
+    }));
 
     // Listen to rate changes
-    _rateSubscription = _player!.streams.rate.listen((rate) {
+    _subscriptions.add(_player!.streams.rate.listen((rate) {
       if (_isRemoteAction) return;
 
       if (rate != _lastKnownRate) {
@@ -244,12 +236,12 @@ class WatchTogetherSyncManager {
           _peerService.broadcast(SyncMessage.rate(rate, peerId: _peerService.myPeerId));
         }
       }
-    });
+    }));
   }
 
   /// Set up subscription to incoming sync messages
   void _setupMessageSubscription() {
-    _messageSubscription = _peerService.onMessageReceived.listen(_handleMessage);
+    _subscriptions.add(_peerService.onMessageReceived.listen(_handleMessage));
   }
 
   /// Start periodic position sync (host only)
@@ -537,74 +529,54 @@ class WatchTogetherSyncManager {
     }
   }
 
-  /// Apply remote play command
-  Future<void> _applyRemotePlay({Duration? position}) async {
+  /// Shared helper for applying remote actions with proper guarding
+  Future<void> _applyRemoteAction(Future<void> Function() action) async {
     if (_player == null) return;
-
-    appLogger.d('WatchTogether: Applying remote PLAY${position != null ? ' at ${position.inSeconds}s' : ''}');
     _isRemoteAction = true;
     try {
+      await action();
+    } on StateError catch (e) {
+      appLogger.w('WatchTogether: Player disposed during remote action', error: e);
+      detachPlayer();
+    } finally {
+      _isRemoteAction = false;
+    }
+  }
+
+  /// Apply remote play command
+  Future<void> _applyRemotePlay({Duration? position}) async {
+    appLogger.d('WatchTogether: Applying remote PLAY${position != null ? ' at ${position.inSeconds}s' : ''}');
+    await _applyRemoteAction(() async {
       if (position != null) {
         await _player!.seek(position);
       }
       await _player!.play();
       _lastKnownPlaying = true;
-    } on StateError catch (e) {
-      appLogger.w('WatchTogether: Player disposed during remote PLAY', error: e);
-      detachPlayer();
-    } finally {
-      _isRemoteAction = false;
-    }
+    });
   }
 
   /// Apply remote pause command
   Future<void> _applyRemotePause() async {
-    if (_player == null) return;
-
     appLogger.d('WatchTogether: Applying remote PAUSE');
-    _isRemoteAction = true;
-    try {
+    await _applyRemoteAction(() async {
       await _player!.pause();
       _lastKnownPlaying = false;
-    } on StateError catch (e) {
-      appLogger.w('WatchTogether: Player disposed during remote PAUSE', error: e);
-      detachPlayer();
-    } finally {
-      _isRemoteAction = false;
-    }
+    });
   }
 
   /// Apply remote seek command
   Future<void> _applyRemoteSeek(Duration position) async {
-    if (_player == null) return;
-
     appLogger.d('WatchTogether: Applying remote SEEK to ${position.inSeconds}s');
-    _isRemoteAction = true;
-    try {
-      await _player!.seek(position);
-    } on StateError catch (e) {
-      appLogger.w('WatchTogether: Player disposed during remote SEEK', error: e);
-      detachPlayer();
-    } finally {
-      _isRemoteAction = false;
-    }
+    await _applyRemoteAction(() => _player!.seek(position));
   }
 
   /// Apply remote rate change
   Future<void> _applyRemoteRate(double rate) async {
-    if (_player == null) return;
-
     appLogger.d('WatchTogether: Applying remote RATE: $rate');
-    _isRemoteAction = true;
-    try {
+    await _applyRemoteAction(() async {
       await _player!.setRate(rate);
       _lastKnownRate = rate;
-    } on StateError catch (e) {
-      appLogger.w('WatchTogether: Player disposed during remote RATE', error: e);
-      detachPlayer();
-    } finally {
-      _isRemoteAction = false;
-    }
+    });
   }
 
   /// Check and correct position drift

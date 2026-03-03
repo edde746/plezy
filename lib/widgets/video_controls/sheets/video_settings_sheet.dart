@@ -524,9 +524,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final isSelected = (currentRate - speed).abs() < 0.01;
             final label = speed == 1.0 ? 'Normal' : '${speed.toStringAsFixed(2)}x';
 
-            return ListTile(
-              title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : null)),
-              trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
+            final primary = Theme.of(context).colorScheme.primary;
+            return FocusableListTile(
+              title: Text(label, style: TextStyle(color: isSelected ? primary : null)),
+              trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
               onTap: () async {
                 widget.player.setRate(speed);
                 // Save as default playback speed
@@ -641,9 +642,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final isSelected = device.name == currentDevice.name;
     final label = device.description.isEmpty ? device.name : device.description;
 
-    return ListTile(
-      title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : null)),
-      trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
+    final primary = Theme.of(context).colorScheme.primary;
+    return FocusableListTile(
+      title: Text(label, style: TextStyle(color: isSelected ? primary : null)),
+      trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
       onTap: () {
         widget.player.setAudioDevice(device);
         OverlaySheetController.of(context).close();

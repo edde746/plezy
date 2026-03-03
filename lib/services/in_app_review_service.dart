@@ -14,6 +14,13 @@ class InAppReviewService {
 
   final InAppReview _inAppReview = InAppReview.instance;
 
+  // Cached SharedPreferences instance (lazy-initialized)
+  SharedPreferences? _prefs;
+
+  Future<SharedPreferences> _getPrefs() async {
+    return _prefs ??= await SharedPreferences.getInstance();
+  }
+
   // SharedPreferences keys
   static const String _keyQualifyingSessionsCount = 'review_qualifying_sessions_count';
   static const String _keyLastPromptTime = 'review_last_prompt_time';
@@ -62,20 +69,20 @@ class InAppReviewService {
 
   /// Increment the qualifying sessions counter
   Future<void> _incrementQualifyingSessions() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final currentCount = prefs.getInt(_keyQualifyingSessionsCount) ?? 0;
     await prefs.setInt(_keyQualifyingSessionsCount, currentCount + 1);
   }
 
   /// Get the current qualifying sessions count
   Future<int> _getQualifyingSessionsCount() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getInt(_keyQualifyingSessionsCount) ?? 0;
   }
 
   /// Check if we should request a review based on session count and cooldown
   Future<bool> _shouldRequestReview() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
 
     // Check session count
     final sessionCount = await _getQualifyingSessionsCount();
@@ -127,7 +134,7 @@ class InAppReviewService {
 
   /// Record that the review prompt was shown
   Future<void> _recordPromptShown() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setString(_keyLastPromptTime, DateTime.now().toIso8601String());
     // Reset session count so user needs to use app more before next prompt
     await prefs.setInt(_keyQualifyingSessionsCount, 0);
@@ -135,7 +142,7 @@ class InAppReviewService {
 
   /// Get debug info about the current state (for development/testing)
   Future<Map<String, dynamic>> getDebugInfo() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final sessionCount = prefs.getInt(_keyQualifyingSessionsCount) ?? 0;
     final lastPromptString = prefs.getString(_keyLastPromptTime);
     final isAvailable = await _inAppReview.isAvailable();
@@ -153,7 +160,7 @@ class InAppReviewService {
 
   /// Reset all stored data (for testing purposes)
   Future<void> reset() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.remove(_keyQualifyingSessionsCount);
     await prefs.remove(_keyLastPromptTime);
     _sessionStartTime = null;

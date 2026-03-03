@@ -961,7 +961,7 @@ class SettingsService extends BaseSharedPreferencesService {
     await prefs.setString(_keyMpvConfigText, text);
   }
 
-  /// Parse raw config text into a Map<String, String> (skip blanks and # comments)
+  /// Parse raw config text into a `Map<String, String>` (skip blanks and # comments)
   static Map<String, String> parseMpvConfigText(String text) {
     final result = <String, String>{};
     for (final line in text.split('\n')) {

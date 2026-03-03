@@ -155,7 +155,7 @@ void main() async {
   );
 }
 
-Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint hint) {
+Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
   if (breadcrumb == null) return null;
 
   final message = breadcrumb.message;
@@ -168,7 +168,7 @@ Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint hint) {
   );
 }
 
-FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint hint) {
+FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   // Drop event if user opted out of crash reporting
   final instance = SettingsService.instanceOrNull;
   if (instance != null && !instance.getCrashReporting()) return null;
@@ -361,14 +361,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           create: (context) => OfflineWatchProvider(
             syncService: _offlineWatchSyncService,
             downloadProvider: context.read<DownloadProvider>(),
-            apiCache: PlexApiCache.instance,
           ),
           update: (_, syncService, downloadProvider, previous) {
             return previous ??
                 OfflineWatchProvider(
                   syncService: syncService,
                   downloadProvider: downloadProvider,
-                  apiCache: PlexApiCache.instance,
                 );
           },
         ),

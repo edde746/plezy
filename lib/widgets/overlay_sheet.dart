@@ -549,15 +549,13 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         mainAxisSize: MainAxisSize.min,
         children: [
           // M3 drag handle: 32x4, rounded, with 12dp top / 4dp bottom margin
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 4),
-            child: Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                borderRadius: const BorderRadius.all(Radius.circular(2)),
-              ),
+          Container(
+            width: 32,
+            height: 4,
+            margin: const EdgeInsets.only(top: 12, bottom: 4),
+            decoration: BoxDecoration(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              borderRadius: const BorderRadius.all(Radius.circular(2)),
             ),
           ),
           Flexible(child: content),

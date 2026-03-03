@@ -15,12 +15,13 @@ import '../widgets/media_grid_delegate.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/overlay_sheet.dart';
 import '../focus/focusable_action_bar.dart';
-import '../focus/input_mode_tracker.dart';
+import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import 'libraries/sort_bottom_sheet.dart';
 import 'libraries/state_messages.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
+import 'focusable_detail_screen_mixin.dart';
 
 /// Screen to display full content of a recommendation hub
 class HubDetailScreen extends StatefulWidget {
@@ -32,7 +33,8 @@ class HubDetailScreen extends StatefulWidget {
   State<HubDetailScreen> createState() => _HubDetailScreenState();
 }
 
-class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, GridFocusNodeMixin {
+class _HubDetailScreenState extends State<HubDetailScreen>
+    with Refreshable, GridFocusNodeMixin, FocusableDetailScreenMixin {
   PlexClient get client => _getClientForHub();
 
   List<PlexMetadata> _items = [];
@@ -43,13 +45,41 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
   bool _isLoading = false;
   String? _errorMessage;
 
-  late final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'hub_detail_first_item');
-  final _actionBarKey = GlobalKey<FocusableActionBarState>();
-  bool _isAppBarFocused = false;
-  bool _backHandledByKeyEvent = false;
-
   /// Key for getting a context below OverlaySheetHost
   final GlobalKey _overlayChildKey = GlobalKey();
+
+  @override
+  bool get hasItems => _filteredItems.isNotEmpty;
+
+  @override
+  List<FocusableAction> getAppBarActions() {
+    return [
+      FocusableAction(
+        icon: Symbols.swap_vert_rounded,
+        tooltip: t.libraries.sort,
+        onPressed: _showSortBottomSheet,
+      ),
+    ];
+  }
+
+  /// Override to add bounds check for filtered items (sorting can change item order)
+  @override
+  void navigateToGrid() {
+    if (!hasItems) return;
+
+    final targetIndex =
+        shouldRestoreGridFocus && lastFocusedGridIndex! < _filteredItems.length ? lastFocusedGridIndex! : 0;
+
+    setState(() {
+      isAppBarFocused = false;
+    });
+
+    if (targetIndex == 0) {
+      firstItemFocusNode.requestFocus();
+    } else {
+      getGridItemFocusNode(targetIndex, prefix: 'hub_detail_item').requestFocus();
+    }
+  }
 
   /// Get the correct PlexClient for this hub's server
   PlexClient _getClientForHub() {
@@ -69,42 +99,14 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
     // Load sorts based on the library type
     _loadSorts();
     // Auto-focus first grid item in keyboard mode after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (InputModeTracker.isKeyboardMode(context) && _filteredItems.isNotEmpty) {
-        _firstItemFocusNode.requestFocus();
-      }
-    });
+    autoFocusFirstItemAfterLoad();
   }
 
   @override
   void dispose() {
-    _firstItemFocusNode.dispose();
-    disposeGridFocusNodes();
+    disposeFocusResources();
     super.dispose();
   }
-
-  void _focusGrid() {
-    if (_filteredItems.isEmpty) return;
-    final targetIndex =
-        shouldRestoreGridFocus && lastFocusedGridIndex! < _filteredItems.length ? lastFocusedGridIndex! : 0;
-    if (targetIndex == 0) {
-      _firstItemFocusNode.requestFocus();
-    } else {
-      getGridItemFocusNode(targetIndex, prefix: 'hub_detail_item').requestFocus();
-    }
-  }
-
-  void _navigateToAppBar() {
-    setState(() => _isAppBarFocused = true);
-    _actionBarKey.currentState?.getFocusNode(0).requestFocus();
-  }
-
-  void _handleBackFromContent() {
-    _backHandledByKeyEvent = true;
-    _navigateToAppBar();
-  }
-
 
   Future<void> _loadSorts() async {
     try {
@@ -279,40 +281,27 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
 
   @override
   Widget build(BuildContext context) {
-    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
-
     return PopScope(
-      canPop: !isKeyboardMode || _isAppBarFocused,
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop || _backHandledByKeyEvent) {
-          _backHandledByKeyEvent = false;
-          return;
+        if (BackKeyCoordinator.consumeIfHandled()) return;
+        if (didPop) return;
+        final shouldPop = handleBackNavigation();
+        if (shouldPop && mounted) {
+          Navigator.pop(context);
         }
-        _navigateToAppBar();
       },
       child: OverlaySheetHost(
         child: Scaffold(
           key: _overlayChildKey,
           body: CustomScrollView(
+            controller: scrollController,
             clipBehavior: Clip.none,
             slivers: [
               CustomAppBar(
                 title: Text(widget.hub.title),
                 pinned: true,
-                actions: [
-                  FocusableActionBar(
-                    key: _actionBarKey,
-                    onNavigateDown: _focusGrid,
-                    onBack: () => Navigator.pop(context),
-                    actions: [
-                      FocusableAction(
-                        icon: Symbols.swap_vert_rounded,
-                        tooltip: t.libraries.sort,
-                        onPressed: _showSortBottomSheet,
-                      ),
-                    ],
-                  ),
-                ],
+                actions: buildFocusableAppBarActions(),
               ),
               if (_errorMessage != null)
                 SliverFillRemaining(
@@ -372,7 +361,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
                               (context, index) {
                                 final item = _filteredItems[index];
                                 final focusNode = index == 0
-                                    ? _firstItemFocusNode
+                                    ? firstItemFocusNode
                                     : getGridItemFocusNode(index, prefix: 'hub_detail_item');
                                 final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
                                 final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
@@ -381,9 +370,9 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable, Gri
                                   focusNode: focusNode,
                                   item: item,
                                   onRefresh: _handleItemRefresh,
-                                  onNavigateUp: isFirstRow ? _navigateToAppBar : null,
+                                  onNavigateUp: isFirstRow ? navigateToAppBar : null,
                                   onNavigateLeft: isFirstColumn ? () {} : null,
-                                  onBack: _handleBackFromContent,
+                                  onBack: handleBackFromContent,
                                   onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
                                   mixedHubContext: isMixedHub,
                                 );

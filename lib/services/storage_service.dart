@@ -284,6 +284,41 @@ class StorageService extends BaseSharedPreferencesService {
     await prefs.remove(_keyServerOrder);
   }
 
+  // Episode Count Persistence (for partial download detection)
+
+  static const String _prefixEpisodeCount = 'episode_count_';
+
+  /// Save the total episode count for a show/season
+  Future<void> saveTotalEpisodeCount(String globalKey, int count) async {
+    await prefs.setInt('$_prefixEpisodeCount$globalKey', count);
+  }
+
+  /// Get the total episode count for a show/season
+  int? getTotalEpisodeCount(String globalKey) {
+    return prefs.getInt('$_prefixEpisodeCount$globalKey');
+  }
+
+  /// Load all persisted episode counts
+  Map<String, int> loadAllEpisodeCounts() {
+    final counts = <String, int>{};
+    final keys = prefs.getKeys().where((k) => k.startsWith(_prefixEpisodeCount));
+
+    for (final key in keys) {
+      final globalKey = key.replaceFirst(_prefixEpisodeCount, '');
+      final count = prefs.getInt(key);
+      if (count != null) {
+        counts[globalKey] = count;
+      }
+    }
+
+    return counts;
+  }
+
+  /// Remove the episode count for a specific show/season
+  Future<void> removeEpisodeCount(String globalKey) async {
+    await prefs.remove('$_prefixEpisodeCount$globalKey');
+  }
+
   // Private helper methods
 
   /// Helper to read and decode JSON `List<String>` from preferences

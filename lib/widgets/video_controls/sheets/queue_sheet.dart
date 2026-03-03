@@ -42,12 +42,13 @@ class QueueSheet extends StatelessWidget {
               final item = items[index];
               final isCurrent = item.playQueueItemID == currentItemID;
 
+              final primaryColor = Theme.of(context).colorScheme.primary;
               return FocusableListTile(
                 leading: _buildThumbnail(context, item, isCurrent),
                 title: Text(
                   item.title,
                   style: TextStyle(
-                    color: isCurrent ? Colors.blue : null,
+                    color: isCurrent ? primaryColor : null,
                     fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                   ),
                   maxLines: 1,
@@ -56,13 +57,13 @@ class QueueSheet extends StatelessWidget {
                 subtitle: Text(
                   _buildSubtitle(item),
                   style: TextStyle(
-                    color: isCurrent ? Colors.blue.withValues(alpha: 0.7) : tokens(context).textMuted,
+                    color: isCurrent ? primaryColor.withValues(alpha: 0.7) : tokens(context).textMuted,
                     fontSize: 12,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                trailing: isCurrent ? const AppIcon(Symbols.play_circle_rounded, fill: 1, color: Colors.blue) : null,
+                trailing: isCurrent ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: primaryColor) : null,
                 onTap: () {
                   onItemSelected(item);
                   OverlaySheetController.of(context).close();
@@ -103,9 +104,9 @@ class QueueSheet extends StatelessWidget {
           if (isCurrent)
             Positioned.fill(
               child: Container(
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(4)),
-                  border: Border.fromBorderSide(BorderSide(color: Colors.blue, width: 2)),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                  border: Border.fromBorderSide(BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)),
                 ),
               ),
             ),

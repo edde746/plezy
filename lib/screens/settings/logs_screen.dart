@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:plezy/utils/http_client.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
@@ -130,7 +131,7 @@ class _LogsScreenState extends State<LogsScreen> {
     );
 
     try {
-      final response = await Dio().post(
+      final response = await createHttpClient().post(
         'https://ice.plezy.app/logs',
         data: logText,
         options: Options(contentType: 'text/plain'),

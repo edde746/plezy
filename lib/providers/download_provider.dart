@@ -3,11 +3,11 @@ import 'dart:io';
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:plezy/utils/content_utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
 import '../services/download_manager_service.dart';
 import '../services/download_storage_service.dart';
+import '../services/storage_service.dart';
 import '../services/plex_api_cache.dart';
 import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
@@ -118,7 +118,7 @@ class DownloadProvider extends ChangeNotifier {
         }
       }
 
-      // Load total episode counts from SharedPreferences
+      // Load total episode counts from StorageService
       await _loadTotalEpisodeCounts();
 
       appLogger.i(
@@ -131,32 +131,24 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
-  /// Load total episode counts from SharedPreferences
+  /// Load total episode counts from StorageService
   Future<void> _loadTotalEpisodeCounts() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final keys = prefs.getKeys().where((k) => k.startsWith('episode_count_'));
+      final storage = await StorageService.getInstance();
+      final counts = storage.loadAllEpisodeCounts();
+      _totalEpisodeCounts.addAll(counts);
 
-      for (final key in keys) {
-        final globalKey = key.replaceFirst('episode_count_', '');
-        final count = prefs.getInt(key);
-        if (count != null) {
-          _totalEpisodeCounts[globalKey] = count;
-          appLogger.d('📂 Loaded episode count from SharedPrefs: $globalKey = $count');
-        }
-      }
-
-      appLogger.i('📚 Loaded ${_totalEpisodeCounts.length} episode counts from SharedPreferences');
+      appLogger.i('Loaded ${_totalEpisodeCounts.length} episode counts from StorageService');
     } catch (e) {
       appLogger.w('Failed to load episode counts', error: e);
     }
   }
 
-  /// Persist total episode count to SharedPreferences
+  /// Persist total episode count to StorageService
   Future<void> _persistTotalEpisodeCount(String globalKey, int count) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('episode_count_$globalKey', count);
+      final storage = await StorageService.getInstance();
+      await storage.saveTotalEpisodeCount(globalKey, count);
       appLogger.d('Persisted episode count for $globalKey: $count');
     } catch (e) {
       appLogger.w('Failed to persist episode count for $globalKey', error: e);
@@ -409,7 +401,7 @@ class DownloadProvider extends ChangeNotifier {
       countSource = 'metadata.leafCount';
     } else if (storedCount != null && storedCount > 0) {
       totalEpisodes = storedCount;
-      countSource = 'stored count (SharedPreferences)';
+      countSource = 'stored count (StorageService)';
     } else {
       totalEpisodes = downloadedCount;
       countSource = 'downloaded episodes (fallback)';
@@ -874,10 +866,10 @@ class DownloadProvider extends ChangeNotifier {
       final meta = _metadata[globalKey];
       if (meta?.type == 'show' || meta?.type == 'season') {
         final removedCount = _totalEpisodeCounts.remove(globalKey);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('episode_count_$globalKey');
+        final storage = await StorageService.getInstance();
+        await storage.removeEpisodeCount(globalKey);
         appLogger.i(
-          '🗑️  Removed episode count for $globalKey\n'
+          'Removed episode count for $globalKey\n'
           '  - Removed count value: $removedCount\n'
           '  - Metadata type: ${meta?.type}\n'
           '  - Metadata title: ${meta?.title}\n'

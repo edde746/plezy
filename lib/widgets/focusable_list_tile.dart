@@ -182,6 +182,7 @@ class FocusableRadioListTile<T> extends StatelessWidget {
       subtitle: subtitle,
       secondary: secondary,
       value: value,
+      // groupValue and onChanged provided by RadioGroup ancestor
       dense: dense,
       focusNode: focusNode,
       autofocus: autofocus,

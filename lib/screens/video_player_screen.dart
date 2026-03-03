@@ -57,7 +57,7 @@ import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/language_codes.dart';
 import '../utils/snackbar_helper.dart';
-import '../utils/track_label_builder.dart' as tlb;
+import '../utils/track_label_builder.dart';
 import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/overlay_sheet.dart';
@@ -434,10 +434,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // exhausts the process address space on memory-constrained devices.
         final heapMB = await PlayerAndroid.getHeapSize();
         if (heapMB > 0) {
-          final autoBackMB = heapMB <= 256 ? 16 : (heapMB <= 512 ? 32 : 48);
+          int autoBackMB;
+          if (heapMB <= 256) {
+            autoBackMB = 16;
+          } else if (heapMB <= 512) {
+            autoBackMB = 32;
+          } else {
+            autoBackMB = 48;
+          }
           if (bufferSizeMB == 0) {
             // Auto mode: cap both forward and back buffer based on heap
-            final autoForwardMB = heapMB <= 256 ? 32 : (heapMB <= 512 ? 64 : 100);
+            int autoForwardMB;
+            if (heapMB <= 256) {
+              autoForwardMB = 32;
+            } else if (heapMB <= 512) {
+              autoForwardMB = 64;
+            } else {
+              autoForwardMB = 100;
+            }
             await player!.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
             await player!.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
           } else {
@@ -1279,6 +1293,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final presetId = settings.getGlobalShaderPreset();
       final preset = ShaderPreset.fromId(presetId) ?? ShaderPreset.none;
       await _shaderService!.applyPreset(preset);
+      if (!mounted) return;
       context.read<ShaderProvider>().setCurrentPreset(preset);
     } catch (e) {
       appLogger.d('Could not apply shader preset', error: e);
@@ -1578,7 +1593,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (mounted) {
       final label = next.id == 'no'
           ? 'Subtitles: Off'
-          : 'Subtitles: ${tlb.TrackLabelBuilder.buildSubtitleLabel(title: next.title, language: next.language, codec: next.codec, index: nextIndex)}';
+          : 'Subtitles: ${TrackLabelBuilder.buildSubtitleLabel(title: next.title, language: next.language, codec: next.codec, index: nextIndex)}';
       showAppSnackBar(context, label, duration: const Duration(seconds: 1));
     }
   }
@@ -1597,7 +1612,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     if (mounted) {
       final label =
-          'Audio: ${tlb.TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
+          'Audio: ${TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
       showAppSnackBar(context, label, duration: const Duration(seconds: 1));
     }
   }

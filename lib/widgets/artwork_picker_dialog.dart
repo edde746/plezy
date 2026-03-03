@@ -129,9 +129,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
         height: 400,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : (_artworkList == null || _artworkList!.isEmpty)
-                ? Center(child: Text(t.metadataEdit.noArtworkAvailable))
-                : _buildGrid(),
+            : _buildArtworkContent(),
       ),
       actions: [
         if (_isApplying)
@@ -165,6 +163,13 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
         ),
       ],
     );
+  }
+
+  Widget _buildArtworkContent() {
+    if (_artworkList == null || _artworkList!.isEmpty) {
+      return Center(child: Text(t.metadataEdit.noArtworkAvailable));
+    }
+    return _buildGrid();
   }
 
   Widget _buildGrid() {

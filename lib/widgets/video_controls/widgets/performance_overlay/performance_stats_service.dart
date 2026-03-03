@@ -298,7 +298,7 @@ class PerformanceStatsService {
       decoderFrameDropCount: _parseInt(results[14]),
       cacheDuration: _parseDouble(results[15]),
       // Video-dependent properties
-      displayFps: _parseDouble(videoResults?[0]),
+      displayFps: _parseDouble(videoResults?.first),
       pixelformat: videoResults?[1],
       hwPixelformat: videoResults?[2],
       colormatrix: videoResults?[3],

@@ -6,6 +6,7 @@ import 'package:dart_discord_presence/dart_discord_presence.dart';
 import 'package:dio/dio.dart';
 
 import '../models/plex_metadata.dart';
+import '../utils/http_client.dart';
 import '../utils/app_logger.dart';
 import 'plex_client.dart';
 import 'settings_service.dart';
@@ -299,7 +300,7 @@ class DiscordRPCService {
       if (imageUrl.isEmpty) return null;
 
       // Fetch image data
-      final dio = Dio();
+      final dio = createHttpClient();
       final imageResponse = await dio.get<List<int>>(
         imageUrl,
         options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 10)),

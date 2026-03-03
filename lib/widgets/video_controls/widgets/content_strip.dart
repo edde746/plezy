@@ -91,11 +91,11 @@ class _ContentStripState extends State<ContentStrip> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_hasBothTabs) _buildTabBar(context),
+            if (_hasBothTabs) _buildTabBar(),
             const SizedBox(height: 8),
             SizedBox(
               height: 106,
-              child: _activeTab == _StripTab.chapters ? _buildChapterStrip(context) : _buildQueueStrip(context),
+              child: _activeTab == _StripTab.chapters ? _buildChapterStrip() : _buildQueueStrip(),
             ),
           ],
         ),
@@ -103,18 +103,18 @@ class _ContentStripState extends State<ContentStrip> {
     );
   }
 
-  Widget _buildTabBar(BuildContext context) {
+  Widget _buildTabBar() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildTabLabel(context, t.videoControls.chapters, _StripTab.chapters),
+        _buildTabLabel(t.videoControls.chapters, _StripTab.chapters),
         const SizedBox(width: 24),
-        _buildTabLabel(context, t.videoControls.queue, _StripTab.queue),
+        _buildTabLabel(t.videoControls.queue, _StripTab.queue),
       ],
     );
   }
 
-  Widget _buildTabLabel(BuildContext context, String label, _StripTab tab) {
+  Widget _buildTabLabel(String label, _StripTab tab) {
     final isActive = _activeTab == tab;
     return GestureDetector(
       onTap: () => setState(() => _activeTab = tab),
@@ -133,14 +133,14 @@ class _ContentStripState extends State<ContentStrip> {
           Container(
             height: 2,
             width: 40,
-            color: isActive ? Colors.blue : Colors.transparent,
+            color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildChapterStrip(BuildContext context) {
+  Widget _buildChapterStrip() {
     return StreamBuilder<Duration>(
       stream: widget.player.streams.position,
       initialData: widget.player.state.position,
@@ -192,7 +192,7 @@ class _ContentStripState extends State<ContentStrip> {
                       width: 120,
                       height: 68,
                       fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) =>
+                      errorWidget: (_, _, _) =>
                           const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
                     )
                   : null,
@@ -206,7 +206,7 @@ class _ContentStripState extends State<ContentStrip> {
     );
   }
 
-  Widget _buildQueueStrip(BuildContext context) {
+  Widget _buildQueueStrip() {
     return Consumer<PlaybackStateProvider>(
       builder: (context, playbackState, _) {
         final items = playbackState.loadedItems;
@@ -246,7 +246,7 @@ class _ContentStripState extends State<ContentStrip> {
                       width: 120,
                       height: 68,
                       fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) =>
+                      errorWidget: (_, _, _) =>
                           const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
                     )
                   : null,
@@ -304,9 +304,9 @@ class _ContentStripState extends State<ContentStrip> {
                   if (isCurrent)
                     Positioned.fill(
                       child: Container(
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(6)),
-                          border: Border.fromBorderSide(BorderSide(color: Colors.blue, width: 2)),
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.all(Radius.circular(6)),
+                          border: Border.fromBorderSide(BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)),
                         ),
                       ),
                     ),
@@ -318,7 +318,7 @@ class _ContentStripState extends State<ContentStrip> {
             Text(
               title,
               style: TextStyle(
-                color: isCurrent ? Colors.blue : Colors.white,
+                color: isCurrent ? Theme.of(context).colorScheme.primary : Colors.white,
                 fontSize: 11,
                 fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -329,7 +329,7 @@ class _ContentStripState extends State<ContentStrip> {
             Text(
               subtitle,
               style: TextStyle(
-                color: isCurrent ? Colors.blue.withValues(alpha: 0.7) : tokens(context).textMuted,
+                color: isCurrent ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7) : tokens(context).textMuted,
                 fontSize: 10,
               ),
               maxLines: 1,

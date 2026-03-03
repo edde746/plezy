@@ -2183,7 +2183,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                           flex: (_autoSkipProgress * 100).round(),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.2),
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                             ),
                           ),

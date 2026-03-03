@@ -110,6 +110,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   String _toGlobalKey(String ratingKey, {String? serverId}) =>
       buildGlobalKey(serverId ?? widget.metadata.serverId ?? '', ratingKey);
 
+  /// Calls [setState] only if the widget is still mounted.
+  void _setStateIfMounted(VoidCallback fn) {
+    if (mounted) setState(fn);
+  }
+
   // WatchStateAware: watch the show/movie and all season ratingKeys
   @override
   Set<String>? get watchedRatingKeys {
@@ -229,8 +234,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       final metadata = result['metadata'] as PlexMetadata?;
       final onDeckEpisode = result['onDeckEpisode'] as PlexMetadata?;
 
-      if (metadata != null && mounted) {
-        setState(() {
+      if (metadata != null) {
+        _setStateIfMounted(() {
           _fullMetadata = metadata.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName);
           _onDeckEpisode = onDeckEpisode?.copyWith(
             serverId: widget.metadata.serverId,
@@ -242,13 +247,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       // Refresh seasons for updated watched counts (also without loader)
       if (widget.metadata.isShow) {
         final seasons = await client.getChildren(widget.metadata.ratingKey);
-        if (mounted) {
-          setState(() {
-            _seasons = seasons
-                .map((s) => s.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
-                .toList();
-          });
-        }
+        _setStateIfMounted(() {
+          _seasons = seasons
+              .map((s) => s.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
+              .toList();
+        });
       }
     } catch (e) {
       // Silently fail - data will refresh on next navigation
@@ -1047,14 +1050,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       final seasonsWithServerId = seasons
           .map((season) => season.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
           .toList();
-      if (!mounted) return;
-      setState(() {
+      _setStateIfMounted(() {
         _seasons = seasonsWithServerId;
         _isLoadingSeasons = false;
       });
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
+      _setStateIfMounted(() {
         _isLoadingSeasons = false;
       });
     } finally {
@@ -1131,11 +1132,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
           .map((extra) => extra.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
           .toList();
 
-      if (mounted) {
-        setState(() {
-          _extras = extrasWithServerId;
-        });
-      }
+      _setStateIfMounted(() {
+        _extras = extrasWithServerId;
+      });
     } catch (e) {
       // Silently fail - extras section won't appear if fetch fails
     }
@@ -1604,8 +1603,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     final offlineWatchProvider = context.read<OfflineWatchProvider>();
     final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(widget.metadata.ratingKey);
 
-    if (nextEpisode != null && mounted) {
-      setState(() {
+    if (nextEpisode != null) {
+      _setStateIfMounted(() {
         _onDeckEpisode = nextEpisode;
       });
       appLogger.d('Offline OnDeck: S${nextEpisode.parentIndex}E${nextEpisode.index} - ${nextEpisode.title}');
@@ -1645,8 +1644,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         }
 
         // Single setState to minimize rebuilds - scroll position is preserved by controller
-        if (!mounted) return;
-        setState(() {
+        _setStateIfMounted(() {
           _fullMetadata = metadataWithServerId;
           if (updatedSeasons != null) {
             _seasons = updatedSeasons;
