@@ -52,6 +52,7 @@ import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'utils/navigation_transitions.dart';
 import 'utils/log_redaction_manager.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
@@ -74,9 +75,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
 
+  final packageInfo = await PackageInfo.fromPlatform();
+
   await SentryFlutter.init(
     (options) {
       options.dsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
+      options.release = 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
       options.tracesSampleRate = 0;
       options.attachStacktrace = true;
       options.enableAutoSessionTracking = false;
