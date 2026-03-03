@@ -234,6 +234,11 @@ class DownloadManagerService {
   // background_downloader state
   bool _fileDownloaderInitialized = false;
   static const _downloadGroup = 'video_downloads';
+  static const _maxAppRetries = 3;
+  static const _nativeRetries = 5;
+  static const _autoRetryDelay = Duration(seconds: 30);
+  static const _progressDebounceDelay = Duration(seconds: 2);
+  static const _videoExtensions = {'.mp4', '.ogv', '.mkv', '.m4v', '.avi'};
 
   // Keys currently being paused — prevents holding queue from promoting them
   final Set<String> _pausingKeys = {};
@@ -435,12 +440,7 @@ class DownloadManagerService {
         if (metadata.type == 'episode' && metadata.grandparentRatingKey != null) {
           final parsed = parseGlobalKey(globalKey);
           if (parsed != null) {
-            final showCached = await _apiCache.get(
-              parsed.serverId,
-              '/library/metadata/${metadata.grandparentRatingKey}',
-            );
-            final showJson = PlexCacheParser.extractFirstMetadata(showCached);
-            if (showJson != null) showYear = PlexMetadata.fromJson(showJson).year;
+            showYear = await _fetchShowYear(parsed.serverId, metadata.grandparentRatingKey);
           }
         }
 
@@ -597,12 +597,9 @@ class DownloadManagerService {
       final ext = _getExtensionFromUrl(playbackData.videoUrl!) ?? 'mp4';
 
       // Look up show year for episodes
-      int? showYear;
-      if (metadata.type == 'episode' && metadata.grandparentRatingKey != null) {
-        final showCached = await _apiCache.get(serverId, '/library/metadata/${metadata.grandparentRatingKey}');
-        final showJson = PlexCacheParser.extractFirstMetadata(showCached);
-        if (showJson != null) showYear = PlexMetadata.fromJson(showJson).year;
-      }
+      final showYear = metadata.type == 'episode'
+          ? await _fetchShowYear(serverId, metadata.grandparentRatingKey)
+          : null;
 
       // Build display name for notifications
       final displayName = metadata.type == 'episode'
@@ -641,7 +638,7 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: 5,
+          retries: _nativeRetries,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -682,7 +679,7 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: 5,
+          retries: _nativeRetries,
           allowPause: true,
           metaData: globalKey,
           displayName: displayName,
@@ -706,7 +703,6 @@ class DownloadManagerService {
     } catch (e) {
       appLogger.e('Failed to prepare download for $globalKey', error: e);
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: e.toString());
-      await _database.updateDownloadError(globalKey, e.toString());
       await _database.removeFromQueue(globalKey);
       _pendingDownloadContext.remove(globalKey);
     }
@@ -745,7 +741,7 @@ class DownloadManagerService {
     // a 2-second settle period. The stream above provides real-time UI updates;
     // the DB write is only for crash-recovery state.
     _progressDebounceTimers[globalKey]?.cancel();
-    _progressDebounceTimers[globalKey] = Timer(const Duration(seconds: 2), () {
+    _progressDebounceTimers[globalKey] = Timer(_progressDebounceDelay, () {
       _progressDebounceTimers.remove(globalKey);
       _database.updateDownloadProgress(globalKey, progress, downloadedBytes, totalBytes).catchError((e) {
         appLogger.w('Failed to update download progress in DB', error: e);
@@ -821,18 +817,17 @@ class DownloadManagerService {
     }
     final retryCount = existing?.retryCount ?? 0;
 
-    if (retryCount < 3 && _lastClient != null) {
+    if (retryCount < _maxAppRetries && _lastClient != null) {
       // App-level auto-retry: schedule a fresh download after a delay.
       // Each new task gets 5 native retries with Range-based resume.
       appLogger.w(
-        'Download failed for $globalKey (attempt ${retryCount + 1}/3), '
-        'scheduling auto-retry in 30s: $errorMessage',
+        'Download failed for $globalKey (attempt ${retryCount + 1}/$_maxAppRetries), '
+        'scheduling auto-retry in ${_autoRetryDelay.inSeconds}s: $errorMessage',
       );
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
-      await _database.updateDownloadError(globalKey, errorMessage);
       await _database.removeFromQueue(globalKey);
       _autoRetryTimers[globalKey]?.cancel();
-      _autoRetryTimers[globalKey] = Timer(const Duration(seconds: 30), () {
+      _autoRetryTimers[globalKey] = Timer(_autoRetryDelay, () {
         _autoRetryTimers.remove(globalKey);
         _performAutoRetry(globalKey);
       });
@@ -860,7 +855,6 @@ class DownloadManagerService {
 
     appLogger.e('Download permanently failed for $globalKey: $errorMessage');
     await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
-    await _database.updateDownloadError(globalKey, errorMessage);
     await _database.removeFromQueue(globalKey);
 
     // Try to enqueue more items from the queue
@@ -1001,7 +995,6 @@ class DownloadManagerService {
     } catch (e) {
       appLogger.e('Post-download processing failed for $globalKey', error: e);
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: 'Post-processing failed: $e');
-      await _database.updateDownloadError(globalKey, 'Post-processing failed: $e');
       await _database.removeFromQueue(globalKey);
     } finally {
       _completingKeys.remove(globalKey);
@@ -1015,6 +1008,15 @@ class DownloadManagerService {
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) return null;
     return _apiCache.getMetadata(parsed.serverId, parsed.ratingKey);
+  }
+
+  /// Look up the year of the parent show for an episode (used for folder naming).
+  Future<int?> _fetchShowYear(String serverId, String? grandparentRatingKey) async {
+    if (grandparentRatingKey == null) return null;
+    final showCached = await _apiCache.get(serverId, '/library/metadata/$grandparentRatingKey');
+    final showJson = PlexCacheParser.extractFirstMetadata(showCached);
+    if (showJson != null) return PlexMetadata.fromJson(showJson).year;
+    return null;
   }
 
   /// Re-derive the SAF file URI from metadata (for recovery when context is lost)
@@ -1256,6 +1258,9 @@ class DownloadManagerService {
   /// Default progress is 0 for most statuses, 100 for completed.
   Future<void> _transitionStatus(String globalKey, DownloadStatus status, {int? progress, String? errorMessage}) async {
     await _database.updateDownloadStatus(globalKey, status.index);
+    if (status == DownloadStatus.failed && errorMessage != null) {
+      await _database.updateDownloadError(globalKey, errorMessage);
+    }
     _emitProgress(
       globalKey,
       status,
@@ -1699,11 +1704,7 @@ class DownloadManagerService {
       final contents = await seasonDir.list().toList();
       final hasVideos = contents.any(
         (e) =>
-            e.path.endsWith('.mp4') ||
-            e.path.endsWith('.ogv') ||
-            e.path.endsWith('.mkv') ||
-            e.path.endsWith('.m4v') ||
-            e.path.endsWith('.avi') ||
+            _videoExtensions.any((ext) => e.path.endsWith(ext)) ||
             e.path.contains('_subs'),
       );
 

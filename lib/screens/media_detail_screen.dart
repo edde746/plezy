@@ -646,10 +646,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                   onPressed: () async {
                     final client = _getClientForMetadata(context);
                     if (client == null) return;
-                    final count = await downloadProvider.queueDownload(metadata, client);
-                    if (context.mounted) {
-                      final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
-                      showSuccessSnackBar(context, message);
+                    try {
+                      final count = await downloadProvider.queueDownload(metadata, client);
+                      if (context.mounted) {
+                        final message =
+                            count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
+                        showSuccessSnackBar(context, message);
+                      }
+                    } on CellularDownloadBlockedException {
+                      if (context.mounted) {
+                        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+                      }
                     }
                   },
                   icon: const AppIcon(Symbols.download_rounded, fill: 1),
