@@ -402,7 +402,7 @@ class PlayerAndroid extends PlayerBase {
   @override
   Future<void> setLogLevel(String level) async {
     checkDisposed();
-    if (!initialized) return;
+    await _ensureInitialized();
     await methodChannel.invokeMethod('setLogLevel', {'level': level});
   }
 }

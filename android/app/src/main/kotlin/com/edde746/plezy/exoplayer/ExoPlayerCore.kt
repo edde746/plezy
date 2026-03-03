@@ -124,7 +124,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             "info"  -> Log.i(TAG, "[$prefix] $message")
             else    -> Log.d(TAG, "[$prefix] $message")
         }
-        if (debugLoggingEnabled) {
+        if (debugLoggingEnabled || level == "error" || level == "warn") {
             delegate?.onEvent("log-message", mapOf(
                 "prefix" to prefix, "level" to level, "text" to message
             ))
