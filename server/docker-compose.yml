@@ -18,47 +18,41 @@ services:
       - caddy_data:/data
       - caddy_config:/config
 
-  rustrak-db:
+  glitchtip-db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${RUSTRAK_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${RUSTRAK_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${RUSTRAK_POSTGRES_DB}
+      POSTGRES_DB: glitchtip
+      POSTGRES_USER: ${GLITCHTIP_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${GLITCHTIP_POSTGRES_PASSWORD}
     volumes:
-      - rustrak_data:/var/lib/postgresql/data
+      - glitchtip_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${RUSTRAK_POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${GLITCHTIP_POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  rustrak:
-    image: abians7/rustrak-server:latest
+  glitchtip:
+    image: glitchtip/glitchtip
     restart: unless-stopped
     depends_on:
-      rustrak-db:
+      glitchtip-db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://${RUSTRAK_POSTGRES_USER}:${RUSTRAK_POSTGRES_PASSWORD}@rustrak-db/${RUSTRAK_POSTGRES_DB}
-      RUSTRAK_LOG: ${RUSTRAK_LOG}
-      SESSION_SECRET: ${RUSTRAK_SESSION_SECRET}
-      CREATE_SUPERUSER: ${RUSTRAK_SUPERUSER}
+      DATABASE_URL: postgres://${GLITCHTIP_POSTGRES_USER}:${GLITCHTIP_POSTGRES_PASSWORD}@glitchtip-db/glitchtip
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY}
+      GLITCHTIP_DOMAIN: https://bugs.plezy.app
+      DEFAULT_FROM_EMAIL: noreply@plezy.app
+      GLITCHTIP_MAX_EVENT_LIFE_DAYS: 90
+      SERVER_ROLE: all_in_one
+      ENABLE_USER_REGISTRATION: "false"
+      VALKEY_URL: ""
     expose:
-      - "8080"
-
-  rustrak-ui:
-    image: abians7/rustrak-ui:latest
-    restart: unless-stopped
-    depends_on:
-      - rustrak
-    environment:
-      RUSTRAK_API_URL: http://rustrak:8080
-    expose:
-      - "3000"
+      - "8000"
 
 volumes:
   logs:
   caddy_data:
   caddy_config:
-  rustrak_data:
+  glitchtip_data:

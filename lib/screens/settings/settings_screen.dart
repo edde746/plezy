@@ -996,11 +996,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ListTile(
               leading: const AppIcon(Symbols.error_rounded, fill: 1),
               title: const Text('Test Sentry'),
-              subtitle: const Text('Send a test error to Bugsink'),
+              subtitle: const Text('Send a test error'),
               trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
               onTap: () {
-                Sentry.captureException(Exception('Sentry test from settings'));
+                throw Exception("Example exception");
                 showSnackBar(context, 'Test error sent to Sentry');
+              },
+            ),
+          if (kDebugMode)
+            ListTile(
+              leading: const AppIcon(Symbols.timer_rounded, fill: 1),
+              title: const Text('Test ANR'),
+              subtitle: const Text('Block the main thread for 10 seconds'),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () {
+                showSnackBar(context, 'Blocking main thread...');
+                final end = DateTime.now().add(const Duration(seconds: 10));
+                while (DateTime.now().isBefore(end)) {}
               },
             ),
         ],

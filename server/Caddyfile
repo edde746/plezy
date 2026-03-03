@@ -3,12 +3,5 @@ ice.plezy.app {
 }
 
 bugs.plezy.app {
-	handle /api/* {
-		reverse_proxy rustrak:8080 {
-			header_up X-Real-IP {remote_host}
-		}
-	}
-	handle {
-		reverse_proxy rustrak-ui:3000
-	}
+	reverse_proxy glitchtip:8000
 }

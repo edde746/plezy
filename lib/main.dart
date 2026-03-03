@@ -76,11 +76,8 @@ void main() async {
 
   await SentryFlutter.init(
     (options) {
-      options.dsn = 'https://642fadfae16a4308a73ae2db1181654a@bugs.plezy.app/1';
-      options.sendDefaultPii = true;
+      options.dsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
       options.tracesSampleRate = 0;
-      options.anrEnabled = true;
-      options.anrTimeoutInterval = const Duration(seconds: 5);
       options.attachStacktrace = true;
       options.enableAutoSessionTracking = false;
       options.beforeSend = _beforeSend;
