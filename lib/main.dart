@@ -84,6 +84,7 @@ void main() async {
       options.tracesSampleRate = 0;
       options.attachStacktrace = true;
       options.enableAutoSessionTracking = false;
+      options.recordHttpBreadcrumbs = false;
       options.beforeSend = _beforeSend;
       options.beforeBreadcrumb = _beforeBreadcrumb;
     },
