@@ -48,6 +48,10 @@ class WatchTogetherPeerService with KeepaliveMixin {
   @override
   Duration get pongTimeout => const Duration(seconds: 30);
 
+  void _safeAdd<T>(StreamController<T> controller, T event) {
+    if (!controller.isClosed) controller.add(event);
+  }
+
   /// Stream of peer IDs when a new peer connects
   Stream<String> get onPeerConnected => _peerConnectedController.stream;
 
@@ -105,7 +109,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       },
       onError: (error) {
         appLogger.e('WatchTogether: WebSocket error', error: error);
-        _errorController.add(
+        _safeAdd(_errorController,
           PeerError(type: PeerErrorType.serverError, message: 'WebSocket error: $error', originalError: error),
         );
         if (setupCompleter != null && !setupCompleter.isCompleted) {
@@ -134,7 +138,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       switch (type) {
         case 'created':
           appLogger.d('WatchTogether: Room created: ${msg['sessionId']}');
-          _connectionStateController.add(true);
+          _safeAdd(_connectionStateController, true);
           if (setupCompleter != null && !setupCompleter.isCompleted) {
             setupCompleter.complete();
           }
@@ -144,9 +148,9 @@ class WatchTogetherPeerService with KeepaliveMixin {
           appLogger.d('WatchTogether: Joined room ${msg['sessionId']} with peers: $peers');
           for (final peerId in peers) {
             _connectedPeers.add(peerId);
-            _peerConnectedController.add(peerId);
+            _safeAdd(_peerConnectedController, peerId);
           }
-          _connectionStateController.add(true);
+          _safeAdd(_connectionStateController, true);
           if (setupCompleter != null && !setupCompleter.isCompleted) {
             setupCompleter.complete();
           }
@@ -155,16 +159,16 @@ class WatchTogetherPeerService with KeepaliveMixin {
           final peerId = msg['peerId'] as String;
           appLogger.d('WatchTogether: Peer joined: $peerId');
           _connectedPeers.add(peerId);
-          _peerConnectedController.add(peerId);
-          _connectionStateController.add(true);
+          _safeAdd(_peerConnectedController, peerId);
+          _safeAdd(_connectionStateController, true);
 
         case 'peerLeft':
           final peerId = msg['peerId'] as String;
           appLogger.d('WatchTogether: Peer left: $peerId');
           _connectedPeers.remove(peerId);
-          _peerDisconnectedController.add(peerId);
+          _safeAdd(_peerDisconnectedController, peerId);
           if (_connectedPeers.isEmpty) {
-            _connectionStateController.add(false);
+            _safeAdd(_connectionStateController, false);
           }
 
         case 'message':
@@ -175,7 +179,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
               final payloadStr = payload is String ? payload : jsonEncode(payload);
               final syncMsg = SyncMessage.fromJson(payloadStr);
               appLogger.d('WatchTogether: Received ${syncMsg.type} from $from');
-              _messageReceivedController.add(syncMsg);
+              _safeAdd(_messageReceivedController, syncMsg);
             } catch (e) {
               appLogger.e('WatchTogether: Failed to parse sync message payload', error: e);
             }
@@ -186,7 +190,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
           final message = msg['message'] as String? ?? 'Unknown error';
           appLogger.e('WatchTogether: Server error: $code - $message');
           final error = PeerError(type: PeerErrorType.serverError, message: '$code: $message');
-          _errorController.add(error);
+          _safeAdd(_errorController, error);
           if (setupCompleter != null && !setupCompleter.isCompleted) {
             setupCompleter.completeError(error);
           }
@@ -232,10 +236,10 @@ class WatchTogetherPeerService with KeepaliveMixin {
 
     // Notify peers lost
     for (final peerId in _connectedPeers.toList()) {
-      _peerDisconnectedController.add(peerId);
+      _safeAdd(_peerDisconnectedController, peerId);
     }
     _connectedPeers.clear();
-    _connectionStateController.add(false);
+    _safeAdd(_connectionStateController, false);
 
     // Attempt to reconnect if we had a session
     if (_sessionId != null) {
@@ -247,7 +251,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   void _attemptReconnect() {
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       appLogger.e('WatchTogether: Max reconnect attempts reached');
-      _errorController.add(
+      _safeAdd(_errorController,
         const PeerError(
           type: PeerErrorType.connectionFailed,
           message: 'Lost connection to relay after multiple reconnect attempts',
@@ -398,7 +402,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _isHost = false;
     _reconnectAttempts = 0;
 
-    _connectionStateController.add(false);
+    _safeAdd(_connectionStateController, false);
   }
 
   /// Dispose all resources
