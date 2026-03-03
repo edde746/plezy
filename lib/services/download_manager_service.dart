@@ -299,6 +299,8 @@ class DownloadManagerService {
 
     // Track tasks for persistence across app restarts
     await FileDownloader().trackTasks();
+    // Deliver status updates from iOS background-to-foreground transitions
+    await FileDownloader().resumeFromBackground();
 
     _fileDownloaderInitialized = true;
   }
@@ -768,20 +770,8 @@ class DownloadManagerService {
         case TaskStatus.notFound:
           _onDownloadPermanentlyFailed(globalKey, 'File not found (404)');
         case TaskStatus.canceled:
-          if (_pausingKeys.contains(globalKey)) {
-            // Expected cancel from holding-queue promotion during pause — ignore
-            break;
-          }
-          final ctx = _pendingDownloadContext.remove(globalKey);
-          if (ctx != null) {
-            // Context still present → OS cancelled the task, not user code
-            // (user-initiated pause/cancel/delete removes context before cancellation completes)
-            appLogger.w('Download cancelled by system for $globalKey, re-queuing');
-            _database.updateBgTaskId(globalKey, null);
-            _transitionStatus(globalKey, DownloadStatus.queued);
-            _database.addToQueue(mediaGlobalKey: globalKey);
-            if (_lastClient != null) _processQueue(_lastClient!);
-          }
+          if (_pausingKeys.contains(globalKey)) break;
+          _onDownloadCanceled(globalKey);
         case TaskStatus.paused:
           appLogger.d('Download paused by system for $globalKey');
         case TaskStatus.waitingToRetry:
@@ -799,12 +789,36 @@ class DownloadManagerService {
     }
   }
 
+  /// Handle a system-initiated cancel — re-queue unless already completed.
+  Future<void> _onDownloadCanceled(String globalKey) async {
+    final ctx = _pendingDownloadContext.remove(globalKey);
+    if (ctx == null) return;
+    if (_completingKeys.contains(globalKey)) return;
+
+    final existing = await _database.getDownloadedMedia(globalKey);
+    if (existing?.status == DownloadStatus.completed.index) return;
+
+    appLogger.w('Download cancelled by system for $globalKey, re-queuing');
+    await _database.updateBgTaskId(globalKey, null);
+    await _transitionStatus(globalKey, DownloadStatus.queued);
+    await _database.addToQueue(mediaGlobalKey: globalKey);
+    if (_lastClient != null) _processQueue(_lastClient!);
+  }
+
   /// Handle a failed download — auto-retry if retries remain, otherwise permanently fail.
   /// Native retries (Range-based resume) are already exhausted at this point.
   Future<void> _onDownloadFailed(String globalKey, String errorMessage) async {
+    if (_completingKeys.contains(globalKey)) {
+      appLogger.d('Ignoring failure event for $globalKey: completion in progress');
+      return;
+    }
     _pendingDownloadContext.remove(globalKey);
 
     final existing = await _database.getDownloadedMedia(globalKey);
+    if (existing?.status == DownloadStatus.completed.index) {
+      appLogger.d('Ignoring stale failure for completed download $globalKey');
+      return;
+    }
     final retryCount = existing?.retryCount ?? 0;
 
     if (retryCount < 3 && _lastClient != null) {
@@ -832,7 +846,18 @@ class DownloadManagerService {
 
   /// Handle a non-retryable failure (e.g. 404) — fail immediately without auto-retry.
   Future<void> _onDownloadPermanentlyFailed(String globalKey, String errorMessage) async {
+    if (_completingKeys.contains(globalKey)) {
+      appLogger.d('Ignoring permanent failure event for $globalKey: completion in progress');
+      return;
+    }
     _pendingDownloadContext.remove(globalKey);
+
+    final existing = await _database.getDownloadedMedia(globalKey);
+    if (existing?.status == DownloadStatus.completed.index) {
+      appLogger.d('Ignoring stale permanent failure for completed download $globalKey');
+      return;
+    }
+
     appLogger.e('Download permanently failed for $globalKey: $errorMessage');
     await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
     await _database.updateDownloadError(globalKey, errorMessage);
