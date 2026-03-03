@@ -82,6 +82,7 @@ void main() async {
       options.anrEnabled = true;
       options.anrTimeoutInterval = const Duration(seconds: 5);
       options.attachStacktrace = true;
+      options.enableAutoSessionTracking = false;
       options.beforeSend = _beforeSend;
     },
     appRunner: () async {
