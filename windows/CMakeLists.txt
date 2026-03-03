@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.14)
 project(plezy LANGUAGES CXX)
 
 # Download and extract mpv-dev (architecture-dependent)
-set(MPV_VERSION "20260120")
-set(MPV_GIT_HASH "b7e8fe9")
+set(MPV_VERSION "20260303")
+set(MPV_GIT_HASH "c55bdc3")
 
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
   # ARM64: use file(DOWNLOAD) + 7z extraction (CMake's built-in libarchive
