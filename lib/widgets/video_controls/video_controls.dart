@@ -211,6 +211,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   int _subtitleSyncOffset = 0; // Default, loaded from settings
   bool _isRotationLocked = true; // Default locked (landscape only)
   bool _clickVideoTogglesPlayback = false; // Default, loaded from settings
+  bool _isContentStripVisible = false; // Whether the swipe-up content strip is showing
 
   // GlobalKey to access DesktopVideoControls state for focus management
   final GlobalKey<DesktopVideoControlsState> _desktopControlsKey = GlobalKey<DesktopVideoControlsState>();
@@ -718,6 +719,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (!mounted || !_showControls || _forceShowControls) return;
     setState(() {
       _showControls = false;
+      _isContentStripVisible = false;
       // Dismiss skip button with controls — after this it only re-appears with controls
       if (_currentMarker != null) {
         _skipButtonDismissed = true;
@@ -984,7 +986,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     return PlaybackExtras.withChapterFallback(chapters: chapters, markers: markers);
   }
 
-  Widget _buildTrackChapterControlsWidget() {
+  Widget _buildTrackChapterControlsWidget({bool hideChaptersAndQueue = false}) {
     final playbackState = context.watch<PlaybackStateProvider>();
 
     return TrackChapterControls(
@@ -1027,6 +1029,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       isLive: widget.isLive,
       showQueueButton: playbackState.isQueueActive,
       onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
+      hideChaptersAndQueue: hideChaptersAndQueue,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
@@ -1911,31 +1914,53 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                   child: isMobile
                                       ? Listener(
                                           behavior: HitTestBehavior.translucent,
-                                          onPointerDown: (_) => _restartHideTimerIfPlaying(),
-                                          child: MobileVideoControls(
-                                            player: widget.player,
-                                            metadata: widget.metadata,
-                                            chapters: _chapters,
-                                            chaptersLoaded: _chaptersLoaded,
-                                            seekTimeSmall: _seekTimeSmall,
-                                            trackChapterControls: _buildTrackChapterControlsWidget(),
-                                            onSeek: _throttledSeek,
-                                            onSeekEnd: _finalizeSeek,
-                                            onSeekCompleted: widget.onSeekCompleted,
-                                            // ignore: no-empty-block - play/pause handled by parent VideoControlsState
-                                            onPlayPause: () {},
-                                            onCancelAutoHide: () => _hideTimer?.cancel(),
-                                            onStartAutoHide: _startHideTimer,
-                                            onBack: widget.onBack,
-                                            onNext: widget.onNext,
-                                            onPrevious: widget.onPrevious,
-                                            onSeekToPreviousChapter: _seekToPreviousChapter,
-                                            onSeekToNextChapter: _seekToNextChapter,
-                                            canControl: widget.canControl,
-                                            hasFirstFrame: widget.hasFirstFrame,
-                                            thumbnailDataBuilder: widget.thumbnailDataBuilder,
-                                            isLive: widget.isLive,
-                                            liveChannelName: widget.liveChannelName,
+                                          onPointerDown: (_) {
+                                            if (!_isContentStripVisible) _restartHideTimerIfPlaying();
+                                          },
+                                          child: Builder(
+                                            builder: (context) {
+                                              final playbackState = context.watch<PlaybackStateProvider>();
+                                              final hasStripContent = _chapters.isNotEmpty || playbackState.isQueueActive;
+                                              return MobileVideoControls(
+                                                player: widget.player,
+                                                metadata: widget.metadata,
+                                                chapters: _chapters,
+                                                chaptersLoaded: _chaptersLoaded,
+                                                seekTimeSmall: _seekTimeSmall,
+                                                trackChapterControls: _buildTrackChapterControlsWidget(
+                                                  hideChaptersAndQueue: hasStripContent,
+                                                ),
+                                                onSeek: _throttledSeek,
+                                                onSeekEnd: _finalizeSeek,
+                                                onSeekCompleted: widget.onSeekCompleted,
+                                                // ignore: no-empty-block - play/pause handled by parent VideoControlsState
+                                                onPlayPause: () {},
+                                                onCancelAutoHide: () => _hideTimer?.cancel(),
+                                                onStartAutoHide: _startHideTimer,
+                                                onBack: widget.onBack,
+                                                onNext: widget.onNext,
+                                                onPrevious: widget.onPrevious,
+                                                onSeekToPreviousChapter: _seekToPreviousChapter,
+                                                onSeekToNextChapter: _seekToNextChapter,
+                                                canControl: widget.canControl,
+                                                hasFirstFrame: widget.hasFirstFrame,
+                                                thumbnailDataBuilder: widget.thumbnailDataBuilder,
+                                                isLive: widget.isLive,
+                                                liveChannelName: widget.liveChannelName,
+                                                serverId: widget.metadata.serverId,
+                                                showQueueTab: playbackState.isQueueActive,
+                                                onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
+                                                controlsVisible: widget.controlsVisible,
+                                                onStripVisibilityChanged: (visible) {
+                                                  setState(() => _isContentStripVisible = visible);
+                                                  if (visible) {
+                                                    _hideTimer?.cancel();
+                                                  } else {
+                                                    _restartHideTimerIfPlaying();
+                                                  }
+                                                },
+                                              );
+                                            },
                                           ),
                                         )
                                       : _buildDesktopControlsListener(),
@@ -1968,6 +1993,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                       right: 24,
                       bottom: () {
                         if (!_showControls) return 24.0;
+                        if (_isContentStripVisible) return 180.0;
                         return isMobile ? 80.0 : 115.0;
                       }(),
                       child: AnimatedOpacity(

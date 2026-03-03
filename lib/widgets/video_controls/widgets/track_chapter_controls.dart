@@ -81,6 +81,9 @@ class TrackChapterControls extends StatelessWidget {
   /// Callback when a queue item is selected
   final Function(PlexMetadata)? onQueueItemSelected;
 
+  /// Whether to hide the chapters and queue buttons (mobile uses content strip instead)
+  final bool hideChaptersAndQueue;
+
   const TrackChapterControls({
     super.key,
     required this.player,
@@ -115,6 +118,7 @@ class TrackChapterControls extends StatelessWidget {
     this.subtitlesVisible = true,
     this.showQueueButton = false,
     this.onQueueItemSelected,
+    this.hideChaptersAndQueue = false,
     this.shaderService,
     this.onShaderChanged,
     this.isAmbientLightingEnabled = false,
@@ -275,8 +279,8 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
-        // Chapters button
-        if (chapters.isNotEmpty) {
+        // Chapters button (hidden on mobile when content strip is available)
+        if (chapters.isNotEmpty && !hideChaptersAndQueue) {
           final currentIndex = buttonIndex;
           buttons.add(
             _buildTrackButton(
@@ -303,8 +307,8 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
-        // Queue button
-        if (showQueueButton && onQueueItemSelected != null) {
+        // Queue button (hidden on mobile when content strip is available)
+        if (showQueueButton && onQueueItemSelected != null && !hideChaptersAndQueue) {
           final currentIndex = buttonIndex;
           buttons.add(
             _buildTrackButton(
@@ -454,8 +458,8 @@ class TrackChapterControls extends StatelessWidget {
   int _getButtonCount(Tracks? tracks, bool isMobile, bool isDesktop) {
     int count = 1; // Settings button always shown
     if (_hasMultipleAudioTracks(tracks) || _hasSubtitles(tracks)) count++;
-    if (chapters.isNotEmpty) count++;
-    if (showQueueButton && onQueueItemSelected != null) count++;
+    if (chapters.isNotEmpty && !hideChaptersAndQueue) count++;
+    if (showQueueButton && onQueueItemSelected != null && !hideChaptersAndQueue) count++;
     if (availableVersions.length > 1 && onSwitchVersion != null) count++;
     if (onTogglePIPMode != null) count++;
     if (onCycleBoxFitMode != null) count++;
