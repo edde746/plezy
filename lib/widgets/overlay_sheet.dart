@@ -586,17 +586,25 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
             alignment: _alignment,
             child: Transform.translate(
               offset: Offset(0, _dragOffset.clamp(0, double.infinity)),
-              child: Material(
-                key: _sheetKey,
-                color: _explicitBackgroundColor ?? colorScheme.surface,
-                borderRadius: borderRadius,
-                clipBehavior: Clip.antiAlias,
-                child: SafeArea(
-                  top: isTop,
-                  bottom: !isTop,
-                  child: ConstrainedBox(
-                    constraints: effectiveConstraints,
-                    child: sheetContent,
+              child: SafeArea(
+                left: true,
+                right: true,
+                top: false,
+                bottom: false,
+                child: Material(
+                  key: _sheetKey,
+                  color: _explicitBackgroundColor ?? colorScheme.surface,
+                  borderRadius: borderRadius,
+                  clipBehavior: Clip.antiAlias,
+                  child: SafeArea(
+                    top: isTop,
+                    bottom: !isTop,
+                    left: false,
+                    right: false,
+                    child: ConstrainedBox(
+                      constraints: effectiveConstraints,
+                      child: sheetContent,
+                    ),
                   ),
                 ),
               ),
