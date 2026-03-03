@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -5,11 +7,15 @@ import 'package:plezy/i18n/strings.g.dart';
 class PipService {
   static const MethodChannel _channel = MethodChannel('app.plezy/pip');
 
+  /// PiP is only implemented natively on Android, iOS, and macOS.
+  static bool get _isAvailable => Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
+
   // Singleton instance
   static final PipService _instance = PipService._internal();
   factory PipService() => _instance;
 
   PipService._internal() {
+    if (!_isAvailable) return;
     // Listen for callbacks from native Android
     _channel.setMethodCallHandler(_handleMethodCall);
   }
@@ -33,11 +39,13 @@ class PipService {
   }
 
   static Future<bool> isSupported() async {
+    if (!_isAvailable) return false;
     return await _channel.invokeMethod<bool>('isSupported') ?? false;
   }
 
   /// Tell the native side whether auto-PiP is ready and the current video dimensions
   static Future<void> setAutoPipReady({required bool ready, int? width, int? height}) async {
+    if (!_isAvailable) return;
     await _channel.invokeMethod('setAutoPipReady', {
       'ready': ready,
       'width': width,
@@ -46,6 +54,7 @@ class PipService {
   }
 
   static Future<(bool success, String? error)> enter({int? width, int? height}) async {
+    if (!_isAvailable) return (false, null);
     final result = await _channel.invokeMethod<Map>('enter', {'width': width, 'height': height});
     if (result == null) {
       return (false, t.videoControls.pipErrors.unknown(error: 'No response'));
