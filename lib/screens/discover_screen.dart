@@ -379,11 +379,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   @override
-  void onTabShown() {
+  void onTabShown({bool scrollToTop = true}) {
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
-    _focusTopBoundary();
+    if (scrollToTop) {
+      _focusTopBoundary();
+    }
   }
 
   // Helper method to calculate visible dot range (max 5 dots)

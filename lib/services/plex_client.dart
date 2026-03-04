@@ -2,9 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:math';
-import 'dart:typed_data';
-import 'dart:ui' show VoidCallback;
-
 import 'package:flutter/foundation.dart';
 
 import 'package:dio/dio.dart';
@@ -146,7 +143,7 @@ class PlexClient {
 
   /// Custom response decoder that handles malformed UTF-8 gracefully.
   /// Large responses are decoded in a background isolate to avoid ANR.
-  static FutureOr<String> _lenientUtf8Decoder(List<int> responseBytes, RequestOptions _, ResponseBody __) {
+  static FutureOr<String> _lenientUtf8Decoder(List<int> responseBytes, RequestOptions _, ResponseBody _a) {
     if (responseBytes.length > 50 * 1024) {
       return compute(_decodeUtf8, responseBytes);
     }

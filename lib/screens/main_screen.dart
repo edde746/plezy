@@ -796,7 +796,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     // Called when returning to this route from a child route (e.g., from video player)
     if (_currentIndex == 0 && !_isOffline) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
-        aware.onTabShown();
+        aware.onTabShown(scrollToTop: false);
       }
       _onDiscoverBecameVisible();
     }
