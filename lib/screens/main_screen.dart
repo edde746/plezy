@@ -191,7 +191,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   Future<void> _checkForUpdatesOnStartup() async {
     // Delay slightly to allow UI to settle
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
 

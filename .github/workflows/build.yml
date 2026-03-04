@@ -712,11 +712,14 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          BUILD_NUMBER=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Generate appcast.xml
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          BUILD_NUMBER="${{ steps.version.outputs.build_number }}"
 
           # Read macOS signature metadata (may be empty if secrets not configured)
           MACOS_ED_SIG=""
@@ -745,7 +748,8 @@ jobs:
               <title>Plezy Updates</title>
               <item>
                 <title>Version ${VERSION}</title>
-                <sparkle:version>${VERSION}</sparkle:version>
+                <sparkle:version>${BUILD_NUMBER}</sparkle:version>
+                <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
                 <sparkle:releaseNotesLink>https://gh-html.edde746.dev/edde746/plezy/${VERSION}</sparkle:releaseNotesLink>
           XMLEOF
 

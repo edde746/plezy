@@ -73,6 +73,10 @@ dev_dependencies:
   drift_dev: ^2.14.0
 
 dependency_overrides:
+  auto_updater_macos:
+    git:
+      url: https://github.com/edde746/auto_updater
+      path: packages/auto_updater_macos
   auto_updater_windows:
     git:
       url: https://github.com/edde746/auto_updater
