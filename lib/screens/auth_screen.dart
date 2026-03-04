@@ -100,7 +100,7 @@ class _AuthScreenState extends State<AuthScreen> {
         clientIdentifier: _authService.clientIdentifier,
       );
 
-      if (!result.hasConnections) {
+      if (!result.hasConnections || result.firstClient == null) {
         if (!mounted) return;
         setState(() {
           _isAuthenticating = false;

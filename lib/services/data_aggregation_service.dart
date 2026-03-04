@@ -150,7 +150,6 @@ class DataAggregationService {
         return hubs;
       } catch (e, stackTrace) {
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
-        _serverManager.updateServerStatus(serverId, false);
         return <PlexHub>[];
       }
     });
@@ -229,7 +228,6 @@ class DataAggregationService {
         return serverHubs;
       } catch (e, stackTrace) {
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
-        _serverManager.updateServerStatus(serverId, false);
         return <PlexHub>[];
       }
     });
@@ -278,7 +276,6 @@ class DataAggregationService {
       return await client.getLibraries();
     } catch (e, stackTrace) {
       appLogger.e('Failed to fetch libraries for server $serverId', error: e, stackTrace: stackTrace);
-      _serverManager.updateServerStatus(serverId, false);
       return [];
     }
   }
@@ -436,7 +433,6 @@ class DataAggregationService {
         return (serverId, result);
       } catch (e, stackTrace) {
         appLogger.e('Failed $operationName from server $serverId', error: e, stackTrace: stackTrace);
-        _serverManager.updateServerStatus(serverId, false);
         appLogger.d('$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms');
         return (serverId, <T>[]);
       }

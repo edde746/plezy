@@ -513,7 +513,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
       if (!mounted) return;
 
-      if (result.hasConnections) {
+      if (result.hasConnections && result.firstClient != null) {
         // Resume any downloads that were interrupted by app kill
         final downloadProvider = context.read<DownloadProvider>();
         downloadProvider.ensureInitialized().then((_) {
