@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' show VoidCallback;
+
+import 'package:flutter/foundation.dart';
 
 import 'package:dio/dio.dart';
 
@@ -109,6 +112,11 @@ class ConnectionTestResult {
   ConnectionTestResult({required this.success, required this.latencyMs, this.error});
 }
 
+// Top-level function required by compute()
+String _decodeUtf8(List<int> bytes) {
+  return utf8.decode(bytes, allowMalformed: true);
+}
+
 class PlexClient {
   PlexConfig config;
   late final Dio _dio;
@@ -136,8 +144,12 @@ class PlexClient {
   /// Get current offline mode state
   bool get isOfflineMode => _offlineMode;
 
-  /// Custom response decoder that handles malformed UTF-8 gracefully
-  static String _lenientUtf8Decoder(List<int> responseBytes, RequestOptions _, ResponseBody _) {
+  /// Custom response decoder that handles malformed UTF-8 gracefully.
+  /// Large responses are decoded in a background isolate to avoid ANR.
+  static FutureOr<String> _lenientUtf8Decoder(List<int> responseBytes, RequestOptions _, ResponseBody __) {
+    if (responseBytes.length > 50 * 1024) {
+      return compute(_decodeUtf8, responseBytes);
+    }
     return utf8.decode(responseBytes, allowMalformed: true);
   }
 

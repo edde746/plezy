@@ -76,6 +76,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
         private const val WATCHDOG_CHECK_INTERVAL_MS = 1000L
         private const val WATCHDOG_TIMEOUT_MS = 8000L
+
+        // Codec capability caches — codec support doesn't change at runtime
+        private val hwAudioDecoderCache = HashMap<String, Boolean>()
+        private val tunneledPlaybackCache = HashMap<String, Boolean>()
     }
 
     private var surfaceView: SurfaceView? = null
@@ -732,8 +736,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         // FLAC hardware decoders are excluded via MediaCodecSelector (Samsung c2.sec.flac.decoder
         // has buggy 32KB input buffer limits), so report no hardware decoder for tunneling purposes.
         if (mimeType == MimeTypes.AUDIO_FLAC) return false
-        try {
+        hwAudioDecoderCache[mimeType]?.let { return it }
+        val result = try {
             val codecList = android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS)
+            var found = false
             for (info in codecList.codecInfos) {
                 if (info.isEncoder) continue
                 for (type in info.supportedTypes) {
@@ -744,21 +750,28 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                             !name.contains(".sw.") &&
                             !name.startsWith("c2.ffmpeg.")) {
                             Log.d(TAG, "Found hardware audio decoder for $mimeType: $name")
-                            return true
+                            found = true
+                            break
                         }
                     }
                 }
+                if (found) break
             }
+            if (!found) Log.d(TAG, "No hardware audio decoder for $mimeType — FFmpeg will handle it")
+            found
         } catch (e: Exception) {
             Log.w(TAG, "Failed to query audio decoders for $mimeType: ${e.message}")
+            false
         }
-        Log.d(TAG, "No hardware audio decoder for $mimeType — FFmpeg will handle it")
-        return false
+        hwAudioDecoderCache[mimeType] = result
+        return result
     }
 
     private fun videoCodecSupportsTunneledPlayback(mimeType: String): Boolean {
-        try {
+        tunneledPlaybackCache[mimeType]?.let { return it }
+        val result = try {
             val codecList = android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS)
+            var supported = false
             for (info in codecList.codecInfos) {
                 if (info.isEncoder) continue
                 for (type in info.supportedTypes) {
@@ -773,17 +786,22 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                         val caps = info.getCapabilitiesForType(type)
                         if (caps.isFeatureSupported(android.media.MediaCodecInfo.CodecCapabilities.FEATURE_TunneledPlayback)) {
                             Log.d(TAG, "Hardware video decoder $name supports tunneled playback for $mimeType")
-                            return true
+                            supported = true
+                            break
                         } else {
                             Log.d(TAG, "Hardware video decoder $name does NOT support tunneled playback for $mimeType")
                         }
                     }
                 }
+                if (supported) break
             }
+            supported
         } catch (e: Exception) {
             Log.w(TAG, "Failed to query video decoders for tunneling support ($mimeType): ${e.message}")
+            false
         }
-        return false
+        tunneledPlaybackCache[mimeType] = result
+        return result
     }
 
     private fun evaluateVideoCodecForTunneling() {
