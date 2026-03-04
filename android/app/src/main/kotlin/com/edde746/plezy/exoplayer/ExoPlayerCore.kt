@@ -296,6 +296,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val renderersFactory = DefaultRenderersFactory(activity).apply {
                 setEnableDecoderFallback(true)
                 setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+                forceDisableMediaCodecAsynchronousQueueing()
                 // Force FFmpeg for FLAC — hardware FLAC decoders (e.g. Samsung c2.sec.flac.decoder)
                 // have buggy 32KB input buffer limits causing InsufficientCapacityException.
                 setMediaCodecSelector { mimeType, requiresSecureDecoder, requiresTunnelingDecoder ->
