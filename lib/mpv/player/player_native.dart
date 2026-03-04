@@ -68,6 +68,7 @@ class PlayerNative extends PlayerBase {
       await observeProperty('speed', 'double');
       await observeProperty('aid', 'string');
       await observeProperty('sid', 'string');
+      await observeProperty('secondary-sid', 'string');
       await observeProperty('demuxer-cache-state', _nodeFormat);
       await observeProperty('audio-device-list', _nodeFormat);
       await observeProperty('audio-device', 'string');
@@ -189,6 +190,12 @@ class PlayerNative extends PlayerBase {
   Future<void> selectSubtitleTrack(SubtitleTrack track) async {
     checkDisposed();
     await setProperty('sid', track.id);
+  }
+
+  @override
+  Future<void> selectSecondarySubtitleTrack(SubtitleTrack track) async {
+    checkDisposed();
+    await setProperty('secondary-sid', track.id);
   }
 
   @override

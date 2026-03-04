@@ -20,9 +20,7 @@ class TrackSelectionHelper {
 
   /// Build a centered empty state widget
   static Widget buildEmptyState<T>() {
-    return Center(
-      child: Text(getEmptyMessage<T>()),
-    );
+    return Center(child: Text(getEmptyMessage<T>()));
   }
 
   /// Check if "Off" is selected for a track
@@ -41,8 +39,25 @@ class TrackSelectionHelper {
   }
 
   /// Build the "Off" list tile for track selection
-  static Widget buildOffTile<T>({required BuildContext context, required bool isSelected, required VoidCallback onTap, FocusNode? focusNode}) {
-    return _buildSelectableTile(context: context, label: 'Off', isSelected: isSelected, onTap: onTap, focusNode: focusNode);
+  static Widget buildOffTile<T>({
+    required BuildContext context,
+    required bool isSelected,
+    required VoidCallback onTap,
+    FocusNode? focusNode,
+    VoidCallback? onLongPress,
+    VoidCallback? onSecondaryTap,
+    Widget? badge,
+  }) {
+    return _buildSelectableTile(
+      context: context,
+      label: 'Off',
+      isSelected: isSelected,
+      onTap: onTap,
+      focusNode: focusNode,
+      onLongPress: onLongPress,
+      onSecondaryTap: onSecondaryTap,
+      badge: badge,
+    );
   }
 
   /// Build a track selection list tile
@@ -52,8 +67,35 @@ class TrackSelectionHelper {
     required bool isSelected,
     required VoidCallback onTap,
     FocusNode? focusNode,
+    VoidCallback? onLongPress,
+    VoidCallback? onSecondaryTap,
+    Widget? badge,
   }) {
-    return _buildSelectableTile(context: context, label: label, isSelected: isSelected, onTap: onTap, focusNode: focusNode);
+    return _buildSelectableTile(
+      context: context,
+      label: label,
+      isSelected: isSelected,
+      onTap: onTap,
+      focusNode: focusNode,
+      onLongPress: onLongPress,
+      onSecondaryTap: onSecondaryTap,
+      badge: badge,
+    );
+  }
+
+  /// Build a numbered badge for primary/secondary subtitle indicators.
+  static Widget buildTrackBadge(BuildContext context, int number) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(4)),
+      alignment: Alignment.center,
+      child: Text(
+        number.toString(),
+        style: TextStyle(color: colorScheme.onPrimary, fontSize: 11, fontWeight: FontWeight.bold),
+      ),
+    );
   }
 
   static Widget _buildSelectableTile({
@@ -62,13 +104,30 @@ class TrackSelectionHelper {
     required bool isSelected,
     required VoidCallback onTap,
     FocusNode? focusNode,
+    VoidCallback? onLongPress,
+    VoidCallback? onSecondaryTap,
+    Widget? badge,
   }) {
     final primaryColor = Theme.of(context).colorScheme.primary;
-    return FocusableListTile(
+    Widget? trailing;
+    if (badge != null) {
+      trailing = badge;
+    } else if (isSelected) {
+      trailing = AppIcon(Symbols.check_rounded, fill: 1, color: primaryColor);
+    }
+
+    Widget tile = FocusableListTile(
       focusNode: focusNode,
       title: Text(label, style: TextStyle(color: isSelected ? primaryColor : null)),
-      trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primaryColor) : null,
+      trailing: trailing,
       onTap: onTap,
+      onLongPress: onLongPress,
     );
+
+    if (onSecondaryTap != null) {
+      tile = GestureDetector(onSecondaryTap: onSecondaryTap, child: tile);
+    }
+
+    return tile;
   }
 }

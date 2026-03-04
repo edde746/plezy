@@ -70,6 +70,7 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onCycleBoxFitMode,
   Function(AudioTrack)? onAudioTrackChanged,
   Function(SubtitleTrack)? onSubtitleTrackChanged,
+  Function(SubtitleTrack)? onSecondarySubtitleTrackChanged,
   Function(Duration position)? onSeekCompleted,
   VoidCallback? onBack,
   bool canControl = true,
@@ -96,6 +97,7 @@ Widget plexVideoControlsBuilder(
     onCycleBoxFitMode: onCycleBoxFitMode,
     onAudioTrackChanged: onAudioTrackChanged,
     onSubtitleTrackChanged: onSubtitleTrackChanged,
+    onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
     onSeekCompleted: onSeekCompleted,
     onBack: onBack,
     canControl: canControl,
@@ -124,6 +126,7 @@ class PlexVideoControls extends StatefulWidget {
   final VoidCallback? onCycleBoxFitMode;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
+  final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
 
   /// Called when a seek operation completes (for Watch Together sync)
   final Function(Duration position)? onSeekCompleted;
@@ -177,6 +180,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onCycleBoxFitMode,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
+    this.onSecondarySubtitleTrackChanged,
     this.onSeekCompleted,
     this.onBack,
     this.canControl = true,
@@ -1001,13 +1005,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
-      onTogglePIPMode: (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) ? widget.onTogglePIPMode : null,
+      onTogglePIPMode: (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS))
+          ? widget.onTogglePIPMode
+          : null,
       onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
       onToggleRotationLock: _toggleRotationLock,
       onToggleFullscreen: _toggleFullscreen,
       onSwitchVersion: _switchMediaVersion,
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
+      onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
       subtitlesVisible: _subtitlesVisible,
       onLoadSeekTimes: () async {
         if (mounted) {
@@ -1921,7 +1928,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                           child: Builder(
                                             builder: (context) {
                                               final playbackState = context.watch<PlaybackStateProvider>();
-                                              final hasStripContent = _chapters.isNotEmpty || playbackState.isQueueActive;
+                                              final hasStripContent =
+                                                  _chapters.isNotEmpty || playbackState.isQueueActive;
                                               return MobileVideoControls(
                                                 player: widget.player,
                                                 metadata: widget.metadata,
@@ -1950,7 +1958,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                                 liveChannelName: widget.liveChannelName,
                                                 serverId: widget.metadata.serverId,
                                                 showQueueTab: playbackState.isQueueActive,
-                                                onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
+                                                onQueueItemSelected: playbackState.isQueueActive
+                                                    ? _onQueueItemSelected
+                                                    : null,
                                                 controlsVisible: widget.controlsVisible,
                                                 onStripVisibilityChanged: (visible) {
                                                   setState(() => _isContentStripVisible = visible);
@@ -2020,7 +2030,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   Widget _buildDesktopControlsListener() {
-    final pipMode = (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) ? widget.onTogglePIPMode : null;
+    final pipMode = (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS))
+        ? widget.onTogglePIPMode
+        : null;
     final boxFitMode = widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null;
     final playbackState = context.watch<PlaybackStateProvider>();
 
@@ -2060,6 +2072,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         onSwitchVersion: _switchMediaVersion,
         onAudioTrackChanged: widget.onAudioTrackChanged,
         onSubtitleTrackChanged: _onSubtitleTrackChanged,
+        onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
         subtitlesVisible: _subtitlesVisible,
         onLoadSeekTimes: () async {
           if (mounted) {

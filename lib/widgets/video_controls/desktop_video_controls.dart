@@ -65,6 +65,7 @@ class DesktopVideoControls extends StatefulWidget {
   final Function(int)? onSwitchVersion;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
+  final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
   final VoidCallback? onLoadSeekTimes;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
@@ -139,6 +140,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.onSwitchVersion,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
+    this.onSecondarySubtitleTrackChanged,
     this.onLoadSeekTimes,
     this.onCancelAutoHide,
     this.onStartAutoHide,
@@ -637,7 +639,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                               final rate = rateSnap.data ?? 1.0;
                               if (remaining.inSeconds <= 0) return const SizedBox.shrink();
 
-                              final text = t.videoControls.endsAt(time: formatFinishTime(remaining, rate: rate, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context)));
+                              final text = t.videoControls.endsAt(
+                                time: formatFinishTime(
+                                  remaining,
+                                  rate: rate,
+                                  is24Hour: MediaQuery.alwaysUse24HourFormatOf(context),
+                                ),
+                              );
                               const style = TextStyle(color: Colors.white70, fontSize: 13);
 
                               return LayoutBuilder(
@@ -692,6 +700,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 onSwitchVersion: widget.onSwitchVersion,
                 onAudioTrackChanged: widget.onAudioTrackChanged,
                 onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
+                onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
                 onLoadSeekTimes: widget.onLoadSeekTimes,
                 onCancelAutoHide: widget.onCancelAutoHide,
                 onStartAutoHide: widget.onStartAutoHide,

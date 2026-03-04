@@ -103,11 +103,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> observeProperty(String name, String format) async {
     final propId = _nextPropId++;
     _propIdToName[propId] = name;
-    await methodChannel.invokeMethod('observeProperty', {
-      'name': name,
-      'format': format,
-      'id': propId,
-    });
+    await methodChannel.invokeMethod('observeProperty', {'name': name, 'format': format, 'id': propId});
   }
 
   void _handleEvent(dynamic event) {
@@ -235,6 +231,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         updateSelectedSubtitleTrack(value);
         break;
 
+      case 'secondary-sid':
+        updateSelectedSecondarySubtitleTrack(value);
+        break;
+
       case 'audio-device-list':
         List? deviceList;
         if (value is List) {
@@ -248,10 +248,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         if (deviceList != null) {
           final devices = deviceList
               .whereType<Map>()
-              .map((d) => AudioDevice(
-                    name: d['name'] as String? ?? '',
-                    description: d['description'] as String? ?? '',
-                  ))
+              .map((d) => AudioDevice(name: d['name'] as String? ?? '', description: d['description'] as String? ?? ''))
               .toList();
           _state = _state.copyWith(audioDevices: devices);
           audioDevicesController.add(devices);
@@ -260,7 +257,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'audio-device':
         if (value is String && value.isNotEmpty) {
-          final device = _state.audioDevices.cast<AudioDevice?>().firstWhere(
+          final device =
+              _state.audioDevices.cast<AudioDevice?>().firstWhere(
                 (d) => d?.name == value,
                 orElse: () => AudioDevice(name: value),
               ) ??
@@ -306,10 +304,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           final start = range['start'] as num?;
           final end = range['end'] as num?;
           if (start != null && end != null) {
-            ranges.add(BufferRange(
-              start: Duration(milliseconds: (start * 1000).toInt()),
-              end: Duration(milliseconds: (end * 1000).toInt()),
-            ));
+            ranges.add(
+              BufferRange(
+                start: Duration(milliseconds: (start * 1000).toInt()),
+                end: Duration(milliseconds: (end * 1000).toInt()),
+              ),
+            );
           }
         }
       }
@@ -441,6 +441,21 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     trackController.add(_state.track);
   }
 
+  /// Update the selected secondary subtitle track.
+  void updateSelectedSecondarySubtitleTrack(dynamic trackId) {
+    final id = trackId?.toString();
+    SubtitleTrack? selectedTrack;
+
+    if (id == null || id == 'no') {
+      selectedTrack = null;
+    } else {
+      selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
+    }
+
+    _state = _state.copyWith(track: _state.track.copyWith(secondarySubtitle: selectedTrack));
+    trackController.add(_state.track);
+  }
+
   /// Update the internal state.
   void updateState(PlayerState Function(PlayerState) update) {
     _state = update(_state);
@@ -504,6 +519,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setAudioDevice(AudioDevice device) async {}
+
+  @override
+  bool get supportsSecondarySubtitles => true;
+
+  @override
+  // ignore: no-empty-block - base no-op, overridden by platform subclasses
+  Future<void> selectSecondarySubtitleTrack(SubtitleTrack track) async {}
 
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses

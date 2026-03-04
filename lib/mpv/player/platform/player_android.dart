@@ -27,6 +27,9 @@ class PlayerAndroid extends PlayerBase {
   @override
   String get playerType => 'exoplayer';
 
+  @override
+  bool get supportsSecondarySubtitles => false;
+
   // ============================================
   // Platform-Specific Event Handling
   // ============================================
@@ -210,9 +213,9 @@ class PlayerAndroid extends PlayerBase {
           if (storedId != null) {
             _hiddenSubtitleTrackId = null;
             final track = state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere(
-                  (t) => t?.id == storedId,
-                  orElse: () => null,
-                );
+              (t) => t?.id == storedId,
+              orElse: () => null,
+            );
             if (track != null) {
               await selectSubtitleTrack(track);
             }

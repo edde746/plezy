@@ -73,11 +73,13 @@ class EpisodeNavigationService {
     // Capture current player state before navigation
     AudioTrack? currentAudioTrack;
     SubtitleTrack? currentSubtitleTrack;
+    SubtitleTrack? currentSecondarySubtitleTrack;
     double? currentPlaybackRate;
 
     if (player != null) {
       currentAudioTrack = player.state.track.audio;
       currentSubtitleTrack = player.state.track.subtitle;
+      currentSecondarySubtitleTrack = player.state.track.secondarySubtitle;
       currentPlaybackRate = player.state.rate;
 
       appLogger.d(
@@ -92,6 +94,7 @@ class EpisodeNavigationService {
         metadata: episode,
         preferredAudioTrack: currentAudioTrack,
         preferredSubtitleTrack: currentSubtitleTrack,
+        preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
         usePushReplacement: usePushReplacement,
       );
     }

@@ -74,6 +74,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
   final AudioTrack? preferredAudioTrack;
   final SubtitleTrack? preferredSubtitleTrack;
+  final SubtitleTrack? preferredSecondarySubtitleTrack;
   final int selectedMediaIndex;
   final bool isOffline;
   final PlexVideoPlaybackData? playbackData;
@@ -94,6 +95,7 @@ class VideoPlayerScreen extends StatefulWidget {
     required this.metadata,
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
+    this.preferredSecondarySubtitleTrack,
     this.selectedMediaIndex = 0,
     this.isOffline = false,
     this.playbackData,
@@ -188,8 +190,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// iOS auto-PiP is system-initiated during the background transition, so
   /// isPipActive may not be true yet — we also check the auto-PiP setting.
   bool get _shouldSkipForPip =>
-      PipService().isPipActive.value ||
-      ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled);
+      PipService().isPipActive.value || ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled);
 
   // Services
   MediaControlsManager? _mediaControlsManager;
@@ -1292,7 +1293,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final shaderProvider = context.read<ShaderProvider>();
       final settings = await SettingsService.getInstance();
       final presetId = settings.getGlobalShaderPreset();
-      final preset = (shaderProvider.initialized ? shaderProvider.findPresetById(presetId) : ShaderPreset.fromId(presetId)) ?? ShaderPreset.none;
+      final preset =
+          (shaderProvider.initialized ? shaderProvider.findPresetById(presetId) : ShaderPreset.fromId(presetId)) ??
+          ShaderPreset.none;
       await _shaderService!.applyPreset(preset);
       if (!mounted) return;
       shaderProvider.setCurrentPreset(preset);
@@ -2230,6 +2233,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await trackService.selectAndApplyTracks(
         preferredAudioTrack: widget.preferredAudioTrack,
         preferredSubtitleTrack: widget.preferredSubtitleTrack,
+        preferredSecondarySubtitleTrack: widget.preferredSecondarySubtitleTrack,
         defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
         onAudioTrackChanged: _onAudioTrackChanged,
         onSubtitleTrackChanged: _onSubtitleTrackChanged,
@@ -2398,6 +2402,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     await _saveTrackPreferences(partId: partId, trackType: 'subtitle', languageCode: languageCode, streamID: streamID);
   }
 
+  /// Handle secondary subtitle track changes - no server save needed, just preserve for episode navigation
+  void _onSecondarySubtitleTrackChanged(SubtitleTrack track) {
+    // Secondary subtitle preference is carried via player.state.track.secondarySubtitle
+    // which is automatically read during episode navigation. No additional state needed.
+  }
+
   /// Set flag to skip orientation restoration when replacing with another video
   void setReplacingWithVideo() {
     _isReplacingWithVideo = true;
@@ -2441,6 +2451,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     final currentAudioTrack = currentPlayer.state.track.audio;
     final currentSubtitleTrack = currentPlayer.state.track.subtitle;
+    final currentSecondarySubtitleTrack = currentPlayer.state.track.secondarySubtitle;
 
     // Pause and stop current playback
     currentPlayer.pause();
@@ -2457,6 +2468,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         metadata: episodeMetadata,
         preferredAudioTrack: currentAudioTrack,
         preferredSubtitleTrack: currentSubtitleTrack,
+        preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
         usePushReplacement: true,
         isOffline: widget.isOffline,
       );
@@ -2604,14 +2616,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
+                              Icon(
+                                Symbols.picture_in_picture_alt_rounded,
+                                size: 48,
+                                color: Colors.white.withValues(alpha: 0.5),
+                              ),
                               const SizedBox(height: 12),
                               Text(
                                 t.videoControls.pipActive,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  fontSize: 14,
-                                ),
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
                               ),
                             ],
                           ),
@@ -2677,6 +2690,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         onCycleBoxFitMode: _cycleBoxFitMode,
                         onAudioTrackChanged: _onAudioTrackChanged,
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,
+                        onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
                         onSeekCompleted: (position) {
                           // Notify Watch Together of seek for sync
                           // Note: canControl() check is done in sync manager, not here

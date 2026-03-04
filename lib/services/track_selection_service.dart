@@ -753,6 +753,7 @@ class TrackSelectionService {
   Future<void> selectAndApplyTracks({
     AudioTrack? preferredAudioTrack,
     SubtitleTrack? preferredSubtitleTrack,
+    SubtitleTrack? preferredSecondarySubtitleTrack,
     double? defaultPlaybackSpeed,
     Function(AudioTrack)? onAudioTrackChanged,
     Function(SubtitleTrack)? onSubtitleTrackChanged,
@@ -796,6 +797,20 @@ class TrackSelectionService {
     // Save to Plex if this was user's navigation preference (Priority 1)
     if (subtitleResult.priority == TrackSelectionPriority.navigation && onSubtitleTrackChanged != null) {
       onSubtitleTrackChanged(selectedSubtitleTrack);
+    }
+
+    // Apply preferred secondary subtitle track if provided (mpv-only)
+    if (preferredSecondarySubtitleTrack != null &&
+        preferredSecondarySubtitleTrack.id != 'no' &&
+        player.supportsSecondarySubtitles &&
+        realSubtitleTracks.isNotEmpty) {
+      final secondaryMatch = findBestSubtitleMatch(realSubtitleTracks, preferredSecondarySubtitleTrack);
+      if (secondaryMatch != null && secondaryMatch.id != 'no') {
+        appLogger.d(
+          'Secondary subtitle: ${secondaryMatch.title ?? secondaryMatch.language ?? "Track ${secondaryMatch.id}"}',
+        );
+        player.selectSecondarySubtitleTrack(secondaryMatch);
+      }
     }
 
     // Apply default playback speed from settings

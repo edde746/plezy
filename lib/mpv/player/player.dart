@@ -90,6 +90,15 @@ abstract class Player {
   /// Pass [SubtitleTrack.off] to disable subtitles.
   Future<void> selectSubtitleTrack(SubtitleTrack track);
 
+  /// Select a secondary subtitle track (displayed simultaneously with primary).
+  ///
+  /// Only supported on mpv backends (desktop + Android mpv fallback).
+  /// Pass [SubtitleTrack.off] to disable secondary subtitles.
+  Future<void> selectSecondarySubtitleTrack(SubtitleTrack track);
+
+  /// Whether this player backend supports secondary subtitle tracks.
+  bool get supportsSecondarySubtitles;
+
   /// Add an external subtitle track.
   ///
   /// [uri] - URL or path to the subtitle file.
