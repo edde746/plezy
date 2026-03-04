@@ -57,6 +57,9 @@ class MpvPlayerCore: NSObject {
     private var hdrEnabled = true  // User preference for HDR
     private var lastSigPeak: Double = 0.0  // Last known sig-peak for re-evaluation
 
+    // Background occlusion state — tracks if we hid the layer for occlusion
+    private var layerHiddenForOcclusion = false
+
     // Async command tracking to prevent UI blocking
     private var pendingCommands: [UInt64: (Result<Void, Error>) -> Void] = [:]
     private var pendingCommandsLock = NSLock()
@@ -114,6 +117,8 @@ class MpvPlayerCore: NSObject {
                        name: NSWindow.willExitFullScreenNotification, object: window)
         nc.addObserver(self, selector: #selector(windowDidExitFullScreen),
                        name: NSWindow.didExitFullScreenNotification, object: window)
+        nc.addObserver(self, selector: #selector(windowOcclusionDidChange),
+                       name: NSWindow.didChangeOcclusionStateNotification, object: window)
 
         isInitialized = true
         print("[MpvPlayerCore] Initialized successfully with MPV")
@@ -144,6 +149,24 @@ class MpvPlayerCore: NSObject {
         guard mpv != nil, !isPipActive else { return }
         print("[MpvPlayerCore] didExitFullScreen — re-enabling video output")
         mpv_set_property_string(mpv, "vid", "auto")
+    }
+
+    // MARK: - Window Occlusion Handling
+
+    @objc private func windowOcclusionDidChange(_ notification: Notification) {
+        guard let layer = metalLayer, mpv != nil, !isPipActive else { return }
+
+        let isVisible = window?.occlusionState.contains(.visible) ?? true
+
+        if !isVisible && !layerHiddenForOcclusion {
+            print("[MpvPlayerCore] Window occluded — hiding Metal layer")
+            layer.isHidden = true
+            layerHiddenForOcclusion = true
+        } else if isVisible && layerHiddenForOcclusion {
+            print("[MpvPlayerCore] Window visible — showing Metal layer")
+            layerHiddenForOcclusion = false
+            layer.isHidden = false
+        }
     }
 
     private func setupMpv() -> Bool {
