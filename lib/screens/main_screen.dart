@@ -694,11 +694,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         }
       });
     }
-    // When content regains focus while on Libraries, retry focusing the active tab
+    // When content regains focus while on Libraries, only focus the active tab
+    // if no child already has focus (avoids stale focus requests stealing focus
+    // from the current item when scrolling back to item 0)
     if (_currentIndex == 1 && !_isOffline) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_librariesKey.currentState case final FocusableTab focusable) {
-          focusable.focusActiveTabIfReady();
+        if (_contentFocusScope.focusedChild == null) {
+          if (_librariesKey.currentState case final FocusableTab focusable) {
+            focusable.focusActiveTabIfReady();
+          }
         }
       });
     }
