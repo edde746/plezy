@@ -987,6 +987,12 @@ class _TranslationsShadersFr implements TranslationsShadersEn {
 	@override String get qualityFast => 'Rapide';
 	@override String get qualityHQ => 'Haute qualité';
 	@override String get mode => 'Mode';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1935,6 +1941,12 @@ extension on TranslationsFr {
 			'shaders.qualityFast' => 'Rapide',
 			'shaders.qualityHQ' => 'Haute qualité',
 			'shaders.mode' => 'Mode',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => 'Se connecter à un appareil',
 			'companionRemote.hostRemoteSession' => 'Héberger une session distante',

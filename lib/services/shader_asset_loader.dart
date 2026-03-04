@@ -174,6 +174,47 @@ class ShaderAssetLoader {
     return shaders;
   }
 
+  /// Get the custom shader directory path, creating it if necessary.
+  /// Uses app support directory (persistent) rather than temp/cache.
+  static Future<String> _getCustomShaderDirectory() async {
+    final supportDir = await getApplicationSupportDirectory();
+    final customDir = Directory(path.join(supportDir.path, 'custom_shaders'));
+
+    if (!await customDir.exists()) {
+      await customDir.create(recursive: true);
+    }
+
+    return customDir.path;
+  }
+
+  /// Import a custom shader file into the custom shaders directory.
+  /// Returns the stored file name (UUID-based to avoid collisions).
+  static Future<String> importCustomShader(String sourcePath) async {
+    final customDir = await _getCustomShaderDirectory();
+    final ext = path.extension(sourcePath);
+    final uuid = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
+    final storedName = '$uuid$ext';
+    final targetFile = File(path.join(customDir, storedName));
+
+    await File(sourcePath).copy(targetFile.path);
+    return storedName;
+  }
+
+  /// Delete a custom shader file from the custom shaders directory.
+  static Future<void> deleteCustomShader(String fileName) async {
+    final customDir = await _getCustomShaderDirectory();
+    final file = File(path.join(customDir, fileName));
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
+
+  /// Get the absolute path for a custom shader file.
+  static Future<String> getCustomShaderPath(String fileName) async {
+    final customDir = await _getCustomShaderDirectory();
+    return path.join(customDir, fileName);
+  }
+
   /// Get shader paths for a given preset.
   /// Returns an empty list for ShaderPresetType.none.
   static Future<List<String>> getShadersForPreset(ShaderPreset preset) async {
@@ -185,6 +226,11 @@ class ShaderAssetLoader {
       case ShaderPresetType.anime4k:
         if (preset.anime4kConfig == null) return [];
         return getAnime4KShaders(preset.anime4kConfig!);
+      case ShaderPresetType.custom:
+        if (preset.fileName == null) return [];
+        final shaderPath = await getCustomShaderPath(preset.fileName!);
+        if (!await File(shaderPath).exists()) return [];
+        return [shaderPath];
     }
   }
 

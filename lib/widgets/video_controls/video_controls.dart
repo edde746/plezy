@@ -592,9 +592,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       // Currently off - restore saved preset
       final shaderProvider = context.read<ShaderProvider>();
       final saved = shaderProvider.savedPreset;
+      final allPresets = shaderProvider.allPresets;
       final targetPreset = saved.isEnabled
           ? saved
-          : ShaderPreset.allPresets.firstWhere((p) => p.isEnabled, orElse: () => ShaderPreset.allPresets[1]);
+          : allPresets.firstWhere((p) => p.isEnabled, orElse: () => allPresets[1]);
       shaderService.applyPreset(targetPreset).then((_) {
         shaderProvider.setCurrentPreset(targetPreset);
         // ignore: no-empty-block - setState triggers rebuild to reflect restored shader

@@ -987,6 +987,12 @@ class _TranslationsShadersNl implements TranslationsShadersEn {
 	@override String get qualityFast => 'Snel';
 	@override String get qualityHQ => 'Hoge kwaliteit';
 	@override String get mode => 'Modus';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1935,6 +1941,12 @@ extension on TranslationsNl {
 			'shaders.qualityFast' => 'Snel',
 			'shaders.qualityHQ' => 'Hoge kwaliteit',
 			'shaders.mode' => 'Modus',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => 'Verbinden met apparaat',
 			'companionRemote.hostRemoteSession' => 'Externe sessie hosten',

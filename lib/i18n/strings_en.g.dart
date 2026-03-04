@@ -2197,6 +2197,24 @@ class TranslationsShadersEn {
 
 	/// en: 'Mode'
 	String get mode => 'Mode';
+
+	/// en: 'Import Shader'
+	String get importShader => 'Import Shader';
+
+	/// en: 'Custom GLSL shader'
+	String get customShaderDescription => 'Custom GLSL shader';
+
+	/// en: 'Shader imported'
+	String get shaderImported => 'Shader imported';
+
+	/// en: 'Failed to import shader'
+	String get shaderImportFailed => 'Failed to import shader';
+
+	/// en: 'Delete Shader'
+	String get deleteShader => 'Delete Shader';
+
+	/// en: 'Delete "${name}"?'
+	String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -3538,6 +3556,12 @@ extension on Translations {
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
 			'shaders.mode' => 'Mode',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => 'Connect to Device',
 			'companionRemote.hostRemoteSession' => 'Host Remote Session',

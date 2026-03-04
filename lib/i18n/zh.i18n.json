@@ -711,7 +711,13 @@
     "nvscalerDescription": "NVIDIA 图像缩放，使视频更清晰",
     "qualityFast": "快速",
     "qualityHQ": "高质量",
-    "mode": "模式"
+    "mode": "模式",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

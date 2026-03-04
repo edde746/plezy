@@ -711,7 +711,13 @@
     "nvscalerDescription": "Ridimensionamento NVIDIA per video più nitido",
     "qualityFast": "Veloce",
     "qualityHQ": "Alta qualità",
-    "mode": "Modalità"
+    "mode": "Modalità",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

@@ -711,7 +711,13 @@
     "nvscalerDescription": "더 선명한 비디오를 위한 NVIDIA 이미지 스케일링",
     "qualityFast": "빠름",
     "qualityHQ": "고품질",
-    "mode": "모드"
+    "mode": "모드",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

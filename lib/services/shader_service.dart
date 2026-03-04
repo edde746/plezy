@@ -149,8 +149,8 @@ class ShaderService {
   }
 
   /// Cycle to the next preset in the available list.
-  Future<ShaderPreset> cyclePreset() async {
-    final presets = ShaderPreset.allPresets;
+  Future<ShaderPreset> cyclePreset({List<ShaderPreset>? presets}) async {
+    presets ??= ShaderPreset.allPresets;
     final currentIndex = presets.indexWhere((p) => p.id == _currentPreset.id);
     final nextIndex = (currentIndex + 1) % presets.length;
     final nextPreset = presets[nextIndex];

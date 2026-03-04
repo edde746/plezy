@@ -711,7 +711,13 @@
     "nvscalerDescription": "NVIDIA-bildskalning för skarpare video",
     "qualityFast": "Snabb",
     "qualityHQ": "Hög kvalitet",
-    "mode": "Läge"
+    "mode": "Läge",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

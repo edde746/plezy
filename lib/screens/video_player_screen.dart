@@ -1289,12 +1289,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (_shaderService == null || !_shaderService!.isSupported) return;
 
     try {
+      final shaderProvider = context.read<ShaderProvider>();
       final settings = await SettingsService.getInstance();
       final presetId = settings.getGlobalShaderPreset();
-      final preset = ShaderPreset.fromId(presetId) ?? ShaderPreset.none;
+      final preset = (shaderProvider.initialized ? shaderProvider.findPresetById(presetId) : ShaderPreset.fromId(presetId)) ?? ShaderPreset.none;
       await _shaderService!.applyPreset(preset);
       if (!mounted) return;
-      context.read<ShaderProvider>().setCurrentPreset(preset);
+      shaderProvider.setCurrentPreset(preset);
     } catch (e) {
       appLogger.d('Could not apply shader preset', error: e);
     }

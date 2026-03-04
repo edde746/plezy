@@ -987,6 +987,12 @@ class _TranslationsShadersZh implements TranslationsShadersEn {
 	@override String get qualityFast => '快速';
 	@override String get qualityHQ => '高质量';
 	@override String get mode => '模式';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1935,6 +1941,12 @@ extension on TranslationsZh {
 			'shaders.qualityFast' => '快速',
 			'shaders.qualityHQ' => '高质量',
 			'shaders.mode' => '模式',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => '连接到设备',
 			'companionRemote.hostRemoteSession' => '创建远程会话',

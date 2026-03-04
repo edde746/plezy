@@ -86,6 +86,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyAmbientLighting = 'ambient_lighting';
   static const String _keyAudioPassthrough = 'audio_passthrough';
   static const String _keyAudioNormalization = 'audio_normalization';
+  static const String _keyCustomShaderPresets = 'custom_shader_presets';
 
   SettingsService._();
 
@@ -1153,6 +1154,22 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getString(_keyGlobalShaderPreset) ?? 'none'; // Default: no shader
   }
 
+  // Custom Shader Presets
+  List<Map<String, dynamic>> getCustomShaderPresets() {
+    final jsonString = prefs.getString(_keyCustomShaderPresets);
+    if (jsonString == null) return [];
+    try {
+      final List<dynamic> decoded = json.decode(jsonString);
+      return decoded.cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> setCustomShaderPresets(List<Map<String, dynamic>> presets) async {
+    await prefs.setString(_keyCustomShaderPresets, json.encode(presets));
+  }
+
   // Require Profile Selection on App Open
   Future<void> setRequireProfileSelectionOnOpen(bool enabled) async {
     await prefs.setBool(_keyRequireProfileSelectionOnOpen, enabled);
@@ -1309,6 +1326,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyShowUnwatchedCount),
       prefs.remove(_keyHideSpoilers),
       prefs.remove(_keyGlobalShaderPreset),
+      prefs.remove(_keyCustomShaderPresets),
       prefs.remove(_keyRequireProfileSelectionOnOpen),
       prefs.remove(_keyUseExternalPlayer),
       prefs.remove(_keySelectedExternalPlayer),

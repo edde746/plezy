@@ -987,6 +987,12 @@ class _TranslationsShadersKo implements TranslationsShadersEn {
 	@override String get qualityFast => '빠름';
 	@override String get qualityHQ => '고품질';
 	@override String get mode => '모드';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1935,6 +1941,12 @@ extension on TranslationsKo {
 			'shaders.qualityFast' => '빠름',
 			'shaders.qualityHQ' => '고품질',
 			'shaders.mode' => '모드',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => '기기에 연결',
 			'companionRemote.hostRemoteSession' => '원격 세션 호스트',
