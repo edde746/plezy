@@ -671,6 +671,17 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     val mpvUri = openContentFd(uri)?.let { "fdclose://$it" } ?: uri
                     mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
 
+                    // On GPUs without compute shaders, MPV can't do dynamic peak detection
+                    // and spline tone-mapping produces dim/washed-out results with extreme
+                    // static HDR peak metadata. Use reinhard which handles this better.
+                    val peakDetection = mpvCore?.getProperty("hdr-compute-peak")
+                    if (peakDetection == "no") {
+                        Log.i(TAG, "No compute shaders — overriding tone-mapping to reinhard")
+                        mpvCore?.setProperty("tone-mapping", "reinhard")
+                        mpvCore?.setProperty("tone-mapping-param", "0.7")
+                        mpvCore?.setProperty("tone-mapping-mode", "luma")
+                    }
+
                     // Request audio focus
                     mpvCore?.requestAudioFocus()
 

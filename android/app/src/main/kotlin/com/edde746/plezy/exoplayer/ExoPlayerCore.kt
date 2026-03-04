@@ -29,6 +29,7 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -76,6 +77,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
         private const val WATCHDOG_CHECK_INTERVAL_MS = 1000L
         private const val WATCHDOG_TIMEOUT_MS = 8000L
+        private const val DECODER_HANG_TIMEOUT_MS = 5000L
 
         // Codec capability caches — codec support doesn't change at runtime
         private val hwAudioDecoderCache = HashMap<String, Boolean>()
@@ -101,6 +103,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     // Frame watchdog: detects black screen (audio plays but 0 video frames rendered)
     private var frameWatchdogRunnable: Runnable? = null
     private var frameWatchdogStartTime: Long = 0L
+    // Decoder hang detection: tracks gap between decoder init and first rendered frame
+    private var decoderHangRunnable: Runnable? = null
+    private var decoderInitName: String? = null
+    private var firstFrameRendered: Boolean = false
     var delegate: ExoPlayerDelegate? = null
     var debugLoggingEnabled: Boolean = false
     var isInitialized: Boolean = false
@@ -388,6 +394,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             handler.init(exoPlayer!!)
 
             exoPlayer!!.addListener(this)
+            exoPlayer!!.addAnalyticsListener(decoderHangListener)
             surfaceView?.let { exoPlayer!!.setVideoSurfaceView(it) }
 
             Log.d(TAG, "SubtitleView childCount after ASS setup: ${subtitleView?.childCount}")
@@ -542,6 +549,20 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val af = audioGroup.mediaTrackGroup.getFormat(0)
             emitLog("info", "tracks", "Audio: ${af.codecs} ${af.channelCount}ch ${af.sampleRate}Hz")
         }
+        // Detect video track present but deselected (unsupported codec — plays audio only)
+        val hasAnyVideoGroup = tracks.groups.any { it.type == C.TRACK_TYPE_VIDEO }
+        val hasSelectedVideo = tracks.groups.any { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
+        if (hasAnyVideoGroup && !hasSelectedVideo && currentMediaUri != null) {
+            emitLog("warn", "fallback", "Video track present but not selected (unsupported codec)")
+            delegate?.onFormatUnsupported(
+                uri = currentMediaUri!!,
+                headers = currentHeaders,
+                positionMs = lastPosition,
+                errorMessage = "Video track present but no decoder available"
+            )
+            return
+        }
+
         evaluateAudioCodecForTunneling()
         evaluateVideoCodecForTunneling()
         emitTrackList()
@@ -550,6 +571,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     override fun onPlayerError(error: PlaybackException) {
         emitLog("error", "player", "Error code=${error.errorCode}: ${error.message}, cause=${error.cause?.javaClass?.simpleName}")
         stopFrameWatchdog()
+        cancelDecoderHangCheck()
 
         if (currentMediaUri != null) {
             Log.w(TAG, "ExoPlayer error (code ${error.errorCode}) - attempting fallback to MPV")
@@ -858,6 +880,69 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
     }
 
+    // Decoder hang detection via AnalyticsListener:
+    // Tracks the gap between onVideoDecoderInitialized and onRenderedFirstFrame.
+    // If the decoder is initialized and fed input but never produces output, it's hung
+    // (e.g. DV profile 7 on PowerVR GPUs that accept the format but never decode).
+
+    private val decoderHangListener = object : AnalyticsListener {
+        override fun onVideoDecoderInitialized(
+            eventTime: AnalyticsListener.EventTime,
+            decoderName: String,
+            initializationDurationMs: Long
+        ) {
+            decoderInitName = decoderName
+            firstFrameRendered = false
+            emitLog("debug", "decoder-hang", "Decoder initialized: $decoderName (${initializationDurationMs}ms)")
+            startDecoderHangCheck(decoderName)
+        }
+
+        override fun onRenderedFirstFrame(
+            eventTime: AnalyticsListener.EventTime,
+            output: Any,
+            renderTimeMs: Long
+        ) {
+            firstFrameRendered = true
+            cancelDecoderHangCheck()
+            emitLog("debug", "decoder-hang", "First frame rendered — decoder OK")
+        }
+    }
+
+    private fun startDecoderHangCheck(decoderName: String) {
+        cancelDecoderHangCheck()
+        if (currentMediaUri == null) return
+        decoderHangRunnable = Runnable {
+            if (firstFrameRendered) return@Runnable
+            val uri = currentMediaUri ?: return@Runnable
+            val player = exoPlayer ?: return@Runnable
+
+            // Confirm via DecoderCounters: input queued but no output produced
+            val counters = player.videoDecoderCounters
+            val inputQueued = counters?.queuedInputBufferCount ?: 0
+            val outputTotal = (counters?.renderedOutputBufferCount ?: 0) +
+                    (counters?.skippedOutputBufferCount ?: 0) +
+                    (counters?.droppedBufferCount ?: 0)
+
+            if (inputQueued > 0 && outputTotal == 0) {
+                emitLog("warn", "fallback", "Decoder hang: $decoderName queued $inputQueued buffers, 0 output after ${DECODER_HANG_TIMEOUT_MS}ms")
+                stopFrameWatchdog()
+                cancelDecoderHangCheck()
+                delegate?.onFormatUnsupported(
+                    uri = uri,
+                    headers = currentHeaders,
+                    positionMs = lastPosition,
+                    errorMessage = "Decoder hang: $decoderName accepted input but produced no output"
+                )
+            }
+        }
+        handler.postDelayed(decoderHangRunnable!!, DECODER_HANG_TIMEOUT_MS)
+    }
+
+    private fun cancelDecoderHangCheck() {
+        decoderHangRunnable?.let { handler.removeCallbacks(it) }
+        decoderHangRunnable = null
+    }
+
     // Frame watchdog: detects when ExoPlayer plays audio but renders 0 video frames
     // (common with HDR tunneling on unsupported devices — black screen, no error)
 
@@ -881,6 +966,23 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 // Check if we have a video track selected
                 val hasVideoTrack = player.currentTracks.groups.any {
                     it.type == C.TRACK_TYPE_VIDEO && it.isSelected
+                }
+                val hasAnyVideoGroup = player.currentTracks.groups.any {
+                    it.type == C.TRACK_TYPE_VIDEO
+                }
+
+                // Secondary safety net: video track exists but was deselected (unsupported codec)
+                if (hasAnyVideoGroup && !hasVideoTrack) {
+                    emitLog("warn", "watchdog", "Video track deselected — triggering fallback")
+                    stopFrameWatchdog()
+                    val uri = currentMediaUri ?: return
+                    delegate?.onFormatUnsupported(
+                        uri = uri,
+                        headers = currentHeaders,
+                        positionMs = player.currentPosition,
+                        errorMessage = "Video track present but no decoder available"
+                    )
+                    return
                 }
 
                 if (elapsed >= WATCHDOG_TIMEOUT_MS && player.isPlaying && hasVideoTrack) {
@@ -912,6 +1014,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     fun open(uri: String, headers: Map<String, String>?, startPositionMs: Long, autoPlay: Boolean, isLive: Boolean = false) {
         if (!isInitialized) return
+
+        stopFrameWatchdog()
+        cancelDecoderHangCheck()
 
         currentMediaUri = uri
         currentHeaders = headers
@@ -981,6 +1086,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     fun stop() {
         stopFrameWatchdog()
+        cancelDecoderHangCheck()
         exoPlayer?.stop()
         setVisible(false)
     }
@@ -1318,6 +1424,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         Log.d(TAG, "Disposing")
 
         stopFrameWatchdog()
+        cancelDecoderHangCheck()
         stopPositionUpdates()
         handler.removeCallbacksAndMessages(null)
         frameRateManager?.clearVideoFrameRate()
