@@ -87,7 +87,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var exoPlayer: ExoPlayer? = null
     private var trackSelector: DefaultTrackSelector? = null
     private var tunnelingUserEnabled: Boolean = true
-    private var tunnelingDisabledForCodec: Boolean = false
+    private var tunnelingDisabledForAudioCodec: Boolean = false
+    private var tunnelingDisabledForVideoCodec: Boolean = false
+    private val tunnelingDisabledForCodec: Boolean
+        get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec
     @Volatile private var disposing: Boolean = false
     private var pendingStartPositionMs: Long = 0L
 
@@ -535,6 +538,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             emitLog("info", "tracks", "Audio: ${af.codecs} ${af.channelCount}ch ${af.sampleRate}Hz")
         }
         evaluateAudioCodecForTunneling()
+        evaluateVideoCodecForTunneling()
         emitTrackList()
     }
 
@@ -752,6 +756,53 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         return false
     }
 
+    private fun videoCodecSupportsTunneledPlayback(mimeType: String): Boolean {
+        try {
+            val codecList = android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS)
+            for (info in codecList.codecInfos) {
+                if (info.isEncoder) continue
+                for (type in info.supportedTypes) {
+                    if (type.equals(mimeType, ignoreCase = true)) {
+                        val name = info.name
+                        if (name.startsWith("OMX.google.") ||
+                            name.startsWith("c2.android.") ||
+                            name.contains(".sw.") ||
+                            name.startsWith("c2.ffmpeg.")) {
+                            continue // Skip software decoders
+                        }
+                        val caps = info.getCapabilitiesForType(type)
+                        if (caps.isFeatureSupported(android.media.MediaCodecInfo.CodecCapabilities.FEATURE_TunneledPlayback)) {
+                            Log.d(TAG, "Hardware video decoder $name supports tunneled playback for $mimeType")
+                            return true
+                        } else {
+                            Log.d(TAG, "Hardware video decoder $name does NOT support tunneled playback for $mimeType")
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to query video decoders for tunneling support ($mimeType): ${e.message}")
+        }
+        return false
+    }
+
+    private fun evaluateVideoCodecForTunneling() {
+        val player = exoPlayer ?: return
+        val selectedVideoGroup = player.currentTracks.groups.firstOrNull {
+            it.type == C.TRACK_TYPE_VIDEO && it.isSelected
+        } ?: return
+
+        val format = selectedVideoGroup.mediaTrackGroup.getFormat(0)
+        val mimeType = format.sampleMimeType ?: return
+
+        val newDisabled = !videoCodecSupportsTunneledPlayback(mimeType)
+        if (newDisabled != tunnelingDisabledForVideoCodec) {
+            tunnelingDisabledForVideoCodec = newDisabled
+            emitLog("info", "tunneling", "Video codec ${format.codecs} ($mimeType): tunneling ${if (newDisabled) "DISABLED (no tunneling support)" else "enabled"}")
+            updateTunnelingState()
+        }
+    }
+
     private fun updateTunnelingState() {
         val selector = trackSelector ?: return
         val player = exoPlayer ?: return
@@ -759,7 +810,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val shouldTunnel = tunnelingUserEnabled && (currentSpeed == 1f) && !tunnelingDisabledForCodec
         val currentTunneling = selector.parameters.tunnelingEnabled
         if (shouldTunnel == currentTunneling) return  // No change needed
-        emitLog("info", "tunneling", "tunneling $currentTunneling -> $shouldTunnel (user=$tunnelingUserEnabled, speed=$currentSpeed, codecDisabled=$tunnelingDisabledForCodec)")
+        emitLog("info", "tunneling", "tunneling $currentTunneling -> $shouldTunnel (user=$tunnelingUserEnabled, speed=$currentSpeed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec)")
         selector.setParameters(
             selector.buildUponParameters()
                 .setTunnelingEnabled(shouldTunnel)
@@ -781,8 +832,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val mimeType = format.sampleMimeType ?: return
 
         val newDisabled = !hasHardwareAudioDecoder(mimeType)
-        if (newDisabled != tunnelingDisabledForCodec) {
-            tunnelingDisabledForCodec = newDisabled
+        if (newDisabled != tunnelingDisabledForAudioCodec) {
+            tunnelingDisabledForAudioCodec = newDisabled
             emitLog("info", "tunneling", "Audio codec ${format.codecs} ($mimeType): tunneling ${if (newDisabled) "DISABLED (no hw decoder)" else "enabled"}")
             updateTunnelingState()
         }
@@ -846,7 +897,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         currentMediaUri = uri
         currentHeaders = headers
         externalSubtitles.clear()
-        tunnelingDisabledForCodec = false
+        tunnelingDisabledForAudioCodec = false
+        tunnelingDisabledForVideoCodec = false
         pendingStartPositionMs = startPositionMs
 
         if (isLive) {
@@ -949,8 +1001,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val format = group.mediaTrackGroup.getFormat(0)
             val mimeType = format.sampleMimeType
             if (mimeType != null) {
-                tunnelingDisabledForCodec = !hasHardwareAudioDecoder(mimeType)
-                Log.i(TAG, "Audio track switch to ${format.codecs} ($mimeType): tunneling ${if (tunnelingDisabledForCodec) "DISABLED" else "enabled"}")
+                tunnelingDisabledForAudioCodec = !hasHardwareAudioDecoder(mimeType)
+                Log.i(TAG, "Audio track switch to ${format.codecs} ($mimeType): tunneling ${if (tunnelingDisabledForAudioCodec) "DISABLED" else "enabled"}")
             }
 
             val currentSpeed = player.playbackParameters.speed
@@ -1254,7 +1306,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         audioFocusManager?.release()
         audioFocusManager = null
 
-        tunnelingDisabledForCodec = false
+        tunnelingDisabledForAudioCodec = false
+        tunnelingDisabledForVideoCodec = false
         pendingStartPositionMs = 0L
         exoPlayer?.clearVideoSurface()
         exoPlayer?.removeListener(this)
