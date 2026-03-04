@@ -2,6 +2,47 @@
 
 #include <cstring>
 #include <fstream>
+#include <simdutf.h>
+
+// Sanitize a C string that may contain invalid UTF-8 sequences.
+// Uses simdutf for SIMD-accelerated validation (fast path for valid strings),
+// then falls back to iterative replacement with U+FFFD on the rare invalid case.
+// mpv does not guarantee UTF-8 for log messages, error strings, or
+// system-encoded paths — sending these unsanitized through Flutter's
+// StandardMessageCodec causes FormatException crashes.
+static std::string SanitizeUtf8(const char* input) {
+  if (!input) return std::string();
+  size_t len = strlen(input);
+  if (len == 0) return std::string();
+
+  // Fast path: SIMD-accelerated validation — almost all strings pass this
+  if (simdutf::validate_utf8(input, len)) {
+    return std::string(input, len);
+  }
+
+  // Slow path: find each invalid position, copy valid prefix, insert U+FFFD,
+  // skip the bad byte, and repeat.
+  std::string result;
+  result.reserve(len);
+  size_t pos = 0;
+
+  while (pos < len) {
+    auto r = simdutf::validate_utf8_with_errors(input + pos, len - pos);
+    // Copy the valid prefix up to the error
+    if (r.count > 0) {
+      result.append(input + pos, r.count);
+    }
+    pos += r.count;
+    if (r.error == simdutf::error_code::SUCCESS) {
+      break;  // remaining tail is valid
+    }
+    // Replace the invalid byte with U+FFFD and skip it
+    result.append("\xEF\xBF\xBD");
+    pos++;
+  }
+
+  return result;
+}
 
 static void LogToFile(const char* message) {
   std::ofstream log("C:\\Users\\admin\\mpv_debug.log", std::ios::app);
@@ -349,11 +390,11 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
 
       flutter::EncodableMap data;
       data[flutter::EncodableValue("prefix")] =
-          flutter::EncodableValue(msg->prefix ? msg->prefix : "");
+          flutter::EncodableValue(SanitizeUtf8(msg->prefix));
       data[flutter::EncodableValue("level")] =
-          flutter::EncodableValue(msg->level ? msg->level : "");
+          flutter::EncodableValue(SanitizeUtf8(msg->level));
       data[flutter::EncodableValue("text")] =
-          flutter::EncodableValue(msg->text ? msg->text : "");
+          flutter::EncodableValue(SanitizeUtf8(msg->text));
       SendEvent("log-message", data);
       break;
     }
@@ -435,8 +476,7 @@ void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
   if (data) {
     switch (data->format) {
       case MPV_FORMAT_STRING:
-        value = flutter::EncodableValue(
-            data->u.string ? std::string(data->u.string) : std::string());
+        value = flutter::EncodableValue(SanitizeUtf8(data->u.string));
         break;
       case MPV_FORMAT_FLAG:
         value = flutter::EncodableValue(data->u.flag != 0);

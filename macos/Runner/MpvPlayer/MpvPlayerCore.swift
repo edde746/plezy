@@ -35,6 +35,21 @@ private class MetalLayer: CAMetalLayer {
     }
 }
 
+/// Safely convert a C string to Swift String with UTF-8 validation.
+/// Falls back to Latin-1 decoding if the bytes are not valid UTF-8.
+/// mpv does not guarantee UTF-8 for log messages, error strings, or
+/// system-encoded paths — sending invalid UTF-8 through Flutter's
+/// StandardMessageCodec causes FormatException crashes.
+private func safeString(_ cstr: UnsafePointer<CChar>) -> String {
+    if let s = String(validatingUTF8: cstr) {
+        return s
+    }
+    // Latin-1 fallback: interpret each byte as its Unicode scalar
+    let len = strlen(cstr)
+    let buf = UnsafeBufferPointer(start: UnsafeRawPointer(cstr).assumingMemoryBound(to: UInt8.self), count: len)
+    return String(buf.map { Character(Unicode.Scalar($0)) })
+}
+
 /// Core MPV player using Metal rendering
 class MpvPlayerCore: NSObject {
 
@@ -506,9 +521,9 @@ class MpvPlayerCore: NSObject {
         case MPV_EVENT_LOG_MESSAGE:
             if let msgPtr = event.data?.assumingMemoryBound(to: mpv_event_log_message.self) {
                 let msg = msgPtr.pointee
-                let prefix = msg.prefix.map { String(cString: $0) } ?? ""
-                let level = msg.level.map { String(cString: $0) } ?? ""
-                let text = msg.text.map { String(cString: $0) } ?? ""
+                let prefix = msg.prefix.map { safeString($0) } ?? ""
+                let level = msg.level.map { safeString($0) } ?? ""
+                let text = msg.text.map { safeString($0) } ?? ""
 
                 DispatchQueue.main.async {
                     self.delegate?.onEvent(name: "log-message", data: [
@@ -547,7 +562,7 @@ class MpvPlayerCore: NSObject {
         case MPV_FORMAT_STRING:
             if let ptr = property.data {
                 let cstr = ptr.assumingMemoryBound(to: UnsafePointer<CChar>?.self).pointee
-                value = cstr.map { String(cString: $0) }
+                value = cstr.map { safeString($0) }
             }
 
         default:
@@ -592,7 +607,7 @@ class MpvPlayerCore: NSObject {
     private func convertNode(_ node: mpv_node) -> Any? {
         switch node.format {
         case MPV_FORMAT_STRING:
-            return node.u.string.map { String(cString: $0) }
+            return node.u.string.map { safeString($0) }
 
         case MPV_FORMAT_FLAG:
             return node.u.flag != 0
@@ -617,7 +632,7 @@ class MpvPlayerCore: NSObject {
             guard let list = node.u.list?.pointee else { return nil }
             var dict = [String: Any]()
             for i in 0..<Int(list.num) {
-                if let key = list.keys?[i].map({ String(cString: $0) }),
+                if let key = list.keys?[i].map({ safeString($0) }),
                    let val = convertNode(list.values[i]) {
                     dict[key] = val
                 }

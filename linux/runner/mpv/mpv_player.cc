@@ -13,6 +13,47 @@
 #include <clocale>
 #include <cstring>
 #include <string>
+#include <simdutf.h>
+
+// Sanitize a C string that may contain invalid UTF-8 sequences.
+// Uses simdutf for SIMD-accelerated validation (fast path for valid strings),
+// then falls back to iterative replacement with U+FFFD on the rare invalid case.
+// mpv does not guarantee UTF-8 for log messages, error strings, or
+// system-encoded paths — sending these unsanitized through Flutter's
+// StandardMessageCodec causes FormatException crashes.
+static std::string SanitizeUtf8(const char* input) {
+  if (!input) return std::string();
+  size_t len = strlen(input);
+  if (len == 0) return std::string();
+
+  // Fast path: SIMD-accelerated validation — almost all strings pass this
+  if (simdutf::validate_utf8(input, len)) {
+    return std::string(input, len);
+  }
+
+  // Slow path: find each invalid position, copy valid prefix, insert U+FFFD,
+  // skip the bad byte, and repeat.
+  std::string result;
+  result.reserve(len);
+  size_t pos = 0;
+
+  while (pos < len) {
+    auto r = simdutf::validate_utf8_with_errors(input + pos, len - pos);
+    // Copy the valid prefix up to the error
+    if (r.count > 0) {
+      result.append(input + pos, r.count);
+    }
+    pos += r.count;
+    if (r.error == simdutf::error_code::SUCCESS) {
+      break;  // remaining tail is valid
+    }
+    // Replace the invalid byte with U+FFFD and skip it
+    result.append("\xEF\xBF\xBD");
+    pos++;
+  }
+
+  return result;
+}
 
 // Flutter on Linux uses EGL (OpenGL ES) for both X11 and Wayland.
 static void* get_opengl_proc_address(void* ctx, const char* name) {
@@ -483,11 +524,11 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
 
       FlValue* data = fl_value_new_map();
       fl_value_set_string_take(data, "prefix",
-                               fl_value_new_string(msg->prefix ? msg->prefix : ""));
+                               fl_value_new_string(SanitizeUtf8(msg->prefix).c_str()));
       fl_value_set_string_take(data, "level",
-                               fl_value_new_string(msg->level ? msg->level : ""));
+                               fl_value_new_string(SanitizeUtf8(msg->level).c_str()));
       fl_value_set_string_take(data, "text",
-                               fl_value_new_string(msg->text ? msg->text : ""));
+                               fl_value_new_string(SanitizeUtf8(msg->text).c_str()));
       SendEvent("log-message", data);
       fl_value_unref(data);
       break;
@@ -559,7 +600,7 @@ FlValue* MpvPlayer::NodeToFlValue(mpv_node* node) {
 
   switch (node->format) {
     case MPV_FORMAT_STRING:
-      return fl_value_new_string(node->u.string ? node->u.string : "");
+      return fl_value_new_string(SanitizeUtf8(node->u.string).c_str());
     case MPV_FORMAT_FLAG:
       return fl_value_new_bool(node->u.flag != 0);
     case MPV_FORMAT_INT64:

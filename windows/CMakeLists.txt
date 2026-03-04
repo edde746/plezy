@@ -50,6 +50,17 @@ else()
   set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
 endif()
 
+# Fetch simdutf for SIMD-accelerated UTF-8 validation.
+# mpv strings are not guaranteed to be valid UTF-8; invalid bytes sent through
+# Flutter's StandardMessageCodec cause FormatException crashes.
+include(FetchContent)
+FetchContent_Declare(
+  simdutf
+  URL https://github.com/simdutf/simdutf/releases/download/v6.4.2/singleheader.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(simdutf)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "plezy")

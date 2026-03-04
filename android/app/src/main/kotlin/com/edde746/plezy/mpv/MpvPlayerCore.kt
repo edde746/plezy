@@ -35,6 +35,20 @@ class MpvPlayerCore(private val activity: Activity) :
 
         // Guards MPVLib.create/destroy which share global native state
         private val mpvLock = Object()
+
+        // JNI's NewStringUTF may produce Java Strings with lone surrogates when
+        // mpv passes invalid UTF-8 (log messages, system-encoded paths, etc.).
+        // Lone surrogates cause FormatException in Flutter's StandardMessageCodec
+        // when it encodes them as UTF-8. Re-encoding strips these invalid chars.
+        private fun safeString(s: String): String {
+            for (c in s) {
+                if (c.isSurrogate()) {
+                    // Slow path: re-encode through UTF-8 to replace lone surrogates with U+FFFD
+                    return s.encodeToByteArray().decodeToString()
+                }
+            }
+            return s // Fast path: no surrogates, string is safe
+        }
     }
 
     private var surfaceView: SurfaceView? = null
@@ -344,8 +358,9 @@ class MpvPlayerCore(private val activity: Activity) :
     }
 
     override fun eventProperty(property: String, value: String) {
+        val safe = safeString(value)
         activity.runOnUiThread {
-            delegate?.onPropertyChange(property, value)
+            delegate?.onPropertyChange(property, safe)
         }
     }
 
@@ -376,11 +391,13 @@ class MpvPlayerCore(private val activity: Activity) :
             MPVLib.MPV_LOG_LEVEL_TRACE -> "trace"
             else -> "info"
         }
+        val safePrefix = safeString(prefix)
+        val safeText = safeString(text)
         activity.runOnUiThread {
             delegate?.onEvent("log-message", mapOf(
-                "prefix" to prefix,
+                "prefix" to safePrefix,
                 "level" to levelStr,
-                "text" to text
+                "text" to safeText
             ))
         }
     }
