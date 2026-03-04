@@ -49,7 +49,6 @@ import '../mixins/watch_state_aware.dart';
 import '../mixins/deletion_aware.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
-import 'metadata_edit_screen.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -86,6 +85,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   bool _isSelectKeyDown = false;
   bool _longPressTriggered = false;
   static const _longPressDuration = Duration(milliseconds: 500);
+
+  // Context menu key for the three-dots button
+  final _contextMenuKey = GlobalKey<MediaContextMenuState>();
 
   // GlobalKeys for season cards to access their context menu
   final Map<int, GlobalKey<MediaCardState>> _seasonCardKeys = {};
@@ -719,23 +721,25 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
             iconSize: 20,
             style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
           ),
-          // Edit metadata button (hidden in offline mode)
+          // Three-dots menu button (hidden in offline mode)
           if (!widget.isOffline) ...[
             const SizedBox(width: 12),
-            IconButton.filledTonal(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: metadata)),
-                );
-                if (mounted) {
-                  _loadFullMetadata();
-                }
-              },
-              icon: const AppIcon(Symbols.edit_rounded, fill: 1),
-              tooltip: t.metadataEdit.editMetadata,
-              iconSize: 20,
-              style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
+            MediaContextMenu(
+              key: _contextMenuKey,
+              item: metadata,
+              onRefresh: (_) => _loadFullMetadata(),
+              child: IconButton.filledTonal(
+                onPressed: () {
+                  final renderBox = context.findRenderObject() as RenderBox?;
+                  if (renderBox != null) {
+                    final position = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
+                    _contextMenuKey.currentState?.showContextMenu(context, position: position);
+                  }
+                },
+                icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                iconSize: 20,
+                style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
+              ),
             ),
           ],
         ],
