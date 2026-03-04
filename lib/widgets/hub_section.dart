@@ -6,6 +6,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../providers/settings_provider.dart';
@@ -325,13 +326,13 @@ class HubSectionState extends State<HubSection> {
       children: [
         // Hub header (NOT focusable - titles should not be focusable)
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+          padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
           child: ExcludeFocus(
             child: InkWell(
               onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,
               borderRadius: BorderRadius.circular(tokens(context).radiusSm),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -420,23 +421,26 @@ class HubSectionState extends State<HubSection> {
                 // Card dimensions based on hub type
                 const wideCardMultiplier = 1.5;
                 final cardWidth = useWideLayout ? baseCardWidth * wideCardMultiplier : baseCardWidth;
-                final posterWidth = cardWidth - 16; // 8px padding on each side
+                final posterWidth = cardWidth - 6; // 3px padding on each side
                 final posterHeight = useWideLayout
                     ? posterWidth *
                           (9 / 16) // 16:9 for wide layout
                     : posterWidth * 1.5; // 2:3 for poster layout
 
-                final containerHeight = posterHeight + 66;
-                _itemExtent = cardWidth + 4;
+                final containerHeight = posterHeight + 48;
+                final focusBorderWidth = FocusTheme.focusBorderWidth;
+                final focusExtra = focusBorderWidth * 2; // border on both sides
+                _itemExtent = cardWidth + focusExtra + 4;
 
                 return SizedBox(
-                  height: containerHeight,
+                  height: containerHeight + focusExtra + 4, // extra for scale + border top/bottom
                   child: HorizontalScrollWithArrows(
                     controller: _scrollController,
                     builder: (scrollController) => ListView.builder(
                       controller: scrollController,
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      clipBehavior: Clip.none,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       itemCount: isKeyboardMode ? _totalItemCount : widget.hub.items.length,
                       itemBuilder: (context, index) {
                         final isItemFocused = hasFocus && index == _focusedIndex;

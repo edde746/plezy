@@ -218,7 +218,7 @@ class MediaCardState extends State<MediaCard> {
   Widget _buildGridCard(BuildContext context, String semanticLabel, String? localPosterPath) {
     final item = widget.item;
     // Compute actual poster dimensions from card dimensions
-    final posterWidth = widget.width != null ? widget.width! - 16 : null; // 8px padding each side
+    final posterWidth = widget.width != null ? widget.width! - 6 : null; // 3px padding each side
     final posterHeight = widget.height;
 
     return SizedBox(
@@ -232,7 +232,7 @@ class MediaCardState extends State<MediaCard> {
         onSecondaryTap: _showContextMenu,
         borderRadius: BorderRadius.circular(tokens(context).radiusSm),
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(3),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -278,7 +278,7 @@ class MediaCardState extends State<MediaCard> {
                     ],
                   ),
                 ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               // Title (flattened — no inner Column)
               Text(
                 item is PlexPlaylist ? item.title : (item as PlexMetadata).displayTitle,

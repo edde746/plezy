@@ -73,7 +73,7 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
   }
 
   // Extra top padding for focus decoration (scale + border extends beyond item bounds)
-  static const double _focusDecorationPadding = 8.0;
+  static const double _focusDecorationPadding = 3.0;
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar(BuildContext context) {

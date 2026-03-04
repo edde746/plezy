@@ -1168,7 +1168,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: -32, // Extend 32px past the hero section bounds
+                bottom: -2, // Minimal overflow to avoid gap without covering hub header
                 height: 80, // Tall enough to cover any gap
                 child: IgnorePointer(
                   child: Builder(

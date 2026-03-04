@@ -131,7 +131,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
     _ensureHubKeys(items.length);
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(0, 8 + _focusDecorationPadding, 0, 8),
+      padding: const EdgeInsets.fromLTRB(0, _focusDecorationPadding, 0, 8),
       // Allow focus decoration to render outside scroll bounds
       clipBehavior: Clip.none,
       itemCount: items.length,
