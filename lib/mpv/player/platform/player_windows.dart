@@ -1,5 +1,3 @@
-import 'package:flutter/services.dart';
-
 import '../player_native.dart';
 import '../video_rect_support.dart';
 
@@ -9,8 +7,6 @@ import '../video_rect_support.dart';
 /// The mpv video window is positioned behind the Flutter window,
 /// with transparent regions allowing the video to show through.
 class PlayerWindows extends PlayerNative with VideoRectSupport {
-  static const _methodChannel = MethodChannel('com.plezy/mpv_player');
-
   @override
   int? get textureId => null; // Uses native window embedding, not Flutter texture
 
@@ -22,7 +18,7 @@ class PlayerWindows extends PlayerNative with VideoRectSupport {
     required int bottom,
     required double devicePixelRatio,
   }) async {
-    await _methodChannel.invokeMethod('setVideoRect', {
+    await invoke('setVideoRect', {
       'left': left,
       'top': top,
       'right': right,

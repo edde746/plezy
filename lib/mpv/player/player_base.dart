@@ -103,7 +103,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> observeProperty(String name, String format) async {
     final propId = _nextPropId++;
     _propIdToName[propId] = name;
-    await methodChannel.invokeMethod('observeProperty', {'name': name, 'format': format, 'id': propId});
+    await invoke('observeProperty', {'name': name, 'format': format, 'id': propId});
   }
 
   void _handleEvent(dynamic event) {
@@ -461,11 +461,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     _state = update(_state);
   }
 
-  /// Throws if the player has been disposed.
-  void checkDisposed() {
-    if (_disposed) {
-      throw StateError('Player has been disposed');
-    }
+  /// Safe method channel invocation — no-ops if player is disposed.
+  @protected
+  Future<T?> invoke<T>(String method, [dynamic args]) async {
+    if (_disposed) return null;
+    return methodChannel.invokeMethod<T>(method, args);
   }
 
   // ============================================
@@ -474,7 +474,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   Future<void> playOrPause() async {
-    checkDisposed();
+    if (_disposed) return;
     if (_state.playing) {
       await pause();
     } else {
@@ -484,9 +484,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   Future<bool> setVisible(bool visible) async {
-    checkDisposed();
+    if (_disposed) return false;
     try {
-      await methodChannel.invokeMethod('setVisible', {'visible': visible});
+      await invoke('setVisible', {'visible': visible});
       return true;
     } catch (e) {
       errorController.add('Failed to set visibility: $e');
@@ -546,7 +546,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
     await _eventSubscription?.cancel();
     await _logSubscription?.cancel();
-    await methodChannel.invokeMethod('dispose');
+    await methodChannel.invokeMethod('dispose'); // Direct call — already guarded by _disposed check above
     await closeStreamControllers();
   }
 }

@@ -238,6 +238,9 @@ abstract class Player {
   // Lifecycle
   // ============================================
 
+  /// Whether the player has been disposed.
+  bool get disposed;
+
   /// Dispose of the player and release resources.
   ///
   /// After calling this, the player instance should not be used.

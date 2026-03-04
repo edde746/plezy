@@ -765,6 +765,8 @@ class TrackSelectionService {
       attempts++;
     }
 
+    if (player.disposed) return;
+
     // Get real tracks (excluding auto and no)
     final realAudioTracks = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
     final realSubtitleTracks = player.state.tracks.subtitle.where((t) => t.id != 'auto' && t.id != 'no').toList();
