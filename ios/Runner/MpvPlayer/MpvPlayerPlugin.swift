@@ -171,6 +171,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         playerCore?.isPipActive = false
         isManualPipRequest = false
         stopPipTimebaseSync()
+        pipController?.flushLayer()
         _ = playerCore?.switchToGpuNextVO()
         if pause { playerCore?.setProperty("pause", value: "yes") }
         if notify { pipChannel?.invokeMethod("onPipChanged", arguments: false) }

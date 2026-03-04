@@ -245,9 +245,16 @@ class MpvPipController: NSObject {
         }
         pipController = nil
         delegateHelper = nil
+        sampleBufferLayer.flushAndRemoveImage()
+        sampleBufferLayer.controlTimebase = nil
         sampleBufferLayer.removeFromSuperlayer()
         containerView?.removeFromSuperview()
         containerView = nil
+    }
+
+    /// Flush enqueued sample buffers from the layer to free video frame memory
+    func flushLayer() {
+        sampleBufferLayer.flushAndRemoveImage()
     }
 }
 

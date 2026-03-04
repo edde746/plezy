@@ -141,6 +141,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<void>? _playbackRestartSubscription;
   StreamSubscription<void>? _backendSwitchedSubscription;
   StreamSubscription<void>? _sleepTimerSubscription;
+  StreamSubscription<bool>? _mediaControlsPlayingSubscription;
+  StreamSubscription<Duration>? _mediaControlsPositionSubscription;
+  StreamSubscription<double>? _mediaControlsRateSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
@@ -799,12 +802,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
 
     // Listen to playing state and update media controls
-    player!.streams.playing.listen((isPlaying) {
+    _mediaControlsPlayingSubscription = player!.streams.playing.listen((isPlaying) {
       _updateMediaControlsPlaybackState();
     });
 
     // Listen to position updates for media controls and Discord
-    player!.streams.position.listen((position) {
+    _mediaControlsPositionSubscription = player!.streams.position.listen((position) {
       _mediaControlsManager?.updatePlaybackState(
         isPlaying: player!.state.playing,
         position: position,
@@ -814,7 +817,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     });
 
     // Listen to playback rate changes for Discord Rich Presence
-    player!.streams.rate.listen((rate) {
+    _mediaControlsRateSubscription = player!.streams.rate.listen((rate) {
       DiscordRPCService.instance.updatePlaybackSpeed(rate);
     });
 
@@ -1740,6 +1743,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playbackRestartSubscription?.cancel();
     _backendSwitchedSubscription?.cancel();
     _sleepTimerSubscription?.cancel();
+    _mediaControlsPlayingSubscription?.cancel();
+    _mediaControlsPositionSubscription?.cancel();
+    _mediaControlsRateSubscription?.cancel();
 
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
