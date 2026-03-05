@@ -89,6 +89,7 @@ class PlexMetadata with MultiServerFields {
   final List<PlexRole>? role; // Cast members
   final String? audioLanguage; // Per-media preferred audio language
   final String? subtitleLanguage; // Per-media preferred subtitle language
+  final int? subtitleMode; // Per-media subtitle mode (0=manual, 1=foreign audio, 2=always, -1=account default)
   final int? playlistItemID; // Playlist item ID (for dumb playlists only)
   final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
   final int? librarySectionID; // Library section ID this item belongs to
@@ -175,6 +176,7 @@ class PlexMetadata with MultiServerFields {
     this.role,
     this.audioLanguage,
     this.subtitleLanguage,
+    this.subtitleMode,
     this.playlistItemID,
     this.playQueueItemID,
     this.librarySectionID,
@@ -232,6 +234,7 @@ class PlexMetadata with MultiServerFields {
     List<PlexRole>? role,
     String? audioLanguage,
     String? subtitleLanguage,
+    int? subtitleMode,
     int? playlistItemID,
     int? playQueueItemID,
     int? librarySectionID,
@@ -287,6 +290,7 @@ class PlexMetadata with MultiServerFields {
       role: role ?? this.role,
       audioLanguage: audioLanguage ?? this.audioLanguage,
       subtitleLanguage: subtitleLanguage ?? this.subtitleLanguage,
+      subtitleMode: subtitleMode ?? this.subtitleMode,
       playlistItemID: playlistItemID ?? this.playlistItemID,
       playQueueItemID: playQueueItemID ?? this.playQueueItemID,
       librarySectionID: librarySectionID ?? this.librarySectionID,

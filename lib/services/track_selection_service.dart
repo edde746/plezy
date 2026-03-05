@@ -710,11 +710,37 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 3: Try per-media language preference
-    if (metadata.subtitleLanguage != null) {
-      if (metadata.subtitleLanguage == 'none' || metadata.subtitleLanguage!.isEmpty) {
+    // Priority 3: Try per-media language/subtitle mode preference
+    final hasSubtitleMode = metadata.subtitleMode != null && metadata.subtitleMode != -1;
+    if (metadata.subtitleLanguage != null || hasSubtitleMode) {
+      if (metadata.subtitleLanguage == 'none' || (metadata.subtitleLanguage?.isEmpty ?? false)) {
         return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.perMedia);
-      } else if (availableTracks.isNotEmpty) {
+      }
+
+      // Determine effective subtitle mode: per-media overrides account setting
+      final effectiveMode = hasSubtitleMode
+          ? metadata.subtitleMode!
+          : profileSettings?.autoSelectSubtitle;
+
+      // Mode 0: Manually selected / off
+      if (effectiveMode == 0) {
+        return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.perMedia);
+      }
+
+      // Mode 1: Shown with foreign audio only
+      if (effectiveMode == 1 && selectedAudioTrack != null && metadata.subtitleLanguage != null) {
+        final audioLang = selectedAudioTrack.language?.toLowerCase();
+        final prefLang = metadata.subtitleLanguage!.toLowerCase();
+        final languageVariations = LanguageCodes.getVariations(prefLang);
+
+        // If audio matches preferred subtitle language, no subtitles needed
+        if (audioLang != null && languageVariations.contains(audioLang)) {
+          return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.perMedia);
+        }
+      }
+
+      // Mode 2 / null / continuing from mode 1 with foreign audio: find matching subtitle
+      if (metadata.subtitleLanguage != null && availableTracks.isNotEmpty) {
         final matchedTrack = availableTracks.firstWhere(
           (track) => languageMatches(track.language, metadata.subtitleLanguage),
           orElse: () => availableTracks.first,

@@ -290,6 +290,8 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
         return meta.audioLanguage ?? '';
       case 'subtitleLanguage':
         return meta.subtitleLanguage ?? '';
+      case 'subtitleMode':
+        return meta.subtitleMode?.toString() ?? '-1';
       default:
         return '';
     }
