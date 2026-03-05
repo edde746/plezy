@@ -431,6 +431,80 @@ class MpvPlayerCore(private val activity: Activity) :
         MPVLib.observeProperty(name, mpvFormat)
     }
 
+    /**
+     * Get an MPV property asynchronously off the UI thread.
+     * This prevents ANR when mpv_get_property blocks waiting for internal locks.
+     */
+    fun getPropertyAsync(name: String, result: MethodChannel.Result) {
+        if (!isInitialized) {
+            result.success(null)
+            return
+        }
+        commandExecutor.execute {
+            try {
+                val value = MPVLib.getPropertyString(name)
+                activity.runOnUiThread { result.success(value) }
+            } catch (e: Exception) {
+                activity.runOnUiThread { result.success(null) }
+            }
+        }
+    }
+
+    /**
+     * Set an MPV property asynchronously off the UI thread.
+     * This prevents ANR when mpv_set_property blocks waiting for internal locks.
+     */
+    fun setPropertyAsync(name: String, value: String, result: MethodChannel.Result) {
+        if (!isInitialized) {
+            result.success(null)
+            return
+        }
+        commandExecutor.execute {
+            try {
+                MPVLib.setPropertyString(name, value)
+                activity.runOnUiThread { result.success(null) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Async setProperty failed: ${e.message}", e)
+                activity.runOnUiThread { result.success(null) }
+            }
+        }
+    }
+
+    /**
+     * Observe an MPV property asynchronously off the UI thread.
+     * This prevents ANR when mpv_observe_property blocks waiting for internal locks.
+     */
+    fun observePropertyAsync(name: String, format: String, result: MethodChannel.Result) {
+        if (!isInitialized) {
+            result.success(null)
+            return
+        }
+        val mpvFormat = when (format) {
+            "double" -> MPVLib.MPV_FORMAT_DOUBLE
+            "flag" -> MPVLib.MPV_FORMAT_FLAG
+            "string" -> MPVLib.MPV_FORMAT_STRING
+            "node" -> MPVLib.MPV_FORMAT_NODE
+            else -> MPVLib.MPV_FORMAT_NONE
+        }
+        commandExecutor.execute {
+            try {
+                MPVLib.observeProperty(name, mpvFormat)
+                activity.runOnUiThread { result.success(null) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Async observeProperty failed: ${e.message}", e)
+                activity.runOnUiThread { result.success(null) }
+            }
+        }
+    }
+
+    /**
+     * Run a block on the command executor (background thread).
+     * Used by the plugin for I/O operations that shouldn't block the main thread.
+     */
+    fun runOnExecutor(block: () -> Unit) {
+        commandExecutor.execute(block)
+    }
+
     fun command(args: Array<String>) {
         if (!isInitialized || args.isEmpty()) return
         MPVLib.command(args)

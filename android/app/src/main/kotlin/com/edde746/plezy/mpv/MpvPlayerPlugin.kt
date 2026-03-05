@@ -162,8 +162,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        playerCore?.setProperty(name, value)
-        result.success(null)
+        playerCore?.setPropertyAsync(name, value, result)
+            ?: result.success(null)
     }
 
     private fun handleGetProperty(call: MethodCall, result: MethodChannel.Result) {
@@ -174,8 +174,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        val value = playerCore?.getProperty(name)
-        result.success(value)
+        playerCore?.getPropertyAsync(name, result)
+            ?: result.success(null)
     }
 
     private fun handleObserveProperty(call: MethodCall, result: MethodChannel.Result) {
@@ -189,8 +189,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         nameToId[name] = id
-        playerCore?.observeProperty(name, format)
-        result.success(null)
+        playerCore?.observePropertyAsync(name, format, result)
+            ?: result.success(null)
     }
 
     private fun handleCommand(call: MethodCall, result: MethodChannel.Result) {
@@ -253,28 +253,32 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        try {
-            val uri = Uri.parse(uriString)
-            val contentResolver = activity?.contentResolver
-            if (contentResolver == null) {
-                result.error("NO_ACTIVITY", "Activity not available", null)
-                return
-            }
-
-            val pfd = contentResolver.openFileDescriptor(uri, "r")
-            if (pfd == null) {
-                result.error("OPEN_FAILED", "Failed to open file descriptor for $uriString", null)
-                return
-            }
-
-            // detachFd() transfers ownership of the FD to the caller (MPV via fdclose://)
-            val fd = pfd.detachFd()
-            Log.d(TAG, "Opened content FD $fd for $uriString")
-            result.success(fd)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to open content FD: ${e.message}", e)
-            result.error("OPEN_FAILED", e.message, null)
+        val contentResolver = activity?.contentResolver
+        if (contentResolver == null) {
+            result.error("NO_ACTIVITY", "Activity not available", null)
+            return
         }
+
+        // Open file descriptor off UI thread to prevent ANR on slow storage
+        playerCore?.runOnExecutor {
+            try {
+                val uri = Uri.parse(uriString)
+                val pfd = contentResolver.openFileDescriptor(uri, "r")
+                if (pfd == null) {
+                    activity?.runOnUiThread {
+                        result.error("OPEN_FAILED", "Failed to open file descriptor for $uriString", null)
+                    }
+                    return@runOnExecutor
+                }
+
+                val fd = pfd.detachFd()
+                Log.d(TAG, "Opened content FD $fd for $uriString")
+                activity?.runOnUiThread { result.success(fd) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to open content FD: ${e.message}", e)
+                activity?.runOnUiThread { result.error("OPEN_FAILED", e.message, null) }
+            }
+        } ?: result.error("NO_PLAYER", "Player not initialized", null)
     }
 
     // MpvPlayerDelegate
