@@ -300,11 +300,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Refresh continue watching when app resumes on mobile platforms
-    // Skip on desktop to avoid excessive refreshes from window focus changes
-    if (state == AppLifecycleState.resumed && (Platform.isIOS || Platform.isAndroid)) {
-      appLogger.d('App resumed on mobile - refreshing continue watching');
-      _refreshContinueWatching();
+    if (state == AppLifecycleState.resumed) {
+      // Restart auto-scroll when app becomes active again
+      if (!_isAutoScrollPaused) _startAutoScroll();
+      // Refresh continue watching on mobile only
+      // (on desktop, "resumed" fires on every window focus gain)
+      if (Platform.isIOS || Platform.isAndroid) {
+        _refreshContinueWatching();
+      }
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      // Stop animations to prevent scroll state corruption while backgrounded
+      _autoScrollTimer?.cancel();
+      _stopIndicatorProgress();
     }
   }
 
