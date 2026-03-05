@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../services/settings_service.dart' show EpisodePosterMode;
 import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
@@ -452,8 +453,16 @@ class PlexMetadata with MultiServerFields {
     return viewCount != null && viewCount! > 0;
   }
 
-  factory PlexMetadata.fromJson(Map<String, dynamic> json) =>
-      _$PlexMetadataFromJson(kBlurArtwork ? _obfuscateJson(json) : json);
+  factory PlexMetadata.fromJson(Map<String, dynamic> json) {
+    try {
+      return _$PlexMetadataFromJson(kBlurArtwork ? _obfuscateJson(json) : json);
+    } on TypeError catch (e, st) {
+      Sentry.captureException(e, stackTrace: st, withScope: (scope) {
+        scope.setContexts('json', json);
+      });
+      rethrow;
+    }
+  }
 
   static Map<String, dynamic> _obfuscateJson(Map<String, dynamic> json) {
     final copy = Map<String, dynamic>.from(json);
