@@ -57,6 +57,7 @@ class _LibraryPlaylistsTabState extends LibraryGridTabState<PlexPlaylist, Librar
       key: Key(playlist.ratingKey),
       item: playlist,
       focusNode: index == 0 ? firstItemFocusNode : null,
+      disableScale: gridContext?.isListMode ?? false,
       onListRefresh: loadItems,
       onBack: widget.onBack,
       onNavigateLeft: gridContext?.isFirstColumn == true ? gridContext?.navigateToSidebar : null,

@@ -1214,6 +1214,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             index,
             isFirstRow: index == 0,
             isFirstColumn: true, // List view = single column
+            disableScale: true,
           ),
         ),
       );
@@ -1256,6 +1257,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     required bool isFirstRow,
     required bool isFirstColumn,
     bool isLastColumn = false,
+    bool disableScale = false,
   }) {
     final item = _loadedItems[index];
 
@@ -1272,6 +1274,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       key: Key(item.ratingKey),
       item: item,
       focusNode: focusNode,
+      disableScale: disableScale,
       onRefresh: updateItem,
       onNavigateUp: isFirstRow ? _navigateToChips : null,
       onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,

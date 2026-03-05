@@ -319,6 +319,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                 Builder(
                   builder: (context) {
                     final settings = context.watch<SettingsProvider>();
+                    final isListMode = settings.viewMode == ViewMode.list;
                     final episodePosterMode = settings.episodePosterMode;
 
                     // Determine hub content type for layout decisions
@@ -334,6 +335,32 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                     // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
                     final useWideLayout =
                         episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
+
+                    if (isListMode) {
+                      return SliverPadding(
+                        padding: const EdgeInsets.all(8),
+                        sliver: SliverList.builder(
+                          itemCount: _filteredItems.length,
+                          itemBuilder: (context, index) {
+                            final item = _filteredItems[index];
+                            final focusNode = index == 0
+                                ? firstItemFocusNode
+                                : getGridItemFocusNode(index, prefix: 'hub_detail_item');
+
+                            return FocusableMediaCard(
+                              focusNode: focusNode,
+                              item: item,
+                              disableScale: true,
+                              onRefresh: _handleItemRefresh,
+                              onNavigateUp: index == 0 ? navigateToAppBar : null,
+                              onBack: handleBackFromContent,
+                              onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                              mixedHubContext: isMixedHub,
+                            );
+                          },
+                        ),
+                      );
+                    }
 
                     return SliverPadding(
                       padding: const EdgeInsets.all(8),

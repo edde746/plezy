@@ -4,6 +4,7 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import '../providers/settings_provider.dart';
+import '../services/settings_service.dart' show ViewMode;
 import '../utils/grid_size_calculator.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_grid_delegate.dart';
@@ -130,6 +131,36 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   }) {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
+        final isListMode = settingsProvider.viewMode == ViewMode.list;
+
+        if (isListMode) {
+          return SliverPadding(
+            padding: const EdgeInsets.all(8),
+            sliver: SliverList.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final focusNode = index == 0
+                    ? firstItemFocusNode
+                    : getGridItemFocusNode(index, prefix: 'detail_grid_item');
+
+                return FocusableMediaCard(
+                  key: Key(item.ratingKey),
+                  item: item,
+                  focusNode: focusNode,
+                  disableScale: true,
+                  onRefresh: onRefresh,
+                  collectionId: collectionId,
+                  onListRefresh: onListRefresh,
+                  onNavigateUp: index == 0 ? navigateToAppBar : null,
+                  onBack: handleBackFromContent,
+                  onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                );
+              },
+            ),
+          );
+        }
+
         final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
         return SliverPadding(
           padding: const EdgeInsets.all(8),
