@@ -732,6 +732,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Show a confirmation dialog when pressing back to exit the app'
 	String get confirmExitOnBackDescription => 'Show a confirmation dialog when pressing back to exit the app';
+
+	/// en: 'Show Navigation Bar Labels'
+	String get showNavBarLabels => 'Show Navigation Bar Labels';
+
+	/// en: 'Display text labels under navigation bar icons'
+	String get showNavBarLabelsDescription => 'Display text labels under navigation bar icons';
 }
 
 // Path: search
@@ -3116,6 +3122,8 @@ extension on Translations {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.confirmExitOnBack' => 'Confirm before exiting',
 			'settings.confirmExitOnBackDescription' => 'Show a confirmation dialog when pressing back to exit the app',
+			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
+			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -3426,10 +3434,10 @@ extension on Translations {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEW',
-			'liveTv.reloadGuide' => 'Reload Guide',
-			'liveTv.allChannels' => 'All Channels',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.reloadGuide' => 'Reload Guide',
+			'liveTv.allChannels' => 'All Channels',
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',

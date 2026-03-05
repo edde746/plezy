@@ -209,7 +209,9 @@
     "requireProfileSelectionOnOpen": "Chiedi profilo all'apertura",
     "requireProfileSelectionOnOpenDescription": "Mostra la selezione del profilo ogni volta che l'app viene aperta",
     "confirmExitOnBack": "Conferma prima di uscire",
-    "confirmExitOnBackDescription": "Mostra una finestra di conferma quando si preme indietro per uscire dall'app"
+    "confirmExitOnBackDescription": "Mostra una finestra di conferma quando si preme indietro per uscire dall'app",
+    "showNavBarLabels": "Mostra etichette barra di navigazione",
+    "showNavBarLabelsDescription": "Mostra le etichette sotto le icone della barra di navigazione"
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",

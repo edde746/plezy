@@ -209,7 +209,9 @@
     "requireProfileSelectionOnOpen": "Ask for profile on app open",
     "requireProfileSelectionOnOpenDescription": "Show profile selection every time the app is opened",
     "confirmExitOnBack": "Confirm before exiting",
-    "confirmExitOnBackDescription": "Show a confirmation dialog when pressing back to exit the app"
+    "confirmExitOnBackDescription": "Show a confirmation dialog when pressing back to exit the app",
+    "showNavBarLabels": "Show Navigation Bar Labels",
+    "showNavBarLabelsDescription": "Display text labels under navigation bar icons"
   },
   "search": {
     "hint": "Search movies, shows, music...",

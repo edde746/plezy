@@ -73,6 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const _kShowUnwatchedCount = 'show_unwatched_count';
   static const _kHideSpoilers = 'hide_spoilers';
+  static const _kShowNavBarLabels = 'show_nav_bar_labels';
   static const _kRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const _kConfirmExitOnBack = 'confirm_exit_on_back';
   static const _kPlayerBackend = 'player_backend';
@@ -376,6 +377,21 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   value: settingsProvider.alwaysKeepSidebarOpen,
                   onChanged: (value) async {
                     await settingsProvider.setAlwaysKeepSidebarOpen(value);
+                  },
+                );
+              },
+            ),
+          if (!PlatformDetector.shouldUseSideNavigation(context))
+            Consumer<SettingsProvider>(
+              builder: (context, settingsProvider, child) {
+                return SwitchListTile(
+                  focusNode: _focusTracker.get(_kShowNavBarLabels),
+                  secondary: const AppIcon(Symbols.label_rounded, fill: 1),
+                  title: Text(t.settings.showNavBarLabels),
+                  subtitle: Text(t.settings.showNavBarLabelsDescription),
+                  value: settingsProvider.showNavBarLabels,
+                  onChanged: (value) async {
+                    await settingsProvider.setShowNavBarLabels(value);
                   },
                 );
               },

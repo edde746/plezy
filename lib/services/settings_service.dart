@@ -77,6 +77,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const String _keyShowUnwatchedCount = 'show_unwatched_count';
   static const String _keyHideSpoilers = 'hide_spoilers';
+  static const String _keyShowNavBarLabels = 'show_nav_bar_labels';
   static const String _keyGlobalShaderPreset = 'global_shader_preset';
   static const String _keyRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const String _keyUseExternalPlayer = 'use_external_player';
@@ -1145,6 +1146,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyHideSpoilers) ?? false; // Default: disabled
   }
 
+  // Show Navigation Bar Labels (mobile bottom nav)
+  Future<void> setShowNavBarLabels(bool enabled) async {
+    await prefs.setBool(_keyShowNavBarLabels, enabled);
+  }
+
+  bool getShowNavBarLabels() {
+    return prefs.getBool(_keyShowNavBarLabels) ?? true; // Default: show labels
+  }
+
   // Global Shader Preset (for MPV video enhancement)
   Future<void> setGlobalShaderPreset(String presetId) async {
     await prefs.setString(_keyGlobalShaderPreset, presetId);
@@ -1325,6 +1335,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyAlwaysKeepSidebarOpen),
       prefs.remove(_keyShowUnwatchedCount),
       prefs.remove(_keyHideSpoilers),
+      prefs.remove(_keyShowNavBarLabels),
       prefs.remove(_keyGlobalShaderPreset),
       prefs.remove(_keyCustomShaderPresets),
       prefs.remove(_keyRequireProfileSelectionOnOpen),

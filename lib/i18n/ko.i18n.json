@@ -209,7 +209,9 @@
     "requireProfileSelectionOnOpen": "앱 실행 시 프로필 선택",
     "requireProfileSelectionOnOpenDescription": "앱을 열 때마다 프로필 선택 화면을 표시합니다",
     "confirmExitOnBack": "종료 전 확인",
-    "confirmExitOnBackDescription": "뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다"
+    "confirmExitOnBackDescription": "뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다",
+    "showNavBarLabels": "내비게이션 바 라벨 표시",
+    "showNavBarLabelsDescription": "내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다"
   },
   "search": {
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",

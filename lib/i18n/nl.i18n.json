@@ -209,7 +209,9 @@
     "requireProfileSelectionOnOpen": "Vraag om profiel bij openen",
     "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
     "confirmExitOnBack": "Bevestigen voor afsluiten",
-    "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten"
+    "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten",
+    "showNavBarLabels": "Navigatiebalk labels tonen",
+    "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen van de navigatiebalk weergeven"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",

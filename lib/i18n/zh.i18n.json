@@ -209,7 +209,9 @@
     "requireProfileSelectionOnOpen": "打开应用时询问配置文件",
     "requireProfileSelectionOnOpenDescription": "每次打开应用时显示配置文件选择",
     "confirmExitOnBack": "退出前确认",
-    "confirmExitOnBackDescription": "按返回键退出应用时显示确认对话框"
+    "confirmExitOnBackDescription": "按返回键退出应用时显示确认对话框",
+    "showNavBarLabels": "显示导航栏标签",
+    "showNavBarLabelsDescription": "在导航栏图标下方显示文字标签"
   },
   "search": {
     "hint": "搜索电影、系列、音乐...",

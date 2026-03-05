@@ -209,7 +209,9 @@
     "requireProfileSelectionOnOpen": "Demander le profil à l'ouverture",
     "requireProfileSelectionOnOpenDescription": "Afficher la sélection de profil à chaque ouverture de l'application",
     "confirmExitOnBack": "Confirmer avant de quitter",
-    "confirmExitOnBackDescription": "Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter"
+    "confirmExitOnBackDescription": "Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter",
+    "showNavBarLabels": "Afficher les libellés de la barre de navigation",
+    "showNavBarLabelsDescription": "Afficher les libellés sous les icônes de la barre de navigation"
   },
   "search": {
     "hint": "Rechercher des films, des séries, de la musique...",

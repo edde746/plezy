@@ -329,6 +329,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Visa profilval varje gång appen öppnas';
 	@override String get confirmExitOnBack => 'Bekräfta innan avslut';
 	@override String get confirmExitOnBackDescription => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen';
+	@override String get showNavBarLabels => 'Visa navigeringsfältets etiketter';
+	@override String get showNavBarLabelsDescription => 'Visa textetiketter under navigeringsfältets ikoner';
 }
 
 // Path: search
@@ -1501,6 +1503,8 @@ extension on TranslationsSv {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Visa profilval varje gång appen öppnas',
 			'settings.confirmExitOnBack' => 'Bekräfta innan avslut',
 			'settings.confirmExitOnBackDescription' => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen',
+			'settings.showNavBarLabels' => 'Visa navigeringsfältets etiketter',
+			'settings.showNavBarLabelsDescription' => 'Visa textetiketter under navigeringsfältets ikoner',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -1811,10 +1815,10 @@ extension on TranslationsSv {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
-			'liveTv.reloadGuide' => 'Ladda om programguide',
-			'liveTv.allChannels' => 'Alla kanaler',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.reloadGuide' => 'Ladda om programguide',
+			'liveTv.allChannels' => 'Alla kanaler',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',

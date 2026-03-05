@@ -329,6 +329,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
 	@override String get confirmExitOnBack => '退出前确认';
 	@override String get confirmExitOnBackDescription => '按返回键退出应用时显示确认对话框';
+	@override String get showNavBarLabels => '显示导航栏标签';
+	@override String get showNavBarLabelsDescription => '在导航栏图标下方显示文字标签';
 }
 
 // Path: search
@@ -1501,6 +1503,8 @@ extension on TranslationsZh {
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
 			'settings.confirmExitOnBack' => '退出前确认',
 			'settings.confirmExitOnBackDescription' => '按返回键退出应用时显示确认对话框',
+			'settings.showNavBarLabels' => '显示导航栏标签',
+			'settings.showNavBarLabelsDescription' => '在导航栏图标下方显示文字标签',
 			'search.hint' => '搜索电影、系列、音乐...',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -1811,10 +1815,10 @@ extension on TranslationsZh {
 			'liveTv.live' => '直播',
 			'liveTv.hd' => '高清',
 			'liveTv.premiere' => '新',
-			'liveTv.reloadGuide' => '重新加载节目指南',
-			'liveTv.allChannels' => '所有频道',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.reloadGuide' => '重新加载节目指南',
+			'liveTv.allChannels' => '所有频道',
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',

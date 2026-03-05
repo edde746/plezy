@@ -329,6 +329,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get confirmExitOnBack => '종료 전 확인';
 	@override String get confirmExitOnBackDescription => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다';
+	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
+	@override String get showNavBarLabelsDescription => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다';
 }
 
 // Path: search
@@ -1501,6 +1503,8 @@ extension on TranslationsKo {
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.confirmExitOnBack' => '종료 전 확인',
 			'settings.confirmExitOnBackDescription' => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다',
+			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
+			'settings.showNavBarLabelsDescription' => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -1811,10 +1815,10 @@ extension on TranslationsKo {
 			'liveTv.live' => '실시간',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '신규',
-			'liveTv.reloadGuide' => '편성표 새로고침',
-			'liveTv.allChannels' => '전체 채널',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.reloadGuide' => '편성표 새로고침',
+			'liveTv.allChannels' => '전체 채널',
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',

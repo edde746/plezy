@@ -1113,10 +1113,23 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                   ),
                 ),
               ),
-            NavigationBar(
-              selectedIndex: _currentIndex,
-              onDestinationSelected: _selectTab,
-              destinations: _buildNavDestinations(_isOffline),
+            Consumer<SettingsProvider>(
+              builder: (context, settingsProvider, child) {
+                final hideLabels = !settingsProvider.showNavBarLabels;
+                return NavigationBarTheme(
+                  data: NavigationBarTheme.of(context).copyWith(
+                    height: hideLabels ? 56 : null,
+                  ),
+                  child: NavigationBar(
+                    selectedIndex: _currentIndex,
+                    onDestinationSelected: _selectTab,
+                    labelBehavior: hideLabels
+                        ? NavigationDestinationLabelBehavior.alwaysHide
+                        : NavigationDestinationLabelBehavior.alwaysShow,
+                    destinations: _buildNavDestinations(_isOffline),
+                  ),
+                );
+              },
             ),
           ],
         ),

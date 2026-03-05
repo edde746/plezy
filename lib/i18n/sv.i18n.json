@@ -209,7 +209,9 @@
     "requireProfileSelectionOnOpen": "Fråga efter profil vid appstart",
     "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas",
     "confirmExitOnBack": "Bekräfta innan avslut",
-    "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen"
+    "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen",
+    "showNavBarLabels": "Visa navigeringsfältets etiketter",
+    "showNavBarLabelsDescription": "Visa textetiketter under navigeringsfältets ikoner"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
