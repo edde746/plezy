@@ -454,6 +454,10 @@ class PlexMetadata with MultiServerFields {
   }
 
   factory PlexMetadata.fromJson(Map<String, dynamic> json) {
+    // Plex API returns subtitleMode as a string
+    if (json['subtitleMode'] is String) {
+      json = {...json, 'subtitleMode': num.tryParse(json['subtitleMode'] as String)};
+    }
     try {
       return _$PlexMetadataFromJson(kBlurArtwork ? _obfuscateJson(json) : json);
     } on TypeError catch (e, st) {
