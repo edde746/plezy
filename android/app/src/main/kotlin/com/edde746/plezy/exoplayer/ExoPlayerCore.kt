@@ -1452,13 +1452,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             "isPlaying" to player.isPlaying,
             "playbackState" to player.playbackState,
             // DV conversion (query extractor's track output, which is set during extraction)
-            "dvConversionActive" to ((activeDoviMkvExtractor?.doviTrackOutput?.conversionActive
-                ?: activeDoviMp4Wrapper?.doviTrackOutput?.conversionActive) == true),
-            "dvConversionMode" to dvMode.name,
-            "dvStrippedNals" to ((activeDoviMkvExtractor?.doviTrackOutput?.strippedNalCount
-                ?: activeDoviMp4Wrapper?.doviTrackOutput?.strippedNalCount) ?: 0L),
-            "dvConvertedRpus" to ((activeDoviMkvExtractor?.doviTrackOutput?.convertedRpuCount
-                ?: activeDoviMp4Wrapper?.doviTrackOutput?.convertedRpuCount) ?: 0L),
+            *(activeDoviMkvExtractor?.doviTrackOutput
+                ?: activeDoviMp4Wrapper?.doviTrackOutput).let { dovi ->
+                arrayOf(
+                    "dvConversionActive" to (dovi?.conversionActive == true),
+                    "dvConversionMode" to dvMode.name,
+                    "dvStrippedNals" to (dovi?.strippedNalCount ?: 0L),
+                    "dvConvertedRpus" to (dovi?.convertedRpuCount ?: 0L),
+                )
+            },
         )
     }
 

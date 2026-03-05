@@ -1,10 +1,8 @@
 package com.edde746.plezy.exoplayer
 
 import android.util.Log
-import androidx.media3.common.C
 import androidx.media3.extractor.ExtractorInput
 import androidx.media3.extractor.ExtractorOutput
-import androidx.media3.extractor.TrackOutput
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.text.SubtitleParser
 import io.github.peerless2012.ass.media.AssHandler
@@ -141,33 +139,11 @@ class DoviMatroskaExtractor(
         val field = extractorOutputField ?: return
         val output = field.get(this) as? ExtractorOutput ?: return
         if (output is DoviExtractorOutputWrapper) return
-        field.set(this, DoviExtractorOutputWrapper(output, this))
+        field.set(this, DoviExtractorOutputWrapper(output, dvMode) { doviTrackOutput = it })
     }
 
     private fun clearAttachment() {
         currentAttachmentName = null
         currentAttachmentMime = null
-    }
-
-    /**
-     * ExtractorOutput wrapper that intercepts video track creation
-     * to insert DoviConvertingTrackOutput for DV processing.
-     */
-    class DoviExtractorOutputWrapper(
-        private val delegate: ExtractorOutput,
-        private val extractor: DoviMatroskaExtractor,
-    ) : ExtractorOutput {
-        override fun track(id: Int, type: Int): TrackOutput {
-            val original = delegate.track(id, type)
-            if (type == C.TRACK_TYPE_VIDEO) {
-                val wrapper = DoviConvertingTrackOutput(original, extractor.dvMode)
-                extractor.doviTrackOutput = wrapper
-                return wrapper
-            }
-            return original
-        }
-
-        override fun endTracks() = delegate.endTracks()
-        override fun seekMap(seekMap: androidx.media3.extractor.SeekMap) = delegate.seekMap(seekMap)
     }
 }

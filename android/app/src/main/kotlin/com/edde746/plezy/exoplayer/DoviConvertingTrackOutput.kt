@@ -166,13 +166,41 @@ class DoviConvertingTrackOutput(
     private var sampleCount = 0L
 
     /**
+     * Process a single NAL: convert RPU (DV81), strip DV layers, or keep.
+     * Returns processed NAL data to write, or null if stripped.
+     */
+    private fun processNal(nalData: ByteArray): ByteArray? {
+        if (nalData.size < 2) return nalData
+        val nalType = (nalData[0].toInt() ushr 1) and 0x3F
+        val nuhLayerId = ((nalData[0].toInt() and 1) shl 5) or
+            ((nalData[1].toInt() ushr 3) and 0x1F)
+        return when {
+            nalType == NAL_TYPE_UNSPEC62 && dvMode == DvConversionMode.DV81 -> {
+                val converted = DoviBridge.convertRpuNalu(nalData, LIBDOVI_MODE_TO_81)
+                if (converted != null) {
+                    normalizeLayerId(converted)
+                    convertedRpuCount++
+                    converted
+                } else {
+                    strippedNalCount++
+                    null
+                }
+            }
+            nalType == NAL_TYPE_UNSPEC62 || nalType == NAL_TYPE_UNSPEC63 || nuhLayerId > 0 -> {
+                strippedNalCount++
+                null
+            }
+            else -> {
+                normalizeLayerId(nalData)
+                nalData
+            }
+        }
+    }
+
+    /**
      * Process NAL units in the sample data. Auto-detects format:
      * - Annex B (00 00 00 01 / 00 00 01 start codes) — used by MatroskaExtractor
      * - Length-prefixed (4-byte big-endian length) — used by Mp4Extractor
-     *
-     * Strips UNSPEC62 RPU NALs, UNSPEC63 EL NALs, and any NAL with nuh_layer_id > 0.
-     * Normalizes nuh_layer_id to 0 on all retained NALs.
-     * Output uses the same format as input.
      */
     private fun processNalUnits(data: ByteArray): ByteArray {
         if (data.size < 4) return data
@@ -202,12 +230,10 @@ class DoviConvertingTrackOutput(
         while (i < data.size - 2) {
             if (data[i] == 0.toByte() && data[i + 1] == 0.toByte()) {
                 if (i + 3 < data.size && data[i + 2] == 0.toByte() && data[i + 3] == 1.toByte()) {
-                    // 4-byte start code: 00 00 00 01
                     positions.add(Pair(i + 4, 4))
                     i += 4
                     continue
                 } else if (data[i + 2] == 1.toByte()) {
-                    // 3-byte start code: 00 00 01
                     positions.add(Pair(i + 3, 3))
                     i += 3
                     continue
@@ -227,58 +253,25 @@ class DoviConvertingTrackOutput(
         val startCodes = findAnnexBStartCodes(data)
         if (startCodes.isEmpty()) {
             sampleCount++
-            return data // No start codes found, pass through
+            return data
         }
 
         for (idx in startCodes.indices) {
             val nalStart = startCodes[idx].first
             val nalEnd = if (idx + 1 < startCodes.size) {
-                // NAL ends where next start code begins (subtract its start code length area)
-                // Find the start of the next start code pattern
                 startCodes[idx + 1].first - startCodes[idx + 1].second
             } else {
                 data.size
             }
-
             if (nalEnd <= nalStart) continue
-            val nalData = data.copyOfRange(nalStart, nalEnd)
 
-            if (nalData.size >= 2) {
-                val nalType = (nalData[0].toInt() ushr 1) and 0x3F
-                val nuhLayerId = ((nalData[0].toInt() and 1) shl 5) or
-                    ((nalData[1].toInt() ushr 3) and 0x1F)
-
-                when {
-                    nalType == NAL_TYPE_UNSPEC62 && dvMode == DvConversionMode.DV81 -> {
-                        // Convert RPU NAL via libdovi instead of stripping
-                        val converted = DoviBridge.convertRpuNalu(nalData, LIBDOVI_MODE_TO_81)
-                        if (converted != null) {
-                            normalizeLayerId(converted)
-                            output.write(ANNEX_B_START_CODE)
-                            output.write(converted)
-                            convertedRpuCount++
-                            kept++
-                        } else {
-                            strippedNalCount++
-                            stripped++
-                        }
-                    }
-                    nalType == NAL_TYPE_UNSPEC62 || nalType == NAL_TYPE_UNSPEC63 || nuhLayerId > 0 -> {
-                        strippedNalCount++
-                        stripped++
-                    }
-                    else -> {
-                        normalizeLayerId(nalData)
-                        // Write with 4-byte start code (consistent output)
-                        output.write(ANNEX_B_START_CODE)
-                        output.write(nalData)
-                        kept++
-                    }
-                }
-            } else {
+            val result = processNal(data.copyOfRange(nalStart, nalEnd))
+            if (result != null) {
                 output.write(ANNEX_B_START_CODE)
-                output.write(nalData)
+                output.write(result)
                 kept++
+            } else {
+                stripped++
             }
         }
 
@@ -287,7 +280,6 @@ class DoviConvertingTrackOutput(
             Log.d(TAG, "Sample #$sampleCount (AnnexB): ${data.size}B -> ${output.size()}B, " +
                 "kept=$kept stripped=$stripped NALs")
         }
-
         return output.toByteArray()
     }
 
@@ -311,41 +303,12 @@ class DoviConvertingTrackOutput(
                 break
             }
 
-            val nalStart = pos + 4
-            val nalData = data.copyOfRange(nalStart, nalStart + nalLen)
-
-            if (nalData.size >= 2) {
-                val nalType = (nalData[0].toInt() ushr 1) and 0x3F
-                val nuhLayerId = ((nalData[0].toInt() and 1) shl 5) or
-                    ((nalData[1].toInt() ushr 3) and 0x1F)
-
-                when {
-                    nalType == NAL_TYPE_UNSPEC62 && dvMode == DvConversionMode.DV81 -> {
-                        // Convert RPU NAL via libdovi instead of stripping
-                        val converted = DoviBridge.convertRpuNalu(nalData, LIBDOVI_MODE_TO_81)
-                        if (converted != null) {
-                            normalizeLayerId(converted)
-                            writeLengthPrefixedNal(output, converted)
-                            convertedRpuCount++
-                            kept++
-                        } else {
-                            strippedNalCount++
-                            stripped++
-                        }
-                    }
-                    nalType == NAL_TYPE_UNSPEC62 || nalType == NAL_TYPE_UNSPEC63 || nuhLayerId > 0 -> {
-                        strippedNalCount++
-                        stripped++
-                    }
-                    else -> {
-                        normalizeLayerId(nalData)
-                        writeLengthPrefixedNal(output, nalData)
-                        kept++
-                    }
-                }
-            } else {
-                writeLengthPrefixedNal(output, nalData)
+            val result = processNal(data.copyOfRange(pos + 4, pos + 4 + nalLen))
+            if (result != null) {
+                writeLengthPrefixedNal(output, result)
                 kept++
+            } else {
+                stripped++
             }
 
             pos += 4 + nalLen
@@ -356,7 +319,6 @@ class DoviConvertingTrackOutput(
             Log.d(TAG, "Sample #$sampleCount (LenPrefix): ${data.size}B -> ${output.size()}B, " +
                 "kept=$kept stripped=$stripped NALs")
         }
-
         return output.toByteArray()
     }
 

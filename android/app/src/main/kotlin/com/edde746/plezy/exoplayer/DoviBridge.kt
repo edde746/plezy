@@ -23,55 +23,30 @@ object DoviBridge {
     fun isAvailable(): Boolean = nativeLoaded &&
         runCatching { nativeIsConversionPathReady() }.getOrDefault(false)
 
-    /**
-     * Check if the device has a hardware decoder that supports Dolby Vision Profile 7.
-     * Queries MediaCodecList for decoders supporting video/dolby-vision with
-     * DolbyVisionProfileDvheDtr (profile 7).
-     */
-    val deviceSupportsDvProfile7: Boolean by lazy {
+    private fun deviceSupportsDvProfile(profile: Int, minApi: Int = 0): Boolean {
         try {
+            if (Build.VERSION.SDK_INT < minApi) return false
             val codecList = MediaCodecList(MediaCodecList.REGULAR_CODECS)
-            val supported = codecList.codecInfos.any { info ->
+            return codecList.codecInfos.any { info ->
                 !info.isEncoder && info.supportedTypes.any { type ->
                     type.equals("video/dolby-vision", ignoreCase = true) &&
-                        info.getCapabilitiesForType(type).profileLevels.any { pl ->
-                            pl.profile == MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDtr
-                        }
+                        info.getCapabilitiesForType(type).profileLevels.any { it.profile == profile }
                 }
             }
-            Log.i(TAG, "Device DV Profile 7 support: $supported")
-            supported
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to query DV7 support", e)
-            false
+            Log.w(TAG, "Failed to query DV profile $profile support", e)
+            return false
         }
     }
 
-    /**
-     * Check if the device has a hardware decoder that supports Dolby Vision Profile 8
-     * (DvheSt). DolbyVisionProfileDvheSt constant requires API 27+.
-     */
+    val deviceSupportsDvProfile7: Boolean by lazy {
+        deviceSupportsDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDtr)
+            .also { Log.i(TAG, "Device DV Profile 7 support: $it") }
+    }
+
     val deviceSupportsDvProfile8: Boolean by lazy {
-        try {
-            if (Build.VERSION.SDK_INT < 27) {
-                Log.i(TAG, "API < 27, cannot check DV Profile 8 support")
-                return@lazy false
-            }
-            val codecList = MediaCodecList(MediaCodecList.REGULAR_CODECS)
-            val supported = codecList.codecInfos.any { info ->
-                !info.isEncoder && info.supportedTypes.any { type ->
-                    type.equals("video/dolby-vision", ignoreCase = true) &&
-                        info.getCapabilitiesForType(type).profileLevels.any { pl ->
-                            pl.profile == MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt
-                        }
-                }
-            }
-            Log.i(TAG, "Device DV Profile 8 support: $supported")
-            supported
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to query DV8 support", e)
-            false
-        }
+        deviceSupportsDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt, minApi = 27)
+            .also { Log.i(TAG, "Device DV Profile 8 support: $it") }
     }
 
     fun getConversionMode(): DvConversionMode = when {

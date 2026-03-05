@@ -9,12 +9,33 @@ import androidx.media3.extractor.SeekMap
 import androidx.media3.extractor.TrackOutput
 
 /**
+ * ExtractorOutput wrapper that intercepts video track creation
+ * to insert DoviConvertingTrackOutput for DV processing.
+ * Shared by DoviExtractorWrapper (MP4) and DoviMatroskaExtractor (MKV).
+ */
+class DoviExtractorOutputWrapper(
+    private val delegate: ExtractorOutput,
+    private val dvMode: DvConversionMode,
+    private val onVideoTrackWrapped: (DoviConvertingTrackOutput) -> Unit,
+) : ExtractorOutput {
+    override fun track(id: Int, type: Int): TrackOutput {
+        val original = delegate.track(id, type)
+        if (type == C.TRACK_TYPE_VIDEO) {
+            val wrapper = DoviConvertingTrackOutput(original, dvMode)
+            onVideoTrackWrapped(wrapper)
+            return wrapper
+        }
+        return original
+    }
+
+    override fun endTracks() = delegate.endTracks()
+    override fun seekMap(seekMap: SeekMap) = delegate.seekMap(seekMap)
+}
+
+/**
  * Extractor decorator for Mp4/FragmentedMp4 containers.
  * Wraps the video TrackOutput with DoviConvertingTrackOutput to perform
  * DV Profile 7 → 8.1 conversion via inline NAL processing.
- *
- * For MP4, RPU (UNSPEC62) and EL (UNSPEC63) NALs are interleaved in sample data,
- * so no BlockAdditions handling is needed.
  */
 class DoviExtractorWrapper(
     private val delegate: Extractor,
@@ -27,20 +48,7 @@ class DoviExtractorWrapper(
     override fun sniff(input: ExtractorInput): Boolean = delegate.sniff(input)
 
     override fun init(output: ExtractorOutput) {
-        delegate.init(object : ExtractorOutput {
-            override fun track(id: Int, type: Int): TrackOutput {
-                val original = output.track(id, type)
-                if (type == C.TRACK_TYPE_VIDEO) {
-                    val wrapper = DoviConvertingTrackOutput(original, dvMode)
-                    doviTrackOutput = wrapper
-                    return wrapper
-                }
-                return original
-            }
-
-            override fun endTracks() = output.endTracks()
-            override fun seekMap(seekMap: SeekMap) = output.seekMap(seekMap)
-        })
+        delegate.init(DoviExtractorOutputWrapper(output, dvMode) { doviTrackOutput = it })
     }
 
     override fun read(input: ExtractorInput, seekPosition: PositionHolder): Int =
