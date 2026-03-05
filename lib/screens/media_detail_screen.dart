@@ -44,6 +44,7 @@ import '../widgets/app_bar_back_button.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/media_context_menu.dart';
+import '../widgets/overlay_sheet.dart';
 import '../widgets/placeholder_container.dart';
 import '../mixins/watch_state_aware.dart';
 import '../mixins/deletion_aware.dart';
@@ -728,17 +729,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
               key: _contextMenuKey,
               item: metadata,
               onRefresh: (_) => _loadFullMetadata(),
-              child: IconButton.filledTonal(
-                onPressed: () {
-                  final renderBox = context.findRenderObject() as RenderBox?;
-                  if (renderBox != null) {
-                    final position = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
-                    _contextMenuKey.currentState?.showContextMenu(context, position: position);
-                  }
-                },
-                icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                iconSize: 20,
-                style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
+              child: Builder(
+                builder: (buttonContext) => IconButton.filledTonal(
+                  onPressed: () {
+                    final renderBox = buttonContext.findRenderObject() as RenderBox?;
+                    if (renderBox != null) {
+                      final position = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
+                      _contextMenuKey.currentState?.showContextMenu(buttonContext, position: position);
+                    }
+                  },
+                  icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                  iconSize: 20,
+                  style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
+                ),
               ),
             ),
           ],
@@ -1859,7 +1862,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     final size = MediaQuery.of(context).size;
     final headerHeight = size.height * 0.6;
 
-    final content = Focus(
+    final content = OverlaySheetHost(
+      child: Focus(
       onKeyEvent: handleBack,
       child: Scaffold(
         body: Stack(
@@ -2227,6 +2231,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
           ],
         ),
       ),
+    ),
     );
 
     final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);

@@ -121,10 +121,20 @@ class OverlaySheetController {
         showDragHandle: showDragHandle,
       );
     }
+    // Apply the same default constraints the overlay system uses so sheets
+    // shown without an OverlaySheetHost still have sensible sizing on desktop.
+    final effectiveConstraints = constraints ?? () {
+      final size = MediaQuery.of(context).size;
+      final isDesktop = size.width > 600;
+      return BoxConstraints(
+        maxWidth: isDesktop ? 700 : double.infinity,
+        maxHeight: isDesktop ? 400 : size.height * 0.75,
+      );
+    }();
     return showModalBottomSheet<T>(
       context: context,
       builder: builder,
-      constraints: constraints,
+      constraints: effectiveConstraints,
       backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
       barrierColor: Colors.black54,
       isScrollControlled: isScrollControlled,
