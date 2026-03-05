@@ -13,6 +13,8 @@ import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
 import '../../plex_optimized_image.dart';
 
+const _kItemHeight = 72.0;
+
 /// Bottom sheet for viewing and navigating the play queue
 class QueueSheet extends StatelessWidget {
   final Function(PlexMetadata) onItemSelected;
@@ -36,7 +38,8 @@ class QueueSheet extends StatelessWidget {
           final currentIndex = items.indexWhere((item) => item.playQueueItemID == currentItemID);
 
           content = ListView.builder(
-            controller: currentIndex > 0 ? ScrollController(initialScrollOffset: currentIndex * 56.0) : null,
+            controller: currentIndex > 0 ? ScrollController(initialScrollOffset: currentIndex * _kItemHeight) : null,
+            itemExtent: _kItemHeight,
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
