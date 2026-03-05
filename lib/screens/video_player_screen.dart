@@ -2238,12 +2238,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           widget.metadata.audioLanguage == null) {
         try {
           final client = _getClientForMetadata(context);
-          final showMeta = widget.metadata.grandparentRatingKey != null
-              ? await client.getMetadataWithImages(widget.metadata.grandparentRatingKey!)
-              : null;
-          final seasonMeta = widget.metadata.parentRatingKey != null
-              ? await client.getMetadataWithImages(widget.metadata.parentRatingKey!)
-              : null;
+          final showFuture = widget.metadata.grandparentRatingKey != null
+              ? client.getMetadataWithImages(widget.metadata.grandparentRatingKey!)
+              : Future<PlexMetadata?>.value(null);
+          final seasonFuture = widget.metadata.parentRatingKey != null
+              ? client.getMetadataWithImages(widget.metadata.parentRatingKey!)
+              : Future<PlexMetadata?>.value(null);
+          final (showMeta, seasonMeta) = await (showFuture, seasonFuture).wait;
           // Season overrides show (Plex preference hierarchy)
           final inheritedAudio = seasonMeta?.audioLanguage ?? showMeta?.audioLanguage;
           final inheritedSubLang = seasonMeta?.subtitleLanguage ?? showMeta?.subtitleLanguage;
