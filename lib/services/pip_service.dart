@@ -53,6 +53,11 @@ class PipService {
     });
   }
 
+  static Future<void> exit() async {
+    if (!_isAvailable) return;
+    await _channel.invokeMethod('exit');
+  }
+
   static Future<(bool success, String? error)> enter({int? width, int? height}) async {
     if (!_isAvailable) return (false, null);
     final result = await _channel.invokeMethod<Map>('enter', {'width': width, 'height': height});

@@ -117,6 +117,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             result(MpvPipController.isSupported)
         case "enter":
             enterPip(manual: true, result: result)
+        case "exit":
+            pipController?.stopPip()
+            result(nil)
         case "setAutoPipReady":
             if let args = call.arguments as? [String: Any], let ready = args["ready"] as? Bool {
                 autoPipEnabled = ready
@@ -171,6 +174,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
 
         enteredPipViaAuto = !manual
         playerCore.isPipActive = true
+
         pip.startPip(metalLayer: metalLayer, window: window, aspectRatio: aspectRatio)
         pipChannel?.invokeMethod("onPipChanged", arguments: true)
         result?(["success": true])
