@@ -39,6 +39,8 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.extractor.mp4.FragmentedMp4Extractor
+import androidx.media3.extractor.mp4.Mp4Extractor
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
@@ -191,6 +193,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
     }
 
+    // DV conversion state
+    private var dvMode: DvConversionMode = DvConversionMode.DISABLED
+    private var dv7RetryAttempted = false
+    @Volatile private var activeDoviMkvExtractor: DoviMatroskaExtractor? = null
+    @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
+
     fun initialize(bufferSizeBytes: Int? = null, tunnelingEnabled: Boolean = true): Boolean {
         if (isInitialized) {
             Log.d(TAG, "Already initialized")
@@ -198,6 +206,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
 
         tunnelingUserEnabled = tunnelingEnabled
+        this.dvMode = DoviBridge.getConversionMode()
+        Log.i(TAG, "DV conversion: mode=$dvMode, bridge=${DoviBridge.isAvailable()}, " +
+            "deviceDV7=${DoviBridge.deviceSupportsDvProfile7}, deviceDV8=${DoviBridge.deviceSupportsDvProfile8}")
         disposing = false
 
         try {
@@ -331,13 +342,30 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
             val assParserFactory = AssSubtitleParserFactory(handler)
 
-            // Wrap extractors to replace MatroskaExtractor with ASS-aware variant
+            // Wrap extractors: replace MatroskaExtractor with ASS+DV variant,
+            // wrap MP4 extractors with DV converter when enabled.
+            // Reads this.dvMode each time (not captured) so DV7→8.1 retry can
+            // change mode and reload without reinitializing the player.
             val wrappedExtractorsFactory = androidx.media3.extractor.ExtractorsFactory {
+                val currentDvMode = this.dvMode
+                val doviEnabled = currentDvMode != DvConversionMode.DISABLED
                 extractorsFactory.createExtractors().map { extractor ->
-                    if (extractor is androidx.media3.extractor.mkv.MatroskaExtractor) {
-                        AssMatroskaExtractor(assParserFactory, handler)
-                    } else {
-                        extractor
+                    when {
+                        extractor is MatroskaExtractor -> {
+                            if (doviEnabled) {
+                                DoviMatroskaExtractor(assParserFactory, handler, currentDvMode).also {
+                                    activeDoviMkvExtractor = it
+                                }
+                            } else {
+                                AssMatroskaExtractor(assParserFactory, handler)
+                            }
+                        }
+                        doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
+                            DoviExtractorWrapper(extractor, currentDvMode).also {
+                                activeDoviMp4Wrapper = it
+                            }
+                        }
+                        else -> extractor
                     }
                 }.toTypedArray()
             }
@@ -553,6 +581,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val hasAnyVideoGroup = tracks.groups.any { it.type == C.TRACK_TYPE_VIDEO }
         val hasSelectedVideo = tracks.groups.any { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
         if (hasAnyVideoGroup && !hasSelectedVideo && currentMediaUri != null) {
+            // Try DV conversion before falling to MPV
+            if (retryWithDvConversion("video track not selected")) return
             emitLog("warn", "fallback", "Video track present but not selected (unsupported codec)")
             delegate?.onFormatUnsupported(
                 uri = currentMediaUri!!,
@@ -573,6 +603,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         stopFrameWatchdog()
         cancelDecoderHangCheck()
 
+        // If native DV7 failed, retry with conversion before falling to MPV
+        if (error.errorCode in 4001..4005 && retryWithDvConversion("decoder error ${error.errorCode}")) return
+
         if (currentMediaUri != null) {
             Log.w(TAG, "ExoPlayer error (code ${error.errorCode}) - attempting fallback to MPV")
             val handled = delegate?.onFormatUnsupported(
@@ -589,6 +622,32 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             "reason" to "error",
             "message" to (error.message ?: "Unknown error")
         ))
+    }
+
+    /**
+     * When native DV7 decoding fails (device falsely advertises DV7 support),
+     * upgrade to DV7→8.1 conversion or HEVC strip and reload the media.
+     * Returns true if retry was initiated.
+     */
+    private fun retryWithDvConversion(reason: String): Boolean {
+        if (dv7RetryAttempted) return false
+        if (dvMode != DvConversionMode.DISABLED) return false
+        if (!DoviBridge.isAvailable()) return false
+        val uri = currentMediaUri ?: return false
+
+        dv7RetryAttempted = true
+        val newMode = DoviBridge.getDv7FallbackMode()
+        dvMode = newMode
+        Log.i(TAG, "Native DV7 playback failed ($reason), retrying with $newMode")
+        emitLog("info", "dv-fallback", "DV7 native failed ($reason), retrying as $newMode")
+
+        open(
+            uri = uri,
+            headers = currentHeaders,
+            startPositionMs = lastPosition,
+            autoPlay = true,
+        )
+        return true
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -1018,6 +1077,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         stopFrameWatchdog()
         cancelDecoderHangCheck()
 
+        // Reset DV7 retry flag when opening a different file
+        if (uri != currentMediaUri) {
+            dv7RetryAttempted = false
+        }
+
         currentMediaUri = uri
         currentHeaders = headers
         externalSubtitles.clear()
@@ -1387,6 +1451,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             "playbackSpeed" to player.playbackParameters.speed,
             "isPlaying" to player.isPlaying,
             "playbackState" to player.playbackState,
+            // DV conversion (query extractor's track output, which is set during extraction)
+            "dvConversionActive" to ((activeDoviMkvExtractor?.doviTrackOutput?.conversionActive
+                ?: activeDoviMp4Wrapper?.doviTrackOutput?.conversionActive) == true),
+            "dvConversionMode" to dvMode.name,
+            "dvStrippedNals" to ((activeDoviMkvExtractor?.doviTrackOutput?.strippedNalCount
+                ?: activeDoviMp4Wrapper?.doviTrackOutput?.strippedNalCount) ?: 0L),
+            "dvConvertedRpus" to ((activeDoviMkvExtractor?.doviTrackOutput?.convertedRpuCount
+                ?: activeDoviMp4Wrapper?.doviTrackOutput?.convertedRpuCount) ?: 0L),
         )
     }
 

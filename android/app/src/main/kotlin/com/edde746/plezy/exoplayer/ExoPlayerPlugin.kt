@@ -35,6 +35,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private val nameToId = mutableMapOf<String, Int>()
     private var configuredBufferSizeBytes: Int? = null
     private var configuredTunnelingEnabled: Boolean = true
+
     private var debugLoggingEnabled: Boolean = false
 
     // FlutterPlugin

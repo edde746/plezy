@@ -48,6 +48,10 @@ class PerformanceStats {
   final double? cacheSpeed;
   final double? cacheDuration;
 
+  // DV conversion
+  final bool dvConversionActive;
+  final String dvConversionMode; // "DV81", "HEVC_STRIP", "DISABLED"
+
   // App metrics
   final int? appMemoryBytes;
   final double? uiFps;
@@ -84,6 +88,8 @@ class PerformanceStats {
     this.cacheUsed,
     this.cacheSpeed,
     this.cacheDuration,
+    this.dvConversionActive = false,
+    this.dvConversionMode = '',
     this.appMemoryBytes,
     this.uiFps,
   });
@@ -121,6 +127,8 @@ class PerformanceStats {
       cacheUsed = null,
       cacheSpeed = null,
       cacheDuration = null,
+      dvConversionActive = false,
+      dvConversionMode = '',
       appMemoryBytes = null,
       uiFps = null;
 

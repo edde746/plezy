@@ -73,6 +73,8 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
                   _metric('Decoder', _stats.hwdecFormatted),
                   if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty) _metric('Aspect', _stats.aspectName!),
                   if (_stats.rotate != null && _stats.rotate != 0) _metric('Rotation', _stats.rotateFormatted),
+                  if (_stats.dvConversionActive)
+                    _metric('DV', _stats.dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC'),
                 ]),
                 // Color section - MPV only (ExoPlayer doesn't provide this info)
                 if (isMpv) ...[

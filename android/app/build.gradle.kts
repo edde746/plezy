@@ -8,6 +8,33 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val doviVersion = "2.3.1"
+val doviDir = layout.buildDirectory.dir("libdovi").get().asFile
+val doviAbis = mapOf(
+    "arm64-v8a" to "aarch64-linux-android",
+    "armeabi-v7a" to "armv7-linux-androideabi",
+    "x86" to "i686-linux-android",
+    "x86_64" to "x86_64-linux-android",
+)
+
+val downloadLibdovi by tasks.registering {
+    val stamp = File(doviDir, ".version")
+    outputs.upToDateWhen { stamp.exists() && stamp.readText().trim() == doviVersion }
+    doLast {
+        doviDir.mkdirs()
+        val baseUrl = "https://github.com/edde746/libdovi-builds/releases/download/v$doviVersion"
+        doviAbis.forEach { (abi, triple) ->
+            val archive = File(doviDir, "$triple.tar.gz")
+            exec { commandLine("curl", "-sfL", "$baseUrl/libdovi-$triple.tar.gz", "-o", archive.absolutePath) }
+            val outDir = File(doviDir, "$abi/lib")
+            outDir.mkdirs()
+            exec { commandLine("tar", "-xzf", archive.absolutePath, "-C", outDir.absolutePath) }
+            archive.delete()
+        }
+        stamp.writeText(doviVersion)
+    }
+}
+
 android {
     namespace = "com.edde746.plezy"
     compileSdk = flutter.compileSdkVersion
@@ -31,11 +58,26 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
+        externalNativeBuild {
+            cmake {
+                arguments += listOf(
+                    "-DDOVI_ENABLE_LIBDOVI=ON",
+                    "-DDOVI_LIBDOVI_PREBUILT_ROOT=${doviDir.absolutePath}"
+                )
+            }
+        }
+
         if (System.getenv("AMAZON") != null) {
             versionCode = (flutter.versionCode ?: 0) + 3000
             ndk {
                 abiFilters += listOf("armeabi-v7a", "arm64-v8a")
             }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
         }
     }
 
@@ -78,6 +120,11 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Download libdovi before any CMake/native build task
+tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative") }.configureEach {
+    dependsOn(downloadLibdovi)
 }
 
 dependencies {
