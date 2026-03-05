@@ -51,11 +51,10 @@ class DataAggregationService {
       }).toList();
     }
 
-    // Sort by most recently viewed
-    // Use lastViewedAt (when item was last viewed), falling back to updatedAt/addedAt if not available
+    // Sort by most recently viewed, falling back to addedAt for unwatched items
     filteredOnDeck.sort((a, b) {
-      final aTime = a.lastViewedAt ?? a.updatedAt ?? a.addedAt ?? 0;
-      final bTime = b.lastViewedAt ?? b.updatedAt ?? b.addedAt ?? 0;
+      final aTime = a.lastViewedAt ?? a.addedAt ?? 0;
+      final bTime = b.lastViewedAt ?? b.addedAt ?? 0;
       return bTime.compareTo(aTime); // Descending (most recent first)
     });
 
