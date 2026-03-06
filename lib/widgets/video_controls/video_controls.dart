@@ -2043,8 +2043,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                     ),
                   // Performance overlay (top-left)
                   if (_showPerformanceOverlay)
-                    Positioned(
-                      top: isMobile ? 60 : 16,
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      top: _showControls && isMobile ? 80.0 : 16.0,
                       left: 16,
                       child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
                     ),

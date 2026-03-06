@@ -125,6 +125,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     // Decoder hang detection: tracks gap between decoder init and first rendered frame
     private var decoderHangRunnable: Runnable? = null
     private var decoderInitName: String? = null
+    private var audioDecoderInitName: String? = null
     private var firstFrameRendered: Boolean = false
     var delegate: ExoPlayerDelegate? = null
     var debugLoggingEnabled: Boolean = false
@@ -1170,6 +1171,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             startDecoderHangCheck(decoderName)
         }
 
+        override fun onAudioDecoderInitialized(
+            eventTime: AnalyticsListener.EventTime,
+            decoderName: String,
+            initializationDurationMs: Long
+        ) {
+            audioDecoderInitName = decoderName
+        }
+
         override fun onRenderedFirstFrame(
             eventTime: AnalyticsListener.EventTime,
             output: Any,
@@ -1296,6 +1305,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             dv7RetryAttempted = false
         }
 
+        decoderInitName = null
+        audioDecoderInitName = null
         currentMediaUri = uri
         currentHeaders = headers
         currentMediaIsLive = isLive
@@ -1639,7 +1650,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             "videoHeight" to videoFormat?.height,
             "videoFps" to videoFormat?.frameRate,
             "videoBitrate" to videoFormat?.bitrate,
-            "videoDecoderName" to videoDecoderInfo,
+            "videoDecoderName" to (decoderInitName ?: videoDecoderInfo),
             "videoDroppedFrames" to player.videoDecoderCounters?.droppedBufferCount,
             "videoRenderedFrames" to player.videoDecoderCounters?.renderedOutputBufferCount,
             // Color info
@@ -1653,6 +1664,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             "audioSampleRate" to audioFormat?.sampleRate,
             "audioChannels" to audioFormat?.channelCount,
             "audioBitrate" to audioFormat?.bitrate,
+            "audioDecoderName" to audioDecoderInitName,
+            // Tunneling
+            "tunneledPlayback" to currentTunneledPlayback,
+            "tunnelingStatus" to getTunnelingStatus(player),
             // Buffer metrics
             "bufferedPositionMs" to player.bufferedPosition,
             "currentPositionMs" to player.currentPosition,
@@ -1700,6 +1715,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
     }
 
+    private fun getTunnelingStatus(player: ExoPlayer): String {
+        if (currentTunneledPlayback) return "Active"
+        if (!tunnelingUserEnabled) return "Disabled by user"
+        if (player.playbackParameters.speed != 1f) return "Off (speed ≠ 1×)"
+        if (tunnelingDisabledForVideoCodec) return "Off (video codec unsupported)"
+        if (tunnelingDisabledForAudioCodec) return "Off (no HW audio decoder)"
+        return "Off"
+    }
+
     // Cleanup
 
     fun dispose() {
@@ -1716,6 +1740,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         audioFocusManager?.release()
         audioFocusManager = null
 
+        decoderInitName = null
+        audioDecoderInitName = null
         tunnelingDisabledForAudioCodec = false
         tunnelingDisabledForVideoCodec = false
         currentTunneledPlayback = false

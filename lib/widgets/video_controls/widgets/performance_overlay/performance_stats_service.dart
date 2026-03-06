@@ -188,6 +188,10 @@ class PerformanceStatsService {
         audioSamplerate: statsMap['audioSampleRate'] as int?,
         audioChannels: _formatChannels(statsMap['audioChannels'] as int?),
         audioBitrate: statsMap['audioBitrate'] as int?,
+        audioDecoderName: statsMap['audioDecoderName'] as String?,
+        // Tunneling
+        tunneledPlayback: statsMap['tunneledPlayback'] == true,
+        tunnelingStatus: statsMap['tunnelingStatus'] as String?,
         // Performance metrics
         frameDropCount: statsMap['videoDroppedFrames'] as int?,
         // Buffer metrics - convert ms to seconds for duration
