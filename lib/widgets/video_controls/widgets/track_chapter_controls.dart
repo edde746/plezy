@@ -13,6 +13,7 @@ import '../../../utils/platform_detector.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../models/plex_metadata.dart';
+import '../models/track_controls_state.dart';
 import '../sheets/chapter_sheet.dart';
 import '../sheets/queue_sheet.dart';
 import '../sheets/track_sheet.dart';
@@ -27,36 +28,7 @@ class TrackChapterControls extends StatelessWidget {
   final Player player;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
-  final List<PlexMediaVersion> availableVersions;
-  final int selectedMediaIndex;
-  final int boxFitMode;
-  final int audioSyncOffset;
-  final int subtitleSyncOffset;
-  final bool isRotationLocked;
-  final bool isFullscreen;
-  final bool isAlwaysOnTop;
-  final VoidCallback? onTogglePIPMode;
-  final VoidCallback? onCycleBoxFitMode;
-  final VoidCallback? onToggleRotationLock;
-  final VoidCallback? onToggleFullscreen;
-  final VoidCallback? onToggleAlwaysOnTop;
-  final Function(int)? onSwitchVersion;
-  final Function(AudioTrack)? onAudioTrackChanged;
-  final Function(SubtitleTrack)? onSubtitleTrackChanged;
-  final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
-  final VoidCallback? onLoadSeekTimes;
-  final VoidCallback? onCancelAutoHide;
-  final VoidCallback? onStartAutoHide;
-  final void Function(String propertyName, int offset)? onSyncOffsetChanged;
-  final String serverId;
-  final ShaderService? shaderService;
-  final VoidCallback? onShaderChanged;
-
-  /// Whether ambient lighting is enabled (passed to settings sheet)
-  final bool isAmbientLightingEnabled;
-
-  /// Called to toggle ambient lighting (passed to settings sheet)
-  final VoidCallback? onToggleAmbientLighting;
+  final TrackControlsState trackControlsState;
 
   /// List of FocusNodes for the buttons (passed from parent for navigation)
   final List<FocusNode>? focusNodes;
@@ -67,21 +39,6 @@ class TrackChapterControls extends StatelessWidget {
   /// Called to navigate left from the first button
   final VoidCallback? onNavigateLeft;
 
-  /// Whether the user can control playback (false in host-only mode for non-host).
-  final bool canControl;
-
-  /// Whether this is a live TV stream (hides speed settings).
-  final bool isLive;
-
-  /// Whether subtitles are currently visible (false = hidden via sub-visibility toggle)
-  final bool subtitlesVisible;
-
-  /// Whether to show the queue button
-  final bool showQueueButton;
-
-  /// Callback when a queue item is selected
-  final Function(PlexMetadata)? onQueueItemSelected;
-
   /// Whether to hide the chapters and queue buttons (mobile uses content strip instead)
   final bool hideChaptersAndQueue;
 
@@ -90,42 +47,44 @@ class TrackChapterControls extends StatelessWidget {
     required this.player,
     required this.chapters,
     required this.chaptersLoaded,
-    required this.availableVersions,
-    required this.selectedMediaIndex,
-    required this.boxFitMode,
-    required this.audioSyncOffset,
-    required this.subtitleSyncOffset,
-    required this.isRotationLocked,
-    required this.isFullscreen,
-    required this.serverId,
-    this.isAlwaysOnTop = false,
-    this.onTogglePIPMode,
-    this.onCycleBoxFitMode,
-    this.onToggleRotationLock,
-    this.onToggleFullscreen,
-    this.onToggleAlwaysOnTop,
-    this.onSwitchVersion,
-    this.onAudioTrackChanged,
-    this.onSubtitleTrackChanged,
-    this.onSecondarySubtitleTrackChanged,
-    this.onLoadSeekTimes,
-    this.onCancelAutoHide,
-    this.onStartAutoHide,
-    this.onSyncOffsetChanged,
+    required this.trackControlsState,
     this.focusNodes,
     this.onFocusChange,
     this.onNavigateLeft,
-    this.canControl = true,
-    this.isLive = false,
-    this.subtitlesVisible = true,
-    this.showQueueButton = false,
-    this.onQueueItemSelected,
     this.hideChaptersAndQueue = false,
-    this.shaderService,
-    this.onShaderChanged,
-    this.isAmbientLightingEnabled = false,
-    this.onToggleAmbientLighting,
   });
+
+  List<PlexMediaVersion> get availableVersions => trackControlsState.availableVersions;
+  int get selectedMediaIndex => trackControlsState.selectedMediaIndex;
+  int get boxFitMode => trackControlsState.boxFitMode;
+  int get audioSyncOffset => trackControlsState.audioSyncOffset;
+  int get subtitleSyncOffset => trackControlsState.subtitleSyncOffset;
+  bool get isRotationLocked => trackControlsState.isRotationLocked;
+  bool get isFullscreen => trackControlsState.isFullscreen;
+  bool get isAlwaysOnTop => trackControlsState.isAlwaysOnTop;
+  VoidCallback? get onTogglePIPMode => trackControlsState.onTogglePIPMode;
+  VoidCallback? get onCycleBoxFitMode => trackControlsState.onCycleBoxFitMode;
+  VoidCallback? get onToggleRotationLock => trackControlsState.onToggleRotationLock;
+  VoidCallback? get onToggleFullscreen => trackControlsState.onToggleFullscreen;
+  VoidCallback? get onToggleAlwaysOnTop => trackControlsState.onToggleAlwaysOnTop;
+  Function(int)? get onSwitchVersion => trackControlsState.onSwitchVersion;
+  Function(AudioTrack)? get onAudioTrackChanged => trackControlsState.onAudioTrackChanged;
+  Function(SubtitleTrack)? get onSubtitleTrackChanged => trackControlsState.onSubtitleTrackChanged;
+  Function(SubtitleTrack)? get onSecondarySubtitleTrackChanged => trackControlsState.onSecondarySubtitleTrackChanged;
+  VoidCallback? get onLoadSeekTimes => trackControlsState.onLoadSeekTimes;
+  VoidCallback? get onCancelAutoHide => trackControlsState.onCancelAutoHide;
+  VoidCallback? get onStartAutoHide => trackControlsState.onStartAutoHide;
+  void Function(String propertyName, int offset)? get onSyncOffsetChanged => trackControlsState.onSyncOffsetChanged;
+  String get serverId => trackControlsState.serverId;
+  ShaderService? get shaderService => trackControlsState.shaderService;
+  VoidCallback? get onShaderChanged => trackControlsState.onShaderChanged;
+  bool get isAmbientLightingEnabled => trackControlsState.isAmbientLightingEnabled;
+  VoidCallback? get onToggleAmbientLighting => trackControlsState.onToggleAmbientLighting;
+  bool get canControl => trackControlsState.canControl;
+  bool get isLive => trackControlsState.isLive;
+  bool get subtitlesVisible => trackControlsState.subtitlesVisible;
+  bool get showQueueButton => trackControlsState.showQueueButton;
+  Function(PlexMetadata)? get onQueueItemSelected => trackControlsState.onQueueItemSelected;
 
   /// Handle key event for button navigation
   KeyEventResult _handleButtonKeyEvent(FocusNode _, KeyEvent event, int index, int totalButtons) {

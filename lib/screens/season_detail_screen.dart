@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../main.dart';
 import '../focus/focusable_wrapper.dart';
-import '../utils/global_key_utils.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
@@ -21,7 +20,6 @@ import '../services/download_storage_service.dart';
 import '../widgets/collapsible_text.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
-import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/formatters.dart';
@@ -31,6 +29,8 @@ import '../widgets/placeholder_container.dart';
 import '../mixins/item_updatable.dart';
 import '../mixins/watch_state_aware.dart';
 import '../mixins/deletion_aware.dart';
+import '../mixins/mounted_set_state_mixin.dart';
+import '../mixins/server_bound_media_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
@@ -47,7 +47,7 @@ class SeasonDetailScreen extends StatefulWidget {
 }
 
 class _SeasonDetailScreenState extends State<SeasonDetailScreen>
-    with ItemUpdatable, WatchStateAware, DeletionAware, RouteAware {
+    with ItemUpdatable, WatchStateAware, DeletionAware, RouteAware, MountedSetStateMixin, ServerBoundMediaMixin {
   PlexClient? _client;
 
   @override
@@ -61,27 +61,25 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   bool _suppressNextBackKeyUp = false;
   bool _routeSubscribed = false;
 
-  String _toGlobalKey(String ratingKey, {String? serverId}) =>
-      buildGlobalKey(serverId ?? widget.season.serverId ?? '', ratingKey);
+  @override
+  PlexMetadata get serverBoundMetadata => widget.season;
 
-  /// Calls [setState] only if the widget is still mounted.
-  void _setStateIfMounted(VoidCallback fn) {
-    if (mounted) setState(fn);
-  }
+  @override
+  bool get isServerBoundOffline => widget.isOffline;
 
   // WatchStateAware: watch all episode ratingKeys
   @override
   Set<String>? get watchedRatingKeys => _episodes.map((e) => e.ratingKey).toSet();
 
   @override
-  String? get watchStateServerId => widget.season.serverId;
+  String? get watchStateServerId => serverBoundServerId;
 
   @override
   Set<String>? get watchedGlobalKeys {
-    final serverId = widget.season.serverId;
+    final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    return _episodes.map((e) => _toGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
+    return _episodes.map((e) => toServerBoundGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
   }
 
   @override
@@ -100,15 +98,15 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   }
 
   @override
-  String? get deletionServerId => widget.season.serverId;
+  String? get deletionServerId => serverBoundServerId;
 
   @override
   Set<String>? get deletionGlobalKeys {
-    final serverId = widget.season.serverId;
+    final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    final keys = _episodes.map((e) => _toGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
-    keys.add(_toGlobalKey(widget.season.ratingKey, serverId: serverId));
+    final keys = _episodes.map((e) => toServerBoundGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
+    keys.add(toServerBoundGlobalKey(widget.season.ratingKey, serverId: serverId));
     return keys;
   }
 
@@ -130,14 +128,6 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     }
   }
 
-  /// Get the correct PlexClient for this season's server
-  PlexClient? _getClientForSeason(BuildContext context) {
-    if (widget.isOffline || widget.season.serverId == null) {
-      return null;
-    }
-    return context.getClientForServer(widget.season.serverId!);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -145,7 +135,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Capture keyboard mode once to avoid rebuild dependency when mode changes
       _initialKeyboardMode = InputModeTracker.isKeyboardMode(context);
-      _client = _getClientForSeason(context);
+      _client = getServerBoundClient(context);
       _loadEpisodes();
     });
   }
@@ -165,12 +155,12 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
       // Episodes are automatically tagged with server info by PlexClient
       final episodes = await _client!.getChildren(widget.season.ratingKey);
 
-      _setStateIfMounted(() {
+      setStateIfMounted(() {
         _episodes = episodes;
         _isLoadingEpisodes = false;
       });
     } catch (e) {
-      _setStateIfMounted(() {
+      setStateIfMounted(() {
         _isLoadingEpisodes = false;
       });
     }
@@ -583,7 +573,9 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                                     CircularProgressIndicator(
                                       value: progress?.progressPercent,
                                       strokeWidth: 1.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(getMutedColor(Theme.of(context).colorScheme.primary)),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        getMutedColor(Theme.of(context).colorScheme.primary),
+                                      ),
                                     ),
                                   ],
                                 ),

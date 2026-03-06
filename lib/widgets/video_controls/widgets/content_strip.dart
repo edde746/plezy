@@ -65,12 +65,7 @@ class _ContentStripState extends State<ContentStrip> {
   }
 
   PlexClient? _tryGetClient(BuildContext context, String? serverId) {
-    if (serverId == null) return null;
-    try {
-      return context.getClientForServer(serverId);
-    } catch (_) {
-      return null;
-    }
+    return context.tryGetClientForServer(serverId);
   }
 
   void _autoScrollTo(ScrollController controller, int index, {bool force = false}) {
@@ -93,10 +88,7 @@ class _ContentStripState extends State<ContentStrip> {
           children: [
             if (_hasBothTabs) _buildTabBar(),
             const SizedBox(height: 8),
-            SizedBox(
-              height: 106,
-              child: _activeTab == _StripTab.chapters ? _buildChapterStrip() : _buildQueueStrip(),
-            ),
+            SizedBox(height: 106, child: _activeTab == _StripTab.chapters ? _buildChapterStrip() : _buildQueueStrip()),
           ],
         ),
       ),
@@ -130,11 +122,7 @@ class _ContentStripState extends State<ContentStrip> {
             ),
           ),
           const SizedBox(height: 4),
-          Container(
-            height: 2,
-            width: 40,
-            color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent,
-          ),
+          Container(height: 2, width: 40, color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent),
         ],
       ),
     );
@@ -152,7 +140,8 @@ class _ContentStripState extends State<ContentStrip> {
         for (int i = 0; i < widget.chapters.length; i++) {
           final chapter = widget.chapters[i];
           final startMs = chapter.startTimeOffset ?? 0;
-          final endMs = chapter.endTimeOffset ??
+          final endMs =
+              chapter.endTimeOffset ??
               (i < widget.chapters.length - 1 ? widget.chapters[i + 1].startTimeOffset ?? 0 : double.maxFinite.toInt());
           if (currentPositionMs >= startMs && currentPositionMs < endMs) {
             currentChapterIndex = i;
@@ -232,7 +221,7 @@ class _ContentStripState extends State<ContentStrip> {
             PlexClient? client;
             if (item.serverId != null) {
               try {
-                client = context.getClientForServer(item.serverId!);
+                client = context.tryGetClientForServer(item.serverId);
               } catch (_) {}
             }
 
@@ -293,7 +282,8 @@ class _ContentStripState extends State<ContentStrip> {
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.all(Radius.circular(6)),
-                    child: thumbnail ??
+                    child:
+                        thumbnail ??
                         Container(
                           color: Colors.white10,
                           child: const Center(
@@ -306,7 +296,9 @@ class _ContentStripState extends State<ContentStrip> {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: const BorderRadius.all(Radius.circular(6)),
-                          border: Border.fromBorderSide(BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)),
+                          border: Border.fromBorderSide(
+                            BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                          ),
                         ),
                       ),
                     ),
@@ -329,7 +321,9 @@ class _ContentStripState extends State<ContentStrip> {
             Text(
               subtitle,
               style: TextStyle(
-                color: isCurrent ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7) : tokens(context).textMuted,
+                color: isCurrent
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
+                    : tokens(context).textMuted,
                 fontSize: 10,
               ),
               maxLines: 1,

@@ -46,6 +46,7 @@ import 'icons.dart';
 import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
+import 'models/track_controls_state.dart';
 import 'widgets/track_chapter_controls.dart';
 import 'widgets/performance_overlay/performance_overlay.dart';
 import 'mobile_video_controls.dart';
@@ -991,13 +992,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     return PlaybackExtras.withChapterFallback(chapters: chapters, markers: markers);
   }
 
-  Widget _buildTrackChapterControlsWidget({bool hideChaptersAndQueue = false}) {
-    final playbackState = context.watch<PlaybackStateProvider>();
-
-    return TrackChapterControls(
-      player: widget.player,
-      chapters: _chapters,
-      chaptersLoaded: _chaptersLoaded,
+  TrackControlsState _buildTrackControlsState({
+    required PlaybackStateProvider playbackState,
+    required VoidCallback? onToggleAlwaysOnTop,
+  }) {
+    return TrackControlsState(
       availableVersions: widget.availableVersions,
       selectedMediaIndex: widget.selectedMediaIndex,
       boxFitMode: widget.boxFitMode,
@@ -1005,17 +1004,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
+      isAlwaysOnTop: _isAlwaysOnTop,
       onTogglePIPMode: (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS))
           ? widget.onTogglePIPMode
           : null,
       onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
       onToggleRotationLock: _toggleRotationLock,
       onToggleFullscreen: _toggleFullscreen,
+      onToggleAlwaysOnTop: onToggleAlwaysOnTop,
       onSwitchVersion: _switchMediaVersion,
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
-      subtitlesVisible: _subtitlesVisible,
       onLoadSeekTimes: () async {
         if (mounted) {
           await _loadSeekTimes();
@@ -1033,15 +1033,31 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         });
       },
       serverId: widget.metadata.serverId ?? '',
-      canControl: widget.canControl,
-      isLive: widget.isLive,
-      showQueueButton: playbackState.isQueueActive,
-      onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
-      hideChaptersAndQueue: hideChaptersAndQueue,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
       onToggleAmbientLighting: widget.player.playerType != 'exoplayer' ? widget.onToggleAmbientLighting : null,
+      canControl: widget.canControl,
+      isLive: widget.isLive,
+      subtitlesVisible: _subtitlesVisible,
+      showQueueButton: playbackState.isQueueActive,
+      onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
+    );
+  }
+
+  Widget _buildTrackChapterControlsWidget({bool hideChaptersAndQueue = false}) {
+    final playbackState = context.watch<PlaybackStateProvider>();
+    final trackControlsState = _buildTrackControlsState(
+      playbackState: playbackState,
+      onToggleAlwaysOnTop: _toggleAlwaysOnTop,
+    );
+
+    return TrackChapterControls(
+      player: widget.player,
+      chapters: _chapters,
+      chaptersLoaded: _chaptersLoaded,
+      trackControlsState: trackControlsState,
+      hideChaptersAndQueue: hideChaptersAndQueue,
     );
   }
 
@@ -2030,11 +2046,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   Widget _buildDesktopControlsListener() {
-    final pipMode = (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS))
-        ? widget.onTogglePIPMode
-        : null;
-    final boxFitMode = widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null;
     final playbackState = context.watch<PlaybackStateProvider>();
+    final trackControlsState = _buildTrackControlsState(
+      playbackState: playbackState,
+      onToggleAlwaysOnTop: Platform.isMacOS ? null : _toggleAlwaysOnTop,
+    );
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -2058,51 +2074,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         getForwardIcon: getForwardIcon,
         onFocusActivity: _restartHideTimerIfPlaying,
         onHideControls: _hideControlsFromKeyboard,
-        availableVersions: widget.availableVersions,
-        selectedMediaIndex: widget.selectedMediaIndex,
-        boxFitMode: widget.boxFitMode,
-        audioSyncOffset: _audioSyncOffset,
-        subtitleSyncOffset: _subtitleSyncOffset,
-        isFullscreen: _isFullscreen,
-        isAlwaysOnTop: _isAlwaysOnTop,
-        onTogglePIPMode: pipMode,
-        onCycleBoxFitMode: boxFitMode,
-        onToggleFullscreen: _toggleFullscreen,
-        onToggleAlwaysOnTop: Platform.isMacOS ? null : _toggleAlwaysOnTop,
-        onSwitchVersion: _switchMediaVersion,
-        onAudioTrackChanged: widget.onAudioTrackChanged,
-        onSubtitleTrackChanged: _onSubtitleTrackChanged,
-        onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
-        subtitlesVisible: _subtitlesVisible,
-        onLoadSeekTimes: () async {
-          if (mounted) {
-            await _loadSeekTimes();
-          }
-        },
-        onCancelAutoHide: () => _hideTimer?.cancel(),
-        onStartAutoHide: _startHideTimer,
-        onSyncOffsetChanged: (propertyName, offset) {
-          setState(() {
-            if (propertyName == 'sub-delay') {
-              _subtitleSyncOffset = offset;
-            } else {
-              _audioSyncOffset = offset;
-            }
-          });
-        },
-        serverId: widget.metadata.serverId ?? '',
+        trackControlsState: trackControlsState,
         onBack: widget.onBack,
-        canControl: widget.canControl,
         hasFirstFrame: widget.hasFirstFrame,
-        showQueueButton: playbackState.isQueueActive,
-        onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
-        shaderService: widget.shaderService,
-        onShaderChanged: widget.onShaderChanged,
         thumbnailDataBuilder: widget.thumbnailDataBuilder,
-        isLive: widget.isLive,
         liveChannelName: widget.liveChannelName,
-        isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
-        onToggleAmbientLighting: widget.player.playerType != 'exoplayer' ? widget.onToggleAmbientLighting : null,
       ),
     );
   }

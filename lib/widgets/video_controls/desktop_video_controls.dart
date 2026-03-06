@@ -8,14 +8,13 @@ import 'package:flutter/services.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../mpv/mpv.dart';
 import '../../models/plex_media_info.dart';
-import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/formatters.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/focusable_wrapper.dart';
-import '../../services/shader_service.dart';
+import 'models/track_controls_state.dart';
 import 'widgets/first_frame_guard.dart';
 import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/video_controls_header.dart';
@@ -50,61 +49,17 @@ class DesktopVideoControls extends StatefulWidget {
   /// Called when user navigates up from timeline (to hide controls)
   final VoidCallback? onHideControls;
 
-  // Track chapter controls parameters
-  final List<PlexMediaVersion> availableVersions;
-  final int selectedMediaIndex;
-  final int boxFitMode;
-  final int audioSyncOffset;
-  final int subtitleSyncOffset;
-  final bool isFullscreen;
-  final bool isAlwaysOnTop;
-  final VoidCallback? onTogglePIPMode;
-  final VoidCallback? onCycleBoxFitMode;
-  final VoidCallback? onToggleFullscreen;
-  final VoidCallback? onToggleAlwaysOnTop;
-  final Function(int)? onSwitchVersion;
-  final Function(AudioTrack)? onAudioTrackChanged;
-  final Function(SubtitleTrack)? onSubtitleTrackChanged;
-  final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
-  final VoidCallback? onLoadSeekTimes;
-  final VoidCallback? onCancelAutoHide;
-  final VoidCallback? onStartAutoHide;
-  final void Function(String propertyName, int offset)? onSyncOffsetChanged;
-  final String serverId;
+  final TrackControlsState trackControlsState;
   final VoidCallback? onBack;
-
-  /// Whether the user can control playback (false in host-only mode for non-host).
-  final bool canControl;
 
   /// Notifier for whether first video frame has rendered (shows loading state when false).
   final ValueNotifier<bool>? hasFirstFrame;
 
-  final ShaderService? shaderService;
-  final VoidCallback? onShaderChanged;
-
   /// Optional callback that returns thumbnail image bytes for a given timestamp.
   final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
-  /// Whether this is a live TV stream
-  final bool isLive;
-
   /// Channel name for live TV display
   final String? liveChannelName;
-
-  /// Whether ambient lighting is enabled (passed to settings sheet)
-  final bool isAmbientLightingEnabled;
-
-  /// Called to toggle ambient lighting (passed to settings sheet)
-  final VoidCallback? onToggleAmbientLighting;
-
-  /// Whether subtitles are currently visible (false = hidden via sub-visibility toggle)
-  final bool subtitlesVisible;
-
-  /// Whether to show the queue button
-  final bool showQueueButton;
-
-  /// Callback when a queue item is selected
-  final Function(PlexMetadata)? onQueueItemSelected;
 
   const DesktopVideoControls({
     super.key,
@@ -126,39 +81,11 @@ class DesktopVideoControls extends StatefulWidget {
     this.onFocusActivity,
     this.onRequestPlayPauseFocus,
     this.onHideControls,
-    this.availableVersions = const [],
-    this.selectedMediaIndex = 0,
-    this.boxFitMode = 0,
-    this.audioSyncOffset = 0,
-    this.subtitleSyncOffset = 0,
-    this.isFullscreen = false,
-    this.isAlwaysOnTop = false,
-    this.onTogglePIPMode,
-    this.onCycleBoxFitMode,
-    this.onToggleFullscreen,
-    this.onToggleAlwaysOnTop,
-    this.onSwitchVersion,
-    this.onAudioTrackChanged,
-    this.onSubtitleTrackChanged,
-    this.onSecondarySubtitleTrackChanged,
-    this.onLoadSeekTimes,
-    this.onCancelAutoHide,
-    this.onStartAutoHide,
-    this.onSyncOffsetChanged,
-    this.serverId = '',
+    this.trackControlsState = const TrackControlsState(),
     this.onBack,
-    this.canControl = true,
     this.hasFirstFrame,
-    this.shaderService,
-    this.onShaderChanged,
     this.thumbnailDataBuilder,
-    this.isLive = false,
     this.liveChannelName,
-    this.isAmbientLightingEnabled = false,
-    this.onToggleAmbientLighting,
-    this.subtitlesVisible = true,
-    this.showQueueButton = false,
-    this.onQueueItemSelected,
   });
 
   @override
@@ -166,6 +93,10 @@ class DesktopVideoControls extends StatefulWidget {
 }
 
 class DesktopVideoControlsState extends State<DesktopVideoControls> {
+  TrackControlsState get _trackControlsState => widget.trackControlsState;
+  bool get _canControl => _trackControlsState.canControl;
+  bool get _isLive => _trackControlsState.isLive;
+
   // Focus nodes for playback control buttons
   late final FocusNode _prevItemFocusNode;
   late final FocusNode _prevChapterFocusNode;
@@ -370,7 +301,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     // LEFT/RIGHT for smooth scrubbing with progressive acceleration
     if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight) {
       // Ignore seeking if user cannot control
-      if (!widget.canControl) return KeyEventResult.handled;
+      if (!_canControl) return KeyEventResult.handled;
 
       if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
 
@@ -455,7 +386,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               onBack: widget.onBack,
             ),
           ),
-          if (widget.isLive) ...[
+          if (_isLive) ...[
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -474,13 +405,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   }
 
   Widget _buildBottomControlsContent(BuildContext _, {required bool hasFrame}) {
-    final canInteract = widget.canControl && hasFrame;
+    final canInteract = _canControl && hasFrame;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         children: [
           // Row 1: Timeline with time indicators (hidden for live TV)
-          if (!widget.isLive) ...[
+          if (!_isLive) ...[
             VideoTimelineBar(
               player: widget.player,
               chapters: widget.chapters,
@@ -499,16 +430,16 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
           // Row 2: Playback controls and options
           Row(
             children: [
-              if (!widget.isLive) ...[
+              if (!_isLive) ...[
                 // Previous item
                 Opacity(
-                  opacity: widget.canControl ? 1.0 : 0.5,
+                  opacity: _canControl ? 1.0 : 0.5,
                   child: _buildFocusableButton(
                     focusNode: _prevItemFocusNode,
                     index: 0,
                     icon: Symbols.skip_previous_rounded,
-                    color: widget.onPrevious != null && widget.canControl ? Colors.white : Colors.white54,
-                    onPressed: widget.canControl ? widget.onPrevious : null,
+                    color: widget.onPrevious != null && _canControl ? Colors.white : Colors.white54,
+                    onPressed: _canControl ? widget.onPrevious : null,
                     semanticLabel: t.videoControls.previousButton,
                   ),
                 ),
@@ -519,15 +450,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   builder: (context, posSnapshot) {
                     final prevLabel = _getPreviousChapterLabel(posSnapshot.data ?? Duration.zero);
                     return Opacity(
-                      opacity: widget.canControl ? 1.0 : 0.5,
+                      opacity: _canControl ? 1.0 : 0.5,
                       child: _buildFocusableButton(
                         focusNode: _prevChapterFocusNode,
                         index: 1,
                         icon: Symbols.fast_rewind_rounded,
-                        color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
-                        onPressed: widget.canControl && widget.chapters.isNotEmpty
-                            ? widget.onSeekToPreviousChapter
-                            : null,
+                        color: widget.chapters.isNotEmpty && _canControl ? Colors.white : Colors.white54,
+                        onPressed: _canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
                         semanticLabel: t.videoControls.previousChapterButton,
                         tooltip: prevLabel,
                       ),
@@ -536,19 +465,19 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 ),
                 // Skip backward
                 Opacity(
-                  opacity: widget.canControl ? 1.0 : 0.5,
+                  opacity: _canControl ? 1.0 : 0.5,
                   child: _buildFocusableButton(
                     focusNode: _skipBackFocusNode,
                     index: 2,
                     icon: widget.getReplayIcon(widget.seekTimeSmall),
-                    onPressed: widget.canControl ? widget.onSeekBackward : null,
+                    onPressed: _canControl ? widget.onSeekBackward : null,
                     semanticLabel: t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall),
                   ),
                 ),
               ],
               // Play/Pause
               Opacity(
-                opacity: widget.canControl ? 1.0 : 0.5,
+                opacity: _canControl ? 1.0 : 0.5,
                 child: PlayPauseStreamBuilder(
                   player: widget.player,
                   builder: (context, isPlaying) {
@@ -557,7 +486,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       index: 3,
                       icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
                       iconSize: 32,
-                      onPressed: widget.canControl
+                      onPressed: _canControl
                           ? () {
                               if (isPlaying) {
                                 widget.player.pause();
@@ -571,15 +500,15 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   },
                 ),
               ),
-              if (!widget.isLive) ...[
+              if (!_isLive) ...[
                 // Skip forward
                 Opacity(
-                  opacity: widget.canControl ? 1.0 : 0.5,
+                  opacity: _canControl ? 1.0 : 0.5,
                   child: _buildFocusableButton(
                     focusNode: _skipForwardFocusNode,
                     index: 4,
                     icon: widget.getForwardIcon(widget.seekTimeSmall),
-                    onPressed: widget.canControl ? widget.onSeekForward : null,
+                    onPressed: _canControl ? widget.onSeekForward : null,
                     semanticLabel: t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall),
                   ),
                 ),
@@ -590,13 +519,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   builder: (context, posSnapshot) {
                     final nextLabel = _getNextChapterLabel(posSnapshot.data ?? Duration.zero);
                     return Opacity(
-                      opacity: widget.canControl ? 1.0 : 0.5,
+                      opacity: _canControl ? 1.0 : 0.5,
                       child: _buildFocusableButton(
                         focusNode: _nextChapterFocusNode,
                         index: 5,
                         icon: Symbols.fast_forward_rounded,
-                        color: widget.chapters.isNotEmpty && widget.canControl ? Colors.white : Colors.white54,
-                        onPressed: widget.canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
+                        color: widget.chapters.isNotEmpty && _canControl ? Colors.white : Colors.white54,
+                        onPressed: _canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
                         semanticLabel: t.videoControls.nextChapterButton,
                         tooltip: nextLabel,
                       ),
@@ -605,19 +534,19 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 ),
                 // Next item
                 Opacity(
-                  opacity: widget.canControl ? 1.0 : 0.5,
+                  opacity: _canControl ? 1.0 : 0.5,
                   child: _buildFocusableButton(
                     focusNode: _nextItemFocusNode,
                     index: 6,
                     icon: Symbols.skip_next_rounded,
-                    color: widget.onNext != null && widget.canControl ? Colors.white : Colors.white54,
-                    onPressed: widget.canControl ? widget.onNext : null,
+                    color: widget.onNext != null && _canControl ? Colors.white : Colors.white54,
+                    onPressed: _canControl ? widget.onNext : null,
                     semanticLabel: t.videoControls.nextButton,
                   ),
                 ),
               ],
               // Finish time (hidden for live TV and when too narrow to fit)
-              if (widget.isLive)
+              if (_isLive)
                 const Spacer()
               else
                 Expanded(
@@ -684,39 +613,10 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 player: widget.player,
                 chapters: widget.chapters,
                 chaptersLoaded: widget.chaptersLoaded,
-                availableVersions: widget.availableVersions,
-                selectedMediaIndex: widget.selectedMediaIndex,
-                boxFitMode: widget.boxFitMode,
-                audioSyncOffset: widget.audioSyncOffset,
-                subtitleSyncOffset: widget.subtitleSyncOffset,
-                isRotationLocked: false, // Desktop doesn't have rotation lock
-                isFullscreen: widget.isFullscreen,
-                isAlwaysOnTop: widget.isAlwaysOnTop,
-                serverId: widget.serverId,
-                onTogglePIPMode: widget.onTogglePIPMode,
-                onCycleBoxFitMode: widget.onCycleBoxFitMode,
-                onToggleFullscreen: widget.onToggleFullscreen,
-                onToggleAlwaysOnTop: widget.onToggleAlwaysOnTop,
-                onSwitchVersion: widget.onSwitchVersion,
-                onAudioTrackChanged: widget.onAudioTrackChanged,
-                onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
-                onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
-                onLoadSeekTimes: widget.onLoadSeekTimes,
-                onCancelAutoHide: widget.onCancelAutoHide,
-                onStartAutoHide: widget.onStartAutoHide,
-                onSyncOffsetChanged: widget.onSyncOffsetChanged,
+                trackControlsState: _trackControlsState,
                 focusNodes: _trackControlFocusNodes,
                 onFocusChange: _onFocusChange,
                 onNavigateLeft: navigateFromTrackToVolume,
-                canControl: widget.canControl,
-                isLive: widget.isLive,
-                subtitlesVisible: widget.subtitlesVisible,
-                showQueueButton: widget.showQueueButton,
-                onQueueItemSelected: widget.onQueueItemSelected,
-                shaderService: widget.shaderService,
-                onShaderChanged: widget.onShaderChanged,
-                isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
-                onToggleAmbientLighting: widget.onToggleAmbientLighting,
               ),
             ],
           ),

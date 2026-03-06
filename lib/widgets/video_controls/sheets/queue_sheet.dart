@@ -132,11 +132,6 @@ class QueueSheet extends StatelessWidget {
   }
 
   static dynamic _tryGetClient(BuildContext context, PlexMetadata item) {
-    if (item.serverId == null) return null;
-    try {
-      return context.getClientForServer(item.serverId!);
-    } catch (_) {
-      return null;
-    }
+    return context.tryGetClientForServer(item.serverId);
   }
 }

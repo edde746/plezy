@@ -51,6 +51,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool initialized = false;
 
   /// Whether the player has been disposed.
+  @override
   bool get disposed => _disposed;
 
   /// The method channel for platform communication.

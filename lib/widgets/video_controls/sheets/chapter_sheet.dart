@@ -37,12 +37,7 @@ class ChapterSheet extends StatefulWidget {
 class _ChapterSheetState extends State<ChapterSheet> {
   /// Get the PlexClient for chapters, or null if unavailable (offline mode)
   PlexClient? _tryGetClientForChapters(BuildContext context) {
-    if (widget.serverId == null) return null;
-    try {
-      return context.getClientForServer(widget.serverId!);
-    } catch (_) {
-      return null;
-    }
+    return context.tryGetClientForServer(widget.serverId);
   }
 
   @override
@@ -113,7 +108,9 @@ class _ChapterSheetState extends State<ChapterSheet> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius: const BorderRadius.all(Radius.circular(4)),
-                                    border: Border.fromBorderSide(BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)),
+                                    border: Border.fromBorderSide(
+                                      BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -131,7 +128,9 @@ class _ChapterSheetState extends State<ChapterSheet> {
                 subtitle: Text(
                   formatDurationTimestamp(chapter.startTime),
                   style: TextStyle(
-                    color: isCurrentChapter ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7) : tokens(context).textMuted,
+                    color: isCurrentChapter
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
+                        : tokens(context).textMuted,
                     fontSize: 12,
                   ),
                 ),

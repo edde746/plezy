@@ -37,6 +37,13 @@ extension ProviderExtensions on BuildContext {
     return serverClient;
   }
 
+  /// Get PlexClient for a specific server ID, or null if unavailable.
+  PlexClient? tryGetClientForServer(String? serverId) {
+    if (serverId == null) return null;
+    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
+    return multiServerProvider.getClientForServer(serverId);
+  }
+
   /// Get PlexClient for a library
   /// Throws an exception if no client is available
   PlexClient getClientForLibrary(PlexLibrary library) {
@@ -66,7 +73,7 @@ extension ProviderExtensions on BuildContext {
     if (isOffline || metadata.serverId == null) {
       return null;
     }
-    return getClientForServer(metadata.serverId!);
+    return tryGetClientForServer(metadata.serverId);
   }
 
   /// Get the first available client from connected servers

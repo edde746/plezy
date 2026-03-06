@@ -86,8 +86,11 @@ List<PlexMetadata> _processOnDeckResponse(Map<String, dynamic> decoded, String s
   if (container == null || container['Metadata'] == null) return [];
 
   final allItems = (container['Metadata'] as List)
-      .map((json) => PlexMetadata.fromJsonWithImages(json as Map<String, dynamic>)
-          .copyWith(serverId: serverId, serverName: serverName))
+      .map(
+        (json) => PlexMetadata.fromJsonWithImages(
+          json as Map<String, dynamic>,
+        ).copyWith(serverId: serverId, serverName: serverName),
+      )
       .toList();
 
   return allItems.where((item) => !item.isMusicContent).toList();
@@ -143,7 +146,11 @@ class PlexClient {
 
   /// Custom response decoder that handles malformed UTF-8 gracefully.
   /// Large responses are decoded in a background isolate to avoid ANR.
-  static FutureOr<String> _lenientUtf8Decoder(List<int> responseBytes, RequestOptions _, ResponseBody _a) {
+  static FutureOr<String> _lenientUtf8Decoder(
+    List<int> responseBytes,
+    RequestOptions requestOptions,
+    ResponseBody responseBody,
+  ) {
     if (responseBytes.length > 50 * 1024) {
       return compute(_decodeUtf8, responseBytes);
     }
@@ -1196,11 +1203,10 @@ class PlexClient {
   /// Pass -1 to clear an existing rating
   Future<bool> rateItem(String ratingKey, double rating) {
     return _wrapBoolApiCall(
-      () => _dio.put('/:/rate', queryParameters: {
-        'key': ratingKey,
-        'identifier': 'com.plexapp.plugins.library',
-        'rating': rating,
-      }),
+      () => _dio.put(
+        '/:/rate',
+        queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library', 'rating': rating},
+      ),
       'Failed to rate item',
     );
   }
@@ -1335,10 +1341,7 @@ class PlexClient {
   /// This matches the official Plex client's home page layout.
   Future<List<PlexHub>> getGlobalHubs({int limit = 10}) async {
     try {
-      final response = await _dio.get(
-        '/hubs',
-        queryParameters: {'count': limit, 'includeGuids': 1},
-      );
+      final response = await _dio.get('/hubs', queryParameters: {'count': limit, 'includeGuids': 1});
       final sid = serverId;
       final sname = serverName;
       return Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
@@ -1544,10 +1547,7 @@ class PlexClient {
     String? tagline,
     String? summary,
   }) {
-    final queryParams = <String, dynamic>{
-      'type': typeNumber,
-      'id': ratingKey,
-    };
+    final queryParams = <String, dynamic>{'type': typeNumber, 'id': ratingKey};
 
     void addField(String name, String? value) {
       if (value != null) {
@@ -1602,10 +1602,7 @@ class PlexClient {
       () => _dio.put(
         '/library/metadata/$ratingKey/$setElement',
         data: bytes,
-        options: Options(
-          headers: {'Content-Length': bytes.length},
-          contentType: 'application/octet-stream',
-        ),
+        options: Options(headers: {'Content-Length': bytes.length}, contentType: 'application/octet-stream'),
       ),
       'Failed to upload artwork',
     );
