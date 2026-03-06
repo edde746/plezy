@@ -240,7 +240,13 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       final client = _getClientForHub();
 
       // Fetch items from the hub, tagged with server info at the source
-      final items = await client.getHubContent(widget.hub.hubKey);
+      var items = await client.getHubContent(widget.hub.hubKey);
+
+      // Filter to specific library if this hub was split from a multi-library hub
+      final sectionFilter = widget.hub.librarySectionID;
+      if (sectionFilter != null) {
+        items = items.where((item) => item.librarySectionID == sectionFilter).toList();
+      }
 
       if (!mounted) return;
       setState(() {

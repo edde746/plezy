@@ -350,6 +350,7 @@ class DataAggregationService {
           items: items,
           serverId: hub.serverId,
           serverName: hub.serverName,
+          librarySectionID: entry.key,
         ));
       }
 
