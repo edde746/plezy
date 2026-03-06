@@ -51,7 +51,13 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   PlexClient? _client;
 
   @override
-  PlexClient get client => _client!;
+  PlexClient get client {
+    final client = _client;
+    if (client == null) {
+      throw StateError('PlexClient unavailable for season ${widget.season.ratingKey}');
+    }
+    return client;
+  }
 
   List<PlexMetadata> _episodes = [];
   bool _isLoadingEpisodes = false;
@@ -152,8 +158,16 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     }
 
     try {
+      final client = _client;
+      if (client == null) {
+        setStateIfMounted(() {
+          _isLoadingEpisodes = false;
+        });
+        return;
+      }
+
       // Episodes are automatically tagged with server info by PlexClient
-      final episodes = await _client!.getChildren(widget.season.ratingKey);
+      final episodes = await client.getChildren(widget.season.ratingKey);
 
       setStateIfMounted(() {
         _episodes = episodes;
@@ -185,6 +199,9 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
 
   @override
   Future<void> updateItem(String ratingKey) async {
+    if (_client == null) {
+      return;
+    }
     _watchStateChanged = true;
     await super.updateItem(ratingKey);
   }
