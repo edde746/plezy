@@ -49,12 +49,16 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
   }
 
   Future<void> _selectArtwork(Map<String, dynamic> artwork) async {
-    final key = artwork['key'] as String?;
-    if (key == null || _isApplying) return;
+    // Use ratingKey (the artwork provider identifier) rather than key (a
+    // file-serving path that is already percent-encoded).  Passing key through
+    // Dio's query-parameter encoding double-encodes it, causing Plex to
+    // silently ignore the selection despite returning 200.
+    final url = artwork['ratingKey'] as String? ?? artwork['key'] as String?;
+    if (url == null || _isApplying) return;
 
     setState(() => _isApplying = true);
 
-    final success = await widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, key);
+    final success = await widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, url);
 
     if (!mounted) return;
     setState(() => _isApplying = false);
