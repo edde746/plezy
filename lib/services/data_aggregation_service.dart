@@ -15,10 +15,6 @@ class DataAggregationService {
 
   DataAggregationService(this._serverManager);
 
-  /// Clear any cached data (for compatibility with existing callers)
-  // ignore: no-empty-block - stub, no cache to clear in current implementation
-  void clearCache() {}
-
   /// Fetch libraries from all online servers
   /// Libraries are automatically tagged with server info by PlexClient
   Future<List<PlexLibrary>> getLibrariesFromAllServers() async {

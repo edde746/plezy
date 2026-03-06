@@ -19,7 +19,6 @@ import 'services/discord_rpc_service.dart';
 import 'services/gamepad_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
-import 'providers/server_state_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/hidden_libraries_provider.dart';
@@ -326,7 +325,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => MultiServerProvider(_serverManager, _aggregationService)),
-        ChangeNotifierProvider(create: (context) => ServerStateProvider()),
         // Offline mode provider - depends on MultiServerProvider
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
           create: (_) {

@@ -80,17 +80,12 @@ class LibrariesProvider extends ChangeNotifier {
     }
   }
 
-  /// Refresh libraries by clearing cache and reloading.
+  /// Refresh libraries by reloading from the connected servers.
   Future<void> refresh() async {
     if (_aggregationService == null) {
       appLogger.w('LibrariesProvider: Cannot refresh - not initialized');
       return;
     }
-
-    // Clear aggregation service cache
-    _aggregationService!.clearCache();
-
-    // Reload libraries
     await loadLibraries();
   }
 

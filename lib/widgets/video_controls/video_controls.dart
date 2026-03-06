@@ -69,6 +69,8 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onTogglePIPMode,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
+  VoidCallback? onCycleAudioTrack,
+  VoidCallback? onCycleSubtitleTrack,
   Function(AudioTrack)? onAudioTrackChanged,
   Function(SubtitleTrack)? onSubtitleTrackChanged,
   Function(SubtitleTrack)? onSecondarySubtitleTrackChanged,
@@ -96,6 +98,8 @@ Widget plexVideoControlsBuilder(
     boxFitMode: boxFitMode,
     onTogglePIPMode: onTogglePIPMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
+    onCycleAudioTrack: onCycleAudioTrack,
+    onCycleSubtitleTrack: onCycleSubtitleTrack,
     onAudioTrackChanged: onAudioTrackChanged,
     onSubtitleTrackChanged: onSubtitleTrackChanged,
     onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
@@ -125,6 +129,8 @@ class PlexVideoControls extends StatefulWidget {
   final int boxFitMode;
   final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
+  final VoidCallback? onCycleAudioTrack;
+  final VoidCallback? onCycleSubtitleTrack;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
@@ -179,6 +185,8 @@ class PlexVideoControls extends StatefulWidget {
     this.boxFitMode = 0,
     this.onTogglePIPMode,
     this.onCycleBoxFitMode,
+    this.onCycleAudioTrack,
+    this.onCycleSubtitleTrack,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
@@ -610,11 +618,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
-  // ignore: no-empty-block - stub for future track cycling implementation
-  void _nextAudioTrack() {}
+  void _nextAudioTrack() {
+    if (!widget.canControl) return;
+    widget.onCycleAudioTrack?.call();
+  }
 
-  // ignore: no-empty-block - stub for future track cycling implementation
-  void _nextSubtitleTrack() {}
+  void _nextSubtitleTrack() {
+    if (!widget.canControl) return;
+    widget.onCycleSubtitleTrack?.call();
+  }
 
   void _nextChapter() {
     // Go to next chapter - this would use your existing chapter navigation

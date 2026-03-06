@@ -21,7 +21,6 @@ import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/server_state_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
@@ -826,7 +825,6 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     // Get all providers
     final multiServerProvider = context.read<MultiServerProvider>();
-    final serverStateProvider = context.read<ServerStateProvider>();
     final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
     final librariesProvider = context.read<LibrariesProvider>();
     final playbackStateProvider = context.read<PlaybackStateProvider>();
@@ -854,7 +852,6 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
 
     // Reset other provider states
-    serverStateProvider.reset();
     hiddenLibrariesProvider.refresh();
     playbackStateProvider.clearShuffle();
 
