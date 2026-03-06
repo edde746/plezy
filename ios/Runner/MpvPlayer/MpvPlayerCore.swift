@@ -118,6 +118,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         )
     }
 
+    /// Nudge mpv to present the current paused frame after switching back from PiP.
+    func forceDraw() {
+        command(["seek", "0", "relative+exact"])
+    }
+
     override func updateEDRMode(sigPeak: Double) {
         guard let metalLayer else { return }
 
