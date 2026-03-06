@@ -173,8 +173,20 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   final instance = SettingsService.instanceOrNull;
   if (instance != null && !instance.getCrashReporting()) return null;
 
-  // Scrub Plex tokens and server URLs from exception messages
+  // Drop harmless Windows file-lock errors from cache manager cleanup
   var exceptions = event.exceptions;
+  if (exceptions != null &&
+      exceptions.any(
+        (e) =>
+            e.type == 'FileSystemException' &&
+            e.value != null &&
+            e.value!.contains('plexImageCache') &&
+            e.value!.contains('errno = 32'),
+      )) {
+    return null;
+  }
+
+  // Scrub Plex tokens and server URLs from exception messages
   if (exceptions != null) {
     exceptions = exceptions.map((e) {
       final value = e.value;
@@ -362,11 +374,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             downloadProvider: context.read<DownloadProvider>(),
           ),
           update: (_, syncService, downloadProvider, previous) {
-            return previous ??
-                OfflineWatchProvider(
-                  syncService: syncService,
-                  downloadProvider: downloadProvider,
-                );
+            return previous ?? OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
           },
         ),
         // Existing providers
