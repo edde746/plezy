@@ -704,6 +704,10 @@
     "sessionCodeCopied": "会话代码已复制到剪贴板",
     "relayUnreachable": "无法连接到中继服务器。这可能是由于您的网络运营商屏蔽了连接。您仍然可以尝试，但一起观看功能可能无法正常使用。",
     "reconnectingToHost": "正在重新连接到主持人...",
+    "currentPlayback": "当前播放",
+    "joinCurrentPlayback": "加入当前播放",
+    "joinCurrentPlaybackDescription": "回到房主当前正在观看的内容",
+    "failedToOpenCurrentPlayback": "无法打开当前播放",
     "participantJoined": "${name} 加入了",
     "participantLeft": "${name} 离开了"
   },

@@ -972,6 +972,10 @@ class _TranslationsWatchTogetherNl implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Sessiecode gekopieerd naar klembord';
 	@override String get relayUnreachable => 'De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet.';
 	@override String get reconnectingToHost => 'Opnieuw verbinden met host...';
+	@override String get currentPlayback => 'Huidige weergave';
+	@override String get joinCurrentPlayback => 'Deelnemen aan huidige weergave';
+	@override String get joinCurrentPlaybackDescription => 'Ga terug naar wat de host nu kijkt';
+	@override String get failedToOpenCurrentPlayback => 'Huidige weergave kon niet worden geopend';
 	@override String participantJoined({required Object name}) => '${name} is toegetreden';
 	@override String participantLeft({required Object name}) => '${name} heeft de sessie verlaten';
 }
@@ -1937,6 +1941,10 @@ extension on TranslationsNl {
 			'watchTogether.sessionCodeCopied' => 'Sessiecode gekopieerd naar klembord',
 			'watchTogether.relayUnreachable' => 'De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet.',
 			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
+			'watchTogether.currentPlayback' => 'Huidige weergave',
+			'watchTogether.joinCurrentPlayback' => 'Deelnemen aan huidige weergave',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Ga terug naar wat de host nu kijkt',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Huidige weergave kon niet worden geopend',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} is toegetreden',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} heeft de sessie verlaten',
 			'shaders.title' => 'Shaders',

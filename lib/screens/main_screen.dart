@@ -43,7 +43,6 @@ import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
-import 'video_player_screen.dart';
 import 'profile/profile_switch_screen.dart';
 import '../services/watch_next_service.dart';
 import '../watch_together/watch_together.dart';
@@ -374,27 +373,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     if (!mounted) return; // Check before any context usage
 
     try {
-      final multiServer = context.read<MultiServerProvider>();
-      final client = multiServer.getClientForServer(serverId);
-
-      if (client == null) {
-        appLogger.w('WatchTogether: Server $serverId not available');
-        return;
-      }
-
-      // Fetch the metadata for the new media
-      final metadata = await client.getMetadataWithImages(ratingKey);
-
-      if (metadata == null || !mounted) return;
-
-      // Use push to preserve WatchTogetherScreen in navigation stack
-      // VideoPlayerScreen handles its own replacement via onPlayerMediaSwitched
-      Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: kVideoPlayerRouteName),
-          builder: (_) => VideoPlayerScreen(metadata: metadata),
-        ),
-      );
+      await navigateToWatchTogetherPlayback(context, ratingKey: ratingKey, serverId: serverId);
     } catch (e) {
       appLogger.e('WatchTogether: Failed to navigate to media', error: e);
     }
@@ -1114,9 +1093,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
               builder: (context, settingsProvider, child) {
                 final hideLabels = !settingsProvider.showNavBarLabels;
                 return NavigationBarTheme(
-                  data: NavigationBarTheme.of(context).copyWith(
-                    height: hideLabels ? 56 : null,
-                  ),
+                  data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
                   child: NavigationBar(
                     selectedIndex: _currentIndex,
                     onDestinationSelected: _selectTab,

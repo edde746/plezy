@@ -10,6 +10,8 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/snackbar_helper.dart';
+import '../../utils/video_player_navigation.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
@@ -391,11 +393,16 @@ class _ActiveSessionContent extends StatelessWidget {
 
         const SizedBox(height: 24),
 
+        if (!watchTogether.isHost && watchTogether.hasCurrentPlayback) ...[
+          _JoinCurrentPlaybackCard(watchTogether: watchTogether),
+          const SizedBox(height: 16),
+        ],
+
         // Leave/End Session Button
         SizedBox(
           width: double.infinity,
           child: FocusableButton(
-            autofocus: true,
+            autofocus: watchTogether.isHost || !watchTogether.hasCurrentPlayback,
             onPressed: () => _leaveSession(context),
             child: OutlinedButton.icon(
               onPressed: () => _leaveSession(context),
@@ -424,6 +431,103 @@ class _ActiveSessionContent extends StatelessWidget {
     if (confirmed) {
       await watchTogether.leaveSession();
     }
+  }
+}
+
+class _JoinCurrentPlaybackCard extends StatefulWidget {
+  final WatchTogetherProvider watchTogether;
+
+  const _JoinCurrentPlaybackCard({required this.watchTogether});
+
+  @override
+  State<_JoinCurrentPlaybackCard> createState() => _JoinCurrentPlaybackCardState();
+}
+
+class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
+  bool _isJoining = false;
+
+  Future<void> _joinCurrentPlayback() async {
+    final ratingKey = widget.watchTogether.currentMediaRatingKey;
+    final serverId = widget.watchTogether.currentMediaServerId;
+    if (ratingKey == null || serverId == null) return;
+
+    setState(() => _isJoining = true);
+
+    try {
+      await navigateToWatchTogetherPlayback(
+        context,
+        ratingKey: ratingKey,
+        serverId: serverId,
+        onBeforeNavigate: () {
+          widget.watchTogether.markCurrentPlaybackHandled(ratingKey: ratingKey, serverId: serverId);
+        },
+      );
+    } catch (e, stackTrace) {
+      appLogger.e('WatchTogether: Failed to open current playback', error: e, stackTrace: stackTrace);
+      if (mounted) {
+        showErrorSnackBar(context, t.watchTogether.failedToOpenCurrentPlayback);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isJoining = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final mediaTitle = widget.watchTogether.currentMediaTitle;
+    if (widget.watchTogether.isHost || mediaTitle == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Symbols.play_circle_rounded, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(t.watchTogether.currentPlayback, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text(
+                        t.watchTogether.joinCurrentPlaybackDescription,
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(mediaTitle, style: theme.textTheme.bodyLarge),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FocusableButton(
+                autofocus: true,
+                onPressed: _isJoining ? null : _joinCurrentPlayback,
+                child: FilledButton.icon(
+                  onPressed: _isJoining ? null : _joinCurrentPlayback,
+                  icon: _isJoining
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Symbols.play_arrow_rounded),
+                  label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinCurrentPlayback),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

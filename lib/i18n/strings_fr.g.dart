@@ -945,6 +945,10 @@ class _TranslationsWatchTogetherFr implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Code de session copié dans le presse-papiers';
 	@override String get relayUnreachable => 'Le serveur relais est inaccessible. Cela peut être dû au blocage de la connexion par votre fournisseur d\'accès. Vous pouvez quand même essayer, mais Watch Together pourrait ne pas fonctionner.';
 	@override String get reconnectingToHost => 'Reconnexion à l\'hôte...';
+	@override String get currentPlayback => 'Lecture en cours';
+	@override String get joinCurrentPlayback => 'Rejoindre la lecture en cours';
+	@override String get joinCurrentPlaybackDescription => 'Revenez à ce que l\'hôte regarde actuellement';
+	@override String get failedToOpenCurrentPlayback => 'Impossible d\'ouvrir la lecture en cours';
 	@override String participantJoined({required Object name}) => '${name} a rejoint';
 	@override String participantLeft({required Object name}) => '${name} est parti';
 }
@@ -1919,6 +1923,10 @@ extension on TranslationsFr {
 			'watchTogether.sessionCodeCopied' => 'Code de session copié dans le presse-papiers',
 			'watchTogether.relayUnreachable' => 'Le serveur relais est inaccessible. Cela peut être dû au blocage de la connexion par votre fournisseur d\'accès. Vous pouvez quand même essayer, mais Watch Together pourrait ne pas fonctionner.',
 			'watchTogether.reconnectingToHost' => 'Reconnexion à l\'hôte...',
+			'watchTogether.currentPlayback' => 'Lecture en cours',
+			'watchTogether.joinCurrentPlayback' => 'Rejoindre la lecture en cours',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Revenez à ce que l\'hôte regarde actuellement',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Impossible d\'ouvrir la lecture en cours',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} a rejoint',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} est parti',
 			'downloads.title' => 'Téléchargements',

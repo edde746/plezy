@@ -945,6 +945,10 @@ class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => '세션 코드가 클립보드에 복사되었습니다';
 	@override String get relayUnreachable => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.';
 	@override String get reconnectingToHost => '호스트에 재연결 중...';
+	@override String get currentPlayback => '현재 재생';
+	@override String get joinCurrentPlayback => '현재 재생 참여';
+	@override String get joinCurrentPlaybackDescription => '호스트가 현재 보고 있는 항목으로 돌아갑니다';
+	@override String get failedToOpenCurrentPlayback => '현재 재생을 열 수 없습니다';
 	@override String participantJoined({required Object name}) => '${name}님이 참여했습니다';
 	@override String participantLeft({required Object name}) => '${name}님이 나갔습니다';
 }
@@ -1919,6 +1923,10 @@ extension on TranslationsKo {
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
 			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.',
 			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
+			'watchTogether.currentPlayback' => '현재 재생',
+			'watchTogether.joinCurrentPlayback' => '현재 재생 참여',
+			'watchTogether.joinCurrentPlaybackDescription' => '호스트가 현재 보고 있는 항목으로 돌아갑니다',
+			'watchTogether.failedToOpenCurrentPlayback' => '현재 재생을 열 수 없습니다',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}님이 참여했습니다',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}님이 나갔습니다',
 			'downloads.title' => '다운로드',

@@ -704,6 +704,10 @@
     "sessionCodeCopied": "Sessionskod kopierad till urklipp",
     "relayUnreachable": "Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.",
     "reconnectingToHost": "Återansluter till värd...",
+    "currentPlayback": "Aktuell uppspelning",
+    "joinCurrentPlayback": "Gå med i aktuell uppspelning",
+    "joinCurrentPlaybackDescription": "Hoppa tillbaka till det värden tittar på just nu",
+    "failedToOpenCurrentPlayback": "Kunde inte öppna aktuell uppspelning",
     "participantJoined": "${name} gick med",
     "participantLeft": "${name} lämnade"
   },

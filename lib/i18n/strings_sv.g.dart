@@ -972,6 +972,10 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Sessionskod kopierad till urklipp';
 	@override String get relayUnreachable => 'Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.';
 	@override String get reconnectingToHost => 'Återansluter till värd...';
+	@override String get currentPlayback => 'Aktuell uppspelning';
+	@override String get joinCurrentPlayback => 'Gå med i aktuell uppspelning';
+	@override String get joinCurrentPlaybackDescription => 'Hoppa tillbaka till det värden tittar på just nu';
+	@override String get failedToOpenCurrentPlayback => 'Kunde inte öppna aktuell uppspelning';
 	@override String participantJoined({required Object name}) => '${name} gick med';
 	@override String participantLeft({required Object name}) => '${name} lämnade';
 }
@@ -1937,6 +1941,10 @@ extension on TranslationsSv {
 			'watchTogether.sessionCodeCopied' => 'Sessionskod kopierad till urklipp',
 			'watchTogether.relayUnreachable' => 'Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.',
 			'watchTogether.reconnectingToHost' => 'Återansluter till värd...',
+			'watchTogether.currentPlayback' => 'Aktuell uppspelning',
+			'watchTogether.joinCurrentPlayback' => 'Gå med i aktuell uppspelning',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Hoppa tillbaka till det värden tittar på just nu',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Kunde inte öppna aktuell uppspelning',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} gick med',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} lämnade',
 			'shaders.title' => 'Shaders',

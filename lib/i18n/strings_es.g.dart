@@ -945,6 +945,10 @@ class _TranslationsWatchTogetherEs implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Código de sesión copiado al portapapeles';
 	@override String get relayUnreachable => 'El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.';
 	@override String get reconnectingToHost => 'Reconectando con el anfitrión...';
+	@override String get currentPlayback => 'Reproducción actual';
+	@override String get joinCurrentPlayback => 'Unirse a la reproducción actual';
+	@override String get joinCurrentPlaybackDescription => 'Vuelve a lo que el anfitrión está viendo ahora mismo';
+	@override String get failedToOpenCurrentPlayback => 'No se pudo abrir la reproducción actual';
 	@override String participantJoined({required Object name}) => '${name} se unió';
 	@override String participantLeft({required Object name}) => '${name} se fue';
 }
@@ -1919,6 +1923,10 @@ extension on TranslationsEs {
 			'watchTogether.sessionCodeCopied' => 'Código de sesión copiado al portapapeles',
 			'watchTogether.relayUnreachable' => 'El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.',
 			'watchTogether.reconnectingToHost' => 'Reconectando con el anfitrión...',
+			'watchTogether.currentPlayback' => 'Reproducción actual',
+			'watchTogether.joinCurrentPlayback' => 'Unirse a la reproducción actual',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Vuelve a lo que el anfitrión está viendo ahora mismo',
+			'watchTogether.failedToOpenCurrentPlayback' => 'No se pudo abrir la reproducción actual',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} se unió',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} se fue',
 			'downloads.title' => 'Descargas',

@@ -684,6 +684,10 @@
     "sessionCodeCopied": "Code de session copié dans le presse-papiers",
     "relayUnreachable": "Le serveur relais est inaccessible. Cela peut être dû au blocage de la connexion par votre fournisseur d'accès. Vous pouvez quand même essayer, mais Watch Together pourrait ne pas fonctionner.",
     "reconnectingToHost": "Reconnexion à l'hôte...",
+    "currentPlayback": "Lecture en cours",
+    "joinCurrentPlayback": "Rejoindre la lecture en cours",
+    "joinCurrentPlaybackDescription": "Revenez à ce que l'hôte regarde actuellement",
+    "failedToOpenCurrentPlayback": "Impossible d'ouvrir la lecture en cours",
     "participantJoined": "${name} a rejoint",
     "participantLeft": "${name} est parti"
   },

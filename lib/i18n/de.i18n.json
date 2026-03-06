@@ -704,6 +704,10 @@
     "sessionCodeCopied": "Sitzungscode in Zwischenablage kopiert",
     "relayUnreachable": "Der Relay-Server ist nicht erreichbar. Möglicherweise blockiert dein Internetanbieter die Verbindung. Du kannst es trotzdem versuchen, aber Watch Together funktioniert eventuell nicht.",
     "reconnectingToHost": "Verbindung zum Host wird wiederhergestellt...",
+    "currentPlayback": "Aktuelle Wiedergabe",
+    "joinCurrentPlayback": "Aktuelle Wiedergabe beitreten",
+    "joinCurrentPlaybackDescription": "Springe zurück zu dem, was der Host gerade ansieht",
+    "failedToOpenCurrentPlayback": "Aktuelle Wiedergabe konnte nicht geöffnet werden",
     "participantJoined": "${name} ist beigetreten",
     "participantLeft": "${name} hat die Sitzung verlassen"
   },

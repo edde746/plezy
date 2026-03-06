@@ -972,6 +972,10 @@ class _TranslationsWatchTogetherZh implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => '会话代码已复制到剪贴板';
 	@override String get relayUnreachable => '无法连接到中继服务器。这可能是由于您的网络运营商屏蔽了连接。您仍然可以尝试，但一起观看功能可能无法正常使用。';
 	@override String get reconnectingToHost => '正在重新连接到主持人...';
+	@override String get currentPlayback => '当前播放';
+	@override String get joinCurrentPlayback => '加入当前播放';
+	@override String get joinCurrentPlaybackDescription => '回到房主当前正在观看的内容';
+	@override String get failedToOpenCurrentPlayback => '无法打开当前播放';
 	@override String participantJoined({required Object name}) => '${name} 加入了';
 	@override String participantLeft({required Object name}) => '${name} 离开了';
 }
@@ -1937,6 +1941,10 @@ extension on TranslationsZh {
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
 			'watchTogether.relayUnreachable' => '无法连接到中继服务器。这可能是由于您的网络运营商屏蔽了连接。您仍然可以尝试，但一起观看功能可能无法正常使用。',
 			'watchTogether.reconnectingToHost' => '正在重新连接到主持人...',
+			'watchTogether.currentPlayback' => '当前播放',
+			'watchTogether.joinCurrentPlayback' => '加入当前播放',
+			'watchTogether.joinCurrentPlaybackDescription' => '回到房主当前正在观看的内容',
+			'watchTogether.failedToOpenCurrentPlayback' => '无法打开当前播放',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} 加入了',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} 离开了',
 			'shaders.title' => '着色器',

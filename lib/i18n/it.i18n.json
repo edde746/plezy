@@ -704,6 +704,10 @@
     "sessionCodeCopied": "Codice sessione copiato negli appunti",
     "relayUnreachable": "Il server di inoltro non è raggiungibile. Questo potrebbe essere causato dal blocco della connessione da parte del tuo provider. Puoi comunque provare, ma Watch Together potrebbe non funzionare.",
     "reconnectingToHost": "Riconnessione all'host...",
+    "currentPlayback": "Riproduzione corrente",
+    "joinCurrentPlayback": "Unisciti alla riproduzione corrente",
+    "joinCurrentPlaybackDescription": "Torna a ciò che l'host sta guardando in questo momento",
+    "failedToOpenCurrentPlayback": "Impossibile aprire la riproduzione corrente",
     "participantJoined": "${name} si è unito",
     "participantLeft": "${name} se ne è andato"
   },

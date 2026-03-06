@@ -972,6 +972,10 @@ class _TranslationsWatchTogetherIt implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Codice sessione copiato negli appunti';
 	@override String get relayUnreachable => 'Il server di inoltro non è raggiungibile. Questo potrebbe essere causato dal blocco della connessione da parte del tuo provider. Puoi comunque provare, ma Watch Together potrebbe non funzionare.';
 	@override String get reconnectingToHost => 'Riconnessione all\'host...';
+	@override String get currentPlayback => 'Riproduzione corrente';
+	@override String get joinCurrentPlayback => 'Unisciti alla riproduzione corrente';
+	@override String get joinCurrentPlaybackDescription => 'Torna a ciò che l\'host sta guardando in questo momento';
+	@override String get failedToOpenCurrentPlayback => 'Impossibile aprire la riproduzione corrente';
 	@override String participantJoined({required Object name}) => '${name} si è unito';
 	@override String participantLeft({required Object name}) => '${name} se ne è andato';
 }
@@ -1937,6 +1941,10 @@ extension on TranslationsIt {
 			'watchTogether.sessionCodeCopied' => 'Codice sessione copiato negli appunti',
 			'watchTogether.relayUnreachable' => 'Il server di inoltro non è raggiungibile. Questo potrebbe essere causato dal blocco della connessione da parte del tuo provider. Puoi comunque provare, ma Watch Together potrebbe non funzionare.',
 			'watchTogether.reconnectingToHost' => 'Riconnessione all\'host...',
+			'watchTogether.currentPlayback' => 'Riproduzione corrente',
+			'watchTogether.joinCurrentPlayback' => 'Unisciti alla riproduzione corrente',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Torna a ciò che l\'host sta guardando in questo momento',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Impossibile aprire la riproduzione corrente',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} si è unito',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} se ne è andato',
 			'shaders.title' => 'Shader',

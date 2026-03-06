@@ -684,6 +684,10 @@
     "sessionCodeCopied": "Código de sesión copiado al portapapeles",
     "relayUnreachable": "El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.",
     "reconnectingToHost": "Reconectando con el anfitrión...",
+    "currentPlayback": "Reproducción actual",
+    "joinCurrentPlayback": "Unirse a la reproducción actual",
+    "joinCurrentPlaybackDescription": "Vuelve a lo que el anfitrión está viendo ahora mismo",
+    "failedToOpenCurrentPlayback": "No se pudo abrir la reproducción actual",
     "participantJoined": "${name} se unió",
     "participantLeft": "${name} se fue"
   },

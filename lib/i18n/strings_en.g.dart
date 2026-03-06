@@ -2108,6 +2108,18 @@ class TranslationsWatchTogetherEn {
 	/// en: 'Reconnecting to host...'
 	String get reconnectingToHost => 'Reconnecting to host...';
 
+	/// en: 'Current Playback'
+	String get currentPlayback => 'Current Playback';
+
+	/// en: 'Join Current Playback'
+	String get joinCurrentPlayback => 'Join Current Playback';
+
+	/// en: 'Jump back into what the host is currently watching'
+	String get joinCurrentPlaybackDescription => 'Jump back into what the host is currently watching';
+
+	/// en: 'Failed to open current playback'
+	String get failedToOpenCurrentPlayback => 'Failed to open current playback';
+
 	/// en: '${name} joined'
 	String participantJoined({required Object name}) => '${name} joined';
 
@@ -3538,6 +3550,10 @@ extension on Translations {
 			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
 			'watchTogether.relayUnreachable' => 'The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.',
 			'watchTogether.reconnectingToHost' => 'Reconnecting to host...',
+			'watchTogether.currentPlayback' => 'Current Playback',
+			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'downloads.title' => 'Downloads',

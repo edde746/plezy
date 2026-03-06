@@ -684,6 +684,10 @@
     "sessionCodeCopied": "Session code copied to clipboard",
     "relayUnreachable": "The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.",
     "reconnectingToHost": "Reconnecting to host...",
+    "currentPlayback": "Current Playback",
+    "joinCurrentPlayback": "Join Current Playback",
+    "joinCurrentPlaybackDescription": "Jump back into what the host is currently watching",
+    "failedToOpenCurrentPlayback": "Failed to open current playback",
     "participantJoined": "${name} joined",
     "participantLeft": "${name} left"
   },
