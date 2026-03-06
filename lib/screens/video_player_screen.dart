@@ -2229,43 +2229,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final settingsService = await SettingsService.getInstance();
       if (!mounted || player == null) return;
 
-      // For episodes without per-media prefs, fetch show/season metadata
-      // to get series-level language/subtitle mode preferences
-      PlexMetadata effectiveMetadata = widget.metadata;
-      if (!widget.isOffline &&
-          widget.metadata.isEpisode &&
-          widget.metadata.subtitleMode == null &&
-          widget.metadata.audioLanguage == null) {
-        try {
-          final client = _getClientForMetadata(context);
-          final showFuture = widget.metadata.grandparentRatingKey != null
-              ? client.getMetadataWithImages(widget.metadata.grandparentRatingKey!)
-              : Future<PlexMetadata?>.value(null);
-          final seasonFuture = widget.metadata.parentRatingKey != null
-              ? client.getMetadataWithImages(widget.metadata.parentRatingKey!)
-              : Future<PlexMetadata?>.value(null);
-          final (showMeta, seasonMeta) = await (showFuture, seasonFuture).wait;
-          // Season overrides show (Plex preference hierarchy)
-          final inheritedAudio = seasonMeta?.audioLanguage ?? showMeta?.audioLanguage;
-          final inheritedSubLang = seasonMeta?.subtitleLanguage ?? showMeta?.subtitleLanguage;
-          final inheritedSubMode = seasonMeta?.subtitleMode ?? showMeta?.subtitleMode;
-          if (inheritedAudio != null || inheritedSubLang != null || inheritedSubMode != null) {
-            effectiveMetadata = widget.metadata.copyWith(
-              audioLanguage: inheritedAudio,
-              subtitleLanguage: inheritedSubLang,
-              subtitleMode: inheritedSubMode,
-            );
-          }
-        } catch (e) {
-          appLogger.w('Failed to fetch show/season prefs for track selection', error: e);
-        }
-        if (!mounted || player == null) return;
-      }
-
       final trackService = TrackSelectionService(
         player: player!,
         profileSettings: profileSettings,
-        metadata: effectiveMetadata,
+        metadata: widget.metadata,
         plexMediaInfo: _currentMediaInfo,
       );
 
