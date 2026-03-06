@@ -698,6 +698,7 @@ class TrackSelectionService {
     }
 
     // Priority 2: Check Plex-selected track from media info
+    // If a subtitle IS actively selected, the user manually chose it — respect that.
     if (plexMediaInfo != null && availableTracks.isNotEmpty) {
       final plexSelectedTrack = plexMediaInfo!.subtitleTracks.where((t) => t.selected).firstOrNull;
 
@@ -710,7 +711,7 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 3: Try per-media language/subtitle mode preference
+    // Priority 3: Try per-media language/subtitle mode preference (show/season/item-level)
     final hasSubtitleMode = metadata.subtitleMode != null && metadata.subtitleMode != -1;
     if (metadata.subtitleLanguage != null || hasSubtitleMode) {
       if (metadata.subtitleLanguage == 'none' || (metadata.subtitleLanguage?.isEmpty ?? false)) {
@@ -751,7 +752,12 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 4: Apply user profile preferences
+    // Priority 4: No subtitle selected by server — trust that decision
+    if (plexMediaInfo != null && plexMediaInfo!.subtitleTracks.isNotEmpty && availableTracks.isNotEmpty) {
+      return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.plexSelected);
+    }
+
+    // Priority 5: Apply user profile preferences
     if (profileSettings != null && availableTracks.isNotEmpty) {
       subtitleToSelect = findSubtitleTrackByProfile(
         availableTracks,
@@ -763,7 +769,7 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 5: Check for default subtitle
+    // Priority 6: Check for default subtitle
     if (availableTracks.isNotEmpty) {
       final defaultTrack = availableTracks.firstWhere((t) => t.isDefault, orElse: () => availableTracks.first);
       if (defaultTrack.isDefault) {
@@ -771,7 +777,7 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 6: Turn off subtitles
+    // Priority 7: Turn off subtitles
     return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.off);
   }
 
