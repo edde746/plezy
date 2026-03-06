@@ -368,11 +368,6 @@ class TrackSelectionService {
   }
 
   /// Apply a filter to tracks, falling back to original if filter produces empty result
-  List<T> _applyFilterWithFallback<T>(List<T> tracks, List<T> Function(List<T>) filter, String _) {
-    final filtered = filter(tracks);
-    return filtered.isNotEmpty ? filtered : tracks;
-  }
-
   /// Generic track matching for audio and subtitle tracks
   /// Returns the best matching track based on hierarchical criteria:
   /// 1. Exact match (id + title + language)
