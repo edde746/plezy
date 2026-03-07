@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
+import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/mpv_config_models.dart';
 import '../../focus/focusable_button.dart';
@@ -24,6 +25,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
   late TextEditingController _textController;
   final _savePresetFocusNode = FocusNode();
+  final _textFieldFocusNode = FocusNode();
   List<MpvPreset> _presets = [];
 
   @override
@@ -37,6 +39,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
   void dispose() {
     _textController.dispose();
     _savePresetFocusNode.dispose();
+    _textFieldFocusNode.dispose();
     super.dispose();
   }
 
@@ -148,23 +151,36 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusedScrollScaffold(
-      title: Text(t.screens.mpvConfig),
-      slivers: _isLoading
-          ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
-          : [
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildConfigEditor(),
-                    const SizedBox(height: 16),
-                    _buildPresetsCard(),
-                    const SizedBox(height: 24),
-                  ]),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (BackKeyCoordinator.consumeIfHandled()) return;
+        BackKeyUpSuppressor.suppressBackUntilKeyUp();
+        if (_textFieldFocusNode.hasFocus && _savePresetFocusNode.canRequestFocus) {
+          _savePresetFocusNode.requestFocus();
+        } else {
+          Navigator.pop(context);
+        }
+      },
+      child: FocusedScrollScaffold(
+        title: Text(t.screens.mpvConfig),
+        slivers: _isLoading
+            ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
+            : [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildConfigEditor(),
+                      const SizedBox(height: 16),
+                      _buildPresetsCard(),
+                      const SizedBox(height: 24),
+                    ]),
+                  ),
                 ),
-              ),
-            ],
+              ],
+      ),
     );
   }
 
@@ -176,6 +192,9 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
         // Suppress the KeyUp so it doesn't reach handleBackKeyNavigation
         // on the new focus chain after focus moves away from the text field.
         if (event.logicalKey.isBackKey) {
+          if (!_savePresetFocusNode.canRequestFocus) {
+            return KeyEventResult.ignored;
+          }
           if (event is KeyDownEvent) {
             BackKeyUpSuppressor.suppressBackUntilKeyUp();
             _savePresetFocusNode.requestFocus();
@@ -203,10 +222,19 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
         if (event.logicalKey.isSelectKey) {
           return KeyEventResult.handled;
         }
+        if (event.logicalKey.isDownKey && event.isActionable) {
+          final sel = _textController.selection;
+          if (sel.isValid &&
+              _textController.text.indexOf('\n', sel.extentOffset) == -1) {
+            _savePresetFocusNode.requestFocus();
+            return KeyEventResult.handled;
+          }
+        }
         return KeyEventResult.ignored;
       },
       child: TextField(
         controller: _textController,
+        focusNode: _textFieldFocusNode,
         maxLines: null,
         minLines: 12,
         decoration: InputDecoration(
