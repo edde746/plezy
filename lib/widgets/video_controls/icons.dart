@@ -13,7 +13,7 @@ IconData getReplayIcon(int seconds) {
     case 30:
       return Symbols.replay_30_rounded;
     default:
-      return Symbols.replay_rounded; // Generic icon for custom durations
+      return Symbols.replay_rounded;
   }
 }
 
@@ -29,6 +29,6 @@ IconData getForwardIcon(int seconds) {
     case 30:
       return Symbols.forward_30_rounded;
     default:
-      return Symbols.forward_rounded; // Generic icon for custom durations
+      return Symbols.forward_media_rounded;
   }
 }

@@ -41,9 +41,6 @@ class MobileVideoControls extends StatefulWidget {
   final VoidCallback? onBack;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
-  final VoidCallback? onSeekToPreviousChapter;
-  final VoidCallback? onSeekToNextChapter;
-
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
 
@@ -91,8 +88,6 @@ class MobileVideoControls extends StatefulWidget {
     this.onBack,
     this.onNext,
     this.onPrevious,
-    this.onSeekToPreviousChapter,
-    this.onSeekToNextChapter,
     this.canControl = true,
     this.hasFirstFrame,
     this.thumbnailDataBuilder,
@@ -307,8 +302,6 @@ class _MobileVideoControlsState extends State<MobileVideoControls>
   }
 
   Widget _buildPlaybackControlsContent(BuildContext _) {
-    final hasChapters = !widget.isLive && widget.chaptersLoaded && widget.chapters.isNotEmpty;
-
     return PlayPauseStreamBuilder(
       player: widget.player,
       builder: (context, isPlaying) {
@@ -316,15 +309,6 @@ class _MobileVideoControlsState extends State<MobileVideoControls>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (!widget.isLive) ...[
-              if (hasChapters) ...[
-                CircularControlButton(
-                  semanticLabel: t.videoControls.previousChapterButton,
-                  icon: Symbols.fast_rewind_rounded,
-                  iconSize: 32,
-                  onPressed: widget.onSeekToPreviousChapter,
-                ),
-                const SizedBox(width: 16),
-              ],
               // Previous episode button (greyed out when unavailable)
               CircularControlButton(
                 semanticLabel: t.videoControls.previousButton,
@@ -357,15 +341,6 @@ class _MobileVideoControlsState extends State<MobileVideoControls>
                 iconSize: 48,
                 onPressed: widget.onNext,
               ),
-              if (hasChapters) ...[
-                const SizedBox(width: 16),
-                CircularControlButton(
-                  semanticLabel: t.videoControls.nextChapterButton,
-                  icon: Symbols.fast_forward_rounded,
-                  iconSize: 32,
-                  onPressed: widget.onSeekToNextChapter,
-                ),
-              ],
             ],
           ],
         );

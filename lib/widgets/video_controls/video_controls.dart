@@ -1384,7 +1384,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           mainAxisSize: MainAxisSize.min,
           children: [
             AppIcon(
-              _lastDoubleTapWasForward ? Symbols.fast_forward_rounded : Symbols.fast_rewind_rounded,
+              _lastDoubleTapWasForward ? Symbols.forward_media_rounded : Symbols.replay_rounded,
               fill: 1,
               color: Colors.white,
               size: 32,
@@ -1978,8 +1978,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                                 onBack: widget.onBack,
                                                 onNext: widget.onNext,
                                                 onPrevious: widget.onPrevious,
-                                                onSeekToPreviousChapter: _seekToPreviousChapter,
-                                                onSeekToNextChapter: _seekToNextChapter,
                                                 canControl: widget.canControl,
                                                 hasFirstFrame: widget.hasFirstFrame,
                                                 thumbnailDataBuilder: widget.thumbnailDataBuilder,
