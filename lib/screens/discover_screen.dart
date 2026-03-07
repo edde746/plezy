@@ -1169,30 +1169,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   return _buildHeroItem(_onDeck[index], heroHeight);
                 },
               ),
-              // Bottom gradient that extends past hero bounds to ensure seamless blend
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: -2, // Minimal overflow to avoid gap without covering hub header
-                height: 80, // Tall enough to cover any gap
-                child: IgnorePointer(
-                  child: Builder(
-                    builder: (context) {
-                      final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [bgColor.withValues(alpha: 0), bgColor],
-                            stops: const [0.0, 0.6],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
               // Page indicators with animated progress and pause/play button
               if (!InputModeTracker.isKeyboardMode(context))
               Positioned(
@@ -1370,20 +1346,22 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               left: 0,
               right: 0,
               bottom: -4, // Extend past stack bounds to ensure coverage
-              child: Builder(
-                builder: (context) {
-                  final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                        stops: const [0.5, 0.85, 1.0],
+              child: IgnorePointer(
+                child: Builder(
+                  builder: (context) {
+                    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
+                          stops: const [0.5, 0.85, 1.0],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
 
