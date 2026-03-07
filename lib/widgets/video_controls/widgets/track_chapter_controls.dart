@@ -39,6 +39,12 @@ class TrackChapterControls extends StatelessWidget {
   /// Called to navigate left from the first button
   final VoidCallback? onNavigateLeft;
 
+  /// Called to navigate up from any button (e.g., to focus timeline on TV)
+  final VoidCallback? onNavigateUp;
+
+  /// Called to navigate down from any button (e.g., to show content strip on TV)
+  final VoidCallback? onNavigateDown;
+
   /// Whether to hide the chapters and queue buttons (mobile uses content strip instead)
   final bool hideChaptersAndQueue;
 
@@ -51,6 +57,8 @@ class TrackChapterControls extends StatelessWidget {
     this.focusNodes,
     this.onFocusChange,
     this.onNavigateLeft,
+    this.onNavigateUp,
+    this.onNavigateDown,
     this.hideChaptersAndQueue = false,
   });
 
@@ -113,6 +121,18 @@ class TrackChapterControls extends StatelessWidget {
         return KeyEventResult.handled;
       }
       // At end, consume to prevent bubbling
+      return KeyEventResult.handled;
+    }
+
+    // UP arrow - navigate up (e.g., to timeline)
+    if (key == LogicalKeyboardKey.arrowUp) {
+      onNavigateUp?.call();
+      return KeyEventResult.handled;
+    }
+
+    // DOWN arrow - navigate down (e.g., to content strip)
+    if (key == LogicalKeyboardKey.arrowDown) {
+      onNavigateDown?.call();
       return KeyEventResult.handled;
     }
 

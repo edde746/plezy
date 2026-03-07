@@ -743,6 +743,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _skipButtonDismissed = true;
       }
     });
+    _desktopControlsKey.currentState?.hideContentStrip();
     _cancelSkipButtonDismissTimer();
     widget.controlsVisible?.value = false;
     if (Platform.isMacOS) {
@@ -2065,6 +2066,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       playbackState: playbackState,
       onToggleAlwaysOnTop: Platform.isMacOS ? null : _toggleAlwaysOnTop,
     );
+    final useDpad = _videoPlayerNavigationEnabled || PlatformDetector.isTV();
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -2093,6 +2095,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         hasFirstFrame: widget.hasFirstFrame,
         thumbnailDataBuilder: widget.thumbnailDataBuilder,
         liveChannelName: widget.liveChannelName,
+        useDpadNavigation: useDpad,
+        serverId: widget.metadata.serverId,
+        showQueueTab: playbackState.isQueueActive,
+        onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
+        onCancelAutoHide: () => _hideTimer?.cancel(),
+        onStartAutoHide: _startHideTimer,
+        onContentStripVisibilityChanged: (visible) {
+          setState(() => _isContentStripVisible = visible);
+          if (visible) {
+            _hideTimer?.cancel();
+          } else {
+            _restartHideTimerIfPlaying();
+          }
+        },
       ),
     );
   }
