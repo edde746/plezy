@@ -67,8 +67,11 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
  *
  * Also suppresses Amlogic AudioTrack timestamp discontinuity errors.
  *
- * Note: this bypass does not apply speed conversion, so it is only accurate at
- * 1.0x playback speed. At other speeds, the delegate position is used.
+ * The raw AudioTrack position advances at real-time rate regardless of speed
+ * (AudioTrackPositionTracker reports post-time-stretch output frames). The
+ * bypass multiplies by speed to convert to media time, matching what
+ * DefaultAudioSink.applyMediaPositionParameters() does internally. Reference
+ * points are captured on speed changes for correct mid-playback transitions.
  */
 @OptIn(UnstableApi::class)
 private class PositionFixAudioSink(
@@ -79,6 +82,11 @@ private class PositionFixAudioSink(
     private var startMediaTimeUs = Long.MIN_VALUE
     private var suppressedErrorCount = 0
 
+    // Speed tracking for position bypass
+    private var currentSpeed = 1.0f
+    private var refMediaTimeUs = Long.MIN_VALUE
+    private var refRawPositionUs = 0L
+
     override fun handleBuffer(
         buffer: ByteBuffer,
         presentationTimeUs: Long,
@@ -86,20 +94,33 @@ private class PositionFixAudioSink(
     ): Boolean {
         if (startMediaTimeUs == Long.MIN_VALUE) {
             startMediaTimeUs = presentationTimeUs
+            refMediaTimeUs = presentationTimeUs
+            refRawPositionUs = 0
         }
         return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
     }
 
+    override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
+        // Capture reference point before speed changes
+        val rawPos = rawPositionUs.get()
+        if (rawPos > 0 && refMediaTimeUs != Long.MIN_VALUE) {
+            refMediaTimeUs = refMediaTimeUs + ((rawPos - refRawPositionUs) * currentSpeed).toLong()
+            refRawPositionUs = rawPos
+        }
+        currentSpeed = playbackParameters.speed
+        super.setPlaybackParameters(playbackParameters)
+    }
+
     override fun getCurrentPositionUs(sourceEnded: Boolean): Long {
         val delegatePos = super.getCurrentPositionUs(sourceEnded)
-        if (delegatePos == Long.MIN_VALUE || startMediaTimeUs == Long.MIN_VALUE) {
+        if (delegatePos == Long.MIN_VALUE || refMediaTimeUs == Long.MIN_VALUE) {
             return delegatePos
         }
 
         val rawPos = rawPositionUs.get()
         if (rawPos <= 0) return delegatePos
 
-        val expectedPos = startMediaTimeUs + rawPos
+        val expectedPos = refMediaTimeUs + ((rawPos - refRawPositionUs) * currentSpeed).toLong()
         return if (expectedPos > delegatePos + 30_000) expectedPos else delegatePos
     }
 
@@ -131,12 +152,17 @@ private class PositionFixAudioSink(
 
     override fun flush() {
         startMediaTimeUs = Long.MIN_VALUE
+        refMediaTimeUs = Long.MIN_VALUE
+        refRawPositionUs = 0
         rawPositionUs.set(Long.MIN_VALUE)
         super.flush()
     }
 
     override fun reset() {
         startMediaTimeUs = Long.MIN_VALUE
+        refMediaTimeUs = Long.MIN_VALUE
+        refRawPositionUs = 0
+        currentSpeed = 1.0f
         rawPositionUs.set(Long.MIN_VALUE)
         suppressedErrorCount = 0
         super.reset()
