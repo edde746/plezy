@@ -1041,7 +1041,7 @@ class PlexClient {
   Future<PlexVideoPlaybackData> getVideoPlaybackData(String ratingKey, {int mediaIndex = 0}) async {
     Map<String, dynamic>? data;
     try {
-      data = await _fetchWithCacheFirst<Map<String, dynamic>>(
+      data = await _fetchWithCacheFallback<Map<String, dynamic>>(
         cacheKey: '/library/metadata/$ratingKey',
         networkCall: () =>
             _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
