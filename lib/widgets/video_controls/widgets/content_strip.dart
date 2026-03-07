@@ -68,9 +68,11 @@ class _ContentStripState extends State<ContentStrip> {
     return context.tryGetClientForServer(serverId);
   }
 
-  void _autoScrollTo(ScrollController controller, int index, {bool force = false}) {
+  double _itemWidth(bool isTablet) => isTablet ? 212.0 : 132.0; // thumb + 12 padding
+
+  void _autoScrollTo(ScrollController controller, int index, {bool force = false, bool isTablet = false}) {
     if (!controller.hasClients) return;
-    const itemWidth = 132.0; // 120 thumb + 12 padding
+    final itemWidth = _itemWidth(isTablet);
     final target = (index * itemWidth - 60).clamp(0.0, controller.position.maxScrollExtent);
     if (force || (target - controller.offset).abs() > itemWidth) {
       controller.jumpTo(target);
@@ -79,6 +81,9 @@ class _ContentStripState extends State<ContentStrip> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+    final stripHeight = isTablet ? 170.0 : 106.0;
+
     return SafeArea(
       top: false,
       child: Padding(
@@ -88,7 +93,10 @@ class _ContentStripState extends State<ContentStrip> {
           children: [
             if (_hasBothTabs) _buildTabBar(),
             const SizedBox(height: 8),
-            SizedBox(height: 106, child: _activeTab == _StripTab.chapters ? _buildChapterStrip() : _buildQueueStrip()),
+            SizedBox(
+              height: stripHeight,
+              child: _activeTab == _StripTab.chapters ? _buildChapterStrip(isTablet) : _buildQueueStrip(isTablet),
+            ),
           ],
         ),
       ),
@@ -128,7 +136,10 @@ class _ContentStripState extends State<ContentStrip> {
     );
   }
 
-  Widget _buildChapterStrip() {
+  Widget _buildChapterStrip(bool isTablet) {
+    final thumbWidth = isTablet ? 200.0 : 120.0;
+    final thumbHeight = isTablet ? 112.0 : 68.0;
+
     return StreamBuilder<Duration>(
       stream: widget.player.streams.position,
       initialData: widget.player.state.position,
@@ -153,7 +164,7 @@ class _ContentStripState extends State<ContentStrip> {
         if (!_hasAutoScrolledChapters && currentChapterIndex != null) {
           _hasAutoScrolledChapters = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _autoScrollTo(_chapterScrollController, currentChapterIndex!);
+            _autoScrollTo(_chapterScrollController, currentChapterIndex!, isTablet: isTablet);
           });
         }
 
@@ -173,13 +184,14 @@ class _ContentStripState extends State<ContentStrip> {
             return _buildStripItem(
               context: context,
               isCurrent: isCurrent,
+              isTablet: isTablet,
               thumbnail: chapter.thumb != null
                   ? PlexOptimizedImage.thumb(
                       client: _tryGetClient(context, widget.serverId),
                       imagePath: chapter.thumb,
                       localFilePath: localThumbPath,
-                      width: 120,
-                      height: 68,
+                      width: thumbWidth,
+                      height: thumbHeight,
                       fit: BoxFit.cover,
                       errorWidget: (_, _, _) =>
                           const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
@@ -195,7 +207,10 @@ class _ContentStripState extends State<ContentStrip> {
     );
   }
 
-  Widget _buildQueueStrip() {
+  Widget _buildQueueStrip(bool isTablet) {
+    final thumbWidth = isTablet ? 200.0 : 120.0;
+    final thumbHeight = isTablet ? 112.0 : 68.0;
+
     return Consumer<PlaybackStateProvider>(
       builder: (context, playbackState, _) {
         final items = playbackState.loadedItems;
@@ -205,7 +220,7 @@ class _ContentStripState extends State<ContentStrip> {
         if (!_hasAutoScrolledQueue && currentIndex >= 0) {
           _hasAutoScrolledQueue = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _autoScrollTo(_queueScrollController, currentIndex);
+            _autoScrollTo(_queueScrollController, currentIndex, isTablet: isTablet);
           });
         }
 
@@ -228,12 +243,13 @@ class _ContentStripState extends State<ContentStrip> {
             return _buildStripItem(
               context: context,
               isCurrent: isCurrent,
+              isTablet: isTablet,
               thumbnail: item.thumb != null
                   ? PlexOptimizedImage.thumb(
                       client: client,
                       imagePath: item.thumb,
-                      width: 120,
-                      height: 68,
+                      width: thumbWidth,
+                      height: thumbHeight,
                       fit: BoxFit.cover,
                       errorWidget: (_, _, _) =>
                           const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
@@ -265,19 +281,25 @@ class _ContentStripState extends State<ContentStrip> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    bool isTablet = false,
   }) {
+    final itemWidth = isTablet ? 200.0 : 120.0;
+    final thumbHeight = isTablet ? 112.0 : 68.0;
+    final titleFontSize = isTablet ? 13.0 : 11.0;
+    final subtitleFontSize = isTablet ? 12.0 : 10.0;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 120,
+        width: itemWidth,
         margin: const EdgeInsets.symmetric(horizontal: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Thumbnail
             SizedBox(
-              width: 120,
-              height: 68,
+              width: itemWidth,
+              height: thumbHeight,
               child: Stack(
                 children: [
                   ClipRRect(
@@ -311,7 +333,7 @@ class _ContentStripState extends State<ContentStrip> {
               title,
               style: TextStyle(
                 color: isCurrent ? Theme.of(context).colorScheme.primary : Colors.white,
-                fontSize: 11,
+                fontSize: titleFontSize,
                 fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
               ),
               maxLines: 1,
@@ -324,7 +346,7 @@ class _ContentStripState extends State<ContentStrip> {
                 color: isCurrent
                     ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
                     : tokens(context).textMuted,
-                fontSize: 10,
+                fontSize: subtitleFontSize,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
