@@ -64,8 +64,8 @@ class ContentStripState extends State<ContentStrip> {
   bool _hasAutoScrolledQueue = false;
 
   // Focus nodes for focus navigation mode
-  List<FocusNode> _chapterFocusNodes = [];
-  List<FocusNode> _queueFocusNodes = [];
+  final List<FocusNode> _chapterFocusNodes = [];
+  final List<FocusNode> _queueFocusNodes = [];
 
   bool get _hasChapters => widget.chapters.isNotEmpty;
   bool get _hasQueue => widget.showQueueTab && widget.onQueueItemSelected != null;
@@ -363,7 +363,7 @@ class ContentStripState extends State<ContentStrip> {
                 ? DownloadStorageService.instance.getArtworkPathSync(widget.serverId!, chapter.thumb!)
                 : null;
 
-            final onTap = () => widget.player.seek(chapter.startTime);
+            void onTap() => widget.player.seek(chapter.startTime);
 
             final item = _buildStripItem(
               context: context,
@@ -451,7 +451,7 @@ class ContentStripState extends State<ContentStrip> {
               } catch (_) {}
             }
 
-            final onTap = () => widget.onQueueItemSelected?.call(item);
+            void onTap() => widget.onQueueItemSelected?.call(item);
 
             final stripItem = _buildStripItem(
               context: context,
