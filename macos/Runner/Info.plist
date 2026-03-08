@@ -30,6 +30,8 @@
 	<string>NSApplication</string>
 	<key>FLTEnableMergedPlatformUIThread</key>
 	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
 	<key>SUFeedURL</key>
 	<string>https://github.com/edde746/plezy/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>

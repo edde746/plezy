@@ -45,12 +45,10 @@ class UpdateService {
   /// Call once at startup if [useNativeUpdater] is true.
   static Future<void> initNativeUpdater() async {
     if (_nativeUpdaterInitialized) return;
-    _nativeUpdaterInitialized = true;
 
     try {
       await autoUpdater.setFeedURL(_feedUrl);
-      // 6 hours in seconds
-      await autoUpdater.setScheduledCheckInterval(_checkCooldown.inSeconds);
+      _nativeUpdaterInitialized = true;
     } catch (e) {
       _logger.e('Failed to initialize native auto updater: $e');
     }
@@ -59,7 +57,10 @@ class UpdateService {
   /// Trigger a background update check via Sparkle/WinSparkle.
   /// Only shows UI if an update is found.
   static Future<void> checkForUpdatesNative({bool inBackground = true}) async {
-    if (!_nativeUpdaterInitialized) await initNativeUpdater();
+    if (!_nativeUpdaterInitialized) {
+      await initNativeUpdater();
+      if (!_nativeUpdaterInitialized) return;
+    }
     try {
       await autoUpdater.checkForUpdates(inBackground: inBackground);
     } catch (e) {
