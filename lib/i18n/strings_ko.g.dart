@@ -97,9 +97,6 @@ class _TranslationsAuthKo implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Plex 계정으로 로그인';
 	@override String get showQRCode => 'QR 코드';
 	@override String get authenticate => '인증';
-	@override String get debugEnterToken => '디버깅을 위해 Plex 토큰을 입력하세요.';
-	@override String get plexTokenLabel => 'Plex 인증 토큰';
-	@override String get plexTokenHint => 'Plex.tv 토큰을 입력하세요';
 	@override String get authenticationTimeout => '인증 시간이 초과되었습니다. 다시 시도해 주세요.';
 	@override String get scanQRToSignIn => 'QR 코드를 스캔하여 로그인';
 	@override String get waitingForAuth => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.';
@@ -1311,9 +1308,6 @@ extension on TranslationsKo {
 			'auth.signInWithPlex' => 'Plex 계정으로 로그인',
 			'auth.showQRCode' => 'QR 코드',
 			'auth.authenticate' => '인증',
-			'auth.debugEnterToken' => '디버깅을 위해 Plex 토큰을 입력하세요.',
-			'auth.plexTokenLabel' => 'Plex 인증 토큰',
-			'auth.plexTokenHint' => 'Plex.tv 토큰을 입력하세요',
 			'auth.authenticationTimeout' => '인증 시간이 초과되었습니다. 다시 시도해 주세요.',
 			'auth.scanQRToSignIn' => 'QR 코드를 스캔하여 로그인',
 			'auth.waitingForAuth' => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.',
@@ -1819,11 +1813,11 @@ extension on TranslationsKo {
 			'liveTv.live' => '실시간',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '신규',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.allChannels' => '전체 채널',
 			'liveTv.now' => '지금',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
 			'liveTv.overnight' => '심야',

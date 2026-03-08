@@ -97,9 +97,6 @@ class _TranslationsAuthPt implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Entrar com Plex';
 	@override String get showQRCode => 'Mostrar QR Code';
 	@override String get authenticate => 'Autenticar';
-	@override String get debugEnterToken => 'Debug: Inserir Token Plex';
-	@override String get plexTokenLabel => 'Token de Autenticação Plex';
-	@override String get plexTokenHint => 'Insira seu token do Plex.tv';
 	@override String get authenticationTimeout => 'A autenticação expirou. Tente novamente.';
 	@override String get scanQRToSignIn => 'Escaneie este QR code para entrar';
 	@override String get waitingForAuth => 'Aguardando autenticação...\nConclua o login no seu navegador.';
@@ -1311,9 +1308,6 @@ extension on TranslationsPt {
 			'auth.signInWithPlex' => 'Entrar com Plex',
 			'auth.showQRCode' => 'Mostrar QR Code',
 			'auth.authenticate' => 'Autenticar',
-			'auth.debugEnterToken' => 'Debug: Inserir Token Plex',
-			'auth.plexTokenLabel' => 'Token de Autenticação Plex',
-			'auth.plexTokenHint' => 'Insira seu token do Plex.tv',
 			'auth.authenticationTimeout' => 'A autenticação expirou. Tente novamente.',
 			'auth.scanQRToSignIn' => 'Escaneie este QR code para entrar',
 			'auth.waitingForAuth' => 'Aguardando autenticação...\nConclua o login no seu navegador.',
@@ -1819,11 +1813,11 @@ extension on TranslationsPt {
 			'liveTv.live' => 'AO VIVO',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NOVO',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Recarregar Guia',
 			'liveTv.allChannels' => 'Todos os Canais',
 			'liveTv.now' => 'Agora',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'Hoje',
 			'liveTv.midnight' => 'Meia-noite',
 			'liveTv.overnight' => 'Madrugada',

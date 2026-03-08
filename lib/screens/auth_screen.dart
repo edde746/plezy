@@ -243,15 +243,15 @@ class _AuthScreenState extends State<AuthScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(t.auth.debugEnterToken),
+              title: const Text('Debug: Enter Plex Token'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
                     controller: tokenController,
                     decoration: InputDecoration(
-                      labelText: t.auth.plexTokenLabel,
-                      hintText: t.auth.plexTokenHint,
+                      labelText: 'Plex Auth Token',
+                      hintText: 'Enter your Plex.tv token',
                       errorText: errorMessage,
                       border: const OutlineInputBorder(),
                     ),
@@ -453,7 +453,7 @@ class _AuthScreenState extends State<AuthScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
             ),
-            child: Text(t.auth.debugEnterToken, style: const TextStyle(fontSize: 12)),
+            child: const Text('Debug: Enter Plex Token', style: TextStyle(fontSize: 12)),
           ),
         ],
         if (_errorMessage != null) ...[

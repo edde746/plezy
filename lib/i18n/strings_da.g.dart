@@ -97,9 +97,6 @@ class _TranslationsAuthDa implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Log ind med Plex';
 	@override String get showQRCode => 'Vis QR-kode';
 	@override String get authenticate => 'Godkend';
-	@override String get debugEnterToken => 'Debug: Indtast Plex-token';
-	@override String get plexTokenLabel => 'Plex-godkendelsestoken';
-	@override String get plexTokenHint => 'Indtast dit Plex.tv-token';
 	@override String get authenticationTimeout => 'Godkendelse fik timeout. Prøv igen.';
 	@override String get scanQRToSignIn => 'Scan denne QR-kode for at logge ind';
 	@override String get waitingForAuth => 'Venter på godkendelse...\nFærdiggør login i din browser.';
@@ -1311,9 +1308,6 @@ extension on TranslationsDa {
 			'auth.signInWithPlex' => 'Log ind med Plex',
 			'auth.showQRCode' => 'Vis QR-kode',
 			'auth.authenticate' => 'Godkend',
-			'auth.debugEnterToken' => 'Debug: Indtast Plex-token',
-			'auth.plexTokenLabel' => 'Plex-godkendelsestoken',
-			'auth.plexTokenHint' => 'Indtast dit Plex.tv-token',
 			'auth.authenticationTimeout' => 'Godkendelse fik timeout. Prøv igen.',
 			'auth.scanQRToSignIn' => 'Scan denne QR-kode for at logge ind',
 			'auth.waitingForAuth' => 'Venter på godkendelse...\nFærdiggør login i din browser.',
@@ -1819,11 +1813,11 @@ extension on TranslationsDa {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Genindlæs guide',
 			'liveTv.allChannels' => 'Alle kanaler',
 			'liveTv.now' => 'Nu',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'I dag',
 			'liveTv.midnight' => 'Midnat',
 			'liveTv.overnight' => 'Nat',

@@ -97,9 +97,6 @@ class _TranslationsAuthZh implements TranslationsAuthEn {
 	@override String get signInWithPlex => '使用 Plex 登录';
 	@override String get showQRCode => '显示二维码';
 	@override String get authenticate => '验证';
-	@override String get debugEnterToken => '调试：输入 Plex Token';
-	@override String get plexTokenLabel => 'Plex 授权令牌 (Auth Token)';
-	@override String get plexTokenHint => '输入你的 Plex.tv 令牌';
 	@override String get authenticationTimeout => '验证超时。请重试。';
 	@override String get scanQRToSignIn => '扫描二维码登录';
 	@override String get waitingForAuth => '等待验证中...\n请在你的浏览器中完成登录。';
@@ -1311,9 +1308,6 @@ extension on TranslationsZh {
 			'auth.signInWithPlex' => '使用 Plex 登录',
 			'auth.showQRCode' => '显示二维码',
 			'auth.authenticate' => '验证',
-			'auth.debugEnterToken' => '调试：输入 Plex Token',
-			'auth.plexTokenLabel' => 'Plex 授权令牌 (Auth Token)',
-			'auth.plexTokenHint' => '输入你的 Plex.tv 令牌',
 			'auth.authenticationTimeout' => '验证超时。请重试。',
 			'auth.scanQRToSignIn' => '扫描二维码登录',
 			'auth.waitingForAuth' => '等待验证中...\n请在你的浏览器中完成登录。',
@@ -1819,11 +1813,11 @@ extension on TranslationsZh {
 			'liveTv.live' => '直播',
 			'liveTv.hd' => '高清',
 			'liveTv.premiere' => '新',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.allChannels' => '所有频道',
 			'liveTv.now' => '现在',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
 			'liveTv.overnight' => '凌晨',

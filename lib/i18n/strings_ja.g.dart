@@ -97,9 +97,6 @@ class _TranslationsAuthJa implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Plexでサインイン';
 	@override String get showQRCode => 'QRコードを表示';
 	@override String get authenticate => '認証';
-	@override String get debugEnterToken => 'デバッグ: Plexトークンを入力';
-	@override String get plexTokenLabel => 'Plex認証トークン';
-	@override String get plexTokenHint => 'Plex.tvトークンを入力';
 	@override String get authenticationTimeout => '認証がタイムアウトしました。もう一度お試しください。';
 	@override String get scanQRToSignIn => 'このQRコードをスキャンしてサインイン';
 	@override String get waitingForAuth => '認証を待機中...\nブラウザでサインインを完了してください。';
@@ -1311,9 +1308,6 @@ extension on TranslationsJa {
 			'auth.signInWithPlex' => 'Plexでサインイン',
 			'auth.showQRCode' => 'QRコードを表示',
 			'auth.authenticate' => '認証',
-			'auth.debugEnterToken' => 'デバッグ: Plexトークンを入力',
-			'auth.plexTokenLabel' => 'Plex認証トークン',
-			'auth.plexTokenHint' => 'Plex.tvトークンを入力',
 			'auth.authenticationTimeout' => '認証がタイムアウトしました。もう一度お試しください。',
 			'auth.scanQRToSignIn' => 'このQRコードをスキャンしてサインイン',
 			'auth.waitingForAuth' => '認証を待機中...\nブラウザでサインインを完了してください。',
@@ -1819,11 +1813,11 @@ extension on TranslationsJa {
 			'liveTv.live' => 'ライブ',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '新着',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => '番組表を再読込',
 			'liveTv.allChannels' => 'すべてのチャンネル',
 			'liveTv.now' => '現在',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => '今日',
 			'liveTv.midnight' => '深夜',
 			'liveTv.overnight' => '深夜',

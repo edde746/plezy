@@ -97,9 +97,6 @@ class _TranslationsAuthSv implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Logga in med Plex';
 	@override String get showQRCode => 'Visa QR-kod';
 	@override String get authenticate => 'Autentisera';
-	@override String get debugEnterToken => 'Debug: Ange Plex-token';
-	@override String get plexTokenLabel => 'Plex-autentiseringstoken';
-	@override String get plexTokenHint => 'Ange din Plex.tv-token';
 	@override String get authenticationTimeout => 'Autentisering tog för lång tid. Försök igen.';
 	@override String get scanQRToSignIn => 'Skanna QR-koden för att logga in';
 	@override String get waitingForAuth => 'Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.';
@@ -1311,9 +1308,6 @@ extension on TranslationsSv {
 			'auth.signInWithPlex' => 'Logga in med Plex',
 			'auth.showQRCode' => 'Visa QR-kod',
 			'auth.authenticate' => 'Autentisera',
-			'auth.debugEnterToken' => 'Debug: Ange Plex-token',
-			'auth.plexTokenLabel' => 'Plex-autentiseringstoken',
-			'auth.plexTokenHint' => 'Ange din Plex.tv-token',
 			'auth.authenticationTimeout' => 'Autentisering tog för lång tid. Försök igen.',
 			'auth.scanQRToSignIn' => 'Skanna QR-koden för att logga in',
 			'auth.waitingForAuth' => 'Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.',
@@ -1819,11 +1813,11 @@ extension on TranslationsSv {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.allChannels' => 'Alla kanaler',
 			'liveTv.now' => 'Nu',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
 			'liveTv.overnight' => 'Natt',

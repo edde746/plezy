@@ -109,15 +109,6 @@ class TranslationsAuthEn {
 	/// en: 'Authenticate'
 	String get authenticate => 'Authenticate';
 
-	/// en: 'Debug: Enter Plex Token'
-	String get debugEnterToken => 'Debug: Enter Plex Token';
-
-	/// en: 'Plex Auth Token'
-	String get plexTokenLabel => 'Plex Auth Token';
-
-	/// en: 'Enter your Plex.tv token'
-	String get plexTokenHint => 'Enter your Plex.tv token';
-
 	/// en: 'Authentication timed out. Please try again.'
 	String get authenticationTimeout => 'Authentication timed out. Please try again.';
 
@@ -2938,9 +2929,6 @@ extension on Translations {
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
-			'auth.debugEnterToken' => 'Debug: Enter Plex Token',
-			'auth.plexTokenLabel' => 'Plex Auth Token',
-			'auth.plexTokenHint' => 'Enter your Plex.tv token',
 			'auth.authenticationTimeout' => 'Authentication timed out. Please try again.',
 			'auth.scanQRToSignIn' => 'Scan this QR code to sign in',
 			'auth.waitingForAuth' => 'Waiting for authentication...\nPlease complete sign-in in your browser.',
@@ -3446,11 +3434,11 @@ extension on Translations {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEW',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.allChannels' => 'All Channels',
 			'liveTv.now' => 'Now',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',

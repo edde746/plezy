@@ -97,9 +97,6 @@ class _TranslationsAuthRu implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Войти через Plex';
 	@override String get showQRCode => 'Показать QR-код';
 	@override String get authenticate => 'Аутентификация';
-	@override String get debugEnterToken => 'Отладка: Ввести токен Plex';
-	@override String get plexTokenLabel => 'Токен авторизации Plex';
-	@override String get plexTokenHint => 'Введите ваш токен Plex.tv';
 	@override String get authenticationTimeout => 'Время аутентификации истекло. Попробуйте снова.';
 	@override String get scanQRToSignIn => 'Отсканируйте QR-код для входа';
 	@override String get waitingForAuth => 'Ожидание аутентификации...\nЗавершите вход в браузере.';
@@ -1311,9 +1308,6 @@ extension on TranslationsRu {
 			'auth.signInWithPlex' => 'Войти через Plex',
 			'auth.showQRCode' => 'Показать QR-код',
 			'auth.authenticate' => 'Аутентификация',
-			'auth.debugEnterToken' => 'Отладка: Ввести токен Plex',
-			'auth.plexTokenLabel' => 'Токен авторизации Plex',
-			'auth.plexTokenHint' => 'Введите ваш токен Plex.tv',
 			'auth.authenticationTimeout' => 'Время аутентификации истекло. Попробуйте снова.',
 			'auth.scanQRToSignIn' => 'Отсканируйте QR-код для входа',
 			'auth.waitingForAuth' => 'Ожидание аутентификации...\nЗавершите вход в браузере.',
@@ -1819,11 +1813,11 @@ extension on TranslationsRu {
 			'liveTv.live' => 'ЭФИР',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'НОВОЕ',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Перезагрузить программу',
 			'liveTv.allChannels' => 'Все каналы',
 			'liveTv.now' => 'Сейчас',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'Сегодня',
 			'liveTv.midnight' => 'Полночь',
 			'liveTv.overnight' => 'Ночь',
