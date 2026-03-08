@@ -172,7 +172,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
           }
 
         case 'message':
-          final from = msg['from'] as String?;
           final payload = msg['payload'];
           if (payload != null) {
             try {
