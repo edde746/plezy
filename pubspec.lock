@@ -61,8 +61,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/auto_updater"
-      ref: HEAD
-      resolved-ref: c70320c6885db88ef8360d278f936e90a7cc9689
+      ref: "5d1046a"
+      resolved-ref: "5d1046af4fadf633fd222d471457b95415ca499b"
       url: "https://github.com/edde746/auto_updater"
     source: git
     version: "1.0.0"
@@ -70,25 +70,26 @@ packages:
     dependency: "direct overridden"
     description:
       path: "packages/auto_updater_macos"
-      ref: HEAD
-      resolved-ref: "6a21278549a7b988302ea1a9b2a3210fe0cd177c"
+      ref: "5d1046a"
+      resolved-ref: "5d1046af4fadf633fd222d471457b95415ca499b"
       url: "https://github.com/edde746/auto_updater"
     source: git
     version: "1.0.0"
   auto_updater_platform_interface:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: auto_updater_platform_interface
-      sha256: ed5dff8cea18c58bc5ac787ff9122fedd1644272e02015d28c9b592f8078c5dc
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/auto_updater_platform_interface"
+      ref: "5d1046a"
+      resolved-ref: "5d1046af4fadf633fd222d471457b95415ca499b"
+      url: "https://github.com/edde746/auto_updater"
+    source: git
     version: "1.0.0"
   auto_updater_windows:
     dependency: "direct overridden"
     description:
       path: "packages/auto_updater_windows"
-      ref: HEAD
-      resolved-ref: c70320c6885db88ef8360d278f936e90a7cc9689
+      ref: "5d1046a"
+      resolved-ref: "5d1046af4fadf633fd222d471457b95415ca499b"
       url: "https://github.com/edde746/auto_updater"
     source: git
     version: "1.0.0"

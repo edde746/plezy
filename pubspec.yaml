@@ -61,6 +61,7 @@ dependencies:
     git:
       url: https://github.com/edde746/auto_updater
       path: packages/auto_updater
+      ref: 5d1046a
 
 dev_dependencies:
   flutter_test:
@@ -73,13 +74,20 @@ dev_dependencies:
   drift_dev: ^2.14.0
 
 dependency_overrides:
+  auto_updater_platform_interface:
+    git:
+      url: https://github.com/edde746/auto_updater
+      ref: 5d1046a
+      path: packages/auto_updater_platform_interface
   auto_updater_macos:
     git:
       url: https://github.com/edde746/auto_updater
+      ref: 5d1046a
       path: packages/auto_updater_macos
   auto_updater_windows:
     git:
       url: https://github.com/edde746/auto_updater
+      ref: 5d1046a
       path: packages/auto_updater_windows
 
 flutter:
