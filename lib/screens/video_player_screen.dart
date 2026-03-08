@@ -70,6 +70,18 @@ import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/widgets/watch_together_overlay.dart';
 
+Future<void> _setWakelock(bool enabled) async {
+  try {
+    if (enabled) {
+      await WakelockPlus.enable();
+    } else {
+      await WakelockPlus.disable();
+    }
+  } catch (e) {
+    appLogger.w('Wakelock ${enabled ? 'enable' : 'disable'} failed: $e');
+  }
+}
+
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
   final AudioTrack? preferredAudioTrack;
@@ -346,14 +358,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // (we don't support background playback)
         OsMediaControls.clear();
         // Disable wakelock when app goes to background
-        WakelockPlus.disable();
+        _setWakelock(false);
         appLogger.d('Media controls cleared and wakelock disabled due to app being paused/backgrounded');
         break;
       case AppLifecycleState.resumed:
         // Restore media controls and wakelock when app is resumed
         if (_isPlayerInitialized && mounted) {
           // Re-enable wakelock since we're back in the video player
-          WakelockPlus.enable();
+          _setWakelock(true);
 
           // Restore media metadata (only in online mode - requires client for artwork URLs)
           if (!widget.isOffline && _mediaControlsManager != null) {
@@ -553,7 +565,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
 
         // Enable wakelock to prevent screen from turning off during playback
-        WakelockPlus.enable();
+        _setWakelock(true);
         appLogger.d('Wakelock enabled for video playback');
       }
 
@@ -1778,7 +1790,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     // Disable wakelock when leaving the video player
-    WakelockPlus.disable();
+    _setWakelock(false);
     appLogger.d('Wakelock disabled');
 
     // Restore system UI and orientation preferences (skip if navigating to another video)
@@ -1831,15 +1843,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
-    // Toggle wakelock based on playback state
+    _setWakelock(isPlaying);
+
     if (isPlaying) {
-      WakelockPlus.enable();
       // Force a texture refresh on resume to unstick stale frames
       // (Linux/macOS texture registrars can miss frame-available
       // notifications after extended pause periods)
       player?.updateFrame();
-    } else {
-      WakelockPlus.disable();
     }
 
     // Send timeline update when playback state changes
