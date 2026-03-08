@@ -66,6 +66,9 @@ class WatchTogetherSyncManager {
   // Timer for clearing sync indicator (prevents flicker from overlapping corrections)
   Timer? _syncingTimer;
 
+  // Debounce timer for buffering broadcasts
+  Timer? _bufferingDebounceTimer;
+
   // Track last known state to avoid duplicate broadcasts
   bool _lastKnownPlaying = false;
   double _lastKnownRate = 1.0;
@@ -87,7 +90,6 @@ class WatchTogetherSyncManager {
   /// Update the session (e.g., when control mode changes)
   void updateSession(WatchSession session) {
     _session = session;
-    appLogger.d('WatchTogether: Sync manager session updated, controlMode: ${session.controlMode}');
   }
 
   /// Whether this manager has a player attached
@@ -172,6 +174,8 @@ class WatchTogetherSyncManager {
     _firstPlayCompleted = false;
     _syncingTimer?.cancel();
     _syncingTimer = null;
+    _bufferingDebounceTimer?.cancel();
+    _bufferingDebounceTimer = null;
     _clockSyncTimer?.cancel();
     _clockSyncTimer = null;
     _clockOffset = 0;
@@ -246,8 +250,11 @@ class WatchTogetherSyncManager {
           }
         }
 
-        // Broadcast for UI (peer buffering indicators) — no playback control
-        _peerService.broadcast(SyncMessage.buffering(isBuffering, peerId: _peerService.myPeerId));
+        // Broadcast for UI (peer buffering indicators) — debounced to avoid churn
+        _bufferingDebounceTimer?.cancel();
+        _bufferingDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+          _peerService.broadcast(SyncMessage.buffering(isBuffering, peerId: _peerService.myPeerId));
+        });
       }),
     );
 
@@ -361,7 +368,6 @@ class WatchTogetherSyncManager {
       // Exponential moving average
       const alpha = 0.3;
       _clockOffset = (_clockOffset + (alpha * (sampleOffset - _clockOffset)).round());
-      appLogger.d('WatchTogether: Clock offset updated: ${_clockOffset}ms (sample: ${sampleOffset}ms, RTT: ${rtt}ms)');
     }
   }
 
@@ -504,10 +510,7 @@ class WatchTogetherSyncManager {
 
   /// Broadcast play/pause state
   void _broadcastPlayPause(bool isPlaying) {
-    if (!_canControl()) {
-      appLogger.d('WatchTogether: Cannot control playback in hostOnly mode');
-      return;
-    }
+    if (!_canControl()) return;
 
     if (isPlaying) {
       final position = _player?.state.position ?? Duration.zero;
@@ -519,10 +522,7 @@ class WatchTogetherSyncManager {
 
   /// Called when user seeks locally
   void onLocalSeek(Duration position) {
-    if (!_canControl()) {
-      appLogger.d('WatchTogether: Cannot control playback in hostOnly mode');
-      return;
-    }
+    if (!_canControl()) return;
 
     _peerService.broadcast(SyncMessage.seek(position, peerId: _peerService.myPeerId));
   }
@@ -544,7 +544,6 @@ class WatchTogetherSyncManager {
           message.type == SyncMessageType.rate;
 
       if (isControlMessage) {
-        appLogger.d('WatchTogether: Host relaying ${message.type} from ${message.peerId}');
         _peerService.broadcast(message);
       }
     }
@@ -561,35 +560,23 @@ class WatchTogetherSyncManager {
           message.type == SyncMessageType.pong ||
           message.type == SyncMessageType.mediaSwitch;
 
-      if (!isHostMessage && !isMetaMessage) {
-        appLogger.d('WatchTogether: Ignoring non-host message in hostOnly mode');
-        return;
-      }
+      if (!isHostMessage && !isMetaMessage) return;
     }
 
     switch (message.type) {
       case SyncMessageType.play:
-        if (!_shouldApplyRemoteControl(message)) {
-          appLogger.d('WatchTogether: Ignoring play from non-host in hostOnly mode');
-          break;
-        }
+        if (!_shouldApplyRemoteControl(message)) break;
         await _applyRemotePlay(position: message.position, expectedAttachmentGeneration: queuedAttachmentGeneration);
         break;
 
       case SyncMessageType.pause:
-        if (!_shouldApplyRemoteControl(message)) {
-          appLogger.d('WatchTogether: Ignoring pause from non-host in hostOnly mode');
-          break;
-        }
+        if (!_shouldApplyRemoteControl(message)) break;
         _deferredPlay = false;
         await _applyRemotePause(expectedAttachmentGeneration: queuedAttachmentGeneration);
         break;
 
       case SyncMessageType.seek:
-        if (!_shouldApplyRemoteControl(message)) {
-          appLogger.d('WatchTogether: Ignoring seek from non-host in hostOnly mode');
-          break;
-        }
+        if (!_shouldApplyRemoteControl(message)) break;
         if (message.position != null) {
           await _applyRemoteSeek(message.position!, expectedAttachmentGeneration: queuedAttachmentGeneration);
         }
@@ -613,23 +600,18 @@ class WatchTogetherSyncManager {
 
           final localPlaying = player.state.playing;
           if (message.isPlaying! && !localPlaying) {
-            appLogger.d('WatchTogether: Play/pause state diverged, syncing to host (playing)');
             await _applyRemotePlay(
               position: message.position,
               expectedAttachmentGeneration: queuedAttachmentGeneration,
             );
           } else if (!message.isPlaying! && localPlaying) {
-            appLogger.d('WatchTogether: Play/pause state diverged, syncing to host (paused)');
             await _applyRemotePause(expectedAttachmentGeneration: queuedAttachmentGeneration);
           }
         }
         break;
 
       case SyncMessageType.rate:
-        if (!_shouldApplyRemoteControl(message)) {
-          appLogger.d('WatchTogether: Ignoring rate from non-host in hostOnly mode');
-          break;
-        }
+        if (!_shouldApplyRemoteControl(message)) break;
         if (message.rate != null) {
           await _applyRemoteRate(message.rate!, expectedAttachmentGeneration: queuedAttachmentGeneration);
         }
@@ -703,7 +685,6 @@ class WatchTogetherSyncManager {
 
   /// Apply remote play command
   Future<bool> _applyRemotePlay({Duration? position, int? expectedAttachmentGeneration}) async {
-    appLogger.d('WatchTogether: Applying remote PLAY${position != null ? ' at ${position.inSeconds}s' : ''}');
     return _runGuardedRemoteAction(
       actionName: 'play',
       expectedAttachmentGeneration: expectedAttachmentGeneration,
@@ -734,7 +715,6 @@ class WatchTogetherSyncManager {
 
   /// Apply remote pause command
   Future<bool> _applyRemotePause({int? expectedAttachmentGeneration}) async {
-    appLogger.d('WatchTogether: Applying remote PAUSE');
     return _runGuardedRemoteAction(
       actionName: 'pause',
       expectedAttachmentGeneration: expectedAttachmentGeneration,
@@ -755,7 +735,6 @@ class WatchTogetherSyncManager {
 
   /// Apply remote seek command
   Future<bool> _applyRemoteSeek(Duration position, {int? expectedAttachmentGeneration}) async {
-    appLogger.d('WatchTogether: Applying remote SEEK to ${position.inSeconds}s');
     return _runGuardedRemoteAction(
       actionName: 'seek',
       expectedAttachmentGeneration: expectedAttachmentGeneration,
@@ -772,7 +751,6 @@ class WatchTogetherSyncManager {
 
   /// Apply remote rate change
   Future<bool> _applyRemoteRate(double rate, {int? expectedAttachmentGeneration}) async {
-    appLogger.d('WatchTogether: Applying remote RATE: $rate');
     return _runGuardedRemoteAction(
       actionName: 'rate',
       expectedAttachmentGeneration: expectedAttachmentGeneration,
@@ -838,8 +816,6 @@ class WatchTogetherSyncManager {
       _syncingTimer?.cancel();
       _syncingTimer = Timer(const Duration(milliseconds: 500), () => _setSyncing(false));
     } else if (drift > maxAllowedDrift) {
-      // Normal drift correction
-      appLogger.d('WatchTogether: Drift correction (${drift.inMilliseconds}ms)');
       _setSyncing(true);
       final didSeek = await _applyRemoteSeek(
         estimatedRemoteNow,

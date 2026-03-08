@@ -36,6 +36,7 @@ class PeerError {
 mixin KeepaliveMixin {
   Timer? _pingTimer;
   Timer? _pongTimer;
+  DateTime? _lastPongReset;
 
   /// How often to send a keepalive ping.
   Duration get pingInterval;
@@ -55,12 +56,19 @@ mixin KeepaliveMixin {
   void startKeepalive() {
     _pingTimer?.cancel();
     _pingTimer = Timer.periodic(pingInterval, (_) => sendPing());
+    _lastPongReset = null; // Force first reset
     resetPongTimer();
   }
 
   /// Reset the pong timeout (call on every incoming message).
+  /// Coalesced: skips if last reset was <5s ago (timeout is 30s, still safe).
   void resetPongTimer() {
     if (pongTimeout == Duration.zero) return;
+    final now = DateTime.now();
+    if (_lastPongReset != null && now.difference(_lastPongReset!) < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastPongReset = now;
     _pongTimer?.cancel();
     _pongTimer = Timer(pongTimeout, onPongTimeout);
   }
@@ -71,5 +79,6 @@ mixin KeepaliveMixin {
     _pingTimer = null;
     _pongTimer?.cancel();
     _pongTimer = null;
+    _lastPongReset = null;
   }
 }

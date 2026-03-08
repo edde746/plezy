@@ -440,8 +440,11 @@ class WatchTogetherProvider with ChangeNotifier {
         if (message.peerId != null) {
           final index = _participants.indexWhere((p) => p.peerId == message.peerId);
           if (index >= 0) {
-            _participants[index] = _participants[index].copyWith(isBuffering: message.bufferingState ?? false);
-            notifyListeners();
+            final newState = message.bufferingState ?? false;
+            if (_participants[index].isBuffering != newState) {
+              _participants[index] = _participants[index].copyWith(isBuffering: newState);
+              notifyListeners();
+            }
           }
         }
         break;

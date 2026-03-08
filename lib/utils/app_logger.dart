@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:logger/logger.dart';
 
 import 'log_redaction_manager.dart';
@@ -52,13 +54,18 @@ class LogEntry {
 }
 
 /// Custom log output that stores logs in memory with a circular buffer
+///
+/// Storage is handled by [MemoryAwareLogPrinter.log()] — this class only
+/// forwards formatted lines to the console via the default [ConsoleOutput].
 class MemoryLogOutput extends LogOutput {
   static const int maxLogSizeBytes = 5 * 1024 * 1024; // 5 MB
-  static final List<LogEntry> _logs = [];
+  static final ListQueue<LogEntry> _logs = ListQueue<LogEntry>();
   static int _currentSize = 0;
 
+  static final _consoleOutput = ConsoleOutput();
+
   /// Get all stored logs (newest first)
-  static List<LogEntry> getLogs() => List.unmodifiable(_logs.reversed);
+  static List<LogEntry> getLogs() => _logs.toList().reversed.toList();
 
   /// Clear all stored logs
   static void clearLogs() {
@@ -74,19 +81,8 @@ class MemoryLogOutput extends LogOutput {
 
   @override
   void output(OutputEvent event) {
-    // Extract relevant information from the log event
-    for (var line in event.lines) {
-      final logEntry = LogEntry(timestamp: DateTime.now(), level: event.level, message: _redactSensitiveData(line));
-
-      _logs.add(logEntry);
-      _currentSize += logEntry.estimatedSize;
-
-      // Maintain buffer size limit (remove oldest entries)
-      while (_currentSize > maxLogSizeBytes && _logs.isNotEmpty) {
-        final removed = _logs.removeAt(0);
-        _currentSize -= removed.estimatedSize;
-      }
-    }
+    // Only print to console — storage is done in MemoryAwareLogPrinter.log()
+    _consoleOutput.output(event);
   }
 }
 
@@ -113,9 +109,9 @@ class MemoryAwareLogPrinter extends LogPrinter {
     MemoryLogOutput._logs.add(logEntry);
     MemoryLogOutput._currentSize += logEntry.estimatedSize;
 
-    // Maintain buffer size limit (remove oldest entries)
+    // Maintain buffer size limit (remove oldest entries) — O(1) with ListQueue
     while (MemoryLogOutput._currentSize > MemoryLogOutput.maxLogSizeBytes && MemoryLogOutput._logs.isNotEmpty) {
-      final removed = MemoryLogOutput._logs.removeAt(0);
+      final removed = MemoryLogOutput._logs.removeFirst();
       MemoryLogOutput._currentSize -= removed.estimatedSize;
     }
 
