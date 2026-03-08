@@ -343,16 +343,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
 
     try {
-      final client = _getClientForItem();
-
       if (!context.mounted) return;
-
-      // Check if we're in offline mode for watch actions
-      final offlineModeProvider = context.read<OfflineModeProvider>();
-      final isOffline = offlineModeProvider.isOffline;
 
       switch (selected) {
         case 'watch':
+          final isOffline = context.read<OfflineModeProvider>().isOffline;
           if (isOffline && metadata?.serverId != null) {
             // Offline mode: queue action for later sync (emits WatchStateEvent)
             final offlineWatch = context.read<OfflineWatchProvider>();
@@ -365,13 +360,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             // Pass metadata to emit WatchStateEvent for cross-screen updates
             await _executeAction(
               context,
-              () => client.markAsWatched(metadata!.ratingKey, metadata: metadata),
+              () => _getClientForItem().markAsWatched(metadata!.ratingKey, metadata: metadata),
               t.messages.markedAsWatched,
             );
           }
           break;
 
         case 'unwatch':
+          final isOffline = context.read<OfflineModeProvider>().isOffline;
           if (isOffline && metadata?.serverId != null) {
             // Offline mode: queue action for later sync (emits WatchStateEvent)
             final offlineWatch = context.read<OfflineWatchProvider>();
@@ -384,7 +380,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             // Pass metadata to emit WatchStateEvent for cross-screen updates
             await _executeAction(
               context,
-              () => client.markAsUnwatched(metadata!.ratingKey, metadata: metadata),
+              () => _getClientForItem().markAsUnwatched(metadata!.ratingKey, metadata: metadata),
               t.messages.markedAsUnwatched,
             );
           }
@@ -395,6 +391,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // This preserves the progression for partially watched items
           // and doesn't mark unwatched next episodes as watched
           try {
+            final client = _getClientForItem();
             await client.removeFromOnDeck(metadata!.ratingKey);
             if (context.mounted) {
               showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
@@ -414,7 +411,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'rate':
           if (context.mounted) {
-            await _showRatingSheet(context, metadata!, client);
+            try {
+              final client = _getClientForItem();
+              await _showRatingSheet(context, metadata!, client);
+            } catch (e) {
+              if (context.mounted) {
+                showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+              }
+            }
           }
           break;
 
