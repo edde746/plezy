@@ -628,8 +628,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (duration.inMilliseconds > 0 &&
             position.inMilliseconds >= duration.inMilliseconds - 1000 &&
             !_showPlayNextDialog &&
-            !_completionTriggered &&
-            _nextEpisode != null) {
+            !_completionTriggered) {
           _onVideoCompleted(true);
         }
       });
@@ -1894,6 +1893,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
+    } else if (completed &&
+        _nextEpisode == null &&
+        !_completionTriggered) {
+      _completionTriggered = true;
+      _handleBackButton();
     }
   }
 
