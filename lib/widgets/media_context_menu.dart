@@ -1128,7 +1128,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     try {
       // Use settings-aware refresh for shows/seasons, direct queue for others
       if (metadata.isShow || metadata.isSeason) {
-        final result = await AutoDownloadService().refreshShow(metadata, client, downloadProvider);
+        final result = await AutoDownloadService.instance.refreshShow(metadata, client, downloadProvider);
         if (context.mounted) {
           if (result.queued > 0) {
             showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));

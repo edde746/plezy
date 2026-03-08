@@ -27,6 +27,8 @@ import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/user_profile_provider.dart';
+import '../providers/download_provider.dart';
+import '../services/auto_download_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import '../providers/offline_mode_provider.dart';
@@ -536,6 +538,18 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       // which is too frequent — the initial prompt on startup is sufficient.
       if (Platform.isAndroid || Platform.isIOS) {
         _showProfileSelectionOnResume();
+      }
+
+      // Auto-download check (singleton rate-limits to every 5 min)
+      final multiServer = context.read<MultiServerProvider>();
+      for (final serverId in multiServer.onlineServerIds) {
+        final client = multiServer.getClientForServer(serverId);
+        if (client != null) {
+          AutoDownloadService.instance.checkForNewEpisodes(
+            client,
+            context.read<DownloadProvider>(),
+          );
+        }
       }
     }
   }

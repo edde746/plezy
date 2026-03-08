@@ -644,7 +644,7 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: transcodeSessionId != null ? 0 : 3,
+          retries: transcodeSessionId != null ? 2 : 3,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -689,7 +689,7 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: transcodeSessionId != null ? 0 : 3,
+          retries: transcodeSessionId != null ? 2 : 3,
           allowPause: transcodeSessionId == null,
           metaData: globalKey,
           displayName: displayName,

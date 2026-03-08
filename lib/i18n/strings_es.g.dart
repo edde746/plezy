@@ -312,6 +312,10 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Error al seleccionar la carpeta';
 	@override String get downloadOnWifiOnly => 'Descargar solo con WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Evitar descargas cuando se usan datos móviles';
+	@override String get autoDownloadNewEpisodes => 'Auto-download new episodes';
+	@override String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes of subscribed shows';
+	@override String get autoDownloadNewSeasons => 'Auto-download new seasons';
+	@override String get autoDownloadNewSeasonsDescription => 'Automatically download episodes from new seasons of subscribed shows';
 	@override String get cellularDownloadBlocked => 'Las descargas están desactivadas en datos móviles. Conéctate a una red WiFi o cambia la configuración.';
 	@override String get maxVolume => 'Volumen Máximo';
 	@override String get maxVolumeDescription => 'Permitir aumento de volumen por encima del 100% para medios con sonido bajo';
@@ -506,7 +510,7 @@ class _TranslationsVideoControlsEs implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Línea de tiempo del video';
 	@override String get volumeSlider => 'Nivel de volumen';
 	@override String endsAt({required Object time}) => 'Termina a las ${time}';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => 'Reproduciendo en Imagen en Imagen';
 	@override String get pipFailed => 'Error al iniciar Imagen en Imagen';
 	@override late final _TranslationsVideoControlsPipErrorsEs pipErrors = _TranslationsVideoControlsPipErrorsEs._(_root);
 	@override String get chapters => 'Capítulos';
@@ -1505,6 +1509,10 @@ extension on TranslationsEs {
 			'settings.downloadLocationSelectError' => 'Error al seleccionar la carpeta',
 			'settings.downloadOnWifiOnly' => 'Descargar solo con WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Evitar descargas cuando se usan datos móviles',
+			'settings.autoDownloadNewEpisodes' => 'Auto-download new episodes',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes of subscribed shows',
+			'settings.autoDownloadNewSeasons' => 'Auto-download new seasons',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download episodes from new seasons of subscribed shows',
 			'settings.cellularDownloadBlocked' => 'Las descargas están desactivadas en datos móviles. Conéctate a una red WiFi o cambia la configuración.',
 			'settings.maxVolume' => 'Volumen Máximo',
 			'settings.maxVolumeDescription' => 'Permitir aumento de volumen por encima del 100% para medios con sonido bajo',
@@ -1645,7 +1653,7 @@ extension on TranslationsEs {
 			'videoControls.timelineSlider' => 'Línea de tiempo del video',
 			'videoControls.volumeSlider' => 'Nivel de volumen',
 			'videoControls.endsAt' => ({required Object time}) => 'Termina a las ${time}',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => 'Reproduciendo en Imagen en Imagen',
 			'videoControls.pipFailed' => 'Error al iniciar Imagen en Imagen',
 			'videoControls.pipErrors.androidVersion' => 'Requiere Android 8.0 o más reciente',
 			'videoControls.pipErrors.iosVersion' => 'Requiere iOS 15.0 o más reciente',
@@ -1830,12 +1838,12 @@ extension on TranslationsEs {
 			'liveTv.title' => 'TV en vivo',
 			'liveTv.channels' => 'Canales',
 			'liveTv.guide' => 'Guía',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => 'No hay canales disponibles',
 			'liveTv.noDvr' => 'No hay DVR configurado en ningún servidor',
 			'liveTv.tuneFailed' => 'Error al sintonizar el canal',
 			'liveTv.loading' => 'Cargando canales...',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.nowPlaying' => 'Reproduciendo ahora',
 			'liveTv.noPrograms' => 'No hay datos de programación disponibles',
 			'liveTv.channelNumber' => ({required Object number}) => 'Canal ${number}',

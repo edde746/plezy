@@ -8,6 +8,7 @@ import '../services/plex_client.dart';
 import '../services/settings_service.dart';
 import '../utils/dialogs.dart';
 import '../utils/platform_detector.dart';
+import '../utils/snackbar_helper.dart';
 import 'tv_number_spinner.dart';
 
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
@@ -59,11 +60,8 @@ Future<DownloadSettings?> showDownloadSettingsDialog(
       if (isSeries) {
         hasDownloads = downloadProvider.getDownloadedEpisodesForShow(ratingKey).isNotEmpty;
       } else {
-        final movieGlobalKey = downloadProvider.metadata.keys.firstWhere(
-          (k) => k.endsWith(':$ratingKey'),
-          orElse: () => '',
-        );
-        hasDownloads = movieGlobalKey.isNotEmpty && downloadProvider.isDownloaded(movieGlobalKey);
+        final movieGlobalKey = downloadProvider.findGlobalKeyForRatingKey(ratingKey);
+        hasDownloads = movieGlobalKey != null && downloadProvider.isDownloaded(movieGlobalKey);
       }
     }
 
@@ -82,65 +80,24 @@ Future<DownloadSettings?> showDownloadSettingsDialog(
     // Save settings BEFORE re-queueing so queueDownload reads the new quality
     await settingsService.setDownloadSettings(ratingKey, result);
 
-    if (qualityChanged && hasDownloads && downloadProvider != null) {
-      await _redownloadAtNewQuality(ratingKey, isSeries, downloadProvider, client);
+    if (qualityChanged && hasDownloads && downloadProvider != null && client != null) {
+      await downloadProvider.redownloadAtNewQuality(ratingKey, isSeries, client);
+      if (context.mounted) {
+        showSuccessSnackBar(context, t.downloads.settingsSaved);
+      }
     } else if (settingsChanged && isSeries && downloadProvider != null && client != null) {
       // Any setting changed (episode count, retention, etc.) — refresh to apply
-      final showGlobalKey = downloadProvider.metadata.keys.firstWhere(
-        (k) => k.endsWith(':$ratingKey'),
-        orElse: () => '',
-      );
-      if (showGlobalKey.isNotEmpty) {
+      final showGlobalKey = downloadProvider.findGlobalKeyForRatingKey(ratingKey);
+      if (showGlobalKey != null) {
         final showMeta = downloadProvider.getMetadata(showGlobalKey);
         if (showMeta != null) {
-          await AutoDownloadService().refreshShow(showMeta, client, downloadProvider);
+          await AutoDownloadService.instance.refreshShow(showMeta, client, downloadProvider);
         }
       }
     }
   }
 
   return result;
-}
-
-Future<void> _redownloadAtNewQuality(
-  String ratingKey,
-  bool isSeries,
-  DownloadProvider downloadProvider,
-  PlexClient? client,
-) async {
-  if (client == null) return;
-
-  if (isSeries) {
-    final episodes = downloadProvider.getDownloadedEpisodesForShow(ratingKey);
-    for (final ep in episodes) {
-      final epGlobalKey = '${ep.serverId}:${ep.ratingKey}';
-      await downloadProvider.deleteDownload(epGlobalKey);
-    }
-    // Re-queue using refreshShow which respects episode count/retention settings
-    final showGlobalKey = downloadProvider.metadata.keys.firstWhere(
-      (k) => k.endsWith(':$ratingKey'),
-      orElse: () => '',
-    );
-    if (showGlobalKey.isNotEmpty) {
-      final showMeta = downloadProvider.getMetadata(showGlobalKey);
-      if (showMeta != null) {
-        await AutoDownloadService().refreshShow(showMeta, client, downloadProvider);
-      }
-    }
-  } else {
-    // Movie
-    final movieGlobalKey = downloadProvider.metadata.keys.firstWhere(
-      (k) => k.endsWith(':$ratingKey'),
-      orElse: () => '',
-    );
-    if (movieGlobalKey.isNotEmpty) {
-      final meta = downloadProvider.getMetadata(movieGlobalKey);
-      await downloadProvider.deleteDownload(movieGlobalKey);
-      if (meta != null) {
-        await downloadProvider.queueDownload(meta, client);
-      }
-    }
-  }
 }
 
 class _DownloadSettingsDialog extends StatefulWidget {
@@ -162,7 +119,8 @@ class _DownloadSettingsDialogState extends State<_DownloadSettingsDialog> {
   late bool _downloadAllEpisodes;
   late int _episodeCount;
   late DeleteRetentionMode _deleteMode;
-  late int _retentionValue;
+  late int _retentionDays;
+  late int _retentionWeeks;
   late String? _transcodeQuality;
 
   final _episodeCountController = TextEditingController();
@@ -174,11 +132,20 @@ class _DownloadSettingsDialogState extends State<_DownloadSettingsDialog> {
     _downloadAllEpisodes = widget.initial.downloadAllEpisodes;
     _episodeCount = widget.initial.episodeCount;
     _deleteMode = widget.initial.deleteMode;
-    _retentionValue = widget.initial.retentionValue;
+    // Initialize each retention value from settings based on active mode
+    _retentionDays = widget.initial.deleteMode == DeleteRetentionMode.afterDays
+        ? widget.initial.retentionValue
+        : 7;
+    _retentionWeeks = widget.initial.deleteMode == DeleteRetentionMode.afterWeeks
+        ? widget.initial.retentionValue
+        : 4;
     _transcodeQuality = widget.initial.transcodeQuality;
     _episodeCountController.text = _episodeCount.toString();
-    _retentionValueController.text = _retentionValue.toString();
+    _retentionValueController.text = _activeRetentionValue.toString();
   }
+
+  int get _activeRetentionValue =>
+      _deleteMode == DeleteRetentionMode.afterWeeks ? _retentionWeeks : _retentionDays;
 
   @override
   void dispose() {
@@ -192,7 +159,7 @@ class _DownloadSettingsDialogState extends State<_DownloadSettingsDialog> {
       downloadAllEpisodes: _downloadAllEpisodes,
       episodeCount: _episodeCount,
       deleteMode: _deleteMode,
-      retentionValue: _retentionValue,
+      retentionValue: _activeRetentionValue,
       transcodeQuality: _transcodeQuality,
     );
   }
@@ -285,24 +252,30 @@ class _DownloadSettingsDialogState extends State<_DownloadSettingsDialog> {
               RadioListTile<DeleteRetentionMode>(
                 contentPadding: EdgeInsets.zero,
                 title: _buildRetentionRow(
-                  t.downloads.afterDays(count: _retentionValue),
+                  t.downloads.afterDays(count: _retentionDays),
                   DeleteRetentionMode.afterDays,
                   isTV,
                 ),
                 value: DeleteRetentionMode.afterDays,
                 groupValue: _deleteMode,
-                onChanged: (v) => setState(() => _deleteMode = v!),
+                onChanged: (v) => setState(() {
+                  _deleteMode = v!;
+                  _retentionValueController.text = _retentionDays.toString();
+                }),
               ),
               RadioListTile<DeleteRetentionMode>(
                 contentPadding: EdgeInsets.zero,
                 title: _buildRetentionRow(
-                  t.downloads.afterWeeks(count: _retentionValue),
+                  t.downloads.afterWeeks(count: _retentionWeeks),
                   DeleteRetentionMode.afterWeeks,
                   isTV,
                 ),
                 value: DeleteRetentionMode.afterWeeks,
                 groupValue: _deleteMode,
-                onChanged: (v) => setState(() => _deleteMode = v!),
+                onChanged: (v) => setState(() {
+                  _deleteMode = v!;
+                  _retentionValueController.text = _retentionWeeks.toString();
+                }),
               ),
               const Divider(height: 24),
             ],
@@ -348,11 +321,15 @@ class _DownloadSettingsDialogState extends State<_DownloadSettingsDialog> {
           SizedBox(
             width: 160,
             child: TvNumberSpinner(
-              value: _retentionValue,
+              value: _activeRetentionValue,
               min: 1,
               max: mode == DeleteRetentionMode.afterDays ? 365 : 52,
               onChanged: (v) => setState(() {
-                _retentionValue = v;
+                if (mode == DeleteRetentionMode.afterWeeks) {
+                  _retentionWeeks = v;
+                } else {
+                  _retentionDays = v;
+                }
                 _retentionValueController.text = v.toString();
               }),
             ),
@@ -368,7 +345,13 @@ class _DownloadSettingsDialogState extends State<_DownloadSettingsDialog> {
               onChanged: (v) {
                 final parsed = int.tryParse(v);
                 if (parsed != null && parsed >= 1) {
-                  setState(() => _retentionValue = parsed);
+                  setState(() {
+                    if (mode == DeleteRetentionMode.afterWeeks) {
+                      _retentionWeeks = parsed;
+                    } else {
+                      _retentionDays = parsed;
+                    }
+                  });
                 }
               },
             ),

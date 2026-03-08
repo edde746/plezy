@@ -312,6 +312,10 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Échec de la sélection du dossier';
 	@override String get downloadOnWifiOnly => 'Télécharger uniquement via WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Empêcher les téléchargements lorsque vous utilisez les données cellulaires';
+	@override String get autoDownloadNewEpisodes => 'Auto-download new episodes';
+	@override String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes of subscribed shows';
+	@override String get autoDownloadNewSeasons => 'Auto-download new seasons';
+	@override String get autoDownloadNewSeasonsDescription => 'Automatically download episodes from new seasons of subscribed shows';
 	@override String get cellularDownloadBlocked => 'Les téléchargements sont désactivés sur les données cellulaires. Connectez-vous au Wi-Fi ou modifiez le paramètre.';
 	@override String get maxVolume => 'Volume maximal';
 	@override String get maxVolumeDescription => 'Autoriser l\'augmentation du volume au-delà de 100 % pour les médias silencieux';
@@ -506,7 +510,7 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Timeline vidéo';
 	@override String get volumeSlider => 'Niveau sonore';
 	@override String endsAt({required Object time}) => 'Fin à ${time}';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => 'Lecture en mode image dans l\'image';
 	@override String get pipFailed => 'Échec du démarrage du mode image dans l\'image';
 	@override late final _TranslationsVideoControlsPipErrorsFr pipErrors = _TranslationsVideoControlsPipErrorsFr._(_root);
 	@override String get chapters => 'Chapitres';
@@ -1505,6 +1509,10 @@ extension on TranslationsFr {
 			'settings.downloadLocationSelectError' => 'Échec de la sélection du dossier',
 			'settings.downloadOnWifiOnly' => 'Télécharger uniquement via WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Empêcher les téléchargements lorsque vous utilisez les données cellulaires',
+			'settings.autoDownloadNewEpisodes' => 'Auto-download new episodes',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes of subscribed shows',
+			'settings.autoDownloadNewSeasons' => 'Auto-download new seasons',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download episodes from new seasons of subscribed shows',
 			'settings.cellularDownloadBlocked' => 'Les téléchargements sont désactivés sur les données cellulaires. Connectez-vous au Wi-Fi ou modifiez le paramètre.',
 			'settings.maxVolume' => 'Volume maximal',
 			'settings.maxVolumeDescription' => 'Autoriser l\'augmentation du volume au-delà de 100 % pour les médias silencieux',
@@ -1645,7 +1653,7 @@ extension on TranslationsFr {
 			'videoControls.timelineSlider' => 'Timeline vidéo',
 			'videoControls.volumeSlider' => 'Niveau sonore',
 			'videoControls.endsAt' => ({required Object time}) => 'Fin à ${time}',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => 'Lecture en mode image dans l\'image',
 			'videoControls.pipFailed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.pipErrors.androidVersion' => 'Nécessite Android 8.0 ou plus récent',
 			'videoControls.pipErrors.iosVersion' => 'Nécessite iOS 15.0 ou plus récent',
@@ -1830,12 +1838,12 @@ extension on TranslationsFr {
 			'liveTv.title' => 'TV en direct',
 			'liveTv.channels' => 'Chaînes',
 			'liveTv.guide' => 'Guide',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => 'Aucune chaîne disponible',
 			'liveTv.noDvr' => 'Aucun DVR configuré sur les serveurs',
 			'liveTv.tuneFailed' => 'Impossible de syntoniser la chaîne',
 			'liveTv.loading' => 'Chargement des chaînes...',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.nowPlaying' => 'En cours de lecture',
 			'liveTv.noPrograms' => 'Aucune donnée de programme disponible',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',

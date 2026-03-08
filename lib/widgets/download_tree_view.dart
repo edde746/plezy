@@ -62,7 +62,7 @@ class DownloadTreeView extends StatefulWidget {
   final void Function(String globalKey)? onRetry;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
-  final void Function(String globalKey)? onRefresh;
+  final Future<void> Function(String globalKey)? onRefresh;
   final void Function(String ratingKey, String title, bool isSeries)? onSettings;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
@@ -474,7 +474,7 @@ class _DownloadTreeItem extends StatefulWidget {
   final void Function(String globalKey)? onRetry;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
-  final void Function(String globalKey)? onRefresh;
+  final Future<void> Function(String globalKey)? onRefresh;
   final void Function(String ratingKey, String title, bool isSeries)? onSettings;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onBack;
@@ -510,6 +510,8 @@ class _DownloadTreeItem extends StatefulWidget {
 }
 
 class _DownloadTreeItemState extends State<_DownloadTreeItem> {
+  bool _isRefreshing = false;
+
   /// Treat downloading items with no progress/speed as effectively queued
   /// (they're waiting in background_downloader's HoldingQueue).
   /// Exception: transcoding downloads show progress from server polling.
@@ -955,14 +957,36 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
 
     // Refresh button (check for new episodes)
     if (widget.onRefresh != null && widget.node.refreshKey != null) {
-      actions.add(
-        _buildActionButton(
-          icon: Symbols.refresh_rounded,
-          tooltip: t.downloads.checkForNewEpisodes,
-          onPressed: () => widget.onRefresh!(widget.node.refreshKey!),
-          buttonIndex: buttonIndex++,
-        ),
-      );
+      if (_isRefreshing) {
+        actions.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
+        );
+        buttonIndex++;
+      } else {
+        actions.add(
+          _buildActionButton(
+            icon: Symbols.refresh_rounded,
+            tooltip: t.downloads.checkForNewEpisodes,
+            onPressed: () async {
+              if (_isRefreshing) return;
+              setState(() => _isRefreshing = true);
+              try {
+                await widget.onRefresh!(widget.node.refreshKey!);
+              } finally {
+                if (mounted) setState(() => _isRefreshing = false);
+              }
+            },
+            buttonIndex: buttonIndex++,
+          ),
+        );
+      }
     }
 
     // Delete all button

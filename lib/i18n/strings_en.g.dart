@@ -682,6 +682,18 @@ class TranslationsSettingsEn {
 	/// en: 'Prevent downloads when on cellular data'
 	String get downloadOnWifiOnlyDescription => 'Prevent downloads when on cellular data';
 
+	/// en: 'Auto-download new episodes'
+	String get autoDownloadNewEpisodes => 'Auto-download new episodes';
+
+	/// en: 'Automatically download new episodes of subscribed shows'
+	String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes of subscribed shows';
+
+	/// en: 'Auto-download new seasons'
+	String get autoDownloadNewSeasons => 'Auto-download new seasons';
+
+	/// en: 'Automatically download episodes from new seasons of subscribed shows'
+	String get autoDownloadNewSeasonsDescription => 'Automatically download episodes from new seasons of subscribed shows';
+
 	/// en: 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.'
 	String get cellularDownloadBlocked => 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.';
 
@@ -3162,6 +3174,10 @@ extension on Translations {
 			'settings.downloadLocationSelectError' => 'Failed to select folder',
 			'settings.downloadOnWifiOnly' => 'Download on WiFi only',
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
+			'settings.autoDownloadNewEpisodes' => 'Auto-download new episodes',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes of subscribed shows',
+			'settings.autoDownloadNewSeasons' => 'Auto-download new seasons',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download episodes from new seasons of subscribed shows',
 			'settings.cellularDownloadBlocked' => 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
@@ -3487,12 +3503,12 @@ extension on Translations {
 			'liveTv.title' => 'Live TV',
 			'liveTv.channels' => 'Channels',
 			'liveTv.guide' => 'Guide',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.tuneFailed' => 'Failed to tune channel',
 			'liveTv.loading' => 'Loading channels...',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.nowPlaying' => 'Now Playing',
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',

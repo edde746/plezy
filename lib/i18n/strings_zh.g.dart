@@ -312,6 +312,10 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => '选择文件夹失败';
 	@override String get downloadOnWifiOnly => '仅在 WiFi 时下载';
 	@override String get downloadOnWifiOnlyDescription => '使用蜂窝数据时禁止下载';
+	@override String get autoDownloadNewEpisodes => 'Auto-download new episodes';
+	@override String get autoDownloadNewEpisodesDescription => 'Automatically download new episodes of subscribed shows';
+	@override String get autoDownloadNewSeasons => 'Auto-download new seasons';
+	@override String get autoDownloadNewSeasonsDescription => 'Automatically download episodes from new seasons of subscribed shows';
 	@override String get cellularDownloadBlocked => '蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。';
 	@override String get maxVolume => '最大音量';
 	@override String get maxVolumeDescription => '允许音量超过 100% 以适应安静的媒体';
@@ -506,7 +510,7 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '视频时间轴';
 	@override String get volumeSlider => '音量调节';
 	@override String endsAt({required Object time}) => '${time} 结束';
-	@override String get pipActive => 'Playing in Picture-in-Picture';
+	@override String get pipActive => '正在画中画模式中播放';
 	@override String get pipFailed => '画中画启动失败';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
@@ -1505,6 +1509,10 @@ extension on TranslationsZh {
 			'settings.downloadLocationSelectError' => '选择文件夹失败',
 			'settings.downloadOnWifiOnly' => '仅在 WiFi 时下载',
 			'settings.downloadOnWifiOnlyDescription' => '使用蜂窝数据时禁止下载',
+			'settings.autoDownloadNewEpisodes' => 'Auto-download new episodes',
+			'settings.autoDownloadNewEpisodesDescription' => 'Automatically download new episodes of subscribed shows',
+			'settings.autoDownloadNewSeasons' => 'Auto-download new seasons',
+			'settings.autoDownloadNewSeasonsDescription' => 'Automatically download episodes from new seasons of subscribed shows',
 			'settings.cellularDownloadBlocked' => '蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。',
 			'settings.maxVolume' => '最大音量',
 			'settings.maxVolumeDescription' => '允许音量超过 100% 以适应安静的媒体',
@@ -1645,7 +1653,7 @@ extension on TranslationsZh {
 			'videoControls.timelineSlider' => '视频时间轴',
 			'videoControls.volumeSlider' => '音量调节',
 			'videoControls.endsAt' => ({required Object time}) => '${time} 结束',
-			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
+			'videoControls.pipActive' => '正在画中画模式中播放',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
 			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
@@ -1830,12 +1838,12 @@ extension on TranslationsZh {
 			'liveTv.title' => '电视直播',
 			'liveTv.channels' => '频道',
 			'liveTv.guide' => '节目指南',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => '没有可用的频道',
 			'liveTv.noDvr' => '没有服务器配置了DVR',
 			'liveTv.tuneFailed' => '无法调谐频道',
 			'liveTv.loading' => '正在加载频道...',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.nowPlaying' => '正在播放',
 			'liveTv.noPrograms' => '没有可用的节目数据',
 			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',

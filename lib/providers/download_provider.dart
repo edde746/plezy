@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/download_models.dart';
 import '../models/download_settings.dart';
 import '../models/plex_metadata.dart';
+import '../services/auto_download_service.dart';
 import '../services/download_manager_service.dart';
 import '../services/download_storage_service.dart';
 import '../services/plex_api_cache.dart';
@@ -263,6 +264,15 @@ class DownloadProvider extends ChangeNotifier {
 
   /// All metadata for downloads
   Map<String, PlexMetadata> get metadata => Map.unmodifiable(_metadata);
+
+  /// Find the globalKey for a given ratingKey by parsing stored keys.
+  String? findGlobalKeyForRatingKey(String ratingKey) {
+    for (final key in _metadata.keys) {
+      final parsed = parseGlobalKey(key);
+      if (parsed != null && parsed.ratingKey == ratingKey) return key;
+    }
+    return null;
+  }
 
   /// Get all queued/downloading items (for Queue tab)
   List<DownloadProgress> get queuedDownloads {
@@ -1071,12 +1081,45 @@ class DownloadProvider extends ChangeNotifier {
       _metadata.remove(globalKey);
       _artworkPaths.remove(globalKey);
 
+      // Clean up orphaned per-show settings + watched timestamps
+      if (meta != null) {
+        await _cleanupOrphanedSettings(meta);
+      }
+
       notifyListeners();
     } catch (e) {
       // Remove from deletion tracking on error
       _deletionProgress.remove(globalKey);
       notifyListeners();
       rethrow;
+    }
+  }
+
+  /// Clean up per-show download settings and watched timestamps when the last
+  /// episode of a show is deleted, or when a movie is deleted.
+  Future<void> _cleanupOrphanedSettings(PlexMetadata meta) async {
+    final settingsService = await SettingsService.getInstance();
+    final type = meta.type.toLowerCase();
+
+    if (type == 'movie') {
+      await settingsService.clearDownloadSettings(meta.ratingKey);
+    } else if (type == 'episode') {
+      // Check if this was the last episode for the show
+      final showRatingKey = meta.grandparentRatingKey;
+      if (showRatingKey != null) {
+        final remaining = getDownloadedEpisodesForShow(showRatingKey);
+        if (remaining.isEmpty) {
+          await settingsService.clearDownloadSettings(showRatingKey);
+          // Collect globalKeys of all watched timestamps for this show's episodes
+          final episodeGlobalKeys = _metadata.entries
+              .where((e) => e.value.grandparentRatingKey == showRatingKey)
+              .map((e) => e.key)
+              .toList();
+          await settingsService.clearWatchedTimestampsForKeys(episodeGlobalKeys);
+        }
+      }
+    } else if (type == 'show') {
+      await settingsService.clearDownloadSettings(meta.ratingKey);
     }
   }
 
@@ -1110,6 +1153,66 @@ class DownloadProvider extends ChangeNotifier {
   /// Call after a PlexClient becomes available (e.g. after server connect on launch).
   void resumeQueuedDownloads(PlexClient client) {
     _downloadManager.resumeQueuedDownloads(client);
+  }
+
+  /// Re-download all content at a new quality after settings change.
+  ///
+  /// For series: deletes all episodes, then re-queues via refreshShow.
+  /// For movies: deletes and re-queues the single item.
+  Future<void> redownloadAtNewQuality(
+    String ratingKey,
+    bool isSeries,
+    PlexClient client,
+  ) async {
+    if (await DownloadManagerService.shouldBlockDownloadOnCellular()) {
+      throw CellularDownloadBlockedException();
+    }
+    final globalKey = findGlobalKeyForRatingKey(ratingKey);
+    if (globalKey == null) return;
+
+    try {
+      _queueing.add(globalKey);
+      notifyListeners();
+
+      if (isSeries) {
+        // Snapshot metadata and episode keys synchronously before any async deletions
+        final showMeta = _metadata[globalKey];
+        final episodeKeys = _downloads.keys
+            .where((k) {
+              final meta = _metadata[k];
+              return meta != null &&
+                  meta.type.toLowerCase() == 'episode' &&
+                  meta.grandparentRatingKey == ratingKey;
+            })
+            .toList();
+
+        // Batch delete without per-item notifyListeners
+        for (final key in episodeKeys) {
+          await _downloadManager.deleteDownload(key);
+          _downloads.remove(key);
+          _metadata.remove(key);
+          _artworkPaths.remove(key);
+        }
+
+        // Re-queue using snapshotted metadata
+        if (showMeta != null) {
+          await AutoDownloadService.instance.refreshShow(showMeta, client, this);
+        }
+      } else {
+        // Movie
+        final meta = _metadata[globalKey];
+        await _downloadManager.deleteDownload(globalKey);
+        _downloads.remove(globalKey);
+        _metadata.remove(globalKey);
+        _artworkPaths.remove(globalKey);
+        if (meta != null) {
+          await queueDownload(meta, client);
+        }
+      }
+    } finally {
+      _queueing.remove(globalKey);
+      notifyListeners();
+    }
   }
 
   /// Refresh only metadata from API cache (after watch state sync).

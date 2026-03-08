@@ -1119,9 +1119,8 @@ class PlexClient {
   /// Get transcode session progress from the server.
   /// Returns progress (0-100) and whether the transcode is complete, or null if not found.
   ///
-  /// Plex assigns its own session key (different from our `session` parameter),
-  /// so we match by protocol=http (download transcodes use HTTP, not HLS/DASH).
-  /// If multiple HTTP sessions exist, falls back to the first one.
+  /// Matches by TranscodeSession.key (which equals the `session` query param we sent
+  /// to /decision and /start). Falls back to the sole HTTP session if key match fails.
   Future<({double progress, bool complete})?> getTranscodeSessionProgress(String sessionId) async {
     try {
       final response = await _dio.get('/transcode/sessions');
@@ -1146,15 +1145,16 @@ class PlexClient {
 
       if (sessions.isEmpty) return null;
 
-      // Prefer HTTP-protocol sessions (download transcodes use protocol=http)
-      final httpSessions = sessions.where((s) => s['protocol'] == 'http').toList();
-      if (httpSessions.isNotEmpty) {
-        return _extractTranscodeProgress(httpSessions.first);
+      // Match by session key first (most reliable)
+      for (final s in sessions) {
+        final key = s['key'] as String? ?? '';
+        if (key == sessionId) return _extractTranscodeProgress(s);
       }
 
-      // Fallback: use the only session if there's just one
-      if (sessions.length == 1) {
-        return _extractTranscodeProgress(sessions.first);
+      // Fallback: if only one HTTP transcode session, assume it's ours
+      final httpSessions = sessions.where((s) => s['protocol'] == 'http').toList();
+      if (httpSessions.length == 1) {
+        return _extractTranscodeProgress(httpSessions.first);
       }
 
       return null;

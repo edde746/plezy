@@ -11,6 +11,10 @@ import '../utils/app_logger.dart';
 /// of shows that the user has subscribed to (partially or fully downloaded).
 /// Also handles watched episode cleanup based on per-series retention settings.
 class AutoDownloadService {
+  static AutoDownloadService? _instance;
+  static AutoDownloadService get instance => _instance ??= AutoDownloadService._();
+  AutoDownloadService._();
+
   bool _isChecking = false;
   DateTime? _lastCheckTime;
 

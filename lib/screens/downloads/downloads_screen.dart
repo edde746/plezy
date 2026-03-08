@@ -206,7 +206,7 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                               if (meta == null) return;
                               final client = getClient(globalKey);
                               if (client == null) return;
-                              final autoDownload = AutoDownloadService();
+                              final autoDownload = AutoDownloadService.instance;
                               final result = await autoDownload.refreshShow(meta, client, downloadProvider);
                               if (context.mounted) {
                                 if (result.queued > 0) {
@@ -219,11 +219,8 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                               }
                             },
                             onSettings: (ratingKey, title, isSeries) {
-                              final globalKey = downloadProvider.metadata.keys.firstWhere(
-                                (k) => k.endsWith(':$ratingKey'),
-                                orElse: () => '',
-                              );
-                              final client = globalKey.isNotEmpty ? getClient(globalKey) : null;
+                              final globalKey = downloadProvider.findGlobalKeyForRatingKey(ratingKey);
+                              final client = globalKey != null ? getClient(globalKey) : null;
                               showDownloadSettingsDialog(
                                 context,
                                 ratingKey: ratingKey,

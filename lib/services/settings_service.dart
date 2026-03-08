@@ -94,6 +94,9 @@ class SettingsService extends BaseSharedPreferencesService {
 
   SettingsService._();
 
+  /// In-memory cache for media version preferences (avoids repeated JSON decode)
+  Map<String, int>? _cachedMediaVersionPreferences;
+
   static SettingsService? _cachedInstance;
 
   static Future<SettingsService> getInstance() async {
@@ -808,6 +811,7 @@ class SettingsService extends BaseSharedPreferencesService {
   Future<void> setMediaVersionPreference(String seriesRatingKey, int mediaIndex) async {
     final preferences = _getMediaVersionPreferences();
     preferences[seriesRatingKey] = mediaIndex;
+    _cachedMediaVersionPreferences = Map.of(preferences);
 
     final jsonString = json.encode(preferences);
     await prefs.setString(_keyMediaVersionPreferences, jsonString);
@@ -824,18 +828,21 @@ class SettingsService extends BaseSharedPreferencesService {
   Future<void> clearMediaVersionPreference(String seriesRatingKey) async {
     final preferences = _getMediaVersionPreferences();
     preferences.remove(seriesRatingKey);
+    _cachedMediaVersionPreferences = Map.of(preferences);
 
     final jsonString = json.encode(preferences);
     await prefs.setString(_keyMediaVersionPreferences, jsonString);
   }
 
-  /// Get all media version preferences
+  /// Get all media version preferences (cached to avoid repeated JSON decode)
   Map<String, int> _getMediaVersionPreferences() {
+    if (_cachedMediaVersionPreferences != null) return _cachedMediaVersionPreferences!;
     final jsonString = prefs.getString(_keyMediaVersionPreferences);
     if (jsonString == null) return {};
 
     final decoded = decodeJsonStringToMap(jsonString);
-    return decoded.map((key, value) => MapEntry(key, value as int));
+    _cachedMediaVersionPreferences = decoded.map((key, value) => MapEntry(key, value as int));
+    return _cachedMediaVersionPreferences!;
   }
 
   // App Locale
@@ -1273,12 +1280,21 @@ class SettingsService extends BaseSharedPreferencesService {
     await prefs.setString(_keyWatchedTimestamps, json.encode(all));
   }
 
+  /// Remove watched-detected timestamps for a list of globalKeys.
+  Future<void> clearWatchedTimestampsForKeys(List<String> globalKeys) async {
+    if (globalKeys.isEmpty) return;
+    final all = _getWatchedTimestamps();
+    final keySet = globalKeys.toSet();
+    all.removeWhere((key, _) => keySet.contains(key));
+    await prefs.setString(_keyWatchedTimestamps, json.encode(all));
+  }
+
   Map<String, dynamic> _getWatchedTimestamps() {
     final jsonString = prefs.getString(_keyWatchedTimestamps);
     if (jsonString == null) return {};
     return _decodeJsonStringToMap(jsonString);
   }
-  
+
   // Ambient Lighting
   Future<void> setAmbientLighting(bool enabled) async {
     await prefs.setBool(_keyAmbientLighting, enabled);
@@ -1372,6 +1388,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyAudioNormalization),
       prefs.remove(_keyBufferSizeMigratedToAuto),
     ]);
+    _cachedMediaVersionPreferences = null;
   }
 
   // Clear cache (for storage cleanup)

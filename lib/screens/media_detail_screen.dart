@@ -618,7 +618,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
 
                           // Use settings-aware refresh for shows, direct queue for others
                           if (metadata.isShow) {
-                            final autoDownload = AutoDownloadService();
+                            final autoDownload = AutoDownloadService.instance;
                             final result = await autoDownload.refreshShow(metadata, client, downloadProvider);
                             if (context.mounted) {
                               if (result.queued > 0) {
@@ -727,7 +727,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                     if (!context.mounted) return;
                     // Use settings-aware refresh for shows, direct queue for others
                     if (metadata.isShow) {
-                      final result = await AutoDownloadService().refreshShow(metadata, client, downloadProvider);
+                      final result = await AutoDownloadService.instance.refreshShow(metadata, client, downloadProvider);
                       if (context.mounted) {
                         if (result.queued > 0) {
                           showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
