@@ -13,6 +13,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _alwaysKeepSidebarOpen = false;
   bool _showUnwatchedCount = true;
   bool _hideSpoilers = false;
+  bool _showNavBarLabels = true;
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
@@ -38,6 +39,7 @@ class SettingsProvider extends ChangeNotifier {
     _alwaysKeepSidebarOpen = _settingsService!.getAlwaysKeepSidebarOpen();
     _showUnwatchedCount = _settingsService!.getShowUnwatchedCount();
     _hideSpoilers = _settingsService!.getHideSpoilers();
+    _showNavBarLabels = _settingsService!.getShowNavBarLabels();
     _isInitialized = true;
     notifyListeners();
   }
@@ -62,6 +64,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get showUnwatchedCount => _showUnwatchedCount;
 
   bool get hideSpoilers => _hideSpoilers;
+
+  bool get showNavBarLabels => _showNavBarLabels;
 
   /// Helper to update a setting: ensures init, deduplicates, persists, notifies.
   Future<void> _updateSetting<T>({
@@ -130,6 +134,12 @@ class SettingsProvider extends ChangeNotifier {
     current: _hideSpoilers, value: value,
     setLocal: (v) => _hideSpoilers = v,
     persist: _settingsService!.setHideSpoilers,
+  );
+
+  Future<void> setShowNavBarLabels(bool value) => _updateSetting(
+    current: _showNavBarLabels, value: value,
+    setLocal: (v) => _showNavBarLabels = v,
+    persist: _settingsService!.setShowNavBarLabels,
   );
 
   String get libraryDensityDisplayName {

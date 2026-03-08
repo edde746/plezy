@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../models/hotkey_model.dart';
@@ -74,6 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const _kShowUnwatchedCount = 'show_unwatched_count';
   static const _kHideSpoilers = 'hide_spoilers';
+  static const _kShowNavBarLabels = 'show_nav_bar_labels';
   static const _kRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const _kConfirmExitOnBack = 'confirm_exit_on_back';
   static const _kPlayerBackend = 'player_backend';
@@ -383,6 +383,21 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   value: settingsProvider.alwaysKeepSidebarOpen,
                   onChanged: (value) async {
                     await settingsProvider.setAlwaysKeepSidebarOpen(value);
+                  },
+                );
+              },
+            ),
+          if (!PlatformDetector.shouldUseSideNavigation(context))
+            Consumer<SettingsProvider>(
+              builder: (context, settingsProvider, child) {
+                return SwitchListTile(
+                  focusNode: _focusTracker.get(_kShowNavBarLabels),
+                  secondary: const AppIcon(Symbols.label_rounded, fill: 1),
+                  title: Text(t.settings.showNavBarLabels),
+                  subtitle: Text(t.settings.showNavBarLabelsDescription),
+                  value: settingsProvider.showNavBarLabels,
+                  onChanged: (value) async {
+                    await settingsProvider.setShowNavBarLabels(value);
                   },
                 );
               },
@@ -1024,11 +1039,22 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ListTile(
               leading: const AppIcon(Symbols.error_rounded, fill: 1),
               title: const Text('Test Sentry'),
-              subtitle: const Text('Send a test error to Bugsink'),
+              subtitle: const Text('Send a test error'),
               trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
               onTap: () {
-                Sentry.captureException(Exception('Sentry test from settings'));
-                showSnackBar(context, 'Test error sent to Sentry');
+                throw Exception("Example exception");
+              },
+            ),
+          if (kDebugMode)
+            ListTile(
+              leading: const AppIcon(Symbols.timer_rounded, fill: 1),
+              title: const Text('Test ANR'),
+              subtitle: const Text('Block the main thread for 10 seconds'),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () {
+                showSnackBar(context, 'Blocking main thread...');
+                final end = DateTime.now().add(const Duration(seconds: 10));
+                while (DateTime.now().isBefore(end)) {}
               },
             ),
         ],
@@ -1622,6 +1648,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         return '한국어';
       case AppLocale.es:
         return 'Español';
+      case AppLocale.pt:
+        return 'Português';
+      case AppLocale.ja:
+        return '日本語';
+      case AppLocale.ru:
+        return 'Русский';
+      case AppLocale.pl:
+        return 'Polski';
+      case AppLocale.da:
+        return 'Dansk';
+      case AppLocale.nb:
+        return 'Norsk bokmål';
     }
   }
 

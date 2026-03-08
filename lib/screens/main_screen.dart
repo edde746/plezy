@@ -21,7 +21,6 @@ import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/server_state_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
@@ -46,7 +45,6 @@ import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
-import 'video_player_screen.dart';
 import 'profile/profile_switch_screen.dart';
 import '../services/watch_next_service.dart';
 import '../watch_together/watch_together.dart';
@@ -193,7 +191,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   Future<void> _checkForUpdatesOnStartup() async {
     // Delay slightly to allow UI to settle
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
 
@@ -377,27 +375,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     if (!mounted) return; // Check before any context usage
 
     try {
-      final multiServer = context.read<MultiServerProvider>();
-      final client = multiServer.getClientForServer(serverId);
-
-      if (client == null) {
-        appLogger.w('WatchTogether: Server $serverId not available');
-        return;
-      }
-
-      // Fetch the metadata for the new media
-      final metadata = await client.getMetadataWithImages(ratingKey);
-
-      if (metadata == null || !mounted) return;
-
-      // Use push to preserve WatchTogetherScreen in navigation stack
-      // VideoPlayerScreen handles its own replacement via onPlayerMediaSwitched
-      Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: kVideoPlayerRouteName),
-          builder: (_) => VideoPlayerScreen(metadata: metadata),
-        ),
-      );
+      await navigateToWatchTogetherPlayback(context, ratingKey: ratingKey, serverId: serverId);
     } catch (e) {
       appLogger.e('WatchTogether: Failed to navigate to media', error: e);
     }
@@ -708,11 +686,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         }
       });
     }
-    // When content regains focus while on Libraries, retry focusing the active tab
+    // When content regains focus while on Libraries, only focus the active tab
+    // if no child already has focus (avoids stale focus requests stealing focus
+    // from the current item when scrolling back to item 0)
     if (_currentIndex == 1 && !_isOffline) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_librariesKey.currentState case final FocusableTab focusable) {
-          focusable.focusActiveTabIfReady();
+        if (_contentFocusScope.focusedChild == null) {
+          if (_librariesKey.currentState case final FocusableTab focusable) {
+            focusable.focusActiveTabIfReady();
+          }
         }
       });
     }
@@ -810,7 +792,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     // Called when returning to this route from a child route (e.g., from video player)
     if (_currentIndex == 0 && !_isOffline) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
-        aware.onTabShown();
+        aware.onTabShown(scrollToTop: false);
       }
       _onDiscoverBecameVisible();
     }
@@ -836,7 +818,6 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     // Get all providers
     final multiServerProvider = context.read<MultiServerProvider>();
-    final serverStateProvider = context.read<ServerStateProvider>();
     final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
     final librariesProvider = context.read<LibrariesProvider>();
     final playbackStateProvider = context.read<PlaybackStateProvider>();
@@ -864,7 +845,6 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
 
     // Reset other provider states
-    serverStateProvider.reset();
     hiddenLibrariesProvider.refresh();
     playbackStateProvider.clearShuffle();
 
@@ -1123,10 +1103,21 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                   ),
                 ),
               ),
-            NavigationBar(
-              selectedIndex: _currentIndex,
-              onDestinationSelected: _selectTab,
-              destinations: _buildNavDestinations(_isOffline),
+            Consumer<SettingsProvider>(
+              builder: (context, settingsProvider, child) {
+                final hideLabels = !settingsProvider.showNavBarLabels;
+                return NavigationBarTheme(
+                  data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
+                  child: NavigationBar(
+                    selectedIndex: _currentIndex,
+                    onDestinationSelected: _selectTab,
+                    labelBehavior: hideLabels
+                        ? NavigationDestinationLabelBehavior.alwaysHide
+                        : NavigationDestinationLabelBehavior.alwaysShow,
+                    destinations: _buildNavDestinations(_isOffline),
+                  ),
+                );
+              },
             ),
           ],
         ),

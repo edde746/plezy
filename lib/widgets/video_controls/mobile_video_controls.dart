@@ -9,6 +9,7 @@ import '../../models/plex_metadata.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../i18n/strings.g.dart';
 import 'widgets/circular_control_button.dart';
+import 'widgets/content_strip.dart';
 import 'widgets/first_frame_guard.dart';
 import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/video_controls_header.dart';
@@ -20,7 +21,11 @@ import 'widgets/video_timeline_bar.dart';
 /// - Top bar: Back button, title, and track/chapter controls
 /// - Center: Large playback controls (seek backward, play/pause, seek forward)
 /// - Bottom bar: Timeline slider with chapter markers and timestamps
-class MobileVideoControls extends StatelessWidget {
+///
+/// When chapters or queue are available, the user can swipe up on the bottom
+/// area to slide a content strip into view. The playback controls and timeline
+/// fade out while the strip slides up — only the top bar stays fixed.
+class MobileVideoControls extends StatefulWidget {
   final Player player;
   final PlexMetadata metadata;
   final List<PlexChapter> chapters;
@@ -36,9 +41,6 @@ class MobileVideoControls extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
-  final VoidCallback? onSeekToPreviousChapter;
-  final VoidCallback? onSeekToNextChapter;
-
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
 
@@ -53,6 +55,21 @@ class MobileVideoControls extends StatelessWidget {
 
   /// Channel name for live TV display
   final String? liveChannelName;
+
+  /// Server ID for chapter thumbnails in the content strip
+  final String? serverId;
+
+  /// Whether to show the queue tab in the content strip
+  final bool showQueueTab;
+
+  /// Callback when a queue item is selected from the content strip
+  final Function(PlexMetadata)? onQueueItemSelected;
+
+  /// Notifier for controls visibility (used to reset strip on hide)
+  final ValueNotifier<bool>? controlsVisible;
+
+  /// Called when the content strip visibility changes
+  final ValueChanged<bool>? onStripVisibilityChanged;
 
   const MobileVideoControls({
     super.key,
@@ -71,27 +88,188 @@ class MobileVideoControls extends StatelessWidget {
     this.onBack,
     this.onNext,
     this.onPrevious,
-    this.onSeekToPreviousChapter,
-    this.onSeekToNextChapter,
     this.canControl = true,
     this.hasFirstFrame,
     this.thumbnailDataBuilder,
     this.isLive = false,
     this.liveChannelName,
+    this.serverId,
+    this.showQueueTab = false,
+    this.onQueueItemSelected,
+    this.controlsVisible,
+    this.onStripVisibilityChanged,
   });
 
   @override
+  State<MobileVideoControls> createState() => _MobileVideoControlsState();
+}
+
+class _MobileVideoControlsState extends State<MobileVideoControls>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _stripAnim;
+  bool _stripVisible = false;
+
+  /// Drag distance (in pixels) required to fully reveal the strip.
+  static const _dragExtent = 150.0;
+
+  bool get _hasStripContent =>
+      widget.chapters.isNotEmpty || (widget.showQueueTab && widget.onQueueItemSelected != null);
+
+  @override
+  void initState() {
+    super.initState();
+    _stripAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _stripAnim.addListener(_onStripAnimChanged);
+    widget.controlsVisible?.addListener(_onControlsVisibilityChanged);
+  }
+
+  @override
+  void didUpdateWidget(MobileVideoControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controlsVisible != widget.controlsVisible) {
+      oldWidget.controlsVisible?.removeListener(_onControlsVisibilityChanged);
+      widget.controlsVisible?.addListener(_onControlsVisibilityChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controlsVisible?.removeListener(_onControlsVisibilityChanged);
+    _stripAnim.removeListener(_onStripAnimChanged);
+    _stripAnim.dispose();
+    super.dispose();
+  }
+
+  void _onStripAnimChanged() {
+    final visible = _stripAnim.value > 0.5;
+    if (visible != _stripVisible) {
+      _stripVisible = visible;
+      widget.onStripVisibilityChanged?.call(visible);
+    }
+  }
+
+  void _onControlsVisibilityChanged() {
+    if (widget.controlsVisible?.value == false && _stripVisible) {
+      // Just notify parent that strip is no longer active — don't animate,
+      // let the overlay fade out with the strip still showing.
+      _stripVisible = false;
+      widget.onStripVisibilityChanged?.call(false);
+    } else if (widget.controlsVisible?.value == true && _stripAnim.value > 0) {
+      // Reset strip when controls reappear so page 0 is shown.
+      _stripAnim.value = 0;
+    }
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    // Negative primaryDelta = swipe up = reveal strip (increase value)
+    _stripAnim.value -= (details.primaryDelta ?? 0) / _dragExtent;
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    // Fast swipe up or past halfway without fast swipe down → show strip
+    if (velocity < -200 || (_stripAnim.value > 0.5 && velocity < 200)) {
+      _stripAnim.forward();
+    } else {
+      _stripAnim.reverse();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (!_hasStripContent) {
+      return Column(
+        children: [
+          _buildTopBar(context),
+          const Spacer(),
+          _buildPlaybackControls(context),
+          const Spacer(),
+          _buildBottomBar(context),
+        ],
+      );
+    }
+
+    // Top bar stays fixed. Everything below it is a Stack where the controls
+    // fade out and the content strip slides up from the bottom on swipe.
     return Column(
       children: [
-        // Top bar with back button and track/chapter controls
         _buildTopBar(context),
-        const Spacer(),
-        // Centered large playback controls
-        _buildPlaybackControls(context),
-        const Spacer(),
-        // Progress bar at bottom
-        _buildBottomBar(context),
+        Expanded(
+          child: GestureDetector(
+            onVerticalDragUpdate: _onVerticalDragUpdate,
+            onVerticalDragEnd: _onVerticalDragEnd,
+            behavior: HitTestBehavior.translucent,
+            child: ListenableBuilder(
+              listenable: _stripAnim,
+              builder: (context, _) {
+                final t = _stripAnim.value;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Normal controls — fade out as strip appears
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        ignoring: t > 0.5,
+                        child: Opacity(
+                          opacity: (1 - t * 2).clamp(0.0, 1.0),
+                          child: Stack(
+                            children: [
+                              Column(
+                                children: [
+                                  const Spacer(),
+                                  _buildPlaybackControls(context),
+                                  const Spacer(),
+                                  _buildBottomBar(context),
+                                ],
+                              ),
+                              const Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 12,
+                                child: Icon(Symbols.keyboard_arrow_up_rounded, color: Colors.white24, size: 24),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Content strip — slides up from below the bottom edge
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: FractionalTranslation(
+                        translation: Offset(0, 1 - t),
+                        child: IgnorePointer(
+                          ignoring: t < 0.5,
+                          child: Opacity(
+                            opacity: (t * 2).clamp(0.0, 1.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Symbols.keyboard_arrow_down_rounded, color: Colors.white38, size: 20),
+                                const SizedBox(height: 4),
+                                ContentStrip(
+                                  player: widget.player,
+                                  chapters: widget.chapters,
+                                  chaptersLoaded: widget.chaptersLoaded,
+                                  serverId: widget.serverId,
+                                  showQueueTab: widget.showQueueTab,
+                                  onQueueItemSelected: widget.onQueueItemSelected,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -103,10 +281,10 @@ class MobileVideoControls extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: VideoControlsHeader(
-          metadata: metadata,
+          metadata: widget.metadata,
           style: VideoHeaderStyle.multiLine,
-          trailing: trackChapterControls,
-          onBack: onBack,
+          trailing: widget.trackChapterControls,
+          onBack: widget.onBack,
         ),
       ),
     );
@@ -116,38 +294,27 @@ class MobileVideoControls extends StatelessWidget {
 
   Widget _buildPlaybackControls(BuildContext _) {
     // Hide all playback controls in host-only mode for non-host
-    if (!canControl) {
+    if (!widget.canControl) {
       return const SizedBox.shrink();
     }
 
-    return FirstFrameGuard(hasFirstFrame: hasFirstFrame, builder: (context) => _buildPlaybackControlsContent(context));
+    return FirstFrameGuard(hasFirstFrame: widget.hasFirstFrame, builder: (context) => _buildPlaybackControlsContent(context));
   }
 
   Widget _buildPlaybackControlsContent(BuildContext _) {
-    final hasChapters = !isLive && chaptersLoaded && chapters.isNotEmpty;
-
     return PlayPauseStreamBuilder(
-      player: player,
+      player: widget.player,
       builder: (context, isPlaying) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (!isLive) ...[
-              if (hasChapters) ...[
-                CircularControlButton(
-                  semanticLabel: t.videoControls.previousChapterButton,
-                  icon: Symbols.fast_rewind_rounded,
-                  iconSize: 32,
-                  onPressed: onSeekToPreviousChapter,
-                ),
-                const SizedBox(width: 16),
-              ],
+            if (!widget.isLive) ...[
               // Previous episode button (greyed out when unavailable)
               CircularControlButton(
                 semanticLabel: t.videoControls.previousButton,
                 icon: Symbols.skip_previous_rounded,
                 iconSize: 48,
-                onPressed: onPrevious,
+                onPressed: widget.onPrevious,
               ),
               const SizedBox(width: 24),
             ],
@@ -157,32 +324,23 @@ class MobileVideoControls extends StatelessWidget {
               iconSize: 72,
               onPressed: () {
                 if (isPlaying) {
-                  player.pause();
-                  onCancelAutoHide?.call(); // Cancel auto-hide when paused
+                  widget.player.pause();
+                  widget.onCancelAutoHide?.call(); // Cancel auto-hide when paused
                 } else {
-                  player.play();
-                  onStartAutoHide?.call(); // Start auto-hide when playing
+                  widget.player.play();
+                  widget.onStartAutoHide?.call(); // Start auto-hide when playing
                 }
               },
             ),
-            if (!isLive) ...[
+            if (!widget.isLive) ...[
               const SizedBox(width: 24),
               // Next episode button (greyed out when unavailable)
               CircularControlButton(
                 semanticLabel: t.videoControls.nextButton,
                 icon: Symbols.skip_next_rounded,
                 iconSize: 48,
-                onPressed: onNext,
+                onPressed: widget.onNext,
               ),
-              if (hasChapters) ...[
-                const SizedBox(width: 16),
-                CircularControlButton(
-                  semanticLabel: t.videoControls.nextChapterButton,
-                  icon: Symbols.fast_forward_rounded,
-                  iconSize: 32,
-                  onPressed: onSeekToNextChapter,
-                ),
-              ],
             ],
           ],
         );
@@ -191,7 +349,7 @@ class MobileVideoControls extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext _) {
-    if (isLive) {
+    if (widget.isLive) {
       // For live TV, show channel name instead of timeline
       return Padding(
         padding: const EdgeInsets.all(16),
@@ -209,7 +367,7 @@ class MobileVideoControls extends StatelessWidget {
         ),
       );
     }
-    return FirstFrameGuard(hasFirstFrame: hasFirstFrame, builder: (context) => _buildBottomBarContent(context));
+    return FirstFrameGuard(hasFirstFrame: widget.hasFirstFrame, builder: (context) => _buildBottomBarContent(context));
   }
 
   Widget _buildBottomBarContent(BuildContext context) {
@@ -219,15 +377,15 @@ class MobileVideoControls extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: VideoTimelineBar(
-          player: player,
-          chapters: chapters,
-          chaptersLoaded: chaptersLoaded,
-          onSeek: onSeek,
-          onSeekEnd: onSeekEnd,
+          player: widget.player,
+          chapters: widget.chapters,
+          chaptersLoaded: widget.chaptersLoaded,
+          onSeek: widget.onSeek,
+          onSeekEnd: widget.onSeekEnd,
           horizontalLayout: false,
-          enabled: canControl,
+          enabled: widget.canControl,
           showFinishTime: true,
-          thumbnailDataBuilder: thumbnailDataBuilder,
+          thumbnailDataBuilder: widget.thumbnailDataBuilder,
         ),
       ),
     );

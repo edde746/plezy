@@ -51,6 +51,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool initialized = false;
 
   /// Whether the player has been disposed.
+  @override
   bool get disposed => _disposed;
 
   /// The method channel for platform communication.
@@ -103,11 +104,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> observeProperty(String name, String format) async {
     final propId = _nextPropId++;
     _propIdToName[propId] = name;
-    await methodChannel.invokeMethod('observeProperty', {
-      'name': name,
-      'format': format,
-      'id': propId,
-    });
+    await invoke('observeProperty', {'name': name, 'format': format, 'id': propId});
   }
 
   void _handleEvent(dynamic event) {
@@ -235,6 +232,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         updateSelectedSubtitleTrack(value);
         break;
 
+      case 'secondary-sid':
+        updateSelectedSecondarySubtitleTrack(value);
+        break;
+
       case 'audio-device-list':
         List? deviceList;
         if (value is List) {
@@ -248,10 +249,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         if (deviceList != null) {
           final devices = deviceList
               .whereType<Map>()
-              .map((d) => AudioDevice(
-                    name: d['name'] as String? ?? '',
-                    description: d['description'] as String? ?? '',
-                  ))
+              .map((d) => AudioDevice(name: d['name'] as String? ?? '', description: d['description'] as String? ?? ''))
               .toList();
           _state = _state.copyWith(audioDevices: devices);
           audioDevicesController.add(devices);
@@ -260,7 +258,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'audio-device':
         if (value is String && value.isNotEmpty) {
-          final device = _state.audioDevices.cast<AudioDevice?>().firstWhere(
+          final device =
+              _state.audioDevices.cast<AudioDevice?>().firstWhere(
                 (d) => d?.name == value,
                 orElse: () => AudioDevice(name: value),
               ) ??
@@ -306,10 +305,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           final start = range['start'] as num?;
           final end = range['end'] as num?;
           if (start != null && end != null) {
-            ranges.add(BufferRange(
-              start: Duration(milliseconds: (start * 1000).toInt()),
-              end: Duration(milliseconds: (end * 1000).toInt()),
-            ));
+            ranges.add(
+              BufferRange(
+                start: Duration(milliseconds: (start * 1000).toInt()),
+                end: Duration(milliseconds: (end * 1000).toInt()),
+              ),
+            );
           }
         }
       }
@@ -324,7 +325,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_disposed) return;
     switch (name) {
       case 'end-file':
-        final reason = data?['reason'] as String?;
+        final rawReason = data?['reason'];
+        final reason = switch (rawReason) {
+          0 => 'eof',
+          2 => 'stop',
+          3 => 'quit',
+          4 => 'error',
+          5 => 'redirect',
+          String s => s,
+          _ => null,
+        };
         if (reason == 'eof') {
           _state = _state.copyWith(completed: true);
           completedController.add(true);
@@ -432,16 +442,31 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     trackController.add(_state.track);
   }
 
+  /// Update the selected secondary subtitle track.
+  void updateSelectedSecondarySubtitleTrack(dynamic trackId) {
+    final id = trackId?.toString();
+    SubtitleTrack? selectedTrack;
+
+    if (id == null || id == 'no') {
+      selectedTrack = null;
+    } else {
+      selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
+    }
+
+    _state = _state.copyWith(track: _state.track.copyWith(secondarySubtitle: selectedTrack));
+    trackController.add(_state.track);
+  }
+
   /// Update the internal state.
   void updateState(PlayerState Function(PlayerState) update) {
     _state = update(_state);
   }
 
-  /// Throws if the player has been disposed.
-  void checkDisposed() {
-    if (_disposed) {
-      throw StateError('Player has been disposed');
-    }
+  /// Safe method channel invocation — no-ops if player is disposed.
+  @protected
+  Future<T?> invoke<T>(String method, [dynamic args]) async {
+    if (_disposed) return null;
+    return methodChannel.invokeMethod<T>(method, args);
   }
 
   // ============================================
@@ -450,7 +475,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   Future<void> playOrPause() async {
-    checkDisposed();
+    if (_disposed) return;
     if (_state.playing) {
       await pause();
     } else {
@@ -460,9 +485,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   Future<bool> setVisible(bool visible) async {
-    checkDisposed();
+    if (_disposed) return false;
     try {
-      await methodChannel.invokeMethod('setVisible', {'visible': visible});
+      await invoke('setVisible', {'visible': visible});
       return true;
     } catch (e) {
       errorController.add('Failed to set visibility: $e');
@@ -497,6 +522,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> setAudioDevice(AudioDevice device) async {}
 
   @override
+  bool get supportsSecondarySubtitles => true;
+
+  @override
+  // ignore: no-empty-block - base no-op, overridden by platform subclasses
+  Future<void> selectSecondarySubtitleTrack(SubtitleTrack track) async {}
+
+  @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setAudioPassthrough(bool enabled) async {}
 
@@ -515,7 +547,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
     await _eventSubscription?.cancel();
     await _logSubscription?.cancel();
-    await methodChannel.invokeMethod('dispose');
+    await methodChannel.invokeMethod('dispose'); // Direct call — already guarded by _disposed check above
     await closeStreamControllers();
   }
 }

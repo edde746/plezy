@@ -3,7 +3,5 @@ ice.plezy.app {
 }
 
 bugs.plezy.app {
-	reverse_proxy bugsink:8000 {
-		header_up X-Real-IP {remote_host}
-	}
+	reverse_proxy glitchtip:8000
 }

@@ -97,9 +97,6 @@ class _TranslationsAuthZh implements TranslationsAuthEn {
 	@override String get signInWithPlex => '使用 Plex 登录';
 	@override String get showQRCode => '显示二维码';
 	@override String get authenticate => '验证';
-	@override String get debugEnterToken => '调试：输入 Plex Token';
-	@override String get plexTokenLabel => 'Plex 授权令牌 (Auth Token)';
-	@override String get plexTokenHint => '输入你的 Plex.tv 令牌';
 	@override String get authenticationTimeout => '验证超时。请重试。';
 	@override String get scanQRToSignIn => '扫描二维码登录';
 	@override String get waitingForAuth => '等待验证中...\n请在你的浏览器中完成登录。';
@@ -130,6 +127,7 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get delete => '删除';
 	@override String get shuffle => '随机播放';
 	@override String get addTo => '添加到...';
+	@override String get createNew => '新建';
 	@override String get remove => '删除';
 	@override String get paste => '粘贴';
 	@override String get connect => '连接';
@@ -168,7 +166,7 @@ class _TranslationsScreensZh implements TranslationsScreensEn {
 	@override String get licenses => '许可证';
 	@override String get switchProfile => '切换用户';
 	@override String get subtitleStyling => '字幕样式';
-	@override String get mpvConfig => 'MPV 配置';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => '日志';
 }
 
@@ -246,7 +244,7 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get playerBackend => '播放器引擎';
 	@override String get exoPlayer => 'ExoPlayer（推荐）';
 	@override String get exoPlayerDescription => 'Android 原生播放器，硬件支持更好';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => '功能更多的高级播放器，支持 ASS 字幕';
 	@override String get hardwareDecoding => '硬件解码';
 	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
@@ -332,6 +330,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
 	@override String get confirmExitOnBack => '退出前确认';
 	@override String get confirmExitOnBackDescription => '按返回键退出应用时显示确认对话框';
+	@override String get showNavBarLabels => '显示导航栏标签';
+	@override String get showNavBarLabelsDescription => '在导航栏图标下方显示文字标签';
 }
 
 // Path: search
@@ -496,6 +496,7 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get settingsButton => '视频设置';
 	@override String get audioTrackButton => '音轨';
 	@override String get subtitlesButton => '字幕';
+	@override String get tracksButton => '音频和字幕';
 	@override String get chaptersButton => '章节';
 	@override String get versionsButton => '视频版本';
 	@override String get pipButton => '画中画模式';
@@ -598,19 +599,10 @@ class _TranslationsMpvConfigZh implements TranslationsMpvConfigEn {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'MPV 配置';
+	@override String get title => 'mpv 配置';
 	@override String get description => '高级视频播放器设置';
-	@override String get properties => '属性';
 	@override String get presets => '预设';
-	@override String get noProperties => '未配置任何属性';
 	@override String get noPresets => '没有保存的预设';
-	@override String get addProperty => '添加属性';
-	@override String get editProperty => '编辑属性';
-	@override String get deleteProperty => '删除属性';
-	@override String get propertyKey => '属性键';
-	@override String get propertyKeyHint => '例如 hwdec, demuxer-max-bytes';
-	@override String get propertyValue => '属性值';
-	@override String get propertyValueHint => '例如 auto, 256000000';
 	@override String get saveAsPreset => '保存为预设...';
 	@override String get presetName => '预设名称';
 	@override String get presetNameHint => '输入此预设的名称';
@@ -620,8 +612,7 @@ class _TranslationsMpvConfigZh implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => '预设已加载';
 	@override String get presetDeleted => '预设已删除';
 	@override String get confirmDeletePreset => '确定要删除此预设吗？';
-	@override String get confirmDeleteProperty => '确定要删除此属性吗？';
-	@override String entriesCount({required Object count}) => '${count} 条目';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -909,7 +900,6 @@ class _TranslationsPlaylistsZh implements TranslationsPlaylistsEn {
 	@override String get itemAdded => '已添加到播放列表';
 	@override String get itemRemoved => '已从播放列表中移除';
 	@override String get selectPlaylist => '选择播放列表';
-	@override String get createNewPlaylist => '创建新播放列表';
 	@override String get errorCreating => '创建播放列表失败';
 	@override String get errorDeleting => '删除播放列表失败';
 	@override String get errorLoading => '加载播放列表失败';
@@ -937,7 +927,6 @@ class _TranslationsCollectionsZh implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => '删除合集失败：${error}';
 	@override String failedToLoadItems({required Object error}) => '加载合集项目失败：${error}';
 	@override String get selectCollection => '选择合集';
-	@override String get createNewCollection => '创建新合集';
 	@override String get collectionName => '合集名称';
 	@override String get enterCollectionName => '输入合集名称';
 	@override String get addedToCollection => '已添加到合集';
@@ -1001,6 +990,10 @@ class _TranslationsWatchTogetherZh implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => '会话代码已复制到剪贴板';
 	@override String get relayUnreachable => '无法连接到中继服务器。这可能是由于您的网络运营商屏蔽了连接。您仍然可以尝试，但一起观看功能可能无法正常使用。';
 	@override String get reconnectingToHost => '正在重新连接到主持人...';
+	@override String get currentPlayback => '当前播放';
+	@override String get joinCurrentPlayback => '加入当前播放';
+	@override String get joinCurrentPlaybackDescription => '回到房主当前正在观看的内容';
+	@override String get failedToOpenCurrentPlayback => '无法打开当前播放';
 	@override String participantJoined({required Object name}) => '${name} 加入了';
 	@override String participantLeft({required Object name}) => '${name} 离开了';
 }
@@ -1018,6 +1011,12 @@ class _TranslationsShadersZh implements TranslationsShadersEn {
 	@override String get qualityFast => '快速';
 	@override String get qualityHQ => '高质量';
 	@override String get mode => '模式';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1330,9 +1329,6 @@ extension on TranslationsZh {
 			'auth.signInWithPlex' => '使用 Plex 登录',
 			'auth.showQRCode' => '显示二维码',
 			'auth.authenticate' => '验证',
-			'auth.debugEnterToken' => '调试：输入 Plex Token',
-			'auth.plexTokenLabel' => 'Plex 授权令牌 (Auth Token)',
-			'auth.plexTokenHint' => '输入你的 Plex.tv 令牌',
 			'auth.authenticationTimeout' => '验证超时。请重试。',
 			'auth.scanQRToSignIn' => '扫描二维码登录',
 			'auth.waitingForAuth' => '等待验证中...\n请在你的浏览器中完成登录。',
@@ -1354,6 +1350,7 @@ extension on TranslationsZh {
 			'common.delete' => '删除',
 			'common.shuffle' => '随机播放',
 			'common.addTo' => '添加到...',
+			'common.createNew' => '新建',
 			'common.remove' => '删除',
 			'common.paste' => '粘贴',
 			'common.connect' => '连接',
@@ -1383,7 +1380,7 @@ extension on TranslationsZh {
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
-			'screens.mpvConfig' => 'MPV 配置',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => '日志',
 			'update.available' => '有可用更新',
 			'update.versionAvailable' => ({required Object version}) => '版本 ${version} 已发布',
@@ -1443,7 +1440,7 @@ extension on TranslationsZh {
 			'settings.playerBackend' => '播放器引擎',
 			'settings.exoPlayer' => 'ExoPlayer（推荐）',
 			'settings.exoPlayerDescription' => 'Android 原生播放器，硬件支持更好',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => '功能更多的高级播放器，支持 ASS 字幕',
 			'settings.hardwareDecoding' => '硬件解码',
 			'settings.hardwareDecodingDescription' => '如果可用，使用硬件加速',
@@ -1529,6 +1526,8 @@ extension on TranslationsZh {
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
 			'settings.confirmExitOnBack' => '退出前确认',
 			'settings.confirmExitOnBackDescription' => '按返回键退出应用时显示确认对话框',
+			'settings.showNavBarLabels' => '显示导航栏标签',
+			'settings.showNavBarLabelsDescription' => '在导航栏图标下方显示文字标签',
 			'search.hint' => '搜索电影、系列、音乐...',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -1639,6 +1638,7 @@ extension on TranslationsZh {
 			'videoControls.settingsButton' => '视频设置',
 			'videoControls.audioTrackButton' => '音轨',
 			'videoControls.subtitlesButton' => '字幕',
+			'videoControls.tracksButton' => '音频和字幕',
 			'videoControls.chaptersButton' => '章节',
 			'videoControls.versionsButton' => '视频版本',
 			'videoControls.pipButton' => '画中画模式',
@@ -1711,19 +1711,10 @@ extension on TranslationsZh {
 			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
 			'subtitlingStyling.backgroundColor' => '背景颜色',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV 配置',
+			'mpvConfig.title' => 'mpv 配置',
 			'mpvConfig.description' => '高级视频播放器设置',
-			'mpvConfig.properties' => '属性',
 			'mpvConfig.presets' => '预设',
-			'mpvConfig.noProperties' => '未配置任何属性',
 			'mpvConfig.noPresets' => '没有保存的预设',
-			'mpvConfig.addProperty' => '添加属性',
-			'mpvConfig.editProperty' => '编辑属性',
-			'mpvConfig.deleteProperty' => '删除属性',
-			'mpvConfig.propertyKey' => '属性键',
-			'mpvConfig.propertyKeyHint' => '例如 hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => '属性值',
-			'mpvConfig.propertyValueHint' => '例如 auto, 256000000',
 			'mpvConfig.saveAsPreset' => '保存为预设...',
 			'mpvConfig.presetName' => '预设名称',
 			'mpvConfig.presetNameHint' => '输入此预设的名称',
@@ -1733,8 +1724,7 @@ extension on TranslationsZh {
 			'mpvConfig.presetLoaded' => '预设已加载',
 			'mpvConfig.presetDeleted' => '预设已删除',
 			'mpvConfig.confirmDeletePreset' => '确定要删除此预设吗？',
-			'mpvConfig.confirmDeleteProperty' => '确定要删除此属性吗？',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} 条目',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '确认操作',
 			'discover.title' => '发现',
 			'discover.switchProfile' => '切换用户',
@@ -1838,8 +1828,6 @@ extension on TranslationsZh {
 			'liveTv.title' => '电视直播',
 			'liveTv.channels' => '频道',
 			'liveTv.guide' => '节目指南',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noChannels' => '没有可用的频道',
 			'liveTv.noDvr' => '没有服务器配置了DVR',
 			'liveTv.tuneFailed' => '无法调谐频道',
@@ -1849,6 +1837,8 @@ extension on TranslationsZh {
 			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			'liveTv.live' => '直播',
 			'liveTv.hd' => '高清',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.premiere' => '新',
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.allChannels' => '所有频道',
@@ -1915,7 +1905,6 @@ extension on TranslationsZh {
 			'playlists.itemAdded' => '已添加到播放列表',
 			'playlists.itemRemoved' => '已从播放列表中移除',
 			'playlists.selectPlaylist' => '选择播放列表',
-			'playlists.createNewPlaylist' => '创建新播放列表',
 			'playlists.errorCreating' => '创建播放列表失败',
 			'playlists.errorDeleting' => '删除播放列表失败',
 			'playlists.errorLoading' => '加载播放列表失败',
@@ -1934,7 +1923,6 @@ extension on TranslationsZh {
 			'collections.deleteFailedWithError' => ({required Object error}) => '删除合集失败：${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => '加载合集项目失败：${error}',
 			'collections.selectCollection' => '选择合集',
-			'collections.createNewCollection' => '创建新合集',
 			'collections.collectionName' => '合集名称',
 			'collections.enterCollectionName' => '输入合集名称',
 			'collections.addedToCollection' => '已添加到合集',
@@ -1989,6 +1977,10 @@ extension on TranslationsZh {
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
 			'watchTogether.relayUnreachable' => '无法连接到中继服务器。这可能是由于您的网络运营商屏蔽了连接。您仍然可以尝试，但一起观看功能可能无法正常使用。',
 			'watchTogether.reconnectingToHost' => '正在重新连接到主持人...',
+			'watchTogether.currentPlayback' => '当前播放',
+			'watchTogether.joinCurrentPlayback' => '加入当前播放',
+			'watchTogether.joinCurrentPlaybackDescription' => '回到房主当前正在观看的内容',
+			'watchTogether.failedToOpenCurrentPlayback' => '无法打开当前播放',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} 加入了',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} 离开了',
 			'shaders.title' => '着色器',
@@ -1997,6 +1989,12 @@ extension on TranslationsZh {
 			'shaders.qualityFast' => '快速',
 			'shaders.qualityHQ' => '高质量',
 			'shaders.mode' => '模式',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => '连接到设备',
 			'companionRemote.hostRemoteSession' => '创建远程会话',

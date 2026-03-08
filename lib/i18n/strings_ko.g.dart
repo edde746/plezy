@@ -97,9 +97,6 @@ class _TranslationsAuthKo implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Plex 계정으로 로그인';
 	@override String get showQRCode => 'QR 코드';
 	@override String get authenticate => '인증';
-	@override String get debugEnterToken => '디버깅을 위해 Plex 토큰을 입력하세요.';
-	@override String get plexTokenLabel => 'Plex 인증 토큰';
-	@override String get plexTokenHint => 'Plex.tv 토큰을 입력하세요';
 	@override String get authenticationTimeout => '인증 시간이 초과되었습니다. 다시 시도해 주세요.';
 	@override String get scanQRToSignIn => 'QR 코드를 스캔하여 로그인';
 	@override String get waitingForAuth => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.';
@@ -130,6 +127,7 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get delete => '삭제';
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
+	@override String get createNew => '새로 만들기';
 	@override String get remove => '삭제';
 	@override String get paste => '붙여넣기';
 	@override String get connect => '연결';
@@ -168,7 +166,7 @@ class _TranslationsScreensKo implements TranslationsScreensEn {
 	@override String get licenses => '라이선스';
 	@override String get switchProfile => '프로필 전환';
 	@override String get subtitleStyling => '자막 스타일 설정';
-	@override String get mpvConfig => 'MPV 설정';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => '로그';
 }
 
@@ -246,7 +244,7 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get playerBackend => '플레이어 백엔드';
 	@override String get exoPlayer => 'ExoPlayer (권장)';
 	@override String get exoPlayerDescription => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
@@ -332,6 +330,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get confirmExitOnBack => '종료 전 확인';
 	@override String get confirmExitOnBackDescription => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다';
+	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
+	@override String get showNavBarLabelsDescription => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다';
 }
 
 // Path: search
@@ -496,6 +496,7 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get settingsButton => '동영상 설정';
 	@override String get audioTrackButton => '음원 트랙';
 	@override String get subtitlesButton => '자막';
+	@override String get tracksButton => '오디오 및 자막';
 	@override String get chaptersButton => '챕터';
 	@override String get versionsButton => '동영상 버전';
 	@override String get pipButton => '픽처 인 픽처 모드';
@@ -598,19 +599,10 @@ class _TranslationsMpvConfigKo implements TranslationsMpvConfigEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'MPV 설정';
+	@override String get title => 'mpv 설정';
 	@override String get description => '고급 비디오 플레이어 설정';
-	@override String get properties => '속성';
 	@override String get presets => '사전 설정';
-	@override String get noProperties => '설정된 속성이 없습니다';
 	@override String get noPresets => '저장된 사전 설정이 없습니다';
-	@override String get addProperty => '속성 추가';
-	@override String get editProperty => '속성 편집';
-	@override String get deleteProperty => '속성 삭제';
-	@override String get propertyKey => '속성 키';
-	@override String get propertyKeyHint => '예: hwdec, demuxer-max-bytes';
-	@override String get propertyValue => '속성값';
-	@override String get propertyValueHint => '예: auto, 256000000';
 	@override String get saveAsPreset => '프리셋으로 저장...';
 	@override String get presetName => '프리셋 이름';
 	@override String get presetNameHint => '이 프리셋의 이름을 입력하세요';
@@ -620,8 +612,7 @@ class _TranslationsMpvConfigKo implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => '프리셋이 로드 되었습니다';
 	@override String get presetDeleted => '프리셋이 삭제 되었습니다';
 	@override String get confirmDeletePreset => '이 프리셋을 삭제 하시겠습니까?';
-	@override String get confirmDeleteProperty => '이 속성을 삭제 하시겠습니까?';
-	@override String entriesCount({required Object count}) => '${count} 항목';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -858,7 +849,6 @@ class _TranslationsCollectionsKo implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => '컬렉션 삭제 실패: ${error}';
 	@override String failedToLoadItems({required Object error}) => '컬렉션 항목 로드 실패: ${error}';
 	@override String get selectCollection => '컬렉션 선택';
-	@override String get createNewCollection => '새 컬렉션 생성';
 	@override String get collectionName => '컬렉션 이름';
 	@override String get enterCollectionName => '컬렉션 이름 입력';
 	@override String get addedToCollection => '컬렉션에 추가됨';
@@ -897,7 +887,6 @@ class _TranslationsPlaylistsKo implements TranslationsPlaylistsEn {
 	@override String get itemAdded => '재생 목록에 추가 되었습니다';
 	@override String get itemRemoved => '재생 목록에서 제거됨';
 	@override String get selectPlaylist => '재생 목록 선택';
-	@override String get createNewPlaylist => '새 재생 목록 생성';
 	@override String get errorCreating => '재생 목록 생성 실패';
 	@override String get errorDeleting => '재생 목록 삭제 실패';
 	@override String get errorLoading => '재생 목록 로드 실패';
@@ -957,6 +946,10 @@ class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => '세션 코드가 클립보드에 복사되었습니다';
 	@override String get relayUnreachable => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.';
 	@override String get reconnectingToHost => '호스트에 재연결 중...';
+	@override String get currentPlayback => '현재 재생';
+	@override String get joinCurrentPlayback => '현재 재생 참여';
+	@override String get joinCurrentPlaybackDescription => '호스트가 현재 보고 있는 항목으로 돌아갑니다';
+	@override String get failedToOpenCurrentPlayback => '현재 재생을 열 수 없습니다';
 	@override String participantJoined({required Object name}) => '${name}님이 참여했습니다';
 	@override String participantLeft({required Object name}) => '${name}님이 나갔습니다';
 }
@@ -1018,6 +1011,12 @@ class _TranslationsShadersKo implements TranslationsShadersEn {
 	@override String get qualityFast => '빠름';
 	@override String get qualityHQ => '고품질';
 	@override String get mode => '모드';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1330,9 +1329,6 @@ extension on TranslationsKo {
 			'auth.signInWithPlex' => 'Plex 계정으로 로그인',
 			'auth.showQRCode' => 'QR 코드',
 			'auth.authenticate' => '인증',
-			'auth.debugEnterToken' => '디버깅을 위해 Plex 토큰을 입력하세요.',
-			'auth.plexTokenLabel' => 'Plex 인증 토큰',
-			'auth.plexTokenHint' => 'Plex.tv 토큰을 입력하세요',
 			'auth.authenticationTimeout' => '인증 시간이 초과되었습니다. 다시 시도해 주세요.',
 			'auth.scanQRToSignIn' => 'QR 코드를 스캔하여 로그인',
 			'auth.waitingForAuth' => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.',
@@ -1354,6 +1350,7 @@ extension on TranslationsKo {
 			'common.delete' => '삭제',
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
+			'common.createNew' => '새로 만들기',
 			'common.remove' => '삭제',
 			'common.paste' => '붙여넣기',
 			'common.connect' => '연결',
@@ -1383,7 +1380,7 @@ extension on TranslationsKo {
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
-			'screens.mpvConfig' => 'MPV 설정',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => '로그',
 			'update.available' => '사용 가능한 업데이트',
 			'update.versionAvailable' => ({required Object version}) => '버전 ${version} 출시됨',
@@ -1443,7 +1440,7 @@ extension on TranslationsKo {
 			'settings.playerBackend' => '플레이어 백엔드',
 			'settings.exoPlayer' => 'ExoPlayer (권장)',
 			'settings.exoPlayerDescription' => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어',
 			'settings.hardwareDecoding' => '하드웨어 디코딩',
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
@@ -1529,6 +1526,8 @@ extension on TranslationsKo {
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.confirmExitOnBack' => '종료 전 확인',
 			'settings.confirmExitOnBackDescription' => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다',
+			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
+			'settings.showNavBarLabelsDescription' => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -1639,6 +1638,7 @@ extension on TranslationsKo {
 			'videoControls.settingsButton' => '동영상 설정',
 			'videoControls.audioTrackButton' => '음원 트랙',
 			'videoControls.subtitlesButton' => '자막',
+			'videoControls.tracksButton' => '오디오 및 자막',
 			'videoControls.chaptersButton' => '챕터',
 			'videoControls.versionsButton' => '동영상 버전',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
@@ -1711,19 +1711,10 @@ extension on TranslationsKo {
 			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
 			'subtitlingStyling.backgroundColor' => '배경색',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV 설정',
+			'mpvConfig.title' => 'mpv 설정',
 			'mpvConfig.description' => '고급 비디오 플레이어 설정',
-			'mpvConfig.properties' => '속성',
 			'mpvConfig.presets' => '사전 설정',
-			'mpvConfig.noProperties' => '설정된 속성이 없습니다',
 			'mpvConfig.noPresets' => '저장된 사전 설정이 없습니다',
-			'mpvConfig.addProperty' => '속성 추가',
-			'mpvConfig.editProperty' => '속성 편집',
-			'mpvConfig.deleteProperty' => '속성 삭제',
-			'mpvConfig.propertyKey' => '속성 키',
-			'mpvConfig.propertyKeyHint' => '예: hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => '속성값',
-			'mpvConfig.propertyValueHint' => '예: auto, 256000000',
 			'mpvConfig.saveAsPreset' => '프리셋으로 저장...',
 			'mpvConfig.presetName' => '프리셋 이름',
 			'mpvConfig.presetNameHint' => '이 프리셋의 이름을 입력하세요',
@@ -1733,8 +1724,7 @@ extension on TranslationsKo {
 			'mpvConfig.presetLoaded' => '프리셋이 로드 되었습니다',
 			'mpvConfig.presetDeleted' => '프리셋이 삭제 되었습니다',
 			'mpvConfig.confirmDeletePreset' => '이 프리셋을 삭제 하시겠습니까?',
-			'mpvConfig.confirmDeleteProperty' => '이 속성을 삭제 하시겠습니까?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} 항목',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '확인',
 			'discover.title' => '발견',
 			'discover.switchProfile' => '사용자 전환',
@@ -1838,8 +1828,6 @@ extension on TranslationsKo {
 			'liveTv.title' => '실시간 TV',
 			'liveTv.channels' => '채널',
 			'liveTv.guide' => '편성표',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noChannels' => '사용 가능한 채널이 없습니다',
 			'liveTv.noDvr' => '서버에 DVR이 구성되어 있지 않습니다',
 			'liveTv.tuneFailed' => '채널 튜닝에 실패했습니다',
@@ -1849,6 +1837,8 @@ extension on TranslationsKo {
 			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
 			'liveTv.live' => '실시간',
 			'liveTv.hd' => 'HD',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.premiere' => '신규',
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.allChannels' => '전체 채널',
@@ -1873,7 +1863,6 @@ extension on TranslationsKo {
 			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => '컬렉션 항목 로드 실패: ${error}',
 			'collections.selectCollection' => '컬렉션 선택',
-			'collections.createNewCollection' => '새 컬렉션 생성',
 			'collections.collectionName' => '컬렉션 이름',
 			'collections.enterCollectionName' => '컬렉션 이름 입력',
 			'collections.addedToCollection' => '컬렉션에 추가됨',
@@ -1903,7 +1892,6 @@ extension on TranslationsKo {
 			'playlists.itemAdded' => '재생 목록에 추가 되었습니다',
 			'playlists.itemRemoved' => '재생 목록에서 제거됨',
 			'playlists.selectPlaylist' => '재생 목록 선택',
-			'playlists.createNewPlaylist' => '새 재생 목록 생성',
 			'playlists.errorCreating' => '재생 목록 생성 실패',
 			'playlists.errorDeleting' => '재생 목록 삭제 실패',
 			'playlists.errorLoading' => '재생 목록 로드 실패',
@@ -1954,6 +1942,10 @@ extension on TranslationsKo {
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
 			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.',
 			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
+			'watchTogether.currentPlayback' => '현재 재생',
+			'watchTogether.joinCurrentPlayback' => '현재 재생 참여',
+			'watchTogether.joinCurrentPlaybackDescription' => '호스트가 현재 보고 있는 항목으로 돌아갑니다',
+			'watchTogether.failedToOpenCurrentPlayback' => '현재 재생을 열 수 없습니다',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}님이 참여했습니다',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}님이 나갔습니다',
 			'downloads.title' => '다운로드',
@@ -1997,6 +1989,12 @@ extension on TranslationsKo {
 			'shaders.qualityFast' => '빠름',
 			'shaders.qualityHQ' => '고품질',
 			'shaders.mode' => '모드',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => '기기에 연결',
 			'companionRemote.hostRemoteSession' => '원격 세션 호스트',

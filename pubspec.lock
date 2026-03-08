@@ -61,33 +61,35 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/auto_updater"
-      ref: HEAD
-      resolved-ref: c70320c6885db88ef8360d278f936e90a7cc9689
+      ref: "5d1046a"
+      resolved-ref: "5d1046af4fadf633fd222d471457b95415ca499b"
       url: "https://github.com/edde746/auto_updater"
     source: git
     version: "1.0.0"
   auto_updater_macos:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: auto_updater_macos
-      sha256: ef9de0daf38d782d2243fe131503a9404d62df762f5386e5360020e43c01867f
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/auto_updater_macos"
+      ref: "5d1046a"
+      resolved-ref: "5d1046af4fadf633fd222d471457b95415ca499b"
+      url: "https://github.com/edde746/auto_updater"
+    source: git
     version: "1.0.0"
   auto_updater_platform_interface:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: auto_updater_platform_interface
-      sha256: ed5dff8cea18c58bc5ac787ff9122fedd1644272e02015d28c9b592f8078c5dc
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/auto_updater_platform_interface"
+      ref: "5d1046a"
+      resolved-ref: "5d1046af4fadf633fd222d471457b95415ca499b"
+      url: "https://github.com/edde746/auto_updater"
+    source: git
     version: "1.0.0"
   auto_updater_windows:
     dependency: "direct overridden"
     description:
       path: "packages/auto_updater_windows"
-      ref: HEAD
-      resolved-ref: c70320c6885db88ef8360d278f936e90a7cc9689
+      ref: "5d1046a"
+      resolved-ref: "5d1046af4fadf633fd222d471457b95415ca499b"
       url: "https://github.com/edde746/auto_updater"
     source: git
     version: "1.0.0"
@@ -1289,10 +1291,10 @@ packages:
     dependency: "direct main"
     description:
       name: universal_gamepad
-      sha256: b638bd9d2bf25c15cf815c7f1a66629d56e8d5229178d7347ffc68efd7c646dd
+      sha256: "757711dcc142daf19cfbdf3302abe90615de112269022c38b7a2f1789a00cc84"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.0"
+    version: "1.5.2"
   url_launcher:
     dependency: "direct main"
     description:

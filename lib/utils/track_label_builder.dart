@@ -1,10 +1,25 @@
 import 'codec_utils.dart';
-import '../models/plex_media_info.dart' show buildTrackLabel;
+
+/// Builds a track label from parts with the standard `' · '` joiner pattern.
+///
+/// Shared by both Plex track models and MPV track label utilities.
+/// If [title] is non-empty it is added first, then [language], then [extraParts].
+/// Falls back to `'$fallbackPrefix ${index + 1}'` when no parts are available.
+String buildTrackLabel({
+  String? title,
+  String? language,
+  List<String> extraParts = const [],
+  required int index,
+  String fallbackPrefix = 'Track',
+}) {
+  final parts = <String>[];
+  if (title != null && title.isNotEmpty) parts.add(title);
+  if (language != null && language.isNotEmpty) parts.add(language);
+  parts.addAll(extraParts);
+  return parts.isEmpty ? '$fallbackPrefix ${index + 1}' : parts.join(' · ');
+}
 
 /// Utility for building track labels for audio and subtitle tracks.
-///
-/// Delegates to the shared [buildTrackLabel] function so Plex-model and
-/// MPV-player label logic stays consistent.
 class TrackLabelBuilder {
   TrackLabelBuilder._();
 

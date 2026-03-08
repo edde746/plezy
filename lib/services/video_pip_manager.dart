@@ -61,6 +61,12 @@ class VideoPIPManager {
     final supported = await PipService.isSupported();
     if (!supported) return (false, 'PiP not supported on this device');
 
+    // If PiP is already active, exit it
+    if (isPipActive.value) {
+      await PipService.exit();
+      return (true, null);
+    }
+
     // Reset video filter to contain mode BEFORE entering PiP (Android only —
     // iOS switches VO entirely so the filter is irrelevant)
     if (Platform.isAndroid) {

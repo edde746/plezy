@@ -109,15 +109,6 @@ class TranslationsAuthEn {
 	/// en: 'Authenticate'
 	String get authenticate => 'Authenticate';
 
-	/// en: 'Debug: Enter Plex Token'
-	String get debugEnterToken => 'Debug: Enter Plex Token';
-
-	/// en: 'Plex Auth Token'
-	String get plexTokenLabel => 'Plex Auth Token';
-
-	/// en: 'Enter your Plex.tv token'
-	String get plexTokenHint => 'Enter your Plex.tv token';
-
 	/// en: 'Authentication timed out. Please try again.'
 	String get authenticationTimeout => 'Authentication timed out. Please try again.';
 
@@ -189,6 +180,9 @@ class TranslationsCommonEn {
 
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
+
+	/// en: 'Create new'
+	String get createNew => 'Create new';
 
 	/// en: 'Remove'
 	String get remove => 'Remove';
@@ -286,8 +280,8 @@ class TranslationsScreensEn {
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
-	/// en: 'MPV Configuration'
-	String get mpvConfig => 'MPV Configuration';
+	/// en: 'mpv.conf'
+	String get mpvConfig => 'mpv.conf';
 
 	/// en: 'Logs'
 	String get logs => 'Logs';
@@ -484,8 +478,8 @@ class TranslationsSettingsEn {
 	/// en: 'Android native player with better hardware support'
 	String get exoPlayerDescription => 'Android native player with better hardware support';
 
-	/// en: 'MPV'
-	String get mpv => 'MPV';
+	/// en: 'mpv'
+	String get mpv => 'mpv';
 
 	/// en: 'Advanced player with more features and ASS subtitle support'
 	String get mpvDescription => 'Advanced player with more features and ASS subtitle support';
@@ -741,6 +735,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Show a confirmation dialog when pressing back to exit the app'
 	String get confirmExitOnBackDescription => 'Show a confirmation dialog when pressing back to exit the app';
+
+	/// en: 'Show Navigation Bar Labels'
+	String get showNavBarLabels => 'Show Navigation Bar Labels';
+
+	/// en: 'Display text labels under navigation bar icons'
+	String get showNavBarLabelsDescription => 'Display text labels under navigation bar icons';
 }
 
 // Path: search
@@ -1089,6 +1089,9 @@ class TranslationsVideoControlsEn {
 	/// en: 'Subtitles'
 	String get subtitlesButton => 'Subtitles';
 
+	/// en: 'Audio & Subtitles'
+	String get tracksButton => 'Audio & Subtitles';
+
 	/// en: 'Chapters'
 	String get chaptersButton => 'Chapters';
 
@@ -1322,44 +1325,17 @@ class TranslationsMpvConfigEn {
 
 	// Translations
 
-	/// en: 'MPV Configuration'
-	String get title => 'MPV Configuration';
+	/// en: 'mpv.conf'
+	String get title => 'mpv.conf';
 
 	/// en: 'Advanced video player settings'
 	String get description => 'Advanced video player settings';
 
-	/// en: 'Properties'
-	String get properties => 'Properties';
-
 	/// en: 'Presets'
 	String get presets => 'Presets';
 
-	/// en: 'No properties configured'
-	String get noProperties => 'No properties configured';
-
 	/// en: 'No saved presets'
 	String get noPresets => 'No saved presets';
-
-	/// en: 'Add Property'
-	String get addProperty => 'Add Property';
-
-	/// en: 'Edit Property'
-	String get editProperty => 'Edit Property';
-
-	/// en: 'Delete Property'
-	String get deleteProperty => 'Delete Property';
-
-	/// en: 'Property Key'
-	String get propertyKey => 'Property Key';
-
-	/// en: 'e.g., hwdec, demuxer-max-bytes'
-	String get propertyKeyHint => 'e.g., hwdec, demuxer-max-bytes';
-
-	/// en: 'Property Value'
-	String get propertyValue => 'Property Value';
-
-	/// en: 'e.g., auto, 256000000'
-	String get propertyValueHint => 'e.g., auto, 256000000';
 
 	/// en: 'Save as Preset...'
 	String get saveAsPreset => 'Save as Preset...';
@@ -1388,11 +1364,8 @@ class TranslationsMpvConfigEn {
 	/// en: 'Are you sure you want to delete this preset?'
 	String get confirmDeletePreset => 'Are you sure you want to delete this preset?';
 
-	/// en: 'Are you sure you want to delete this property?'
-	String get confirmDeleteProperty => 'Are you sure you want to delete this property?';
-
-	/// en: '${count} entries'
-	String entriesCount({required Object count}) => '${count} entries';
+	/// en: 'gpu-api=vulkan hwdec=auto # comment'
+	String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -1883,9 +1856,6 @@ class TranslationsCollectionsEn {
 	/// en: 'Select Collection'
 	String get selectCollection => 'Select Collection';
 
-	/// en: 'Create New Collection'
-	String get createNewCollection => 'Create New Collection';
-
 	/// en: 'Collection Name'
 	String get collectionName => 'Collection Name';
 
@@ -1981,9 +1951,6 @@ class TranslationsPlaylistsEn {
 
 	/// en: 'Select Playlist'
 	String get selectPlaylist => 'Select Playlist';
-
-	/// en: 'Create New Playlist'
-	String get createNewPlaylist => 'Create New Playlist';
 
 	/// en: 'Failed to create playlist'
 	String get errorCreating => 'Failed to create playlist';
@@ -2144,6 +2111,18 @@ class TranslationsWatchTogetherEn {
 	/// en: 'Reconnecting to host...'
 	String get reconnectingToHost => 'Reconnecting to host...';
 
+	/// en: 'Current Playback'
+	String get currentPlayback => 'Current Playback';
+
+	/// en: 'Join Current Playback'
+	String get joinCurrentPlayback => 'Join Current Playback';
+
+	/// en: 'Jump back into what the host is currently watching'
+	String get joinCurrentPlaybackDescription => 'Jump back into what the host is currently watching';
+
+	/// en: 'Failed to open current playback'
+	String get failedToOpenCurrentPlayback => 'Failed to open current playback';
+
 	/// en: '${name} joined'
 	String participantJoined({required Object name}) => '${name} joined';
 
@@ -2290,6 +2269,24 @@ class TranslationsShadersEn {
 
 	/// en: 'Mode'
 	String get mode => 'Mode';
+
+	/// en: 'Import Shader'
+	String get importShader => 'Import Shader';
+
+	/// en: 'Custom GLSL shader'
+	String get customShaderDescription => 'Custom GLSL shader';
+
+	/// en: 'Shader imported'
+	String get shaderImported => 'Shader imported';
+
+	/// en: 'Failed to import shader'
+	String get shaderImportFailed => 'Failed to import shader';
+
+	/// en: 'Delete Shader'
+	String get deleteShader => 'Delete Shader';
+
+	/// en: 'Delete "${name}"?'
+	String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -2995,9 +2992,6 @@ extension on Translations {
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
-			'auth.debugEnterToken' => 'Debug: Enter Plex Token',
-			'auth.plexTokenLabel' => 'Plex Auth Token',
-			'auth.plexTokenHint' => 'Enter your Plex.tv token',
 			'auth.authenticationTimeout' => 'Authentication timed out. Please try again.',
 			'auth.scanQRToSignIn' => 'Scan this QR code to sign in',
 			'auth.waitingForAuth' => 'Waiting for authentication...\nPlease complete sign-in in your browser.',
@@ -3019,6 +3013,7 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.shuffle' => 'Shuffle',
 			'common.addTo' => 'Add to...',
+			'common.createNew' => 'Create new',
 			'common.remove' => 'Remove',
 			'common.paste' => 'Paste',
 			'common.connect' => 'Connect',
@@ -3048,7 +3043,7 @@ extension on Translations {
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
-			'screens.mpvConfig' => 'MPV Configuration',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'Logs',
 			'update.available' => 'Update Available',
 			'update.versionAvailable' => ({required Object version}) => 'Version ${version} is available',
@@ -3108,7 +3103,7 @@ extension on Translations {
 			'settings.playerBackend' => 'Player Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Recommended)',
 			'settings.exoPlayerDescription' => 'Android native player with better hardware support',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => 'Advanced player with more features and ASS subtitle support',
 			'settings.hardwareDecoding' => 'Hardware Decoding',
 			'settings.hardwareDecodingDescription' => 'Use hardware acceleration when available',
@@ -3194,6 +3189,8 @@ extension on Translations {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.confirmExitOnBack' => 'Confirm before exiting',
 			'settings.confirmExitOnBackDescription' => 'Show a confirmation dialog when pressing back to exit the app',
+			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
+			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -3304,6 +3301,7 @@ extension on Translations {
 			'videoControls.settingsButton' => 'Video settings',
 			'videoControls.audioTrackButton' => 'Audio tracks',
 			'videoControls.subtitlesButton' => 'Subtitles',
+			'videoControls.tracksButton' => 'Audio & Subtitles',
 			'videoControls.chaptersButton' => 'Chapters',
 			'videoControls.versionsButton' => 'Video versions',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
@@ -3376,19 +3374,10 @@ extension on Translations {
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
 			'subtitlingStyling.backgroundColor' => 'Background Color',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV Configuration',
+			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
-			'mpvConfig.properties' => 'Properties',
 			'mpvConfig.presets' => 'Presets',
-			'mpvConfig.noProperties' => 'No properties configured',
 			'mpvConfig.noPresets' => 'No saved presets',
-			'mpvConfig.addProperty' => 'Add Property',
-			'mpvConfig.editProperty' => 'Edit Property',
-			'mpvConfig.deleteProperty' => 'Delete Property',
-			'mpvConfig.propertyKey' => 'Property Key',
-			'mpvConfig.propertyKeyHint' => 'e.g., hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => 'Property Value',
-			'mpvConfig.propertyValueHint' => 'e.g., auto, 256000000',
 			'mpvConfig.saveAsPreset' => 'Save as Preset...',
 			'mpvConfig.presetName' => 'Preset Name',
 			'mpvConfig.presetNameHint' => 'Enter a name for this preset',
@@ -3398,8 +3387,7 @@ extension on Translations {
 			'mpvConfig.presetLoaded' => 'Preset loaded',
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
-			'mpvConfig.confirmDeleteProperty' => 'Are you sure you want to delete this property?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entries',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
 			'discover.title' => 'Discover',
 			'discover.switchProfile' => 'Switch Profile',
@@ -3503,8 +3491,6 @@ extension on Translations {
 			'liveTv.title' => 'Live TV',
 			'liveTv.channels' => 'Channels',
 			'liveTv.guide' => 'Guide',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.tuneFailed' => 'Failed to tune channel',
@@ -3514,6 +3500,8 @@ extension on Translations {
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.premiere' => 'NEW',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.allChannels' => 'All Channels',
@@ -3538,7 +3526,6 @@ extension on Translations {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Failed to delete collection: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Failed to load collection items: ${error}',
 			'collections.selectCollection' => 'Select Collection',
-			'collections.createNewCollection' => 'Create New Collection',
 			'collections.collectionName' => 'Collection Name',
 			'collections.enterCollectionName' => 'Enter collection name',
 			'collections.addedToCollection' => 'Added to collection',
@@ -3568,7 +3555,6 @@ extension on Translations {
 			'playlists.itemAdded' => 'Added to playlist',
 			'playlists.itemRemoved' => 'Removed from playlist',
 			'playlists.selectPlaylist' => 'Select Playlist',
-			'playlists.createNewPlaylist' => 'Create New Playlist',
 			'playlists.errorCreating' => 'Failed to create playlist',
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
@@ -3619,6 +3605,10 @@ extension on Translations {
 			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
 			'watchTogether.relayUnreachable' => 'The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.',
 			'watchTogether.reconnectingToHost' => 'Reconnecting to host...',
+			'watchTogether.currentPlayback' => 'Current Playback',
+			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'downloads.title' => 'Downloads',
@@ -3662,6 +3652,12 @@ extension on Translations {
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
 			'shaders.mode' => 'Mode',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => 'Connect to Device',
 			'companionRemote.hostRemoteSession' => 'Host Remote Session',

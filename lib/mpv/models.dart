@@ -186,6 +186,9 @@ class Tracks {
   String toString() => 'Tracks(audio: ${audio.length}, subtitle: ${subtitle.length})';
 }
 
+/// Sentinel value used to distinguish "not provided" from "explicitly set to null" in copyWith.
+const _sentinel = Object();
+
 /// Represents the currently selected tracks.
 class TrackSelection {
   /// Currently selected audio track.
@@ -194,15 +197,25 @@ class TrackSelection {
   /// Currently selected subtitle track.
   final SubtitleTrack? subtitle;
 
-  const TrackSelection({this.audio, this.subtitle});
+  /// Currently selected secondary subtitle track (mpv secondary-sid).
+  final SubtitleTrack? secondarySubtitle;
+
+  const TrackSelection({this.audio, this.subtitle, this.secondarySubtitle});
 
   /// Creates a copy with the given fields replaced.
-  TrackSelection copyWith({AudioTrack? audio, SubtitleTrack? subtitle}) {
-    return TrackSelection(audio: audio ?? this.audio, subtitle: subtitle ?? this.subtitle);
+  /// Use [secondarySubtitle] with explicit null to clear the secondary subtitle.
+  TrackSelection copyWith({AudioTrack? audio, SubtitleTrack? subtitle, Object? secondarySubtitle = _sentinel}) {
+    return TrackSelection(
+      audio: audio ?? this.audio,
+      subtitle: subtitle ?? this.subtitle,
+      secondarySubtitle: identical(secondarySubtitle, _sentinel)
+          ? this.secondarySubtitle
+          : secondarySubtitle as SubtitleTrack?,
+    );
   }
 
   @override
-  String toString() => 'TrackSelection(audio: $audio, subtitle: $subtitle)';
+  String toString() => 'TrackSelection(audio: $audio, subtitle: $subtitle, secondarySubtitle: $secondarySubtitle)';
 }
 
 /// Represents an audio output device.

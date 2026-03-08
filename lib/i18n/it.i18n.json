@@ -6,9 +6,6 @@
     "signInWithPlex": "Accedi con Plex",
     "showQRCode": "Mostra QR Code",
     "authenticate": "Autenticazione",
-    "debugEnterToken": "Debug: Inserisci Token Plex",
-    "plexTokenLabel": "Token Auth Plex",
-    "plexTokenHint": "Inserisci il tuo token di Plex.tv",
     "authenticationTimeout": "Autenticazione scaduta. Riprova.",
     "scanQRToSignIn": "Scansiona il QR code per accedere",
     "waitingForAuth": "In attesa di autenticazione...\nCompleta l'accesso dal tuo browser.",
@@ -32,6 +29,7 @@
     "delete": "Elimina",
     "shuffle": "Casuale",
     "addTo": "Aggiungi a...",
+    "createNew": "Crea",
     "remove": "Rimuovi",
     "paste": "Incolla",
     "connect": "Connetti",
@@ -43,7 +41,7 @@
     "search": "Cerca",
     "home": "Home",
     "back": "Indietro",
-    "settings": "Impostazioni",
+    "settings": "Opzioni",
     "mute": "Muto",
     "ok": "OK",
     "loading": "Caricamento...",
@@ -63,7 +61,7 @@
     "licenses": "Licenze",
     "switchProfile": "Cambia profilo",
     "subtitleStyling": "Stile sottotitoli",
-    "mpvConfig": "Configurazione MPV",
+    "mpvConfig": "mpv.conf",
     "logs": "Registro"
   },
   "update": {
@@ -127,7 +125,7 @@
     "playerBackend": "Motore di riproduzione",
     "exoPlayer": "ExoPlayer (Consigliato)",
     "exoPlayerDescription": "Lettore nativo Android con migliore supporto hardware",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Lettore avanzato con più funzionalità e supporto sottotitoli ASS",
     "hardwareDecoding": "Decodifica Hardware",
     "hardwareDecodingDescription": "Utilizza l'accelerazione hardware quando disponibile",
@@ -212,7 +210,9 @@
     "requireProfileSelectionOnOpen": "Chiedi profilo all'apertura",
     "requireProfileSelectionOnOpenDescription": "Mostra la selezione del profilo ogni volta che l'app viene aperta",
     "confirmExitOnBack": "Conferma prima di uscire",
-    "confirmExitOnBackDescription": "Mostra una finestra di conferma quando si preme indietro per uscire dall'app"
+    "confirmExitOnBackDescription": "Mostra una finestra di conferma quando si preme indietro per uscire dall'app",
+    "showNavBarLabels": "Mostra etichette barra di navigazione",
+    "showNavBarLabelsDescription": "Mostra le etichette sotto le icone della barra di navigazione"
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",
@@ -341,6 +341,7 @@
     "settingsButton": "Impostazioni video",
     "audioTrackButton": "Tracce audio",
     "subtitlesButton": "Sottotitoli",
+    "tracksButton": "Audio e sottotitoli",
     "chaptersButton": "Capitoli",
     "versionsButton": "Versioni video",
     "pipButton": "Modalità Picture-in-Picture",
@@ -423,19 +424,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "Configurazione MPV",
+    "title": "Configurazione mpv",
     "description": "Impostazioni avanzate del lettore video",
-    "properties": "Proprietà",
     "presets": "Preset",
-    "noProperties": "Nessuna proprietà configurata",
     "noPresets": "Nessun preset salvato",
-    "addProperty": "Aggiungi proprietà",
-    "editProperty": "Modifica proprietà",
-    "deleteProperty": "Elimina proprietà",
-    "propertyKey": "Chiave proprietà",
-    "propertyKeyHint": "es. hwdec, demuxer-max-bytes",
-    "propertyValue": "Valore proprietà",
-    "propertyValueHint": "es. auto, 256000000",
     "saveAsPreset": "Salva come preset...",
     "presetName": "Nome preset",
     "presetNameHint": "Inserisci un nome per questo preset",
@@ -445,8 +437,7 @@
     "presetLoaded": "Preset caricato",
     "presetDeleted": "Preset eliminato",
     "confirmDeletePreset": "Sei sicuro di voler eliminare questo preset?",
-    "confirmDeleteProperty": "Sei sicuro di voler eliminare questa proprietà?",
-    "entriesCount": "${count} voci"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Conferma azione"
@@ -570,7 +561,7 @@
   "navigation": {
     "libraries": "Librerie",
     "downloads": "Download",
-    "liveTv": "TV in diretta"
+    "liveTv": "TV Live"
   },
   "liveTv": {
     "title": "TV in diretta",
@@ -655,7 +646,6 @@
     "itemAdded": "Aggiunto alla playlist",
     "itemRemoved": "Rimosso dalla playlist",
     "selectPlaylist": "Seleziona playlist",
-    "createNewPlaylist": "Crea nuova playlist",
     "errorCreating": "Errore durante la creazione della playlist",
     "errorDeleting": "Errore durante l'eliminazione della playlist",
     "errorLoading": "Errore durante il caricamento delle playlist",
@@ -676,7 +666,6 @@
     "deleteFailedWithError": "Impossibile eliminare la raccolta: ${error}",
     "failedToLoadItems": "Impossibile caricare gli elementi della raccolta: ${error}",
     "selectCollection": "Seleziona raccolta",
-    "createNewCollection": "Crea nuova raccolta",
     "collectionName": "Nome raccolta",
     "enterCollectionName": "Inserisci nome raccolta",
     "addedToCollection": "Aggiunto alla raccolta",
@@ -733,6 +722,10 @@
     "sessionCodeCopied": "Codice sessione copiato negli appunti",
     "relayUnreachable": "Il server di inoltro non è raggiungibile. Questo potrebbe essere causato dal blocco della connessione da parte del tuo provider. Puoi comunque provare, ma Watch Together potrebbe non funzionare.",
     "reconnectingToHost": "Riconnessione all'host...",
+    "currentPlayback": "Riproduzione corrente",
+    "joinCurrentPlayback": "Unisciti alla riproduzione corrente",
+    "joinCurrentPlaybackDescription": "Torna a ciò che l'host sta guardando in questo momento",
+    "failedToOpenCurrentPlayback": "Impossibile aprire la riproduzione corrente",
     "participantJoined": "${name} si è unito",
     "participantLeft": "${name} se ne è andato"
   },
@@ -742,7 +735,13 @@
     "nvscalerDescription": "Ridimensionamento NVIDIA per video più nitido",
     "qualityFast": "Veloce",
     "qualityHQ": "Alta qualità",
-    "mode": "Modalità"
+    "mode": "Modalità",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

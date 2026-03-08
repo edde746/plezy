@@ -28,10 +28,15 @@ class OfflineModeProvider extends ChangeNotifier {
 
   /// Updates network and server connection flags
   Future<void> _updateConnectionFlags() async {
-    final connectivityResult = await Connectivity()
-        .checkConnectivity()
-        .timeout(const Duration(seconds: 3), onTimeout: () => [ConnectivityResult.other]);
-    _hasNetworkConnection = !connectivityResult.contains(ConnectivityResult.none);
+    try {
+      final connectivityResult = await Connectivity()
+          .checkConnectivity()
+          .timeout(const Duration(seconds: 3), onTimeout: () => [ConnectivityResult.other]);
+      _hasNetworkConnection = !connectivityResult.contains(ConnectivityResult.none);
+    } catch (e) {
+      // connectivity_plus can throw PlatformException on Windows (NetworkManager::StartListen)
+      _hasNetworkConnection = true;
+    }
     _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
   }
 
@@ -43,15 +48,27 @@ class OfflineModeProvider extends ChangeNotifier {
     // Check initial connectivity
     await _updateConnectionFlags();
 
-    // Monitor connectivity changes
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
-      final wasOffline = isOffline;
-      _hasNetworkConnection = !results.contains(ConnectivityResult.none);
+    // Monitor connectivity changes — wrapped in try-catch because
+    // connectivity_plus can throw synchronously on Windows (NetworkManager::StartListen)
+    try {
+      _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+        (results) {
+          final wasOffline = isOffline;
+          _hasNetworkConnection = !results.contains(ConnectivityResult.none);
 
-      if (wasOffline != isOffline) {
-        notifyListeners();
-      }
-    });
+          if (wasOffline != isOffline) {
+            notifyListeners();
+          }
+        },
+        onError: (e) {
+          // Assume network available on stream error
+          _hasNetworkConnection = true;
+        },
+      );
+    } catch (e) {
+      // Assume network available if stream activation fails
+      _hasNetworkConnection = true;
+    }
 
     // Monitor server status from MultiServerManager
     _serverStatusSubscription = _serverManager.statusStream.listen((statusMap) {

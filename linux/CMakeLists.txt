@@ -50,6 +50,17 @@ endfunction()
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
 add_subdirectory(${FLUTTER_MANAGED_DIR})
 
+# Fetch simdutf for SIMD-accelerated UTF-8 validation.
+# mpv strings are not guaranteed to be valid UTF-8; invalid bytes sent through
+# Flutter's StandardMessageCodec cause FormatException crashes.
+include(FetchContent)
+FetchContent_Declare(
+  simdutf
+  URL https://github.com/simdutf/simdutf/releases/download/v6.4.2/singleheader.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(simdutf)
+
 # System-level dependencies.
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)

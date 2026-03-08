@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import '../utils/global_key_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
@@ -36,7 +35,6 @@ import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import '../utils/scroll_utils.dart';
-import '../utils/provider_extensions.dart';
 import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/download_settings_dialog.dart';
@@ -46,12 +44,14 @@ import '../widgets/app_bar_back_button.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/media_context_menu.dart';
+import '../widgets/overlay_sheet.dart';
 import '../widgets/placeholder_container.dart';
 import '../mixins/watch_state_aware.dart';
 import '../mixins/deletion_aware.dart';
+import '../mixins/mounted_set_state_mixin.dart';
+import '../mixins/server_bound_media_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
-import 'metadata_edit_screen.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -64,7 +64,8 @@ class MediaDetailScreen extends StatefulWidget {
   State<MediaDetailScreen> createState() => _MediaDetailScreenState();
 }
 
-class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAware, DeletionAware {
+class _MediaDetailScreenState extends State<MediaDetailScreen>
+    with WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin {
   List<PlexMetadata> _seasons = [];
   bool _isLoadingSeasons = false;
   Completer<void>? _seasonsCompleter;
@@ -89,6 +90,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   bool _longPressTriggered = false;
   static const _longPressDuration = Duration(milliseconds: 500);
 
+  // Context menu key for the three-dots button
+  final _contextMenuKey = GlobalKey<MediaContextMenuState>();
+
   // GlobalKeys for season cards to access their context menu
   final Map<int, GlobalKey<MediaCardState>> _seasonCardKeys = {};
 
@@ -109,8 +113,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   final _castSectionKey = GlobalKey();
   final _seasonsSectionKey = GlobalKey();
 
-  String _toGlobalKey(String ratingKey, {String? serverId}) =>
-      buildGlobalKey(serverId ?? widget.metadata.serverId ?? '', ratingKey);
+  @override
+  PlexMetadata get serverBoundMetadata => widget.metadata;
+
+  @override
+  bool get isServerBoundOffline => widget.isOffline;
 
   // WatchStateAware: watch the show/movie and all season ratingKeys
   @override
@@ -123,16 +130,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   }
 
   @override
-  String? get watchStateServerId => widget.metadata.serverId;
+  String? get watchStateServerId => serverBoundServerId;
 
   @override
   Set<String>? get watchedGlobalKeys {
-    final serverId = widget.metadata.serverId;
+    final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    final keys = <String>{_toGlobalKey(widget.metadata.ratingKey, serverId: serverId)};
+    final keys = <String>{toServerBoundGlobalKey(widget.metadata.ratingKey, serverId: serverId)};
     for (final season in _seasons) {
-      keys.add(_toGlobalKey(season.ratingKey, serverId: season.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(season.ratingKey, serverId: season.serverId ?? serverId));
     }
     return keys;
   }
@@ -155,16 +162,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   }
 
   @override
-  String? get deletionServerId => widget.metadata.serverId;
+  String? get deletionServerId => serverBoundServerId;
 
   @override
   Set<String>? get deletionGlobalKeys {
-    final serverId = widget.metadata.serverId;
+    final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    final keys = <String>{_toGlobalKey(widget.metadata.ratingKey, serverId: serverId)};
+    final keys = <String>{toServerBoundGlobalKey(widget.metadata.ratingKey, serverId: serverId)};
     for (final season in _seasons) {
-      keys.add(_toGlobalKey(season.ratingKey, serverId: season.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(season.ratingKey, serverId: season.serverId ?? serverId));
     }
     return keys;
   }
@@ -231,8 +238,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       final metadata = result['metadata'] as PlexMetadata?;
       final onDeckEpisode = result['onDeckEpisode'] as PlexMetadata?;
 
-      if (metadata != null && mounted) {
-        setState(() {
+      if (metadata != null) {
+        setStateIfMounted(() {
           _fullMetadata = metadata.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName);
           _onDeckEpisode = onDeckEpisode?.copyWith(
             serverId: widget.metadata.serverId,
@@ -244,13 +251,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       // Refresh seasons for updated watched counts (also without loader)
       if (widget.metadata.isShow) {
         final seasons = await client.getChildren(widget.metadata.ratingKey);
-        if (mounted) {
-          setState(() {
-            _seasons = seasons
-                .map((s) => s.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
-                .toList();
-          });
-        }
+        setStateIfMounted(() {
+          _seasons = seasons
+              .map((s) => s.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
+              .toList();
+        });
       }
     } catch (e) {
       // Silently fail - data will refresh on next navigation
@@ -725,21 +730,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                     }
 
                     if (!context.mounted) return;
-                    // Use settings-aware refresh for shows, direct queue for others
-                    if (metadata.isShow) {
-                      final result = await AutoDownloadService.instance.refreshShow(metadata, client, downloadProvider);
-                      if (context.mounted) {
-                        if (result.queued > 0) {
-                          showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
-                        } else {
-                          showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+                    try {
+                      // Use settings-aware refresh for shows, direct queue for others
+                      if (metadata.isShow) {
+                        final result = await AutoDownloadService.instance.refreshShow(metadata, client, downloadProvider);
+                        if (context.mounted) {
+                          if (result.queued > 0) {
+                            showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
+                          } else {
+                            showAppSnackBar(context, t.downloads.noNewEpisodesFound);
+                          }
+                        }
+                      } else {
+                        final count = await downloadProvider.queueDownload(metadata, client);
+                        if (context.mounted) {
+                          final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
+                          showSuccessSnackBar(context, message);
                         }
                       }
-                    } else {
-                      final count = await downloadProvider.queueDownload(metadata, client);
+                    } on CellularDownloadBlockedException {
                       if (context.mounted) {
-                        final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
-                        showSuccessSnackBar(context, message);
+                        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
                       }
                     }
                   },
@@ -800,23 +811,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
             iconSize: 20,
             style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
           ),
-          // Edit metadata button (hidden in offline mode)
+          // Three-dots menu button (hidden in offline mode)
           if (!widget.isOffline) ...[
             const SizedBox(width: 12),
-            IconButton.filledTonal(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: metadata)),
-                );
-                if (mounted) {
-                  _loadFullMetadata();
-                }
-              },
-              icon: const AppIcon(Symbols.edit_rounded, fill: 1),
-              tooltip: t.metadataEdit.editMetadata,
-              iconSize: 20,
-              style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
+            MediaContextMenu(
+              key: _contextMenuKey,
+              item: metadata,
+              onRefresh: (_) => _loadFullMetadata(),
+              child: Builder(
+                builder: (buttonContext) => IconButton.filledTonal(
+                  onPressed: () {
+                    final renderBox = buttonContext.findRenderObject() as RenderBox?;
+                    if (renderBox != null) {
+                      final position = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
+                      _contextMenuKey.currentState?.showContextMenu(buttonContext, position: position);
+                    }
+                  },
+                  icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                  iconSize: 20,
+                  style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
+                ),
+              ),
             ),
           ],
         ],
@@ -936,16 +951,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
               AppIcon(
                 Symbols.star_rounded,
                 fill: hasRating ? 1 : 0,
-                color: hasRating
-                    ? Colors.amber
-                    : Theme.of(context).colorScheme.onSecondaryContainer,
+                color: hasRating ? Colors.amber : Theme.of(context).colorScheme.onSecondaryContainer,
                 size: 16,
               ),
               const SizedBox(width: 4),
               Text(
-                hasRating
-                    ? formatRating(starValue)
-                    : t.mediaMenu.rate,
+                hasRating ? formatRating(starValue) : t.mediaMenu.rate,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSecondaryContainer,
                   fontSize: 13,
@@ -1013,10 +1024,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   /// Get the correct PlexClient for this metadata's server
   /// Returns null in offline mode or if serverId is null
   PlexClient? _getClientForMetadata(BuildContext context) {
-    if (widget.isOffline || widget.metadata.serverId == null) {
-      return null;
-    }
-    return context.getClientForServer(widget.metadata.serverId!);
+    return getServerBoundClient(context);
   }
 
   Future<void> _loadFullMetadata() async {
@@ -1131,14 +1139,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       final seasonsWithServerId = seasons
           .map((season) => season.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
           .toList();
-      if (!mounted) return;
-      setState(() {
+      setStateIfMounted(() {
         _seasons = seasonsWithServerId;
         _isLoadingSeasons = false;
       });
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
+      setStateIfMounted(() {
         _isLoadingSeasons = false;
       });
     } finally {
@@ -1215,11 +1221,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
           .map((extra) => extra.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
           .toList();
 
-      if (mounted) {
-        setState(() {
-          _extras = extrasWithServerId;
-        });
-      }
+      setStateIfMounted(() {
+        _extras = extrasWithServerId;
+      });
     } catch (e) {
       // Silently fail - extras section won't appear if fetch fails
     }
@@ -1501,7 +1505,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     );
   }
 
-
   /// Handle key events for the extras row (locked focus pattern)
   KeyEventResult _handleExtrasKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
@@ -1688,8 +1691,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     final offlineWatchProvider = context.read<OfflineWatchProvider>();
     final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(widget.metadata.ratingKey);
 
-    if (nextEpisode != null && mounted) {
-      setState(() {
+    if (nextEpisode != null) {
+      setStateIfMounted(() {
         _onDeckEpisode = nextEpisode;
       });
       appLogger.d('Offline OnDeck: S${nextEpisode.parentIndex}E${nextEpisode.index} - ${nextEpisode.title}');
@@ -1729,8 +1732,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         }
 
         // Single setState to minimize rebuilds - scroll position is preserved by controller
-        if (!mounted) return;
-        setState(() {
+        setStateIfMounted(() {
           _fullMetadata = metadataWithServerId;
           if (updatedSeasons != null) {
             _seasons = updatedSeasons;
@@ -1769,10 +1771,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       }
 
       // Skip Season 0 (Specials) — prefer the first regular season
-      final firstSeason = _seasons.firstWhere(
-        (s) => (s.index ?? 0) > 0,
-        orElse: () => _seasons.first,
-      );
+      final firstSeason = _seasons.firstWhere((s) => (s.index ?? 0) > 0, orElse: () => _seasons.first);
 
       // Get episodes of the first season
       List<PlexMetadata> episodes;
@@ -1941,372 +1940,379 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     final size = MediaQuery.of(context).size;
     final headerHeight = size.height * 0.6;
 
-    final content = Focus(
-      onKeyEvent: handleBack,
-      child: Scaffold(
-        body: Stack(
-          children: [
-            CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // Hero header with background art
-                SliverToBoxAdapter(
-                  child: Stack(
-                    children: [
-                      // Background Art (fixed height, no parallax)
-                      SizedBox(
-                        height: headerHeight,
-                        width: double.infinity,
-                        child: (metadata.art != null || metadata.backgroundSquare != null)
-                            ? Builder(
-                                builder: (context) {
-                                  final containerAspect = size.width / headerHeight;
-                                  final heroArtPath = metadata.heroArt(containerAspectRatio: containerAspect);
+    final content = OverlaySheetHost(
+      child: Focus(
+        onKeyEvent: handleBack,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  // Hero header with background art
+                  SliverToBoxAdapter(
+                    child: Stack(
+                      children: [
+                        // Background Art (fixed height, no parallax)
+                        SizedBox(
+                          height: headerHeight,
+                          width: double.infinity,
+                          child: (metadata.art != null || metadata.backgroundSquare != null)
+                              ? Builder(
+                                  builder: (context) {
+                                    final containerAspect = size.width / headerHeight;
+                                    final heroArtPath = metadata.heroArt(containerAspectRatio: containerAspect);
 
-                                  // Check for offline local file first
-                                  if (widget.isOffline && widget.metadata.serverId != null) {
-                                    final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
-                                      widget.metadata.serverId!,
-                                      heroArtPath,
-                                    );
-                                    if (localPath != null && File(localPath).existsSync()) {
-                                      return Image.file(
-                                        File(localPath),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
+                                    // Check for offline local file first
+                                    if (widget.isOffline && widget.metadata.serverId != null) {
+                                      final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
+                                        widget.metadata.serverId!,
+                                        heroArtPath,
                                       );
+                                      if (localPath != null && File(localPath).existsSync()) {
+                                        return Image.file(
+                                          File(localPath),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
+                                        );
+                                      }
+                                      // Offline but no local file - show placeholder
+                                      return const PlaceholderContainer();
                                     }
-                                    // Offline but no local file - show placeholder
-                                    return const PlaceholderContainer();
-                                  }
 
-                                  // Online - use network image
-                                  final client = _getClientForMetadata(context);
-                                  final mediaQuery = MediaQuery.of(context);
-                                  final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
-                                  final imageUrl = PlexImageHelper.getOptimizedImageUrl(
-                                    client: client,
-                                    thumbPath: heroArtPath,
-                                    maxWidth: mediaQuery.size.width,
-                                    maxHeight: mediaQuery.size.height * 0.6,
-                                    devicePixelRatio: dpr,
-                                    imageType: ImageType.art,
-                                  );
+                                    // Online - use network image
+                                    final client = _getClientForMetadata(context);
+                                    final mediaQuery = MediaQuery.of(context);
+                                    final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
+                                    final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+                                      client: client,
+                                      thumbPath: heroArtPath,
+                                      maxWidth: mediaQuery.size.width,
+                                      maxHeight: mediaQuery.size.height * 0.6,
+                                      devicePixelRatio: dpr,
+                                      imageType: ImageType.art,
+                                    );
 
-                                  return blurArtwork(CachedNetworkImage(
-                                    imageUrl: imageUrl,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => const PlaceholderContainer(),
-                                    errorWidget: (context, url, error) => const PlaceholderContainer(),
-                                  ));
-                                },
-                              )
-                            : const PlaceholderContainer(),
-                      ),
-
-                      // Gradient overlay
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: -1, // Extend 1px past to prevent subpixel gap
-                        child: Builder(
-                          builder: (context) {
-                            final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                            return Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                                  stops: const [0.3, 0.8, 1.0],
-                                ),
-                              ),
-                            );
-                          },
+                                    return blurArtwork(
+                                      CachedNetworkImage(
+                                        imageUrl: imageUrl,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => const PlaceholderContainer(),
+                                        errorWidget: (context, url, error) => const PlaceholderContainer(),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : const PlaceholderContainer(),
                         ),
-                      ),
 
-                      // Content at bottom
-                      Positioned(
-                        bottom: 16,
-                        left: 0,
-                        right: 0,
-                        child: SafeArea(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Clear logo or title
-                                if (metadata.clearLogo != null)
-                                  SizedBox(
-                                    height: 120,
-                                    width: 400,
-                                    child: Builder(
-                                      builder: (context) {
-                                        // Check for offline local file first
-                                        if (widget.isOffline && widget.metadata.serverId != null) {
-                                          final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
-                                            widget.metadata.serverId!,
-                                            metadata.clearLogo,
+                        // Gradient overlay
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: -1, // Extend 1px past to prevent subpixel gap
+                          child: Builder(
+                            builder: (context) {
+                              final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                              return Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
+                                    stops: const [0.3, 0.8, 1.0],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                        // Content at bottom
+                        Positioned(
+                          bottom: 16,
+                          left: 0,
+                          right: 0,
+                          child: SafeArea(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Clear logo or title
+                                  if (metadata.clearLogo != null)
+                                    SizedBox(
+                                      height: 120,
+                                      width: 400,
+                                      child: Builder(
+                                        builder: (context) {
+                                          // Check for offline local file first
+                                          if (widget.isOffline && widget.metadata.serverId != null) {
+                                            final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
+                                              widget.metadata.serverId!,
+                                              metadata.clearLogo,
+                                            );
+                                            if (localPath != null && File(localPath).existsSync()) {
+                                              return Image.file(
+                                                File(localPath),
+                                                fit: BoxFit.contain,
+                                                alignment: Alignment.centerLeft,
+                                                errorBuilder: (context, error, stackTrace) =>
+                                                    _buildTitleText(context, metadata.title),
+                                              );
+                                            }
+                                            // Offline but no local file - show title text
+                                            return _buildTitleText(context, metadata.title);
+                                          }
+
+                                          // Online - use network image
+                                          final client = _getClientForMetadata(context);
+                                          final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
+                                          final logoUrl = PlexImageHelper.getOptimizedImageUrl(
+                                            client: client,
+                                            thumbPath: metadata.clearLogo,
+                                            maxWidth: 400,
+                                            maxHeight: 120,
+                                            devicePixelRatio: dpr,
+                                            imageType: ImageType.logo,
                                           );
-                                          if (localPath != null && File(localPath).existsSync()) {
-                                            return Image.file(
-                                              File(localPath),
+
+                                          return blurArtwork(
+                                            CachedNetworkImage(
+                                              imageUrl: logoUrl,
+                                              filterQuality: FilterQuality.medium,
                                               fit: BoxFit.contain,
                                               alignment: Alignment.centerLeft,
-                                              errorBuilder: (context, error, stackTrace) =>
-                                                  _buildTitleText(context, metadata.title),
-                                            );
-                                          }
-                                          // Offline but no local file - show title text
-                                          return _buildTitleText(context, metadata.title);
-                                        }
-
-                                        // Online - use network image
-                                        final client = _getClientForMetadata(context);
-                                        final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
-                                        final logoUrl = PlexImageHelper.getOptimizedImageUrl(
-                                          client: client,
-                                          thumbPath: metadata.clearLogo,
-                                          maxWidth: 400,
-                                          maxHeight: 120,
-                                          devicePixelRatio: dpr,
-                                          imageType: ImageType.logo,
-                                        );
-
-                                        return blurArtwork(CachedNetworkImage(
-                                          imageUrl: logoUrl,
-                                          filterQuality: FilterQuality.medium,
-                                          fit: BoxFit.contain,
-                                          alignment: Alignment.centerLeft,
-                                          memCacheWidth: (400 * dpr).clamp(200, 800).round(),
-                                          placeholder: (context, url) => Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              metadata.title,
-                                              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                                color: Colors.white.withValues(alpha: 0.3),
-                                                fontWeight: FontWeight.bold,
-                                                shadows: [
-                                                  Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8),
-                                                ],
+                                              memCacheWidth: (400 * dpr).clamp(200, 800).round(),
+                                              placeholder: (context, url) => Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  metadata.title,
+                                                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                                    color: Colors.white.withValues(alpha: 0.3),
+                                                    fontWeight: FontWeight.bold,
+                                                    shadows: [
+                                                      Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8),
+                                                    ],
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
+                                              errorWidget: (context, url, error) {
+                                                return _buildTitleText(context, metadata.title);
+                                              },
                                             ),
-                                          ),
-                                          errorWidget: (context, url, error) {
-                                            return _buildTitleText(context, metadata.title);
-                                          },
-                                        ), sigma: 10, clip: false);
-                                      },
+                                            sigma: 10,
+                                            clip: false,
+                                          );
+                                        },
+                                      ),
+                                    )
+                                  else
+                                    Text(
+                                      metadata.title,
+                                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  )
-                                else
-                                  Text(
-                                    metadata.title,
-                                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                const SizedBox(height: 12),
+                                  const SizedBox(height: 12),
 
-                                // Metadata chips
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    if (metadata.year != null) _buildMetadataChip('${metadata.year}'),
-                                    if (metadata.contentRating != null)
-                                      _buildMetadataChip(formatContentRating(metadata.contentRating!)),
-                                    if (metadata.duration != null)
-                                      _buildMetadataChip(formatDurationTextual(metadata.duration!)),
-                                    ..._buildRatingChips(metadata),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                // Action buttons
-                                _buildActionButtons(metadata),
-                              ],
+                                  // Metadata chips
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      if (metadata.year != null) _buildMetadataChip('${metadata.year}'),
+                                      if (metadata.contentRating != null)
+                                        _buildMetadataChip(formatContentRating(metadata.contentRating!)),
+                                      if (metadata.duration != null)
+                                        _buildMetadataChip(formatDurationTextual(metadata.duration!)),
+                                      ..._buildRatingChips(metadata),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  // Action buttons
+                                  _buildActionButtons(metadata),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Main content
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Summary
-                        if (metadata.summary != null) ...[
-                          Text(
-                            key: _overviewSectionKey,
-                            t.discover.overview,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          Focus(
-                            focusNode: _overviewFocusNode,
-                            onKeyEvent: _handleOverviewKeyEvent,
-                            onFocusChange: (_) => setState(() {}),
-                            child: Builder(
-                              builder: (context) {
-                                final showFocus =
-                                    _overviewFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
-                                return AnimatedContainer(
-                                  duration: const Duration(milliseconds: 150),
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                    border: Border.all(
-                                      color: showFocus
-                                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
-                                          : Colors.transparent,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: () {
-                                    final summaryStyle =
-                                        Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6);
-                                    if (isTv) {
-                                      return Text(metadata.summary!, style: summaryStyle);
-                                    }
-                                    return CollapsibleText(
-                                      text: metadata.summary!,
-                                      maxLines: isMobile ? 6 : 4,
-                                      style: summaryStyle,
-                                    );
-                                  }(),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-
-                        // Seasons (for TV shows)
-                        if (isShow) ...[
-                          Text(
-                            key: _seasonsSectionKey,
-                            t.discover.seasons,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          if (_isLoadingSeasons)
-                            const Center(
-                              child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
-                            )
-                          else if (_seasons.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Center(
-                                child: Text(
-                                  t.messages.noSeasonsFound,
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
-                                ),
-                              ),
-                            )
-                          else if (size.width >= 600)
-                            _buildHorizontalSeasons()
-                          else
-                            _buildVerticalSeasons(),
-                          const SizedBox(height: 24),
-                        ],
-
-                        // Cast
-                        if (metadata.role != null && metadata.role!.isNotEmpty) ...[
-                          Text(
-                            key: _castSectionKey,
-                            t.discover.cast,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildCastSection(metadata),
-                          const SizedBox(height: 24),
-                        ],
-
-                        // Trailers & Extras Section
-                        if (!widget.isOffline && _extras != null && _extras!.isNotEmpty) ...[
-                          Text(
-                            key: _extrasSectionKey,
-                            t.discover.extras,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildExtrasSection(),
-                          const SizedBox(height: 24),
-                        ],
-
-                        // Additional info
-                        if (metadata.studio != null) ...[
-                          _buildInfoRow(t.discover.studio, metadata.studio!),
-                          const SizedBox(height: 12),
-                        ],
-                        if (metadata.contentRating != null) ...[
-                          _buildInfoRow(t.discover.rating, formatContentRating(metadata.contentRating!)),
-                          const SizedBox(height: 12),
-                        ],
                       ],
                     ),
                   ),
-                ),
-                SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom)),
-              ],
-            ),
-            // Sticky top bar with fading background
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: IgnorePointer(
-                ignoring: _scrollOffset < 50,
-                child: AnimatedOpacity(
-                  opacity: (_scrollOffset / 100).clamp(0.0, 1.0),
-                  duration: const Duration(milliseconds: 150),
-                  child: Container(
-                    height: MediaQuery.of(context).padding.top + 58,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0),
+
+                  // Main content
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Summary
+                          if (metadata.summary != null) ...[
+                            Text(
+                              key: _overviewSectionKey,
+                              t.discover.overview,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 12),
+                            Focus(
+                              focusNode: _overviewFocusNode,
+                              onKeyEvent: _handleOverviewKeyEvent,
+                              onFocusChange: (_) => setState(() {}),
+                              child: Builder(
+                                builder: (context) {
+                                  final showFocus =
+                                      _overviewFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
+                                  return AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.all(Radius.circular(8)),
+                                      border: Border.all(
+                                        color: showFocus
+                                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
+                                            : Colors.transparent,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: () {
+                                      final summaryStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6);
+                                      if (isTv) {
+                                        return Text(metadata.summary!, style: summaryStyle);
+                                      }
+                                      return CollapsibleText(
+                                        text: metadata.summary!,
+                                        maxLines: isMobile ? 6 : 4,
+                                        style: summaryStyle,
+                                      );
+                                    }(),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+
+                          // Seasons (for TV shows)
+                          if (isShow) ...[
+                            Text(
+                              key: _seasonsSectionKey,
+                              t.discover.seasons,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 12),
+                            if (_isLoadingSeasons)
+                              const Center(
+                                child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
+                              )
+                            else if (_seasons.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.all(32),
+                                child: Center(
+                                  child: Text(
+                                    t.messages.noSeasonsFound,
+                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                                  ),
+                                ),
+                              )
+                            else if (size.width >= 600)
+                              _buildHorizontalSeasons()
+                            else
+                              _buildVerticalSeasons(),
+                            const SizedBox(height: 24),
+                          ],
+
+                          // Cast
+                          if (metadata.role != null && metadata.role!.isNotEmpty) ...[
+                            Text(
+                              key: _castSectionKey,
+                              t.discover.cast,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildCastSection(metadata),
+                            const SizedBox(height: 24),
+                          ],
+
+                          // Trailers & Extras Section
+                          if (!widget.isOffline && _extras != null && _extras!.isNotEmpty) ...[
+                            Text(
+                              key: _extrasSectionKey,
+                              t.discover.extras,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildExtrasSection(),
+                            const SizedBox(height: 24),
+                          ],
+
+                          // Additional info
+                          if (metadata.studio != null) ...[
+                            _buildInfoRow(t.discover.studio, metadata.studio!),
+                            const SizedBox(height: 12),
+                          ],
+                          if (metadata.contentRating != null) ...[
+                            _buildInfoRow(t.discover.rating, formatContentRating(metadata.contentRating!)),
+                            const SizedBox(height: 12),
+                          ],
                         ],
-                        stops: const [0.0, 0.3, 1.0],
+                      ),
+                    ),
+                  ),
+                  SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom)),
+                ],
+              ),
+              // Sticky top bar with fading background
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  ignoring: _scrollOffset < 50,
+                  child: AnimatedOpacity(
+                    opacity: (_scrollOffset / 100).clamp(0.0, 1.0),
+                    duration: const Duration(milliseconds: 150),
+                    child: Container(
+                      height: MediaQuery.of(context).padding.top + 58,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
+                            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
+                            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0),
+                          ],
+                          stops: const [0.0, 0.3, 1.0],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            // Back button (always visible)
-            Positioned(
-              top: 0,
-              left: 0,
-              child: DesktopAppBarHelper.buildAdjustedLeading(
-                AppBarBackButton(
-                  style: BackButtonStyle.circular,
-                  onPressed: () => Navigator.pop(context, _watchStateChanged),
-                ),
-                context: context,
-              )!,
-            ),
-          ],
+              // Back button (always visible)
+              Positioned(
+                top: 0,
+                left: 0,
+                child: DesktopAppBarHelper.buildAdjustedLeading(
+                  AppBarBackButton(
+                    style: BackButtonStyle.circular,
+                    onPressed: () => Navigator.pop(context, _watchStateChanged),
+                  ),
+                  context: context,
+                )!,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2408,8 +2414,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                               children: [
                                 Text(
                                   actor.tag,
-                                  style:
-                                      Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -2635,7 +2640,10 @@ class _SeasonCardState extends State<_SeasonCard> {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Symbols.star_rounded, size: 14, fill: 1, color: Colors.amber)),
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 2),
+                                  child: Icon(Symbols.star_rounded, size: 14, fill: 1, color: Colors.amber),
+                                ),
                                 const SizedBox(width: 3),
                                 Text(
                                   (widget.season.userRating! / 2) == (widget.season.userRating! / 2).truncateToDouble()
@@ -2733,4 +2741,3 @@ class _SeasonCardState extends State<_SeasonCard> {
     );
   }
 }
-

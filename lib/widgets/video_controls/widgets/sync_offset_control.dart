@@ -236,7 +236,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                 min: _sliderMin,
                 max: _sliderMax,
                 divisions: _sliderDivisions,
-                activeColor: Colors.blue,
+                activeColor: Theme.of(context).colorScheme.primary,
                 inactiveColor: Theme.of(context).colorScheme.outlineVariant,
                 onChanged: (value) {
                   setState(() {
@@ -328,7 +328,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                   min: _sliderMin,
                   max: _sliderMax,
                   divisions: _sliderDivisions,
-                  activeColor: Colors.blue,
+                  activeColor: Theme.of(context).colorScheme.primary,
                   inactiveColor: Theme.of(context).colorScheme.outlineVariant,
                   onChanged: (value) {
                     setState(() {

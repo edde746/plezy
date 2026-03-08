@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import '../models/plex_metadata.dart';
 import '../services/offline_watch_sync_service.dart';
-import '../services/plex_api_cache.dart';
 import '../utils/watch_state_notifier.dart';
 import 'download_provider.dart';
 import '../utils/global_key_utils.dart';
@@ -16,16 +15,12 @@ import '../utils/global_key_utils.dart';
 class OfflineWatchProvider extends ChangeNotifier {
   final OfflineWatchSyncService _syncService;
   final DownloadProvider _downloadProvider;
-  // ignore: unused_field - reserved for future cached metadata lookup
-  final PlexApiCache _apiCache;
 
   OfflineWatchProvider({
     required OfflineWatchSyncService syncService,
     required DownloadProvider downloadProvider,
-    required PlexApiCache apiCache,
   }) : _syncService = syncService,
-       _downloadProvider = downloadProvider,
-       _apiCache = apiCache {
+       _downloadProvider = downloadProvider {
     // Listen to sync service changes to update UI
     _syncService.addListener(_onSyncServiceChanged);
   }

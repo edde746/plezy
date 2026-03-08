@@ -309,10 +309,12 @@ class CompanionRemoteProvider with ChangeNotifier {
       appLogger.d('CompanionRemote: Attempting reconnect...');
       // Clean up old peer service without triggering intentional disconnect
       _cleanupSubscriptions();
-      await _peerService?.disconnect();
-
-      _peerService = CompanionRemotePeerService();
-      _setupPeerServiceListeners();
+      try {
+        await _peerService?.disconnect();
+      } finally {
+        _peerService = CompanionRemotePeerService();
+        _setupPeerServiceListeners();
+      }
 
       await _peerService!.joinSession(_lastSessionId!, _lastPin!, _deviceName, _platform, _lastHostAddress!);
 

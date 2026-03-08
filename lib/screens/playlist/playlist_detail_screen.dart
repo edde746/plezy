@@ -542,11 +542,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Colors.blue[300]),
+                    AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 4),
                     Text(
                       t.playlists.smartPlaylist,
-                      style: TextStyle(fontSize: 11, color: Colors.blue[300], fontWeight: FontWeight.normal),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.normal),
                     ),
                   ],
                 ),

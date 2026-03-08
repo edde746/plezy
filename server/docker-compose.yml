@@ -18,15 +18,36 @@ services:
       - caddy_data:/data
       - caddy_config:/config
 
-  bugsink:
-    image: bugsink/bugsink
+  glitchtip-db:
+    image: postgres:16-alpine
     restart: unless-stopped
-    env_file: .env
     environment:
-      SECRET_KEY: ${BUGSINK_SECRET_KEY}
-      CREATE_SUPERUSER: ${BUGSINK_SUPERUSER}
-      PORT: 8000
-      BEHIND_HTTPS_PROXY: "True"
+      POSTGRES_DB: glitchtip
+      POSTGRES_USER: ${GLITCHTIP_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${GLITCHTIP_POSTGRES_PASSWORD}
+    volumes:
+      - glitchtip_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${GLITCHTIP_POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  glitchtip:
+    image: glitchtip/glitchtip
+    restart: unless-stopped
+    depends_on:
+      glitchtip-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${GLITCHTIP_POSTGRES_USER}:${GLITCHTIP_POSTGRES_PASSWORD}@glitchtip-db/glitchtip
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY}
+      GLITCHTIP_DOMAIN: https://bugs.plezy.app
+      DEFAULT_FROM_EMAIL: noreply@plezy.app
+      GLITCHTIP_MAX_EVENT_LIFE_DAYS: 90
+      SERVER_ROLE: all_in_one
+      ENABLE_USER_REGISTRATION: "false"
+      VALKEY_URL: ""
     expose:
       - "8000"
 
@@ -34,3 +55,4 @@ volumes:
   logs:
   caddy_data:
   caddy_config:
+  glitchtip_data:

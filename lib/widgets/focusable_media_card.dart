@@ -31,6 +31,9 @@ class FocusableMediaCard extends StatefulWidget {
   /// Show server name in list view (multi-server)
   final bool showServerName;
 
+  /// Whether to disable the scale animation on focus (e.g. in list view).
+  final bool disableScale;
+
   /// Optional external focus node for programmatic focus control.
   /// If not provided, an internal focus node is created.
   final FocusNode? focusNode;
@@ -70,6 +73,7 @@ class FocusableMediaCard extends StatefulWidget {
     this.isOffline = false,
     this.mixedHubContext = false,
     this.showServerName = false,
+    this.disableScale = false,
     this.focusNode,
     this.onNavigateUp,
     this.onNavigateLeft,
@@ -98,6 +102,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
       onBack: widget.onBack,
       onFocusChange: widget.onFocusChange,
       enableLongPress: true,
+      disableScale: widget.disableScale,
       useComfortableZone: !PlatformDetector.isTV(), // Always center on TV
       scrollAlignment: 0.5,
       child: MediaCard(

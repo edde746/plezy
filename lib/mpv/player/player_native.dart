@@ -42,7 +42,7 @@ class PlayerNative extends PlayerBase {
     if (initialized) return;
 
     try {
-      final result = await methodChannel.invokeMethod<Object>('initialize');
+      final result = await invoke<Object>('initialize');
       if (result is int) {
         // Linux: initialize returns the texture ID
         _textureIdValue = result;
@@ -68,6 +68,7 @@ class PlayerNative extends PlayerBase {
       await observeProperty('speed', 'double');
       await observeProperty('aid', 'string');
       await observeProperty('sid', 'string');
+      await observeProperty('secondary-sid', 'string');
       await observeProperty('demuxer-cache-state', _nodeFormat);
       await observeProperty('audio-device-list', _nodeFormat);
       await observeProperty('audio-device', 'string');
@@ -103,7 +104,7 @@ class PlayerNative extends PlayerBase {
   /// Returns null if the call fails.
   Future<int?> _openContentFd(String contentUri) async {
     try {
-      return await methodChannel.invokeMethod<int>('openContentFd', {'uri': contentUri});
+      return await invoke<int>('openContentFd', {'uri': contentUri});
     } catch (e) {
       return null;
     }
@@ -111,7 +112,7 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> open(Media media, {bool play = true, bool isLive = false}) async {
-    checkDisposed();
+    if (disposed) return;
     await _ensureInitialized();
 
     // Show the video layer
@@ -152,26 +153,22 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> play() async {
-    checkDisposed();
     await setProperty('pause', 'no');
   }
 
   @override
   Future<void> pause() async {
-    checkDisposed();
     await setProperty('pause', 'yes');
   }
 
   @override
   Future<void> stop() async {
-    checkDisposed();
     await command(['stop']);
-    await methodChannel.invokeMethod('setVisible', {'visible': false});
+    await invoke('setVisible', {'visible': false});
   }
 
   @override
   Future<void> seek(Duration position) async {
-    checkDisposed();
     await command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']);
   }
 
@@ -181,19 +178,21 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> selectAudioTrack(AudioTrack track) async {
-    checkDisposed();
     await setProperty('aid', track.id);
   }
 
   @override
   Future<void> selectSubtitleTrack(SubtitleTrack track) async {
-    checkDisposed();
     await setProperty('sid', track.id);
   }
 
   @override
+  Future<void> selectSecondarySubtitleTrack(SubtitleTrack track) async {
+    await setProperty('secondary-sid', track.id);
+  }
+
+  @override
   Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
-    checkDisposed();
     final args = ['sub-add', uri, select ? 'select' : 'auto'];
     if (title != null) args.add('title=$title');
     if (language != null) args.add('lang=$language');
@@ -206,19 +205,16 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> setVolume(double volume) async {
-    checkDisposed();
     await setProperty('volume', volume.toString());
   }
 
   @override
   Future<void> setRate(double rate) async {
-    checkDisposed();
     await setProperty('speed', rate.toString());
   }
 
   @override
   Future<void> setAudioDevice(AudioDevice device) async {
-    checkDisposed();
     await setProperty('audio-device', device.name);
   }
 
@@ -228,23 +224,23 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> setProperty(String name, String value) async {
-    checkDisposed();
+    if (disposed) return;
     await _ensureInitialized();
-    await methodChannel.invokeMethod('setProperty', {'name': name, 'value': value});
+    await invoke('setProperty', {'name': name, 'value': value});
   }
 
   @override
   Future<String?> getProperty(String name) async {
-    checkDisposed();
+    if (disposed) return null;
     await _ensureInitialized();
-    return await methodChannel.invokeMethod<String>('getProperty', {'name': name});
+    return await invoke<String>('getProperty', {'name': name});
   }
 
   @override
   Future<void> command(List<String> args) async {
-    checkDisposed();
+    if (disposed) return;
     await _ensureInitialized();
-    await methodChannel.invokeMethod('command', {'args': args});
+    await invoke('command', {'args': args});
   }
 
   // ============================================
@@ -253,9 +249,9 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> setLogLevel(String level) async {
-    checkDisposed();
+    if (disposed) return;
     await _ensureInitialized();
-    await methodChannel.invokeMethod('setLogLevel', {'level': level});
+    await invoke('setLogLevel', {'level': level});
   }
 
   // ============================================
@@ -264,7 +260,6 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> setAudioPassthrough(bool enabled) async {
-    checkDisposed();
     if (enabled) {
       await setProperty('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd');
       await setProperty('audio-exclusive', 'yes');
@@ -280,47 +275,35 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> updateFrame() async {
-    checkDisposed();
-    if (!initialized) return;
+    if (disposed || !initialized) return;
     if (Platform.isIOS || Platform.isMacOS || Platform.isLinux) {
-      await methodChannel.invokeMethod('updateFrame');
+      await invoke('updateFrame');
     }
   }
 
   @override
   Future<void> setVideoFrameRate(double fps, int durationMs) async {
-    checkDisposed();
-    if (!Platform.isAndroid) return;
-    if (!initialized) return;
-
-    await methodChannel.invokeMethod('setVideoFrameRate', {'fps': fps, 'duration': durationMs});
+    if (!Platform.isAndroid || disposed || !initialized) return;
+    await invoke('setVideoFrameRate', {'fps': fps, 'duration': durationMs});
   }
 
   @override
   Future<void> clearVideoFrameRate() async {
-    checkDisposed();
-    if (!Platform.isAndroid) return;
-    if (!initialized) return;
-
-    await methodChannel.invokeMethod('clearVideoFrameRate');
+    if (!Platform.isAndroid || disposed || !initialized) return;
+    await invoke('clearVideoFrameRate');
   }
 
   @override
   Future<bool> requestAudioFocus() async {
-    checkDisposed();
+    if (disposed) return false;
     if (!Platform.isAndroid) return true;
-    if (!initialized) return false;
-
-    final result = await methodChannel.invokeMethod<bool>('requestAudioFocus');
-    return result ?? false;
+    await _ensureInitialized();
+    return await invoke<bool>('requestAudioFocus') ?? false;
   }
 
   @override
   Future<void> abandonAudioFocus() async {
-    checkDisposed();
-    if (!Platform.isAndroid) return;
-    if (!initialized) return;
-
-    await methodChannel.invokeMethod('abandonAudioFocus');
+    if (!Platform.isAndroid || disposed || !initialized) return;
+    await invoke('abandonAudioFocus');
   }
 }

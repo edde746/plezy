@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:provider/provider.dart';
 
@@ -13,8 +15,10 @@ import '../../../services/settings_service.dart';
 import '../../../services/shader_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../focus/focusable_wrapper.dart';
+import '../../../utils/dialogs.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../utils/snackbar_helper.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
@@ -524,9 +528,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final isSelected = (currentRate - speed).abs() < 0.01;
             final label = speed == 1.0 ? 'Normal' : '${speed.toStringAsFixed(2)}x';
 
-            return ListTile(
-              title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : null)),
-              trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
+            final primary = Theme.of(context).colorScheme.primary;
+            return FocusableListTile(
+              title: Text(label, style: TextStyle(color: isSelected ? primary : null)),
+              trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
               onTap: () async {
                 widget.player.setRate(speed);
                 // Save as default playback speed
@@ -641,9 +646,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final isSelected = device.name == currentDevice.name;
     final label = device.description.isEmpty ? device.name : device.description;
 
-    return ListTile(
-      title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : null)),
-      trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
+    final primary = Theme.of(context).colorScheme.primary;
+    return FocusableListTile(
+      title: Text(label, style: TextStyle(color: isSelected ? primary : null)),
+      trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
       onTap: () {
         widget.player.setAudioDevice(device);
         OverlaySheetController.of(context).close();
@@ -657,20 +663,43 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return Consumer<ShaderProvider>(
       builder: (context, shaderProvider, _) {
         final currentPreset = widget.shaderService!.currentPreset;
-        final presets = ShaderPreset.allPresets;
+        final presets = shaderProvider.allPresets;
 
+        // +1 for the import button at the end
         return ListView.builder(
-          itemCount: presets.length,
+          itemCount: presets.length + 1,
           itemBuilder: (context, index) {
+            // Import button at the end
+            if (index == presets.length) {
+              return FocusableListTile(
+                leading: AppIcon(Symbols.add_rounded, fill: 1, color: tokens(context).textMuted),
+                title: Text(t.shaders.importShader),
+                onTap: () => _importCustomShader(shaderProvider),
+              );
+            }
+
             final preset = presets[index];
             final isSelected = preset.id == currentPreset.id;
+            final isCustom = preset.type == ShaderPresetType.custom;
 
             return FocusableListTile(
               title: Text(preset.name, style: TextStyle(color: isSelected ? Colors.amber : null)),
               subtitle: _getShaderSubtitle(preset) != null
                   ? Text(_getShaderSubtitle(preset)!, style: TextStyle(color: tokens(context).textMuted, fontSize: 12))
                   : null,
-              trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.amber) : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isSelected) const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.amber),
+                  if (isCustom) ...[
+                    if (isSelected) const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _deleteCustomShader(shaderProvider, preset),
+                      child: AppIcon(Symbols.delete_rounded, fill: 1, color: tokens(context).textMuted, size: 20),
+                    ),
+                  ],
+                ],
+              ),
               onTap: () async {
                 // Disable ambient lighting when selecting a shader
                 if (preset.type != ShaderPresetType.none && widget.isAmbientLightingEnabled) {
@@ -688,6 +717,54 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     );
   }
 
+  Future<void> _importCustomShader(ShaderProvider shaderProvider) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['glsl'],
+    );
+
+    if (result == null || result.files.isEmpty || !mounted) return;
+
+    final filePath = result.files.first.path;
+    if (filePath == null) return;
+
+    try {
+      final displayName = path.basenameWithoutExtension(filePath);
+      final preset = await shaderProvider.importCustomShader(filePath, displayName);
+
+      // Apply the imported shader immediately
+      if (widget.shaderService != null && mounted) {
+        if (preset.type != ShaderPresetType.none && widget.isAmbientLightingEnabled) {
+          widget.onToggleAmbientLighting?.call();
+        }
+        await widget.shaderService!.applyPreset(preset);
+        await shaderProvider.setPreset(preset);
+        widget.onShaderChanged?.call();
+      }
+
+      if (mounted) showSuccessSnackBar(context, t.shaders.shaderImported);
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.shaders.shaderImportFailed);
+    }
+  }
+
+  Future<void> _deleteCustomShader(ShaderProvider shaderProvider, ShaderPreset preset) async {
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: t.shaders.deleteShader,
+      message: t.shaders.deleteShaderConfirm(name: preset.name),
+    );
+    if (!confirmed || !mounted) return;
+
+    // If the deleted shader is active, clear it from the player first
+    if (widget.shaderService!.currentPreset.id == preset.id) {
+      await widget.shaderService!.applyPreset(ShaderPreset.none);
+      widget.onShaderChanged?.call();
+    }
+
+    await shaderProvider.deleteCustomShader(preset);
+  }
+
   String? _getShaderSubtitle(ShaderPreset preset) {
     switch (preset.type) {
       case ShaderPresetType.none:
@@ -703,6 +780,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           return '$quality - ${t.shaders.mode} $mode';
         }
         return null;
+      case ShaderPresetType.custom:
+        return t.shaders.customShaderDescription;
     }
   }
 

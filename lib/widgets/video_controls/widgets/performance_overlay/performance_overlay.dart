@@ -47,93 +47,73 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
   Widget build(BuildContext context) {
     final isMpv = _stats.playerType == 'mpv';
 
+    final sections = <Widget>[
+      _buildSection(Symbols.videocam_rounded, 'Video', [
+        _metric('Codec', _stats.videoCodec ?? 'N/A'),
+        _metric('Resolution', _stats.resolution),
+        if (_stats.hasValidVideoFps) _metric('FPS', _stats.videoFpsFormatted),
+        if (_stats.hasValidVideoBitrate) _metric('Bitrate', _stats.videoBitrateFormatted),
+        _metric('Decoder', _stats.hwdecFormatted),
+        if (!isMpv && _stats.videoDecoderName != null) _metric('Raw Decoder', _stats.videoDecoderRaw),
+        if (!isMpv) _metric('Tunneling', _stats.tunneledPlaybackFormatted),
+        if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty) _metric('Aspect', _stats.aspectName!),
+        if (_stats.rotate != null && _stats.rotate != 0) _metric('Rotation', _stats.rotateFormatted),
+        if (_stats.dvConversionActive)
+          _metric('DV', _stats.dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC'),
+      ]),
+      _buildSection(Symbols.volume_up_rounded, 'Audio', [
+        if (_stats.audioCodec != null) _metric('Codec', _stats.audioCodec!),
+        _metric('Sample Rate', _stats.sampleRateFormatted),
+        _metric('Channels', _stats.audioChannels ?? 'N/A'),
+        if (_stats.hasValidAudioBitrate) _metric('Bitrate', _stats.audioBitrateFormatted),
+        if (!isMpv && _stats.audioDecoderName != null) _metric('Decoder', _stats.audioDecoderFormatted),
+      ]),
+      if (isMpv)
+        _buildSection(Symbols.palette_rounded, 'Color', [
+          _metric('Pixel Fmt', _stats.pixelformat ?? 'N/A'),
+          if (_stats.hwPixelformat != null && _stats.hwPixelformat != _stats.pixelformat)
+            _metric('HW Fmt', _stats.hwPixelformat!),
+          _metric('Matrix', _stats.colormatrix ?? 'N/A'),
+          _metric('Primaries', _stats.primaries ?? 'N/A'),
+          _metric('Transfer', _stats.gamma ?? 'N/A'),
+        ]),
+      _buildSection(Symbols.speed_rounded, 'Performance', [
+        if (isMpv) _metric('Render FPS', _stats.actualFpsFormatted),
+        if (isMpv) _metric('Display FPS', _stats.displayFpsFormatted),
+        if (isMpv) _metric('A/V Sync', _stats.avsyncFormatted),
+        _metric('Dropped', _stats.droppedFramesFormatted),
+      ]),
+      if (_stats.hasHdrMetadata)
+        _buildSection(Symbols.hdr_on_rounded, 'HDR', [
+          if (_stats.maxLuma != null) _metric('Max Luma', _stats.maxLumaFormatted),
+          if (_stats.minLuma != null) _metric('Min Luma', _stats.minLumaFormatted),
+          if (_stats.maxCll != null) _metric('MaxCLL', _stats.maxCllFormatted),
+          if (_stats.maxFall != null) _metric('MaxFALL', _stats.maxFallFormatted),
+        ]),
+      _buildSection(Symbols.memory_rounded, 'Buffer', [
+        _metric('Duration', _stats.cacheDurationFormatted),
+        if (isMpv) _metric('Cache Used', _stats.cacheUsedFormatted),
+        if (isMpv) _metric('Speed', _stats.cacheSpeedFormatted),
+      ]),
+      _buildSection(Symbols.apps_rounded, 'App', [
+        _metric('Player', _stats.playerTypeFormatted),
+        _metric('Memory', _stats.appMemoryFormatted),
+        _metric('UI FPS', _stats.uiFpsFormatted),
+      ]),
+    ];
+
     return Container(
-      constraints: const BoxConstraints(maxWidth: 380),
+      constraints: const BoxConstraints(maxWidth: 400),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.8),
         borderRadius: const BorderRadius.all(Radius.circular(8)),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Left column
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSection(Symbols.videocam_rounded, 'Video', [
-                  _metric('Codec', _stats.videoCodec ?? 'N/A'),
-                  _metric('Resolution', _stats.resolution),
-                  if (_stats.hasValidVideoFps) _metric('FPS', _stats.videoFpsFormatted),
-                  if (_stats.hasValidVideoBitrate) _metric('Bitrate', _stats.videoBitrateFormatted),
-                  _metric('Decoder', _stats.hwdecFormatted),
-                  if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty) _metric('Aspect', _stats.aspectName!),
-                  if (_stats.rotate != null && _stats.rotate != 0) _metric('Rotation', _stats.rotateFormatted),
-                ]),
-                // Color section - MPV only (ExoPlayer doesn't provide this info)
-                if (isMpv) ...[
-                  const SizedBox(height: 12),
-                  _buildSection(Symbols.palette_rounded, 'Color', [
-                    _metric('Pixel Fmt', _stats.pixelformat ?? 'N/A'),
-                    if (_stats.hwPixelformat != null && _stats.hwPixelformat != _stats.pixelformat)
-                      _metric('HW Fmt', _stats.hwPixelformat!),
-                    _metric('Matrix', _stats.colormatrix ?? 'N/A'),
-                    _metric('Primaries', _stats.primaries ?? 'N/A'),
-                    _metric('Transfer', _stats.gamma ?? 'N/A'),
-                  ]),
-                ],
-                if (_stats.hasHdrMetadata) ...[
-                  const SizedBox(height: 12),
-                  _buildSection(Symbols.hdr_on_rounded, 'HDR', [
-                    if (_stats.maxLuma != null) _metric('Max Luma', _stats.maxLumaFormatted),
-                    if (_stats.minLuma != null) _metric('Min Luma', _stats.minLumaFormatted),
-                    if (_stats.maxCll != null) _metric('MaxCLL', _stats.maxCllFormatted),
-                    if (_stats.maxFall != null) _metric('MaxFALL', _stats.maxFallFormatted),
-                  ]),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 24),
-          // Right column
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSection(Symbols.volume_up_rounded, 'Audio', [
-                  if (_stats.audioCodec != null) _metric('Codec', _stats.audioCodec!),
-                  _metric('Sample Rate', _stats.sampleRateFormatted),
-                  _metric('Channels', _stats.audioChannels ?? 'N/A'),
-                  if (_stats.hasValidAudioBitrate) _metric('Bitrate', _stats.audioBitrateFormatted),
-                ]),
-                const SizedBox(height: 12),
-                _buildSection(Symbols.speed_rounded, 'Performance', [
-                  if (isMpv) _metric('Render FPS', _stats.actualFpsFormatted),
-                  if (isMpv) _metric('Display FPS', _stats.displayFpsFormatted),
-                  if (isMpv) _metric('A/V Sync', _stats.avsyncFormatted),
-                  _metric('Dropped', _stats.droppedFramesFormatted),
-                ]),
-                const SizedBox(height: 12),
-                _buildSection(Symbols.memory_rounded, 'Buffer', [
-                  _metric('Duration', _stats.cacheDurationFormatted),
-                  if (isMpv) _metric('Cache Used', _stats.cacheUsedFormatted),
-                  if (isMpv) _metric('Speed', _stats.cacheSpeedFormatted),
-                ]),
-                const SizedBox(height: 12),
-                _buildSection(Symbols.apps_rounded, 'App', [
-                  _metric('Player', _stats.playerTypeFormatted),
-                  _metric('Memory', _stats.appMemoryFormatted),
-                  _metric('UI FPS', _stats.uiFpsFormatted),
-                ]),
-              ],
-            ),
-          ),
-        ],
+      child: Wrap(
+        spacing: 24,
+        runSpacing: 12,
+        children: sections,
       ),
     );
   }

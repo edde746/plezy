@@ -63,28 +63,39 @@ extension DpadKeyExtension on LogicalKeyboardKey {
   bool get isDownKey => this == LogicalKeyboardKey.arrowDown;
 }
 
-/// Global helper to suppress the next SELECT key-up event.
-class SelectKeyUpSuppressor {
-  static bool _suppressSelectUntilKeyUp = false;
+/// Base class for suppressing key-up events after a key category triggers an
+/// action (e.g. opening a sheet). While suppressed, all events for the matched
+/// key category are consumed; suppression auto-clears on [KeyUpEvent].
+class _KeyUpSuppressor {
+  final bool Function(LogicalKeyboardKey) _keyMatcher;
 
-  static void suppressSelectUntilKeyUp() {
-    _suppressSelectUntilKeyUp = true;
-  }
+  _KeyUpSuppressor(this._keyMatcher);
 
-  static void clearSuppression() {
-    _suppressSelectUntilKeyUp = false;
-  }
+  bool _suppressed = false;
 
-  static bool consumeIfSuppressed(KeyEvent event) {
-    if (!_suppressSelectUntilKeyUp) return false;
-    if (event.logicalKey.isSelectKey) {
-      if (event is KeyUpEvent) {
-        _suppressSelectUntilKeyUp = false;
-      }
+  void suppress() => _suppressed = true;
+
+  void clearSuppression() => _suppressed = false;
+
+  /// Returns `true` (consumed) when the event belongs to the matched key
+  /// category and suppression is active. Clears suppression on [KeyUpEvent].
+  bool consumeIfSuppressed(KeyEvent event) {
+    if (!_suppressed) return false;
+    if (_keyMatcher(event.logicalKey)) {
+      if (event is KeyUpEvent) _suppressed = false;
       return true;
     }
     return false;
   }
+}
+
+/// Global helper to suppress the next SELECT key-up event.
+class SelectKeyUpSuppressor {
+  static final _instance = _KeyUpSuppressor((k) => k.isSelectKey);
+
+  static void suppressSelectUntilKeyUp() => _instance.suppress();
+  static void clearSuppression() => _instance.clearSuppression();
+  static bool consumeIfSuppressed(KeyEvent event) => _instance.consumeIfSuppressed(event);
 }
 
 /// Global helper to suppress the next BACK key-up event.
@@ -92,7 +103,7 @@ class SelectKeyUpSuppressor {
 /// Use this when a modal (bottom sheet, dialog) closes to prevent
 /// the BACK key-up from propagating to the underlying screen.
 class BackKeyUpSuppressor {
-  static bool _suppressBackUntilKeyUp = false;
+  static final _instance = _KeyUpSuppressor((k) => k.isBackKey);
   static bool _closedViaBackKey = false;
 
   /// Mark that a modal is being closed via back key press.
@@ -109,26 +120,17 @@ class BackKeyUpSuppressor {
       _closedViaBackKey = false;
       return;
     }
-    _suppressBackUntilKeyUp = true;
+    _instance.suppress();
   }
 
   /// Clear any pending suppression. Call when opening a new modal
   /// to ensure stale suppression from previous closes doesn't affect it.
   static void clearSuppression() {
-    _suppressBackUntilKeyUp = false;
+    _instance.clearSuppression();
     _closedViaBackKey = false;
   }
 
-  static bool consumeIfSuppressed(KeyEvent event) {
-    if (!_suppressBackUntilKeyUp) return false;
-    if (event.logicalKey.isBackKey) {
-      if (event is KeyUpEvent) {
-        _suppressBackUntilKeyUp = false;
-      }
-      return true;
-    }
-    return false;
-  }
+  static bool consumeIfSuppressed(KeyEvent event) => _instance.consumeIfSuppressed(event);
 }
 
 /// Tracks whether a back key is currently physically pressed.

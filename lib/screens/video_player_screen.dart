@@ -57,7 +57,7 @@ import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/language_codes.dart';
 import '../utils/snackbar_helper.dart';
-import '../utils/track_label_builder.dart' as tlb;
+import '../utils/track_label_builder.dart';
 import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/overlay_sheet.dart';
@@ -74,6 +74,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
   final AudioTrack? preferredAudioTrack;
   final SubtitleTrack? preferredSubtitleTrack;
+  final SubtitleTrack? preferredSecondarySubtitleTrack;
   final int selectedMediaIndex;
   final bool isOffline;
   final PlexVideoPlaybackData? playbackData;
@@ -94,6 +95,7 @@ class VideoPlayerScreen extends StatefulWidget {
     required this.metadata,
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
+    this.preferredSecondarySubtitleTrack,
     this.selectedMediaIndex = 0,
     this.isOffline = false,
     this.playbackData,
@@ -139,6 +141,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<void>? _playbackRestartSubscription;
   StreamSubscription<void>? _backendSwitchedSubscription;
   StreamSubscription<void>? _sleepTimerSubscription;
+  StreamSubscription<bool>? _mediaControlsPlayingSubscription;
+  StreamSubscription<Duration>? _mediaControlsPositionSubscription;
+  StreamSubscription<double>? _mediaControlsRateSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
@@ -188,8 +193,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// iOS auto-PiP is system-initiated during the background transition, so
   /// isPipActive may not be true yet — we also check the auto-PiP setting.
   bool get _shouldSkipForPip =>
-      PipService().isPipActive.value ||
-      ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled);
+      PipService().isPipActive.value || ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled);
 
   // Services
   MediaControlsManager? _mediaControlsManager;
@@ -434,10 +438,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // exhausts the process address space on memory-constrained devices.
         final heapMB = await PlayerAndroid.getHeapSize();
         if (heapMB > 0) {
-          final autoBackMB = heapMB <= 256 ? 16 : (heapMB <= 512 ? 32 : 48);
+          int autoBackMB;
+          if (heapMB <= 256) {
+            autoBackMB = 16;
+          } else if (heapMB <= 512) {
+            autoBackMB = 32;
+          } else {
+            autoBackMB = 48;
+          }
           if (bufferSizeMB == 0) {
             // Auto mode: cap both forward and back buffer based on heap
-            final autoForwardMB = heapMB <= 256 ? 32 : (heapMB <= 512 ? 64 : 100);
+            int autoForwardMB;
+            if (heapMB <= 256) {
+              autoForwardMB = 32;
+            } else if (heapMB <= 512) {
+              autoForwardMB = 64;
+            } else {
+              autoForwardMB = 100;
+            }
             await player!.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
             await player!.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
           } else {
@@ -610,8 +628,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (duration.inMilliseconds > 0 &&
             position.inMilliseconds >= duration.inMilliseconds - 1000 &&
             !_showPlayNextDialog &&
-            !_completionTriggered &&
-            _nextEpisode != null) {
+            !_completionTriggered) {
           _onVideoCompleted(true);
         }
       });
@@ -784,12 +801,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
 
     // Listen to playing state and update media controls
-    player!.streams.playing.listen((isPlaying) {
+    _mediaControlsPlayingSubscription = player!.streams.playing.listen((isPlaying) {
       _updateMediaControlsPlaybackState();
     });
 
     // Listen to position updates for media controls and Discord
-    player!.streams.position.listen((position) {
+    _mediaControlsPositionSubscription = player!.streams.position.listen((position) {
       _mediaControlsManager?.updatePlaybackState(
         isPlaying: player!.state.playing,
         position: position,
@@ -799,7 +816,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     });
 
     // Listen to playback rate changes for Discord Rich Presence
-    player!.streams.rate.listen((rate) {
+    _mediaControlsRateSubscription = player!.streams.rate.listen((rate) {
       DiscordRPCService.instance.updatePlaybackSpeed(rate);
     });
 
@@ -1275,11 +1292,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (_shaderService == null || !_shaderService!.isSupported) return;
 
     try {
+      final shaderProvider = context.read<ShaderProvider>();
       final settings = await SettingsService.getInstance();
       final presetId = settings.getGlobalShaderPreset();
-      final preset = ShaderPreset.fromId(presetId) ?? ShaderPreset.none;
+      final preset =
+          (shaderProvider.initialized ? shaderProvider.findPresetById(presetId) : ShaderPreset.fromId(presetId)) ??
+          ShaderPreset.none;
       await _shaderService!.applyPreset(preset);
-      context.read<ShaderProvider>().setCurrentPreset(preset);
+      if (!mounted) return;
+      shaderProvider.setCurrentPreset(preset);
     } catch (e) {
       appLogger.d('Could not apply shader preset', error: e);
     }
@@ -1578,7 +1599,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (mounted) {
       final label = next.id == 'no'
           ? 'Subtitles: Off'
-          : 'Subtitles: ${tlb.TrackLabelBuilder.buildSubtitleLabel(title: next.title, language: next.language, codec: next.codec, index: nextIndex)}';
+          : 'Subtitles: ${TrackLabelBuilder.buildSubtitleLabel(title: next.title, language: next.language, codec: next.codec, index: nextIndex)}';
       showAppSnackBar(context, label, duration: const Duration(seconds: 1));
     }
   }
@@ -1597,7 +1618,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     if (mounted) {
       final label =
-          'Audio: ${tlb.TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
+          'Audio: ${TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
       showAppSnackBar(context, label, duration: const Duration(seconds: 1));
     }
   }
@@ -1721,6 +1742,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playbackRestartSubscription?.cancel();
     _backendSwitchedSubscription?.cancel();
     _sleepTimerSubscription?.cancel();
+    _mediaControlsPlayingSubscription?.cancel();
+    _mediaControlsPositionSubscription?.cancel();
+    _mediaControlsRateSubscription?.cancel();
 
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
@@ -1869,6 +1893,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
+    } else if (completed &&
+        _nextEpisode == null &&
+        !_completionTriggered) {
+      _completionTriggered = true;
+      _handleBackButton();
     }
   }
 
@@ -2214,6 +2243,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await trackService.selectAndApplyTracks(
         preferredAudioTrack: widget.preferredAudioTrack,
         preferredSubtitleTrack: widget.preferredSubtitleTrack,
+        preferredSecondarySubtitleTrack: widget.preferredSecondarySubtitleTrack,
         defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
         onAudioTrackChanged: _onAudioTrackChanged,
         onSubtitleTrackChanged: _onSubtitleTrackChanged,
@@ -2382,6 +2412,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     await _saveTrackPreferences(partId: partId, trackType: 'subtitle', languageCode: languageCode, streamID: streamID);
   }
 
+  /// Handle secondary subtitle track changes - no server save needed, just preserve for episode navigation
+  void _onSecondarySubtitleTrackChanged(SubtitleTrack track) {
+    // Secondary subtitle preference is carried via player.state.track.secondarySubtitle
+    // which is automatically read during episode navigation. No additional state needed.
+  }
+
   /// Set flag to skip orientation restoration when replacing with another video
   void setReplacingWithVideo() {
     _isReplacingWithVideo = true;
@@ -2425,6 +2461,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     final currentAudioTrack = currentPlayer.state.track.audio;
     final currentSubtitleTrack = currentPlayer.state.track.subtitle;
+    final currentSecondarySubtitleTrack = currentPlayer.state.track.secondarySubtitle;
 
     // Pause and stop current playback
     currentPlayer.pause();
@@ -2441,6 +2478,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         metadata: episodeMetadata,
         preferredAudioTrack: currentAudioTrack,
         preferredSubtitleTrack: currentSubtitleTrack,
+        preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
         usePushReplacement: true,
         isOffline: widget.isOffline,
       );
@@ -2588,14 +2626,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
+                              Icon(
+                                Symbols.picture_in_picture_alt_rounded,
+                                size: 48,
+                                color: Colors.white.withValues(alpha: 0.5),
+                              ),
                               const SizedBox(height: 12),
                               Text(
                                 t.videoControls.pipActive,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  fontSize: 14,
-                                ),
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
                               ),
                             ],
                           ),
@@ -2659,8 +2698,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         onTogglePIPMode: _togglePIPMode,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         onCycleBoxFitMode: _cycleBoxFitMode,
+                        onCycleAudioTrack: _cycleAudioTrack,
+                        onCycleSubtitleTrack: _cycleSubtitleTrack,
                         onAudioTrackChanged: _onAudioTrackChanged,
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,
+                        onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
                         onSeekCompleted: (position) {
                           // Notify Watch Together of seek for sync
                           // Note: canControl() check is done in sync manager, not here

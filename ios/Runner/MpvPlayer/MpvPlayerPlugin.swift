@@ -18,6 +18,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
     private var autoPipEnabled = false
     private var isManualPipRequest = false
     private var pipTimebaseSyncTimer: Timer?
+    private var pendingInlineRestoreAfterPip = false
+    private var sceneActivationObserverRegistered = false
 
     // MARK: - FlutterPlugin Registration
 
@@ -95,6 +97,42 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         return controller
     }
 
+    private func registerSceneActivationObserver() {
+        guard !sceneActivationObserverRegistered else { return }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(sceneDidActivate),
+            name: UIScene.didActivateNotification,
+            object: nil
+        )
+        sceneActivationObserverRegistered = true
+    }
+
+    private func unregisterSceneActivationObserver() {
+        guard sceneActivationObserverRegistered else { return }
+        NotificationCenter.default.removeObserver(self, name: UIScene.didActivateNotification, object: nil)
+        sceneActivationObserverRegistered = false
+    }
+
+    private var isSceneActive: Bool {
+        UIApplication.shared.connectedScenes.contains { $0.activationState == .foregroundActive }
+    }
+
+    private func restoreInlinePlayerAfterPip() {
+        guard pendingInlineRestoreAfterPip,
+              let playerCore = playerCore,
+              !playerCore.isPipActive,
+              !playerCore.isPipStarting else { return }
+
+        print("[MpvPlayerPlugin] Restoring inline player after PiP")
+        playerCore.setVisible(true)
+        playerCore.updateFrame()
+        if playerCore.isPaused {
+            playerCore.forceDraw()
+        }
+        pendingInlineRestoreAfterPip = false
+    }
+
     private func handlePipCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "isSupported":
@@ -111,11 +149,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
                     if let pc = playerCore {
                         pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
                     }
-                    NotificationCenter.default.removeObserver(self, name: UIScene.didActivateNotification, object: nil)
-                    NotificationCenter.default.addObserver(self, selector: #selector(sceneDidActivate), name: UIScene.didActivateNotification, object: nil)
                 } else {
                     pipController?.setAutoStart(false)
-                    NotificationCenter.default.removeObserver(self, name: UIScene.didActivateNotification, object: nil)
                 }
             }
             result(nil)
@@ -131,6 +166,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         guard let playerCore = playerCore else { return nil }
         let pip = ensurePipController()
         guard playerCore.switchToPipVO(layerPtr: pip.layerPointer) else { return nil }
+        pendingInlineRestoreAfterPip = false
         playerCore.isPipStarting = true
         pip.pushBlankFrame()
         pip.syncTimebase(currentTime: playerCore.timePos, isPlaying: !playerCore.isPaused)
@@ -171,13 +207,24 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         playerCore?.isPipActive = false
         isManualPipRequest = false
         stopPipTimebaseSync()
-        _ = playerCore?.switchToGpuNextVO()
+        pipController?.flushLayer()
+        let restoredInlineVO = playerCore?.switchToGpuNextVO() ?? false
         if pause { playerCore?.setProperty("pause", value: "yes") }
+        pendingInlineRestoreAfterPip = restoredInlineVO
+        if pendingInlineRestoreAfterPip {
+            if isSceneActive {
+                restoreInlinePlayerAfterPip()
+            } else {
+                print("[MpvPlayerPlugin] Deferring inline restore until scene activation")
+            }
+        }
         if notify { pipChannel?.invokeMethod("onPipChanged", arguments: false) }
     }
 
-    /// Scene became active — re-warm the layer so auto-PiP stays possible
+    /// Scene became active — restore inline playback if needed and re-warm the
+    /// sample-buffer layer so future auto-PiP remains possible.
     @objc private func sceneDidActivate() {
+        restoreInlinePlayerAfterPip()
         if autoPipEnabled, let pip = pipController, let pc = playerCore, !pc.isPipActive {
             pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
         }
@@ -215,6 +262,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             }
 
             if self.playerCore?.isInitialized == true {
+                self.registerSceneActivationObserver()
                 result(true)
                 return
             }
@@ -233,6 +281,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             }
 
             self.playerCore = core
+            self.registerSceneActivationObserver()
             core.setVisible(false)
             result(true)
         }
@@ -244,7 +293,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             self.pipController?.teardown()
             self.pipController = nil
             self.autoPipEnabled = false
-            NotificationCenter.default.removeObserver(self, name: UIScene.didActivateNotification, object: nil)
+            self.pendingInlineRestoreAfterPip = false
+            self.unregisterSceneActivationObserver()
             self.stopPipTimebaseSync()
             self.playerCore?.dispose()
             self.playerCore = nil
@@ -383,6 +433,7 @@ extension MpvPlayerPlugin: MpvPipDelegate {
     func pipDidStart() {
         playerCore?.isPipStarting = false
         playerCore?.isPipActive = true
+        pendingInlineRestoreAfterPip = false
         pipChannel?.invokeMethod("onPipChanged", arguments: true)
         syncPipTimebase()
         startPipTimebaseSync()

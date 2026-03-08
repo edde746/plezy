@@ -6,9 +6,6 @@
     "signInWithPlex": "Mit Plex anmelden",
     "showQRCode": "QR-Code anzeigen",
     "authenticate": "Authentifizieren",
-    "debugEnterToken": "Debug: Plex-Token eingeben",
-    "plexTokenLabel": "Plex-Auth-Token",
-    "plexTokenHint": "Plex.tv-Token eingeben",
     "authenticationTimeout": "Authentifizierung abgelaufen. Bitte erneut versuchen.",
     "scanQRToSignIn": "QR-Code scannen zum Anmelden",
     "waitingForAuth": "Warte auf Authentifizierung...\nBitte Anmeldung im Browser abschließen.",
@@ -32,6 +29,7 @@
     "delete": "Löschen",
     "shuffle": "Zufall",
     "addTo": "Hinzufügen zu...",
+    "createNew": "Neu erstellen",
     "remove": "Entfernen",
     "paste": "Einfügen",
     "connect": "Verbinden",
@@ -41,9 +39,9 @@
     "resume": "Fortsetzen",
     "error": "Fehler",
     "search": "Suche",
-    "home": "Startseite",
+    "home": "Start",
     "back": "Zurück",
-    "settings": "Einstellungen",
+    "settings": "Optionen",
     "mute": "Stumm",
     "ok": "OK",
     "loading": "Laden...",
@@ -63,7 +61,7 @@
     "licenses": "Lizenzen",
     "switchProfile": "Profil wechseln",
     "subtitleStyling": "Untertitel-Stil",
-    "mpvConfig": "MPV-Konfiguration",
+    "mpvConfig": "mpv.conf",
     "logs": "Protokolle"
   },
   "update": {
@@ -127,7 +125,7 @@
     "playerBackend": "Player-Backend",
     "exoPlayer": "ExoPlayer (Empfohlen)",
     "exoPlayerDescription": "Android-nativer Player mit besserer Hardware-Unterstützung",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Erweiterter Player mit mehr Funktionen und ASS-Untertitel-Unterstützung",
     "hardwareDecoding": "Hardware-Decodierung",
     "hardwareDecodingDescription": "Hardwarebeschleunigung verwenden, sofern verfügbar",
@@ -212,7 +210,9 @@
     "requireProfileSelectionOnOpen": "Profil beim Öffnen abfragen",
     "requireProfileSelectionOnOpenDescription": "Profilauswahl bei jedem Öffnen der App anzeigen",
     "confirmExitOnBack": "Vor dem Beenden bestätigen",
-    "confirmExitOnBackDescription": "Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird"
+    "confirmExitOnBackDescription": "Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird",
+    "showNavBarLabels": "Navigationsleisten-Beschriftungen anzeigen",
+    "showNavBarLabelsDescription": "Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",
@@ -341,6 +341,7 @@
     "settingsButton": "Videoeinstellungen",
     "audioTrackButton": "Tonspuren",
     "subtitlesButton": "Untertitel",
+    "tracksButton": "Audio und Untertitel",
     "chaptersButton": "Kapitel",
     "versionsButton": "Videoversionen",
     "pipButton": "Bild-in-Bild Modus",
@@ -423,19 +424,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV-Konfiguration",
+    "title": "mpv-Konfiguration",
     "description": "Erweiterte Videoplayer-Einstellungen",
-    "properties": "Eigenschaften",
     "presets": "Voreinstellungen",
-    "noProperties": "Keine Eigenschaften konfiguriert",
     "noPresets": "Keine gespeicherten Voreinstellungen",
-    "addProperty": "Eigenschaft hinzufügen",
-    "editProperty": "Eigenschaft bearbeiten",
-    "deleteProperty": "Eigenschaft löschen",
-    "propertyKey": "Eigenschaftsschlüssel",
-    "propertyKeyHint": "z.B. hwdec, demuxer-max-bytes",
-    "propertyValue": "Eigenschaftswert",
-    "propertyValueHint": "z.B. auto, 256000000",
     "saveAsPreset": "Als Voreinstellung speichern...",
     "presetName": "Name der Voreinstellung",
     "presetNameHint": "Namen für diese Voreinstellung eingeben",
@@ -445,8 +437,7 @@
     "presetLoaded": "Voreinstellung geladen",
     "presetDeleted": "Voreinstellung gelöscht",
     "confirmDeletePreset": "Möchten Sie diese Voreinstellung wirklich löschen?",
-    "confirmDeleteProperty": "Möchten Sie diese Eigenschaft wirklich löschen?",
-    "entriesCount": "${count} Einträge"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Aktion bestätigen"
@@ -568,7 +559,7 @@
     "licensesCount": "${count} Lizenzen"
   },
   "navigation": {
-    "libraries": "Mediatheken",
+    "libraries": "Medien",
     "downloads": "Downloads",
     "liveTv": "Live-TV"
   },
@@ -655,7 +646,6 @@
     "itemAdded": "Zur Wiedergabeliste hinzugefügt",
     "itemRemoved": "Aus Wiedergabeliste entfernt",
     "selectPlaylist": "Wiedergabeliste auswählen",
-    "createNewPlaylist": "Neue Wiedergabeliste erstellen",
     "errorCreating": "Wiedergabeliste konnte nicht erstellt werden",
     "errorDeleting": "Wiedergabeliste konnte nicht gelöscht werden",
     "errorLoading": "Wiedergabelisten konnten nicht geladen werden",
@@ -676,7 +666,6 @@
     "deleteFailedWithError": "Sammlung konnte nicht gelöscht werden: ${error}",
     "failedToLoadItems": "Sammlungselemente konnten nicht geladen werden: ${error}",
     "selectCollection": "Sammlung auswählen",
-    "createNewCollection": "Neue Sammlung erstellen",
     "collectionName": "Sammlungsname",
     "enterCollectionName": "Sammlungsnamen eingeben",
     "addedToCollection": "Zur Sammlung hinzugefügt",
@@ -733,6 +722,10 @@
     "sessionCodeCopied": "Sitzungscode in Zwischenablage kopiert",
     "relayUnreachable": "Der Relay-Server ist nicht erreichbar. Möglicherweise blockiert dein Internetanbieter die Verbindung. Du kannst es trotzdem versuchen, aber Watch Together funktioniert eventuell nicht.",
     "reconnectingToHost": "Verbindung zum Host wird wiederhergestellt...",
+    "currentPlayback": "Aktuelle Wiedergabe",
+    "joinCurrentPlayback": "Aktuelle Wiedergabe beitreten",
+    "joinCurrentPlaybackDescription": "Springe zurück zu dem, was der Host gerade ansieht",
+    "failedToOpenCurrentPlayback": "Aktuelle Wiedergabe konnte nicht geöffnet werden",
     "participantJoined": "${name} ist beigetreten",
     "participantLeft": "${name} hat die Sitzung verlassen"
   },
@@ -742,7 +735,13 @@
     "nvscalerDescription": "NVIDIA-Bildskalierung für schärferes Video",
     "qualityFast": "Schnell",
     "qualityHQ": "Hohe Qualität",
-    "mode": "Modus"
+    "mode": "Modus",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

@@ -6,9 +6,6 @@
     "signInWithPlex": "Inicia sesión con Plex",
     "showQRCode": "Mostrar código QR",
     "authenticate": "Autenticar",
-    "debugEnterToken": "Debug: Ingresar Token de Plex",
-    "plexTokenLabel": "Token de Autenticación de Plex",
-    "plexTokenHint": "Ingresa tu token de Plex.tv",
     "authenticationTimeout": "Tiempo de autenticación agotado. Por favor, intenta de nuevo.",
     "scanQRToSignIn": "Escanea este código QR para iniciar sesión",
     "waitingForAuth": "Esperando autenticación...\nPor favor completa el inicio de sesión en tu navegador.",
@@ -32,6 +29,7 @@
     "delete": "Eliminar",
     "shuffle": "Aleatorio",
     "addTo": "Añadir a...",
+    "createNew": "Crear",
     "remove": "Eliminar",
     "paste": "Pegar",
     "connect": "Conectar",
@@ -63,7 +61,7 @@
     "licenses": "Licencias",
     "switchProfile": "Cambiar Perfil",
     "subtitleStyling": "Estilo de Subtítulos",
-    "mpvConfig": "Configuración de MPV",
+    "mpvConfig": "mpv.conf",
     "logs": "Logs"
   },
   "update": {
@@ -127,7 +125,7 @@
     "playerBackend": "Reproductor",
     "exoPlayer": "ExoPlayer (Recomendado)",
     "exoPlayerDescription": "Reproductor nativo de Android con mejor soporte de hardware",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Reproductor avanzado con más funciones y soporte de subtítulos ASS",
     "hardwareDecoding": "Decodificación por Hardware",
     "hardwareDecodingDescription": "Usar aceleración por hardware cuando esté disponible",
@@ -212,7 +210,9 @@
     "requireProfileSelectionOnOpen": "Pedir perfil al abrir la app",
     "requireProfileSelectionOnOpenDescription": "Mostrar selección de perfil cada vez que se abre la aplicación",
     "confirmExitOnBack": "Confirmar antes de salir",
-    "confirmExitOnBackDescription": "Mostrar un diálogo de confirmación al presionar atrás para salir de la app"
+    "confirmExitOnBackDescription": "Mostrar un diálogo de confirmación al presionar atrás para salir de la app",
+    "showNavBarLabels": "Mostrar etiquetas de la barra de navegación",
+    "showNavBarLabelsDescription": "Mostrar etiquetas de texto bajo los iconos de la barra de navegación"
   },
   "search": {
     "hint": "Buscar películas, series, música...",
@@ -341,6 +341,7 @@
     "settingsButton": "Ajustes de video",
     "audioTrackButton": "Pistas de audio",
     "subtitlesButton": "Subtítulos",
+    "tracksButton": "Audio y subtítulos",
     "chaptersButton": "Capítulos",
     "versionsButton": "Versiones de video",
     "pipButton": "Modo PiP (Imagen en Imagen)",
@@ -423,19 +424,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "Configuración de MPV",
+    "title": "Configuración de mpv",
     "description": "Ajustes avanzados del reproductor de video",
-    "properties": "Propiedades",
     "presets": "Ajustes preestablecidos",
-    "noProperties": "No hay propiedades configuradas",
     "noPresets": "No hay ajustes guardados",
-    "addProperty": "Añadir Propiedad",
-    "editProperty": "Editar Propiedad",
-    "deleteProperty": "Eliminar Propiedad",
-    "propertyKey": "Clave de la Propiedad",
-    "propertyKeyHint": "ej., hwdec, demuxer-max-bytes",
-    "propertyValue": "Valor de la Propiedad",
-    "propertyValueHint": "ej., auto, 256000000",
     "saveAsPreset": "Guardar como Ajuste...",
     "presetName": "Nombre del Ajuste",
     "presetNameHint": "Introduce un nombre para este ajuste",
@@ -445,8 +437,7 @@
     "presetLoaded": "Ajuste cargado",
     "presetDeleted": "Ajuste eliminado",
     "confirmDeletePreset": "¿Estás seguro de que quieres eliminar este ajuste?",
-    "confirmDeleteProperty": "¿Estás seguro de que quieres eliminar esta propiedad?",
-    "entriesCount": "${count} entradas"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Confirmar Acción"
@@ -568,7 +559,7 @@
     "licensesCount": "${count} licencias"
   },
   "navigation": {
-    "libraries": "Bibliotecas",
+    "libraries": "Medios",
     "downloads": "Descargas",
     "liveTv": "TV en vivo"
   },
@@ -611,7 +602,6 @@
     "deleteFailedWithError": "Error al eliminar la colección: ${error}",
     "failedToLoadItems": "Error al cargar los elementos de la colección: ${error}",
     "selectCollection": "Seleccionar Colección",
-    "createNewCollection": "Crear Nueva Colección",
     "collectionName": "Nombre de la Colección",
     "enterCollectionName": "Introduce el nombre de la colección",
     "addedToCollection": "Añadido a la colección",
@@ -643,7 +633,6 @@
     "itemAdded": "Añadido a la lista",
     "itemRemoved": "Eliminado de la lista",
     "selectPlaylist": "Seleccionar Lista",
-    "createNewPlaylist": "Crear Nueva Lista",
     "errorCreating": "Error al crear la lista",
     "errorDeleting": "Error al eliminar la lista",
     "errorLoading": "Error al cargar las listas",
@@ -696,6 +685,10 @@
     "sessionCodeCopied": "Código de sesión copiado al portapapeles",
     "relayUnreachable": "El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.",
     "reconnectingToHost": "Reconectando con el anfitrión...",
+    "currentPlayback": "Reproducción actual",
+    "joinCurrentPlayback": "Unirse a la reproducción actual",
+    "joinCurrentPlaybackDescription": "Vuelve a lo que el anfitrión está viendo ahora mismo",
+    "failedToOpenCurrentPlayback": "No se pudo abrir la reproducción actual",
     "participantJoined": "${name} se unió",
     "participantLeft": "${name} se fue"
   },
@@ -742,7 +735,13 @@
     "nvscalerDescription": "Escalado de imagen NVIDIA para un video más nítido",
     "qualityFast": "Rápido",
     "qualityHQ": "Alta Calidad",
-    "mode": "Modo"
+    "mode": "Modo",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

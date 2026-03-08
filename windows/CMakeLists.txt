@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.14)
 project(plezy LANGUAGES CXX)
 
 # Download and extract mpv-dev (architecture-dependent)
-set(MPV_VERSION "20260120")
-set(MPV_GIT_HASH "b7e8fe9")
+set(MPV_VERSION "20260303")
+set(MPV_GIT_HASH "c55bdc3")
 
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
   # ARM64: use file(DOWNLOAD) + 7z extraction (CMake's built-in libarchive
@@ -49,6 +49,17 @@ else()
   set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
   set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
 endif()
+
+# Fetch simdutf for SIMD-accelerated UTF-8 validation.
+# mpv strings are not guaranteed to be valid UTF-8; invalid bytes sent through
+# Flutter's StandardMessageCodec cause FormatException crashes.
+include(FetchContent)
+FetchContent_Declare(
+  simdutf
+  URL https://github.com/simdutf/simdutf/releases/download/v6.4.2/singleheader.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(simdutf)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.

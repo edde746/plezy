@@ -12,6 +12,12 @@ class LogRedactionManager {
   static final RegExp _ipv4Pattern = RegExp(r'\b(\d{1,3})([.-])(\d{1,3})\2(\d{1,3})\2(\d{1,3})\b');
   static final RegExp _ipv4HostPattern = RegExp(r'^\d{1,3}([.-]\d{1,3}){3}$');
 
+  /// Pattern-based catch-all for Plex tokens in query strings/headers.
+  static final RegExp _plexTokenQueryParam = RegExp(
+    r'X-Plex-Token=[^&#\s]+',
+    caseSensitive: false,
+  );
+
   // Combined regex for single-pass redaction (rebuilt on set changes)
   static RegExp? _combinedPattern;
 
@@ -90,7 +96,10 @@ class LogRedactionManager {
       (match) => _maskIpv4(match.group(1)!, match.group(2)!, match.group(5)!),
     );
 
-    // Pass 2: All tracked values in single pass
+    // Pass 2: Strip X-Plex-Token query parameters (pattern-based, no pre-registration needed)
+    redacted = redacted.replaceAll(_plexTokenQueryParam, 'X-Plex-Token=[REDACTED]');
+
+    // Pass 3: All tracked values in single pass
     if (_combinedPattern != null) {
       redacted = redacted.replaceAllMapped(_combinedPattern!, (match) {
         final value = match.group(0)!;

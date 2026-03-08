@@ -1002,7 +1002,7 @@ class GuideTabState extends State<GuideTab> {
     if (isFocused) {
       materialColor = theme.colorScheme.primary.withValues(alpha: 0.25);
     } else if (isCurrentlyAiring) {
-      materialColor = theme.colorScheme.onSurface;
+      materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.3);
     } else {
       materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.12);
     }
@@ -1011,7 +1011,7 @@ class GuideTabState extends State<GuideTab> {
     if (isFocused) {
       titleColor = theme.colorScheme.primary;
     } else if (isCurrentlyAiring) {
-      titleColor = theme.colorScheme.surface;
+      titleColor = theme.colorScheme.onSurface;
     } else {
       titleColor = theme.colorScheme.onSurface;
     }
@@ -1020,7 +1020,7 @@ class GuideTabState extends State<GuideTab> {
     if (isFocused) {
       subtitleColor = theme.colorScheme.primary.withValues(alpha: 0.7);
     } else if (isCurrentlyAiring) {
-      subtitleColor = theme.colorScheme.surface.withValues(alpha: 0.7);
+      subtitleColor = theme.colorScheme.onSurfaceVariant;
     } else {
       subtitleColor = theme.colorScheme.onSurfaceVariant;
     }
@@ -1028,7 +1028,7 @@ class GuideTabState extends State<GuideTab> {
     return Opacity(
       opacity: isPast ? 0.5 : 1.0,
       child: Material(
-        color: materialColor,
+        color: isFocused ? materialColor : Colors.transparent,
         shape: RoundedRectangleBorder(
           side: isFocused ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
         ),
@@ -1042,34 +1042,37 @@ class GuideTabState extends State<GuideTab> {
                 right: isLast ? BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)) : BorderSide.none,
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  program.grandparentTitle ?? program.title,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: isCurrentlyAiring ? FontWeight.w600 : FontWeight.normal,
-                    color: titleColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (program.grandparentTitle != null)
+            child: Container(
+              color: isFocused ? null : materialColor,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                   Text(
-                    '${program.parentIndex != null && program.index != null ? 'S${program.parentIndex}E${program.index} · ' : ''}${program.title}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
+                    program.grandparentTitle ?? program.title,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: isCurrentlyAiring ? FontWeight.w600 : FontWeight.normal,
+                      color: titleColor,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                if (program.startTime != null)
-                  Text(
-                    '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60000)}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
-                    maxLines: 1,
-                  ),
-              ],
+                  if (program.grandparentTitle != null)
+                    Text(
+                      '${program.parentIndex != null && program.index != null ? 'S${program.parentIndex}E${program.index} · ' : ''}${program.title}',
+                      style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  if (program.startTime != null)
+                    Text(
+                      '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60000)}',
+                      style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
+                      maxLines: 1,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

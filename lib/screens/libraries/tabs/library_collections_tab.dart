@@ -57,6 +57,7 @@ class _LibraryCollectionsTabState extends LibraryGridTabState<PlexMetadata, Libr
       key: Key(item.ratingKey),
       item: item,
       focusNode: index == 0 ? firstItemFocusNode : null,
+      disableScale: gridContext?.isListMode ?? false,
       onListRefresh: loadItems,
       onBack: widget.onBack,
       onNavigateLeft: gridContext?.isFirstColumn == true ? gridContext?.navigateToSidebar : null,

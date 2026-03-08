@@ -97,9 +97,6 @@ class _TranslationsAuthNl implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Inloggen met Plex';
 	@override String get showQRCode => 'Toon QR-code';
 	@override String get authenticate => 'Authenticeren';
-	@override String get debugEnterToken => 'Debug: Voer Plex Token in';
-	@override String get plexTokenLabel => 'Plex Authenticatietoken';
-	@override String get plexTokenHint => 'Voer je Plex.tv token in';
 	@override String get authenticationTimeout => 'Authenticatie verlopen. Probeer opnieuw.';
 	@override String get scanQRToSignIn => 'Scan deze QR-code om in te loggen';
 	@override String get waitingForAuth => 'Wachten op authenticatie...\nVoltooi het inloggen in je browser.';
@@ -130,6 +127,7 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get delete => 'Verwijderen';
 	@override String get shuffle => 'Willekeurig';
 	@override String get addTo => 'Toevoegen aan...';
+	@override String get createNew => 'Nieuw aanmaken';
 	@override String get remove => 'Verwijderen';
 	@override String get paste => 'Plakken';
 	@override String get connect => 'Verbinden';
@@ -141,7 +139,7 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get search => 'Zoeken';
 	@override String get home => 'Home';
 	@override String get back => 'Terug';
-	@override String get settings => 'Instellingen';
+	@override String get settings => 'Opties';
 	@override String get mute => 'Dempen';
 	@override String get ok => 'OK';
 	@override String get loading => 'Laden...';
@@ -168,7 +166,7 @@ class _TranslationsScreensNl implements TranslationsScreensEn {
 	@override String get licenses => 'Licenties';
 	@override String get switchProfile => 'Wissel van profiel';
 	@override String get subtitleStyling => 'Ondertitel opmaak';
-	@override String get mpvConfig => 'MPV-configuratie';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => 'Logbestanden';
 }
 
@@ -246,7 +244,7 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get playerBackend => 'Speler backend';
 	@override String get exoPlayer => 'ExoPlayer (Aanbevolen)';
 	@override String get exoPlayerDescription => 'Android-native speler met betere hardware-ondersteuning';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => 'Geavanceerde speler met meer functies en ASS-ondertitelondersteuning';
 	@override String get hardwareDecoding => 'Hardware decodering';
 	@override String get hardwareDecodingDescription => 'Gebruik hardware versnelling indien beschikbaar';
@@ -332,6 +330,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
 	@override String get confirmExitOnBack => 'Bevestigen voor afsluiten';
 	@override String get confirmExitOnBackDescription => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten';
+	@override String get showNavBarLabels => 'Navigatiebalk labels tonen';
+	@override String get showNavBarLabelsDescription => 'Tekstlabels onder de pictogrammen van de navigatiebalk weergeven';
 }
 
 // Path: search
@@ -496,6 +496,7 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get settingsButton => 'Video-instellingen';
 	@override String get audioTrackButton => 'Audiosporen';
 	@override String get subtitlesButton => 'Ondertitels';
+	@override String get tracksButton => 'Audio en ondertitels';
 	@override String get chaptersButton => 'Hoofdstukken';
 	@override String get versionsButton => 'Videoversies';
 	@override String get pipButton => 'Beeld-in-beeld modus';
@@ -598,19 +599,10 @@ class _TranslationsMpvConfigNl implements TranslationsMpvConfigEn {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'MPV-configuratie';
+	@override String get title => 'mpv-configuratie';
 	@override String get description => 'Geavanceerde videospeler-instellingen';
-	@override String get properties => 'Eigenschappen';
 	@override String get presets => 'Voorinstellingen';
-	@override String get noProperties => 'Geen eigenschappen geconfigureerd';
 	@override String get noPresets => 'Geen opgeslagen voorinstellingen';
-	@override String get addProperty => 'Eigenschap toevoegen';
-	@override String get editProperty => 'Eigenschap bewerken';
-	@override String get deleteProperty => 'Eigenschap verwijderen';
-	@override String get propertyKey => 'Eigenschapssleutel';
-	@override String get propertyKeyHint => 'bijv. hwdec, demuxer-max-bytes';
-	@override String get propertyValue => 'Eigenschapswaarde';
-	@override String get propertyValueHint => 'bijv. auto, 256000000';
 	@override String get saveAsPreset => 'Opslaan als voorinstelling...';
 	@override String get presetName => 'Naam voorinstelling';
 	@override String get presetNameHint => 'Voer een naam in voor deze voorinstelling';
@@ -620,8 +612,7 @@ class _TranslationsMpvConfigNl implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => 'Voorinstelling geladen';
 	@override String get presetDeleted => 'Voorinstelling verwijderd';
 	@override String get confirmDeletePreset => 'Weet je zeker dat je deze voorinstelling wilt verwijderen?';
-	@override String get confirmDeleteProperty => 'Weet je zeker dat je deze eigenschap wilt verwijderen?';
-	@override String entriesCount({required Object count}) => '${count} items';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -801,7 +792,7 @@ class _TranslationsNavigationNl implements TranslationsNavigationEn {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get libraries => 'Bibliotheken';
+	@override String get libraries => 'Media';
 	@override String get downloads => 'Downloads';
 	@override String get liveTv => 'Live TV';
 }
@@ -909,7 +900,6 @@ class _TranslationsPlaylistsNl implements TranslationsPlaylistsEn {
 	@override String get itemAdded => 'Toegevoegd aan afspeellijst';
 	@override String get itemRemoved => 'Verwijderd uit afspeellijst';
 	@override String get selectPlaylist => 'Selecteer afspeellijst';
-	@override String get createNewPlaylist => 'Nieuwe afspeellijst maken';
 	@override String get errorCreating => 'Fout bij maken afspeellijst';
 	@override String get errorDeleting => 'Fout bij verwijderen afspeellijst';
 	@override String get errorLoading => 'Fout bij laden afspeellijsten';
@@ -937,7 +927,6 @@ class _TranslationsCollectionsNl implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => 'Collectie verwijderen mislukt: ${error}';
 	@override String failedToLoadItems({required Object error}) => 'Collectie-items laden mislukt: ${error}';
 	@override String get selectCollection => 'Selecteer collectie';
-	@override String get createNewCollection => 'Nieuwe collectie maken';
 	@override String get collectionName => 'Collectienaam';
 	@override String get enterCollectionName => 'Voer collectienaam in';
 	@override String get addedToCollection => 'Toegevoegd aan collectie';
@@ -1001,6 +990,10 @@ class _TranslationsWatchTogetherNl implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Sessiecode gekopieerd naar klembord';
 	@override String get relayUnreachable => 'De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet.';
 	@override String get reconnectingToHost => 'Opnieuw verbinden met host...';
+	@override String get currentPlayback => 'Huidige weergave';
+	@override String get joinCurrentPlayback => 'Deelnemen aan huidige weergave';
+	@override String get joinCurrentPlaybackDescription => 'Ga terug naar wat de host nu kijkt';
+	@override String get failedToOpenCurrentPlayback => 'Huidige weergave kon niet worden geopend';
 	@override String participantJoined({required Object name}) => '${name} is toegetreden';
 	@override String participantLeft({required Object name}) => '${name} heeft de sessie verlaten';
 }
@@ -1018,6 +1011,12 @@ class _TranslationsShadersNl implements TranslationsShadersEn {
 	@override String get qualityFast => 'Snel';
 	@override String get qualityHQ => 'Hoge kwaliteit';
 	@override String get mode => 'Modus';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1330,9 +1329,6 @@ extension on TranslationsNl {
 			'auth.signInWithPlex' => 'Inloggen met Plex',
 			'auth.showQRCode' => 'Toon QR-code',
 			'auth.authenticate' => 'Authenticeren',
-			'auth.debugEnterToken' => 'Debug: Voer Plex Token in',
-			'auth.plexTokenLabel' => 'Plex Authenticatietoken',
-			'auth.plexTokenHint' => 'Voer je Plex.tv token in',
 			'auth.authenticationTimeout' => 'Authenticatie verlopen. Probeer opnieuw.',
 			'auth.scanQRToSignIn' => 'Scan deze QR-code om in te loggen',
 			'auth.waitingForAuth' => 'Wachten op authenticatie...\nVoltooi het inloggen in je browser.',
@@ -1354,6 +1350,7 @@ extension on TranslationsNl {
 			'common.delete' => 'Verwijderen',
 			'common.shuffle' => 'Willekeurig',
 			'common.addTo' => 'Toevoegen aan...',
+			'common.createNew' => 'Nieuw aanmaken',
 			'common.remove' => 'Verwijderen',
 			'common.paste' => 'Plakken',
 			'common.connect' => 'Verbinden',
@@ -1365,7 +1362,7 @@ extension on TranslationsNl {
 			'common.search' => 'Zoeken',
 			'common.home' => 'Home',
 			'common.back' => 'Terug',
-			'common.settings' => 'Instellingen',
+			'common.settings' => 'Opties',
 			'common.mute' => 'Dempen',
 			'common.ok' => 'OK',
 			'common.loading' => 'Laden...',
@@ -1383,7 +1380,7 @@ extension on TranslationsNl {
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
-			'screens.mpvConfig' => 'MPV-configuratie',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'Logbestanden',
 			'update.available' => 'Update beschikbaar',
 			'update.versionAvailable' => ({required Object version}) => 'Versie ${version} is beschikbaar',
@@ -1443,7 +1440,7 @@ extension on TranslationsNl {
 			'settings.playerBackend' => 'Speler backend',
 			'settings.exoPlayer' => 'ExoPlayer (Aanbevolen)',
 			'settings.exoPlayerDescription' => 'Android-native speler met betere hardware-ondersteuning',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => 'Geavanceerde speler met meer functies en ASS-ondertitelondersteuning',
 			'settings.hardwareDecoding' => 'Hardware decodering',
 			'settings.hardwareDecodingDescription' => 'Gebruik hardware versnelling indien beschikbaar',
@@ -1529,6 +1526,8 @@ extension on TranslationsNl {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
 			'settings.confirmExitOnBack' => 'Bevestigen voor afsluiten',
 			'settings.confirmExitOnBackDescription' => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten',
+			'settings.showNavBarLabels' => 'Navigatiebalk labels tonen',
+			'settings.showNavBarLabelsDescription' => 'Tekstlabels onder de pictogrammen van de navigatiebalk weergeven',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -1639,6 +1638,7 @@ extension on TranslationsNl {
 			'videoControls.settingsButton' => 'Video-instellingen',
 			'videoControls.audioTrackButton' => 'Audiosporen',
 			'videoControls.subtitlesButton' => 'Ondertitels',
+			'videoControls.tracksButton' => 'Audio en ondertitels',
 			'videoControls.chaptersButton' => 'Hoofdstukken',
 			'videoControls.versionsButton' => 'Videoversies',
 			'videoControls.pipButton' => 'Beeld-in-beeld modus',
@@ -1711,19 +1711,10 @@ extension on TranslationsNl {
 			'subtitlingStyling.backgroundOpacity' => 'Achtergrond transparantie',
 			'subtitlingStyling.backgroundColor' => 'Achtergrondkleur',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV-configuratie',
+			'mpvConfig.title' => 'mpv-configuratie',
 			'mpvConfig.description' => 'Geavanceerde videospeler-instellingen',
-			'mpvConfig.properties' => 'Eigenschappen',
 			'mpvConfig.presets' => 'Voorinstellingen',
-			'mpvConfig.noProperties' => 'Geen eigenschappen geconfigureerd',
 			'mpvConfig.noPresets' => 'Geen opgeslagen voorinstellingen',
-			'mpvConfig.addProperty' => 'Eigenschap toevoegen',
-			'mpvConfig.editProperty' => 'Eigenschap bewerken',
-			'mpvConfig.deleteProperty' => 'Eigenschap verwijderen',
-			'mpvConfig.propertyKey' => 'Eigenschapssleutel',
-			'mpvConfig.propertyKeyHint' => 'bijv. hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => 'Eigenschapswaarde',
-			'mpvConfig.propertyValueHint' => 'bijv. auto, 256000000',
 			'mpvConfig.saveAsPreset' => 'Opslaan als voorinstelling...',
 			'mpvConfig.presetName' => 'Naam voorinstelling',
 			'mpvConfig.presetNameHint' => 'Voer een naam in voor deze voorinstelling',
@@ -1733,8 +1724,7 @@ extension on TranslationsNl {
 			'mpvConfig.presetLoaded' => 'Voorinstelling geladen',
 			'mpvConfig.presetDeleted' => 'Voorinstelling verwijderd',
 			'mpvConfig.confirmDeletePreset' => 'Weet je zeker dat je deze voorinstelling wilt verwijderen?',
-			'mpvConfig.confirmDeleteProperty' => 'Weet je zeker dat je deze eigenschap wilt verwijderen?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} items',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bevestig actie',
 			'discover.title' => 'Ontdekken',
 			'discover.switchProfile' => 'Wissel van profiel',
@@ -1832,14 +1822,12 @@ extension on TranslationsNl {
 			'licenses.license' => 'Licentie',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licentie ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenties',
-			'navigation.libraries' => 'Bibliotheken',
+			'navigation.libraries' => 'Media',
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live TV',
 			'liveTv.title' => 'Live TV',
 			'liveTv.channels' => 'Zenders',
 			'liveTv.guide' => 'Gids',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noChannels' => 'Geen zenders beschikbaar',
 			'liveTv.noDvr' => 'Geen DVR geconfigureerd op een server',
 			'liveTv.tuneFailed' => 'Kan zender niet afstemmen',
@@ -1849,6 +1837,8 @@ extension on TranslationsNl {
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.premiere' => 'NIEUW',
 			'liveTv.reloadGuide' => 'Gids herladen',
 			'liveTv.allChannels' => 'Alle zenders',
@@ -1915,7 +1905,6 @@ extension on TranslationsNl {
 			'playlists.itemAdded' => 'Toegevoegd aan afspeellijst',
 			'playlists.itemRemoved' => 'Verwijderd uit afspeellijst',
 			'playlists.selectPlaylist' => 'Selecteer afspeellijst',
-			'playlists.createNewPlaylist' => 'Nieuwe afspeellijst maken',
 			'playlists.errorCreating' => 'Fout bij maken afspeellijst',
 			'playlists.errorDeleting' => 'Fout bij verwijderen afspeellijst',
 			'playlists.errorLoading' => 'Fout bij laden afspeellijsten',
@@ -1934,7 +1923,6 @@ extension on TranslationsNl {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
 			'collections.selectCollection' => 'Selecteer collectie',
-			'collections.createNewCollection' => 'Nieuwe collectie maken',
 			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer collectienaam in',
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
@@ -1989,6 +1977,10 @@ extension on TranslationsNl {
 			'watchTogether.sessionCodeCopied' => 'Sessiecode gekopieerd naar klembord',
 			'watchTogether.relayUnreachable' => 'De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet.',
 			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
+			'watchTogether.currentPlayback' => 'Huidige weergave',
+			'watchTogether.joinCurrentPlayback' => 'Deelnemen aan huidige weergave',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Ga terug naar wat de host nu kijkt',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Huidige weergave kon niet worden geopend',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} is toegetreden',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} heeft de sessie verlaten',
 			'shaders.title' => 'Shaders',
@@ -1997,6 +1989,12 @@ extension on TranslationsNl {
 			'shaders.qualityFast' => 'Snel',
 			'shaders.qualityHQ' => 'Hoge kwaliteit',
 			'shaders.mode' => 'Modus',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => 'Verbinden met apparaat',
 			'companionRemote.hostRemoteSession' => 'Externe sessie hosten',

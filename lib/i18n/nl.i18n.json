@@ -6,9 +6,6 @@
     "signInWithPlex": "Inloggen met Plex",
     "showQRCode": "Toon QR-code",
     "authenticate": "Authenticeren",
-    "debugEnterToken": "Debug: Voer Plex Token in",
-    "plexTokenLabel": "Plex Authenticatietoken",
-    "plexTokenHint": "Voer je Plex.tv token in",
     "authenticationTimeout": "Authenticatie verlopen. Probeer opnieuw.",
     "scanQRToSignIn": "Scan deze QR-code om in te loggen",
     "waitingForAuth": "Wachten op authenticatie...\nVoltooi het inloggen in je browser.",
@@ -32,6 +29,7 @@
     "delete": "Verwijderen",
     "shuffle": "Willekeurig",
     "addTo": "Toevoegen aan...",
+    "createNew": "Nieuw aanmaken",
     "remove": "Verwijderen",
     "paste": "Plakken",
     "connect": "Verbinden",
@@ -43,7 +41,7 @@
     "search": "Zoeken",
     "home": "Home",
     "back": "Terug",
-    "settings": "Instellingen",
+    "settings": "Opties",
     "mute": "Dempen",
     "ok": "OK",
     "loading": "Laden...",
@@ -63,7 +61,7 @@
     "licenses": "Licenties",
     "switchProfile": "Wissel van profiel",
     "subtitleStyling": "Ondertitel opmaak",
-    "mpvConfig": "MPV-configuratie",
+    "mpvConfig": "mpv.conf",
     "logs": "Logbestanden"
   },
   "update": {
@@ -127,7 +125,7 @@
     "playerBackend": "Speler backend",
     "exoPlayer": "ExoPlayer (Aanbevolen)",
     "exoPlayerDescription": "Android-native speler met betere hardware-ondersteuning",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Geavanceerde speler met meer functies en ASS-ondertitelondersteuning",
     "hardwareDecoding": "Hardware decodering",
     "hardwareDecodingDescription": "Gebruik hardware versnelling indien beschikbaar",
@@ -212,7 +210,9 @@
     "requireProfileSelectionOnOpen": "Vraag om profiel bij openen",
     "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
     "confirmExitOnBack": "Bevestigen voor afsluiten",
-    "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten"
+    "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten",
+    "showNavBarLabels": "Navigatiebalk labels tonen",
+    "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen van de navigatiebalk weergeven"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",
@@ -341,6 +341,7 @@
     "settingsButton": "Video-instellingen",
     "audioTrackButton": "Audiosporen",
     "subtitlesButton": "Ondertitels",
+    "tracksButton": "Audio en ondertitels",
     "chaptersButton": "Hoofdstukken",
     "versionsButton": "Videoversies",
     "pipButton": "Beeld-in-beeld modus",
@@ -423,19 +424,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV-configuratie",
+    "title": "mpv-configuratie",
     "description": "Geavanceerde videospeler-instellingen",
-    "properties": "Eigenschappen",
     "presets": "Voorinstellingen",
-    "noProperties": "Geen eigenschappen geconfigureerd",
     "noPresets": "Geen opgeslagen voorinstellingen",
-    "addProperty": "Eigenschap toevoegen",
-    "editProperty": "Eigenschap bewerken",
-    "deleteProperty": "Eigenschap verwijderen",
-    "propertyKey": "Eigenschapssleutel",
-    "propertyKeyHint": "bijv. hwdec, demuxer-max-bytes",
-    "propertyValue": "Eigenschapswaarde",
-    "propertyValueHint": "bijv. auto, 256000000",
     "saveAsPreset": "Opslaan als voorinstelling...",
     "presetName": "Naam voorinstelling",
     "presetNameHint": "Voer een naam in voor deze voorinstelling",
@@ -445,8 +437,7 @@
     "presetLoaded": "Voorinstelling geladen",
     "presetDeleted": "Voorinstelling verwijderd",
     "confirmDeletePreset": "Weet je zeker dat je deze voorinstelling wilt verwijderen?",
-    "confirmDeleteProperty": "Weet je zeker dat je deze eigenschap wilt verwijderen?",
-    "entriesCount": "${count} items"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Bevestig actie"
@@ -568,7 +559,7 @@
     "licensesCount": "${count} licenties"
   },
   "navigation": {
-    "libraries": "Bibliotheken",
+    "libraries": "Media",
     "downloads": "Downloads",
     "liveTv": "Live TV"
   },
@@ -655,7 +646,6 @@
     "itemAdded": "Toegevoegd aan afspeellijst",
     "itemRemoved": "Verwijderd uit afspeellijst",
     "selectPlaylist": "Selecteer afspeellijst",
-    "createNewPlaylist": "Nieuwe afspeellijst maken",
     "errorCreating": "Fout bij maken afspeellijst",
     "errorDeleting": "Fout bij verwijderen afspeellijst",
     "errorLoading": "Fout bij laden afspeellijsten",
@@ -676,7 +666,6 @@
     "deleteFailedWithError": "Collectie verwijderen mislukt: ${error}",
     "failedToLoadItems": "Collectie-items laden mislukt: ${error}",
     "selectCollection": "Selecteer collectie",
-    "createNewCollection": "Nieuwe collectie maken",
     "collectionName": "Collectienaam",
     "enterCollectionName": "Voer collectienaam in",
     "addedToCollection": "Toegevoegd aan collectie",
@@ -733,6 +722,10 @@
     "sessionCodeCopied": "Sessiecode gekopieerd naar klembord",
     "relayUnreachable": "De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet.",
     "reconnectingToHost": "Opnieuw verbinden met host...",
+    "currentPlayback": "Huidige weergave",
+    "joinCurrentPlayback": "Deelnemen aan huidige weergave",
+    "joinCurrentPlaybackDescription": "Ga terug naar wat de host nu kijkt",
+    "failedToOpenCurrentPlayback": "Huidige weergave kon niet worden geopend",
     "participantJoined": "${name} is toegetreden",
     "participantLeft": "${name} heeft de sessie verlaten"
   },
@@ -742,7 +735,13 @@
     "nvscalerDescription": "NVIDIA-beeldschaling voor scherpere video",
     "qualityFast": "Snel",
     "qualityHQ": "Hoge kwaliteit",
-    "mode": "Modus"
+    "mode": "Modus",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

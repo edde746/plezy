@@ -46,6 +46,7 @@ import 'icons.dart';
 import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
+import 'models/track_controls_state.dart';
 import 'widgets/track_chapter_controls.dart';
 import 'widgets/performance_overlay/performance_overlay.dart';
 import 'mobile_video_controls.dart';
@@ -68,8 +69,11 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onTogglePIPMode,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
+  VoidCallback? onCycleAudioTrack,
+  VoidCallback? onCycleSubtitleTrack,
   Function(AudioTrack)? onAudioTrackChanged,
   Function(SubtitleTrack)? onSubtitleTrackChanged,
+  Function(SubtitleTrack)? onSecondarySubtitleTrackChanged,
   Function(Duration position)? onSeekCompleted,
   VoidCallback? onBack,
   bool canControl = true,
@@ -94,8 +98,11 @@ Widget plexVideoControlsBuilder(
     boxFitMode: boxFitMode,
     onTogglePIPMode: onTogglePIPMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
+    onCycleAudioTrack: onCycleAudioTrack,
+    onCycleSubtitleTrack: onCycleSubtitleTrack,
     onAudioTrackChanged: onAudioTrackChanged,
     onSubtitleTrackChanged: onSubtitleTrackChanged,
+    onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
     onSeekCompleted: onSeekCompleted,
     onBack: onBack,
     canControl: canControl,
@@ -122,8 +129,11 @@ class PlexVideoControls extends StatefulWidget {
   final int boxFitMode;
   final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
+  final VoidCallback? onCycleAudioTrack;
+  final VoidCallback? onCycleSubtitleTrack;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
+  final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
 
   /// Called when a seek operation completes (for Watch Together sync)
   final Function(Duration position)? onSeekCompleted;
@@ -175,8 +185,11 @@ class PlexVideoControls extends StatefulWidget {
     this.boxFitMode = 0,
     this.onTogglePIPMode,
     this.onCycleBoxFitMode,
+    this.onCycleAudioTrack,
+    this.onCycleSubtitleTrack,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
+    this.onSecondarySubtitleTrackChanged,
     this.onSeekCompleted,
     this.onBack,
     this.canControl = true,
@@ -211,6 +224,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   int _subtitleSyncOffset = 0; // Default, loaded from settings
   bool _isRotationLocked = true; // Default locked (landscape only)
   bool _clickVideoTogglesPlayback = false; // Default, loaded from settings
+  bool _isContentStripVisible = false; // Whether the swipe-up content strip is showing
 
   // GlobalKey to access DesktopVideoControls state for focus management
   final GlobalKey<DesktopVideoControlsState> _desktopControlsKey = GlobalKey<DesktopVideoControlsState>();
@@ -591,9 +605,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       // Currently off - restore saved preset
       final shaderProvider = context.read<ShaderProvider>();
       final saved = shaderProvider.savedPreset;
+      final allPresets = shaderProvider.allPresets;
       final targetPreset = saved.isEnabled
           ? saved
-          : ShaderPreset.allPresets.firstWhere((p) => p.isEnabled, orElse: () => ShaderPreset.allPresets[1]);
+          : allPresets.firstWhere((p) => p.isEnabled, orElse: () => allPresets[1]);
       shaderService.applyPreset(targetPreset).then((_) {
         shaderProvider.setCurrentPreset(targetPreset);
         // ignore: no-empty-block - setState triggers rebuild to reflect restored shader
@@ -603,11 +618,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
-  // ignore: no-empty-block - stub for future track cycling implementation
-  void _nextAudioTrack() {}
+  void _nextAudioTrack() {
+    if (!widget.canControl) return;
+    widget.onCycleAudioTrack?.call();
+  }
 
-  // ignore: no-empty-block - stub for future track cycling implementation
-  void _nextSubtitleTrack() {}
+  void _nextSubtitleTrack() {
+    if (!widget.canControl) return;
+    widget.onCycleSubtitleTrack?.call();
+  }
 
   void _nextChapter() {
     // Go to next chapter - this would use your existing chapter navigation
@@ -718,11 +737,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (!mounted || !_showControls || _forceShowControls) return;
     setState(() {
       _showControls = false;
+      _isContentStripVisible = false;
       // Dismiss skip button with controls — after this it only re-appears with controls
       if (_currentMarker != null) {
         _skipButtonDismissed = true;
       }
     });
+    _desktopControlsKey.currentState?.hideContentStrip();
     _cancelSkipButtonDismissTimer();
     widget.controlsVisible?.value = false;
     if (Platform.isMacOS) {
@@ -984,13 +1005,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     return PlaybackExtras.withChapterFallback(chapters: chapters, markers: markers);
   }
 
-  Widget _buildTrackChapterControlsWidget() {
-    final playbackState = context.watch<PlaybackStateProvider>();
-
-    return TrackChapterControls(
-      player: widget.player,
-      chapters: _chapters,
-      chaptersLoaded: _chaptersLoaded,
+  TrackControlsState _buildTrackControlsState({
+    required PlaybackStateProvider playbackState,
+    required VoidCallback? onToggleAlwaysOnTop,
+  }) {
+    return TrackControlsState(
       availableVersions: widget.availableVersions,
       selectedMediaIndex: widget.selectedMediaIndex,
       boxFitMode: widget.boxFitMode,
@@ -998,14 +1017,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
-      onTogglePIPMode: (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) ? widget.onTogglePIPMode : null,
+      isAlwaysOnTop: _isAlwaysOnTop,
+      onTogglePIPMode: (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS))
+          ? widget.onTogglePIPMode
+          : null,
       onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
       onToggleRotationLock: _toggleRotationLock,
       onToggleFullscreen: _toggleFullscreen,
+      onToggleAlwaysOnTop: onToggleAlwaysOnTop,
       onSwitchVersion: _switchMediaVersion,
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
-      subtitlesVisible: _subtitlesVisible,
+      onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
       onLoadSeekTimes: () async {
         if (mounted) {
           await _loadSeekTimes();
@@ -1023,14 +1046,31 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         });
       },
       serverId: widget.metadata.serverId ?? '',
-      canControl: widget.canControl,
-      isLive: widget.isLive,
-      showQueueButton: playbackState.isQueueActive,
-      onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
       onToggleAmbientLighting: widget.player.playerType != 'exoplayer' ? widget.onToggleAmbientLighting : null,
+      canControl: widget.canControl,
+      isLive: widget.isLive,
+      subtitlesVisible: _subtitlesVisible,
+      showQueueButton: playbackState.isQueueActive,
+      onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
+    );
+  }
+
+  Widget _buildTrackChapterControlsWidget({bool hideChaptersAndQueue = false}) {
+    final playbackState = context.watch<PlaybackStateProvider>();
+    final trackControlsState = _buildTrackControlsState(
+      playbackState: playbackState,
+      onToggleAlwaysOnTop: _toggleAlwaysOnTop,
+    );
+
+    return TrackChapterControls(
+      player: widget.player,
+      chapters: _chapters,
+      chaptersLoaded: _chaptersLoaded,
+      trackControlsState: trackControlsState,
+      hideChaptersAndQueue: hideChaptersAndQueue,
     );
   }
 
@@ -1344,7 +1384,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           mainAxisSize: MainAxisSize.min,
           children: [
             AppIcon(
-              _lastDoubleTapWasForward ? Symbols.fast_forward_rounded : Symbols.fast_rewind_rounded,
+              _lastDoubleTapWasForward ? Symbols.forward_media_rounded : Symbols.replay_rounded,
               fill: 1,
               color: Colors.white,
               size: 32,
@@ -1911,31 +1951,54 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                   child: isMobile
                                       ? Listener(
                                           behavior: HitTestBehavior.translucent,
-                                          onPointerDown: (_) => _restartHideTimerIfPlaying(),
-                                          child: MobileVideoControls(
-                                            player: widget.player,
-                                            metadata: widget.metadata,
-                                            chapters: _chapters,
-                                            chaptersLoaded: _chaptersLoaded,
-                                            seekTimeSmall: _seekTimeSmall,
-                                            trackChapterControls: _buildTrackChapterControlsWidget(),
-                                            onSeek: _throttledSeek,
-                                            onSeekEnd: _finalizeSeek,
-                                            onSeekCompleted: widget.onSeekCompleted,
-                                            // ignore: no-empty-block - play/pause handled by parent VideoControlsState
-                                            onPlayPause: () {},
-                                            onCancelAutoHide: () => _hideTimer?.cancel(),
-                                            onStartAutoHide: _startHideTimer,
-                                            onBack: widget.onBack,
-                                            onNext: widget.onNext,
-                                            onPrevious: widget.onPrevious,
-                                            onSeekToPreviousChapter: _seekToPreviousChapter,
-                                            onSeekToNextChapter: _seekToNextChapter,
-                                            canControl: widget.canControl,
-                                            hasFirstFrame: widget.hasFirstFrame,
-                                            thumbnailDataBuilder: widget.thumbnailDataBuilder,
-                                            isLive: widget.isLive,
-                                            liveChannelName: widget.liveChannelName,
+                                          onPointerDown: (_) {
+                                            if (!_isContentStripVisible) _restartHideTimerIfPlaying();
+                                          },
+                                          child: Builder(
+                                            builder: (context) {
+                                              final playbackState = context.watch<PlaybackStateProvider>();
+                                              final hasStripContent =
+                                                  _chapters.isNotEmpty || playbackState.isQueueActive;
+                                              return MobileVideoControls(
+                                                player: widget.player,
+                                                metadata: widget.metadata,
+                                                chapters: _chapters,
+                                                chaptersLoaded: _chaptersLoaded,
+                                                seekTimeSmall: _seekTimeSmall,
+                                                trackChapterControls: _buildTrackChapterControlsWidget(
+                                                  hideChaptersAndQueue: hasStripContent,
+                                                ),
+                                                onSeek: _throttledSeek,
+                                                onSeekEnd: _finalizeSeek,
+                                                onSeekCompleted: widget.onSeekCompleted,
+                                                // ignore: no-empty-block - play/pause handled by parent VideoControlsState
+                                                onPlayPause: () {},
+                                                onCancelAutoHide: () => _hideTimer?.cancel(),
+                                                onStartAutoHide: _startHideTimer,
+                                                onBack: widget.onBack,
+                                                onNext: widget.onNext,
+                                                onPrevious: widget.onPrevious,
+                                                canControl: widget.canControl,
+                                                hasFirstFrame: widget.hasFirstFrame,
+                                                thumbnailDataBuilder: widget.thumbnailDataBuilder,
+                                                isLive: widget.isLive,
+                                                liveChannelName: widget.liveChannelName,
+                                                serverId: widget.metadata.serverId,
+                                                showQueueTab: playbackState.isQueueActive,
+                                                onQueueItemSelected: playbackState.isQueueActive
+                                                    ? _onQueueItemSelected
+                                                    : null,
+                                                controlsVisible: widget.controlsVisible,
+                                                onStripVisibilityChanged: (visible) {
+                                                  setState(() => _isContentStripVisible = visible);
+                                                  if (visible) {
+                                                    _hideTimer?.cancel();
+                                                  } else {
+                                                    _restartHideTimerIfPlaying();
+                                                  }
+                                                },
+                                              );
+                                            },
                                           ),
                                         )
                                       : _buildDesktopControlsListener(),
@@ -1968,6 +2031,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                       right: 24,
                       bottom: () {
                         if (!_showControls) return 24.0;
+                        if (_isContentStripVisible) return 180.0;
                         return isMobile ? 80.0 : 115.0;
                       }(),
                       child: AnimatedOpacity(
@@ -1978,8 +2042,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                     ),
                   // Performance overlay (top-left)
                   if (_showPerformanceOverlay)
-                    Positioned(
-                      top: isMobile ? 60 : 16,
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      top: _showControls && isMobile ? 80.0 : 16.0,
                       left: 16,
                       child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
                     ),
@@ -1993,9 +2059,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   Widget _buildDesktopControlsListener() {
-    final pipMode = (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) ? widget.onTogglePIPMode : null;
-    final boxFitMode = widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null;
     final playbackState = context.watch<PlaybackStateProvider>();
+    final trackControlsState = _buildTrackControlsState(
+      playbackState: playbackState,
+      onToggleAlwaysOnTop: Platform.isMacOS ? null : _toggleAlwaysOnTop,
+    );
+    final useDpad = _videoPlayerNavigationEnabled || PlatformDetector.isTV();
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -2019,50 +2088,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         getForwardIcon: getForwardIcon,
         onFocusActivity: _restartHideTimerIfPlaying,
         onHideControls: _hideControlsFromKeyboard,
-        availableVersions: widget.availableVersions,
-        selectedMediaIndex: widget.selectedMediaIndex,
-        boxFitMode: widget.boxFitMode,
-        audioSyncOffset: _audioSyncOffset,
-        subtitleSyncOffset: _subtitleSyncOffset,
-        isFullscreen: _isFullscreen,
-        isAlwaysOnTop: _isAlwaysOnTop,
-        onTogglePIPMode: pipMode,
-        onCycleBoxFitMode: boxFitMode,
-        onToggleFullscreen: _toggleFullscreen,
-        onToggleAlwaysOnTop: Platform.isMacOS ? null : _toggleAlwaysOnTop,
-        onSwitchVersion: _switchMediaVersion,
-        onAudioTrackChanged: widget.onAudioTrackChanged,
-        onSubtitleTrackChanged: _onSubtitleTrackChanged,
-        subtitlesVisible: _subtitlesVisible,
-        onLoadSeekTimes: () async {
-          if (mounted) {
-            await _loadSeekTimes();
-          }
-        },
+        trackControlsState: trackControlsState,
+        onBack: widget.onBack,
+        hasFirstFrame: widget.hasFirstFrame,
+        thumbnailDataBuilder: widget.thumbnailDataBuilder,
+        liveChannelName: widget.liveChannelName,
+        useDpadNavigation: useDpad,
+        serverId: widget.metadata.serverId,
+        showQueueTab: playbackState.isQueueActive,
+        onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
         onCancelAutoHide: () => _hideTimer?.cancel(),
         onStartAutoHide: _startHideTimer,
-        onSyncOffsetChanged: (propertyName, offset) {
-          setState(() {
-            if (propertyName == 'sub-delay') {
-              _subtitleSyncOffset = offset;
-            } else {
-              _audioSyncOffset = offset;
-            }
-          });
+        onContentStripVisibilityChanged: (visible) {
+          setState(() => _isContentStripVisible = visible);
+          if (visible) {
+            _hideTimer?.cancel();
+          } else {
+            _restartHideTimerIfPlaying();
+          }
         },
-        serverId: widget.metadata.serverId ?? '',
-        onBack: widget.onBack,
-        canControl: widget.canControl,
-        hasFirstFrame: widget.hasFirstFrame,
-        showQueueButton: playbackState.isQueueActive,
-        onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
-        shaderService: widget.shaderService,
-        onShaderChanged: widget.onShaderChanged,
-        thumbnailDataBuilder: widget.thumbnailDataBuilder,
-        isLive: widget.isLive,
-        liveChannelName: widget.liveChannelName,
-        isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
-        onToggleAmbientLighting: widget.player.playerType != 'exoplayer' ? widget.onToggleAmbientLighting : null,
       ),
     );
   }
@@ -2157,7 +2201,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                           flex: (_autoSkipProgress * 100).round(),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.2),
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                             ),
                           ),

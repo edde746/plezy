@@ -26,6 +26,10 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
   brew tap edde746/plezy https://github.com/edde746/plezy
   brew install --cask plezy
   ```
+- **WinGet** (Windows):
+  ```bash
+  winget install edde746.plezy
+  ```
 
 ## Features
 

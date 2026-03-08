@@ -37,12 +37,7 @@ class ChapterSheet extends StatefulWidget {
 class _ChapterSheetState extends State<ChapterSheet> {
   /// Get the PlexClient for chapters, or null if unavailable (offline mode)
   PlexClient? _tryGetClientForChapters(BuildContext context) {
-    if (widget.serverId == null) return null;
-    try {
-      return context.getClientForServer(widget.serverId!);
-    } catch (_) {
-      return null;
-    }
+    return context.tryGetClientForServer(widget.serverId);
   }
 
   @override
@@ -111,9 +106,11 @@ class _ChapterSheetState extends State<ChapterSheet> {
                             if (isCurrentChapter)
                               Positioned.fill(
                                 child: Container(
-                                  decoration: const BoxDecoration(
-                                    borderRadius: BorderRadius.all(Radius.circular(4)),
-                                    border: Border.fromBorderSide(BorderSide(color: Colors.blue, width: 2)),
+                                  decoration: BoxDecoration(
+                                    borderRadius: const BorderRadius.all(Radius.circular(4)),
+                                    border: Border.fromBorderSide(
+                                      BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -124,19 +121,21 @@ class _ChapterSheetState extends State<ChapterSheet> {
                 title: Text(
                   chapter.label,
                   style: TextStyle(
-                    color: isCurrentChapter ? Colors.blue : null,
+                    color: isCurrentChapter ? Theme.of(context).colorScheme.primary : null,
                     fontWeight: isCurrentChapter ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 subtitle: Text(
                   formatDurationTimestamp(chapter.startTime),
                   style: TextStyle(
-                    color: isCurrentChapter ? Colors.blue.withValues(alpha: 0.7) : tokens(context).textMuted,
+                    color: isCurrentChapter
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
+                        : tokens(context).textMuted,
                     fontSize: 12,
                   ),
                 ),
                 trailing: isCurrentChapter
-                    ? const AppIcon(Symbols.play_circle_rounded, fill: 1, color: Colors.blue)
+                    ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: Theme.of(context).colorScheme.primary)
                     : null,
                 onTap: () {
                   widget.player.seek(chapter.startTime);

@@ -202,7 +202,8 @@ class SyncMessage {
       timestamp: DateTime.now().millisecondsSinceEpoch,
       controlMode: controlMode,
       positionMs: currentPosition.inMilliseconds,
-      bufferingState: !isPlaying, // Reuse field: false = playing, true = paused
+      isPlaying: isPlaying,
+      bufferingState: !isPlaying, // Legacy compat: false = playing, true = paused
       rate: playbackRate,
       peerId: peerId,
       ratingKey: ratingKey,

@@ -187,6 +187,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   final Set<int> _loadingRanges = {};
   CancelToken? _cancelToken;
   int _requestId = 0;
+  int _firstCharactersRequestId = 0;
   static const int _fetchSize = 200;
   Timer? _scrollIdleTimer;
 
@@ -299,12 +300,38 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _groupingChipFocusNode.requestFocus();
   }
 
+  /// Reset transient browse state before loading a different library.
+  void _resetForFullReload() {
+    _scrollActivityTimer?.cancel();
+    _scrollIdleTimer?.cancel();
+    _isScrollActive = false;
+    _hasJumpPin = false;
+    _isJumpScrolling = false;
+    _jumpScrollGeneration++;
+    _currentFirstVisibleIndex = 0;
+
+    // The browse tab state is kept alive across libraries, so ensure each
+    // library starts from top instead of inheriting the previous offset.
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+        }
+      });
+    }
+  }
+
   Future<void> _loadContent() async {
     // Cancel any pending request
     _cancelToken?.cancel();
     _cancelToken = CancelToken();
     // Use a generation counter for the filter/sort loading phase
     final generation = ++_requestId;
+    final firstCharactersGeneration = ++_firstCharactersRequestId;
+
+    _resetForFullReload();
 
     // Extract context dependencies before async gap - use server-specific client
     final client = getClientForLibrary();
@@ -365,7 +392,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
       // Load items and first characters in parallel
       // _loadItems manages its own requestId internally
-      await Future.wait([_loadItems(), _loadFirstCharacters()]);
+      await Future.wait([_loadItems(), _loadFirstCharacters(requestId: firstCharactersGeneration)]);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -795,7 +822,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   /// Fetch first characters for the current library/filter state
-  Future<void> _loadFirstCharacters() async {
+  Future<void> _loadFirstCharacters({int? requestId}) async {
+    final currentRequestId = requestId ?? ++_firstCharactersRequestId;
     final client = getClientForLibrary();
     final filterParams = Map<String, String>.from(_selectedFilters);
     final typeId = _getGroupingTypeId();
@@ -808,20 +836,20 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         type: typeId.isNotEmpty ? int.tryParse(typeId) : null,
         filters: filterParams.isNotEmpty ? filterParams : null,
       );
-      if (mounted) {
-        setState(() {
-          _firstCharacters = chars;
-          _alphaHelper = AlphaJumpHelper(chars);
-        });
-      }
+      if (!mounted || currentRequestId != _firstCharactersRequestId) return;
+
+      setState(() {
+        _firstCharacters = chars;
+        _alphaHelper = AlphaJumpHelper(chars);
+      });
     } catch (_) {
       // Non-critical — hide the bar on failure
-      if (mounted) {
-        setState(() {
-          _firstCharacters = [];
-          _alphaHelper = AlphaJumpHelper(const []);
-        });
-      }
+      if (!mounted || currentRequestId != _firstCharactersRequestId) return;
+
+      setState(() {
+        _firstCharacters = [];
+        _alphaHelper = AlphaJumpHelper(const []);
+      });
     }
   }
 
@@ -1186,6 +1214,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             index,
             isFirstRow: index == 0,
             isFirstColumn: true, // List view = single column
+            disableScale: true,
           ),
         ),
       );
@@ -1228,6 +1257,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     required bool isFirstRow,
     required bool isFirstColumn,
     bool isLastColumn = false,
+    bool disableScale = false,
   }) {
     final item = _loadedItems[index];
 
@@ -1244,6 +1274,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       key: Key(item.ratingKey),
       item: item,
       focusNode: focusNode,
+      disableScale: disableScale,
       onRefresh: updateItem,
       onNavigateUp: isFirstRow ? _navigateToChips : null,
       onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
@@ -1270,14 +1301,14 @@ class _SkeletonCard extends StatelessWidget {
           // Poster area — matches the Expanded poster in _buildGridCard
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
               child: const SkeletonLoader(child: SizedBox.expand()),
             ),
           ),
           const SizedBox(height: 4),
           // Title bar
           SkeletonLoader(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: const BorderRadius.all(Radius.circular(4)),
             child: const SizedBox(height: 13, width: double.infinity),
           ),
           const SizedBox(height: 3),
@@ -1286,7 +1317,7 @@ class _SkeletonCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             widthFactor: 0.6,
             child: SkeletonLoader(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: const BorderRadius.all(Radius.circular(4)),
               child: const SizedBox(height: 11),
             ),
           ),

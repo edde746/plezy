@@ -6,9 +6,6 @@
     "signInWithPlex": "使用 Plex 登录",
     "showQRCode": "显示二维码",
     "authenticate": "验证",
-    "debugEnterToken": "调试：输入 Plex Token",
-    "plexTokenLabel": "Plex 授权令牌 (Auth Token)",
-    "plexTokenHint": "输入你的 Plex.tv 令牌",
     "authenticationTimeout": "验证超时。请重试。",
     "scanQRToSignIn": "扫描二维码登录",
     "waitingForAuth": "等待验证中...\n请在你的浏览器中完成登录。",
@@ -32,6 +29,7 @@
     "delete": "删除",
     "shuffle": "随机播放",
     "addTo": "添加到...",
+    "createNew": "新建",
     "remove": "删除",
     "paste": "粘贴",
     "connect": "连接",
@@ -63,7 +61,7 @@
     "licenses": "许可证",
     "switchProfile": "切换用户",
     "subtitleStyling": "字幕样式",
-    "mpvConfig": "MPV 配置",
+    "mpvConfig": "mpv.conf",
     "logs": "日志"
   },
   "update": {
@@ -127,7 +125,7 @@
     "playerBackend": "播放器引擎",
     "exoPlayer": "ExoPlayer（推荐）",
     "exoPlayerDescription": "Android 原生播放器，硬件支持更好",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "功能更多的高级播放器，支持 ASS 字幕",
     "hardwareDecoding": "硬件解码",
     "hardwareDecodingDescription": "如果可用，使用硬件加速",
@@ -212,7 +210,9 @@
     "requireProfileSelectionOnOpen": "打开应用时询问配置文件",
     "requireProfileSelectionOnOpenDescription": "每次打开应用时显示配置文件选择",
     "confirmExitOnBack": "退出前确认",
-    "confirmExitOnBackDescription": "按返回键退出应用时显示确认对话框"
+    "confirmExitOnBackDescription": "按返回键退出应用时显示确认对话框",
+    "showNavBarLabels": "显示导航栏标签",
+    "showNavBarLabelsDescription": "在导航栏图标下方显示文字标签"
   },
   "search": {
     "hint": "搜索电影、系列、音乐...",
@@ -341,6 +341,7 @@
     "settingsButton": "视频设置",
     "audioTrackButton": "音轨",
     "subtitlesButton": "字幕",
+    "tracksButton": "音频和字幕",
     "chaptersButton": "章节",
     "versionsButton": "视频版本",
     "pipButton": "画中画模式",
@@ -423,19 +424,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV 配置",
+    "title": "mpv 配置",
     "description": "高级视频播放器设置",
-    "properties": "属性",
     "presets": "预设",
-    "noProperties": "未配置任何属性",
     "noPresets": "没有保存的预设",
-    "addProperty": "添加属性",
-    "editProperty": "编辑属性",
-    "deleteProperty": "删除属性",
-    "propertyKey": "属性键",
-    "propertyKeyHint": "例如 hwdec, demuxer-max-bytes",
-    "propertyValue": "属性值",
-    "propertyValueHint": "例如 auto, 256000000",
     "saveAsPreset": "保存为预设...",
     "presetName": "预设名称",
     "presetNameHint": "输入此预设的名称",
@@ -445,8 +437,7 @@
     "presetLoaded": "预设已加载",
     "presetDeleted": "预设已删除",
     "confirmDeletePreset": "确定要删除此预设吗？",
-    "confirmDeleteProperty": "确定要删除此属性吗？",
-    "entriesCount": "${count} 条目"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "确认操作"
@@ -655,7 +646,6 @@
     "itemAdded": "已添加到播放列表",
     "itemRemoved": "已从播放列表中移除",
     "selectPlaylist": "选择播放列表",
-    "createNewPlaylist": "创建新播放列表",
     "errorCreating": "创建播放列表失败",
     "errorDeleting": "删除播放列表失败",
     "errorLoading": "加载播放列表失败",
@@ -676,7 +666,6 @@
     "deleteFailedWithError": "删除合集失败：${error}",
     "failedToLoadItems": "加载合集项目失败：${error}",
     "selectCollection": "选择合集",
-    "createNewCollection": "创建新合集",
     "collectionName": "合集名称",
     "enterCollectionName": "输入合集名称",
     "addedToCollection": "已添加到合集",
@@ -733,6 +722,10 @@
     "sessionCodeCopied": "会话代码已复制到剪贴板",
     "relayUnreachable": "无法连接到中继服务器。这可能是由于您的网络运营商屏蔽了连接。您仍然可以尝试，但一起观看功能可能无法正常使用。",
     "reconnectingToHost": "正在重新连接到主持人...",
+    "currentPlayback": "当前播放",
+    "joinCurrentPlayback": "加入当前播放",
+    "joinCurrentPlaybackDescription": "回到房主当前正在观看的内容",
+    "failedToOpenCurrentPlayback": "无法打开当前播放",
     "participantJoined": "${name} 加入了",
     "participantLeft": "${name} 离开了"
   },
@@ -742,7 +735,13 @@
     "nvscalerDescription": "NVIDIA 图像缩放，使视频更清晰",
     "qualityFast": "快速",
     "qualityHQ": "高质量",
-    "mode": "模式"
+    "mode": "模式",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

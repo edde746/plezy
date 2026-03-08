@@ -14,10 +14,13 @@ class GridItemContext {
   /// Whether this item is in the first column of the grid.
   final bool isFirstColumn;
 
+  /// Whether items are displayed in list mode (single column).
+  final bool isListMode;
+
   /// Callback to navigate to the sidebar (for first-column items).
   final VoidCallback? navigateToSidebar;
 
-  const GridItemContext({required this.isFirstRow, required this.isFirstColumn, this.navigateToSidebar});
+  const GridItemContext({required this.isFirstRow, required this.isFirstColumn, this.isListMode = false, this.navigateToSidebar});
 }
 
 /// A widget that automatically switches between grid and list view
@@ -73,7 +76,7 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
   }
 
   // Extra top padding for focus decoration (scale + border extends beyond item bounds)
-  static const double _focusDecorationPadding = 8.0;
+  static const double _focusDecorationPadding = 3.0;
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar(BuildContext context) {
@@ -99,6 +102,7 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
               ? GridItemContext(
                   isFirstRow: index == 0,
                   isFirstColumn: true, // List view = single column
+                  isListMode: true,
                   navigateToSidebar: () => _navigateToSidebar(context),
                 )
               : null;

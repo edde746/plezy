@@ -33,15 +33,6 @@ class DeletionProgressDialog extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 24),
-
-            // Progress text
-            Text(
-              'Deleting ${progress.itemTitle}... (${progress.currentItem} of ${progress.totalItems})',
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-
             const SizedBox(height: 16),
 
             // Progress bar

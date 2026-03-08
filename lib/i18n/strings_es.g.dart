@@ -97,9 +97,6 @@ class _TranslationsAuthEs implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Inicia sesión con Plex';
 	@override String get showQRCode => 'Mostrar código QR';
 	@override String get authenticate => 'Autenticar';
-	@override String get debugEnterToken => 'Debug: Ingresar Token de Plex';
-	@override String get plexTokenLabel => 'Token de Autenticación de Plex';
-	@override String get plexTokenHint => 'Ingresa tu token de Plex.tv';
 	@override String get authenticationTimeout => 'Tiempo de autenticación agotado. Por favor, intenta de nuevo.';
 	@override String get scanQRToSignIn => 'Escanea este código QR para iniciar sesión';
 	@override String get waitingForAuth => 'Esperando autenticación...\nPor favor completa el inicio de sesión en tu navegador.';
@@ -130,6 +127,7 @@ class _TranslationsCommonEs implements TranslationsCommonEn {
 	@override String get delete => 'Eliminar';
 	@override String get shuffle => 'Aleatorio';
 	@override String get addTo => 'Añadir a...';
+	@override String get createNew => 'Crear';
 	@override String get remove => 'Eliminar';
 	@override String get paste => 'Pegar';
 	@override String get connect => 'Conectar';
@@ -168,7 +166,7 @@ class _TranslationsScreensEs implements TranslationsScreensEn {
 	@override String get licenses => 'Licencias';
 	@override String get switchProfile => 'Cambiar Perfil';
 	@override String get subtitleStyling => 'Estilo de Subtítulos';
-	@override String get mpvConfig => 'Configuración de MPV';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => 'Logs';
 }
 
@@ -246,7 +244,7 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get playerBackend => 'Reproductor';
 	@override String get exoPlayer => 'ExoPlayer (Recomendado)';
 	@override String get exoPlayerDescription => 'Reproductor nativo de Android con mejor soporte de hardware';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => 'Reproductor avanzado con más funciones y soporte de subtítulos ASS';
 	@override String get hardwareDecoding => 'Decodificación por Hardware';
 	@override String get hardwareDecodingDescription => 'Usar aceleración por hardware cuando esté disponible';
@@ -332,6 +330,8 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostrar selección de perfil cada vez que se abre la aplicación';
 	@override String get confirmExitOnBack => 'Confirmar antes de salir';
 	@override String get confirmExitOnBackDescription => 'Mostrar un diálogo de confirmación al presionar atrás para salir de la app';
+	@override String get showNavBarLabels => 'Mostrar etiquetas de la barra de navegación';
+	@override String get showNavBarLabelsDescription => 'Mostrar etiquetas de texto bajo los iconos de la barra de navegación';
 }
 
 // Path: search
@@ -496,6 +496,7 @@ class _TranslationsVideoControlsEs implements TranslationsVideoControlsEn {
 	@override String get settingsButton => 'Ajustes de video';
 	@override String get audioTrackButton => 'Pistas de audio';
 	@override String get subtitlesButton => 'Subtítulos';
+	@override String get tracksButton => 'Audio y subtítulos';
 	@override String get chaptersButton => 'Capítulos';
 	@override String get versionsButton => 'Versiones de video';
 	@override String get pipButton => 'Modo PiP (Imagen en Imagen)';
@@ -598,19 +599,10 @@ class _TranslationsMpvConfigEs implements TranslationsMpvConfigEn {
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Configuración de MPV';
+	@override String get title => 'Configuración de mpv';
 	@override String get description => 'Ajustes avanzados del reproductor de video';
-	@override String get properties => 'Propiedades';
 	@override String get presets => 'Ajustes preestablecidos';
-	@override String get noProperties => 'No hay propiedades configuradas';
 	@override String get noPresets => 'No hay ajustes guardados';
-	@override String get addProperty => 'Añadir Propiedad';
-	@override String get editProperty => 'Editar Propiedad';
-	@override String get deleteProperty => 'Eliminar Propiedad';
-	@override String get propertyKey => 'Clave de la Propiedad';
-	@override String get propertyKeyHint => 'ej., hwdec, demuxer-max-bytes';
-	@override String get propertyValue => 'Valor de la Propiedad';
-	@override String get propertyValueHint => 'ej., auto, 256000000';
 	@override String get saveAsPreset => 'Guardar como Ajuste...';
 	@override String get presetName => 'Nombre del Ajuste';
 	@override String get presetNameHint => 'Introduce un nombre para este ajuste';
@@ -620,8 +612,7 @@ class _TranslationsMpvConfigEs implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => 'Ajuste cargado';
 	@override String get presetDeleted => 'Ajuste eliminado';
 	@override String get confirmDeletePreset => '¿Estás seguro de que quieres eliminar este ajuste?';
-	@override String get confirmDeleteProperty => '¿Estás seguro de que quieres eliminar esta propiedad?';
-	@override String entriesCount({required Object count}) => '${count} entradas';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -801,7 +792,7 @@ class _TranslationsNavigationEs implements TranslationsNavigationEn {
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get libraries => 'Bibliotecas';
+	@override String get libraries => 'Medios';
 	@override String get downloads => 'Descargas';
 	@override String get liveTv => 'TV en vivo';
 }
@@ -858,7 +849,6 @@ class _TranslationsCollectionsEs implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => 'Error al eliminar la colección: ${error}';
 	@override String failedToLoadItems({required Object error}) => 'Error al cargar los elementos de la colección: ${error}';
 	@override String get selectCollection => 'Seleccionar Colección';
-	@override String get createNewCollection => 'Crear Nueva Colección';
 	@override String get collectionName => 'Nombre de la Colección';
 	@override String get enterCollectionName => 'Introduce el nombre de la colección';
 	@override String get addedToCollection => 'Añadido a la colección';
@@ -897,7 +887,6 @@ class _TranslationsPlaylistsEs implements TranslationsPlaylistsEn {
 	@override String get itemAdded => 'Añadido a la lista';
 	@override String get itemRemoved => 'Eliminado de la lista';
 	@override String get selectPlaylist => 'Seleccionar Lista';
-	@override String get createNewPlaylist => 'Crear Nueva Lista';
 	@override String get errorCreating => 'Error al crear la lista';
 	@override String get errorDeleting => 'Error al eliminar la lista';
 	@override String get errorLoading => 'Error al cargar las listas';
@@ -957,6 +946,10 @@ class _TranslationsWatchTogetherEs implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Código de sesión copiado al portapapeles';
 	@override String get relayUnreachable => 'El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.';
 	@override String get reconnectingToHost => 'Reconectando con el anfitrión...';
+	@override String get currentPlayback => 'Reproducción actual';
+	@override String get joinCurrentPlayback => 'Unirse a la reproducción actual';
+	@override String get joinCurrentPlaybackDescription => 'Vuelve a lo que el anfitrión está viendo ahora mismo';
+	@override String get failedToOpenCurrentPlayback => 'No se pudo abrir la reproducción actual';
 	@override String participantJoined({required Object name}) => '${name} se unió';
 	@override String participantLeft({required Object name}) => '${name} se fue';
 }
@@ -1018,6 +1011,12 @@ class _TranslationsShadersEs implements TranslationsShadersEn {
 	@override String get qualityFast => 'Rápido';
 	@override String get qualityHQ => 'Alta Calidad';
 	@override String get mode => 'Modo';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1330,9 +1329,6 @@ extension on TranslationsEs {
 			'auth.signInWithPlex' => 'Inicia sesión con Plex',
 			'auth.showQRCode' => 'Mostrar código QR',
 			'auth.authenticate' => 'Autenticar',
-			'auth.debugEnterToken' => 'Debug: Ingresar Token de Plex',
-			'auth.plexTokenLabel' => 'Token de Autenticación de Plex',
-			'auth.plexTokenHint' => 'Ingresa tu token de Plex.tv',
 			'auth.authenticationTimeout' => 'Tiempo de autenticación agotado. Por favor, intenta de nuevo.',
 			'auth.scanQRToSignIn' => 'Escanea este código QR para iniciar sesión',
 			'auth.waitingForAuth' => 'Esperando autenticación...\nPor favor completa el inicio de sesión en tu navegador.',
@@ -1354,6 +1350,7 @@ extension on TranslationsEs {
 			'common.delete' => 'Eliminar',
 			'common.shuffle' => 'Aleatorio',
 			'common.addTo' => 'Añadir a...',
+			'common.createNew' => 'Crear',
 			'common.remove' => 'Eliminar',
 			'common.paste' => 'Pegar',
 			'common.connect' => 'Conectar',
@@ -1383,7 +1380,7 @@ extension on TranslationsEs {
 			'screens.licenses' => 'Licencias',
 			'screens.switchProfile' => 'Cambiar Perfil',
 			'screens.subtitleStyling' => 'Estilo de Subtítulos',
-			'screens.mpvConfig' => 'Configuración de MPV',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'Logs',
 			'update.available' => 'Actualización disponible',
 			'update.versionAvailable' => ({required Object version}) => 'Versión ${version} disponible',
@@ -1443,7 +1440,7 @@ extension on TranslationsEs {
 			'settings.playerBackend' => 'Reproductor',
 			'settings.exoPlayer' => 'ExoPlayer (Recomendado)',
 			'settings.exoPlayerDescription' => 'Reproductor nativo de Android con mejor soporte de hardware',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => 'Reproductor avanzado con más funciones y soporte de subtítulos ASS',
 			'settings.hardwareDecoding' => 'Decodificación por Hardware',
 			'settings.hardwareDecodingDescription' => 'Usar aceleración por hardware cuando esté disponible',
@@ -1529,6 +1526,8 @@ extension on TranslationsEs {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostrar selección de perfil cada vez que se abre la aplicación',
 			'settings.confirmExitOnBack' => 'Confirmar antes de salir',
 			'settings.confirmExitOnBackDescription' => 'Mostrar un diálogo de confirmación al presionar atrás para salir de la app',
+			'settings.showNavBarLabels' => 'Mostrar etiquetas de la barra de navegación',
+			'settings.showNavBarLabelsDescription' => 'Mostrar etiquetas de texto bajo los iconos de la barra de navegación',
 			'search.hint' => 'Buscar películas, series, música...',
 			'search.tryDifferentTerm' => 'Prueba con un término de búsqueda diferente',
 			'search.searchYourMedia' => 'Busca en tu contenido',
@@ -1639,6 +1638,7 @@ extension on TranslationsEs {
 			'videoControls.settingsButton' => 'Ajustes de video',
 			'videoControls.audioTrackButton' => 'Pistas de audio',
 			'videoControls.subtitlesButton' => 'Subtítulos',
+			'videoControls.tracksButton' => 'Audio y subtítulos',
 			'videoControls.chaptersButton' => 'Capítulos',
 			'videoControls.versionsButton' => 'Versiones de video',
 			'videoControls.pipButton' => 'Modo PiP (Imagen en Imagen)',
@@ -1711,19 +1711,10 @@ extension on TranslationsEs {
 			'subtitlingStyling.backgroundOpacity' => 'Opacidad de Fondo',
 			'subtitlingStyling.backgroundColor' => 'Color de Fondo',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'Configuración de MPV',
+			'mpvConfig.title' => 'Configuración de mpv',
 			'mpvConfig.description' => 'Ajustes avanzados del reproductor de video',
-			'mpvConfig.properties' => 'Propiedades',
 			'mpvConfig.presets' => 'Ajustes preestablecidos',
-			'mpvConfig.noProperties' => 'No hay propiedades configuradas',
 			'mpvConfig.noPresets' => 'No hay ajustes guardados',
-			'mpvConfig.addProperty' => 'Añadir Propiedad',
-			'mpvConfig.editProperty' => 'Editar Propiedad',
-			'mpvConfig.deleteProperty' => 'Eliminar Propiedad',
-			'mpvConfig.propertyKey' => 'Clave de la Propiedad',
-			'mpvConfig.propertyKeyHint' => 'ej., hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => 'Valor de la Propiedad',
-			'mpvConfig.propertyValueHint' => 'ej., auto, 256000000',
 			'mpvConfig.saveAsPreset' => 'Guardar como Ajuste...',
 			'mpvConfig.presetName' => 'Nombre del Ajuste',
 			'mpvConfig.presetNameHint' => 'Introduce un nombre para este ajuste',
@@ -1733,8 +1724,7 @@ extension on TranslationsEs {
 			'mpvConfig.presetLoaded' => 'Ajuste cargado',
 			'mpvConfig.presetDeleted' => 'Ajuste eliminado',
 			'mpvConfig.confirmDeletePreset' => '¿Estás seguro de que quieres eliminar este ajuste?',
-			'mpvConfig.confirmDeleteProperty' => '¿Estás seguro de que quieres eliminar esta propiedad?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entradas',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirmar Acción',
 			'discover.title' => 'Descubrir',
 			'discover.switchProfile' => 'Cambiar Perfil',
@@ -1832,14 +1822,12 @@ extension on TranslationsEs {
 			'licenses.license' => 'Licencia',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licencia ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licencias',
-			'navigation.libraries' => 'Bibliotecas',
+			'navigation.libraries' => 'Medios',
 			'navigation.downloads' => 'Descargas',
 			'navigation.liveTv' => 'TV en vivo',
 			'liveTv.title' => 'TV en vivo',
 			'liveTv.channels' => 'Canales',
 			'liveTv.guide' => 'Guía',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noChannels' => 'No hay canales disponibles',
 			'liveTv.noDvr' => 'No hay DVR configurado en ningún servidor',
 			'liveTv.tuneFailed' => 'Error al sintonizar el canal',
@@ -1849,6 +1837,8 @@ extension on TranslationsEs {
 			'liveTv.channelNumber' => ({required Object number}) => 'Canal ${number}',
 			'liveTv.live' => 'EN VIVO',
 			'liveTv.hd' => 'HD',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.premiere' => 'NUEVO',
 			'liveTv.reloadGuide' => 'Recargar guía',
 			'liveTv.allChannels' => 'Todos los canales',
@@ -1873,7 +1863,6 @@ extension on TranslationsEs {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Error al eliminar la colección: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Error al cargar los elementos de la colección: ${error}',
 			'collections.selectCollection' => 'Seleccionar Colección',
-			'collections.createNewCollection' => 'Crear Nueva Colección',
 			'collections.collectionName' => 'Nombre de la Colección',
 			'collections.enterCollectionName' => 'Introduce el nombre de la colección',
 			'collections.addedToCollection' => 'Añadido a la colección',
@@ -1903,7 +1892,6 @@ extension on TranslationsEs {
 			'playlists.itemAdded' => 'Añadido a la lista',
 			'playlists.itemRemoved' => 'Eliminado de la lista',
 			'playlists.selectPlaylist' => 'Seleccionar Lista',
-			'playlists.createNewPlaylist' => 'Crear Nueva Lista',
 			'playlists.errorCreating' => 'Error al crear la lista',
 			'playlists.errorDeleting' => 'Error al eliminar la lista',
 			'playlists.errorLoading' => 'Error al cargar las listas',
@@ -1954,6 +1942,10 @@ extension on TranslationsEs {
 			'watchTogether.sessionCodeCopied' => 'Código de sesión copiado al portapapeles',
 			'watchTogether.relayUnreachable' => 'El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.',
 			'watchTogether.reconnectingToHost' => 'Reconectando con el anfitrión...',
+			'watchTogether.currentPlayback' => 'Reproducción actual',
+			'watchTogether.joinCurrentPlayback' => 'Unirse a la reproducción actual',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Vuelve a lo que el anfitrión está viendo ahora mismo',
+			'watchTogether.failedToOpenCurrentPlayback' => 'No se pudo abrir la reproducción actual',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} se unió',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} se fue',
 			'downloads.title' => 'Descargas',
@@ -1997,6 +1989,12 @@ extension on TranslationsEs {
 			'shaders.qualityFast' => 'Rápido',
 			'shaders.qualityHQ' => 'Alta Calidad',
 			'shaders.mode' => 'Modo',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => 'Conectar a dispositivo',
 			'companionRemote.hostRemoteSession' => 'Iniciar sesión remota',

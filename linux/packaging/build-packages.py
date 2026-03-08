@@ -15,7 +15,7 @@ ARCH_SUFFIX = os.environ.get("ARCH_SUFFIX", "x64")
 # Package metadata
 METADATA = {
     "name": "plezy",
-    "license": "Proprietary",
+    "license": "GPL-3.0",
     "vendor": "edde746",
     "maintainer": "edde746 <noreply@github.com>",
     "url": "https://github.com/edde746/plezy",

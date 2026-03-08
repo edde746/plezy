@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../focus/dpad_navigator.dart';
+import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/mpv_config_models.dart';
 import '../../focus/focusable_button.dart';
@@ -20,13 +23,24 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
   late SettingsService _settingsService;
   bool _isLoading = true;
 
-  List<MpvConfigEntry> _entries = [];
+  late TextEditingController _textController;
+  final _savePresetFocusNode = FocusNode();
+  final _textFieldFocusNode = FocusNode();
   List<MpvPreset> _presets = [];
 
   @override
   void initState() {
     super.initState();
+    _textController = TextEditingController();
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _savePresetFocusNode.dispose();
+    _textFieldFocusNode.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -34,144 +48,18 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
     if (!mounted) return;
     setState(() {
-      _entries = _settingsService.getMpvConfigEntries();
+      _textController.text = _settingsService.getMpvConfigText();
       _presets = _settingsService.getMpvPresets();
       _isLoading = false;
     });
   }
 
-  Future<void> _saveEntries() async {
-    await _settingsService.setMpvConfigEntries(_entries);
-  }
-
-  void _toggleEntry(int index) {
-    setState(() {
-      _entries[index] = _entries[index].copyWith(isEnabled: !_entries[index].isEnabled);
-    });
-    _saveEntries();
-  }
-
-  void _deleteEntry(int index) {
-    setState(() {
-      _entries.removeAt(index);
-    });
-    _saveEntries();
-  }
-
-  void _addEntry(MpvConfigEntry entry) {
-    setState(() {
-      _entries.add(entry);
-    });
-    _saveEntries();
-  }
-
-  void _updateEntry(int index, MpvConfigEntry entry) {
-    setState(() {
-      _entries[index] = entry;
-    });
-    _saveEntries();
-  }
-
-  Future<void> _showEntryDialog({int? editIndex}) async {
-    final isEdit = editIndex != null;
-    final existingEntry = isEdit ? _entries[editIndex] : null;
-
-    final keyController = TextEditingController(text: existingEntry?.key ?? '');
-    final valueController = TextEditingController(text: existingEntry?.value ?? '');
-    final keyFocusNode = FocusNode();
-    final valueFocusNode = FocusNode();
-    final saveFocusNode = FocusNode();
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isEdit ? t.mpvConfig.editProperty : t.mpvConfig.addProperty),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: keyController,
-              focusNode: keyFocusNode,
-              decoration: InputDecoration(labelText: t.mpvConfig.propertyKey, hintText: t.mpvConfig.propertyKeyHint),
-              autofocus: true,
-              textInputAction: TextInputAction.next,
-              onSubmitted: (_) => valueFocusNode.requestFocus(),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: valueController,
-              focusNode: valueFocusNode,
-              decoration: InputDecoration(
-                labelText: t.mpvConfig.propertyValue,
-                hintText: t.mpvConfig.propertyValueHint,
-              ),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => saveFocusNode.requestFocus(),
-            ),
-          ],
-        ),
-        actions: [
-          FocusableButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          ),
-          FocusableButton(
-            focusNode: saveFocusNode,
-            onPressed: () {
-              if (keyController.text.isNotEmpty && valueController.text.isNotEmpty) {
-                Navigator.pop(context, true);
-              }
-            },
-            child: TextButton(
-              onPressed: () {
-                if (keyController.text.isNotEmpty && valueController.text.isNotEmpty) {
-                  Navigator.pop(context, true);
-                }
-              },
-              child: Text(t.common.save),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      final entry = MpvConfigEntry(
-        key: keyController.text.trim(),
-        value: valueController.text.trim(),
-        isEnabled: existingEntry?.isEnabled ?? true,
-      );
-
-      if (isEdit) {
-        _updateEntry(editIndex, entry);
-      } else {
-        _addEntry(entry);
-      }
-    }
-
-    keyController.dispose();
-    valueController.dispose();
-    keyFocusNode.dispose();
-    valueFocusNode.dispose();
-    saveFocusNode.dispose();
-  }
-
-  Future<bool> _showConfirmDeleteDialog({required String title, required String content}) {
-    return showDeleteConfirmation(context, title: title, message: content);
-  }
-
-  Future<void> _showDeleteEntryDialog(int index) async {
-    final confirmed = await _showConfirmDeleteDialog(
-      title: t.mpvConfig.deleteProperty,
-      content: t.mpvConfig.confirmDeleteProperty,
-    );
-    if (confirmed) {
-      _deleteEntry(index);
-    }
+  Future<void> _saveText() async {
+    await _settingsService.setMpvConfigText(_textController.text);
   }
 
   Future<void> _showSavePresetDialog() async {
-    if (_entries.isEmpty) return;
+    if (_textController.text.trim().isEmpty) return;
 
     final nameController = TextEditingController();
     final saveFocusNode = FocusNode();
@@ -215,7 +103,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
     saveFocusNode.dispose();
 
     if (result == true) {
-      await _settingsService.saveMpvPreset(nameController.text.trim(), _entries);
+      await _settingsService.saveMpvPreset(nameController.text.trim(), _textController.text);
       if (!mounted) return;
       setState(() {
         _presets = _settingsService.getMpvPresets();
@@ -233,7 +121,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
     await _settingsService.loadMpvPreset(preset.name);
     if (!mounted) return;
     setState(() {
-      _entries = _settingsService.getMpvConfigEntries();
+      _textController.text = _settingsService.getMpvConfigText();
     });
 
     if (mounted) {
@@ -242,9 +130,10 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
   }
 
   Future<void> _deletePreset(MpvPreset preset) async {
-    final confirmed = await _showConfirmDeleteDialog(
+    final confirmed = await showDeleteConfirmation(
+      context,
       title: t.mpvConfig.deletePreset,
-      content: t.mpvConfig.confirmDeletePreset,
+      message: t.mpvConfig.confirmDeletePreset,
     );
 
     if (confirmed) {
@@ -262,23 +151,100 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusedScrollScaffold(
-      title: Text(t.screens.mpvConfig),
-      slivers: _isLoading
-          ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
-          : [
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildPresetsCard(),
-                    const SizedBox(height: 16),
-                    _buildEntriesCard(),
-                    const SizedBox(height: 24),
-                  ]),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (BackKeyCoordinator.consumeIfHandled()) return;
+        BackKeyUpSuppressor.suppressBackUntilKeyUp();
+        if (_textFieldFocusNode.hasFocus && _savePresetFocusNode.canRequestFocus) {
+          _savePresetFocusNode.requestFocus();
+        } else {
+          Navigator.pop(context);
+        }
+      },
+      child: FocusedScrollScaffold(
+        title: Text(t.screens.mpvConfig),
+        slivers: _isLoading
+            ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
+            : [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildConfigEditor(),
+                      const SizedBox(height: 16),
+                      _buildPresetsCard(),
+                      const SizedBox(height: 24),
+                    ]),
+                  ),
                 ),
-              ),
-            ],
+              ],
+      ),
+    );
+  }
+
+  Widget _buildConfigEditor() {
+    return Focus(
+      canRequestFocus: false,
+      onKeyEvent: (_, event) {
+        // Back/Escape: move focus to the save preset button instead of exiting.
+        // Suppress the KeyUp so it doesn't reach handleBackKeyNavigation
+        // on the new focus chain after focus moves away from the text field.
+        if (event.logicalKey.isBackKey) {
+          if (!_savePresetFocusNode.canRequestFocus) {
+            return KeyEventResult.ignored;
+          }
+          if (event is KeyDownEvent) {
+            BackKeyUpSuppressor.suppressBackUntilKeyUp();
+            _savePresetFocusNode.requestFocus();
+          }
+          return KeyEventResult.handled;
+        }
+        // We must consume Enter to prevent parent handlers from unfocusing,
+        // but that also blocks Flutter's text editing shortcuts (which are
+        // higher in the focus tree). So we manually insert newlines here.
+        if (event.logicalKey == LogicalKeyboardKey.enter ||
+            event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+          if (event is KeyDownEvent || event is KeyRepeatEvent) {
+            final sel = _textController.selection;
+            if (sel.isValid) {
+              final text = _textController.text;
+              _textController.value = TextEditingValue(
+                text: text.replaceRange(sel.start, sel.end, '\n'),
+                selection: TextSelection.collapsed(offset: sel.start + 1),
+              );
+              _saveText();
+            }
+          }
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey.isSelectKey) {
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey.isDownKey && event.isActionable) {
+          final sel = _textController.selection;
+          if (sel.isValid &&
+              _textController.text.indexOf('\n', sel.extentOffset) == -1) {
+            _savePresetFocusNode.requestFocus();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: TextField(
+        controller: _textController,
+        focusNode: _textFieldFocusNode,
+        maxLines: null,
+        minLines: 12,
+        decoration: InputDecoration(
+          hintText: t.mpvConfig.configPlaceholder,
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.all(12),
+        ),
+        style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+        onChanged: (_) => _saveText(),
+      ),
     );
   }
 
@@ -295,10 +261,11 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
             ),
           ),
           ListTile(
+            focusNode: _savePresetFocusNode,
             leading: const AppIcon(Symbols.save_rounded, fill: 1),
             title: Text(t.mpvConfig.saveAsPreset),
-            enabled: _entries.isNotEmpty,
-            onTap: _entries.isNotEmpty ? _showSavePresetDialog : null,
+            enabled: _textController.text.trim().isNotEmpty,
+            onTap: _textController.text.trim().isNotEmpty ? _showSavePresetDialog : null,
           ),
           if (_presets.isNotEmpty) ...[
             const Divider(),
@@ -306,7 +273,6 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
               (preset) => ListTile(
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                 title: Text(preset.name),
-                subtitle: Text(t.mpvConfig.entriesCount(count: preset.entries.length)),
                 trailing: PopupMenuButton<String>(
                   onSelected: (value) {
                     if (value == 'load') {
@@ -328,73 +294,6 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
               padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
               child: Text(
                 t.mpvConfig.noPresets,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEntriesCard() {
-    return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    t.mpvConfig.properties,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                IconButton(
-                  icon: const AppIcon(Symbols.add_rounded, fill: 1),
-                  onPressed: () => _showEntryDialog(),
-                  tooltip: t.mpvConfig.addProperty,
-                ),
-              ],
-            ),
-          ),
-          if (_entries.isNotEmpty) ...[
-            const Divider(height: 1),
-            ...List.generate(_entries.length, (index) {
-              final entry = _entries[index];
-              return ListTile(
-                leading: Switch(value: entry.isEnabled, onChanged: (_) => _toggleEntry(index)),
-                title: Text(
-                  entry.key,
-                  style: TextStyle(color: entry.isEnabled ? null : Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-                subtitle: Text(
-                  entry.value,
-                  style: TextStyle(color: entry.isEnabled ? null : Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-                trailing: PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showEntryDialog(editIndex: index);
-                    } else if (value == 'delete') {
-                      _showDeleteEntryDialog(index);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(value: 'edit', child: Text(t.mpvConfig.editProperty)),
-                    PopupMenuItem(value: 'delete', child: Text(t.mpvConfig.deleteProperty)),
-                  ],
-                ),
-              );
-            }),
-          ] else
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              child: Text(
-                t.mpvConfig.noProperties,
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),

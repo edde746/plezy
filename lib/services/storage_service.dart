@@ -61,6 +61,35 @@ class StorageService extends BaseSharedPreferencesService {
     LogRedactionManager.registerToken(getPlexToken());
   }
 
+  // User-scoped storage for per-profile library settings
+
+  /// Returns `'user_{uuid}_'` for the current user, or `''` if no user is set.
+  String get _userPrefix {
+    final uuid = getCurrentUserUUID();
+    return uuid != null ? 'user_${uuid}_' : '';
+  }
+
+  /// Read a string with user-scoped key, migrating from legacy key if needed.
+  String? _getScopedString(String baseKey) {
+    final scopedKey = '$_userPrefix$baseKey';
+    final value = prefs.getString(scopedKey);
+    if (value != null || _userPrefix.isEmpty) return value;
+    // One-time migration from legacy global key
+    final legacy = prefs.getString(baseKey);
+    if (legacy != null) prefs.setString(scopedKey, legacy);
+    return legacy;
+  }
+
+  /// Read an int with user-scoped key, migrating from legacy key if needed.
+  int? _getScopedInt(String baseKey) {
+    final scopedKey = '$_userPrefix$baseKey';
+    final value = prefs.getInt(scopedKey);
+    if (value != null || _userPrefix.isEmpty) return value;
+    final legacy = prefs.getInt(baseKey);
+    if (legacy != null) prefs.setInt(scopedKey, legacy);
+    return legacy;
+  }
+
   // Per-Server Endpoint URL (for multi-server connection caching)
   Future<void> saveServerEndpoint(String serverId, String url) async {
     await prefs.setString('$_prefixServerEndpoint$serverId', url);
@@ -101,34 +130,35 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   int? getSelectedLibraryIndex() {
-    return prefs.getInt(_keySelectedLibraryIndex);
+    return _getScopedInt(_keySelectedLibraryIndex);
   }
 
   // Selected Library Key (replaces index-based selection)
   Future<void> saveSelectedLibraryKey(String key) async {
-    await prefs.setString(_keySelectedLibraryKey, key);
+    await prefs.setString('$_userPrefix$_keySelectedLibraryKey', key);
   }
 
   String? getSelectedLibraryKey() {
-    return prefs.getString(_keySelectedLibraryKey);
+    return _getScopedString(_keySelectedLibraryKey);
   }
 
   // Library Filters (stored as JSON string)
   Future<void> saveLibraryFilters(Map<String, String> filters, {String? sectionId}) async {
-    final key = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
+    final baseKey = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
     // Note: using Map<String, String> which json.encode handles correctly
     final jsonString = json.encode(filters);
-    await prefs.setString(key, jsonString);
+    await prefs.setString('$_userPrefix$baseKey', jsonString);
   }
 
   Map<String, String> getLibraryFilters({String? sectionId}) {
-    final scopedKey = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
+    final baseKey = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
 
     // Prefer per-library filters when available
-    final jsonString =
-        prefs.getString(scopedKey) ??
-        // Legacy support: fall back to global filters if present
-        prefs.getString(_keyLibraryFilters);
+    var jsonString = _getScopedString(baseKey);
+    if (jsonString == null && sectionId != null) {
+      // Legacy support: fall back to global filters if present
+      jsonString = _getScopedString(_keyLibraryFilters);
+    }
     if (jsonString == null) return {};
 
     final decoded = decodeJsonStringToMap(jsonString);
@@ -138,38 +168,45 @@ class StorageService extends BaseSharedPreferencesService {
   // Library Sort (per-library, stored individually with descending flag)
   Future<void> saveLibrarySort(String sectionId, String sortKey, {bool descending = false}) async {
     final sortData = {'key': sortKey, 'descending': descending};
-    await _setJsonMap('$_prefixLibrarySort$sectionId', sortData);
+    await _setJsonMap('$_userPrefix$_prefixLibrarySort$sectionId', sortData);
   }
 
   Map<String, dynamic>? getLibrarySort(String sectionId) {
-    return _readJsonMap('$_prefixLibrarySort$sectionId', legacyStringOk: true);
+    final baseKey = '$_prefixLibrarySort$sectionId';
+    final scopedKey = '$_userPrefix$baseKey';
+    var result = _readJsonMap(scopedKey, legacyStringOk: true);
+    if (result != null || _userPrefix.isEmpty) return result;
+    // One-time migration from legacy key
+    result = _readJsonMap(baseKey, legacyStringOk: true);
+    if (result != null) _setJsonMap(scopedKey, result);
+    return result;
   }
 
   // Library Grouping (per-library, e.g., 'movies', 'shows', 'seasons', 'episodes')
   Future<void> saveLibraryGrouping(String sectionId, String grouping) async {
-    await prefs.setString('$_prefixLibraryGrouping$sectionId', grouping);
+    await prefs.setString('$_userPrefix$_prefixLibraryGrouping$sectionId', grouping);
   }
 
   String? getLibraryGrouping(String sectionId) {
-    return prefs.getString('$_prefixLibraryGrouping$sectionId');
+    return _getScopedString('$_prefixLibraryGrouping$sectionId');
   }
 
   // Library Tab (per-library, saves last selected tab index)
   Future<void> saveLibraryTab(String sectionId, int tabIndex) async {
-    await prefs.setInt('$_prefixLibraryTab$sectionId', tabIndex);
+    await prefs.setInt('$_userPrefix$_prefixLibraryTab$sectionId', tabIndex);
   }
 
   int? getLibraryTab(String sectionId) {
-    return prefs.getInt('$_prefixLibraryTab$sectionId');
+    return _getScopedInt('$_prefixLibraryTab$sectionId');
   }
 
   // Hidden Libraries (stored as JSON array of library section IDs)
   Future<void> saveHiddenLibraries(Set<String> libraryKeys) async {
-    await _setStringList(_keyHiddenLibraries, libraryKeys.toList());
+    await _setStringList('$_userPrefix$_keyHiddenLibraries', libraryKeys.toList());
   }
 
   Set<String> getHiddenLibraries() {
-    final jsonString = prefs.getString(_keyHiddenLibraries);
+    final jsonString = _getScopedString(_keyHiddenLibraries);
     if (jsonString == null) return {};
 
     try {
@@ -180,23 +217,34 @@ class StorageService extends BaseSharedPreferencesService {
     }
   }
 
-  // Clear library preferences
+  // Clear library preferences (scoped to current user)
   Future<void> clearLibraryPreferences() async {
+    final prefix = _userPrefix;
     await Future.wait([
-      ..._libraryPreferenceKeys.map((k) => prefs.remove(k)),
-      _clearKeysWithPrefix(_prefixLibrarySort),
-      _clearKeysWithPrefix(_prefixLibraryFilters),
-      _clearKeysWithPrefix(_prefixLibraryGrouping),
-      _clearKeysWithPrefix(_prefixLibraryTab),
+      ..._libraryPreferenceKeys.map((k) => prefs.remove('$prefix$k')),
+      prefs.remove('$prefix$_keySelectedLibraryKey'),
+      _clearKeysWithPrefix('$prefix$_prefixLibrarySort'),
+      _clearKeysWithPrefix('$prefix$_prefixLibraryFilters'),
+      _clearKeysWithPrefix('$prefix$_prefixLibraryGrouping'),
+      _clearKeysWithPrefix('$prefix$_prefixLibraryTab'),
     ]);
   }
 
   // Library Order (stored as JSON list of library keys)
   Future<void> saveLibraryOrder(List<String> libraryKeys) async {
-    await _setStringList(_keyLibraryOrder, libraryKeys);
+    await _setStringList('$_userPrefix$_keyLibraryOrder', libraryKeys);
   }
 
-  List<String>? getLibraryOrder() => _getStringList(_keyLibraryOrder);
+  List<String>? getLibraryOrder() {
+    final baseKey = _keyLibraryOrder;
+    final scopedKey = '$_userPrefix$baseKey';
+    final value = _getStringList(scopedKey);
+    if (value != null || _userPrefix.isEmpty) return value;
+    // One-time migration from legacy key
+    final legacy = _getStringList(baseKey);
+    if (legacy != null) _setStringList(scopedKey, legacy);
+    return legacy;
+  }
 
   // User Profile (stored as JSON string)
   Future<void> saveUserProfile(Map<String, dynamic> profileJson) async {
@@ -282,6 +330,41 @@ class StorageService extends BaseSharedPreferencesService {
   /// Clear server order
   Future<void> clearServerOrder() async {
     await prefs.remove(_keyServerOrder);
+  }
+
+  // Episode Count Persistence (for partial download detection)
+
+  static const String _prefixEpisodeCount = 'episode_count_';
+
+  /// Save the total episode count for a show/season
+  Future<void> saveTotalEpisodeCount(String globalKey, int count) async {
+    await prefs.setInt('$_prefixEpisodeCount$globalKey', count);
+  }
+
+  /// Get the total episode count for a show/season
+  int? getTotalEpisodeCount(String globalKey) {
+    return prefs.getInt('$_prefixEpisodeCount$globalKey');
+  }
+
+  /// Load all persisted episode counts
+  Map<String, int> loadAllEpisodeCounts() {
+    final counts = <String, int>{};
+    final keys = prefs.getKeys().where((k) => k.startsWith(_prefixEpisodeCount));
+
+    for (final key in keys) {
+      final globalKey = key.replaceFirst(_prefixEpisodeCount, '');
+      final count = prefs.getInt(key);
+      if (count != null) {
+        counts[globalKey] = count;
+      }
+    }
+
+    return counts;
+  }
+
+  /// Remove the episode count for a specific show/season
+  Future<void> removeEpisodeCount(String globalKey) async {
+    await prefs.remove('$_prefixEpisodeCount$globalKey');
   }
 
   // Private helper methods

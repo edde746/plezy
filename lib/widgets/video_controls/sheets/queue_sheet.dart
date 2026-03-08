@@ -13,6 +13,13 @@ import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
 import '../../plex_optimized_image.dart';
 
+const _kItemHeight = 72.0;
+const _kItemHeightTablet = 116.0;
+const _kThumbWidth = 60.0;
+const _kThumbHeight = 34.0;
+const _kThumbWidthTablet = 120.0;
+const _kThumbHeightTablet = 68.0;
+
 /// Bottom sheet for viewing and navigating the play queue
 class QueueSheet extends StatelessWidget {
   final Function(PlexMetadata) onItemSelected;
@@ -21,6 +28,9 @@ class QueueSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+    final itemHeight = isTablet ? _kItemHeightTablet : _kItemHeight;
+
     return Consumer<PlaybackStateProvider>(
       builder: (context, playbackState, _) {
         final items = playbackState.loadedItems;
@@ -36,18 +46,20 @@ class QueueSheet extends StatelessWidget {
           final currentIndex = items.indexWhere((item) => item.playQueueItemID == currentItemID);
 
           content = ListView.builder(
-            controller: currentIndex > 0 ? ScrollController(initialScrollOffset: currentIndex * 56.0) : null,
+            controller: currentIndex > 0 ? ScrollController(initialScrollOffset: currentIndex * itemHeight) : null,
+            itemExtent: itemHeight,
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
               final isCurrent = item.playQueueItemID == currentItemID;
 
+              final primaryColor = Theme.of(context).colorScheme.primary;
               return FocusableListTile(
-                leading: _buildThumbnail(context, item, isCurrent),
+                leading: _buildThumbnail(context, item, isCurrent, isTablet: isTablet),
                 title: Text(
                   item.title,
                   style: TextStyle(
-                    color: isCurrent ? Colors.blue : null,
+                    color: isCurrent ? primaryColor : null,
                     fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                   ),
                   maxLines: 1,
@@ -56,13 +68,13 @@ class QueueSheet extends StatelessWidget {
                 subtitle: Text(
                   _buildSubtitle(item),
                   style: TextStyle(
-                    color: isCurrent ? Colors.blue.withValues(alpha: 0.7) : tokens(context).textMuted,
+                    color: isCurrent ? primaryColor.withValues(alpha: 0.7) : tokens(context).textMuted,
                     fontSize: 12,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                trailing: isCurrent ? const AppIcon(Symbols.play_circle_rounded, fill: 1, color: Colors.blue) : null,
+                trailing: isCurrent ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: primaryColor) : null,
                 onTap: () {
                   onItemSelected(item);
                   OverlaySheetController.of(context).close();
@@ -77,15 +89,18 @@ class QueueSheet extends StatelessWidget {
     );
   }
 
-  Widget? _buildThumbnail(BuildContext context, PlexMetadata item, bool isCurrent) {
+  Widget? _buildThumbnail(BuildContext context, PlexMetadata item, bool isCurrent, {bool isTablet = false}) {
     if (item.thumb == null) return null;
+
+    final thumbWidth = isTablet ? _kThumbWidthTablet : _kThumbWidth;
+    final thumbHeight = isTablet ? _kThumbHeightTablet : _kThumbHeight;
 
     // Try to get client for thumbnails, may fail in offline mode
     final client = _tryGetClient(context, item);
 
     return SizedBox(
-      width: 60,
-      height: 34,
+      width: thumbWidth,
+      height: thumbHeight,
       child: Stack(
         children: [
           ClipRRect(
@@ -93,19 +108,19 @@ class QueueSheet extends StatelessWidget {
             child: PlexOptimizedImage.thumb(
               client: client,
               imagePath: item.thumb,
-              width: 60,
-              height: 34,
+              width: thumbWidth,
+              height: thumbHeight,
               fit: BoxFit.cover,
               errorWidget: (context, url, error) =>
-                  const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
+                  AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: thumbHeight),
             ),
           ),
           if (isCurrent)
             Positioned.fill(
               child: Container(
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(4)),
-                  border: Border.fromBorderSide(BorderSide(color: Colors.blue, width: 2)),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                  border: Border.fromBorderSide(BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)),
                 ),
               ),
             ),
@@ -128,11 +143,6 @@ class QueueSheet extends StatelessWidget {
   }
 
   static dynamic _tryGetClient(BuildContext context, PlexMetadata item) {
-    if (item.serverId == null) return null;
-    try {
-      return context.getClientForServer(item.serverId!);
-    } catch (_) {
-      return null;
-    }
+    return context.tryGetClientForServer(item.serverId);
   }
 }

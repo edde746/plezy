@@ -279,7 +279,7 @@ class _PairingScreenState extends State<PairingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.keyboard, size: 64, color: Colors.blue),
+            Icon(Icons.keyboard, size: 64, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 24),
             Text(
               t.companionRemote.pairing.pairWithDesktop,

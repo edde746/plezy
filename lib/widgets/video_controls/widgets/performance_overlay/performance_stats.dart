@@ -35,6 +35,11 @@ class PerformanceStats {
   final int? audioSamplerate;
   final String? audioChannels;
   final int? audioBitrate;
+  final String? audioDecoderName;
+
+  // Tunneling
+  final bool tunneledPlayback;
+  final String? tunnelingStatus;
 
   // Performance metrics
   final double? actualFps;
@@ -47,6 +52,10 @@ class PerformanceStats {
   final int? cacheUsed;
   final double? cacheSpeed;
   final double? cacheDuration;
+
+  // DV conversion
+  final bool dvConversionActive;
+  final String dvConversionMode; // "DV81", "HEVC_STRIP", "DISABLED"
 
   // App metrics
   final int? appMemoryBytes;
@@ -76,6 +85,9 @@ class PerformanceStats {
     this.audioSamplerate,
     this.audioChannels,
     this.audioBitrate,
+    this.audioDecoderName,
+    this.tunneledPlayback = false,
+    this.tunnelingStatus,
     this.actualFps,
     this.avsyncChange,
     this.displayFps,
@@ -84,6 +96,8 @@ class PerformanceStats {
     this.cacheUsed,
     this.cacheSpeed,
     this.cacheDuration,
+    this.dvConversionActive = false,
+    this.dvConversionMode = '',
     this.appMemoryBytes,
     this.uiFps,
   });
@@ -113,6 +127,9 @@ class PerformanceStats {
       audioSamplerate = null,
       audioChannels = null,
       audioBitrate = null,
+      audioDecoderName = null,
+      tunneledPlayback = false,
+      tunnelingStatus = null,
       actualFps = null,
       avsyncChange = null,
       displayFps = null,
@@ -121,6 +138,8 @@ class PerformanceStats {
       cacheUsed = null,
       cacheSpeed = null,
       cacheDuration = null,
+      dvConversionActive = false,
+      dvConversionMode = '',
       appMemoryBytes = null,
       uiFps = null;
 
@@ -226,6 +245,15 @@ class PerformanceStats {
     }
     return hwdecCurrent!;
   }
+
+  /// Raw video decoder name (e.g. c2.qti.video.decoder.hevc).
+  String get videoDecoderRaw => videoDecoderName ?? 'N/A';
+
+  /// Format audio decoder name for display.
+  String get audioDecoderFormatted => audioDecoderName ?? 'N/A';
+
+  /// Format tunneled playback status with reason.
+  String get tunneledPlaybackFormatted => tunnelingStatus ?? (tunneledPlayback ? 'Active' : 'Off');
 
   /// Format app memory usage in MB.
   String get appMemoryFormatted {

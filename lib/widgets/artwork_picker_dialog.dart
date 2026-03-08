@@ -49,12 +49,16 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
   }
 
   Future<void> _selectArtwork(Map<String, dynamic> artwork) async {
-    final key = artwork['key'] as String?;
-    if (key == null || _isApplying) return;
+    // Use ratingKey (the artwork provider identifier) rather than key (a
+    // file-serving path that is already percent-encoded).  Passing key through
+    // Dio's query-parameter encoding double-encodes it, causing Plex to
+    // silently ignore the selection despite returning 200.
+    final url = artwork['ratingKey'] as String? ?? artwork['key'] as String?;
+    if (url == null || _isApplying) return;
 
     setState(() => _isApplying = true);
 
-    final success = await widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, key);
+    final success = await widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, url);
 
     if (!mounted) return;
     setState(() => _isApplying = false);
@@ -129,9 +133,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
         height: 400,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : (_artworkList == null || _artworkList!.isEmpty)
-                ? Center(child: Text(t.metadataEdit.noArtworkAvailable))
-                : _buildGrid(),
+            : _buildArtworkContent(),
       ),
       actions: [
         if (_isApplying)
@@ -165,6 +167,13 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
         ),
       ],
     );
+  }
+
+  Widget _buildArtworkContent() {
+    if (_artworkList == null || _artworkList!.isEmpty) {
+      return Center(child: Text(t.metadataEdit.noArtworkAvailable));
+    }
+    return _buildGrid();
   }
 
   Widget _buildGrid() {

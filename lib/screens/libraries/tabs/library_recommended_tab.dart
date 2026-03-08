@@ -53,55 +53,29 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
   @override
   String get errorContext => t.libraries.tabs.recommended;
 
+  /// Detects Continue Watching hubs by hubIdentifier.
+  /// Section-specific CW hubs use identifiers like "movie.inprogress.1".
+  static bool _isContinueWatchingHub(PlexHub hub) {
+    final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+    return hubId.contains('inprogress');
+  }
+
   @override
   Future<List<PlexHub>> loadData() async {
     // Clear hub keys before loading new hubs to prevent stale references
     _hubKeys.clear();
 
-    // Use server-specific client for this library
     final client = getClientForLibrary();
+    final hubs = await client.getLibraryHubs(widget.library.key, limit: 12);
 
-    // Load both continue watching items and regular hubs in parallel
-    final results = await Future.wait([
-      client.getOnDeckForLibrary(widget.library.key),
-      client.getLibraryHubs(widget.library.key, limit: 12),
-    ]);
-
-    final continueWatchingItems = results.first as List<PlexMetadata>;
-    final hubs = results[1] as List<PlexHub>;
-
-    // Filter out any existing Continue Watching hubs since we're adding our own
-    final filteredHubs = hubs.where((hub) {
-      final title = hub.title.toLowerCase();
-      final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
-      return !title.contains('continue watching') &&
-          !title.contains('on deck') &&
-          !hubId.contains('ondeck') &&
-          !hubId.contains('continue');
-    }).toList();
-
-    final finalHubs = <PlexHub>[];
-
-    // Add Continue Watching as the first hub if there are items
-    if (continueWatchingItems.isNotEmpty) {
-      final continueWatchingHub = PlexHub(
-        hubKey: 'library_continue_watching_${widget.library.key}',
-        title: t.discover.continueWatching,
-        type: 'mixed',
-        hubIdentifier: '_library_continue_watching_',
-        size: continueWatchingItems.length,
-        more: false,
-        items: continueWatchingItems,
-        serverId: widget.library.serverId,
-        serverName: widget.library.serverName,
-      );
-      finalHubs.add(continueWatchingHub);
+    // Move Continue Watching hub to the front if present
+    final cwIndex = hubs.indexWhere(_isContinueWatchingHub);
+    if (cwIndex > 0) {
+      final cwHub = hubs.removeAt(cwIndex);
+      hubs.insert(0, cwHub);
     }
 
-    // Add the filtered regular hubs
-    finalHubs.addAll(filteredHubs);
-
-    return finalHubs;
+    return hubs;
   }
 
   /// Ensure we have enough GlobalKeys for all hubs
@@ -157,13 +131,13 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
     _ensureHubKeys(items.length);
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(0, 8 + _focusDecorationPadding, 0, 8),
+      padding: const EdgeInsets.fromLTRB(0, _focusDecorationPadding, 0, 8),
       // Allow focus decoration to render outside scroll bounds
       clipBehavior: Clip.none,
       itemCount: items.length,
       itemBuilder: (context, index) {
         final hub = items[index];
-        final isContinueWatching = hub.hubIdentifier == '_library_continue_watching_';
+        final isContinueWatching = _isContinueWatchingHub(hub);
 
         return HubSection(
           key: index < _hubKeys.length ? _hubKeys[index] : null,

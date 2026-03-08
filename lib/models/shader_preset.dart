@@ -1,5 +1,5 @@
 /// Shader preset types available in the app
-enum ShaderPresetType { none, nvscaler, anime4k }
+enum ShaderPresetType { none, nvscaler, anime4k, custom }
 
 /// Quality tiers for Anime4K presets
 enum Anime4KQuality {
@@ -88,12 +88,16 @@ class ShaderPreset {
   final Anime4KConfig? anime4kConfig;
   final NVScalerConfig? nvscalerConfig;
 
+  /// File name of the custom shader in the custom shaders directory
+  final String? fileName;
+
   const ShaderPreset({
     required this.id,
     required this.name,
     required this.type,
     this.anime4kConfig,
     this.nvscalerConfig,
+    this.fileName,
   });
 
   /// No shader preset (off)
@@ -193,6 +197,7 @@ class ShaderPreset {
     'type': type.name,
     if (anime4kConfig != null) 'anime4kConfig': anime4kConfig!.toJson(),
     if (nvscalerConfig != null) 'nvscalerConfig': nvscalerConfig!.toJson(),
+    if (fileName != null) 'fileName': fileName,
   };
 
   factory ShaderPreset.fromJson(Map<String, dynamic> json) {
@@ -210,6 +215,7 @@ class ShaderPreset {
       type: ShaderPresetType.values.asNameMap()[json['type']] ?? ShaderPresetType.none,
       anime4kConfig: json['anime4kConfig'] != null ? Anime4KConfig.fromJson(json['anime4kConfig']) : null,
       nvscalerConfig: json['nvscalerConfig'] != null ? NVScalerConfig.fromJson(json['nvscalerConfig']) : null,
+      fileName: json['fileName'] as String?,
     );
   }
 }

@@ -15,6 +15,10 @@ class PlexHub {
   final String? serverId; // Server machine identifier
   final String? serverName; // Server display name
 
+  /// When set, this hub was split from a multi-library hub and should only
+  /// show items belonging to this library section.
+  final int? librarySectionID;
+
   PlexHub({
     required this.hubKey,
     required this.title,
@@ -25,6 +29,7 @@ class PlexHub {
     required this.items,
     this.serverId,
     this.serverName,
+    this.librarySectionID,
   });
 
   factory PlexHub.fromJson(Map<String, dynamic> json) {

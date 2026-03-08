@@ -6,9 +6,6 @@
     "signInWithPlex": "Plex 계정으로 로그인",
     "showQRCode": "QR 코드",
     "authenticate": "인증",
-    "debugEnterToken": "디버깅을 위해 Plex 토큰을 입력하세요.",
-    "plexTokenLabel": "Plex 인증 토큰",
-    "plexTokenHint": "Plex.tv 토큰을 입력하세요",
     "authenticationTimeout": "인증 시간이 초과되었습니다. 다시 시도해 주세요.",
     "scanQRToSignIn": "QR 코드를 스캔하여 로그인",
     "waitingForAuth": "인증 대기 중... 브라우저에서 로그인을 완료해 주세요.",
@@ -32,6 +29,7 @@
     "delete": "삭제",
     "shuffle": "무작위 재생",
     "addTo": "추가하기...",
+    "createNew": "새로 만들기",
     "remove": "삭제",
     "paste": "붙여넣기",
     "connect": "연결",
@@ -63,7 +61,7 @@
     "licenses": "라이선스",
     "switchProfile": "프로필 전환",
     "subtitleStyling": "자막 스타일 설정",
-    "mpvConfig": "MPV 설정",
+    "mpvConfig": "mpv.conf",
     "logs": "로그"
   },
   "update": {
@@ -127,7 +125,7 @@
     "playerBackend": "플레이어 백엔드",
     "exoPlayer": "ExoPlayer (권장)",
     "exoPlayerDescription": "더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "더 많은 기능과 ASS 자막을 지원하는 고급 플레이어",
     "hardwareDecoding": "하드웨어 디코딩",
     "hardwareDecodingDescription": "가능한 경우 하드웨어 가속을 사용합니다",
@@ -212,7 +210,9 @@
     "requireProfileSelectionOnOpen": "앱 실행 시 프로필 선택",
     "requireProfileSelectionOnOpenDescription": "앱을 열 때마다 프로필 선택 화면을 표시합니다",
     "confirmExitOnBack": "종료 전 확인",
-    "confirmExitOnBackDescription": "뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다"
+    "confirmExitOnBackDescription": "뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다",
+    "showNavBarLabels": "내비게이션 바 라벨 표시",
+    "showNavBarLabelsDescription": "내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다"
   },
   "search": {
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",
@@ -341,6 +341,7 @@
     "settingsButton": "동영상 설정",
     "audioTrackButton": "음원 트랙",
     "subtitlesButton": "자막",
+    "tracksButton": "오디오 및 자막",
     "chaptersButton": "챕터",
     "versionsButton": "동영상 버전",
     "pipButton": "픽처 인 픽처 모드",
@@ -423,19 +424,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV 설정",
+    "title": "mpv 설정",
     "description": "고급 비디오 플레이어 설정",
-    "properties": "속성",
     "presets": "사전 설정",
-    "noProperties": "설정된 속성이 없습니다",
     "noPresets": "저장된 사전 설정이 없습니다",
-    "addProperty": "속성 추가",
-    "editProperty": "속성 편집",
-    "deleteProperty": "속성 삭제",
-    "propertyKey": "속성 키",
-    "propertyKeyHint": "예: hwdec, demuxer-max-bytes",
-    "propertyValue": "속성값",
-    "propertyValueHint": "예: auto, 256000000",
     "saveAsPreset": "프리셋으로 저장...",
     "presetName": "프리셋 이름",
     "presetNameHint": "이 프리셋의 이름을 입력하세요",
@@ -445,8 +437,7 @@
     "presetLoaded": "프리셋이 로드 되었습니다",
     "presetDeleted": "프리셋이 삭제 되었습니다",
     "confirmDeletePreset": "이 프리셋을 삭제 하시겠습니까?",
-    "confirmDeleteProperty": "이 속성을 삭제 하시겠습니까?",
-    "entriesCount": "${count} 항목"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "확인"
@@ -611,7 +602,6 @@
     "deleteFailedWithError": "컬렉션 삭제 실패: ${error}",
     "failedToLoadItems": "컬렉션 항목 로드 실패: ${error}",
     "selectCollection": "컬렉션 선택",
-    "createNewCollection": "새 컬렉션 생성",
     "collectionName": "컬렉션 이름",
     "enterCollectionName": "컬렉션 이름 입력",
     "addedToCollection": "컬렉션에 추가됨",
@@ -643,7 +633,6 @@
     "itemAdded": "재생 목록에 추가 되었습니다",
     "itemRemoved": "재생 목록에서 제거됨",
     "selectPlaylist": "재생 목록 선택",
-    "createNewPlaylist": "새 재생 목록 생성",
     "errorCreating": "재생 목록 생성 실패",
     "errorDeleting": "재생 목록 삭제 실패",
     "errorLoading": "재생 목록 로드 실패",
@@ -696,6 +685,10 @@
     "sessionCodeCopied": "세션 코드가 클립보드에 복사되었습니다",
     "relayUnreachable": "릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.",
     "reconnectingToHost": "호스트에 재연결 중...",
+    "currentPlayback": "현재 재생",
+    "joinCurrentPlayback": "현재 재생 참여",
+    "joinCurrentPlaybackDescription": "호스트가 현재 보고 있는 항목으로 돌아갑니다",
+    "failedToOpenCurrentPlayback": "현재 재생을 열 수 없습니다",
     "participantJoined": "${name}님이 참여했습니다",
     "participantLeft": "${name}님이 나갔습니다"
   },
@@ -742,7 +735,13 @@
     "nvscalerDescription": "더 선명한 비디오를 위한 NVIDIA 이미지 스케일링",
     "qualityFast": "빠름",
     "qualityHQ": "고품질",
-    "mode": "모드"
+    "mode": "모드",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

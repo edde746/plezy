@@ -3,10 +3,10 @@
 /// Source: lib/i18n
 /// To regenerate, run: `dart run slang`
 ///
-/// Locales: 9
-/// Strings: 7461 (829 per locale)
+/// Locales: 15
+/// Strings: 12420 (828 per locale)
 ///
-/// Built on 2026-03-08 at 16:59 UTC
+/// Built on 2026-03-08 at 18:12 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
@@ -18,12 +18,18 @@ import 'package:slang/generated.dart';
 import 'package:slang_flutter/slang_flutter.dart';
 export 'package:slang_flutter/slang_flutter.dart';
 
+import 'strings_da.g.dart' deferred as l_da;
 import 'strings_de.g.dart' deferred as l_de;
 import 'strings_es.g.dart' deferred as l_es;
 import 'strings_fr.g.dart' deferred as l_fr;
 import 'strings_it.g.dart' deferred as l_it;
+import 'strings_ja.g.dart' deferred as l_ja;
 import 'strings_ko.g.dart' deferred as l_ko;
+import 'strings_nb.g.dart' deferred as l_nb;
 import 'strings_nl.g.dart' deferred as l_nl;
+import 'strings_pl.g.dart' deferred as l_pl;
+import 'strings_pt.g.dart' deferred as l_pt;
+import 'strings_ru.g.dart' deferred as l_ru;
 import 'strings_sv.g.dart' deferred as l_sv;
 import 'strings_zh.g.dart' deferred as l_zh;
 part 'strings_en.g.dart';
@@ -36,12 +42,18 @@ part 'strings_en.g.dart';
 /// - if (LocaleSettings.currentLocale == AppLocale.en) // locale check
 enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	en(languageCode: 'en'),
+	da(languageCode: 'da'),
 	de(languageCode: 'de'),
 	es(languageCode: 'es'),
 	fr(languageCode: 'fr'),
 	it(languageCode: 'it'),
+	ja(languageCode: 'ja'),
 	ko(languageCode: 'ko'),
+	nb(languageCode: 'nb'),
 	nl(languageCode: 'nl'),
+	pl(languageCode: 'pl'),
+	pt(languageCode: 'pt'),
+	ru(languageCode: 'ru'),
 	sv(languageCode: 'sv'),
 	zh(languageCode: 'zh');
 
@@ -64,6 +76,13 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 		switch (this) {
 			case AppLocale.en:
 				return TranslationsEn(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.da:
+				await l_da.loadLibrary();
+				return l_da.TranslationsDa(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
@@ -96,6 +115,13 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
 				);
+			case AppLocale.ja:
+				await l_ja.loadLibrary();
+				return l_ja.TranslationsJa(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
 			case AppLocale.ko:
 				await l_ko.loadLibrary();
 				return l_ko.TranslationsKo(
@@ -103,9 +129,37 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
 				);
+			case AppLocale.nb:
+				await l_nb.loadLibrary();
+				return l_nb.TranslationsNb(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
 			case AppLocale.nl:
 				await l_nl.loadLibrary();
 				return l_nl.TranslationsNl(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.pl:
+				await l_pl.loadLibrary();
+				return l_pl.TranslationsPl(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.pt:
+				await l_pt.loadLibrary();
+				return l_pt.TranslationsPt(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.ru:
+				await l_ru.loadLibrary();
+				return l_ru.TranslationsRu(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
@@ -140,6 +194,12 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
 				);
+			case AppLocale.da:
+				return l_da.TranslationsDa(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
 			case AppLocale.de:
 				return l_de.TranslationsDe(
 					overrides: overrides,
@@ -164,14 +224,44 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
 				);
+			case AppLocale.ja:
+				return l_ja.TranslationsJa(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
 			case AppLocale.ko:
 				return l_ko.TranslationsKo(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
 				);
+			case AppLocale.nb:
+				return l_nb.TranslationsNb(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
 			case AppLocale.nl:
 				return l_nl.TranslationsNl(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.pl:
+				return l_pl.TranslationsPl(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.pt:
+				return l_pt.TranslationsPt(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.ru:
+				return l_ru.TranslationsRu(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,

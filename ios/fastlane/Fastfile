@@ -7,7 +7,7 @@ platform :ios do
   desc "Build and deploy to App Store"
   lane :deploy_appstore do
     # Build the Flutter app
-    sh("cd #{ENV['PWD']}/.. && flutter build ipa --dart-define=ENABLE_IN_APP_REVIEW=true")
+    sh("cd #{ENV['PWD']}/.. && flutter build ipa --dart-define=ENABLE_IN_APP_REVIEW=true --dart-define=ENABLE_SENTRY=true")
 
     # Upload to App Store
     upload_to_app_store(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
@@ -6,6 +8,7 @@ import '../mpv/mpv.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_video_playback_data.dart';
 import '../providers/download_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
 import '../services/settings_service.dart';
@@ -13,6 +16,15 @@ import '../utils/provider_extensions.dart';
 import 'app_logger.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
+
+class WatchTogetherPlaybackNavigationException implements Exception {
+  final String message;
+
+  const WatchTogetherPlaybackNavigationException(this.message);
+
+  @override
+  String toString() => message;
+}
 
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
 ///
@@ -38,6 +50,7 @@ Future<bool?> navigateToVideoPlayer(
   required PlexMetadata metadata,
   AudioTrack? preferredAudioTrack,
   SubtitleTrack? preferredSubtitleTrack,
+  SubtitleTrack? preferredSecondarySubtitleTrack,
   int? selectedMediaIndex,
   bool usePushReplacement = false,
   bool isOffline = false,
@@ -115,6 +128,7 @@ Future<bool?> navigateToVideoPlayer(
       metadata: metadata,
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
+      preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
       selectedMediaIndex: mediaIndex,
       isOffline: isOffline,
       playbackData: effectivePlaybackData,
@@ -147,6 +161,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   VoidCallback? onRefresh,
   AudioTrack? preferredAudioTrack,
   SubtitleTrack? preferredSubtitleTrack,
+  SubtitleTrack? preferredSecondarySubtitleTrack,
   int? selectedMediaIndex,
   bool usePushReplacement = false,
   PlexVideoPlaybackData? playbackData,
@@ -157,6 +172,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
     isOffline: isOffline,
     preferredAudioTrack: preferredAudioTrack,
     preferredSubtitleTrack: preferredSubtitleTrack,
+    preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
     selectedMediaIndex: selectedMediaIndex,
     usePushReplacement: usePushReplacement,
     playbackData: playbackData,
@@ -170,4 +186,29 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   }
 
   return result;
+}
+
+/// Resolves the current Watch Together media and opens the video player.
+Future<void> navigateToWatchTogetherPlayback(
+  BuildContext context, {
+  required String ratingKey,
+  required String serverId,
+  VoidCallback? onBeforeNavigate,
+}) async {
+  final multiServer = context.read<MultiServerProvider>();
+  final client = multiServer.getClientForServer(serverId);
+
+  if (client == null) {
+    throw const WatchTogetherPlaybackNavigationException('Watch Together server is unavailable');
+  }
+
+  final metadata = await client.getMetadataWithImages(ratingKey);
+  if (metadata == null) {
+    throw const WatchTogetherPlaybackNavigationException('Current Watch Together media is unavailable');
+  }
+
+  if (!context.mounted) return;
+
+  onBeforeNavigate?.call();
+  unawaited(navigateToVideoPlayer(context, metadata: metadata));
 }

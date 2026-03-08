@@ -13,10 +13,10 @@ import '../../../utils/platform_detector.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../models/plex_metadata.dart';
-import '../sheets/audio_track_sheet.dart';
+import '../models/track_controls_state.dart';
 import '../sheets/chapter_sheet.dart';
 import '../sheets/queue_sheet.dart';
-import '../sheets/subtitle_track_sheet.dart';
+import '../sheets/track_sheet.dart';
 import '../sheets/version_sheet.dart';
 import '../sheets/video_settings_sheet.dart';
 import '../../../services/shader_service.dart';
@@ -28,35 +28,7 @@ class TrackChapterControls extends StatelessWidget {
   final Player player;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
-  final List<PlexMediaVersion> availableVersions;
-  final int selectedMediaIndex;
-  final int boxFitMode;
-  final int audioSyncOffset;
-  final int subtitleSyncOffset;
-  final bool isRotationLocked;
-  final bool isFullscreen;
-  final bool isAlwaysOnTop;
-  final VoidCallback? onTogglePIPMode;
-  final VoidCallback? onCycleBoxFitMode;
-  final VoidCallback? onToggleRotationLock;
-  final VoidCallback? onToggleFullscreen;
-  final VoidCallback? onToggleAlwaysOnTop;
-  final Function(int)? onSwitchVersion;
-  final Function(AudioTrack)? onAudioTrackChanged;
-  final Function(SubtitleTrack)? onSubtitleTrackChanged;
-  final VoidCallback? onLoadSeekTimes;
-  final VoidCallback? onCancelAutoHide;
-  final VoidCallback? onStartAutoHide;
-  final void Function(String propertyName, int offset)? onSyncOffsetChanged;
-  final String serverId;
-  final ShaderService? shaderService;
-  final VoidCallback? onShaderChanged;
-
-  /// Whether ambient lighting is enabled (passed to settings sheet)
-  final bool isAmbientLightingEnabled;
-
-  /// Called to toggle ambient lighting (passed to settings sheet)
-  final VoidCallback? onToggleAmbientLighting;
+  final TrackControlsState trackControlsState;
 
   /// List of FocusNodes for the buttons (passed from parent for navigation)
   final List<FocusNode>? focusNodes;
@@ -67,60 +39,60 @@ class TrackChapterControls extends StatelessWidget {
   /// Called to navigate left from the first button
   final VoidCallback? onNavigateLeft;
 
-  /// Whether the user can control playback (false in host-only mode for non-host).
-  final bool canControl;
+  /// Called to navigate up from any button (e.g., to focus timeline on TV)
+  final VoidCallback? onNavigateUp;
 
-  /// Whether this is a live TV stream (hides speed settings).
-  final bool isLive;
+  /// Called to navigate down from any button (e.g., to show content strip on TV)
+  final VoidCallback? onNavigateDown;
 
-  /// Whether subtitles are currently visible (false = hidden via sub-visibility toggle)
-  final bool subtitlesVisible;
-
-  /// Whether to show the queue button
-  final bool showQueueButton;
-
-  /// Callback when a queue item is selected
-  final Function(PlexMetadata)? onQueueItemSelected;
+  /// Whether to hide the chapters and queue buttons (mobile uses content strip instead)
+  final bool hideChaptersAndQueue;
 
   const TrackChapterControls({
     super.key,
     required this.player,
     required this.chapters,
     required this.chaptersLoaded,
-    required this.availableVersions,
-    required this.selectedMediaIndex,
-    required this.boxFitMode,
-    required this.audioSyncOffset,
-    required this.subtitleSyncOffset,
-    required this.isRotationLocked,
-    required this.isFullscreen,
-    required this.serverId,
-    this.isAlwaysOnTop = false,
-    this.onTogglePIPMode,
-    this.onCycleBoxFitMode,
-    this.onToggleRotationLock,
-    this.onToggleFullscreen,
-    this.onToggleAlwaysOnTop,
-    this.onSwitchVersion,
-    this.onAudioTrackChanged,
-    this.onSubtitleTrackChanged,
-    this.onLoadSeekTimes,
-    this.onCancelAutoHide,
-    this.onStartAutoHide,
-    this.onSyncOffsetChanged,
+    required this.trackControlsState,
     this.focusNodes,
     this.onFocusChange,
     this.onNavigateLeft,
-    this.canControl = true,
-    this.isLive = false,
-    this.subtitlesVisible = true,
-    this.showQueueButton = false,
-    this.onQueueItemSelected,
-    this.shaderService,
-    this.onShaderChanged,
-    this.isAmbientLightingEnabled = false,
-    this.onToggleAmbientLighting,
+    this.onNavigateUp,
+    this.onNavigateDown,
+    this.hideChaptersAndQueue = false,
   });
+
+  List<PlexMediaVersion> get availableVersions => trackControlsState.availableVersions;
+  int get selectedMediaIndex => trackControlsState.selectedMediaIndex;
+  int get boxFitMode => trackControlsState.boxFitMode;
+  int get audioSyncOffset => trackControlsState.audioSyncOffset;
+  int get subtitleSyncOffset => trackControlsState.subtitleSyncOffset;
+  bool get isRotationLocked => trackControlsState.isRotationLocked;
+  bool get isFullscreen => trackControlsState.isFullscreen;
+  bool get isAlwaysOnTop => trackControlsState.isAlwaysOnTop;
+  VoidCallback? get onTogglePIPMode => trackControlsState.onTogglePIPMode;
+  VoidCallback? get onCycleBoxFitMode => trackControlsState.onCycleBoxFitMode;
+  VoidCallback? get onToggleRotationLock => trackControlsState.onToggleRotationLock;
+  VoidCallback? get onToggleFullscreen => trackControlsState.onToggleFullscreen;
+  VoidCallback? get onToggleAlwaysOnTop => trackControlsState.onToggleAlwaysOnTop;
+  Function(int)? get onSwitchVersion => trackControlsState.onSwitchVersion;
+  Function(AudioTrack)? get onAudioTrackChanged => trackControlsState.onAudioTrackChanged;
+  Function(SubtitleTrack)? get onSubtitleTrackChanged => trackControlsState.onSubtitleTrackChanged;
+  Function(SubtitleTrack)? get onSecondarySubtitleTrackChanged => trackControlsState.onSecondarySubtitleTrackChanged;
+  VoidCallback? get onLoadSeekTimes => trackControlsState.onLoadSeekTimes;
+  VoidCallback? get onCancelAutoHide => trackControlsState.onCancelAutoHide;
+  VoidCallback? get onStartAutoHide => trackControlsState.onStartAutoHide;
+  void Function(String propertyName, int offset)? get onSyncOffsetChanged => trackControlsState.onSyncOffsetChanged;
+  String get serverId => trackControlsState.serverId;
+  ShaderService? get shaderService => trackControlsState.shaderService;
+  VoidCallback? get onShaderChanged => trackControlsState.onShaderChanged;
+  bool get isAmbientLightingEnabled => trackControlsState.isAmbientLightingEnabled;
+  VoidCallback? get onToggleAmbientLighting => trackControlsState.onToggleAmbientLighting;
+  bool get canControl => trackControlsState.canControl;
+  bool get isLive => trackControlsState.isLive;
+  bool get subtitlesVisible => trackControlsState.subtitlesVisible;
+  bool get showQueueButton => trackControlsState.showQueueButton;
+  Function(PlexMetadata)? get onQueueItemSelected => trackControlsState.onQueueItemSelected;
 
   /// Handle key event for button navigation
   KeyEventResult _handleButtonKeyEvent(FocusNode _, KeyEvent event, int index, int totalButtons) {
@@ -149,6 +121,18 @@ class TrackChapterControls extends StatelessWidget {
         return KeyEventResult.handled;
       }
       // At end, consume to prevent bubbling
+      return KeyEventResult.handled;
+    }
+
+    // UP arrow - navigate up (e.g., to timeline)
+    if (key == LogicalKeyboardKey.arrowUp) {
+      onNavigateUp?.call();
+      return KeyEventResult.handled;
+    }
+
+    // DOWN arrow - navigate down (e.g., to content strip)
+    if (key == LogicalKeyboardKey.arrowDown) {
+      onNavigateDown?.call();
       return KeyEventResult.handled;
     }
 
@@ -216,25 +200,27 @@ class TrackChapterControls extends StatelessWidget {
                 isDesktop: isDesktop,
                 onPressed: () {
                   onCancelAutoHide?.call();
-                  OverlaySheetController.of(context).show(
-                    builder: (_) => VideoSettingsSheet(
-                      player: player,
-                      audioSyncOffset: audioSyncOffset,
-                      subtitleSyncOffset: subtitleSyncOffset,
-                      canControl: canControl,
-                      isLive: isLive,
-                      shaderService: shaderService,
-                      onShaderChanged: onShaderChanged,
-                      isAmbientLightingEnabled: isAmbientLightingEnabled,
-                      onToggleAmbientLighting: onToggleAmbientLighting,
-                      onCancelAutoHide: onCancelAutoHide,
-                      onStartAutoHide: onStartAutoHide,
-                      onSyncOffsetChanged: onSyncOffsetChanged,
-                    ),
-                  ).whenComplete(() {
-                    onStartAutoHide?.call();
-                    onLoadSeekTimes?.call();
-                  });
+                  OverlaySheetController.of(context)
+                      .show(
+                        builder: (_) => VideoSettingsSheet(
+                          player: player,
+                          audioSyncOffset: audioSyncOffset,
+                          subtitleSyncOffset: subtitleSyncOffset,
+                          canControl: canControl,
+                          isLive: isLive,
+                          shaderService: shaderService,
+                          onShaderChanged: onShaderChanged,
+                          isAmbientLightingEnabled: isAmbientLightingEnabled,
+                          onToggleAmbientLighting: onToggleAmbientLighting,
+                          onCancelAutoHide: onCancelAutoHide,
+                          onStartAutoHide: onStartAutoHide,
+                          onSyncOffsetChanged: onSyncOffsetChanged,
+                        ),
+                      )
+                      .whenComplete(() {
+                        onStartAutoHide?.call();
+                        onLoadSeekTimes?.call();
+                      });
                 },
               );
             },
@@ -242,63 +228,45 @@ class TrackChapterControls extends StatelessWidget {
         );
         buttonIndex++;
 
-        // Audio track button
-        if (_hasMultipleAudioTracks(tracks)) {
+        // Combined audio & subtitles button
+        if (_hasMultipleAudioTracks(tracks) || _hasSubtitles(tracks)) {
           final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: Symbols.audiotrack_rounded,
-              tooltip: t.videoControls.audioTrackButton,
-              semanticLabel: t.videoControls.audioTrackButton,
-              tracks: tracks,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
-              onPressed: () {
-                onCancelAutoHide?.call();
-                OverlaySheetController.of(context).show(
-                  builder: (_) => AudioTrackSheet(
-                    player: player,
-                    onTrackChanged: onAudioTrackChanged,
-                  ),
-                ).whenComplete(() => onStartAutoHide?.call());
-              },
-            ),
-          );
-          buttonIndex++;
-        }
-
-        // Subtitles button
-        if (_hasSubtitles(tracks)) {
-          final currentIndex = buttonIndex;
+          final hasSubs = _hasSubtitles(tracks);
           final selectedSub = player.state.track.subtitle;
           final hasActiveSubtitle = selectedSub != null && selectedSub.id != 'no';
-          final isHidden = hasActiveSubtitle && !subtitlesVisible;
+          final isHidden = hasSubs && hasActiveSubtitle && !subtitlesVisible;
+          final icon = hasSubs
+              ? (isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded)
+              : Symbols.audiotrack_rounded;
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded,
-              tooltip: t.videoControls.subtitlesButton,
-              semanticLabel: t.videoControls.subtitlesButton,
+              icon: icon,
+              tooltip: t.videoControls.tracksButton,
+              semanticLabel: t.videoControls.tracksButton,
               tracks: tracks,
               isMobile: isMobile,
               isDesktop: isDesktop,
               onPressed: () {
                 onCancelAutoHide?.call();
-                OverlaySheetController.of(context).show(
-                  builder: (_) => SubtitleTrackSheet(
-                    player: player,
-                    onTrackChanged: onSubtitleTrackChanged,
-                  ),
-                ).whenComplete(() => onStartAutoHide?.call());
+                OverlaySheetController.of(context)
+                    .show(
+                      builder: (_) => TrackSheet(
+                        player: player,
+                        onAudioTrackChanged: onAudioTrackChanged,
+                        onSubtitleTrackChanged: onSubtitleTrackChanged,
+                        onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
+                      ),
+                    )
+                    .whenComplete(() => onStartAutoHide?.call());
               },
             ),
           );
           buttonIndex++;
         }
 
-        // Chapters button
-        if (chapters.isNotEmpty) {
+        // Chapters button (hidden on mobile when content strip is available)
+        if (chapters.isNotEmpty && !hideChaptersAndQueue) {
           final currentIndex = buttonIndex;
           buttons.add(
             _buildTrackButton(
@@ -311,22 +279,24 @@ class TrackChapterControls extends StatelessWidget {
               isDesktop: isDesktop,
               onPressed: () {
                 onCancelAutoHide?.call();
-                OverlaySheetController.of(context).show(
-                  builder: (_) => ChapterSheet(
-                    player: player,
-                    chapters: chapters,
-                    chaptersLoaded: chaptersLoaded,
-                    serverId: serverId,
-                  ),
-                ).whenComplete(() => onStartAutoHide?.call());
+                OverlaySheetController.of(context)
+                    .show(
+                      builder: (_) => ChapterSheet(
+                        player: player,
+                        chapters: chapters,
+                        chaptersLoaded: chaptersLoaded,
+                        serverId: serverId,
+                      ),
+                    )
+                    .whenComplete(() => onStartAutoHide?.call());
               },
             ),
           );
           buttonIndex++;
         }
 
-        // Queue button
-        if (showQueueButton && onQueueItemSelected != null) {
+        // Queue button (hidden on mobile when content strip is available)
+        if (showQueueButton && onQueueItemSelected != null && !hideChaptersAndQueue) {
           final currentIndex = buttonIndex;
           buttons.add(
             _buildTrackButton(
@@ -339,9 +309,9 @@ class TrackChapterControls extends StatelessWidget {
               isDesktop: isDesktop,
               onPressed: () {
                 onCancelAutoHide?.call();
-                OverlaySheetController.of(context).show(
-                  builder: (_) => QueueSheet(onItemSelected: onQueueItemSelected!),
-                ).whenComplete(() => onStartAutoHide?.call());
+                OverlaySheetController.of(context)
+                    .show(builder: (_) => QueueSheet(onItemSelected: onQueueItemSelected!))
+                    .whenComplete(() => onStartAutoHide?.call());
               },
             ),
           );
@@ -362,13 +332,15 @@ class TrackChapterControls extends StatelessWidget {
               isDesktop: isDesktop,
               onPressed: () {
                 onCancelAutoHide?.call();
-                OverlaySheetController.of(context).show(
-                  builder: (_) => VersionSheet(
-                    availableVersions: availableVersions,
-                    selectedMediaIndex: selectedMediaIndex,
-                    onVersionSelected: onSwitchVersion!,
-                  ),
-                ).whenComplete(() => onStartAutoHide?.call());
+                OverlaySheetController.of(context)
+                    .show(
+                      builder: (_) => VersionSheet(
+                        availableVersions: availableVersions,
+                        selectedMediaIndex: selectedMediaIndex,
+                        onVersionSelected: onSwitchVersion!,
+                      ),
+                    )
+                    .whenComplete(() => onStartAutoHide?.call());
               },
             ),
           );
@@ -475,10 +447,9 @@ class TrackChapterControls extends StatelessWidget {
   /// Calculate total button count for navigation
   int _getButtonCount(Tracks? tracks, bool isMobile, bool isDesktop) {
     int count = 1; // Settings button always shown
-    if (_hasMultipleAudioTracks(tracks)) count++;
-    if (_hasSubtitles(tracks)) count++;
-    if (chapters.isNotEmpty) count++;
-    if (showQueueButton && onQueueItemSelected != null) count++;
+    if (_hasMultipleAudioTracks(tracks) || _hasSubtitles(tracks)) count++;
+    if (chapters.isNotEmpty && !hideChaptersAndQueue) count++;
+    if (showQueueButton && onQueueItemSelected != null && !hideChaptersAndQueue) count++;
     if (availableVersions.length > 1 && onSwitchVersion != null) count++;
     if (onTogglePIPMode != null) count++;
     if (onCycleBoxFitMode != null) count++;

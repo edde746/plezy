@@ -3,10 +3,11 @@ import 'dart:io';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:drift/drift.dart';
 import 'package:path/path.dart' as path;
 import 'package:plezy/utils/content_utils.dart';
+import 'package:plezy/utils/http_client.dart';
 import '../database/app_database.dart';
+import '../database/download_operations.dart';
 import 'settings_service.dart';
 import 'saf_storage_service.dart';
 import '../models/download_models.dart';
@@ -20,172 +21,6 @@ import '../utils/codec_utils.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/plex_cache_parser.dart';
 
-/// Extension methods on AppDatabase for download operations
-
-extension DownloadDatabaseOperations on AppDatabase {
-  /// Insert a new download into the database
-  Future<void> insertDownload({
-    required String serverId,
-    required String ratingKey,
-    required String globalKey,
-    required String type,
-    String? parentRatingKey,
-    String? grandparentRatingKey,
-    required int status,
-  }) async {
-    await into(downloadedMedia).insert(
-      DownloadedMediaCompanion.insert(
-        serverId: serverId,
-        ratingKey: ratingKey,
-        globalKey: globalKey,
-        type: type,
-        parentRatingKey: Value(parentRatingKey),
-        grandparentRatingKey: Value(grandparentRatingKey),
-        status: status,
-      ),
-      mode: InsertMode.insertOrReplace,
-    );
-  }
-
-  /// Add item to download queue
-  Future<void> addToQueue({
-    required String mediaGlobalKey,
-    int priority = 0,
-    bool downloadSubtitles = true,
-    bool downloadArtwork = true,
-    String? transcodeQuality,
-  }) async {
-    await into(downloadQueue).insert(
-      DownloadQueueCompanion.insert(
-        mediaGlobalKey: mediaGlobalKey,
-        priority: Value(priority),
-        addedAt: DateTime.now().millisecondsSinceEpoch,
-        downloadSubtitles: Value(downloadSubtitles),
-        downloadArtwork: Value(downloadArtwork),
-        transcodeQuality: Value(transcodeQuality),
-      ),
-      mode: InsertMode.insertOrReplace,
-    );
-  }
-
-  /// Get next item from queue (highest priority, oldest first)
-  /// Only returns items that are not paused
-  Future<DownloadQueueItem?> getNextQueueItem() async {
-    // Join with downloadedMedia to check status and filter out paused items
-    final query = select(
-      downloadQueue,
-    ).join([innerJoin(downloadedMedia, downloadedMedia.globalKey.equalsExp(downloadQueue.mediaGlobalKey))]);
-
-    query
-      ..where(downloadedMedia.status.equals(DownloadStatus.queued.index))
-      ..orderBy([
-        OrderingTerm(expression: downloadQueue.priority, mode: OrderingMode.desc),
-        OrderingTerm(expression: downloadQueue.addedAt),
-      ])
-      ..limit(1);
-
-    final result = await query.getSingleOrNull();
-    return result?.readTable(downloadQueue);
-  }
-
-  /// Update download status
-  Future<void> updateDownloadStatus(String globalKey, int status) async {
-    await (update(
-      downloadedMedia,
-    )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(status: Value(status)));
-  }
-
-  /// Update download progress
-  Future<void> updateDownloadProgress(String globalKey, int progress, int downloadedBytes, int totalBytes) async {
-    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
-      DownloadedMediaCompanion(
-        progress: Value(progress),
-        downloadedBytes: Value(downloadedBytes),
-        totalBytes: Value(totalBytes),
-      ),
-    );
-  }
-
-  /// Update video file path
-  Future<void> updateVideoFilePath(String globalKey, String filePath) async {
-    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
-      DownloadedMediaCompanion(
-        videoFilePath: Value(filePath),
-        downloadedAt: Value(DateTime.now().millisecondsSinceEpoch),
-      ),
-    );
-  }
-
-  /// Update artwork paths
-  Future<void> updateArtworkPaths({required String globalKey, String? thumbPath}) async {
-    await (update(
-      downloadedMedia,
-    )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(thumbPath: Value(thumbPath)));
-  }
-
-  /// Update download error and increment retry count
-  Future<void> updateDownloadError(String globalKey, String errorMessage) async {
-    // Get current retry count to increment it
-    final existing = await getDownloadedMedia(globalKey);
-    final currentCount = existing?.retryCount ?? 0;
-
-    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
-      DownloadedMediaCompanion(errorMessage: Value(errorMessage), retryCount: Value(currentCount + 1)),
-    );
-  }
-
-  /// Clear download error and reset retry count (for retry)
-  Future<void> clearDownloadError(String globalKey) async {
-    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
-      const DownloadedMediaCompanion(errorMessage: Value(null), retryCount: Value(0)),
-    );
-  }
-
-  /// Remove item from queue
-  Future<void> removeFromQueue(String mediaGlobalKey) async {
-    await (delete(downloadQueue)..where((t) => t.mediaGlobalKey.equals(mediaGlobalKey))).go();
-  }
-
-  /// Get downloaded media item
-  Future<DownloadedMediaItem?> getDownloadedMedia(String globalKey) {
-    return (select(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).getSingleOrNull();
-  }
-
-  /// Delete a download
-  Future<void> deleteDownload(String globalKey) async {
-    await (delete(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).go();
-    await (delete(downloadQueue)..where((t) => t.mediaGlobalKey.equals(globalKey))).go();
-  }
-
-  /// Get all downloaded episodes for a season
-  Future<List<DownloadedMediaItem>> getEpisodesBySeason(String seasonKey) {
-    return (select(downloadedMedia)..where((t) => t.parentRatingKey.equals(seasonKey))).get();
-  }
-
-  /// Get all downloaded episodes for a show
-  Future<List<DownloadedMediaItem>> getEpisodesByShow(String showKey) {
-    return (select(downloadedMedia)..where((t) => t.grandparentRatingKey.equals(showKey))).get();
-  }
-
-  /// Get all downloaded items for a specific server
-  Future<List<DownloadedMediaItem>> getDownloadsByServerId(String serverId) {
-    return (select(downloadedMedia)..where((t) => t.serverId.equals(serverId))).get();
-  }
-
-  /// Update the background_downloader task ID for a download
-  Future<void> updateBgTaskId(String globalKey, String? taskId) async {
-    await (update(
-      downloadedMedia,
-    )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(bgTaskId: Value(taskId)));
-  }
-
-  /// Get the background_downloader task ID for a download
-  Future<String?> getBgTaskId(String globalKey) async {
-    final item = await getDownloadedMedia(globalKey);
-    return item?.bgTaskId;
-  }
-}
-
 /// Context for a download that's been enqueued with background_downloader.
 /// Carries metadata needed between enqueue and completion callback.
 class _DownloadContext {
@@ -197,7 +32,6 @@ class _DownloadContext {
   final int? showYear;
   final bool isSafMode;
   final PlexMediaInfo? mediaInfo;
-  final String? transcodeSessionId;
 
   _DownloadContext({
     required this.metadata,
@@ -208,7 +42,6 @@ class _DownloadContext {
     this.showYear,
     this.isSafMode = false,
     this.mediaInfo,
-    this.transcodeSessionId,
   });
 }
 
@@ -238,9 +71,17 @@ class DownloadManagerService {
   // background_downloader state
   bool _fileDownloaderInitialized = false;
   static const _downloadGroup = 'video_downloads';
+  static const _maxAppRetries = 3;
+  static const _nativeRetries = 5;
+  static const _autoRetryDelay = Duration(seconds: 30);
+  static const _progressDebounceDelay = Duration(seconds: 2);
+  static const _videoExtensions = {'.mp4', '.ogv', '.mkv', '.m4v', '.avi'};
 
   // Keys currently being paused — prevents holding queue from promoting them
   final Set<String> _pausingKeys = {};
+
+  // Keys whose completion callback is in-flight — prevents orphan scan from re-queuing them
+  final Set<String> _completingKeys = {};
 
   // Prevents concurrent _processQueue calls
   bool _isProcessingQueue = false;
@@ -250,9 +91,9 @@ class DownloadManagerService {
   // UI progress streams are still real-time; only the DB write is debounced.
   final Map<String, Timer> _progressDebounceTimers = {};
 
-  // Transcode polling timers (keyed by globalKey).
-  // Active while the server is transcoding; stopped when real download bytes flow.
-  final Map<String, Timer> _transcodePollingTimers = {};
+  // App-level auto-retry timers for downloads that exhausted native retries.
+  // Keyed by globalKey; each timer fires a fresh re-enqueue after a delay.
+  final Map<String, Timer> _autoRetryTimers = {};
 
   /// Public method to check if downloads should be blocked due to cellular-only setting
   /// Can be used by DownloadProvider to show user-friendly error
@@ -260,7 +101,13 @@ class DownloadManagerService {
     final settings = await SettingsService.getInstance();
     if (!settings.getDownloadOnWifiOnly()) return false;
 
-    final connectivity = await Connectivity().checkConnectivity();
+    final List<ConnectivityResult> connectivity;
+    try {
+      connectivity = await Connectivity().checkConnectivity();
+    } catch (e) {
+      // connectivity_plus can throw PlatformException on Windows — don't block
+      return false;
+    }
     // Block if on cellular and NOT on WiFi (allow if both are available)
     return connectivity.contains(ConnectivityResult.mobile) &&
         !connectivity.contains(ConnectivityResult.wifi) &&
@@ -274,7 +121,7 @@ class DownloadManagerService {
   DownloadManagerService({required AppDatabase database, required DownloadStorageService storageService, Dio? dio})
     : _database = database,
       _storageService = storageService,
-      _dio = dio ?? Dio();
+      _dio = dio ?? createHttpClient();
 
   /// Initialize background_downloader with callbacks, notifications, and concurrency config.
   Future<void> _initializeFileDownloader() async {
@@ -300,6 +147,8 @@ class DownloadManagerService {
 
     // Track tasks for persistence across app restarts
     await FileDownloader().trackTasks();
+    // Deliver status updates from iOS background-to-foreground transitions
+    await FileDownloader().resumeFromBackground();
 
     _fileDownloaderInitialized = true;
   }
@@ -360,6 +209,12 @@ class DownloadManagerService {
       final allDownloads = await _database.select(_database.downloadedMedia).get();
       for (final item in allDownloads) {
         if (item.status == DownloadStatus.downloading.index) {
+          // Skip items whose completion callback is already in-flight (race with trackTasks)
+          if (_completingKeys.contains(item.globalKey)) {
+            appLogger.d('Skipping orphan check for ${item.globalKey}: completion in progress');
+            continue;
+          }
+
           // Video already downloaded but post-processing didn't complete
           if (item.videoFilePath != null) {
             appLogger.i('Download ${item.globalKey} has video but incomplete post-processing, completing');
@@ -428,12 +283,7 @@ class DownloadManagerService {
         if (metadata.type == 'episode' && metadata.grandparentRatingKey != null) {
           final parsed = parseGlobalKey(globalKey);
           if (parsed != null) {
-            final showCached = await _apiCache.get(
-              parsed.serverId,
-              '/library/metadata/${metadata.grandparentRatingKey}',
-            );
-            final showJson = PlexCacheParser.extractFirstMetadata(showCached);
-            if (showJson != null) showYear = PlexMetadata.fromJson(showJson).year;
+            showYear = await _fetchShowYear(parsed.serverId, metadata.grandparentRatingKey);
           }
         }
 
@@ -475,7 +325,6 @@ class DownloadManagerService {
     int priority = 0,
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
-    String? transcodeQuality,
   }) async {
     final globalKey = metadata.globalKey;
 
@@ -514,7 +363,6 @@ class DownloadManagerService {
       priority: priority,
       downloadSubtitles: downloadSubtitles,
       downloadArtwork: downloadArtwork,
-      transcodeQuality: transcodeQuality,
     );
 
     _emitProgress(globalKey, DownloadStatus.queued, 0);
@@ -547,6 +395,14 @@ class DownloadManagerService {
   /// Resolve metadata, video URL, and file path, then enqueue a background download task.
   Future<void> _prepareAndEnqueueDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
     try {
+      // Guard: don't re-enqueue an item that's already completed or was deleted
+      final existing = await _database.getDownloadedMedia(globalKey);
+      if (existing == null || existing.status == DownloadStatus.completed.index) {
+        appLogger.d('Skipping enqueue for $globalKey: already completed or deleted');
+        await _database.removeFromQueue(globalKey);
+        return;
+      }
+
       appLogger.i('Preparing download for $globalKey');
       await _transitionStatus(globalKey, DownloadStatus.downloading);
 
@@ -581,31 +437,12 @@ class DownloadManagerService {
         if (playbackData.videoUrl == null) throw Exception('Could not get video URL for $globalKey');
       }
 
-      // Determine download URL and extension based on transcode settings
-      String downloadUrl;
-      String? transcodeSessionId;
-      String ext;
-
-      if (queueItem.transcodeQuality != null) {
-        final transcode = await client.getTranscodeDownloadUrl(
-          metadata.ratingKey,
-          queueItem.transcodeQuality!,
-        );
-        downloadUrl = transcode.url;
-        transcodeSessionId = transcode.sessionId;
-        ext = 'mkv'; // HTTP protocol returns MKV container
-      } else {
-        downloadUrl = playbackData.videoUrl!;
-        ext = _getExtensionFromUrl(playbackData.videoUrl!) ?? 'mp4';
-      }
+      final ext = _getExtensionFromUrl(playbackData.videoUrl!) ?? 'mp4';
 
       // Look up show year for episodes
-      int? showYear;
-      if (metadata.type == 'episode' && metadata.grandparentRatingKey != null) {
-        final showCached = await _apiCache.get(serverId, '/library/metadata/${metadata.grandparentRatingKey}');
-        final showJson = PlexCacheParser.extractFirstMetadata(showCached);
-        if (showJson != null) showYear = PlexMetadata.fromJson(showJson).year;
-      }
+      final showYear = metadata.type == 'episode'
+          ? await _fetchShowYear(serverId, metadata.grandparentRatingKey)
+          : null;
 
       // Build display name for notifications
       final displayName = metadata.type == 'episode'
@@ -638,13 +475,13 @@ class DownloadManagerService {
         if (safDirUri == null) throw Exception('Failed to create SAF directory');
 
         final task = UriDownloadTask(
-          url: downloadUrl,
+          url: playbackData.videoUrl!,
           filename: safFileName,
           directoryUri: Uri.parse(safDirUri),
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: transcodeSessionId != null ? 2 : 3,
+          retries: _nativeRetries,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -658,16 +495,12 @@ class DownloadManagerService {
           showYear: showYear,
           isSafMode: true,
           mediaInfo: playbackData.mediaInfo,
-          transcodeSessionId: transcodeSessionId,
         );
 
         await _database.updateBgTaskId(globalKey, task.taskId);
         final success = await FileDownloader().enqueue(task);
         if (!success) throw Exception('Failed to enqueue SAF download task');
         appLogger.i('Enqueued SAF download task ${task.taskId} for $globalKey');
-        if (transcodeSessionId != null) {
-          _startTranscodePolling(globalKey, client, transcodeSessionId);
-        }
       } else {
         // Normal mode: use DownloadTask with pause/resume support
         String downloadFilePath;
@@ -682,15 +515,15 @@ class DownloadManagerService {
         await File(downloadFilePath).parent.create(recursive: true);
 
         final task = DownloadTask(
-          url: downloadUrl,
+          url: playbackData.videoUrl!,
           filename: path.basename(downloadFilePath),
           directory: path.dirname(downloadFilePath),
           baseDirectory: BaseDirectory.root,
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: transcodeSessionId != null ? 2 : 3,
-          allowPause: transcodeSessionId == null,
+          retries: _nativeRetries,
+          allowPause: true,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -703,100 +536,26 @@ class DownloadManagerService {
           client: client,
           showYear: showYear,
           mediaInfo: playbackData.mediaInfo,
-          transcodeSessionId: transcodeSessionId,
         );
 
         await _database.updateBgTaskId(globalKey, task.taskId);
         final success = await FileDownloader().enqueue(task);
         if (!success) throw Exception('Failed to enqueue download task');
         appLogger.i('Enqueued download task ${task.taskId} for $globalKey');
-        if (transcodeSessionId != null) {
-          _startTranscodePolling(globalKey, client, transcodeSessionId);
-        }
       }
     } catch (e) {
       appLogger.e('Failed to prepare download for $globalKey', error: e);
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: e.toString());
-      await _database.updateDownloadError(globalKey, e.toString());
       await _database.removeFromQueue(globalKey);
       _pendingDownloadContext.remove(globalKey);
     }
-  }
-
-  /// Start polling the Plex transcode session for progress.
-  void _startTranscodePolling(String globalKey, PlexClient client, String sessionId) {
-    _stopTranscodePolling(globalKey);
-    appLogger.i('Starting transcode polling for $globalKey (session: $sessionId)');
-
-    int consecutiveNulls = 0;
-
-    Future<void> poll() async {
-      if (!_pendingDownloadContext.containsKey(globalKey)) {
-        _stopTranscodePolling(globalKey);
-        return;
-      }
-
-      final result = await client.getTranscodeSessionProgress(sessionId);
-
-      if (result != null) {
-        consecutiveNulls = 0;
-        _progressController.add(DownloadProgress(
-          globalKey: globalKey,
-          status: DownloadStatus.downloading,
-          progress: result.progress.round().clamp(0, 100),
-          currentFile: 'video',
-          isTranscoding: true,
-        ));
-
-        if (result.complete) {
-          appLogger.i('Transcode complete for $globalKey');
-          _stopTranscodePolling(globalKey);
-        }
-      } else if (++consecutiveNulls >= 15) {
-        appLogger.i('Transcode polling: no session data after 30s for $globalKey, stopping');
-        _stopTranscodePolling(globalKey);
-      }
-    }
-
-    // Fire immediately, then every 3 seconds
-    poll();
-    _transcodePollingTimers[globalKey] = Timer.periodic(const Duration(seconds: 3), (_) => poll());
-  }
-
-  /// Stop transcode polling for a given key.
-  void _stopTranscodePolling(String globalKey) {
-    _transcodePollingTimers.remove(globalKey)?.cancel();
   }
 
   /// Callback: background_downloader progress update
   void _onTaskProgress(TaskProgressUpdate update) {
     if (_disposed) return;
     final globalKey = update.task.metaData;
-    if (globalKey.isEmpty) return;
-
-    // When transcode polling is active, let it be the source of truth for
-    // progress — don't emit from here (the polling provides transcode % which
-    // is more useful than download % during transcoding).
-    if (_transcodePollingTimers.containsKey(globalKey)) {
-      return;
-    }
-
-    if (update.progress < 0) {
-      // Indeterminate progress (no Content-Length).
-      // Mark as transcoding if this download has a transcode session.
-      final ctx = _pendingDownloadContext[globalKey];
-      final isTranscode = ctx?.transcodeSessionId != null;
-      final speedBytesPerSec = update.hasNetworkSpeed ? update.networkSpeed * 1024 * 1024 : 0.0;
-      _progressController.add(DownloadProgress(
-        globalKey: globalKey,
-        status: DownloadStatus.downloading,
-        progress: 0,
-        currentFile: 'video',
-        speed: speedBytesPerSec,
-        isTranscoding: isTranscode,
-      ));
-      return;
-    }
+    if (globalKey.isEmpty || update.progress < 0) return;
 
     // If this item is being paused, the holding queue promoted it — cancel it
     if (_pausingKeys.contains(globalKey)) {
@@ -825,7 +584,7 @@ class DownloadManagerService {
     // a 2-second settle period. The stream above provides real-time UI updates;
     // the DB write is only for crash-recovery state.
     _progressDebounceTimers[globalKey]?.cancel();
-    _progressDebounceTimers[globalKey] = Timer(const Duration(seconds: 2), () {
+    _progressDebounceTimers[globalKey] = Timer(_progressDebounceDelay, () {
       _progressDebounceTimers.remove(globalKey);
       _database.updateDownloadProgress(globalKey, progress, downloadedBytes, totalBytes).catchError((e) {
         appLogger.w('Failed to update download progress in DB', error: e);
@@ -848,22 +607,10 @@ class DownloadManagerService {
         case TaskStatus.failed:
           _onDownloadFailed(globalKey, update.exception?.description ?? 'Download failed');
         case TaskStatus.notFound:
-          _onDownloadFailed(globalKey, 'File not found (404)');
+          _onDownloadPermanentlyFailed(globalKey, 'File not found (404)');
         case TaskStatus.canceled:
-          if (_pausingKeys.contains(globalKey)) {
-            // Expected cancel from holding-queue promotion during pause — ignore
-            break;
-          }
-          final ctx = _pendingDownloadContext.remove(globalKey);
-          if (ctx != null) {
-            // Context still present → OS cancelled the task, not user code
-            // (user-initiated pause/cancel/delete removes context before cancellation completes)
-            appLogger.w('Download cancelled by system for $globalKey, re-queuing');
-            _database.updateBgTaskId(globalKey, null);
-            _transitionStatus(globalKey, DownloadStatus.queued);
-            _database.addToQueue(mediaGlobalKey: globalKey);
-            if (_lastClient != null) _processQueue(_lastClient!);
-          }
+          if (_pausingKeys.contains(globalKey)) break;
+          _onDownloadCanceled(globalKey);
         case TaskStatus.paused:
           appLogger.d('Download paused by system for $globalKey');
         case TaskStatus.waitingToRetry:
@@ -881,33 +628,124 @@ class DownloadManagerService {
     }
   }
 
-  /// Handle a permanently failed download
+  /// Handle a system-initiated cancel — re-queue unless already completed.
+  Future<void> _onDownloadCanceled(String globalKey) async {
+    final ctx = _pendingDownloadContext.remove(globalKey);
+    if (ctx == null) return;
+    if (_completingKeys.contains(globalKey)) return;
+
+    final existing = await _database.getDownloadedMedia(globalKey);
+    if (existing?.status == DownloadStatus.completed.index) return;
+
+    appLogger.w('Download cancelled by system for $globalKey, re-queuing');
+    await _database.updateBgTaskId(globalKey, null);
+    await _transitionStatus(globalKey, DownloadStatus.queued);
+    await _database.addToQueue(mediaGlobalKey: globalKey);
+    if (_lastClient != null) _processQueue(_lastClient!);
+  }
+
+  /// Handle a failed download — auto-retry if retries remain, otherwise permanently fail.
+  /// Native retries (Range-based resume) are already exhausted at this point.
   Future<void> _onDownloadFailed(String globalKey, String errorMessage) async {
-    _stopTranscodePolling(globalKey);
-    final failedCtx = _pendingDownloadContext.remove(globalKey);
-    if (failedCtx?.transcodeSessionId != null) {
-      failedCtx!.client.stopTranscodeSession(failedCtx.transcodeSessionId!);
+    if (_completingKeys.contains(globalKey)) {
+      appLogger.d('Ignoring failure event for $globalKey: completion in progress');
+      return;
     }
-    appLogger.e('Download failed for $globalKey: $errorMessage');
+    _pendingDownloadContext.remove(globalKey);
+
+    final existing = await _database.getDownloadedMedia(globalKey);
+    if (existing?.status == DownloadStatus.completed.index) {
+      appLogger.d('Ignoring stale failure for completed download $globalKey');
+      return;
+    }
+    final retryCount = existing?.retryCount ?? 0;
+
+    if (retryCount < _maxAppRetries && _lastClient != null) {
+      // App-level auto-retry: schedule a fresh download after a delay.
+      // Each new task gets 5 native retries with Range-based resume.
+      appLogger.w(
+        'Download failed for $globalKey (attempt ${retryCount + 1}/$_maxAppRetries), '
+        'scheduling auto-retry in ${_autoRetryDelay.inSeconds}s: $errorMessage',
+      );
+      await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
+      await _database.removeFromQueue(globalKey);
+      _autoRetryTimers[globalKey]?.cancel();
+      _autoRetryTimers[globalKey] = Timer(_autoRetryDelay, () {
+        _autoRetryTimers.remove(globalKey);
+        _performAutoRetry(globalKey);
+      });
+
+      // Advance the queue while we wait for the retry timer
+      if (_lastClient != null) _processQueue(_lastClient!);
+    } else {
+      await _onDownloadPermanentlyFailed(globalKey, errorMessage);
+    }
+  }
+
+  /// Handle a non-retryable failure (e.g. 404) — fail immediately without auto-retry.
+  Future<void> _onDownloadPermanentlyFailed(String globalKey, String errorMessage) async {
+    if (_completingKeys.contains(globalKey)) {
+      appLogger.d('Ignoring permanent failure event for $globalKey: completion in progress');
+      return;
+    }
+    _pendingDownloadContext.remove(globalKey);
+
+    final existing = await _database.getDownloadedMedia(globalKey);
+    if (existing?.status == DownloadStatus.completed.index) {
+      appLogger.d('Ignoring stale permanent failure for completed download $globalKey');
+      return;
+    }
+
+    appLogger.e('Download permanently failed for $globalKey: $errorMessage');
     await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
-    await _database.updateDownloadError(globalKey, errorMessage);
     await _database.removeFromQueue(globalKey);
 
     // Try to enqueue more items from the queue
     if (_lastClient != null) _processQueue(_lastClient!);
   }
 
+  /// Execute an app-level auto-retry: transition back to queued and re-enqueue.
+  Future<void> _performAutoRetry(String globalKey) async {
+    if (_disposed) return;
+    final client = _lastClient;
+    if (client == null) {
+      appLogger.w('Cannot auto-retry $globalKey: no client available');
+      return;
+    }
+
+    final existing = await _database.getDownloadedMedia(globalKey);
+    if (existing == null || existing.status != DownloadStatus.failed.index) {
+      // Download was cancelled/deleted/retried by user during the delay
+      return;
+    }
+
+    appLogger.i('Auto-retrying download for $globalKey');
+    await _database.updateBgTaskId(globalKey, null);
+    await _transitionStatus(globalKey, DownloadStatus.queued);
+    await _database.addToQueue(mediaGlobalKey: globalKey);
+    _processQueue(client);
+  }
+
   /// Handle a completed video download — store path, download supplementary content, mark done.
   Future<void> _onDownloadComplete(String globalKey, Task task) async {
+    // Prevent duplicate concurrent completions (e.g. trackTasks replaying events)
+    if (_completingKeys.contains(globalKey)) {
+      appLogger.d('Already processing completion for $globalKey, skipping');
+      return;
+    }
+    _completingKeys.add(globalKey);
     try {
-      _stopTranscodePolling(globalKey);
       // Flush any pending debounced progress write before completing
       _progressDebounceTimers.remove(globalKey)?.cancel();
 
-      final ctx = _pendingDownloadContext.remove(globalKey);
-      if (ctx?.transcodeSessionId != null) {
-        ctx!.client.stopTranscodeSession(ctx.transcodeSessionId!);
+      // Fresh DB check — bail if already completed (guards against race with orphan scan)
+      final existingCheck = await _database.getDownloadedMedia(globalKey);
+      if (existingCheck?.status == DownloadStatus.completed.index) {
+        appLogger.d('Download already completed for $globalKey, skipping');
+        return;
       }
+
+      final ctx = _pendingDownloadContext.remove(globalKey);
 
       // ── Phase 1 (critical): resolve and store the video file path ──
       final String storedPath;
@@ -1000,9 +838,9 @@ class DownloadManagerService {
     } catch (e) {
       appLogger.e('Post-download processing failed for $globalKey', error: e);
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: 'Post-processing failed: $e');
-      await _database.updateDownloadError(globalKey, 'Post-processing failed: $e');
       await _database.removeFromQueue(globalKey);
     } finally {
+      _completingKeys.remove(globalKey);
       // Always advance the queue, even after errors
       if (_lastClient != null) _processQueue(_lastClient!);
     }
@@ -1013,6 +851,15 @@ class DownloadManagerService {
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) return null;
     return _apiCache.getMetadata(parsed.serverId, parsed.ratingKey);
+  }
+
+  /// Look up the year of the parent show for an episode (used for folder naming).
+  Future<int?> _fetchShowYear(String serverId, String? grandparentRatingKey) async {
+    if (grandparentRatingKey == null) return null;
+    final showCached = await _apiCache.get(serverId, '/library/metadata/$grandparentRatingKey');
+    final showJson = PlexCacheParser.extractFirstMetadata(showCached);
+    if (showJson != null) return PlexMetadata.fromJson(showJson).year;
+    return null;
   }
 
   /// Re-derive the SAF file URI from metadata (for recovery when context is lost)
@@ -1254,6 +1101,9 @@ class DownloadManagerService {
   /// Default progress is 0 for most statuses, 100 for completed.
   Future<void> _transitionStatus(String globalKey, DownloadStatus status, {int? progress, String? errorMessage}) async {
     await _database.updateDownloadStatus(globalKey, status.index);
+    if (status == DownloadStatus.failed && errorMessage != null) {
+      await _database.updateDownloadError(globalKey, errorMessage);
+    }
     _emitProgress(
       globalKey,
       status,
@@ -1279,7 +1129,6 @@ class DownloadManagerService {
 
   /// Pause a download (works for both downloading and queued items)
   Future<void> pauseDownload(String globalKey) async {
-    _stopTranscodePolling(globalKey);
     // Mark as pausing synchronously so callbacks from holding-queue promotions
     // can detect and cancel promoted tasks before any await yields.
     _pausingKeys.add(globalKey);
@@ -1331,6 +1180,7 @@ class DownloadManagerService {
 
   /// Retry a failed download
   Future<void> retryDownload(String globalKey, PlexClient client) async {
+    _autoRetryTimers.remove(globalKey)?.cancel();
     await _database.clearDownloadError(globalKey);
     await _database.updateBgTaskId(globalKey, null);
     await _transitionStatus(globalKey, DownloadStatus.queued);
@@ -1340,53 +1190,25 @@ class DownloadManagerService {
 
   /// Cancel a download
   Future<void> cancelDownload(String globalKey) async {
-    _stopTranscodePolling(globalKey);
-    // Remove context BEFORE cancelling the bg task so the
-    // _onTaskStatusChanged callback sees no context and skips re-queuing.
-    final cancelCtx = _pendingDownloadContext.remove(globalKey);
-    if (cancelCtx?.transcodeSessionId != null) {
-      cancelCtx!.client.stopTranscodeSession(cancelCtx.transcodeSessionId!);
-    }
-
-    // Cancel the background task
+    _autoRetryTimers.remove(globalKey)?.cancel();
     final bgTaskId = await _database.getBgTaskId(globalKey);
     if (bgTaskId != null) {
       await FileDownloader().cancelTaskWithId(bgTaskId);
     }
-
-    // Delete partial files from storage
-    final parsed = parseGlobalKey(globalKey);
-    if (parsed != null) {
-      await _deleteMediaFilesWithMetadata(parsed.serverId, parsed.ratingKey);
-      await _apiCache.deleteForItem(parsed.serverId, parsed.ratingKey);
-    }
-
-    // Delete from database (row + queue)
-    await _database.deleteDownload(globalKey);
+    _pendingDownloadContext.remove(globalKey);
+    await _transitionStatus(globalKey, DownloadStatus.cancelled);
     await _database.removeFromQueue(globalKey);
-
-    // Emit cancelled status so the provider stream listener knows
-    _emitProgress(globalKey, DownloadStatus.cancelled, 0);
-
-    // Advance the queue in case there are remaining items
-    if (_lastClient != null) _processQueue(_lastClient!);
   }
 
   /// Delete a downloaded item and its files
   Future<void> deleteDownload(String globalKey) async {
-    _stopTranscodePolling(globalKey);
-    // Remove context BEFORE cancelling the bg task so the
-    // _onTaskStatusChanged callback sees no context and skips re-queuing.
-    final deleteCtx = _pendingDownloadContext.remove(globalKey);
-    if (deleteCtx?.transcodeSessionId != null) {
-      deleteCtx!.client.stopTranscodeSession(deleteCtx.transcodeSessionId!);
-    }
-
+    _autoRetryTimers.remove(globalKey)?.cancel();
     // Cancel if actively downloading via background_downloader
     final bgTaskId = await _database.getBgTaskId(globalKey);
     if (bgTaskId != null) {
       await FileDownloader().cancelTaskWithId(bgTaskId);
     }
+    _pendingDownloadContext.remove(globalKey);
 
     // Delete files from storage
     final parsed = parseGlobalKey(globalKey);
@@ -1725,11 +1547,7 @@ class DownloadManagerService {
       final contents = await seasonDir.list().toList();
       final hasVideos = contents.any(
         (e) =>
-            e.path.endsWith('.mp4') ||
-            e.path.endsWith('.ogv') ||
-            e.path.endsWith('.mkv') ||
-            e.path.endsWith('.m4v') ||
-            e.path.endsWith('.avi') ||
+            _videoExtensions.any((ext) => e.path.endsWith(ext)) ||
             e.path.contains('_subs'),
       );
 
@@ -1890,10 +1708,10 @@ class DownloadManagerService {
       timer.cancel();
     }
     _progressDebounceTimers.clear();
-    for (final timer in _transcodePollingTimers.values) {
+    for (final timer in _autoRetryTimers.values) {
       timer.cancel();
     }
-    _transcodePollingTimers.clear();
+    _autoRetryTimers.clear();
     _progressController.close();
     _deletionProgressController.close();
   }

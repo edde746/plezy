@@ -219,8 +219,22 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     );
 
     if (result == true && mounted) {
-      // Reload metadata to get updated artwork paths
-      _loadMetadata();
+      // Re-fetch metadata to get updated artwork paths without resetting
+      // any text field edits the user may have made.
+      await _reloadArtwork();
+    }
+  }
+
+  Future<void> _reloadArtwork() async {
+    try {
+      final meta = await _client.getMetadataWithImages(widget.metadata.ratingKey);
+      if (!mounted) return;
+      if (meta != null) {
+        setState(() => _fullMetadata = meta);
+      }
+    } catch (_) {
+      // Artwork was already saved by the picker; display will refresh next
+      // time the editor is opened.
     }
   }
 
@@ -290,6 +304,8 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
         return meta.audioLanguage ?? '';
       case 'subtitleLanguage':
         return meta.subtitleLanguage ?? '';
+      case 'subtitleMode':
+        return meta.subtitleMode?.toString() ?? '-1';
       default:
         return '';
     }

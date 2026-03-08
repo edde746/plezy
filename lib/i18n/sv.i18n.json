@@ -6,9 +6,6 @@
     "signInWithPlex": "Logga in med Plex",
     "showQRCode": "Visa QR-kod",
     "authenticate": "Autentisera",
-    "debugEnterToken": "Debug: Ange Plex-token",
-    "plexTokenLabel": "Plex-autentiseringstoken",
-    "plexTokenHint": "Ange din Plex.tv-token",
     "authenticationTimeout": "Autentisering tog för lång tid. Försök igen.",
     "scanQRToSignIn": "Skanna QR-koden för att logga in",
     "waitingForAuth": "Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.",
@@ -32,6 +29,7 @@
     "delete": "Ta bort",
     "shuffle": "Blanda",
     "addTo": "Lägg till i...",
+    "createNew": "Skapa ny",
     "remove": "Ta bort",
     "paste": "Klistra in",
     "connect": "Anslut",
@@ -43,7 +41,7 @@
     "search": "Sök",
     "home": "Hem",
     "back": "Tillbaka",
-    "settings": "Inställningar",
+    "settings": "Mer",
     "mute": "Ljud av",
     "ok": "OK",
     "loading": "Laddar...",
@@ -63,7 +61,7 @@
     "licenses": "Licenser",
     "switchProfile": "Byt profil",
     "subtitleStyling": "Undertext-styling",
-    "mpvConfig": "MPV-konfiguration",
+    "mpvConfig": "mpv.conf",
     "logs": "Loggar"
   },
   "update": {
@@ -127,7 +125,7 @@
     "playerBackend": "Spelarmotor",
     "exoPlayer": "ExoPlayer (Rekommenderad)",
     "exoPlayerDescription": "Android-nativ spelare med bättre hårdvarustöd",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Avancerad spelare med fler funktioner och ASS-undertextstöd",
     "hardwareDecoding": "Hårdvaruavkodning",
     "hardwareDecodingDescription": "Använd hårdvaruacceleration när tillgängligt",
@@ -212,7 +210,9 @@
     "requireProfileSelectionOnOpen": "Fråga efter profil vid appstart",
     "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas",
     "confirmExitOnBack": "Bekräfta innan avslut",
-    "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen"
+    "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen",
+    "showNavBarLabels": "Visa navigeringsfältets etiketter",
+    "showNavBarLabelsDescription": "Visa textetiketter under navigeringsfältets ikoner"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
@@ -341,6 +341,7 @@
     "settingsButton": "Videoinställningar",
     "audioTrackButton": "Ljudspår",
     "subtitlesButton": "Undertexter",
+    "tracksButton": "Ljud och undertexter",
     "chaptersButton": "Kapitel",
     "versionsButton": "Videoversioner",
     "pipButton": "Bild-i-bild läge",
@@ -423,19 +424,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV-konfiguration",
+    "title": "mpv-konfiguration",
     "description": "Avancerade videospelares inställningar",
-    "properties": "Egenskaper",
     "presets": "Förval",
-    "noProperties": "Inga egenskaper konfigurerade",
     "noPresets": "Inga sparade förval",
-    "addProperty": "Lägg till egenskap",
-    "editProperty": "Redigera egenskap",
-    "deleteProperty": "Ta bort egenskap",
-    "propertyKey": "Egenskapsnyckel",
-    "propertyKeyHint": "t.ex. hwdec, demuxer-max-bytes",
-    "propertyValue": "Egenskapsvärde",
-    "propertyValueHint": "t.ex. auto, 256000000",
     "saveAsPreset": "Spara som förval...",
     "presetName": "Förvalnamn",
     "presetNameHint": "Ange ett namn för detta förval",
@@ -445,8 +437,7 @@
     "presetLoaded": "Förval laddat",
     "presetDeleted": "Förval borttaget",
     "confirmDeletePreset": "Är du säker på att du vill ta bort detta förval?",
-    "confirmDeleteProperty": "Är du säker på att du vill ta bort denna egenskap?",
-    "entriesCount": "${count} poster"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Bekräfta åtgärd"
@@ -569,7 +560,7 @@
   },
   "navigation": {
     "libraries": "Bibliotek",
-    "downloads": "Nedladdningar",
+    "downloads": "Nerladdat",
     "liveTv": "Live-TV"
   },
   "liveTv": {
@@ -655,7 +646,6 @@
     "itemAdded": "Tillagd i spellista",
     "itemRemoved": "Borttagen från spellista",
     "selectPlaylist": "Välj spellista",
-    "createNewPlaylist": "Skapa ny spellista",
     "errorCreating": "Det gick inte att skapa spellista",
     "errorDeleting": "Det gick inte att ta bort spellista",
     "errorLoading": "Det gick inte att ladda spellistor",
@@ -676,7 +666,6 @@
     "deleteFailedWithError": "Det gick inte att ta bort samlingen: ${error}",
     "failedToLoadItems": "Det gick inte att läsa in samlingsobjekt: ${error}",
     "selectCollection": "Välj samling",
-    "createNewCollection": "Skapa ny samling",
     "collectionName": "Samlingsnamn",
     "enterCollectionName": "Ange samlingsnamn",
     "addedToCollection": "Tillagd i samling",
@@ -733,6 +722,10 @@
     "sessionCodeCopied": "Sessionskod kopierad till urklipp",
     "relayUnreachable": "Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.",
     "reconnectingToHost": "Återansluter till värd...",
+    "currentPlayback": "Aktuell uppspelning",
+    "joinCurrentPlayback": "Gå med i aktuell uppspelning",
+    "joinCurrentPlaybackDescription": "Hoppa tillbaka till det värden tittar på just nu",
+    "failedToOpenCurrentPlayback": "Kunde inte öppna aktuell uppspelning",
     "participantJoined": "${name} gick med",
     "participantLeft": "${name} lämnade"
   },
@@ -742,7 +735,13 @@
     "nvscalerDescription": "NVIDIA-bildskalning för skarpare video",
     "qualityFast": "Snabb",
     "qualityHQ": "Hög kvalitet",
-    "mode": "Läge"
+    "mode": "Läge",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",

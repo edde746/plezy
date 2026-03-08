@@ -97,9 +97,6 @@ class _TranslationsAuthSv implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Logga in med Plex';
 	@override String get showQRCode => 'Visa QR-kod';
 	@override String get authenticate => 'Autentisera';
-	@override String get debugEnterToken => 'Debug: Ange Plex-token';
-	@override String get plexTokenLabel => 'Plex-autentiseringstoken';
-	@override String get plexTokenHint => 'Ange din Plex.tv-token';
 	@override String get authenticationTimeout => 'Autentisering tog för lång tid. Försök igen.';
 	@override String get scanQRToSignIn => 'Skanna QR-koden för att logga in';
 	@override String get waitingForAuth => 'Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.';
@@ -130,6 +127,7 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get delete => 'Ta bort';
 	@override String get shuffle => 'Blanda';
 	@override String get addTo => 'Lägg till i...';
+	@override String get createNew => 'Skapa ny';
 	@override String get remove => 'Ta bort';
 	@override String get paste => 'Klistra in';
 	@override String get connect => 'Anslut';
@@ -141,7 +139,7 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get search => 'Sök';
 	@override String get home => 'Hem';
 	@override String get back => 'Tillbaka';
-	@override String get settings => 'Inställningar';
+	@override String get settings => 'Mer';
 	@override String get mute => 'Ljud av';
 	@override String get ok => 'OK';
 	@override String get loading => 'Laddar...';
@@ -168,7 +166,7 @@ class _TranslationsScreensSv implements TranslationsScreensEn {
 	@override String get licenses => 'Licenser';
 	@override String get switchProfile => 'Byt profil';
 	@override String get subtitleStyling => 'Undertext-styling';
-	@override String get mpvConfig => 'MPV-konfiguration';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => 'Loggar';
 }
 
@@ -246,7 +244,7 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get playerBackend => 'Spelarmotor';
 	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
 	@override String get exoPlayerDescription => 'Android-nativ spelare med bättre hårdvarustöd';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => 'Avancerad spelare med fler funktioner och ASS-undertextstöd';
 	@override String get hardwareDecoding => 'Hårdvaruavkodning';
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
@@ -332,6 +330,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Visa profilval varje gång appen öppnas';
 	@override String get confirmExitOnBack => 'Bekräfta innan avslut';
 	@override String get confirmExitOnBackDescription => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen';
+	@override String get showNavBarLabels => 'Visa navigeringsfältets etiketter';
+	@override String get showNavBarLabelsDescription => 'Visa textetiketter under navigeringsfältets ikoner';
 }
 
 // Path: search
@@ -496,6 +496,7 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get settingsButton => 'Videoinställningar';
 	@override String get audioTrackButton => 'Ljudspår';
 	@override String get subtitlesButton => 'Undertexter';
+	@override String get tracksButton => 'Ljud och undertexter';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversioner';
 	@override String get pipButton => 'Bild-i-bild läge';
@@ -598,19 +599,10 @@ class _TranslationsMpvConfigSv implements TranslationsMpvConfigEn {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'MPV-konfiguration';
+	@override String get title => 'mpv-konfiguration';
 	@override String get description => 'Avancerade videospelares inställningar';
-	@override String get properties => 'Egenskaper';
 	@override String get presets => 'Förval';
-	@override String get noProperties => 'Inga egenskaper konfigurerade';
 	@override String get noPresets => 'Inga sparade förval';
-	@override String get addProperty => 'Lägg till egenskap';
-	@override String get editProperty => 'Redigera egenskap';
-	@override String get deleteProperty => 'Ta bort egenskap';
-	@override String get propertyKey => 'Egenskapsnyckel';
-	@override String get propertyKeyHint => 't.ex. hwdec, demuxer-max-bytes';
-	@override String get propertyValue => 'Egenskapsvärde';
-	@override String get propertyValueHint => 't.ex. auto, 256000000';
 	@override String get saveAsPreset => 'Spara som förval...';
 	@override String get presetName => 'Förvalnamn';
 	@override String get presetNameHint => 'Ange ett namn för detta förval';
@@ -620,8 +612,7 @@ class _TranslationsMpvConfigSv implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => 'Förval laddat';
 	@override String get presetDeleted => 'Förval borttaget';
 	@override String get confirmDeletePreset => 'Är du säker på att du vill ta bort detta förval?';
-	@override String get confirmDeleteProperty => 'Är du säker på att du vill ta bort denna egenskap?';
-	@override String entriesCount({required Object count}) => '${count} poster';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -802,7 +793,7 @@ class _TranslationsNavigationSv implements TranslationsNavigationEn {
 
 	// Translations
 	@override String get libraries => 'Bibliotek';
-	@override String get downloads => 'Nedladdningar';
+	@override String get downloads => 'Nerladdat';
 	@override String get liveTv => 'Live-TV';
 }
 
@@ -909,7 +900,6 @@ class _TranslationsPlaylistsSv implements TranslationsPlaylistsEn {
 	@override String get itemAdded => 'Tillagd i spellista';
 	@override String get itemRemoved => 'Borttagen från spellista';
 	@override String get selectPlaylist => 'Välj spellista';
-	@override String get createNewPlaylist => 'Skapa ny spellista';
 	@override String get errorCreating => 'Det gick inte att skapa spellista';
 	@override String get errorDeleting => 'Det gick inte att ta bort spellista';
 	@override String get errorLoading => 'Det gick inte att ladda spellistor';
@@ -937,7 +927,6 @@ class _TranslationsCollectionsSv implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}';
 	@override String failedToLoadItems({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}';
 	@override String get selectCollection => 'Välj samling';
-	@override String get createNewCollection => 'Skapa ny samling';
 	@override String get collectionName => 'Samlingsnamn';
 	@override String get enterCollectionName => 'Ange samlingsnamn';
 	@override String get addedToCollection => 'Tillagd i samling';
@@ -1001,6 +990,10 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Sessionskod kopierad till urklipp';
 	@override String get relayUnreachable => 'Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.';
 	@override String get reconnectingToHost => 'Återansluter till värd...';
+	@override String get currentPlayback => 'Aktuell uppspelning';
+	@override String get joinCurrentPlayback => 'Gå med i aktuell uppspelning';
+	@override String get joinCurrentPlaybackDescription => 'Hoppa tillbaka till det värden tittar på just nu';
+	@override String get failedToOpenCurrentPlayback => 'Kunde inte öppna aktuell uppspelning';
 	@override String participantJoined({required Object name}) => '${name} gick med';
 	@override String participantLeft({required Object name}) => '${name} lämnade';
 }
@@ -1018,6 +1011,12 @@ class _TranslationsShadersSv implements TranslationsShadersEn {
 	@override String get qualityFast => 'Snabb';
 	@override String get qualityHQ => 'Hög kvalitet';
 	@override String get mode => 'Läge';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1330,9 +1329,6 @@ extension on TranslationsSv {
 			'auth.signInWithPlex' => 'Logga in med Plex',
 			'auth.showQRCode' => 'Visa QR-kod',
 			'auth.authenticate' => 'Autentisera',
-			'auth.debugEnterToken' => 'Debug: Ange Plex-token',
-			'auth.plexTokenLabel' => 'Plex-autentiseringstoken',
-			'auth.plexTokenHint' => 'Ange din Plex.tv-token',
 			'auth.authenticationTimeout' => 'Autentisering tog för lång tid. Försök igen.',
 			'auth.scanQRToSignIn' => 'Skanna QR-koden för att logga in',
 			'auth.waitingForAuth' => 'Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.',
@@ -1354,6 +1350,7 @@ extension on TranslationsSv {
 			'common.delete' => 'Ta bort',
 			'common.shuffle' => 'Blanda',
 			'common.addTo' => 'Lägg till i...',
+			'common.createNew' => 'Skapa ny',
 			'common.remove' => 'Ta bort',
 			'common.paste' => 'Klistra in',
 			'common.connect' => 'Anslut',
@@ -1365,7 +1362,7 @@ extension on TranslationsSv {
 			'common.search' => 'Sök',
 			'common.home' => 'Hem',
 			'common.back' => 'Tillbaka',
-			'common.settings' => 'Inställningar',
+			'common.settings' => 'Mer',
 			'common.mute' => 'Ljud av',
 			'common.ok' => 'OK',
 			'common.loading' => 'Laddar...',
@@ -1383,7 +1380,7 @@ extension on TranslationsSv {
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
-			'screens.mpvConfig' => 'MPV-konfiguration',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'Loggar',
 			'update.available' => 'Uppdatering tillgänglig',
 			'update.versionAvailable' => ({required Object version}) => 'Version ${version} är tillgänglig',
@@ -1443,7 +1440,7 @@ extension on TranslationsSv {
 			'settings.playerBackend' => 'Spelarmotor',
 			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
 			'settings.exoPlayerDescription' => 'Android-nativ spelare med bättre hårdvarustöd',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => 'Avancerad spelare med fler funktioner och ASS-undertextstöd',
 			'settings.hardwareDecoding' => 'Hårdvaruavkodning',
 			'settings.hardwareDecodingDescription' => 'Använd hårdvaruacceleration när tillgängligt',
@@ -1529,6 +1526,8 @@ extension on TranslationsSv {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Visa profilval varje gång appen öppnas',
 			'settings.confirmExitOnBack' => 'Bekräfta innan avslut',
 			'settings.confirmExitOnBackDescription' => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen',
+			'settings.showNavBarLabels' => 'Visa navigeringsfältets etiketter',
+			'settings.showNavBarLabelsDescription' => 'Visa textetiketter under navigeringsfältets ikoner',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -1639,6 +1638,7 @@ extension on TranslationsSv {
 			'videoControls.settingsButton' => 'Videoinställningar',
 			'videoControls.audioTrackButton' => 'Ljudspår',
 			'videoControls.subtitlesButton' => 'Undertexter',
+			'videoControls.tracksButton' => 'Ljud och undertexter',
 			'videoControls.chaptersButton' => 'Kapitel',
 			'videoControls.versionsButton' => 'Videoversioner',
 			'videoControls.pipButton' => 'Bild-i-bild läge',
@@ -1711,19 +1711,10 @@ extension on TranslationsSv {
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrundsopacitet',
 			'subtitlingStyling.backgroundColor' => 'Bakgrundsfärg',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV-konfiguration',
+			'mpvConfig.title' => 'mpv-konfiguration',
 			'mpvConfig.description' => 'Avancerade videospelares inställningar',
-			'mpvConfig.properties' => 'Egenskaper',
 			'mpvConfig.presets' => 'Förval',
-			'mpvConfig.noProperties' => 'Inga egenskaper konfigurerade',
 			'mpvConfig.noPresets' => 'Inga sparade förval',
-			'mpvConfig.addProperty' => 'Lägg till egenskap',
-			'mpvConfig.editProperty' => 'Redigera egenskap',
-			'mpvConfig.deleteProperty' => 'Ta bort egenskap',
-			'mpvConfig.propertyKey' => 'Egenskapsnyckel',
-			'mpvConfig.propertyKeyHint' => 't.ex. hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => 'Egenskapsvärde',
-			'mpvConfig.propertyValueHint' => 't.ex. auto, 256000000',
 			'mpvConfig.saveAsPreset' => 'Spara som förval...',
 			'mpvConfig.presetName' => 'Förvalnamn',
 			'mpvConfig.presetNameHint' => 'Ange ett namn för detta förval',
@@ -1733,8 +1724,7 @@ extension on TranslationsSv {
 			'mpvConfig.presetLoaded' => 'Förval laddat',
 			'mpvConfig.presetDeleted' => 'Förval borttaget',
 			'mpvConfig.confirmDeletePreset' => 'Är du säker på att du vill ta bort detta förval?',
-			'mpvConfig.confirmDeleteProperty' => 'Är du säker på att du vill ta bort denna egenskap?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} poster',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bekräfta åtgärd',
 			'discover.title' => 'Upptäck',
 			'discover.switchProfile' => 'Byt profil',
@@ -1833,13 +1823,11 @@ extension on TranslationsSv {
 			'licenses.licenseNumber' => ({required Object number}) => 'Licens ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenser',
 			'navigation.libraries' => 'Bibliotek',
-			'navigation.downloads' => 'Nedladdningar',
+			'navigation.downloads' => 'Nerladdat',
 			'navigation.liveTv' => 'Live-TV',
 			'liveTv.title' => 'Live-TV',
 			'liveTv.channels' => 'Kanaler',
 			'liveTv.guide' => 'Programguide',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noChannels' => 'Inga kanaler tillgängliga',
 			'liveTv.noDvr' => 'Ingen DVR konfigurerad på någon server',
 			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
@@ -1849,6 +1837,8 @@ extension on TranslationsSv {
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.allChannels' => 'Alla kanaler',
@@ -1915,7 +1905,6 @@ extension on TranslationsSv {
 			'playlists.itemAdded' => 'Tillagd i spellista',
 			'playlists.itemRemoved' => 'Borttagen från spellista',
 			'playlists.selectPlaylist' => 'Välj spellista',
-			'playlists.createNewPlaylist' => 'Skapa ny spellista',
 			'playlists.errorCreating' => 'Det gick inte att skapa spellista',
 			'playlists.errorDeleting' => 'Det gick inte att ta bort spellista',
 			'playlists.errorLoading' => 'Det gick inte att ladda spellistor',
@@ -1934,7 +1923,6 @@ extension on TranslationsSv {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
 			'collections.selectCollection' => 'Välj samling',
-			'collections.createNewCollection' => 'Skapa ny samling',
 			'collections.collectionName' => 'Samlingsnamn',
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
 			'collections.addedToCollection' => 'Tillagd i samling',
@@ -1989,6 +1977,10 @@ extension on TranslationsSv {
 			'watchTogether.sessionCodeCopied' => 'Sessionskod kopierad till urklipp',
 			'watchTogether.relayUnreachable' => 'Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.',
 			'watchTogether.reconnectingToHost' => 'Återansluter till värd...',
+			'watchTogether.currentPlayback' => 'Aktuell uppspelning',
+			'watchTogether.joinCurrentPlayback' => 'Gå med i aktuell uppspelning',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Hoppa tillbaka till det värden tittar på just nu',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Kunde inte öppna aktuell uppspelning',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} gick med',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} lämnade',
 			'shaders.title' => 'Shaders',
@@ -1997,6 +1989,12 @@ extension on TranslationsSv {
 			'shaders.qualityFast' => 'Snabb',
 			'shaders.qualityHQ' => 'Hög kvalitet',
 			'shaders.mode' => 'Läge',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => 'Anslut till enhet',
 			'companionRemote.hostRemoteSession' => 'Starta fjärrsession',

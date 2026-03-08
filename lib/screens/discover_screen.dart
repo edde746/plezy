@@ -17,7 +17,6 @@ import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
 import '../models/plex_hub.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/server_state_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import 'profile/user_avatar_widget.dart';
@@ -300,11 +299,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Refresh continue watching when app resumes on mobile platforms
-    // Skip on desktop to avoid excessive refreshes from window focus changes
-    if (state == AppLifecycleState.resumed && (Platform.isIOS || Platform.isAndroid)) {
-      appLogger.d('App resumed on mobile - refreshing continue watching');
-      _refreshContinueWatching();
+    if (state == AppLifecycleState.resumed) {
+      // Restart auto-scroll when app becomes active again
+      if (!_isAutoScrollPaused) _startAutoScroll();
+      // Refresh continue watching on mobile only
+      // (on desktop, "resumed" fires on every window focus gain)
+      if (Platform.isIOS || Platform.isAndroid) {
+        _refreshContinueWatching();
+      }
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      // Stop animations to prevent scroll state corruption while backgrounded
+      _autoScrollTimer?.cancel();
+      _stopIndicatorProgress();
     }
   }
 
@@ -379,11 +386,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   @override
-  void onTabShown() {
+  void onTabShown({bool scrollToTop = true}) {
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
-    _focusTopBoundary();
+    if (scrollToTop) {
+      _focusTopBoundary();
+    }
   }
 
   // Helper method to calculate visible dot range (max 5 dots)
@@ -732,14 +741,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Use comprehensive logout through UserProfileProvider
       final userProfileProvider = Provider.of<UserProfileProvider>(context, listen: false);
       final multiServerProvider = context.read<MultiServerProvider>();
-      final serverStateProvider = context.read<ServerStateProvider>();
       final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
       final playbackStateProvider = context.read<PlaybackStateProvider>();
 
       // Clear all user data and provider states
       await userProfileProvider.logout();
       multiServerProvider.clearAllConnections();
-      serverStateProvider.reset();
       await hiddenLibrariesProvider.refresh();
       playbackStateProvider.clearShuffle();
 
@@ -1162,30 +1169,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   return _buildHeroItem(_onDeck[index], heroHeight);
                 },
               ),
-              // Bottom gradient that extends past hero bounds to ensure seamless blend
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: -32, // Extend 32px past the hero section bounds
-                height: 80, // Tall enough to cover any gap
-                child: IgnorePointer(
-                  child: Builder(
-                    builder: (context) {
-                      final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [bgColor.withValues(alpha: 0), bgColor],
-                            stops: const [0.0, 0.6],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
               // Page indicators with animated progress and pause/play button
               if (!InputModeTracker.isKeyboardMode(context))
               Positioned(
@@ -1363,20 +1346,22 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               left: 0,
               right: 0,
               bottom: -4, // Extend past stack bounds to ensure coverage
-              child: Builder(
-                builder: (context) {
-                  final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                        stops: const [0.5, 0.85, 1.0],
+              child: IgnorePointer(
+                child: Builder(
+                  builder: (context) {
+                    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
+                          stops: const [0.5, 0.85, 1.0],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
 

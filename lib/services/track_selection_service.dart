@@ -368,11 +368,6 @@ class TrackSelectionService {
   }
 
   /// Apply a filter to tracks, falling back to original if filter produces empty result
-  List<T> _applyFilterWithFallback<T>(List<T> tracks, List<T> Function(List<T>) filter, String _) {
-    final filtered = filter(tracks);
-    return filtered.isNotEmpty ? filtered : tracks;
-  }
-
   /// Generic track matching for audio and subtitle tracks
   /// Returns the best matching track based on hierarchical criteria:
   /// 1. Exact match (id + title + language)
@@ -456,113 +451,6 @@ class TrackSelectionService {
       (t) => t.title,
       (t) => t.language,
     );
-  }
-
-  SubtitleTrack? findSubtitleTrackByProfile(
-    List<SubtitleTrack> availableTracks,
-    PlexUserProfile profile, {
-    AudioTrack? selectedAudioTrack,
-  }) {
-    if (availableTracks.isEmpty) return null;
-
-    // Mode 0: Manually selected - return OFF
-    if (profile.autoSelectSubtitle == 0) return SubtitleTrack.off;
-
-    // Mode 1: Shown with foreign audio
-    if (profile.autoSelectSubtitle == 1) {
-      if (selectedAudioTrack != null && profile.defaultSubtitleLanguage != null) {
-        final audioLang = selectedAudioTrack.language?.toLowerCase();
-        final prefLang = profile.defaultSubtitleLanguage!.toLowerCase();
-        final languageVariations = LanguageCodes.getVariations(prefLang);
-
-        // If audio matches preferred language, no subtitles needed
-        if (audioLang != null && languageVariations.contains(audioLang)) {
-          return SubtitleTrack.off;
-        }
-      }
-    }
-
-    // Mode 2: Always enabled (or continuing from mode 1 with foreign audio)
-    final preferredLanguages = _buildPreferredLanguages(profile, isAudio: false);
-    if (preferredLanguages.isEmpty) return null;
-
-    // Apply filtering with fallback to original tracks if filter produces empty result
-    var candidateTracks = availableTracks;
-    candidateTracks = filterSubtitlesBySDH(candidateTracks, profile.defaultSubtitleAccessibility);
-    candidateTracks = filterSubtitlesByForced(candidateTracks, profile.defaultSubtitleForced);
-    candidateTracks = _applyFilterWithFallback(availableTracks, (_) => candidateTracks, 'strict filters');
-
-    for (final preferredLanguage in preferredLanguages) {
-      final match = _findTrackByPreferredLanguage<SubtitleTrack>(
-        candidateTracks,
-        preferredLanguage,
-        (t) => t.language,
-        (t) => t.title ?? 'Track ${t.id}',
-        'subtitle',
-      );
-      if (match != null) return match;
-    }
-
-    return null;
-  }
-
-  /// Filters subtitle tracks based on SDH (Subtitles for Deaf or Hard-of-Hearing) preference
-  ///
-  /// Values:
-  /// - 0: Prefer non-SDH subtitles
-  /// - 1: Prefer SDH subtitles
-  /// - 2: Only show SDH subtitles
-  /// - 3: Only show non-SDH subtitles
-  List<SubtitleTrack> filterSubtitlesBySDH(List<SubtitleTrack> tracks, int preference) {
-    if (preference == 0 || preference == 1) {
-      final preferSDH = preference == 1;
-      final preferred = tracks.where((t) => isSDH(t) == preferSDH).toList();
-      return preferred.isNotEmpty ? preferred : tracks;
-    } else if (preference == 2) {
-      return tracks.where((t) => isSDH(t)).toList();
-    } else if (preference == 3) {
-      return tracks.where((t) => !isSDH(t)).toList();
-    }
-    return tracks;
-  }
-
-  /// Filters subtitle tracks based on forced subtitle preference
-  ///
-  /// Values:
-  /// - 0: Prefer non-forced subtitles
-  /// - 1: Prefer forced subtitles
-  /// - 2: Only show forced subtitles
-  /// - 3: Only show non-forced subtitles
-  List<SubtitleTrack> filterSubtitlesByForced(List<SubtitleTrack> tracks, int preference) {
-    if (preference == 0 || preference == 1) {
-      final preferForced = preference == 1;
-      final preferred = tracks.where((t) => isForced(t) == preferForced).toList();
-      return preferred.isNotEmpty ? preferred : tracks;
-    } else if (preference == 2) {
-      return tracks.where((t) => isForced(t)).toList();
-    } else if (preference == 3) {
-      return tracks.where((t) => !isForced(t)).toList();
-    }
-    return tracks;
-  }
-
-  /// Checks if a subtitle track is SDH (Subtitles for Deaf or Hard-of-Hearing)
-  ///
-  /// Since mpv may not expose this directly, we infer from the title
-  bool isSDH(SubtitleTrack track) {
-    final title = track.title?.toLowerCase() ?? '';
-
-    // Look for common SDH indicators
-    return title.contains('sdh') ||
-        title.contains('cc') ||
-        title.contains('hearing impaired') ||
-        title.contains('deaf');
-  }
-
-  /// Checks if a subtitle track is forced
-  bool isForced(SubtitleTrack track) {
-    final title = track.title?.toLowerCase() ?? '';
-    return title.contains('forced');
   }
 
   /// Find a track matching a preferred language from a list of tracks
@@ -673,31 +561,30 @@ class TrackSelectionService {
 
   /// Select the best subtitle track based on priority:
   /// Priority 1: Preferred track from navigation
-  /// Priority 2: Plex-selected track from media info
-  /// Priority 3: Per-media language preference
-  /// Priority 4: User profile preferences
-  /// Priority 5: Default track
-  /// Priority 6: Off
+  /// Priority 2: Plex server's selected track (the server computes this from
+  ///             account prefs, show/season prefs, and per-item stream selections)
+  /// Priority 3: Default track
+  /// Priority 4: Off
   TrackSelectionResult<SubtitleTrack> selectSubtitleTrack(
     List<SubtitleTrack> availableTracks,
     SubtitleTrack? preferredSubtitleTrack,
     AudioTrack? selectedAudioTrack,
   ) {
-    SubtitleTrack? subtitleToSelect;
-
     // Priority 1: Try preferred track from navigation
     if (preferredSubtitleTrack != null) {
       if (preferredSubtitleTrack.id == 'no') {
         return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.navigation);
       } else if (availableTracks.isNotEmpty) {
-        subtitleToSelect = findBestSubtitleMatch(availableTracks, preferredSubtitleTrack);
+        final subtitleToSelect = findBestSubtitleMatch(availableTracks, preferredSubtitleTrack);
         if (subtitleToSelect != null) {
           return TrackSelectionResult(subtitleToSelect, TrackSelectionPriority.navigation);
         }
       }
     }
 
-    // Priority 2: Check Plex-selected track from media info
+    // Priority 2: Trust Plex server's selected track
+    // The server applies all preference levels (account, show/season, per-item)
+    // and exposes the result via the `selected` flag on streams.
     if (plexMediaInfo != null && availableTracks.isNotEmpty) {
       final plexSelectedTrack = plexMediaInfo!.subtitleTracks.where((t) => t.selected).firstOrNull;
 
@@ -707,37 +594,13 @@ class TrackSelectionService {
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.plexSelected);
         }
+      } else if (plexMediaInfo!.subtitleTracks.isNotEmpty) {
+        // Server has subtitle tracks but none selected — trust that decision
+        return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.plexSelected);
       }
     }
 
-    // Priority 3: Try per-media language preference
-    if (metadata.subtitleLanguage != null) {
-      if (metadata.subtitleLanguage == 'none' || metadata.subtitleLanguage!.isEmpty) {
-        return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.perMedia);
-      } else if (availableTracks.isNotEmpty) {
-        final matchedTrack = availableTracks.firstWhere(
-          (track) => languageMatches(track.language, metadata.subtitleLanguage),
-          orElse: () => availableTracks.first,
-        );
-        if (languageMatches(matchedTrack.language, metadata.subtitleLanguage)) {
-          return TrackSelectionResult(matchedTrack, TrackSelectionPriority.perMedia);
-        }
-      }
-    }
-
-    // Priority 4: Apply user profile preferences
-    if (profileSettings != null && availableTracks.isNotEmpty) {
-      subtitleToSelect = findSubtitleTrackByProfile(
-        availableTracks,
-        profileSettings!,
-        selectedAudioTrack: selectedAudioTrack,
-      );
-      if (subtitleToSelect != null) {
-        return TrackSelectionResult(subtitleToSelect, TrackSelectionPriority.profile);
-      }
-    }
-
-    // Priority 5: Check for default subtitle
+    // Priority 3: Check for default subtitle
     if (availableTracks.isNotEmpty) {
       final defaultTrack = availableTracks.firstWhere((t) => t.isDefault, orElse: () => availableTracks.first);
       if (defaultTrack.isDefault) {
@@ -745,7 +608,7 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 6: Turn off subtitles
+    // Priority 4: Turn off subtitles
     return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.off);
   }
 
@@ -753,6 +616,7 @@ class TrackSelectionService {
   Future<void> selectAndApplyTracks({
     AudioTrack? preferredAudioTrack,
     SubtitleTrack? preferredSubtitleTrack,
+    SubtitleTrack? preferredSecondarySubtitleTrack,
     double? defaultPlaybackSpeed,
     Function(AudioTrack)? onAudioTrackChanged,
     Function(SubtitleTrack)? onSubtitleTrackChanged,
@@ -763,6 +627,8 @@ class TrackSelectionService {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
     }
+
+    if (player.disposed) return;
 
     // Get real tracks (excluding auto and no)
     final realAudioTracks = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
@@ -796,6 +662,20 @@ class TrackSelectionService {
     // Save to Plex if this was user's navigation preference (Priority 1)
     if (subtitleResult.priority == TrackSelectionPriority.navigation && onSubtitleTrackChanged != null) {
       onSubtitleTrackChanged(selectedSubtitleTrack);
+    }
+
+    // Apply preferred secondary subtitle track if provided (mpv-only)
+    if (preferredSecondarySubtitleTrack != null &&
+        preferredSecondarySubtitleTrack.id != 'no' &&
+        player.supportsSecondarySubtitles &&
+        realSubtitleTracks.isNotEmpty) {
+      final secondaryMatch = findBestSubtitleMatch(realSubtitleTracks, preferredSecondarySubtitleTrack);
+      if (secondaryMatch != null && secondaryMatch.id != 'no') {
+        appLogger.d(
+          'Secondary subtitle: ${secondaryMatch.title ?? secondaryMatch.language ?? "Track ${secondaryMatch.id}"}',
+        );
+        player.selectSecondarySubtitleTrack(secondaryMatch);
+      }
     }
 
     // Apply default playback speed from settings

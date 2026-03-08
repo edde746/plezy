@@ -15,10 +15,6 @@ class DataAggregationService {
 
   DataAggregationService(this._serverManager);
 
-  /// Clear any cached data (for compatibility with existing callers)
-  // ignore: no-empty-block - stub, no cache to clear in current implementation
-  void clearCache() {}
-
   /// Fetch libraries from all online servers
   /// Libraries are automatically tagged with server info by PlexClient
   Future<List<PlexLibrary>> getLibrariesFromAllServers() async {
@@ -51,11 +47,10 @@ class DataAggregationService {
       }).toList();
     }
 
-    // Sort by most recently viewed
-    // Use lastViewedAt (when item was last viewed), falling back to updatedAt/addedAt if not available
+    // Sort by most recently viewed, falling back to addedAt for unwatched items
     filteredOnDeck.sort((a, b) {
-      final aTime = a.lastViewedAt ?? a.updatedAt ?? a.addedAt ?? 0;
-      final bTime = b.lastViewedAt ?? b.updatedAt ?? b.addedAt ?? 0;
+      final aTime = a.lastViewedAt ?? a.addedAt ?? 0;
+      final bTime = b.lastViewedAt ?? b.addedAt ?? 0;
       return bTime.compareTo(aTime); // Descending (most recent first)
     });
 
@@ -150,7 +145,6 @@ class DataAggregationService {
         return hubs;
       } catch (e, stackTrace) {
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
-        _serverManager.updateServerStatus(serverId, false);
         return <PlexHub>[];
       }
     });
@@ -229,7 +223,6 @@ class DataAggregationService {
         return serverHubs;
       } catch (e, stackTrace) {
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
-        _serverManager.updateServerStatus(serverId, false);
         return <PlexHub>[];
       }
     });
@@ -278,7 +271,6 @@ class DataAggregationService {
       return await client.getLibraries();
     } catch (e, stackTrace) {
       appLogger.e('Failed to fetch libraries for server $serverId', error: e, stackTrace: stackTrace);
-      _serverManager.updateServerStatus(serverId, false);
       return [];
     }
   }
@@ -358,6 +350,7 @@ class DataAggregationService {
           items: items,
           serverId: hub.serverId,
           serverName: hub.serverName,
+          librarySectionID: entry.key,
         ));
       }
 
@@ -436,7 +429,6 @@ class DataAggregationService {
         return (serverId, result);
       } catch (e, stackTrace) {
         appLogger.e('Failed $operationName from server $serverId', error: e, stackTrace: stackTrace);
-        _serverManager.updateServerStatus(serverId, false);
         appLogger.d('$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms');
         return (serverId, <T>[]);
       }
