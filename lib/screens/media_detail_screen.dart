@@ -609,10 +609,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           icon: const AppIcon(Symbols.settings_rounded, fill: 1),
                           tooltip: t.downloads.downloadSettings,
                           iconSize: 16,
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(36, 36),
-                            maximumSize: const Size(36, 36),
-                          ),
+                          style: IconButton.styleFrom(minimumSize: const Size(36, 36), maximumSize: const Size(36, 36)),
                         ),
                         const SizedBox(width: 4),
                       ],
@@ -675,10 +672,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           icon: const AppIcon(Symbols.settings_rounded, fill: 1),
                           tooltip: t.downloads.downloadSettings,
                           iconSize: 16,
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(36, 36),
-                            maximumSize: const Size(36, 36),
-                          ),
+                          style: IconButton.styleFrom(minimumSize: const Size(36, 36), maximumSize: const Size(36, 36)),
                         ),
                         const SizedBox(width: 4),
                       ],
@@ -733,7 +727,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     try {
                       // Use settings-aware refresh for shows, direct queue for others
                       if (metadata.isShow) {
-                        final result = await AutoDownloadService.instance.refreshShow(metadata, client, downloadProvider);
+                        final result = await AutoDownloadService.instance.refreshShow(
+                          metadata,
+                          client,
+                          downloadProvider,
+                        );
                         if (context.mounted) {
                           if (result.queued > 0) {
                             showSuccessSnackBar(context, t.downloads.episodesQueued(count: result.queued));
@@ -744,7 +742,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       } else {
                         final count = await downloadProvider.queueDownload(metadata, client);
                         if (context.mounted) {
-                          final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
+                          final message = count > 1
+                              ? t.downloads.episodesQueued(count: count)
+                              : t.downloads.downloadQueued;
                           showSuccessSnackBar(context, message);
                         }
                       }

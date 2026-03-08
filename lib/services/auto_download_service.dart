@@ -37,8 +37,8 @@ class AutoDownloadService {
     final showRatingKey = isShow
         ? metadata.ratingKey
         : isSeason
-            ? metadata.parentRatingKey
-            : null;
+        ? metadata.parentRatingKey
+        : null;
 
     // Only apply per-series logic for shows/seasons
     if (showRatingKey == null) {
@@ -253,11 +253,7 @@ class AutoDownloadService {
   /// Delete downloaded episodes that are outside the target "keep last N" window.
   /// Only removes completed downloads — never touches in-progress ones.
   /// Returns the number of episodes trimmed.
-  Future<int> _trimExcessEpisodes(
-    PlexMetadata show,
-    Set<String> targetKeys,
-    DownloadProvider downloadProvider,
-  ) async {
+  Future<int> _trimExcessEpisodes(PlexMetadata show, Set<String> targetKeys, DownloadProvider downloadProvider) async {
     final downloadedEpisodes = downloadProvider.getDownloadedEpisodesForShow(show.ratingKey);
     int trimmed = 0;
 
@@ -332,9 +328,7 @@ class AutoDownloadService {
             if (DateTime.now().difference(effectiveWatchedTime) > retentionPeriod) {
               await downloadProvider.deleteDownload(globalKey);
               await settingsService.clearWatchedDetectedAt(globalKey);
-              appLogger.i(
-                'Auto-download: Deleted watched episode $globalKey (after ${settings.retentionValue} days)',
-              );
+              appLogger.i('Auto-download: Deleted watched episode $globalKey (after ${settings.retentionValue} days)');
             }
             break;
 
@@ -343,9 +337,7 @@ class AutoDownloadService {
             if (DateTime.now().difference(effectiveWatchedTime) > retentionPeriod) {
               await downloadProvider.deleteDownload(globalKey);
               await settingsService.clearWatchedDetectedAt(globalKey);
-              appLogger.i(
-                'Auto-download: Deleted watched episode $globalKey (after ${settings.retentionValue} weeks)',
-              );
+              appLogger.i('Auto-download: Deleted watched episode $globalKey (after ${settings.retentionValue} weeks)');
             }
             break;
         }

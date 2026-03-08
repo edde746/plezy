@@ -745,17 +745,13 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final pct = (dp.progress).toStringAsFixed(1);
     if (dp.isTranscoding) {
       // "Transcoding" or "Transcoding 45.5%"
-      return dp.progress > 0
-          ? '${t.downloads.transcoding} $pct%'
-          : t.downloads.transcoding;
+      return dp.progress > 0 ? '${t.downloads.transcoding} $pct%' : t.downloads.transcoding;
     }
     // "Downloading" or "Downloading 45.5% - 12.3 MB/s"
     if (dp.progress > 0) {
       return '${t.downloads.downloading} $pct% - ${dp.speedFormatted}';
     }
-    return dp.speed > 0
-        ? '${t.downloads.downloading} - ${dp.speedFormatted}'
-        : t.downloads.downloading;
+    return dp.speed > 0 ? '${t.downloads.downloading} - ${dp.speedFormatted}' : t.downloads.downloading;
   }
 
   Widget _buildStatusIcon(DownloadStatus status) {
@@ -877,11 +873,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
         _buildActionButton(
           icon: Symbols.settings_rounded,
           tooltip: t.downloads.downloadSettings,
-          onPressed: () => widget.onSettings!(
-            widget.node.settingsRatingKey!,
-            widget.node.title,
-            widget.node.isSeries,
-          ),
+          onPressed: () => widget.onSettings!(widget.node.settingsRatingKey!, widget.node.title, widget.node.isSeries),
           buttonIndex: buttonIndex++,
         ),
       );
@@ -945,11 +937,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
         _buildActionButton(
           icon: Symbols.settings_rounded,
           tooltip: t.downloads.downloadSettings,
-          onPressed: () => widget.onSettings!(
-            widget.node.settingsRatingKey!,
-            widget.node.title,
-            widget.node.isSeries,
-          ),
+          onPressed: () => widget.onSettings!(widget.node.settingsRatingKey!, widget.node.title, widget.node.isSeries),
           buttonIndex: buttonIndex++,
         ),
       );

@@ -308,9 +308,9 @@ class DownloadProvider extends ChangeNotifier {
           meta.grandparentRatingKey == showRatingKey &&
           progress != null &&
           (progress.status == DownloadStatus.completed ||
-           progress.status == DownloadStatus.downloading ||
-           progress.status == DownloadStatus.queued ||
-           progress.status == DownloadStatus.partial)) {
+              progress.status == DownloadStatus.downloading ||
+              progress.status == DownloadStatus.queued ||
+              progress.status == DownloadStatus.partial)) {
         final seasonRatingKey = meta.parentRatingKey;
         if (seasonRatingKey != null && !seasons.containsKey(seasonRatingKey)) {
           final seasonGlobalKey = '${meta.serverId}:$seasonRatingKey';
@@ -431,10 +431,7 @@ class DownloadProvider extends ChangeNotifier {
   }
 
   /// Get episode downloads filtered by show and/or season ratingKey.
-  List<DownloadProgress> _getEpisodeDownloads({
-    String? showRatingKey,
-    String? seasonRatingKey,
-  }) {
+  List<DownloadProgress> _getEpisodeDownloads({String? showRatingKey, String? seasonRatingKey}) {
     return _downloads.entries
         .where((entry) {
           final meta = _metadata[entry.key];
@@ -775,10 +772,7 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
 
     // Actually trigger download via DownloadManagerService
-    await _downloadManager.queueDownload(
-      metadata: metadataToStore,
-      client: client,
-    );
+    await _downloadManager.queueDownload(metadata: metadataToStore, client: client);
   }
 
   /// Fetch and store show and season metadata for an episode
@@ -1069,11 +1063,7 @@ class DownloadProvider extends ChangeNotifier {
   ///
   /// For series: deletes all episodes, then re-queues via refreshShow.
   /// For movies: deletes and re-queues the single item.
-  Future<void> redownloadAtNewQuality(
-    String ratingKey,
-    bool isSeries,
-    PlexClient client,
-  ) async {
+  Future<void> redownloadAtNewQuality(String ratingKey, bool isSeries, PlexClient client) async {
     if (await DownloadManagerService.shouldBlockDownloadOnCellular()) {
       throw CellularDownloadBlockedException();
     }
@@ -1087,14 +1077,10 @@ class DownloadProvider extends ChangeNotifier {
       if (isSeries) {
         // Snapshot metadata and episode keys synchronously before any async deletions
         final showMeta = _metadata[globalKey];
-        final episodeKeys = _downloads.keys
-            .where((k) {
-              final meta = _metadata[k];
-              return meta != null &&
-                  meta.type.toLowerCase() == 'episode' &&
-                  meta.grandparentRatingKey == ratingKey;
-            })
-            .toList();
+        final episodeKeys = _downloads.keys.where((k) {
+          final meta = _metadata[k];
+          return meta != null && meta.type.toLowerCase() == 'episode' && meta.grandparentRatingKey == ratingKey;
+        }).toList();
 
         // Batch delete without per-item notifyListeners
         for (final key in episodeKeys) {

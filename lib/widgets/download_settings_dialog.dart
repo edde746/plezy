@@ -43,11 +43,7 @@ Future<DownloadSettings?> showDownloadSettingsDialog(
 
   final result = await showDialog<DownloadSettings>(
     context: context,
-    builder: (dialogContext) => _DownloadSettingsDialog(
-      title: title,
-      isSeries: isSeries,
-      initial: initial,
-    ),
+    builder: (dialogContext) => _DownloadSettingsDialog(title: title, isSeries: isSeries, initial: initial),
   );
 
   if (result != null) {
@@ -105,11 +101,7 @@ class _DownloadSettingsDialog extends StatefulWidget {
   final bool isSeries;
   final DownloadSettings initial;
 
-  const _DownloadSettingsDialog({
-    required this.title,
-    required this.isSeries,
-    required this.initial,
-  });
+  const _DownloadSettingsDialog({required this.title, required this.isSeries, required this.initial});
 
   @override
   State<_DownloadSettingsDialog> createState() => _DownloadSettingsDialogState();
@@ -133,19 +125,14 @@ class _DownloadSettingsDialogState extends State<_DownloadSettingsDialog> {
     _episodeCount = widget.initial.episodeCount;
     _deleteMode = widget.initial.deleteMode;
     // Initialize each retention value from settings based on active mode
-    _retentionDays = widget.initial.deleteMode == DeleteRetentionMode.afterDays
-        ? widget.initial.retentionValue
-        : 7;
-    _retentionWeeks = widget.initial.deleteMode == DeleteRetentionMode.afterWeeks
-        ? widget.initial.retentionValue
-        : 4;
+    _retentionDays = widget.initial.deleteMode == DeleteRetentionMode.afterDays ? widget.initial.retentionValue : 7;
+    _retentionWeeks = widget.initial.deleteMode == DeleteRetentionMode.afterWeeks ? widget.initial.retentionValue : 4;
     _transcodeQuality = widget.initial.transcodeQuality;
     _episodeCountController.text = _episodeCount.toString();
     _retentionValueController.text = _activeRetentionValue.toString();
   }
 
-  int get _activeRetentionValue =>
-      _deleteMode == DeleteRetentionMode.afterWeeks ? _retentionWeeks : _retentionDays;
+  int get _activeRetentionValue => _deleteMode == DeleteRetentionMode.afterWeeks ? _retentionWeeks : _retentionDays;
 
   @override
   void dispose() {
@@ -170,11 +157,7 @@ class _DownloadSettingsDialogState extends State<_DownloadSettingsDialog> {
     final isTV = PlatformDetector.isTV();
 
     return AlertDialog(
-      title: Text(
-        '${t.downloads.downloadSettings}: ${widget.title}',
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: Text('${t.downloads.downloadSettings}: ${widget.title}', maxLines: 2, overflow: TextOverflow.ellipsis),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -302,10 +285,7 @@ class _DownloadSettingsDialogState extends State<_DownloadSettingsDialog> {
           style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
           child: Text(t.common.cancel),
         ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _buildSettings()),
-          child: Text(t.common.save),
-        ),
+        FilledButton(onPressed: () => Navigator.pop(context, _buildSettings()), child: Text(t.common.save)),
       ],
     );
   }

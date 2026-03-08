@@ -1046,10 +1046,7 @@ class PlexClient {
   /// Build a transcode download URL for the given quality preset.
   /// Calls the /decision endpoint first to initialize the transcode session,
   /// then returns the /start URL for the actual download.
-  Future<({String url, String sessionId})> getTranscodeDownloadUrl(
-    String ratingKey,
-    String quality,
-  ) async {
+  Future<({String url, String sessionId})> getTranscodeDownloadUrl(String ratingKey, String quality) async {
     final preset = transcodePresets[quality];
     if (preset == null) throw ArgumentError('Unknown quality preset: $quality');
 
@@ -1091,26 +1088,23 @@ class PlexClient {
     };
 
     // Manual URI encoding (Plex needs %20, not +)
-    final query = params.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
+    final query = params.entries.map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}').join('&');
 
     // Decision call — initializes the transcode session on the server.
     // Uses bare Dio (no default X-Plex-* HTTP headers) matching tuneChannel pattern.
-    final decisionDio = Dio(BaseOptions(
-      headers: {'Accept-Language': 'en'},
-      connectTimeout: ConnectionTimeouts.connect,
-      receiveTimeout: ConnectionTimeouts.receive,
-    ));
+    final decisionDio = Dio(
+      BaseOptions(
+        headers: {'Accept-Language': 'en'},
+        connectTimeout: ConnectionTimeouts.connect,
+        receiveTimeout: ConnectionTimeouts.receive,
+      ),
+    );
     final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$query';
     appLogger.d('Transcode decision URL: $decisionUrl');
     final decisionResponse = await decisionDio.getUri(Uri.parse(decisionUrl));
     appLogger.d('Transcode decision for $ratingKey ($quality): ${decisionResponse.statusCode}');
 
-    return (
-      url: '${config.baseUrl}/video/:/transcode/universal/start?$query',
-      sessionId: sessionId,
-    );
+    return (url: '${config.baseUrl}/video/:/transcode/universal/start?$query', sessionId: sessionId);
   }
 
   /// Stop a transcode session on the server (cleanup).
@@ -1175,7 +1169,7 @@ class PlexClient {
     final complete = session['complete'] == true || session['complete'] == 1;
     return (progress: progress.clamp(0.0, 100.0), complete: complete);
   }
-  
+
   /// Get consolidated video playback data (URL, media info, versions, and markers) in a single API call.
   /// This is the primary method for playback initialization.
   /// Uses cache for offline mode support and network fallback.

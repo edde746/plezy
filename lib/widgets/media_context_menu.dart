@@ -218,11 +218,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // or on a season screen belonging to the same series
       final ancestorMediaDetail = context.findAncestorWidgetOfExactType<MediaDetailScreen>();
       final ancestorSeasonDetail = context.findAncestorWidgetOfExactType<SeasonDetailScreen>();
-      final ancestorSeriesKey =
-          ancestorMediaDetail?.metadata.ratingKey ?? ancestorSeasonDetail?.season.parentRatingKey;
+      final ancestorSeriesKey = ancestorMediaDetail?.metadata.ratingKey ?? ancestorSeasonDetail?.season.parentRatingKey;
       // For episodes, the show key is grandparentRatingKey; for seasons, it's parentRatingKey
-      final itemSeriesKey =
-          mediaType == PlexMediaType.episode ? metadata.grandparentRatingKey : metadata.parentRatingKey;
+      final itemSeriesKey = mediaType == PlexMediaType.episode
+          ? metadata.grandparentRatingKey
+          : metadata.parentRatingKey;
       if ((mediaType == PlexMediaType.episode || mediaType == PlexMediaType.season) &&
           itemSeriesKey != null &&
           ancestorSeriesKey != itemSeriesKey) {
@@ -232,8 +232,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Go to Season (for episodes) — hide if already on that season's detail screen
       if (mediaType == PlexMediaType.episode &&
           metadata.parentTitle != null &&
-          context.findAncestorWidgetOfExactType<SeasonDetailScreen>()?.season.ratingKey !=
-              metadata.parentRatingKey) {
+          context.findAncestorWidgetOfExactType<SeasonDetailScreen>()?.season.ratingKey != metadata.parentRatingKey) {
         menuActions.add(
           _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
         );
@@ -451,9 +450,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           didNavigate = true;
           await _navigateToRelated(
             context,
-            metadata!.mediaType == PlexMediaType.season
-                ? metadata.parentRatingKey
-                : metadata.grandparentRatingKey,
+            metadata!.mediaType == PlexMediaType.season ? metadata.parentRatingKey : metadata.grandparentRatingKey,
             (metadata) => MediaDetailScreen(metadata: metadata),
             t.messages.errorLoadingSeries,
           );
@@ -654,7 +651,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             onPressed: () => Navigator.pop(dialogContext, action.value),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Row(
-              children: [AppIcon(action.icon, fill: 1, size: 24), const SizedBox(width: 16), Text(action.label, style: Theme.of(dialogContext).textTheme.bodyLarge)],
+              children: [
+                AppIcon(action.icon, fill: 1, size: 24),
+                const SizedBox(width: 16),
+                Text(action.label, style: Theme.of(dialogContext).textTheme.bodyLarge),
+              ],
             ),
           );
         }).toList(),
@@ -1092,16 +1093,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // For shows/seasons/movies: always show settings dialog before download
     if (metadata.isShow || metadata.isSeason || metadata.isMovie) {
       // For seasons, use the parent show's rating key
-      final settingsKey = metadata.isSeason
-          ? (metadata.parentRatingKey ?? metadata.ratingKey)
-          : metadata.ratingKey;
+      final settingsKey = metadata.isSeason ? (metadata.parentRatingKey ?? metadata.ratingKey) : metadata.ratingKey;
       if (!context.mounted) return;
       final settings = await showDownloadSettingsDialog(
         context,
         ratingKey: settingsKey,
-        title: metadata.isSeason
-            ? (metadata.parentTitle ?? metadata.title)
-            : metadata.title,
+        title: metadata.isSeason ? (metadata.parentTitle ?? metadata.title) : metadata.title,
         isSeries: metadata.isShow || metadata.isSeason,
       );
       if (settings == null) return; // Cancelled

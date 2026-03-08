@@ -523,10 +523,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       for (final serverId in multiServer.onlineServerIds) {
         final client = multiServer.getClientForServer(serverId);
         if (client != null) {
-          AutoDownloadService.instance.checkForNewEpisodes(
-            client,
-            context.read<DownloadProvider>(),
-          );
+          AutoDownloadService.instance.checkForNewEpisodes(client, context.read<DownloadProvider>());
         }
       }
     }

@@ -10,7 +10,6 @@ import '../../models/hotkey_model.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 import '../../focus/focus_memory_tracker.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
@@ -562,7 +561,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             focusNode: _focusTracker.get(_kBufferSize),
             leading: const AppIcon(Symbols.memory_rounded, fill: 1),
             title: Text(t.settings.bufferSize),
-            subtitle: Text(_bufferSize == 0 ? t.settings.bufferSizeAuto : t.settings.bufferSizeMB(size: _bufferSize.toString())),
+            subtitle: Text(
+              _bufferSize == 0 ? t.settings.bufferSizeAuto : t.settings.bufferSizeMB(size: _bufferSize.toString()),
+            ),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showBufferSizeDialog(),
           ),
@@ -1240,7 +1241,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   if (Platform.isAndroid && size > 0) {
                     final heapMB = await PlayerAndroid.getHeapSize();
                     if (heapMB > 0 && size > heapMB ~/ 4 && mounted) {
-                      showAppSnackBar(this.context, t.settings.bufferSizeWarning(heap: heapMB.toString(), size: size.toString()));
+                      showAppSnackBar(
+                        this.context,
+                        t.settings.bufferSizeWarning(heap: heapMB.toString(), size: size.toString()),
+                      );
                     }
                   }
                 },
@@ -1574,11 +1578,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(t.settings.clearCache),
           content: Text(t.settings.clearCacheDescription),
           actions: [
-            TextButton(
-              autofocus: true,
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.cancel),
-            ),
+            TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1604,11 +1604,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(t.settings.resetSettings),
           content: Text(t.settings.resetSettingsDescription),
           actions: [
-            TextButton(
-              autofocus: true,
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.cancel),
-            ),
+            TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1766,11 +1762,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ],
           ),
           actions: [
-            TextButton(
-              autofocus: true,
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.close),
-            ),
+            TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.close)),
             FilledButton(
               onPressed: () async {
                 final url = Uri.parse(_updateInfo!['releaseUrl']);
