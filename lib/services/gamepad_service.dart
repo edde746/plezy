@@ -62,10 +62,9 @@ class GamepadService with WindowListener {
 
   /// Start listening to gamepad events.
   /// Only active on desktop platforms (macOS, Windows, Linux).
-  void start() async {
-    // Only enable on desktop platforms
-    if (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux) return;
+  static bool get _isDesktop => Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
+  void start() async {
     appLogger.i('GamepadService: Starting on ${Platform.operatingSystem}');
 
     // List connected gamepads
@@ -80,8 +79,11 @@ class GamepadService with WindowListener {
     }
 
     // Track window focus so we ignore gamepad input when another app is active
-    windowManager.addListener(this);
-    _windowFocused = await windowManager.isFocused();
+    // (window_manager is desktop-only)
+    if (_isDesktop) {
+      windowManager.addListener(this);
+      _windowFocused = await windowManager.isFocused();
+    }
 
     _subscription?.cancel();
     _subscription = Gamepad.instance.events.listen(
@@ -96,7 +98,9 @@ class GamepadService with WindowListener {
     _stopDirectionRepeat();
     _subscription?.cancel();
     _subscription = null;
-    windowManager.removeListener(this);
+    if (_isDesktop) {
+      windowManager.removeListener(this);
+    }
     Gamepad.instance.dispose();
   }
 
