@@ -53,6 +53,8 @@ import 'utils/navigation_transitions.dart';
 import 'utils/log_redaction_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
+
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
 // Remove when Flutter PR #179643 is merged.
@@ -70,14 +72,14 @@ void _absorbZeroOffsetPointerEvent(PointerEvent event) {
   }
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
 
-  final packageInfo = await PackageInfo.fromPlatform();
+  if (_enableSentry) {
+    final packageInfo = await PackageInfo.fromPlatform();
 
-  await SentryFlutter.init(
-    (options) {
+    await SentryFlutter.init((options) {
       options.dsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
       options.release = 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
       options.tracesSampleRate = 0;
@@ -86,73 +88,77 @@ void main() async {
       options.recordHttpBreadcrumbs = false;
       options.beforeSend = _beforeSend;
       options.beforeBreadcrumb = _beforeBreadcrumb;
-    },
-    appRunner: () async {
-      // Initialize settings first to get saved locale
-      final settings = await SettingsService.getInstance();
-      final savedLocale = settings.getAppLocale();
+    }, appRunner: _bootstrapApp);
+    return;
+  }
 
-      // Initialize localization with saved locale
-      LocaleSettings.setLocale(savedLocale);
+  await _bootstrapApp();
+}
 
-      // Needed for formatting dates in different locales
-      await initializeDateFormatting(savedLocale.languageCode, null);
+Future<void> _bootstrapApp() async {
+  // Initialize settings first to get saved locale
+  final settings = await SettingsService.getInstance();
+  final savedLocale = settings.getAppLocale();
 
-      // Configure image cache for large libraries
-      PaintingBinding.instance.imageCache.maximumSize = 2000; // default 1000
-      PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300MB
+  // Initialize localization with saved locale
+  LocaleSettings.setLocale(savedLocale);
 
-      // Initialize services in parallel where possible
-      final futures = <Future<void>>[];
+  // Needed for formatting dates in different locales
+  await initializeDateFormatting(savedLocale.languageCode, null);
 
-      // Initialize window_manager for desktop platforms
-      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-        futures.add(windowManager.ensureInitialized());
-      }
+  // Configure image cache for large libraries
+  PaintingBinding.instance.imageCache.maximumSize = 2000; // default 1000
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300MB
 
-      // Initialize TV detection and PiP service for Android
-      if (Platform.isAndroid) {
-        futures.add(TvDetectionService.getInstance());
-        // Initialize PiP service to listen for PiP state changes
-        PipService();
-      }
+  // Initialize services in parallel where possible
+  final futures = <Future<void>>[];
 
-      // Configure macOS window with custom titlebar (depends on window manager)
-      futures.add(MacOSWindowService.setupCustomTitlebar());
+  // Initialize window_manager for desktop platforms
+  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    futures.add(windowManager.ensureInitialized());
+  }
 
-      // Initialize storage service
-      futures.add(StorageService.getInstance());
+  // Initialize TV detection and PiP service for Android
+  if (Platform.isAndroid) {
+    futures.add(TvDetectionService.getInstance());
+    // Initialize PiP service to listen for PiP state changes
+    PipService();
+  }
 
-      // Initialize language codes for track selection
-      futures.add(LanguageCodes.initialize());
+  // Configure macOS window with custom titlebar (depends on window manager)
+  futures.add(MacOSWindowService.setupCustomTitlebar());
 
-      // Wait for all parallel services to complete
-      await Future.wait(futures);
+  // Initialize storage service
+  futures.add(StorageService.getInstance());
 
-      // Initialize logger level based on debug setting
-      final debugEnabled = settings.getEnableDebugLogging();
-      setLoggerLevel(debugEnabled);
+  // Initialize language codes for track selection
+  futures.add(LanguageCodes.initialize());
 
-      // Initialize download storage service with settings
-      await DownloadStorageService.instance.initialize(settings);
+  // Wait for all parallel services to complete
+  await Future.wait(futures);
 
-      // Start global fullscreen state monitoring
-      FullscreenStateManager().startMonitoring();
+  // Initialize logger level based on debug setting
+  final debugEnabled = settings.getEnableDebugLogging();
+  setLoggerLevel(debugEnabled);
 
-      // Initialize gamepad service for desktop platforms
-      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-        GamepadService.instance.start();
-        DiscordRPCService.instance.initialize();
-      }
+  // Initialize download storage service with settings
+  await DownloadStorageService.instance.initialize(settings);
 
-      // DTD service is available for MCP tooling connection if needed
+  // Start global fullscreen state monitoring
+  FullscreenStateManager().startMonitoring();
 
-      // Register bundled shader licenses
-      _registerShaderLicenses();
+  // Initialize gamepad service for desktop platforms
+  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    GamepadService.instance.start();
+    DiscordRPCService.instance.initialize();
+  }
 
-      runApp(const MainApp());
-    },
-  );
+  // DTD service is available for MCP tooling connection if needed
+
+  // Register bundled shader licenses
+  _registerShaderLicenses();
+
+  runApp(const MainApp());
 }
 
 Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
