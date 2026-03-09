@@ -248,8 +248,12 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
       }
       return widget.item.displaySubtitle ?? t.discover.tvShow;
     } else if (itemType == 'movie') {
-      // For movies, show year
-      return widget.item.year?.toString() ?? t.discover.movie;
+      // For movies, show year and edition
+      final year = widget.item.year?.toString();
+      if (year != null && widget.item.editionTitle != null) {
+        return '$year · ${widget.item.editionTitle}';
+      }
+      return year ?? t.discover.movie;
     }
 
     // Default to type

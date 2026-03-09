@@ -137,7 +137,7 @@ class QueueSheet extends StatelessWidget {
       return item.grandparentTitle!;
     }
     if (item.year != null) {
-      return '${item.year}';
+      return item.editionTitle != null ? '${item.year} · ${item.editionTitle}' : '${item.year}';
     }
     return item.type;
   }

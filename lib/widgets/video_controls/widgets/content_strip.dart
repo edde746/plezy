@@ -510,7 +510,7 @@ class ContentStripState extends State<ContentStrip> {
       return '${item.grandparentTitle} \u00b7 S${item.parentIndex}E${item.index}';
     }
     if (item.grandparentTitle != null) return item.grandparentTitle!;
-    if (item.year != null) return '${item.year}';
+    if (item.year != null) return item.editionTitle != null ? '${item.year} · ${item.editionTitle}' : '${item.year}';
     return item.type;
   }
 

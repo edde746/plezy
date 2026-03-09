@@ -455,6 +455,11 @@ class _MediaCardList extends StatelessWidget {
           parts.add('${metadata.year}');
         }
 
+        // Add edition title
+        if (metadata.editionTitle != null) {
+          parts.add(metadata.editionTitle!);
+        }
+
         // Add duration
         if (metadata.duration != null) {
           parts.add(formatDurationTextual(metadata.duration!));
@@ -749,7 +754,9 @@ class _MediaCardHelpers {
       );
     } else if (metadata.year != null) {
       return Text(
-        '${metadata.year}',
+        metadata.editionTitle != null ? '${metadata.year} · ${metadata.editionTitle}' : '${metadata.year}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: Theme.of(
           context,
         ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),

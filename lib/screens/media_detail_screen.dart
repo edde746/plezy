@@ -2041,6 +2041,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                     runSpacing: 8,
                                     children: [
                                       if (metadata.year != null) _buildMetadataChip('${metadata.year}'),
+                                      if (metadata.editionTitle != null) _buildMetadataChip(metadata.editionTitle!),
                                       if (metadata.contentRating != null)
                                         _buildMetadataChip(formatContentRating(metadata.contentRating!)),
                                       if (metadata.duration != null)

@@ -99,6 +99,7 @@ class PlexMetadata with MultiServerFields {
   final String? audienceRatingImage; // Audience rating source URI
   final String? tagline;
   final String? originalTitle;
+  final String? editionTitle; // Edition name for movies (e.g., "Director's Cut", "Extended")
   final String? subtype; // Clip subtype: "trailer", "behindTheScenes", "deleted", etc.
   final int? extraType; // Numeric extra type identifier
   final String? primaryExtraKey; // Points to main trailer (e.g., "/library/metadata/52601")
@@ -186,6 +187,7 @@ class PlexMetadata with MultiServerFields {
     this.audienceRatingImage,
     this.tagline,
     this.originalTitle,
+    this.editionTitle,
     this.subtype,
     this.extraType,
     this.primaryExtraKey,
@@ -244,6 +246,7 @@ class PlexMetadata with MultiServerFields {
     String? audienceRatingImage,
     String? tagline,
     String? originalTitle,
+    String? editionTitle,
     String? subtype,
     int? extraType,
     String? primaryExtraKey,
@@ -300,6 +303,7 @@ class PlexMetadata with MultiServerFields {
       audienceRatingImage: audienceRatingImage ?? this.audienceRatingImage,
       tagline: tagline ?? this.tagline,
       originalTitle: originalTitle ?? this.originalTitle,
+      editionTitle: editionTitle ?? this.editionTitle,
       subtype: subtype ?? this.subtype,
       extraType: extraType ?? this.extraType,
       primaryExtraKey: primaryExtraKey ?? this.primaryExtraKey,
