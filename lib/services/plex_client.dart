@@ -2350,13 +2350,15 @@ class PlexClient {
           final nested = op['Metadata'];
           if (nested is Map<String, dynamic>) {
             metadataJson = nested;
+          } else if (nested is List && nested.isNotEmpty) {
+            metadataJson = nested.first as Map<String, dynamic>;
           }
         }
       }
       metadataJson ??= (container['Metadata'] as List?)?.firstOrNull as Map<String, dynamic>?;
 
       if (metadataJson == null) {
-        appLogger.w('Tune channel: no metadata in response');
+        appLogger.w('Tune channel: no metadata in response (keys: ${container.keys.toList()}, subscriptions: ${subscriptions?.length}, firstSub: ${subscriptions?.firstOrNull})');
         return null;
       }
 
