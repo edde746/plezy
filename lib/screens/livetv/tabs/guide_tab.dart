@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -37,7 +38,7 @@ enum _GuideZone { timeNav, grid }
 
 class GuideTabState extends State<GuideTab> {
   static const _slotWidth = 180.0;
-  static const _channelColumnWidth = 140.0;
+  static const _channelColumnWidth = 100.0;
   static const _rowHeight = 64.0;
   static const _timeHeaderHeight = 40.0;
   static const _minutesPerSlot = 30;
@@ -636,9 +637,7 @@ class GuideTabState extends State<GuideTab> {
 
     if (target == today) return t.liveTv.today;
 
-    final format = MaterialLocalizations.of(context);
-    final full = format.formatFullDate(target);
-    return full.split(',').first;
+    return DateFormat('EEEE', LocaleSettings.currentLocale.languageCode).format(target);
   }
 
   List<(String, int)> get _timeSlots => [
@@ -776,8 +775,7 @@ class GuideTabState extends State<GuideTab> {
   }
 
   Widget _buildTimeNavigation(ThemeData theme) {
-    final format = MaterialLocalizations.of(context);
-    final timeLabel = format.formatTimeOfDay(TimeOfDay.fromDateTime(_gridStart));
+    final timeLabel = formatClockTime(_gridStart, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context));
     final dayLabel = _dayLabel(_gridStart);
 
     return Container(
