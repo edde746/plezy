@@ -7,12 +7,12 @@ part of 'plex_metadata.dart';
 // **************************************************************************
 
 PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
-  ratingKey: json['ratingKey'] as String,
-  key: json['key'] as String,
+  ratingKey: json['ratingKey'] as String? ?? '',
+  key: json['key'] as String? ?? '',
   guid: json['guid'] as String?,
   studio: json['studio'] as String?,
-  type: json['type'] as String,
-  title: json['title'] as String,
+  type: json['type'] as String? ?? 'folder',
+  title: json['title'] as String? ?? '',
   titleSort: json['titleSort'] as String?,
   contentRating: json['contentRating'] as String?,
   summary: json['summary'] as String?,
