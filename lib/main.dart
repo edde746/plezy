@@ -147,9 +147,12 @@ Future<void> _bootstrapApp() async {
   // Start global fullscreen state monitoring
   FullscreenStateManager().startMonitoring();
 
-  // Initialize gamepad service for desktop platforms
+  // Initialize gamepad service (all platforms — universal_gamepad auto-registers
+  // and intercepts input events, so we must listen to re-dispatch them)
+  GamepadService.instance.start();
+
+  // Desktop-only services
   if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    GamepadService.instance.start();
     DiscordRPCService.instance.initialize();
   }
 
