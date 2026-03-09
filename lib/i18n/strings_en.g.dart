@@ -205,6 +205,12 @@ class TranslationsCommonEn {
 	/// en: 'Resume'
 	String get resume => 'Resume';
 
+	/// en: 'More'
+	String get more => 'More';
+
+	/// en: 'Description'
+	String get description => 'Description';
+
 	/// en: 'Error'
 	String get error => 'Error';
 
@@ -1243,6 +1249,12 @@ class TranslationsMessagesEn {
 
 	/// en: 'No episodes found'
 	String get noEpisodesFoundGeneral => 'No episodes found';
+
+	/// en: 'No albums found'
+	String get noAlbumsFound => 'No albums found';
+
+	/// en: 'No tracks found'
+	String get noTracksFound => 'No tracks found';
 
 	/// en: 'No results found'
 	String get noResultsFound => 'No results found';
@@ -2681,6 +2693,24 @@ class TranslationsLibrariesGroupingsEn {
 
 	/// en: 'Folders'
 	String get folders => 'Folders';
+
+	/// en: 'Artists'
+	String get artists => 'Artists';
+
+	/// en: 'Albums'
+	String get albums => 'Albums';
+
+	/// en: 'Tracks'
+	String get tracks => 'Tracks';
+
+	/// en: 'Books'
+	String get books => 'Books';
+
+	/// en: 'Authors'
+	String get authors => 'Authors';
+
+	/// en: 'Chapters'
+	String get chapters => 'Chapters';
 }
 
 // Path: companionRemote.session
@@ -2958,6 +2988,8 @@ extension on Translations {
 			'common.play' => 'Play',
 			'common.pause' => 'Pause',
 			'common.resume' => 'Resume',
+			'common.more' => 'More',
+			'common.description' => 'Description',
 			'common.error' => 'Error',
 			'common.search' => 'Search',
 			'common.home' => 'Home',
@@ -3290,6 +3322,8 @@ extension on Translations {
 			'messages.noSeasonsFound' => 'No seasons found',
 			'messages.noEpisodesFound' => 'No episodes found in first season',
 			'messages.noEpisodesFoundGeneral' => 'No episodes found',
+			'messages.noAlbumsFound' => 'No albums found',
+			'messages.noTracksFound' => 'No tracks found',
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
@@ -3396,6 +3430,12 @@ extension on Translations {
 			'libraries.groupings.seasons' => 'Seasons',
 			'libraries.groupings.episodes' => 'Episodes',
 			'libraries.groupings.folders' => 'Folders',
+			'libraries.groupings.artists' => 'Artists',
+			'libraries.groupings.albums' => 'Albums',
+			'libraries.groupings.tracks' => 'Tracks',
+			'libraries.groupings.books' => 'Books',
+			'libraries.groupings.authors' => 'Authors',
+			'libraries.groupings.chapters' => 'Chapters',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -3424,6 +3464,8 @@ extension on Translations {
 			'liveTv.title' => 'Live TV',
 			'liveTv.channels' => 'Channels',
 			'liveTv.guide' => 'Guide',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.tuneFailed' => 'Failed to tune channel',

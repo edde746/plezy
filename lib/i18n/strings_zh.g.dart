@@ -154,6 +154,8 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get loadingServers => '正在加载服务器...';
 	@override String get connectingToServers => '正在连接服务器...';
 	@override String get startingOfflineMode => '正在启动离线模式...';
+	@override String get more => 'More';
+	@override String get description => 'Description';
 }
 
 // Path: screens
@@ -569,6 +571,8 @@ class _TranslationsMessagesZh implements TranslationsMessagesEn {
 	@override String get logsUploaded => 'Logs uploaded';
 	@override String get logsUploadFailed => 'Failed to upload logs';
 	@override String get logId => 'Log ID';
+	@override String get noAlbumsFound => 'No albums found';
+	@override String get noTracksFound => 'No tracks found';
 }
 
 // Path: subtitlingStyling
@@ -1198,6 +1202,12 @@ class _TranslationsLibrariesGroupingsZh implements TranslationsLibrariesGrouping
 	@override String get seasons => '季';
 	@override String get episodes => '集';
 	@override String get folders => '文件夹';
+	@override String get artists => 'Artists';
+	@override String get albums => 'Albums';
+	@override String get tracks => 'Tracks';
+	@override String get books => 'Books';
+	@override String get authors => 'Authors';
+	@override String get chapters => 'Chapters';
 }
 
 // Path: companionRemote.session
@@ -1356,6 +1366,8 @@ extension on TranslationsZh {
 			'common.loadingServers' => '正在加载服务器...',
 			'common.connectingToServers' => '正在连接服务器...',
 			'common.startingOfflineMode' => '正在启动离线模式...',
+			'common.more' => 'More',
+			'common.description' => 'Description',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -1678,6 +1690,8 @@ extension on TranslationsZh {
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
+			'messages.noAlbumsFound' => 'No albums found',
+			'messages.noTracksFound' => 'No tracks found',
 			'subtitlingStyling.stylingOptions' => '样式选项',
 			'subtitlingStyling.fontSize' => '字号',
 			'subtitlingStyling.textColor' => '文本颜色',
@@ -1775,6 +1789,12 @@ extension on TranslationsZh {
 			'libraries.groupings.seasons' => '季',
 			'libraries.groupings.episodes' => '集',
 			'libraries.groupings.folders' => '文件夹',
+			'libraries.groupings.artists' => 'Artists',
+			'libraries.groupings.albums' => 'Albums',
+			'libraries.groupings.tracks' => 'Tracks',
+			'libraries.groupings.books' => 'Books',
+			'libraries.groupings.authors' => 'Authors',
+			'libraries.groupings.chapters' => 'Chapters',
 			'about.title' => '关于',
 			'about.openSourceLicenses' => '开源许可证',
 			'about.versionLabel' => ({required Object version}) => '版本 ${version}',
@@ -1803,6 +1823,8 @@ extension on TranslationsZh {
 			'liveTv.title' => '电视直播',
 			'liveTv.channels' => '频道',
 			'liveTv.guide' => '节目指南',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => '没有可用的频道',
 			'liveTv.noDvr' => '没有服务器配置了DVR',
 			'liveTv.tuneFailed' => '无法调谐频道',

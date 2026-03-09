@@ -14,6 +14,7 @@ import '../focus/focusable_button.dart';
 import '../utils/dialogs.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
+import '../utils/media_navigation_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
@@ -33,6 +34,7 @@ import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../providers/companion_remote_provider.dart';
+import '../providers/watch_connectivity_provider.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/side_navigation_rail.dart';
 import '../focus/dpad_navigator.dart';
@@ -165,9 +167,36 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         _contentFocusScope.requestFocus();
       }
 
+      // Wire up Watch connectivity provider with playback state and client
+      if (Platform.isIOS && !_isOffline) {
+        _setupWatchConnectivity();
+      }
+
       // Check for updates on startup
       _checkForUpdatesOnStartup();
     });
+  }
+
+  void _setupWatchConnectivity() {
+    final watchProvider = context.read<WatchConnectivityProvider>();
+    final playbackState = context.read<PlaybackStateProvider>();
+    watchProvider.setPlaybackState(playbackState);
+
+    // Set client from the first available server
+    final multiServer = context.read<MultiServerProvider>();
+    _updateWatchClient(watchProvider, multiServer);
+
+    // Update client when servers change
+    multiServer.addListener(() {
+      _updateWatchClient(watchProvider, multiServer);
+    });
+  }
+
+  void _updateWatchClient(WatchConnectivityProvider watchProvider, MultiServerProvider multiServer) {
+    final serverIds = multiServer.onlineServerIds;
+    if (serverIds.isNotEmpty) {
+      watchProvider.setClient(multiServer.getClientForServer(serverIds.first));
+    }
   }
 
   Future<void> _promptForInitialProfileSelection(UserProfileProvider userProfileProvider) async {
@@ -362,7 +391,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
       if (metadata == null || !mounted) return;
 
-      navigateToVideoPlayer(context, metadata: metadata);
+      navigateToMediaItem(context, metadata, playDirectly: true);
     } catch (e) {
       appLogger.e('Watch Next: failed to navigate to media', error: e);
     }

@@ -4,7 +4,6 @@ import '../models/plex_library.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
-import '../utils/content_utils.dart';
 
 /// Load state for the libraries provider
 enum LibrariesLoadState { initial, loading, loaded, error }
@@ -43,7 +42,7 @@ class LibrariesProvider extends ChangeNotifier {
   }
 
   /// Load libraries from all connected servers.
-  /// Filters out music libraries and applies saved ordering.
+  /// Applies saved ordering.
   Future<void> loadLibraries() async {
     if (_aggregationService == null) {
       appLogger.w('LibrariesProvider: Cannot load libraries - not initialized');
@@ -58,13 +57,10 @@ class LibrariesProvider extends ChangeNotifier {
       // Fetch libraries from all servers
       final allLibraries = await _aggregationService!.getLibrariesFromAllServers();
 
-      // Filter out music libraries (not supported)
-      final filteredLibraries = allLibraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();
-
       // Apply saved library order
       final storage = await StorageService.getInstance();
       final savedOrder = storage.getLibraryOrder();
-      final orderedLibraries = _applyLibraryOrder(filteredLibraries, savedOrder);
+      final orderedLibraries = _applyLibraryOrder(allLibraries, savedOrder);
 
       _libraries = orderedLibraries;
       _loadState = LibrariesLoadState.loaded;

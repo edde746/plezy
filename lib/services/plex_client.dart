@@ -91,9 +91,10 @@ List<PlexMetadata> _processOnDeckResponse(Map<String, dynamic> decoded, String s
           json as Map<String, dynamic>,
         ).copyWith(serverId: serverId, serverName: serverName),
       )
+      .where((item) => item.mediaType.isVideo)
       .toList();
 
-  return allItems.where((item) => !item.isMusicContent).toList();
+  return allItems;
 }
 
 /// Constants for Plex stream types
@@ -565,6 +566,32 @@ class PlexClient {
     );
   }
 
+  /// Get chapters for a media item
+  Future<List<PlexChapter>> getChapters(String ratingKey) async {
+    try {
+      final response = await _dio.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {'includeChapters': 1},
+      );
+      final metadataJson = _getFirstMetadataJson(response);
+      if (metadataJson == null) return [];
+      final chapterList = metadataJson['Chapter'] as List<dynamic>? ?? [];
+      return chapterList.map((c) {
+        final m = c as Map<String, dynamic>;
+        return PlexChapter(
+          id: m['id'] as int? ?? 0,
+          index: m['index'] as int?,
+          startTimeOffset: m['startTimeOffset'] as int?,
+          endTimeOffset: m['endTimeOffset'] as int?,
+          title: m['tag'] as String? ?? m['title'] as String?,
+          thumb: m['thumb'] as String?,
+        );
+      }).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
   /// Parse PlexMetadata with images from a cached response
   PlexMetadata? _parseMetadataWithImagesFromCachedResponse(Map<String, dynamic> cached) {
     final firstMetadata = PlexCacheParser.extractFirstMetadata(cached);
@@ -631,6 +658,30 @@ class PlexClient {
       await _cache.put(serverId, cacheKey, response.data);
     }
     return parseResponse(response);
+  }
+
+  /// Network-first fetch: try network, cache the result, fall back to cache on failure.
+  Future<T?> _fetchNetworkFirst<T>({
+    required String cacheKey,
+    required Future<Response> Function() networkCall,
+    required T? Function(dynamic cachedData) parseCache,
+    required T? Function(Response response) parseResponse,
+    bool cacheResponse = true,
+  }) async {
+    if (!_offlineMode) {
+      try {
+        final response = await networkCall();
+        if (cacheResponse && response.data != null) {
+          await _cache.put(serverId, cacheKey, response.data);
+        }
+        return parseResponse(response);
+      } catch (_) {
+        // Fall through to cache
+      }
+    }
+    final cached = await _cache.get(serverId, cacheKey);
+    if (cached != null) return parseCache(cached);
+    return null;
   }
 
   /// Get first metadata JSON from response data
@@ -855,8 +906,7 @@ class PlexClient {
     );
     final allItems = _extractMetadataList(response);
 
-    // Filter out music content (artists, albums, tracks)
-    return allItems.where((item) => !item.isMusicContent).toList();
+    return allItems;
   }
 
   /// Get on deck items (continue watching, filtered to video content only)
@@ -876,7 +926,18 @@ class PlexClient {
           cacheKey: endpoint,
           networkCall: () => _dio.get(endpoint),
           parseCache: (cachedData) => _parseMetadataListFromCachedResponse(cachedData),
-          parseResponse: (response) => _extractMetadataList(response),
+          parseResponse: (response) {
+            final result = _extractMetadataList(response);
+            if (result.isEmpty) {
+              final container = _getMediaContainer(response);
+              if (container != null) {
+                appLogger.w('getChildren($ratingKey) returned empty Metadata. Container keys: ${container.keys.toList()}, size: ${container['size']}');
+              } else {
+                appLogger.w('getChildren($ratingKey) returned no MediaContainer. Response type: ${response.data?.runtimeType}');
+              }
+            }
+            return result;
+          },
         ) ??
         [];
   }
@@ -923,6 +984,33 @@ class PlexClient {
 
     // Filter for unwatched episodes
     return episodes.where((ep) => ep.isEpisode && (ep.viewCount ?? 0) == 0).toList();
+  }
+
+  /// Auth token shorthand for watch connectivity
+  String? get authToken => config.token;
+
+  /// Get direct stream URL for a media item (used by Watch app)
+  Future<String?> getDirectStreamUrl(String ratingKey, {int mediaIndex = 0}) async {
+    final response = await _dio.get('/library/metadata/$ratingKey');
+    final metadataJson = _getFirstMetadataJson(response);
+
+    if (metadataJson != null &&
+        metadataJson['Media'] != null &&
+        (metadataJson['Media'] as List).isNotEmpty) {
+      final mediaList = metadataJson['Media'] as List;
+      if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
+        mediaIndex = 0;
+      }
+      final media = mediaList[mediaIndex];
+      if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
+        final part = media['Part'][0];
+        final partKey = part['key'] as String?;
+        if (partKey != null) {
+          return '${config.baseUrl}$partKey'.withPlexToken(config.token);
+        }
+      }
+    }
+    return null;
   }
 
   /// Get thumbnail URL

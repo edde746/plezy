@@ -33,7 +33,7 @@ import '../utils/watch_state_notifier.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/provider_extensions.dart';
-import '../utils/video_player_navigation.dart';
+import '../utils/media_navigation_helper.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
@@ -279,7 +279,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     },
     onSelect: () {
       if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
-        navigateToVideoPlayer(context, metadata: _onDeck[_currentHeroIndex]);
+        navigateToMediaItem(context, _onDeck[_currentHeroIndex], playDirectly: true);
       }
     },
   );
@@ -1281,8 +1281,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       hint: t.accessibility.tapToPlay,
       child: GestureDetector(
         onTap: () {
-          appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
-          navigateToVideoPlayer(context, metadata: heroItem);
+          appLogger.d('Navigating to player for: ${heroItem.title}');
+          navigateToMediaItem(context, heroItem, playDirectly: true);
         },
         child: Stack(
           fit: StackFit.expand,
@@ -1554,7 +1554,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return InkWell(
       onTap: () {
         appLogger.d('Playing: ${heroItem.title}');
-        navigateToVideoPlayer(context, metadata: heroItem);
+        navigateToMediaItem(context, heroItem, playDirectly: true);
       },
       borderRadius: const BorderRadius.all(Radius.circular(24)),
       child: Container(

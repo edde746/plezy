@@ -7,6 +7,7 @@ import '../models/plex_playlist.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/media_navigation_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../i18n/strings.g.dart';
 import 'plex_client.dart';
@@ -244,8 +245,12 @@ class PlayQueueLauncher {
       itemToPlay = itemToPlay.copyWith(serverId: serverId, serverName: serverName);
     }
 
-    // Navigate to video player
-    await navigateToVideoPlayer(context, metadata: itemToPlay);
+    // Navigate to the appropriate player based on media type
+    if (itemToPlay.mediaType.isMusic) {
+      navigateToMediaItem(context, itemToPlay, playDirectly: true);
+    } else {
+      await navigateToVideoPlayer(context, metadata: itemToPlay);
+    }
 
     return const PlayQueueSuccess();
   }

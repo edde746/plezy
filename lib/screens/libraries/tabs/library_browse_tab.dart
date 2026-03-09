@@ -549,6 +549,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       return 'shows';
     } else if (type == 'movie') {
       return 'movies';
+    } else if (type == 'artist') {
+      return 'artists';
     }
     return 'all';
   }
@@ -563,6 +565,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         return '3';
       case 'episodes':
         return '4';
+      case 'artists':
+        return '8';
+      case 'albums':
+        return '9';
+      case 'tracks':
+        return '10';
       default:
         return '';
     }
@@ -574,6 +582,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       return ['shows', 'seasons', 'episodes', 'folders'];
     } else if (type == 'movie') {
       return ['movies', 'folders'];
+    } else if (type == 'artist') {
+      return ['artists', 'albums', 'tracks', 'folders'];
     }
     // All library types support folder browsing
     return ['all', 'folders'];
@@ -589,6 +599,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         return t.libraries.groupings.seasons;
       case 'episodes':
         return t.libraries.groupings.episodes;
+      case 'artists':
+        return t.libraries.groupings.artists;
+      case 'albums':
+        return t.libraries.groupings.albums;
+      case 'tracks':
+        return t.libraries.groupings.tracks;
       case 'folders':
         return t.libraries.groupings.folders;
       default:

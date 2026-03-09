@@ -393,8 +393,18 @@ class MpvPlayerCoreBase: NSObject {
             }
 
         case MPV_EVENT_END_FILE:
+            var endFileData: [String: Any] = [:]
+            if let endFile = event.data?.assumingMemoryBound(to: mpv_event_end_file.self) {
+                let reason = endFile.pointee.reason
+                endFileData["reason"] = Int(reason.rawValue)
+                if reason == MPV_END_FILE_REASON_ERROR {
+                    let errCode = endFile.pointee.error
+                    endFileData["message"] = safeString(mpv_error_string(errCode))
+                    endFileData["error_code"] = Int(errCode)
+                }
+            }
             DispatchQueue.main.async {
-                self.delegate?.onEvent(name: "end-file", data: nil)
+                self.delegate?.onEvent(name: "end-file", data: endFileData.isEmpty ? nil : endFileData)
             }
 
         case MPV_EVENT_SHUTDOWN:

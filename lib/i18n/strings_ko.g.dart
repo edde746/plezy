@@ -154,6 +154,8 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get loadingServers => '서버 로딩 중...';
 	@override String get connectingToServers => '서버 연결 중...';
 	@override String get startingOfflineMode => '오프라인 모드 시작 중...';
+	@override String get more => 'More';
+	@override String get description => 'Description';
 }
 
 // Path: screens
@@ -569,6 +571,8 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 	@override String get logsUploaded => 'Logs uploaded';
 	@override String get logsUploadFailed => 'Failed to upload logs';
 	@override String get logId => 'Log ID';
+	@override String get noAlbumsFound => 'No albums found';
+	@override String get noTracksFound => 'No tracks found';
 }
 
 // Path: subtitlingStyling
@@ -1198,6 +1202,12 @@ class _TranslationsLibrariesGroupingsKo implements TranslationsLibrariesGrouping
 	@override String get seasons => '시즌';
 	@override String get episodes => '화';
 	@override String get folders => '폴더';
+	@override String get artists => 'Artists';
+	@override String get albums => 'Albums';
+	@override String get tracks => 'Tracks';
+	@override String get books => 'Books';
+	@override String get authors => 'Authors';
+	@override String get chapters => 'Chapters';
 }
 
 // Path: companionRemote.session
@@ -1356,6 +1366,8 @@ extension on TranslationsKo {
 			'common.loadingServers' => '서버 로딩 중...',
 			'common.connectingToServers' => '서버 연결 중...',
 			'common.startingOfflineMode' => '오프라인 모드 시작 중...',
+			'common.more' => 'More',
+			'common.description' => 'Description',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -1678,6 +1690,8 @@ extension on TranslationsKo {
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
+			'messages.noAlbumsFound' => 'No albums found',
+			'messages.noTracksFound' => 'No tracks found',
 			'subtitlingStyling.stylingOptions' => '스타일 옵션',
 			'subtitlingStyling.fontSize' => '글자 크기',
 			'subtitlingStyling.textColor' => '텍스트 색상',
@@ -1775,6 +1789,12 @@ extension on TranslationsKo {
 			'libraries.groupings.seasons' => '시즌',
 			'libraries.groupings.episodes' => '화',
 			'libraries.groupings.folders' => '폴더',
+			'libraries.groupings.artists' => 'Artists',
+			'libraries.groupings.albums' => 'Albums',
+			'libraries.groupings.tracks' => 'Tracks',
+			'libraries.groupings.books' => 'Books',
+			'libraries.groupings.authors' => 'Authors',
+			'libraries.groupings.chapters' => 'Chapters',
 			'about.title' => '소개',
 			'about.openSourceLicenses' => '오픈소스 라이선스',
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
@@ -1803,6 +1823,8 @@ extension on TranslationsKo {
 			'liveTv.title' => '실시간 TV',
 			'liveTv.channels' => '채널',
 			'liveTv.guide' => '편성표',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => '사용 가능한 채널이 없습니다',
 			'liveTv.noDvr' => '서버에 DVR이 구성되어 있지 않습니다',
 			'liveTv.tuneFailed' => '채널 튜닝에 실패했습니다',

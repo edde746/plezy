@@ -55,7 +55,9 @@
     "refreshingServers": "Atualizando servidores...",
     "loadingServers": "Carregando servidores...",
     "connectingToServers": "Conectando aos servidores...",
-    "startingOfflineMode": "Iniciando modo offline..."
+    "startingOfflineMode": "Iniciando modo offline...",
+    "more": "More",
+    "description": "Description"
   },
   "screens": {
     "licenses": "Licenças",
@@ -407,7 +409,9 @@
     "switchingToCompatiblePlayer": "Alternando para player compatível...",
     "logsUploaded": "Logs enviados",
     "logsUploadFailed": "Falha ao enviar logs",
-    "logId": "ID do Log"
+    "logId": "ID do Log",
+    "noAlbumsFound": "No albums found",
+    "noTracksFound": "No tracks found"
   },
   "subtitlingStyling": {
     "stylingOptions": "Opções de Estilo",
@@ -519,7 +523,13 @@
       "shows": "Séries de TV",
       "seasons": "Temporadas",
       "episodes": "Episódios",
-      "folders": "Pastas"
+      "folders": "Pastas",
+      "artists": "Artists",
+      "albums": "Albums",
+      "tracks": "Tracks",
+      "books": "Books",
+      "authors": "Authors",
+      "chapters": "Chapters"
     }
   },
   "about": {

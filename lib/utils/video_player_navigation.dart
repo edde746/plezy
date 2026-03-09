@@ -9,6 +9,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_video_playback_data.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../screens/audio_player_screen.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
 import '../services/settings_service.dart';
@@ -138,6 +139,33 @@ Future<bool?> navigateToVideoPlayer(
   );
 
   return usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
+}
+
+/// Navigates to the AudioPlayerScreen with instant transitions to prevent white flash.
+Future<bool?> navigateToAudioPlayer(
+  BuildContext context, {
+  required PlexMetadata metadata,
+  List<PlexMetadata>? queue,
+  int startIndex = 0,
+  bool usePushReplacement = false,
+}) async {
+  final navigator = Navigator.of(context);
+
+  final route = PageRouteBuilder<bool>(
+    pageBuilder: (context, animation, secondaryAnimation) => AudioPlayerScreen(
+      metadata: metadata,
+      queue: queue,
+      startIndex: startIndex,
+    ),
+    transitionDuration: Duration.zero,
+    reverseTransitionDuration: Duration.zero,
+  );
+
+  if (usePushReplacement) {
+    return navigator.pushReplacement<bool, bool>(route);
+  } else {
+    return navigator.push<bool>(route);
+  }
 }
 
 /// Navigates to the video player and optionally refreshes content when returning.

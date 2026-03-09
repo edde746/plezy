@@ -9,6 +9,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     var isPipStarting = false
 
+    override func configurePlatformMpvOptions() {
+        guard let mpv else { return }
+        checkError(mpv_set_option_string(mpv, "ao", "audiounit,avfoundation"))
+    }
+
     func initialize(in window: UIWindow) -> Bool {
         guard !isInitialized else {
             print("[MpvPlayerCore] Already initialized")

@@ -154,6 +154,8 @@ class _TranslationsCommonPl implements TranslationsCommonEn {
 	@override String get loadingServers => 'Ładowanie serwerów...';
 	@override String get connectingToServers => 'Łączenie z serwerami...';
 	@override String get startingOfflineMode => 'Uruchamianie trybu offline...';
+	@override String get more => 'More';
+	@override String get description => 'Description';
 }
 
 // Path: screens
@@ -569,6 +571,8 @@ class _TranslationsMessagesPl implements TranslationsMessagesEn {
 	@override String get logsUploaded => 'Logi przesłane';
 	@override String get logsUploadFailed => 'Nie udało się przesłać logów';
 	@override String get logId => 'ID logu';
+	@override String get noAlbumsFound => 'No albums found';
+	@override String get noTracksFound => 'No tracks found';
 }
 
 // Path: subtitlingStyling
@@ -1198,6 +1202,12 @@ class _TranslationsLibrariesGroupingsPl implements TranslationsLibrariesGrouping
 	@override String get seasons => 'Sezony';
 	@override String get episodes => 'Odcinki';
 	@override String get folders => 'Foldery';
+	@override String get artists => 'Artists';
+	@override String get albums => 'Albums';
+	@override String get tracks => 'Tracks';
+	@override String get books => 'Books';
+	@override String get authors => 'Authors';
+	@override String get chapters => 'Chapters';
 }
 
 // Path: companionRemote.session
@@ -1356,6 +1366,8 @@ extension on TranslationsPl {
 			'common.loadingServers' => 'Ładowanie serwerów...',
 			'common.connectingToServers' => 'Łączenie z serwerami...',
 			'common.startingOfflineMode' => 'Uruchamianie trybu offline...',
+			'common.more' => 'More',
+			'common.description' => 'Description',
 			'screens.licenses' => 'Licencje',
 			'screens.switchProfile' => 'Zmień profil',
 			'screens.subtitleStyling' => 'Styl napisów',
@@ -1678,6 +1690,8 @@ extension on TranslationsPl {
 			'messages.logsUploaded' => 'Logi przesłane',
 			'messages.logsUploadFailed' => 'Nie udało się przesłać logów',
 			'messages.logId' => 'ID logu',
+			'messages.noAlbumsFound' => 'No albums found',
+			'messages.noTracksFound' => 'No tracks found',
 			'subtitlingStyling.stylingOptions' => 'Opcje stylu',
 			'subtitlingStyling.fontSize' => 'Rozmiar czcionki',
 			'subtitlingStyling.textColor' => 'Kolor tekstu',
@@ -1775,6 +1789,12 @@ extension on TranslationsPl {
 			'libraries.groupings.seasons' => 'Sezony',
 			'libraries.groupings.episodes' => 'Odcinki',
 			'libraries.groupings.folders' => 'Foldery',
+			'libraries.groupings.artists' => 'Artists',
+			'libraries.groupings.albums' => 'Albums',
+			'libraries.groupings.tracks' => 'Tracks',
+			'libraries.groupings.books' => 'Books',
+			'libraries.groupings.authors' => 'Authors',
+			'libraries.groupings.chapters' => 'Chapters',
 			'about.title' => 'O aplikacji',
 			'about.openSourceLicenses' => 'Licencje open source',
 			'about.versionLabel' => ({required Object version}) => 'Wersja ${version}',
@@ -1803,6 +1823,8 @@ extension on TranslationsPl {
 			'liveTv.title' => 'TV na żywo',
 			'liveTv.channels' => 'Kanały',
 			'liveTv.guide' => 'Przewodnik',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => 'Brak dostępnych kanałów',
 			'liveTv.noDvr' => 'Brak skonfigurowanego DVR na żadnym serwerze',
 			'liveTv.tuneFailed' => 'Nie udało się dostroić kanału',

@@ -55,7 +55,9 @@
     "refreshingServers": "Обновление серверов...",
     "loadingServers": "Загрузка серверов...",
     "connectingToServers": "Подключение к серверам...",
-    "startingOfflineMode": "Запуск автономного режима..."
+    "startingOfflineMode": "Запуск автономного режима...",
+    "more": "More",
+    "description": "Description"
   },
   "screens": {
     "licenses": "Лицензии",
@@ -407,7 +409,9 @@
     "switchingToCompatiblePlayer": "Переключение на совместимый плеер...",
     "logsUploaded": "Логи загружены",
     "logsUploadFailed": "Не удалось загрузить логи",
-    "logId": "ID лога"
+    "logId": "ID лога",
+    "noAlbumsFound": "No albums found",
+    "noTracksFound": "No tracks found"
   },
   "subtitlingStyling": {
     "stylingOptions": "Параметры стиля",
@@ -519,7 +523,13 @@
       "shows": "Сериалы",
       "seasons": "Сезоны",
       "episodes": "Эпизоды",
-      "folders": "Папки"
+      "folders": "Папки",
+      "artists": "Artists",
+      "albums": "Albums",
+      "tracks": "Tracks",
+      "books": "Books",
+      "authors": "Authors",
+      "chapters": "Chapters"
     }
   },
   "about": {

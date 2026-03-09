@@ -37,6 +37,8 @@
     "play": "Play",
     "pause": "Pause",
     "resume": "Resume",
+    "more": "More",
+    "description": "Description",
     "error": "Error",
     "search": "Search",
     "home": "Home",
@@ -399,6 +401,8 @@
     "noSeasonsFound": "No seasons found",
     "noEpisodesFound": "No episodes found in first season",
     "noEpisodesFoundGeneral": "No episodes found",
+    "noAlbumsFound": "No albums found",
+    "noTracksFound": "No tracks found",
     "noResultsFound": "No results found",
     "sleepTimerSet": "Sleep timer set for ${label}",
     "noItemsAvailable": "No items available",
@@ -519,7 +523,13 @@
       "shows": "TV Shows",
       "seasons": "Seasons",
       "episodes": "Episodes",
-      "folders": "Folders"
+      "folders": "Folders",
+      "artists": "Artists",
+      "albums": "Albums",
+      "tracks": "Tracks",
+      "books": "Books",
+      "authors": "Authors",
+      "chapters": "Chapters"
     }
   },
   "about": {

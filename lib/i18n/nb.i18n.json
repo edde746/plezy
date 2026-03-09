@@ -55,7 +55,9 @@
     "refreshingServers": "Oppdaterer servere...",
     "loadingServers": "Laster servere...",
     "connectingToServers": "Kobler til servere...",
-    "startingOfflineMode": "Starter frakoblet modus..."
+    "startingOfflineMode": "Starter frakoblet modus...",
+    "more": "More",
+    "description": "Description"
   },
   "screens": {
     "licenses": "Lisenser",
@@ -407,7 +409,9 @@
     "switchingToCompatiblePlayer": "Bytter til kompatibel spiller...",
     "logsUploaded": "Logger lastet opp",
     "logsUploadFailed": "Kunne ikke laste opp logger",
-    "logId": "Logg-ID"
+    "logId": "Logg-ID",
+    "noAlbumsFound": "No albums found",
+    "noTracksFound": "No tracks found"
   },
   "subtitlingStyling": {
     "stylingOptions": "Stilalternativer",
@@ -519,7 +523,13 @@
       "shows": "TV-serier",
       "seasons": "Sesonger",
       "episodes": "Episoder",
-      "folders": "Mapper"
+      "folders": "Mapper",
+      "artists": "Artists",
+      "albums": "Albums",
+      "tracks": "Tracks",
+      "books": "Books",
+      "authors": "Authors",
+      "chapters": "Chapters"
     }
   },
   "about": {

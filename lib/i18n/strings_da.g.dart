@@ -154,6 +154,8 @@ class _TranslationsCommonDa implements TranslationsCommonEn {
 	@override String get loadingServers => 'Indlæser servere...';
 	@override String get connectingToServers => 'Forbinder til servere...';
 	@override String get startingOfflineMode => 'Starter offlinetilstand...';
+	@override String get more => 'More';
+	@override String get description => 'Description';
 }
 
 // Path: screens
@@ -569,6 +571,8 @@ class _TranslationsMessagesDa implements TranslationsMessagesEn {
 	@override String get logsUploaded => 'Logs uploadet';
 	@override String get logsUploadFailed => 'Kunne ikke uploade logs';
 	@override String get logId => 'Log-ID';
+	@override String get noAlbumsFound => 'No albums found';
+	@override String get noTracksFound => 'No tracks found';
 }
 
 // Path: subtitlingStyling
@@ -1198,6 +1202,12 @@ class _TranslationsLibrariesGroupingsDa implements TranslationsLibrariesGrouping
 	@override String get seasons => 'Sæsoner';
 	@override String get episodes => 'Episoder';
 	@override String get folders => 'Mapper';
+	@override String get artists => 'Artists';
+	@override String get albums => 'Albums';
+	@override String get tracks => 'Tracks';
+	@override String get books => 'Books';
+	@override String get authors => 'Authors';
+	@override String get chapters => 'Chapters';
 }
 
 // Path: companionRemote.session
@@ -1356,6 +1366,8 @@ extension on TranslationsDa {
 			'common.loadingServers' => 'Indlæser servere...',
 			'common.connectingToServers' => 'Forbinder til servere...',
 			'common.startingOfflineMode' => 'Starter offlinetilstand...',
+			'common.more' => 'More',
+			'common.description' => 'Description',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Skift profil',
 			'screens.subtitleStyling' => 'Undertekststil',
@@ -1678,6 +1690,8 @@ extension on TranslationsDa {
 			'messages.logsUploaded' => 'Logs uploadet',
 			'messages.logsUploadFailed' => 'Kunne ikke uploade logs',
 			'messages.logId' => 'Log-ID',
+			'messages.noAlbumsFound' => 'No albums found',
+			'messages.noTracksFound' => 'No tracks found',
 			'subtitlingStyling.stylingOptions' => 'Stilindstillinger',
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			'subtitlingStyling.textColor' => 'Tekstfarve',
@@ -1775,6 +1789,12 @@ extension on TranslationsDa {
 			'libraries.groupings.seasons' => 'Sæsoner',
 			'libraries.groupings.episodes' => 'Episoder',
 			'libraries.groupings.folders' => 'Mapper',
+			'libraries.groupings.artists' => 'Artists',
+			'libraries.groupings.albums' => 'Albums',
+			'libraries.groupings.tracks' => 'Tracks',
+			'libraries.groupings.books' => 'Books',
+			'libraries.groupings.authors' => 'Authors',
+			'libraries.groupings.chapters' => 'Chapters',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Open source-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -1803,6 +1823,8 @@ extension on TranslationsDa {
 			'liveTv.title' => 'Live TV',
 			'liveTv.channels' => 'Kanaler',
 			'liveTv.guide' => 'Guide',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => 'Ingen kanaler tilgængelige',
 			'liveTv.noDvr' => 'Ingen DVR konfigureret på nogen server',
 			'liveTv.tuneFailed' => 'Kunne ikke tune kanal',

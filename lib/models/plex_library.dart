@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'mixins/multi_server_fields.dart';
@@ -28,6 +29,30 @@ class PlexLibrary with MultiServerFields {
 
   /// Global unique identifier across all servers (serverId:key)
   String get globalKey => serverId != null ? buildGlobalKey(serverId!, key) : key;
+
+  /// Whether this library contains audiobooks (music library with audiobook agent)
+  bool get isAudiobookLibrary {
+    final titleLower = title.toLowerCase();
+    if (titleLower.contains('audiobooks')) return true;
+    if (type.toLowerCase() != 'artist') return false;
+    final agentLower = agent?.toLowerCase() ?? '';
+    if (agentLower.contains('audiobookshelf')) return true;
+    if (agentLower.contains('audnexus')) return true;
+    if (agentLower.contains('audiobook')) return true;
+    return false;
+  }
+
+  /// Icon for this library type
+  IconData get libraryIcon {
+    if (isAudiobookLibrary) return Icons.headphones;
+    switch (type.toLowerCase()) {
+      case 'movie': return Icons.movie;
+      case 'show': return Icons.tv;
+      case 'artist': return Icons.music_note;
+      case 'photo': return Icons.photo;
+      default: return Icons.folder;
+    }
+  }
 
   PlexLibrary({
     required this.key,

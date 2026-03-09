@@ -55,7 +55,9 @@
     "refreshingServers": "서버 새로고침 중...",
     "loadingServers": "서버 로딩 중...",
     "connectingToServers": "서버 연결 중...",
-    "startingOfflineMode": "오프라인 모드 시작 중..."
+    "startingOfflineMode": "오프라인 모드 시작 중...",
+    "more": "More",
+    "description": "Description"
   },
   "screens": {
     "licenses": "라이선스",
@@ -407,7 +409,9 @@
     "switchingToCompatiblePlayer": "호환되는 플레이어로 전환 중...",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logId": "Log ID",
+    "noAlbumsFound": "No albums found",
+    "noTracksFound": "No tracks found"
   },
   "subtitlingStyling": {
     "stylingOptions": "스타일 옵션",
@@ -519,7 +523,13 @@
       "shows": "TV 프로그램",
       "seasons": "시즌",
       "episodes": "화",
-      "folders": "폴더"
+      "folders": "폴더",
+      "artists": "Artists",
+      "albums": "Albums",
+      "tracks": "Tracks",
+      "books": "Books",
+      "authors": "Authors",
+      "chapters": "Chapters"
     }
   },
   "about": {

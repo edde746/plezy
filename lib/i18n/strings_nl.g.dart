@@ -154,6 +154,8 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get loadingServers => 'Servers laden...';
 	@override String get connectingToServers => 'Verbinden met servers...';
 	@override String get startingOfflineMode => 'Offlinemodus starten...';
+	@override String get more => 'More';
+	@override String get description => 'Description';
 }
 
 // Path: screens
@@ -569,6 +571,8 @@ class _TranslationsMessagesNl implements TranslationsMessagesEn {
 	@override String get logsUploaded => 'Logs uploaded';
 	@override String get logsUploadFailed => 'Failed to upload logs';
 	@override String get logId => 'Log ID';
+	@override String get noAlbumsFound => 'No albums found';
+	@override String get noTracksFound => 'No tracks found';
 }
 
 // Path: subtitlingStyling
@@ -1198,6 +1202,12 @@ class _TranslationsLibrariesGroupingsNl implements TranslationsLibrariesGrouping
 	@override String get seasons => 'Seizoenen';
 	@override String get episodes => 'Afleveringen';
 	@override String get folders => 'Mappen';
+	@override String get artists => 'Artists';
+	@override String get albums => 'Albums';
+	@override String get tracks => 'Tracks';
+	@override String get books => 'Books';
+	@override String get authors => 'Authors';
+	@override String get chapters => 'Chapters';
 }
 
 // Path: companionRemote.session
@@ -1356,6 +1366,8 @@ extension on TranslationsNl {
 			'common.loadingServers' => 'Servers laden...',
 			'common.connectingToServers' => 'Verbinden met servers...',
 			'common.startingOfflineMode' => 'Offlinemodus starten...',
+			'common.more' => 'More',
+			'common.description' => 'Description',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
@@ -1678,6 +1690,8 @@ extension on TranslationsNl {
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
+			'messages.noAlbumsFound' => 'No albums found',
+			'messages.noTracksFound' => 'No tracks found',
 			'subtitlingStyling.stylingOptions' => 'Opmaak opties',
 			'subtitlingStyling.fontSize' => 'Lettergrootte',
 			'subtitlingStyling.textColor' => 'Tekstkleur',
@@ -1775,6 +1789,12 @@ extension on TranslationsNl {
 			'libraries.groupings.seasons' => 'Seizoenen',
 			'libraries.groupings.episodes' => 'Afleveringen',
 			'libraries.groupings.folders' => 'Mappen',
+			'libraries.groupings.artists' => 'Artists',
+			'libraries.groupings.albums' => 'Albums',
+			'libraries.groupings.tracks' => 'Tracks',
+			'libraries.groupings.books' => 'Books',
+			'libraries.groupings.authors' => 'Authors',
+			'libraries.groupings.chapters' => 'Chapters',
 			'about.title' => 'Over',
 			'about.openSourceLicenses' => 'Open Source licenties',
 			'about.versionLabel' => ({required Object version}) => 'Versie ${version}',
@@ -1803,6 +1823,8 @@ extension on TranslationsNl {
 			'liveTv.title' => 'Live TV',
 			'liveTv.channels' => 'Zenders',
 			'liveTv.guide' => 'Gids',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => 'Geen zenders beschikbaar',
 			'liveTv.noDvr' => 'Geen DVR geconfigureerd op een server',
 			'liveTv.tuneFailed' => 'Kan zender niet afstemmen',

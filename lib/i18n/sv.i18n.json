@@ -55,7 +55,9 @@
     "refreshingServers": "Uppdaterar servrar...",
     "loadingServers": "Laddar servrar...",
     "connectingToServers": "Ansluter till servrar...",
-    "startingOfflineMode": "Startar offlineläge..."
+    "startingOfflineMode": "Startar offlineläge...",
+    "more": "More",
+    "description": "Description"
   },
   "screens": {
     "licenses": "Licenser",
@@ -407,7 +409,9 @@
     "switchingToCompatiblePlayer": "Byter till kompatibel spelare...",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logId": "Log ID",
+    "noAlbumsFound": "No albums found",
+    "noTracksFound": "No tracks found"
   },
   "subtitlingStyling": {
     "stylingOptions": "Stilalternativ",
@@ -519,7 +523,13 @@
       "shows": "Serier",
       "seasons": "Säsonger",
       "episodes": "Avsnitt",
-      "folders": "Mappar"
+      "folders": "Mappar",
+      "artists": "Artists",
+      "albums": "Albums",
+      "tracks": "Tracks",
+      "books": "Books",
+      "authors": "Authors",
+      "chapters": "Chapters"
     }
   },
   "about": {

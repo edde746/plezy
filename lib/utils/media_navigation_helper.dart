@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
+import '../screens/album_detail_screen.dart';
+import '../screens/artist_detail_screen.dart';
 import '../screens/collection_detail_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
@@ -69,10 +71,27 @@ Future<MediaNavigationResult> navigateToMediaItem(
       return MediaNavigationResult.navigated;
 
     case PlexMediaType.artist:
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ArtistDetailScreen(artist: metadata)),
+      );
+      onRefresh?.call(metadata.ratingKey);
+      return MediaNavigationResult.navigated;
+
     case PlexMediaType.album:
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AlbumDetailScreen(album: metadata)),
+      );
+      onRefresh?.call(metadata.ratingKey);
+      return MediaNavigationResult.navigated;
+
     case PlexMediaType.track:
-      // Music types not supported
-      return MediaNavigationResult.unsupported;
+      final result = await navigateToAudioPlayer(context, metadata: metadata);
+      if (result == true) {
+        onRefresh?.call(metadata.ratingKey);
+      }
+      return MediaNavigationResult.navigated;
 
     case PlexMediaType.clip:
     case PlexMediaType.episode:

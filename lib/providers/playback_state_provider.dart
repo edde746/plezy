@@ -73,6 +73,9 @@ class PlaybackStateProvider with ChangeNotifier {
     return index != -1 ? index + 1 : 0;
   }
 
+  /// The client reference (for watch connectivity)
+  PlexClient? get client => _client;
+
   /// Set the client reference for loading more items
   void setClient(PlexClient client) {
     _client = client;

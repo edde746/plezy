@@ -55,7 +55,9 @@
     "refreshingServers": "サーバーを更新中...",
     "loadingServers": "サーバーを読み込み中...",
     "connectingToServers": "サーバーに接続中...",
-    "startingOfflineMode": "オフラインモードを開始中..."
+    "startingOfflineMode": "オフラインモードを開始中...",
+    "more": "More",
+    "description": "Description"
   },
   "screens": {
     "licenses": "ライセンス",
@@ -407,7 +409,9 @@
     "switchingToCompatiblePlayer": "互換プレーヤーに切替中...",
     "logsUploaded": "ログをアップロードしました",
     "logsUploadFailed": "ログのアップロードに失敗しました",
-    "logId": "ログID"
+    "logId": "ログID",
+    "noAlbumsFound": "No albums found",
+    "noTracksFound": "No tracks found"
   },
   "subtitlingStyling": {
     "stylingOptions": "スタイルオプション",
@@ -519,7 +523,13 @@
       "shows": "テレビ番組",
       "seasons": "シーズン",
       "episodes": "エピソード",
-      "folders": "フォルダ"
+      "folders": "フォルダ",
+      "artists": "Artists",
+      "albums": "Albums",
+      "tracks": "Tracks",
+      "books": "Books",
+      "authors": "Authors",
+      "chapters": "Chapters"
     }
   },
   "about": {

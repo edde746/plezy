@@ -154,6 +154,8 @@ class _TranslationsCommonRu implements TranslationsCommonEn {
 	@override String get loadingServers => 'Загрузка серверов...';
 	@override String get connectingToServers => 'Подключение к серверам...';
 	@override String get startingOfflineMode => 'Запуск автономного режима...';
+	@override String get more => 'More';
+	@override String get description => 'Description';
 }
 
 // Path: screens
@@ -569,6 +571,8 @@ class _TranslationsMessagesRu implements TranslationsMessagesEn {
 	@override String get logsUploaded => 'Логи загружены';
 	@override String get logsUploadFailed => 'Не удалось загрузить логи';
 	@override String get logId => 'ID лога';
+	@override String get noAlbumsFound => 'No albums found';
+	@override String get noTracksFound => 'No tracks found';
 }
 
 // Path: subtitlingStyling
@@ -1198,6 +1202,12 @@ class _TranslationsLibrariesGroupingsRu implements TranslationsLibrariesGrouping
 	@override String get seasons => 'Сезоны';
 	@override String get episodes => 'Эпизоды';
 	@override String get folders => 'Папки';
+	@override String get artists => 'Artists';
+	@override String get albums => 'Albums';
+	@override String get tracks => 'Tracks';
+	@override String get books => 'Books';
+	@override String get authors => 'Authors';
+	@override String get chapters => 'Chapters';
 }
 
 // Path: companionRemote.session
@@ -1356,6 +1366,8 @@ extension on TranslationsRu {
 			'common.loadingServers' => 'Загрузка серверов...',
 			'common.connectingToServers' => 'Подключение к серверам...',
 			'common.startingOfflineMode' => 'Запуск автономного режима...',
+			'common.more' => 'More',
+			'common.description' => 'Description',
 			'screens.licenses' => 'Лицензии',
 			'screens.switchProfile' => 'Сменить профиль',
 			'screens.subtitleStyling' => 'Стиль субтитров',
@@ -1678,6 +1690,8 @@ extension on TranslationsRu {
 			'messages.logsUploaded' => 'Логи загружены',
 			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
 			'messages.logId' => 'ID лога',
+			'messages.noAlbumsFound' => 'No albums found',
+			'messages.noTracksFound' => 'No tracks found',
 			'subtitlingStyling.stylingOptions' => 'Параметры стиля',
 			'subtitlingStyling.fontSize' => 'Размер шрифта',
 			'subtitlingStyling.textColor' => 'Цвет текста',
@@ -1775,6 +1789,12 @@ extension on TranslationsRu {
 			'libraries.groupings.seasons' => 'Сезоны',
 			'libraries.groupings.episodes' => 'Эпизоды',
 			'libraries.groupings.folders' => 'Папки',
+			'libraries.groupings.artists' => 'Artists',
+			'libraries.groupings.albums' => 'Albums',
+			'libraries.groupings.tracks' => 'Tracks',
+			'libraries.groupings.books' => 'Books',
+			'libraries.groupings.authors' => 'Authors',
+			'libraries.groupings.chapters' => 'Chapters',
 			'about.title' => 'О приложении',
 			'about.openSourceLicenses' => 'Лицензии открытого ПО',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
@@ -1803,6 +1823,8 @@ extension on TranslationsRu {
 			'liveTv.title' => 'ТВ в прямом эфире',
 			'liveTv.channels' => 'Каналы',
 			'liveTv.guide' => 'Программа',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noChannels' => 'Нет доступных каналов',
 			'liveTv.noDvr' => 'DVR не настроен ни на одном сервере',
 			'liveTv.tuneFailed' => 'Не удалось настроить канал',
