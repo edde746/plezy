@@ -14,7 +14,6 @@ import '../../../models/plex_metadata.dart';
 import '../../../providers/playback_state_provider.dart';
 import '../../../services/download_storage_service.dart';
 import '../../../services/plex_client.dart';
-import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/player_utils.dart';
 import '../../../utils/provider_extensions.dart';
@@ -313,7 +312,7 @@ class ContentStripState extends State<ContentStrip> {
             ),
           ),
           const SizedBox(height: 4),
-          Container(height: 2, width: 40, color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent),
+          Container(height: 2, width: 40, color: isActive ? Colors.white : Colors.transparent),
         ],
       ),
     );
@@ -562,7 +561,7 @@ class ContentStripState extends State<ContentStrip> {
                         decoration: BoxDecoration(
                           borderRadius: const BorderRadius.all(Radius.circular(6)),
                           border: Border.fromBorderSide(
-                            BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                            BorderSide(color: Colors.white, width: 2),
                           ),
                         ),
                       ),
@@ -575,7 +574,7 @@ class ContentStripState extends State<ContentStrip> {
             Text(
               title,
               style: TextStyle(
-                color: isCurrent ? Theme.of(context).colorScheme.primary : Colors.white,
+                color: Colors.white,
                 fontSize: titleFontSize,
                 fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -586,9 +585,7 @@ class ContentStripState extends State<ContentStrip> {
             Text(
               subtitle,
               style: TextStyle(
-                color: isCurrent
-                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
-                    : tokens(context).textMuted,
+                color: isCurrent ? Colors.white70 : Colors.white60,
                 fontSize: subtitleFontSize,
                 fontWeight: isCurrent ? FontWeight.w500 : FontWeight.normal,
               ),
