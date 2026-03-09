@@ -815,15 +815,8 @@ class PlexServer {
   }
 
   /// Returns true if the address is known to be unreachable from external
-  /// clients (Docker bridge networks, IPv6 link-local, or all-zeros).
+  /// clients (IPv6 link-local or all-zeros).
   static bool _isUnreachableAddress(String address) {
-    // Docker bridge subnets (172.17.0.0/16, 172.18.0.0/16, etc.)
-    // Docker uses 172.17-31.x.x by default.
-    final dockerPattern = RegExp(r'^172\.(1[7-9]|2[0-9]|3[01])\.');
-    if (dockerPattern.hasMatch(address)) {
-      return true;
-    }
-
     // IPv6 all-zeros (::) or link-local (fe80::)
     final normalized = address.replaceAll('-', ':').toLowerCase();
     if (normalized == '::' || normalized == '0000:0000:0000:0000:0000:0000:0000:0000') {
