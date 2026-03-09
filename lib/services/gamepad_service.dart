@@ -153,8 +153,12 @@ class GamepadService with WindowListener {
     if (event.pressed) {
       onGamepadInput?.call();
       _setTraditionalFocusHighlight();
-      key_sim.scheduleFrameIfIdle();
     }
+    // Ensure a frame is scheduled so addPostFrameCallback-based key
+    // simulation fires promptly. Without this, key-up events can be
+    // delayed indefinitely when the app is idle, causing the long-press
+    // timer to fire before the release is delivered.
+    key_sim.scheduleFrameIfIdle();
 
     final wasPressed = _pressedButtons.contains(event.button);
 
