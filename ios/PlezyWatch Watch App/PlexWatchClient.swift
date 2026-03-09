@@ -359,10 +359,26 @@ class PlexWatchClient {
         return await createPlayQueue(uri: uri)
     }
 
-    /// Build a direct stream URL for a track using its part key
+    /// Build a transcoded stream URL for Watch playback (320kbps AAC).
+    /// Direct-play of large FLAC files can stutter on Watch's constrained network stack.
+    /// 320kbps AAC is the max quality AirPods can reproduce and streams reliably.
     func streamUrl(partKey: String) -> String? {
         guard let creds = credentials else { return nil }
-        return "\(creds.serverUrl)\(partKey)?X-Plex-Token=\(creds.token)"
+        // Use Plex's universal transcode endpoint for reliable Watch streaming
+        var components = URLComponents(string: "\(creds.serverUrl)/audio/:/transcode/universal/start")
+        components?.queryItems = [
+            URLQueryItem(name: "path", value: partKey),
+            URLQueryItem(name: "mediaIndex", value: "0"),
+            URLQueryItem(name: "partIndex", value: "0"),
+            URLQueryItem(name: "protocol", value: "http"),
+            URLQueryItem(name: "maxAudioBitrate", value: "320"),
+            URLQueryItem(name: "directStream", value: "1"),
+            URLQueryItem(name: "directPlay", value: "0"),
+            URLQueryItem(name: "X-Plex-Token", value: creds.token),
+            URLQueryItem(name: "X-Plex-Product", value: "Plezy"),
+            URLQueryItem(name: "X-Plex-Platform", value: "watchOS"),
+        ]
+        return components?.url?.absoluteString
     }
 
     /// Fetch the partKey for a track by loading its full metadata

@@ -2,7 +2,6 @@ import Foundation
 import AVFoundation
 import Combine
 import MediaPlayer
-import WatchKit
 
 /// Repeat mode for queue playback
 enum RepeatMode: Int, CaseIterable {
@@ -60,8 +59,8 @@ class WatchAudioPlayer: NSObject, ObservableObject {
     private var shuffledIndices: [Int] = []
     private var isFetchingMore = false
 
-    // Extended runtime session keeps the app alive when the screen sleeps
-    private var extendedSession: WKExtendedRuntimeSession?
+    // Whether the audio session has been activated (only done once)
+    private var audioSessionActivated = false
 
     // Play queue reference for refreshing from Plex
     var playQueueRef: PlayQueueReference?
@@ -94,8 +93,34 @@ class WatchAudioPlayer: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        setupAudioSession()
         setupNotifications()
         setupRemoteCommandCenter()
+    }
+
+    /// Configure audio session once at init — do NOT reconfigure per track
+    private func setupAudioSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, policy: .longFormAudio)
+            rlog("[WatchAudio] Audio session category set to playback/longFormAudio")
+        } catch {
+            rlog("[WatchAudio] Audio session setCategory failed: \(error)")
+        }
+    }
+
+    /// Activate the audio session (only once, before first playback)
+    private func activateSessionIfNeeded() async -> Bool {
+        guard !audioSessionActivated else { return true }
+        do {
+            try await AVAudioSession.sharedInstance().activate()
+            audioSessionActivated = true
+            rlog("[WatchAudio] Audio session activated (one-time)")
+            return true
+        } catch {
+            rlog("[WatchAudio] Audio session activate() failed: \(error)")
+            return false
+        }
     }
 
     private func setupNotifications() {
@@ -134,29 +159,6 @@ class WatchAudioPlayer: NSObject, ObservableObject {
         @unknown default:
             break
         }
-    }
-
-    // MARK: - Extended Runtime Session
-
-    /// Start an extended runtime session to keep audio playing when the screen sleeps
-    private func startExtendedSession() {
-        guard extendedSession == nil || extendedSession?.state == .invalid else {
-            rlog("[WatchAudio] Extended session already active")
-            return
-        }
-        let session = WKExtendedRuntimeSession()
-        session.delegate = self
-        session.start()
-        extendedSession = session
-        rlog("[WatchAudio] Extended runtime session started")
-    }
-
-    /// Stop the extended runtime session
-    private func stopExtendedSession() {
-        guard let session = extendedSession, session.state == .running else { return }
-        session.invalidate()
-        extendedSession = nil
-        rlog("[WatchAudio] Extended runtime session stopped")
     }
 
     /// Set up MPRemoteCommandCenter for system Now Playing controls (Digital Crown volume, etc.)
@@ -426,25 +428,9 @@ class WatchAudioPlayer: NSObject, ObservableObject {
         rlog("[WatchAudio] loadAndPlay: \(item.title)")
         rlog("[WatchAudio] URL: \(item.streamUrl.prefix(100))")
 
-        // Set category synchronously, then activate asynchronously (watchOS requirement)
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default, policy: .longFormAudio)
-        } catch {
-            rlog("[WatchAudio] Audio session setCategory failed: \(error)")
-            self.error = "Audio category: \(error.localizedDescription)"
-            isLoading = false
-            return
-        }
-
-        // watchOS requires async activation for longFormAudio
         Task { @MainActor in
-            do {
-                try await AVAudioSession.sharedInstance().activate()
-                rlog("[WatchAudio] Audio session activated")
-            } catch {
-                rlog("[WatchAudio] Audio session activate() failed: \(error)")
-                self.error = "Audio activate: \(error.localizedDescription)"
+            guard await activateSessionIfNeeded() else {
+                self.error = "Audio session activation failed"
                 self.isLoading = false
                 return
             }
@@ -509,7 +495,6 @@ class WatchAudioPlayer: NSObject, ObservableObject {
             duration = playerItem?.duration.seconds ?? 0
             player?.play()
             isPlaying = true
-            startExtendedSession()
             updateNowPlayingInfo()
         case .failed:
             let underlyingError = playerItem?.error as NSError?
@@ -625,7 +610,6 @@ class WatchAudioPlayer: NSObject, ObservableObject {
         currentIndex = 0
         isShuffled = false
         shuffledIndices = []
-        stopExtendedSession()
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
@@ -775,26 +759,3 @@ struct PlayQueueReference {
     }
 }
 
-// MARK: - WKExtendedRuntimeSessionDelegate
-
-extension WatchAudioPlayer: WKExtendedRuntimeSessionDelegate {
-    func extendedRuntimeSessionDidStart(_ extendedRuntimeSession: WKExtendedRuntimeSession) {
-        rlog("[WatchAudio] Extended session running — audio will continue when screen sleeps")
-    }
-
-    func extendedRuntimeSessionWillExpire(_ extendedRuntimeSession: WKExtendedRuntimeSession) {
-        rlog("[WatchAudio] Extended session expiring — restarting")
-        // Restart the session to keep audio alive
-        startExtendedSession()
-    }
-
-    func extendedRuntimeSession(_ extendedRuntimeSession: WKExtendedRuntimeSession, didInvalidateWith reason: WKExtendedRuntimeSessionInvalidationReason, error: Error?) {
-        rlog("[WatchAudio] Extended session invalidated: reason=\(reason.rawValue) error=\(error?.localizedDescription ?? "none")")
-        // Restart if we're still playing
-        if isPlaying {
-            rlog("[WatchAudio] Still playing — restarting extended session")
-            extendedSession = nil
-            startExtendedSession()
-        }
-    }
-}
