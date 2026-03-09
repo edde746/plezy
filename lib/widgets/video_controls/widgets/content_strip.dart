@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -14,6 +16,7 @@ import '../../../services/download_storage_service.dart';
 import '../../../services/plex_client.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
+import '../../../utils/player_utils.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../app_icon.dart';
 import '../../plex_optimized_image.dart';
@@ -26,6 +29,7 @@ class ContentStrip extends StatefulWidget {
   final String? serverId;
   final bool showQueueTab;
   final Function(PlexMetadata)? onQueueItemSelected;
+  final Function(Duration position)? onSeekCompleted;
 
   /// Whether to use dpad/focus-based navigation (TV mode).
   /// When true, no tab bar is shown — pages are navigated via UP/DOWN.
@@ -45,6 +49,7 @@ class ContentStrip extends StatefulWidget {
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
+    this.onSeekCompleted,
     this.useFocusNavigation = false,
     this.onNavigateUp,
     this.onFocusActivity,
@@ -120,6 +125,14 @@ class ContentStripState extends State<ContentStrip> {
     return null;
   }
 
+  Future<void> _handleChapterTap(Duration position) async {
+    final clamped = clampSeekPosition(widget.player, position);
+    await widget.player.seek(clamped);
+    if (mounted) {
+      widget.onSeekCompleted?.call(clamped);
+    }
+  }
+
   int? _getCurrentQueueIndex() {
     try {
       final playbackState = context.read<PlaybackStateProvider>();
@@ -155,13 +168,7 @@ class ContentStripState extends State<ContentStrip> {
     });
   }
 
-  KeyEventResult _handleFocusItemKeyEvent(
-    FocusNode node,
-    KeyEvent event,
-    int index,
-    int totalItems,
-    _StripTab page,
-  ) {
+  KeyEventResult _handleFocusItemKeyEvent(FocusNode node, KeyEvent event, int index, int totalItems, _StripTab page) {
     if (!event.isActionable) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
@@ -363,7 +370,7 @@ class ContentStripState extends State<ContentStrip> {
                 ? DownloadStorageService.instance.getArtworkPathSync(widget.serverId!, chapter.thumb!)
                 : null;
 
-            void onTap() => widget.player.seek(chapter.startTime);
+            void onTap() => unawaited(_handleChapterTap(chapter.startTime));
 
             final item = _buildStripItem(
               context: context,

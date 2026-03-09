@@ -23,6 +23,7 @@ class MediaControlsManager {
   /// Cached control enabled state to avoid redundant platform calls
   bool? _lastCanGoNext;
   bool? _lastCanGoPrevious;
+  bool? _lastCanSeek;
 
   MediaControlsManager() {
     _throttledUpdate = throttle(
@@ -109,27 +110,34 @@ class MediaControlsManager {
   /// - Episodes: Enable both if there are adjacent episodes
   /// - Playlist items: Enable based on playlist position
   /// - Movies: Usually disabled
-  Future<void> setControlsEnabled({bool canGoNext = false, bool canGoPrevious = false}) async {
-    // Skip if unchanged (avoid redundant platform calls)
-    if (canGoNext == _lastCanGoNext && canGoPrevious == _lastCanGoPrevious) {
-      return;
-    }
-
-    _lastCanGoNext = canGoNext;
-    _lastCanGoPrevious = canGoPrevious;
-
+  Future<void> setControlsEnabled({bool canGoNext = false, bool canGoPrevious = false, bool canSeek = false}) async {
     try {
-      final controls = <MediaControl>[];
-      if (canGoPrevious) controls.add(MediaControl.previous);
-      if (canGoNext) controls.add(MediaControl.next);
+      final controlsToEnable = <MediaControl>[];
+      final controlsToDisable = <MediaControl>[];
 
-      if (controls.isNotEmpty) {
-        await OsMediaControls.enableControls(controls);
-        appLogger.d('Media controls enabled - Previous: $canGoPrevious, Next: $canGoNext');
-      } else {
-        await OsMediaControls.disableControls([MediaControl.previous, MediaControl.next]);
-        appLogger.d('Media controls disabled');
+      if (canGoPrevious != _lastCanGoPrevious) {
+        (canGoPrevious ? controlsToEnable : controlsToDisable).add(MediaControl.previous);
       }
+      if (canGoNext != _lastCanGoNext) {
+        (canGoNext ? controlsToEnable : controlsToDisable).add(MediaControl.next);
+      }
+      if (canSeek != _lastCanSeek) {
+        (canSeek ? controlsToEnable : controlsToDisable).add(MediaControl.seek);
+      }
+
+      if (controlsToEnable.isEmpty && controlsToDisable.isEmpty) return;
+
+      if (controlsToEnable.isNotEmpty) {
+        await OsMediaControls.enableControls(controlsToEnable);
+      }
+      if (controlsToDisable.isNotEmpty) {
+        await OsMediaControls.disableControls(controlsToDisable);
+      }
+
+      _lastCanGoNext = canGoNext;
+      _lastCanGoPrevious = canGoPrevious;
+      _lastCanSeek = canSeek;
+      appLogger.d('Media controls updated - Previous: $canGoPrevious, Next: $canGoNext, Seek: $canSeek');
     } catch (e) {
       appLogger.w('Failed to set media controls enabled state', error: e);
     }
@@ -142,6 +150,9 @@ class MediaControlsManager {
     try {
       await OsMediaControls.clear();
       _throttledUpdate.cancel();
+      _lastCanGoNext = null;
+      _lastCanGoPrevious = null;
+      _lastCanSeek = null;
       appLogger.d('Media controls cleared');
     } catch (e) {
       appLogger.w('Failed to clear media controls', error: e);

@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -9,6 +11,7 @@ import '../../../services/download_storage_service.dart';
 import '../../../models/plex_media_info.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
+import '../../../utils/player_utils.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
@@ -21,6 +24,7 @@ class ChapterSheet extends StatefulWidget {
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
   final String? serverId; // Server ID for the metadata these chapters belong to
+  final Function(Duration position)? onSeekCompleted;
 
   const ChapterSheet({
     super.key,
@@ -28,6 +32,7 @@ class ChapterSheet extends StatefulWidget {
     required this.chapters,
     required this.chaptersLoaded,
     this.serverId,
+    this.onSeekCompleted,
   });
 
   @override
@@ -35,6 +40,15 @@ class ChapterSheet extends StatefulWidget {
 }
 
 class _ChapterSheetState extends State<ChapterSheet> {
+  Future<void> _handleChapterTap(Duration position) async {
+    final clamped = clampSeekPosition(widget.player, position);
+    await widget.player.seek(clamped);
+    if (mounted) {
+      widget.onSeekCompleted?.call(clamped);
+      OverlaySheetController.of(context).close();
+    }
+  }
+
   /// Get the PlexClient for chapters, or null if unavailable (offline mode)
   PlexClient? _tryGetClientForChapters(BuildContext context) {
     return context.tryGetClientForServer(widget.serverId);
@@ -138,8 +152,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                     ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: Theme.of(context).colorScheme.primary)
                     : null,
                 onTap: () {
-                  widget.player.seek(chapter.startTime);
-                  OverlaySheetController.of(context).close();
+                  unawaited(_handleChapterTap(chapter.startTime));
                 },
               );
             },

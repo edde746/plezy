@@ -169,6 +169,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         }
         break;
 
+      case 'seekable':
+        if (value is bool) {
+          setSeekable(value);
+        }
+        break;
+
       case 'demuxer-cache-time':
         if (value is num) {
           final nowMs = _throttleSw.elapsedMilliseconds;
@@ -325,6 +331,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_disposed) return;
     switch (name) {
       case 'end-file':
+        setSeekable(false);
         final rawReason = data?['reason'];
         final reason = switch (rawReason) {
           0 => 'eof',
@@ -460,6 +467,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// Update the internal state.
   void updateState(PlayerState Function(PlayerState) update) {
     _state = update(_state);
+  }
+
+  @protected
+  void setSeekable(bool seekable) {
+    if (_state.seekable == seekable) return;
+    _state = _state.copyWith(seekable: seekable);
+    seekableController.add(seekable);
   }
 
   /// Safe method channel invocation — no-ops if player is disposed.

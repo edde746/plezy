@@ -14,6 +14,7 @@ mixin PlayerStreamControllersMixin {
   final bufferingController = StreamController<bool>.broadcast();
   final positionController = StreamController<Duration>.broadcast();
   final durationController = StreamController<Duration>.broadcast();
+  final seekableController = StreamController<bool>.broadcast();
   final bufferController = StreamController<Duration>.broadcast();
   final volumeController = StreamController<double>.broadcast();
   final rateController = StreamController<double>.broadcast();
@@ -35,6 +36,7 @@ mixin PlayerStreamControllersMixin {
       buffering: bufferingController.stream,
       position: positionController.stream,
       duration: durationController.stream,
+      seekable: seekableController.stream,
       buffer: bufferController.stream,
       volume: volumeController.stream,
       rate: rateController.stream,
@@ -57,6 +59,7 @@ mixin PlayerStreamControllersMixin {
     await bufferingController.close();
     await positionController.close();
     await durationController.close();
+    await seekableController.close();
     await bufferController.close();
     await volumeController.close();
     await rateController.close();

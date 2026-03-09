@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 
 import '../../models.dart';
+import '../../../utils/app_logger.dart';
 import '../player_base.dart';
 
 /// Android implementation of [Player] using ExoPlayer.
@@ -67,6 +68,7 @@ class PlayerAndroid extends PlayerBase {
       // Register property observers so the plugin knows propId mappings
       await observeProperty('time-pos', 'double');
       await observeProperty('duration', 'double');
+      await observeProperty('seekable', 'flag');
       await observeProperty('pause', 'flag');
       await observeProperty('paused-for-cache', 'flag');
       await observeProperty('track-list', 'string');
@@ -90,6 +92,7 @@ class PlayerAndroid extends PlayerBase {
   Future<void> open(Media media, {bool play = true, bool isLive = false}) async {
     if (disposed) return;
     await _ensureInitialized();
+    setSeekable(false);
 
     // Show the video layer
     await setVisible(true);
@@ -116,12 +119,21 @@ class PlayerAndroid extends PlayerBase {
   @override
   Future<void> stop() async {
     await invoke('stop');
+    setSeekable(false);
     await setVisible(false);
   }
 
   @override
   Future<void> seek(Duration position) async {
-    await invoke('seek', {'positionMs': position.inMilliseconds});
+    try {
+      await invoke('seek', {'positionMs': position.inMilliseconds});
+    } on PlatformException catch (e) {
+      if (e.code == 'COMMAND_FAILED' || e.code == 'NOT_INITIALIZED') {
+        appLogger.w('Seek failed (${e.code}), player not ready');
+        return;
+      }
+      rethrow;
+    }
   }
 
   // ============================================
@@ -140,12 +152,7 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
-    await invoke('addSubtitleTrack', {
-      'uri': uri,
-      'title': title,
-      'language': language,
-      'select': select,
-    });
+    await invoke('addSubtitleTrack', {'uri': uri, 'title': title, 'language': language, 'select': select});
   }
 
   // ============================================
@@ -232,6 +239,8 @@ class PlayerAndroid extends PlayerBase {
         return (state.position.inMilliseconds / 1000.0).toString();
       case 'duration':
         return (state.duration.inMilliseconds / 1000.0).toString();
+      case 'seekable':
+        return state.seekable ? 'yes' : 'no';
       // Video dimensions - query from ExoPlayer stats
       case 'width':
       case 'dwidth':

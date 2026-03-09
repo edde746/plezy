@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../font_loader.dart';
 import '../models.dart';
+import '../../utils/app_logger.dart';
 import 'player_base.dart';
 
 /// Shared native implementation of [Player] for iOS, macOS, Android (MPV fallback), and Linux.
@@ -60,6 +61,7 @@ class PlayerNative extends PlayerBase {
       // Subscribe to MPV properties
       await observeProperty('time-pos', 'double');
       await observeProperty('duration', 'double');
+      await observeProperty('seekable', 'flag');
       await observeProperty('pause', 'flag');
       await observeProperty('paused-for-cache', 'flag');
       await observeProperty('track-list', _nodeFormat);
@@ -114,6 +116,7 @@ class PlayerNative extends PlayerBase {
   Future<void> open(Media media, {bool play = true, bool isLive = false}) async {
     if (disposed) return;
     await _ensureInitialized();
+    setSeekable(false);
 
     // Show the video layer
     await setVisible(true);
@@ -164,12 +167,21 @@ class PlayerNative extends PlayerBase {
   @override
   Future<void> stop() async {
     await command(['stop']);
+    setSeekable(false);
     await invoke('setVisible', {'visible': false});
   }
 
   @override
   Future<void> seek(Duration position) async {
-    await command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']);
+    try {
+      await command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']);
+    } on PlatformException catch (e) {
+      if (e.code == 'COMMAND_FAILED' || e.code == 'NOT_INITIALIZED') {
+        appLogger.w('Seek failed (${e.code}), player not ready');
+        return;
+      }
+      rethrow;
+    }
   }
 
   // ============================================

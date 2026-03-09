@@ -20,6 +20,9 @@ class PlayerStreams {
   /// Stream of duration changes (when media is loaded).
   final Stream<Duration> duration;
 
+  /// Stream of seekability changes for the current media item.
+  final Stream<bool> seekable;
+
   /// Stream of buffer position updates.
   final Stream<Duration> buffer;
 
@@ -63,6 +66,7 @@ class PlayerStreams {
     required this.buffering,
     required this.position,
     required this.duration,
+    required this.seekable,
     required this.buffer,
     required this.volume,
     required this.rate,

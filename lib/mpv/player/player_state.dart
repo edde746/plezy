@@ -20,6 +20,9 @@ class PlayerState {
   /// Total duration of the media.
   final Duration duration;
 
+  /// Whether the current media item can be seeked.
+  final bool seekable;
+
   /// Amount of media buffered ahead of current position.
   final Duration buffer;
 
@@ -59,6 +62,7 @@ class PlayerState {
     this.buffering = false,
     this.position = Duration.zero,
     this.duration = Duration.zero,
+    this.seekable = false,
     this.buffer = Duration.zero,
     this.volume = 100.0,
     this.rate = 1.0,
@@ -79,6 +83,7 @@ class PlayerState {
     bool? buffering,
     Duration? position,
     Duration? duration,
+    bool? seekable,
     Duration? buffer,
     double? volume,
     double? rate,
@@ -97,6 +102,7 @@ class PlayerState {
       buffering: buffering ?? this.buffering,
       position: position ?? this.position,
       duration: duration ?? this.duration,
+      seekable: seekable ?? this.seekable,
       buffer: buffer ?? this.buffer,
       volume: volume ?? this.volume,
       rate: rate ?? this.rate,
@@ -112,5 +118,5 @@ class PlayerState {
   }
 
   @override
-  String toString() => 'PlayerState(playing: $playing, position: $position, duration: $duration)';
+  String toString() => 'PlayerState(playing: $playing, position: $position, duration: $duration, seekable: $seekable)';
 }

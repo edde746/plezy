@@ -156,6 +156,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<bool>? _mediaControlsPlayingSubscription;
   StreamSubscription<Duration>? _mediaControlsPositionSubscription;
   StreamSubscription<double>? _mediaControlsRateSubscription;
+  StreamSubscription<bool>? _mediaControlsSeekableSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
@@ -356,7 +357,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (_shouldSkipForPip) break;
         // Clear media controls when app truly goes to background
         // (we don't support background playback)
-        OsMediaControls.clear();
+        _mediaControlsManager?.clear();
         // Disable wakelock when app goes to background
         _setWakelock(false);
         appLogger.d('Media controls cleared and wakelock disabled due to app being paused/backgrounded');
@@ -364,28 +365,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       case AppLifecycleState.resumed:
         // Restore media controls and wakelock when app is resumed
         if (_isPlayerInitialized && mounted) {
-          // Re-enable wakelock since we're back in the video player
-          _setWakelock(true);
-
-          // Restore media metadata (only in online mode - requires client for artwork URLs)
-          if (!widget.isOffline && _mediaControlsManager != null) {
-            final client = _getClientForMetadata(context);
-            _mediaControlsManager!.updateMetadata(
-              metadata: widget.metadata,
-              client: client,
-              duration: widget.metadata.duration != null ? Duration(milliseconds: widget.metadata.duration!) : null,
-            );
-          }
-
-          // Resume playback if it was playing before going inactive
-          if (_wasPlayingBeforeInactive && player != null) {
-            player!.play();
-            _wasPlayingBeforeInactive = false;
-            appLogger.d('Video resumed after returning from inactive state');
-          }
-
-          _updateMediaControlsPlaybackState();
-          appLogger.d('Media controls restored and wakelock re-enabled on app resume');
+          unawaited(_restoreMediaControlsAfterResume());
         }
         break;
       case AppLifecycleState.detached:
@@ -779,7 +759,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       } else if (event is SeekEvent) {
         appLogger.d('Media control: Seek event received to ${event.position}');
-        player?.seek(event.position);
+        final currentPlayer = player;
+        if (currentPlayer != null) {
+          unawaited(currentPlayer.seek(clampSeekPosition(currentPlayer, event.position)));
+        }
       } else if (event is NextTrackEvent) {
         appLogger.d('Media control: Next track event received');
         if (_nextEpisode != null) {
@@ -802,15 +785,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     if (!mounted) return;
 
-    // Set controls enabled based on content type
-    final playbackState = context.read<PlaybackStateProvider>();
-    final isEpisode = widget.metadata.isEpisode;
-    final isInPlaylist = playbackState.isPlaylistActive;
-
-    await _mediaControlsManager!.setControlsEnabled(
-      canGoNext: isEpisode || isInPlaylist,
-      canGoPrevious: isEpisode || isInPlaylist,
-    );
+    await _syncMediaControlsAvailability();
 
     // Listen to playing state and update media controls
     _mediaControlsPlayingSubscription = player!.streams.playing.listen((isPlaying) {
@@ -830,6 +805,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Listen to playback rate changes for Discord Rich Presence
     _mediaControlsRateSubscription = player!.streams.rate.listen((rate) {
       DiscordRPCService.instance.updatePlaybackSpeed(rate);
+    });
+
+    _mediaControlsSeekableSubscription = player!.streams.seekable.listen((_) {
+      unawaited(_syncMediaControlsAvailability());
     });
 
     // Start Discord Rich Presence for current media
@@ -1527,12 +1506,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     receiver.onSeekForward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      seekWithClamping(player!, Duration(seconds: settings.getSeekTimeSmall()));
+      final target = clampSeekPosition(player!, player!.state.position + Duration(seconds: settings.getSeekTimeSmall()));
+      await player!.seek(target);
     };
     receiver.onSeekBackward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      seekWithClamping(player!, Duration(seconds: -settings.getSeekTimeSmall()));
+      final target = clampSeekPosition(player!, player!.state.position - Duration(seconds: settings.getSeekTimeSmall()));
+      await player!.seek(target);
     };
     receiver.onVolumeUp = () async {
       if (player == null) return;
@@ -1757,6 +1738,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _mediaControlsPlayingSubscription?.cancel();
     _mediaControlsPositionSubscription?.cancel();
     _mediaControlsRateSubscription?.cancel();
+    _mediaControlsSeekableSubscription?.cancel();
 
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
@@ -1903,9 +1885,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    } else if (completed &&
-        _nextEpisode == null &&
-        !_completionTriggered) {
+    } else if (completed && _nextEpisode == null && !_completionTriggered) {
       _completionTriggered = true;
       _handleBackButton();
     }
@@ -1928,6 +1908,58 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   // OS Media Controls Integration
+
+  Future<void> _syncMediaControlsAvailability() async {
+    final manager = _mediaControlsManager;
+    final currentPlayer = player;
+    if (!mounted || manager == null || currentPlayer == null) return;
+
+    final playbackState = context.read<PlaybackStateProvider>();
+    final canNavigateEpisodes = widget.metadata.isEpisode || playbackState.isPlaylistActive;
+    final canSeek = !widget.isLive && currentPlayer.state.seekable;
+
+    if (!mounted || currentPlayer != player || manager != _mediaControlsManager) return;
+
+    await manager.setControlsEnabled(
+      canGoNext: canNavigateEpisodes,
+      canGoPrevious: canNavigateEpisodes,
+      canSeek: canSeek,
+    );
+  }
+
+  Future<void> _restoreMediaControlsAfterResume() async {
+    if (!_isPlayerInitialized || !mounted) return;
+
+    _setWakelock(true);
+
+    final manager = _mediaControlsManager;
+    final currentPlayer = player;
+    if (manager != null && currentPlayer != null) {
+      final client = widget.isOffline ? null : _getClientForMetadata(context);
+      await manager.updateMetadata(
+        metadata: widget.metadata,
+        client: client,
+        duration: widget.metadata.duration != null ? Duration(milliseconds: widget.metadata.duration!) : null,
+      );
+      await _syncMediaControlsAvailability();
+    }
+
+    if (!mounted || currentPlayer != player || currentPlayer == null) return;
+
+    if (_wasPlayingBeforeInactive) {
+      try {
+        await currentPlayer.play();
+        appLogger.d('Video resumed after returning from inactive state');
+      } catch (e) {
+        appLogger.w('Failed to resume playback after returning from inactive state', error: e);
+      } finally {
+        _wasPlayingBeforeInactive = false;
+      }
+    }
+
+    _updateMediaControlsPlaybackState();
+    appLogger.d('Media controls restored and wakelock re-enabled on app resume');
+  }
 
   /// Wrapper method to update media controls playback state
   void _updateMediaControlsPlaybackState() {

@@ -647,6 +647,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     // Setup property observers
                     mpvCore?.observeProperty("time-pos", "double")
                     mpvCore?.observeProperty("duration", "double")
+                    mpvCore?.observeProperty("seekable", "flag")
                     mpvCore?.observeProperty("pause", "flag")
                     mpvCore?.observeProperty("paused-for-cache", "flag")
                     mpvCore?.observeProperty("demuxer-cache-time", "double")

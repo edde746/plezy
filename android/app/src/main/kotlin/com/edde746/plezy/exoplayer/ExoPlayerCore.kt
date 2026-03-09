@@ -114,6 +114,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var tunnelingCorrectionInProgress: Boolean = false
     private var pendingRestoredAudioTrackId: String? = null
     private var pendingRestoredSubtitleTrackId: String? = null
+    private var lastSeekable: Boolean? = null
     private var lastTunnelingCorrectionTarget: Boolean? = null
     private var lastTunnelingCorrectionAtMs: Long = 0L
     @Volatile private var disposing: Boolean = false
@@ -528,6 +529,18 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         positionUpdateRunnable = null
     }
 
+    private fun emitSeekable(seekable: Boolean, force: Boolean = false) {
+        if (!force && lastSeekable == seekable) return
+        lastSeekable = seekable
+        delegate?.onPropertyChange("seekable", seekable)
+    }
+
+    private fun emitCurrentSeekable(force: Boolean = false) {
+        val player = exoPlayer
+        val seekable = player?.isCurrentMediaItemSeekable == true && !currentMediaIsLive
+        emitSeekable(seekable, force)
+    }
+
     // Player.Listener
 
     override fun onCues(cueGroup: CueGroup) {
@@ -553,6 +566,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             else -> "unknown"
         }
         emitLog("debug", "state", stateStr)
+        emitCurrentSeekable()
 
         when (state) {
             Player.STATE_BUFFERING -> {
@@ -633,6 +647,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         emitLog("error", "player", "Error code=${error.errorCode}: ${error.message}, cause=${error.cause?.javaClass?.simpleName}")
         stopFrameWatchdog()
         cancelDecoderHangCheck()
+        emitSeekable(false, force = true)
 
         // If native DV7 failed, retry with conversion before falling to MPV
         if (error.errorCode in 4001..4005 && retryWithDvConversion("decoder error ${error.errorCode}")) return
@@ -685,6 +700,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         Log.d(TAG, "onMediaItemTransition: ${mediaItem?.mediaId}, reason: $reason")
         delegate?.onEvent("file-loaded", null)
         delegate?.onPropertyChange("eof-reached", false)
+        emitCurrentSeekable(force = true)
     }
 
     override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -1324,6 +1340,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         currentTunneledPlayback = false
         pendingStartPositionMs = startPositionMs
         applyTunnelingMode(false)
+        emitSeekable(false, force = true)
 
         if (isLive) {
             // Live MKV streams lack Cues (seek index). FLAG_DISABLE_SEEK_FOR_CUES tells
@@ -1377,6 +1394,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         stopFrameWatchdog()
         cancelDecoderHangCheck()
         exoPlayer?.stop()
+        emitSeekable(false, force = true)
         setVisible(false)
     }
 
@@ -1752,6 +1770,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         pendingStartPositionMs = 0L
         currentMediaIsLive = false
         currentVisible = false
+        emitSeekable(false, force = true)
         selectedAudioTrackId = null
         selectedSubtitleTrackId = null
         selectedExternalSubtitleIndex = null

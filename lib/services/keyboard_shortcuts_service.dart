@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -250,16 +251,20 @@ class KeyboardShortcutsService {
         _settingsService.setVolume(newVolume);
         break;
       case 'seek_forward':
-        seekWithClamping(player, Duration(seconds: _seekTimeSmall));
+        final fwdTarget = clampSeekPosition(player, player.state.position + Duration(seconds: _seekTimeSmall));
+        unawaited(player.seek(fwdTarget));
         break;
       case 'seek_backward':
-        seekWithClamping(player, Duration(seconds: -_seekTimeSmall));
+        final bwdTarget = clampSeekPosition(player, player.state.position - Duration(seconds: _seekTimeSmall));
+        unawaited(player.seek(bwdTarget));
         break;
       case 'seek_forward_large':
-        seekWithClamping(player, Duration(seconds: _seekTimeLarge));
+        final fwdLTarget = clampSeekPosition(player, player.state.position + Duration(seconds: _seekTimeLarge));
+        unawaited(player.seek(fwdLTarget));
         break;
       case 'seek_backward_large':
-        seekWithClamping(player, Duration(seconds: -_seekTimeLarge));
+        final bwdLTarget = clampSeekPosition(player, player.state.position - Duration(seconds: _seekTimeLarge));
+        unawaited(player.seek(bwdLTarget));
         break;
       case 'fullscreen_toggle':
         onToggleFullscreen?.call();

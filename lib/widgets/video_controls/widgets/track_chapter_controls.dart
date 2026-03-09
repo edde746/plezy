@@ -29,6 +29,7 @@ class TrackChapterControls extends StatelessWidget {
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
   final TrackControlsState trackControlsState;
+  final Function(Duration position)? onSeekCompleted;
 
   /// List of FocusNodes for the buttons (passed from parent for navigation)
   final List<FocusNode>? focusNodes;
@@ -54,6 +55,7 @@ class TrackChapterControls extends StatelessWidget {
     required this.chapters,
     required this.chaptersLoaded,
     required this.trackControlsState,
+    this.onSeekCompleted,
     this.focusNodes,
     this.onFocusChange,
     this.onNavigateLeft,
@@ -286,6 +288,7 @@ class TrackChapterControls extends StatelessWidget {
                         chapters: chapters,
                         chaptersLoaded: chaptersLoaded,
                         serverId: serverId,
+                        onSeekCompleted: onSeekCompleted,
                       ),
                     )
                     .whenComplete(() => onStartAutoHide?.call());
