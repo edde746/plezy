@@ -25,11 +25,11 @@ class PlexHome {
 
     return PlexHome(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      name: json['name'] as String,
+      name: json['name'] as String? ?? '',
       guestUserID: (json['guestUserID'] as num?)?.toInt(),
-      guestUserUUID: json['guestUserUUID'] as String,
-      guestEnabled: json['guestEnabled'] as bool,
-      subscription: json['subscription'] as bool,
+      guestUserUUID: json['guestUserUUID'] as String? ?? '',
+      guestEnabled: json['guestEnabled'] as bool? ?? false,
+      subscription: json['subscription'] as bool? ?? false,
       users: users,
     );
   }
