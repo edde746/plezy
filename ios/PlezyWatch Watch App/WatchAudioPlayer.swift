@@ -317,7 +317,6 @@ class WatchAudioPlayer: NSObject, ObservableObject {
             let audioTypes: Set<String> = ["track"]
 
             let client = PlexWatchClient.shared
-            // Parse into MusicItems first, then enrich with partKeys
             let musicItems: [MusicItem] = metadata.compactMap { item in
                 let itemType = item["type"] as? String ?? ""
                 guard audioTypes.contains(itemType) else { return nil }
@@ -325,8 +324,7 @@ class WatchAudioPlayer: NSObject, ObservableObject {
                 guard !existingIds.contains(key) else { return nil }
                 return client.parseMusicItemPublic(item)
             }
-            let enriched = await client.enrichWithPartKeys(musicItems)
-            return enriched.compactMap { $0.toQueueItem(client: client) }
+            return musicItems.compactMap { $0.toQueueItem(client: client) }
         } catch {
             rlog("[WatchAudio] Error fetching additional tracks: \(error)")
             return []
@@ -388,7 +386,6 @@ class WatchAudioPlayer: NSObject, ObservableObject {
                 return false
             }
 
-            // Convert metadata to MusicItems, enrich with partKeys, then to QueueItems
             let audioTypes: Set<String> = ["track"]
             let client = PlexWatchClient.shared
             let musicItems: [MusicItem] = metadata.compactMap { item in
@@ -396,8 +393,7 @@ class WatchAudioPlayer: NSObject, ObservableObject {
                 guard audioTypes.contains(itemType) else { return nil }
                 return client.parseMusicItemPublic(item)
             }
-            let enriched = await client.enrichWithPartKeys(musicItems)
-            let items = enriched.compactMap { $0.toQueueItem(client: client) }
+            let items = musicItems.compactMap { $0.toQueueItem(client: client) }
 
             if !items.isEmpty {
                 await MainActor.run {

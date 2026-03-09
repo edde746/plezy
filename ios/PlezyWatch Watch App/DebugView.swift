@@ -182,8 +182,8 @@ struct DebugView: View {
             await MainActor.run { log("--- Stream URL test ---") }
             if let firstLib = musicLibs.first {
                 let tracks = await client.getTracks(ratingKey: albums.first?.ratingKey ?? musicLib.key)
-                if let track = tracks.first, let pk = track.partKey {
-                    if let streamUrl = client.streamUrl(partKey: pk),
+                if let track = tracks.first {
+                    if let streamUrl = client.streamUrl(ratingKey: track.ratingKey),
                        let url = URL(string: streamUrl) {
                         await MainActor.run { log("   Testing: \(streamUrl.prefix(70))...") }
                         do {

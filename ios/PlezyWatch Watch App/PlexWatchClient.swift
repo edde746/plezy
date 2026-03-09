@@ -359,24 +359,31 @@ class PlexWatchClient {
         return await createPlayQueue(uri: uri)
     }
 
-    /// Build a transcoded stream URL for Watch playback (320kbps AAC).
-    /// Direct-play of large FLAC files can stutter on Watch's constrained network stack.
-    /// 320kbps AAC is the max quality AirPods can reproduce and streams reliably.
-    func streamUrl(partKey: String) -> String? {
+    /// Build a transcoded stream URL for Watch playback.
+    /// Uses Plex music transcode to convert FLAC/high-bitrate to AAC 320kbps,
+    /// which streams reliably on Watch and matches AirPods max quality.
+    func streamUrl(ratingKey: String) -> String? {
         guard let creds = credentials else { return nil }
-        // Use Plex's universal transcode endpoint for reliable Watch streaming
-        var components = URLComponents(string: "\(creds.serverUrl)/audio/:/transcode/universal/start")
+        let session = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(24)
+        let profileExtra = "add-transcode-target(type=musicProfile&context=streaming&protocol=http&container=mp4&audioCodec=aac)"
+        var components = URLComponents(string: "\(creds.serverUrl)/music/:/transcode/universal/start")
         components?.queryItems = [
-            URLQueryItem(name: "path", value: partKey),
+            URLQueryItem(name: "hasMDE", value: "1"),
+            URLQueryItem(name: "path", value: "/library/metadata/\(ratingKey)"),
             URLQueryItem(name: "mediaIndex", value: "0"),
             URLQueryItem(name: "partIndex", value: "0"),
+            URLQueryItem(name: "musicBitrate", value: "320"),
+            URLQueryItem(name: "directStreamAudio", value: "0"),
+            URLQueryItem(name: "mediaBufferSize", value: "12288"),
             URLQueryItem(name: "protocol", value: "http"),
-            URLQueryItem(name: "maxAudioBitrate", value: "320"),
-            URLQueryItem(name: "directStream", value: "1"),
             URLQueryItem(name: "directPlay", value: "0"),
+            URLQueryItem(name: "directStream", value: "0"),
+            URLQueryItem(name: "session", value: String(session)),
+            URLQueryItem(name: "X-Plex-Client-Profile-Extra", value: profileExtra),
+            URLQueryItem(name: "X-Plex-Client-Identifier", value: "PlezyWatch"),
             URLQueryItem(name: "X-Plex-Token", value: creds.token),
             URLQueryItem(name: "X-Plex-Product", value: "Plezy"),
-            URLQueryItem(name: "X-Plex-Platform", value: "watchOS"),
+            URLQueryItem(name: "X-Plex-Platform", value: "iOS"),
         ]
         return components?.url?.absoluteString
     }
@@ -582,9 +589,9 @@ struct MusicItem: Identifiable {
         return nil
     }
 
-    /// Convert to a QueueItem for playback (requires partKey)
+    /// Convert to a QueueItem for playback
     func toQueueItem(client: PlexWatchClient) -> QueueItem? {
-        guard let partKey, let streamUrl = client.streamUrl(partKey: partKey) else { return nil }
+        guard let streamUrl = client.streamUrl(ratingKey: ratingKey) else { return nil }
         guard let token = client.credentials?.token else { return nil }
         return QueueItem(from: [
             "id": ratingKey,
@@ -605,10 +612,9 @@ struct PlayQueueResult {
     let playQueueId: Int
     let items: [MusicItem]
 
-    /// Convert all items to QueueItems, fetching missing partKeys as needed
-    func toQueueItems(client: PlexWatchClient) async -> [QueueItem] {
-        let enriched = await client.enrichWithPartKeys(items)
-        return enriched.compactMap { $0.toQueueItem(client: client) }
+    /// Convert all items to QueueItems for playback
+    func toQueueItems(client: PlexWatchClient) -> [QueueItem] {
+        return items.compactMap { $0.toQueueItem(client: client) }
     }
 
     /// Build a PlayQueueReference from this result for queue refreshing
