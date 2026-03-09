@@ -2339,6 +2339,13 @@ class PlexClient {
       final container = _getMediaContainer(response);
       if (container == null) return null;
 
+      final containerStatus = container['status'];
+      if (containerStatus != null && containerStatus != 0 && containerStatus != 200) {
+        final msg = container['message'] ?? 'Unknown error';
+        appLogger.w('Tune channel error: $msg (status: $containerStatus)');
+        throw Exception(msg);
+      }
+
       // Metadata is nested: MediaSubscription[0].MediaGrabOperation[0].Metadata
       Map<String, dynamic>? metadataJson;
       final subscriptions = container['MediaSubscription'] as List?;
@@ -2358,7 +2365,7 @@ class PlexClient {
       metadataJson ??= (container['Metadata'] as List?)?.firstOrNull as Map<String, dynamic>?;
 
       if (metadataJson == null) {
-        appLogger.w('Tune channel: no metadata in response (keys: ${container.keys.toList()}, subscriptions: ${subscriptions?.length}, firstSub: ${subscriptions?.firstOrNull})');
+        appLogger.w('Tune channel failed: ${container['message'] ?? 'no metadata'} (status: ${container['status']}, keys: ${container.keys.toList()})');
         return null;
       }
 

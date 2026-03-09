@@ -2132,6 +2132,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _startLiveTimelineUpdates();
     } catch (e) {
       appLogger.e('Failed to switch channel', error: e);
+      if (mounted) showErrorSnackBar(context, e.toString());
     } finally {
       _isSwitchingChannel = false;
     }
