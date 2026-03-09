@@ -5,11 +5,14 @@ import 'package:plezy/utils/content_utils.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../focus/input_mode_tracker.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../providers/download_provider.dart';
 import '../services/download_storage_service.dart';
 import '../providers/settings_provider.dart';
+import '../screens/media_detail_screen.dart';
+import '../screens/season_detail_screen.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/formatters.dart';
@@ -280,17 +283,24 @@ class MediaCardState extends State<MediaCard> {
                 ),
               const SizedBox(height: 2),
               // Title (flattened — no inner Column)
-              Text(
-                item is PlexPlaylist ? item.title : (item as PlexMetadata).displayTitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
-              ),
+              if (item is PlexMetadata && _canNavigateToShow(item))
+                _ClickableText(
+                  text: item.displayTitle,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
+                  onTap: () => _navigateToShow(context, item, isOffline: widget.isOffline),
+                )
+              else
+                Text(
+                  item is PlexPlaylist ? item.title : (item as PlexMetadata).displayTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
+                ),
               // Subtitle
               if (item is PlexPlaylist)
                 _MediaCardHelpers.buildPlaylistMeta(context, item)
               else if (item is PlexMetadata)
-                _MediaCardHelpers.buildMetadataSubtitle(context, item),
+                _MediaCardHelpers.buildMetadataSubtitle(context, item, isOffline: widget.isOffline),
             ],
           ),
         ),
@@ -504,6 +514,33 @@ class _MediaCardList extends StatelessWidget {
     return null;
   }
 
+  Widget _buildEpisodeSubtitle(BuildContext context, PlexMetadata metadata) {
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: tokens(context).textMuted.withValues(alpha: 0.85),
+      fontSize: _subtitleFontSize,
+    );
+    final episodeTitle = metadata.displaySubtitle ?? metadata.title;
+    final episodeNum = metadata.index != null ? ' E${metadata.index}' : '';
+    return Row(
+      children: [
+        _ClickableText(
+          text: 'S${metadata.parentIndex}',
+          style: style,
+          onTap: () => _navigateToSeason(context, metadata, isOffline: isOffline),
+        ),
+        Text('$episodeNum · ', style: style),
+        Expanded(
+          child: Text(
+            episodeTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final metadataLine = _buildMetadataLine();
@@ -544,12 +581,19 @@ class _MediaCardList extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   // Title
-                  Text(
-                    item.displayTitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
-                  ),
+                  if (item is PlexMetadata && _canNavigateToShow(item as PlexMetadata))
+                    _ClickableText(
+                      text: item.displayTitle,
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
+                      onTap: () => _navigateToShow(context, item as PlexMetadata, isOffline: isOffline),
+                    )
+                  else
+                    Text(
+                      item.displayTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
+                    ),
                   const SizedBox(height: 4),
                   // Metadata info line (rating, duration, score, studio)
                   if (metadataLine.isNotEmpty) ...[
@@ -565,8 +609,11 @@ class _MediaCardList extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                   ],
-                  // Subtitle (S#E# or year/parent title)
-                  if (subtitle != null) ...[
+                  // Subtitle (S# · Episode Title, or year/parent title)
+                  if (item is PlexMetadata && (item as PlexMetadata).isEpisode && (item as PlexMetadata).parentIndex != null && (item as PlexMetadata).parentRatingKey != null) ...[
+                    _buildEpisodeSubtitle(context, item as PlexMetadata),
+                    const SizedBox(height: 4),
+                  ] else if (subtitle != null) ...[
                     Text(
                       subtitle,
                       maxLines: 1,
@@ -717,7 +764,11 @@ class _MediaCardHelpers {
   }
 
   /// Builds metadata subtitle (for collections, episodes, movies, shows)
-  static Widget buildMetadataSubtitle(BuildContext context, PlexMetadata metadata) {
+  static Widget buildMetadataSubtitle(BuildContext context, PlexMetadata metadata, {bool isOffline = false}) {
+    final subtitleStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1);
+
     // For collections, show item count
     if (metadata.mediaType == PlexMediaType.collection) {
       final count = metadata.childCount ?? metadata.leafCount;
@@ -726,11 +777,40 @@ class _MediaCardHelpers {
           t.playlists.itemCount(count: count),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
+          style: subtitleStyle,
         );
       }
+    }
+
+    // For episodes, show "S# · Episode Title" with clickable season link
+    if (metadata.isEpisode && metadata.parentIndex != null) {
+      final episodeTitle = metadata.displaySubtitle ?? metadata.title;
+      if (metadata.parentRatingKey != null) {
+        return Row(
+          children: [
+            _ClickableText(
+              text: 'S${metadata.parentIndex}',
+              style: subtitleStyle,
+              onTap: () => _navigateToSeason(context, metadata, isOffline: isOffline),
+            ),
+            Text(' · ', style: subtitleStyle),
+            Expanded(
+              child: Text(
+                episodeTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: subtitleStyle,
+              ),
+            ),
+          ],
+        );
+      }
+      return Text(
+        'S${metadata.parentIndex} · $episodeTitle',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: subtitleStyle,
+      );
     }
 
     // For other media types, show subtitle/parent/year
@@ -739,27 +819,21 @@ class _MediaCardHelpers {
         metadata.displaySubtitle!,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(
-          context,
-        ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
+        style: subtitleStyle,
       );
     } else if (metadata.parentTitle != null) {
       return Text(
         metadata.parentTitle!,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(
-          context,
-        ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
+        style: subtitleStyle,
       );
     } else if (metadata.year != null) {
       return Text(
         metadata.editionTitle != null ? '${metadata.year} · ${metadata.editionTitle}' : '${metadata.year}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(
-          context,
-        ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
+        style: subtitleStyle,
       );
     }
 
@@ -848,6 +922,121 @@ class _MediaCardHelpers {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Whether this metadata item can navigate to its parent show.
+bool _canNavigateToShow(PlexMetadata metadata) {
+  if (metadata.isEpisode) return metadata.grandparentRatingKey != null;
+  if (metadata.isSeason) return metadata.parentRatingKey != null;
+  return false;
+}
+
+/// Navigate to season detail from episode metadata
+void _navigateToSeason(BuildContext context, PlexMetadata episode, {bool isOffline = false}) {
+  if (episode.parentRatingKey == null) return;
+  final seasonStub = PlexMetadata(
+    ratingKey: episode.parentRatingKey!,
+    key: '/library/metadata/${episode.parentRatingKey}',
+    type: 'season',
+    title: episode.parentTitle ?? 'Season ${episode.parentIndex ?? ''}',
+    index: episode.parentIndex,
+    parentRatingKey: episode.grandparentRatingKey,
+    thumb: episode.parentThumb,
+    serverId: episode.serverId,
+    serverName: episode.serverName,
+  );
+  Navigator.push(context, MaterialPageRoute(builder: (_) => SeasonDetailScreen(season: seasonStub, isOffline: isOffline)));
+}
+
+/// Navigate to show detail from episode/season metadata.
+/// For episodes: show info is in grandparent* fields.
+/// For seasons: show info is in parent* fields.
+void _navigateToShow(BuildContext context, PlexMetadata metadata, {bool isOffline = false}) {
+  final String? showRatingKey;
+  final String? showTitle;
+  final String? showThumb;
+  final String? showArt;
+
+  if (metadata.isEpisode) {
+    showRatingKey = metadata.grandparentRatingKey;
+    showTitle = metadata.grandparentTitle;
+    showThumb = metadata.grandparentThumb;
+    showArt = metadata.grandparentArt;
+  } else if (metadata.isSeason) {
+    showRatingKey = metadata.parentRatingKey;
+    showTitle = metadata.grandparentTitle ?? metadata.parentTitle;
+    showThumb = metadata.grandparentThumb ?? metadata.parentThumb;
+    showArt = metadata.grandparentArt;
+  } else {
+    return;
+  }
+
+  if (showRatingKey == null) return;
+  final showStub = PlexMetadata(
+    ratingKey: showRatingKey,
+    key: '/library/metadata/$showRatingKey',
+    type: 'show',
+    title: showTitle ?? metadata.displayTitle,
+    thumb: showThumb,
+    art: showArt,
+    serverId: metadata.serverId,
+    serverName: metadata.serverName,
+  );
+  Navigator.push(context, MaterialPageRoute(builder: (_) => MediaDetailScreen(metadata: showStub, isOffline: isOffline)));
+}
+
+/// Text widget that shows hover underline + pointer cursor only in pointer mode.
+/// In keyboard/dpad mode, renders as plain text with no interaction.
+class _ClickableText extends StatefulWidget {
+  final String text;
+  final TextStyle? style;
+  final VoidCallback onTap;
+
+  const _ClickableText({required this.text, this.style, required this.onTap});
+
+  @override
+  State<_ClickableText> createState() => _ClickableTextState();
+}
+
+class _ClickableTextState extends State<_ClickableText> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isKeyboard = InputModeTracker.isKeyboardMode(context);
+    final baseStyle = widget.style ?? const TextStyle();
+
+    if (isKeyboard) {
+      return Text(
+        widget.text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: baseStyle,
+      );
+    }
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Listener(
+        onPointerUp: (event) {
+          if (event.kind == PointerDeviceKind.mouse) {
+            widget.onTap();
+          }
+        },
+        child: Text(
+          widget.text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: baseStyle.copyWith(
+            decoration: _isHovered ? TextDecoration.underline : null,
+            decorationColor: baseStyle.color,
+          ),
+        ),
+      ),
     );
   }
 }
