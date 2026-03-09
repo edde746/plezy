@@ -245,20 +245,35 @@ class _MobileVideoControlsState extends State<MobileVideoControls>
                           ignoring: t < 0.5,
                           child: Opacity(
                             opacity: (t * 2).clamp(0.0, 1.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Symbols.keyboard_arrow_down_rounded, color: Colors.white38, size: 20),
-                                const SizedBox(height: 4),
-                                ContentStrip(
-                                  player: widget.player,
-                                  chapters: widget.chapters,
-                                  chaptersLoaded: widget.chaptersLoaded,
-                                  serverId: widget.serverId,
-                                  showQueueTab: widget.showQueueTab,
-                                  onQueueItemSelected: widget.onQueueItemSelected,
+                            child: Container(
+                              padding: const EdgeInsets.only(top: 32),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.65),
+                                    Colors.black.withValues(alpha: 0.7),
+                                  ],
+                                  stops: const [0.0, 0.42, 1.0],
                                 ),
-                              ],
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Symbols.keyboard_arrow_down_rounded, color: Colors.white38, size: 20),
+                                  const SizedBox(height: 4),
+                                  ContentStrip(
+                                    player: widget.player,
+                                    chapters: widget.chapters,
+                                    chaptersLoaded: widget.chaptersLoaded,
+                                    serverId: widget.serverId,
+                                    showQueueTab: widget.showQueueTab,
+                                    onQueueItemSelected: widget.onQueueItemSelected,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),

@@ -489,12 +489,17 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 // Content strip (TV/dpad only) — replaces normal controls
                 if (_contentStripVisible && widget.useDpadNavigation)
                   Container(
-                    padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
-                    decoration: const BoxDecoration(
+                    padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 32),
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black87],
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.65),
+                          Colors.black.withValues(alpha: 0.7),
+                        ],
+                        stops: const [0.0, 0.42, 1.0],
                       ),
                     ),
                     child: Column(
