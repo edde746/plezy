@@ -1,7 +1,6 @@
 #include "mpv_player.h"
 
 #include <cstring>
-#include <fstream>
 #include <simdutf.h>
 
 // Sanitize a C string that may contain invalid UTF-8 sequences.
@@ -44,16 +43,6 @@ static std::string SanitizeUtf8(const char* input) {
   return result;
 }
 
-static void LogToFile(const char* message) {
-  std::ofstream log("C:\\Users\\admin\\mpv_debug.log", std::ios::app);
-  if (log.is_open()) {
-    log << message << std::endl;
-    log.close();
-  }
-  OutputDebugStringA(message);
-  OutputDebugStringA("\n");
-}
-
 namespace mpv {
 
 MpvPlayer::MpvPlayer() {}
@@ -61,56 +50,34 @@ MpvPlayer::MpvPlayer() {}
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
 bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
-  LogToFile("MpvPlayer::Initialize called");
-
   if (mpv_) {
-    LogToFile("MpvPlayer::Initialize - already initialized");
     return true;  // Already initialized.
   }
 
   container_ = container;
   flutter_window_ = flutter_window;
-  char msg[256];
-  snprintf(msg, sizeof(msg), "MpvPlayer::Initialize - container: %p", container);
-  LogToFile(msg);
 
   // Create mpv instance.
-  LogToFile("MpvPlayer::Initialize - calling mpv_create()");
   mpv_ = mpv_create();
   if (!mpv_) {
-    LogToFile("MPV: mpv_create() failed");
     return false;
   }
-  LogToFile("MpvPlayer::Initialize - mpv_create() succeeded");
 
   // Create a child window for mpv to render into.
-  LogToFile("MpvPlayer::Initialize - creating child window");
   hwnd_ = ::CreateWindowW(L"STATIC", L"", WS_CHILD | WS_VISIBLE, 0, 0, 100, 100,
                           container, nullptr, GetModuleHandle(nullptr),
                           nullptr);
   if (!hwnd_) {
-    DWORD error = GetLastError();
-    snprintf(msg, sizeof(msg), "MPV: CreateWindowW failed with error %lu", error);
-    LogToFile(msg);
     mpv_destroy(mpv_);
     mpv_ = nullptr;
     return false;
   }
-  snprintf(msg, sizeof(msg), "MpvPlayer::Initialize - child window created: %p", hwnd_);
-  LogToFile(msg);
 
   // Set the wid option to embed mpv in our window.
   int64_t wid = reinterpret_cast<int64_t>(hwnd_);
-  int err = mpv_set_option(mpv_, "wid", MPV_FORMAT_INT64, &wid);
-  if (err < 0) {
-    snprintf(msg, sizeof(msg), "MPV: Failed to set wid option: %d %s", err, mpv_error_string(err));
-    LogToFile(msg);
-  } else {
-    LogToFile("MpvPlayer::Initialize - wid option set successfully");
-  }
+  mpv_set_option(mpv_, "wid", MPV_FORMAT_INT64, &wid);
 
   // Configure mpv for embedded playback.
-  LogToFile("MpvPlayer::Initialize - setting mpv options");
   // Use gpu-next + Vulkan to avoid D3D11 driver crashes (GH-653)
   mpv_set_option_string(mpv_, "vo", "gpu-next");
   mpv_set_option_string(mpv_, "gpu-api", "vulkan");
@@ -132,12 +99,8 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
   mpv_request_log_messages(mpv_, "warn");
 
   // Initialize mpv.
-  LogToFile("MpvPlayer::Initialize - calling mpv_initialize()");
-  err = mpv_initialize(mpv_);
+  int err = mpv_initialize(mpv_);
   if (err < 0) {
-    snprintf(msg, sizeof(msg), "MPV: mpv_initialize() failed with error %d: %s",
-             err, mpv_error_string(err));
-    LogToFile(msg);
     ::DestroyWindow(hwnd_);
     hwnd_ = nullptr;
     mpv_destroy(mpv_);
@@ -145,14 +108,11 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
     return false;
   }
 
-  LogToFile("MPV: Initialization successful");
-
   // Observe video-params/sig-peak for HDR detection
   mpv_observe_property(mpv_, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE);
 
   // Start event loop.
   StartEventLoop();
-  LogToFile("MpvPlayer::Initialize - event loop started");
 
   return true;
 }
@@ -523,9 +483,6 @@ void MpvPlayer::SendEvent(const std::string& name,
 
 void MpvPlayer::SetHDREnabled(bool enabled) {
   hdr_enabled_ = enabled;
-  char msg[128];
-  snprintf(msg, sizeof(msg), "[MpvPlayer] HDR enabled: %s", enabled ? "true" : "false");
-  LogToFile(msg);
 
   if (mpv_) {
     mpv_set_property_string(mpv_, "target-colorspace-hint", enabled ? "yes" : "no");
@@ -535,16 +492,6 @@ void MpvPlayer::SetHDREnabled(bool enabled) {
 }
 
 void MpvPlayer::UpdateHDRMode(double sigPeak) {
-  bool isHDRContent = sigPeak > 1.0;
-
-  char msg[256];
-  snprintf(msg, sizeof(msg),
-           "[MpvPlayer] HDR mode update (hdrEnabled: %s, sigPeak: %.2f, isHDR: %s)",
-           hdr_enabled_ ? "true" : "false",
-           sigPeak,
-           isHDRContent ? "true" : "false");
-  LogToFile(msg);
-
   // On Windows, mpv handles HDR passthrough automatically when:
   // - target-colorspace-hint=yes
   // - Windows HDR is enabled in Display Settings

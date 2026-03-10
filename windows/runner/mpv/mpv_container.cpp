@@ -2,19 +2,9 @@
 
 #include <dwmapi.h>
 
-#include "mpv_core.h"
-#include "utils.h"
-
 namespace mpv {
 
 MpvContainer* MpvContainer::GetInstance() { return instance_.get(); }
-
-MpvContainer::~MpvContainer() {
-  if (taskbar_) {
-    taskbar_->Release();
-    taskbar_ = nullptr;
-  }
-}
 
 HWND MpvContainer::Create() {
   auto window_class = WNDCLASSEX{};
@@ -59,15 +49,6 @@ HWND MpvContainer::Get(HWND flutter_window) {
   ::SetWindowLongPtr(handle_, GWLP_USERDATA,
                      reinterpret_cast<LONG_PTR>(flutter_window));
 
-  // Remove taskbar entry using cached ITaskbarList3.
-  if (!taskbar_) {
-    ::CoCreateInstance(CLSID_TaskbarList, 0, CLSCTX_INPROC_SERVER,
-                       IID_PPV_ARGS(&taskbar_));
-  }
-  if (taskbar_) {
-    taskbar_->DeleteTab(handle_);
-  }
-
   ::ShowWindow(handle_, SW_SHOWNOACTIVATE);
   ::SetFocus(flutter_window);
 
@@ -83,12 +64,13 @@ LRESULT CALLBACK MpvContainer::WindowProc(HWND const window,
       ::PostQuitMessage(0);
       return 0;
     }
-    case WM_MOUSEMOVE: {
+    case WM_MOUSEMOVE:
+    case WM_SIZE:
+    case WM_MOVE:
+    case WM_MOVING:
+    case WM_ACTIVATE:
+    case WM_WINDOWPOSCHANGED: {
       // Redirect focus to Flutter window.
-      auto* core = MpvCore::GetInstance();
-      if (core) {
-        core->SetHitTestBehavior(0);
-      }
       auto user_data = ::GetWindowLongPtr(window, GWLP_USERDATA);
       if (user_data) {
         ::SetForegroundWindow(reinterpret_cast<HWND>(user_data));
@@ -98,21 +80,6 @@ LRESULT CALLBACK MpvContainer::WindowProc(HWND const window,
     case WM_ERASEBKGND: {
       // Prevent erasing to avoid flicker.
       return 1;
-    }
-    case WM_SIZE:
-    case WM_MOVE:
-    case WM_MOVING:
-    case WM_ACTIVATE:
-    case WM_WINDOWPOSCHANGED: {
-      auto* core = MpvCore::GetInstance();
-      if (core) {
-        core->SetHitTestBehavior(0);
-      }
-      auto user_data = ::GetWindowLongPtr(window, GWLP_USERDATA);
-      if (user_data) {
-        ::SetForegroundWindow(reinterpret_cast<HWND>(user_data));
-      }
-      break;
     }
     default:
       break;

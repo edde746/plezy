@@ -1,15 +1,11 @@
 #ifndef MPV_CONTAINER_H_
 #define MPV_CONTAINER_H_
 
-#include <ShObjIdl.h>
 #include <Windows.h>
 
 #include <memory>
 
 namespace mpv {
-
-// Forward declaration
-class MpvCore;
 
 // Container window that holds the mpv video window behind Flutter.
 // This is a singleton that creates a hidden window with no taskbar entry.
@@ -18,7 +14,7 @@ class MpvContainer {
   static MpvContainer* GetInstance();
 
   MpvContainer() = default;
-  ~MpvContainer();
+  ~MpvContainer() = default;
 
   // Creates the container window.
   HWND Create();
@@ -34,7 +30,6 @@ class MpvContainer {
                                      LPARAM lparam) noexcept;
 
   HWND handle_ = nullptr;
-  ITaskbarList3* taskbar_ = nullptr;
 
   static constexpr wchar_t kClassName[] = L"MPV_CONTAINER";
   static constexpr wchar_t kWindowName[] = L"";

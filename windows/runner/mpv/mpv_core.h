@@ -19,10 +19,8 @@ class MpvCore {
 
   static MpvCore* GetInstance();
   static void SetInstance(std::unique_ptr<MpvCore> instance);
-  static std::optional<int32_t> GetProcId();
-  static void SetProcId(std::optional<int32_t> proc_id);
 
-  MpvCore(HWND flutter_window, HWND flutter_child_window);
+  explicit MpvCore(HWND flutter_window);
   ~MpvCore();
 
   // Initializes transparency on the Flutter window.
@@ -37,9 +35,6 @@ class MpvCore {
   // Disposes the mpv view.
   void DisposeMpvView(HWND mpv_hwnd);
 
-  // Sets hit test behavior for mouse passthrough.
-  void SetHitTestBehavior(int32_t hittest_behavior);
-
   // Shows or hides the mpv view.
   void SetVisible(bool visible);
 
@@ -48,11 +43,9 @@ class MpvCore {
                                     LPARAM lparam);
 
  private:
-  void RedrawMpvViews();
   RECT GetGlobalRect(int32_t left, int32_t top, int32_t right, int32_t bottom);
 
   HWND flutter_window_ = nullptr;
-  HWND flutter_child_window_ = nullptr;
   HWND container_ = nullptr;
   double device_pixel_ratio_ = 1.0;
   std::map<HWND, RECT> mpv_views_;
@@ -62,7 +55,6 @@ class MpvCore {
   bool composition_enabled_ = false;
 
   static std::unique_ptr<MpvCore> instance_;
-  static std::optional<int32_t> proc_id_;
 };
 
 }  // namespace mpv

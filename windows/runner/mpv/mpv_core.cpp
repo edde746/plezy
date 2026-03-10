@@ -13,13 +13,8 @@ void MpvCore::SetInstance(std::unique_ptr<MpvCore> instance) {
   instance_ = std::move(instance);
 }
 
-std::optional<int32_t> MpvCore::GetProcId() { return proc_id_; }
-
-void MpvCore::SetProcId(std::optional<int32_t> proc_id) { proc_id_ = proc_id; }
-
-MpvCore::MpvCore(HWND flutter_window, HWND flutter_child_window)
-    : flutter_window_(flutter_window),
-      flutter_child_window_(flutter_child_window) {}
+MpvCore::MpvCore(HWND flutter_window)
+    : flutter_window_(flutter_window) {}
 
 MpvCore::~MpvCore() {
   // Close all mpv views.
@@ -69,24 +64,6 @@ void MpvCore::ResizeMpvView(HWND mpv_hwnd, RECT rect) {
 void MpvCore::DisposeMpvView(HWND mpv_hwnd) {
   ::SendMessage(mpv_hwnd, WM_CLOSE, 0, 0);
   mpv_views_.erase(mpv_hwnd);
-}
-
-void MpvCore::SetHitTestBehavior(int32_t hittest_behavior) {
-  LONG ex_style = ::GetWindowLong(flutter_window_, GWL_EXSTYLE);
-  if (hittest_behavior) {
-    ex_style |= (WS_EX_TRANSPARENT | WS_EX_LAYERED);
-  } else {
-    ex_style &= ~(WS_EX_TRANSPARENT | WS_EX_LAYERED);
-  }
-  ::SetWindowLong(flutter_window_, GWL_EXSTYLE, ex_style);
-
-  // Force Windows to recalculate window frame after extended style changes.
-  // This ensures the render surface dimensions match the new window state.
-  ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
-                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-
-  // Sync with DWM to ensure render target is updated
-  ::DwmFlush();
 }
 
 void MpvCore::SetVisible(bool visible) {
@@ -173,8 +150,6 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
       }
       break;
     }
-    case WM_MOVE:
-    case WM_MOVING:
     case WM_WINDOWPOSCHANGED: {
       RECT window_rect;
       ::GetWindowRect(flutter_window_, &window_rect);
@@ -209,10 +184,6 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
   return std::nullopt;
 }
 
-void MpvCore::RedrawMpvViews() {
-  ::RedrawWindow(container_, 0, 0, RDW_INVALIDATE | RDW_ALLCHILDREN);
-}
-
 RECT MpvCore::GetGlobalRect(int32_t left, int32_t top, int32_t right,
                             int32_t bottom) {
   // Expand client area to prevent transparent gaps.
@@ -232,6 +203,5 @@ RECT MpvCore::GetGlobalRect(int32_t left, int32_t top, int32_t right,
 }
 
 std::unique_ptr<MpvCore> MpvCore::instance_ = nullptr;
-std::optional<int32_t> MpvCore::proc_id_ = std::nullopt;
 
 }  // namespace mpv

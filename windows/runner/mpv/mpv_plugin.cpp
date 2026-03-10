@@ -1,27 +1,13 @@
 #include "mpv_plugin.h"
 
-#include <fstream>
-
 #include "mpv_container.h"
 #include "mpv_core.h"
 
-static void LogToFile(const char* message) {
-  std::ofstream log("C:\\Users\\admin\\mpv_debug.log", std::ios::app);
-  if (log.is_open()) {
-    log << message << std::endl;
-    log.close();
-  }
-  OutputDebugStringA(message);
-  OutputDebugStringA("\n");
-}
-
 void MpvPlayerPluginRegisterWithRegistrar(
     FlutterDesktopPluginRegistrarRef registrar) {
-  LogToFile("MpvPlayerPlugin: RegisterWithRegistrar called");
   mpv::MpvPlayerPlugin::RegisterWithRegistrar(
       flutter::PluginRegistrarManager::GetInstance()
           ->GetRegistrar<flutter::PluginRegistrarWindows>(registrar));
-  LogToFile("MpvPlayerPlugin: RegisterWithRegistrar completed");
 }
 
 namespace mpv {
@@ -34,22 +20,14 @@ void MpvPlayerPlugin::RegisterWithRegistrar(
 
 MpvPlayerPlugin::MpvPlayerPlugin(flutter::PluginRegistrarWindows* registrar)
     : registrar_(registrar) {
-  LogToFile("MpvPlayerPlugin: Constructor called");
-
   // Create method channel.
   method_channel_ =
       std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
           registrar->messenger(), "com.plezy/mpv_player",
           &flutter::StandardMethodCodec::GetInstance());
 
-  LogToFile("MpvPlayerPlugin: Method channel created");
-
   method_channel_->SetMethodCallHandler(
       [this](const auto& call, auto result) {
-        char msg[256];
-        snprintf(msg, sizeof(msg), "MpvPlayerPlugin: Method call received: %s",
-                 call.method_name().c_str());
-        LogToFile(msg);
         HandleMethodCall(call, std::move(result));
       });
 
@@ -100,8 +78,6 @@ void MpvPlayerPlugin::HandleMethodCall(
   const auto& method = method_call.method_name();
 
   if (method == "initialize") {
-    LogToFile("MPV Plugin: initialize called");
-
     // Set up MpvCore for z-order management.
     if (proc_id_) {
       registrar_->UnregisterTopLevelWindowProcDelegate(proc_id_.value());
@@ -109,15 +85,9 @@ void MpvPlayerPlugin::HandleMethodCall(
     }
 
     HWND flutter_window = GetWindow();
-    HWND child_window = GetChildWindow();
-
-    char msg[256];
-    snprintf(msg, sizeof(msg), "MPV Plugin: Flutter window: %p, Child window: %p",
-             flutter_window, child_window);
-    LogToFile(msg);
 
     MpvCore::SetInstance(
-        std::make_unique<MpvCore>(flutter_window, child_window));
+        std::make_unique<MpvCore>(flutter_window));
 
     proc_id_ = registrar_->RegisterTopLevelWindowProcDelegate(
         [](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
@@ -128,27 +98,20 @@ void MpvPlayerPlugin::HandleMethodCall(
           return std::optional<HRESULT>(std::nullopt);
         });
 
-    LogToFile("MPV Plugin: Calling EnsureInitialized");
     MpvCore::GetInstance()->EnsureInitialized();
 
     // Create player - use the container from MpvCore which was set up by EnsureInitialized
     player_ = std::make_unique<MpvPlayer>();
     HWND container = MpvContainer::GetInstance()->handle();
 
-    snprintf(msg, sizeof(msg), "MPV Plugin: Container handle: %p", container);
-    LogToFile(msg);
-
     if (!container) {
-      LogToFile("MPV Plugin: ERROR - container is null");
       result->Error("INIT_FAILED", "Failed to create container window");
       return;
     }
 
-    LogToFile("MPV Plugin: Initializing player");
     bool success = player_->Initialize(container, flutter_window);
 
     if (success) {
-      LogToFile("MPV Plugin: Player initialized successfully");
       // Set up event callback.
       player_->SetEventCallback([this](const flutter::EncodableValue& event) {
         SendEvent(event);
@@ -162,7 +125,6 @@ void MpvPlayerPlugin::HandleMethodCall(
       MpvCore::GetInstance()->SetVisible(false);
       result->Success(flutter::EncodableValue(true));
     } else {
-      OutputDebugStringA("MPV Plugin: Player initialization FAILED\n");
       player_.reset();  // Clear the player so we don't have a half-initialized state
       result->Error("INIT_FAILED", "Failed to initialize MPV player");
     }
