@@ -201,8 +201,8 @@
     "autoPipDescription": "Activar automáticamente imagen en imagen al salir de la app durante la reproducción",
     "matchContentFrameRate": "Ajustar frecuencia de actualización",
     "matchContentFrameRateDescription": "Ajustar la frecuencia de actualización de la pantalla para que coincida con el video, reduciendo tirones y ahorrando batería",
-    "tunneledPlayback": "Tunneled Playback",
-    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
+    "tunneledPlayback": "Reproducción tunelizada",
+    "tunneledPlaybackDescription": "Usar tunelización de video acelerada por hardware. Desactivar si ves una pantalla negra con audio en contenido HDR",
     "requireProfileSelectionOnOpen": "Pedir perfil al abrir la app",
     "requireProfileSelectionOnOpenDescription": "Mostrar selección de perfil cada vez que se abre la aplicación",
     "confirmExitOnBack": "Confirmar antes de salir",
@@ -365,8 +365,8 @@
     },
     "chapters": "Capítulos",
     "noChaptersAvailable": "No hay capítulos disponibles",
-    "queue": "Queue",
-    "noQueueItems": "No items in queue"
+    "queue": "Cola",
+    "noQueueItems": "No hay elementos en la cola"
   },
   "userStatus": {
     "admin": "Administrador",
@@ -405,9 +405,9 @@
     "failedToCreatePlayQueueNoItems": "Error al crear la cola de reproducción - no hay elementos",
     "failedPlayback": "Error al ${action}: ${error}",
     "switchingToCompatiblePlayer": "Cambiando a reproductor compatible...",
-    "logsUploaded": "Logs uploaded",
-    "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logsUploaded": "Registros subidos",
+    "logsUploadFailed": "Error al subir registros",
+    "logId": "ID de registro"
   },
   "subtitlingStyling": {
     "stylingOptions": "Opciones de Estilo",
@@ -417,7 +417,7 @@
     "borderColor": "Color de Borde",
     "backgroundOpacity": "Opacidad de Fondo",
     "backgroundColor": "Color de Fondo",
-    "position": "Position"
+    "position": "Posición"
   },
   "mpvConfig": {
     "title": "Configuración de mpv",
@@ -544,7 +544,7 @@
   "logs": {
     "clearLogs": "Borrar Logs",
     "copyLogs": "Copiar Logs",
-    "uploadLogs": "Upload Logs",
+    "uploadLogs": "Subir registros",
     "error": "Error:",
     "stackTrace": "Traza de la pila (Stack Trace):"
   },
@@ -715,15 +715,15 @@
     "qualityFast": "Rápido",
     "qualityHQ": "Alta Calidad",
     "mode": "Modo",
-    "importShader": "Import Shader",
-    "customShaderDescription": "Custom GLSL shader",
-    "shaderImported": "Shader imported",
-    "shaderImportFailed": "Failed to import shader",
-    "deleteShader": "Delete Shader",
-    "deleteShaderConfirm": "Delete \"${name}\"?"
+    "importShader": "Importar shader",
+    "customShaderDescription": "Shader GLSL personalizado",
+    "shaderImported": "Shader importado",
+    "shaderImportFailed": "Error al importar shader",
+    "deleteShader": "Eliminar shader",
+    "deleteShaderConfirm": "¿Eliminar \"${name}\"?"
   },
   "companionRemote": {
-    "title": "Companion Remote",
+    "title": "Control remoto",
     "connectToDevice": "Conectar a dispositivo",
     "hostRemoteSession": "Iniciar sesión remota",
     "controlThisDevice": "Controla este dispositivo con tu teléfono",

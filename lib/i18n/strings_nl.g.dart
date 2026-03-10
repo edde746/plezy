@@ -320,8 +320,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
 	@override String get matchContentFrameRateDescription => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij';
-	@override String get tunneledPlayback => 'Tunneled Playback';
-	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
+	@override String get tunneledPlayback => 'Getunnelde weergave';
+	@override String get tunneledPlaybackDescription => 'Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
 	@override String get confirmExitOnBack => 'Bevestigen voor afsluiten';
@@ -512,8 +512,8 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsNl pipErrors = _TranslationsVideoControlsPipErrorsNl._(_root);
 	@override String get chapters => 'Hoofdstukken';
 	@override String get noChaptersAvailable => 'Geen hoofdstukken beschikbaar';
-	@override String get queue => 'Queue';
-	@override String get noQueueItems => 'No items in queue';
+	@override String get queue => 'Wachtrij';
+	@override String get noQueueItems => 'Geen items in de wachtrij';
 }
 
 // Path: userStatus
@@ -566,9 +566,9 @@ class _TranslationsMessagesNl implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Kan afspeelwachtrij niet maken - geen items';
 	@override String failedPlayback({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Overschakelen naar compatibele speler...';
-	@override String get logsUploaded => 'Logs uploaded';
-	@override String get logsUploadFailed => 'Failed to upload logs';
-	@override String get logId => 'Log ID';
+	@override String get logsUploaded => 'Logs geüpload';
+	@override String get logsUploadFailed => 'Uploaden van logs mislukt';
+	@override String get logId => 'Log-ID';
 }
 
 // Path: subtitlingStyling
@@ -585,7 +585,7 @@ class _TranslationsSubtitlingStylingNl implements TranslationsSubtitlingStylingE
 	@override String get borderColor => 'Randkleur';
 	@override String get backgroundOpacity => 'Achtergrond transparantie';
 	@override String get backgroundColor => 'Achtergrondkleur';
-	@override String get position => 'Position';
+	@override String get position => 'Positie';
 }
 
 // Path: mpvConfig
@@ -763,7 +763,7 @@ class _TranslationsLogsNl implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Wis logs';
 	@override String get copyLogs => 'Kopieer logs';
-	@override String get uploadLogs => 'Upload Logs';
+	@override String get uploadLogs => 'Logs uploaden';
 	@override String get error => 'Fout:';
 	@override String get stackTrace => 'Stacktracering:';
 }
@@ -990,12 +990,12 @@ class _TranslationsShadersNl implements TranslationsShadersEn {
 	@override String get qualityFast => 'Snel';
 	@override String get qualityHQ => 'Hoge kwaliteit';
 	@override String get mode => 'Modus';
-	@override String get importShader => 'Import Shader';
-	@override String get customShaderDescription => 'Custom GLSL shader';
-	@override String get shaderImported => 'Shader imported';
-	@override String get shaderImportFailed => 'Failed to import shader';
-	@override String get deleteShader => 'Delete Shader';
-	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
+	@override String get importShader => 'Shader importeren';
+	@override String get customShaderDescription => 'Aangepaste GLSL-shader';
+	@override String get shaderImported => 'Shader geïmporteerd';
+	@override String get shaderImportFailed => 'Shader importeren mislukt';
+	@override String get deleteShader => 'Shader verwijderen';
+	@override String deleteShaderConfirm({required Object name}) => '"${name}" verwijderen?';
 }
 
 // Path: companionRemote
@@ -1005,7 +1005,7 @@ class _TranslationsCompanionRemoteNl implements TranslationsCompanionRemoteEn {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Companion Remote';
+	@override String get title => 'Afstandsbediening';
 	@override String get connectToDevice => 'Verbinden met apparaat';
 	@override String get hostRemoteSession => 'Externe sessie hosten';
 	@override String get controlThisDevice => 'Bedien dit apparaat met je telefoon';
@@ -1495,8 +1495,8 @@ extension on TranslationsNl {
 			'settings.autoPipDescription' => 'Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
 			'settings.matchContentFrameRateDescription' => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij',
-			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
+			'settings.tunneledPlayback' => 'Getunnelde weergave',
+			'settings.tunneledPlaybackDescription' => 'Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
 			'settings.confirmExitOnBack' => 'Bevestigen voor afsluiten',
@@ -1639,8 +1639,8 @@ extension on TranslationsNl {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Er is een fout opgetreden: ${error}',
 			'videoControls.chapters' => 'Hoofdstukken',
 			'videoControls.noChaptersAvailable' => 'Geen hoofdstukken beschikbaar',
-			'videoControls.queue' => 'Queue',
-			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.queue' => 'Wachtrij',
+			'videoControls.noQueueItems' => 'Geen items in de wachtrij',
 			'userStatus.admin' => 'Beheerder',
 			'userStatus.restricted' => 'Beperkt',
 			'userStatus.protected' => 'Beschermd',
@@ -1675,9 +1675,9 @@ extension on TranslationsNl {
 			'messages.failedToCreatePlayQueueNoItems' => 'Kan afspeelwachtrij niet maken - geen items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Overschakelen naar compatibele speler...',
-			'messages.logsUploaded' => 'Logs uploaded',
-			'messages.logsUploadFailed' => 'Failed to upload logs',
-			'messages.logId' => 'Log ID',
+			'messages.logsUploaded' => 'Logs geüpload',
+			'messages.logsUploadFailed' => 'Uploaden van logs mislukt',
+			'messages.logId' => 'Log-ID',
 			'subtitlingStyling.stylingOptions' => 'Opmaak opties',
 			'subtitlingStyling.fontSize' => 'Lettergrootte',
 			'subtitlingStyling.textColor' => 'Tekstkleur',
@@ -1685,7 +1685,7 @@ extension on TranslationsNl {
 			'subtitlingStyling.borderColor' => 'Randkleur',
 			'subtitlingStyling.backgroundOpacity' => 'Achtergrond transparantie',
 			'subtitlingStyling.backgroundColor' => 'Achtergrondkleur',
-			'subtitlingStyling.position' => 'Position',
+			'subtitlingStyling.position' => 'Positie',
 			'mpvConfig.title' => 'mpv-configuratie',
 			'mpvConfig.description' => 'Geavanceerde videospeler-instellingen',
 			'mpvConfig.presets' => 'Voorinstellingen',
@@ -1790,7 +1790,7 @@ extension on TranslationsNl {
 			'hubDetail.noItemsFound' => 'Geen items gevonden',
 			'logs.clearLogs' => 'Wis logs',
 			'logs.copyLogs' => 'Kopieer logs',
-			'logs.uploadLogs' => 'Upload Logs',
+			'logs.uploadLogs' => 'Logs uploaden',
 			'logs.error' => 'Fout:',
 			'logs.stackTrace' => 'Stacktracering:',
 			'licenses.relatedPackages' => 'Gerelateerde pakketten',
@@ -1947,13 +1947,13 @@ extension on TranslationsNl {
 			'shaders.qualityFast' => 'Snel',
 			'shaders.qualityHQ' => 'Hoge kwaliteit',
 			'shaders.mode' => 'Modus',
-			'shaders.importShader' => 'Import Shader',
-			'shaders.customShaderDescription' => 'Custom GLSL shader',
-			'shaders.shaderImported' => 'Shader imported',
-			'shaders.shaderImportFailed' => 'Failed to import shader',
-			'shaders.deleteShader' => 'Delete Shader',
-			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
-			'companionRemote.title' => 'Companion Remote',
+			'shaders.importShader' => 'Shader importeren',
+			'shaders.customShaderDescription' => 'Aangepaste GLSL-shader',
+			'shaders.shaderImported' => 'Shader geïmporteerd',
+			'shaders.shaderImportFailed' => 'Shader importeren mislukt',
+			'shaders.deleteShader' => 'Shader verwijderen',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => '"${name}" verwijderen?',
+			'companionRemote.title' => 'Afstandsbediening',
 			'companionRemote.connectToDevice' => 'Verbinden met apparaat',
 			'companionRemote.hostRemoteSession' => 'Externe sessie hosten',
 			'companionRemote.controlThisDevice' => 'Bedien dit apparaat met je telefoon',

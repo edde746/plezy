@@ -320,8 +320,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Automatisch Bild-in-Bild aktivieren, wenn die App während der Wiedergabe verlassen wird';
 	@override String get matchContentFrameRate => 'Inhalts-Bildrate anpassen';
 	@override String get matchContentFrameRateDescription => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku';
-	@override String get tunneledPlayback => 'Tunneled Playback';
-	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
+	@override String get tunneledPlayback => 'Tunnelwiedergabe';
+	@override String get tunneledPlaybackDescription => 'Hardware-beschleunigte Video-Tunnelierung verwenden. Deaktivieren, wenn bei HDR-Inhalten ein schwarzer Bildschirm mit Ton erscheint';
 	@override String get requireProfileSelectionOnOpen => 'Profil beim Öffnen abfragen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Profilauswahl bei jedem Öffnen der App anzeigen';
 	@override String get confirmExitOnBack => 'Vor dem Beenden bestätigen';
@@ -512,8 +512,8 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsDe pipErrors = _TranslationsVideoControlsPipErrorsDe._(_root);
 	@override String get chapters => 'Kapitel';
 	@override String get noChaptersAvailable => 'Keine Kapitel verfügbar';
-	@override String get queue => 'Queue';
-	@override String get noQueueItems => 'No items in queue';
+	@override String get queue => 'Warteschlange';
+	@override String get noQueueItems => 'Keine Elemente in der Warteschlange';
 }
 
 // Path: userStatus
@@ -566,9 +566,9 @@ class _TranslationsMessagesDe implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente';
 	@override String failedPlayback({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Wechsle zu kompatiblem Player...';
-	@override String get logsUploaded => 'Logs uploaded';
-	@override String get logsUploadFailed => 'Failed to upload logs';
-	@override String get logId => 'Log ID';
+	@override String get logsUploaded => 'Protokolle hochgeladen';
+	@override String get logsUploadFailed => 'Protokolle konnten nicht hochgeladen werden';
+	@override String get logId => 'Protokoll-ID';
 }
 
 // Path: subtitlingStyling
@@ -763,7 +763,7 @@ class _TranslationsLogsDe implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Protokolle löschen';
 	@override String get copyLogs => 'Protokolle kopieren';
-	@override String get uploadLogs => 'Upload Logs';
+	@override String get uploadLogs => 'Protokolle hochladen';
 	@override String get error => 'Fehler:';
 	@override String get stackTrace => 'Stacktrace:';
 }
@@ -990,12 +990,12 @@ class _TranslationsShadersDe implements TranslationsShadersEn {
 	@override String get qualityFast => 'Schnell';
 	@override String get qualityHQ => 'Hohe Qualität';
 	@override String get mode => 'Modus';
-	@override String get importShader => 'Import Shader';
-	@override String get customShaderDescription => 'Custom GLSL shader';
-	@override String get shaderImported => 'Shader imported';
-	@override String get shaderImportFailed => 'Failed to import shader';
-	@override String get deleteShader => 'Delete Shader';
-	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
+	@override String get importShader => 'Shader importieren';
+	@override String get customShaderDescription => 'Benutzerdefinierter GLSL-Shader';
+	@override String get shaderImported => 'Shader importiert';
+	@override String get shaderImportFailed => 'Shader konnte nicht importiert werden';
+	@override String get deleteShader => 'Shader löschen';
+	@override String deleteShaderConfirm({required Object name}) => '"${name}" löschen?';
 }
 
 // Path: companionRemote
@@ -1005,7 +1005,7 @@ class _TranslationsCompanionRemoteDe implements TranslationsCompanionRemoteEn {
 	final TranslationsDe _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Companion Remote';
+	@override String get title => 'Companion-Fernbedienung';
 	@override String get connectToDevice => 'Mit Gerät verbinden';
 	@override String get hostRemoteSession => 'Fernsteuerungssitzung starten';
 	@override String get controlThisDevice => 'Dieses Gerät mit dem Handy steuern';
@@ -1495,8 +1495,8 @@ extension on TranslationsDe {
 			'settings.autoPipDescription' => 'Automatisch Bild-in-Bild aktivieren, wenn die App während der Wiedergabe verlassen wird',
 			'settings.matchContentFrameRate' => 'Inhalts-Bildrate anpassen',
 			'settings.matchContentFrameRateDescription' => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku',
-			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
+			'settings.tunneledPlayback' => 'Tunnelwiedergabe',
+			'settings.tunneledPlaybackDescription' => 'Hardware-beschleunigte Video-Tunnelierung verwenden. Deaktivieren, wenn bei HDR-Inhalten ein schwarzer Bildschirm mit Ton erscheint',
 			'settings.requireProfileSelectionOnOpen' => 'Profil beim Öffnen abfragen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Profilauswahl bei jedem Öffnen der App anzeigen',
 			'settings.confirmExitOnBack' => 'Vor dem Beenden bestätigen',
@@ -1639,8 +1639,8 @@ extension on TranslationsDe {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ein Fehler ist aufgetreten: ${error}',
 			'videoControls.chapters' => 'Kapitel',
 			'videoControls.noChaptersAvailable' => 'Keine Kapitel verfügbar',
-			'videoControls.queue' => 'Queue',
-			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.queue' => 'Warteschlange',
+			'videoControls.noQueueItems' => 'Keine Elemente in der Warteschlange',
 			'userStatus.admin' => 'Eigentümer',
 			'userStatus.restricted' => 'Eingeschränkt',
 			'userStatus.protected' => 'Geschützt',
@@ -1675,9 +1675,9 @@ extension on TranslationsDe {
 			'messages.failedToCreatePlayQueueNoItems' => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Wechsle zu kompatiblem Player...',
-			'messages.logsUploaded' => 'Logs uploaded',
-			'messages.logsUploadFailed' => 'Failed to upload logs',
-			'messages.logId' => 'Log ID',
+			'messages.logsUploaded' => 'Protokolle hochgeladen',
+			'messages.logsUploadFailed' => 'Protokolle konnten nicht hochgeladen werden',
+			'messages.logId' => 'Protokoll-ID',
 			'subtitlingStyling.stylingOptions' => 'Stiloptionen',
 			'subtitlingStyling.fontSize' => 'Schriftgröße',
 			'subtitlingStyling.textColor' => 'Textfarbe',
@@ -1790,7 +1790,7 @@ extension on TranslationsDe {
 			'hubDetail.noItemsFound' => 'Keine Elemente gefunden',
 			'logs.clearLogs' => 'Protokolle löschen',
 			'logs.copyLogs' => 'Protokolle kopieren',
-			'logs.uploadLogs' => 'Upload Logs',
+			'logs.uploadLogs' => 'Protokolle hochladen',
 			'logs.error' => 'Fehler:',
 			'logs.stackTrace' => 'Stacktrace:',
 			'licenses.relatedPackages' => 'Verwandte Pakete',
@@ -1947,13 +1947,13 @@ extension on TranslationsDe {
 			'shaders.qualityFast' => 'Schnell',
 			'shaders.qualityHQ' => 'Hohe Qualität',
 			'shaders.mode' => 'Modus',
-			'shaders.importShader' => 'Import Shader',
-			'shaders.customShaderDescription' => 'Custom GLSL shader',
-			'shaders.shaderImported' => 'Shader imported',
-			'shaders.shaderImportFailed' => 'Failed to import shader',
-			'shaders.deleteShader' => 'Delete Shader',
-			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
-			'companionRemote.title' => 'Companion Remote',
+			'shaders.importShader' => 'Shader importieren',
+			'shaders.customShaderDescription' => 'Benutzerdefinierter GLSL-Shader',
+			'shaders.shaderImported' => 'Shader importiert',
+			'shaders.shaderImportFailed' => 'Shader konnte nicht importiert werden',
+			'shaders.deleteShader' => 'Shader löschen',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => '"${name}" löschen?',
+			'companionRemote.title' => 'Companion-Fernbedienung',
 			'companionRemote.connectToDevice' => 'Mit Gerät verbinden',
 			'companionRemote.hostRemoteSession' => 'Fernsteuerungssitzung starten',
 			'companionRemote.controlThisDevice' => 'Dieses Gerät mit dem Handy steuern',

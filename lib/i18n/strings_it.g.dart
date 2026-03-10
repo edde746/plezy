@@ -320,8 +320,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Attiva automaticamente il picture-in-picture quando si esce dall\'app durante la riproduzione';
 	@override String get matchContentFrameRate => 'Adatta frequenza fotogrammi';
 	@override String get matchContentFrameRateDescription => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria';
-	@override String get tunneledPlayback => 'Tunneled Playback';
-	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
+	@override String get tunneledPlayback => 'Riproduzione tunnelizzata';
+	@override String get tunneledPlaybackDescription => 'Usa il tunneling video accelerato dall\'hardware. Disattiva se vedi uno schermo nero con audio su contenuti HDR';
 	@override String get requireProfileSelectionOnOpen => 'Chiedi profilo all\'apertura';
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostra la selezione del profilo ogni volta che l\'app viene aperta';
 	@override String get confirmExitOnBack => 'Conferma prima di uscire';
@@ -512,8 +512,8 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsIt pipErrors = _TranslationsVideoControlsPipErrorsIt._(_root);
 	@override String get chapters => 'Capitoli';
 	@override String get noChaptersAvailable => 'Nessun capitolo disponibile';
-	@override String get queue => 'Queue';
-	@override String get noQueueItems => 'No items in queue';
+	@override String get queue => 'Coda';
+	@override String get noQueueItems => 'Nessun elemento in coda';
 }
 
 // Path: userStatus
@@ -566,9 +566,9 @@ class _TranslationsMessagesIt implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Impossibile creare la coda di riproduzione - nessun elemento';
 	@override String failedPlayback({required Object action, required Object error}) => 'Impossibile ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Passaggio al lettore compatibile...';
-	@override String get logsUploaded => 'Logs uploaded';
-	@override String get logsUploadFailed => 'Failed to upload logs';
-	@override String get logId => 'Log ID';
+	@override String get logsUploaded => 'Log caricati';
+	@override String get logsUploadFailed => 'Caricamento log fallito';
+	@override String get logId => 'ID log';
 }
 
 // Path: subtitlingStyling
@@ -585,7 +585,7 @@ class _TranslationsSubtitlingStylingIt implements TranslationsSubtitlingStylingE
 	@override String get borderColor => 'Colore bordo';
 	@override String get backgroundOpacity => 'Opacità sfondo';
 	@override String get backgroundColor => 'Colore sfondo';
-	@override String get position => 'Position';
+	@override String get position => 'Posizione';
 }
 
 // Path: mpvConfig
@@ -763,7 +763,7 @@ class _TranslationsLogsIt implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Cancella log';
 	@override String get copyLogs => 'Copia log';
-	@override String get uploadLogs => 'Upload Logs';
+	@override String get uploadLogs => 'Carica log';
 	@override String get error => 'Errore:';
 	@override String get stackTrace => 'Traccia dello stack:';
 }
@@ -990,12 +990,12 @@ class _TranslationsShadersIt implements TranslationsShadersEn {
 	@override String get qualityFast => 'Veloce';
 	@override String get qualityHQ => 'Alta qualità';
 	@override String get mode => 'Modalità';
-	@override String get importShader => 'Import Shader';
-	@override String get customShaderDescription => 'Custom GLSL shader';
-	@override String get shaderImported => 'Shader imported';
-	@override String get shaderImportFailed => 'Failed to import shader';
-	@override String get deleteShader => 'Delete Shader';
-	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
+	@override String get importShader => 'Importa shader';
+	@override String get customShaderDescription => 'Shader GLSL personalizzato';
+	@override String get shaderImported => 'Shader importato';
+	@override String get shaderImportFailed => 'Importazione shader fallita';
+	@override String get deleteShader => 'Elimina shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Eliminare "${name}"?';
 }
 
 // Path: companionRemote
@@ -1005,7 +1005,7 @@ class _TranslationsCompanionRemoteIt implements TranslationsCompanionRemoteEn {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Companion Remote';
+	@override String get title => 'Telecomando';
 	@override String get connectToDevice => 'Connetti a un dispositivo';
 	@override String get hostRemoteSession => 'Ospita sessione remota';
 	@override String get controlThisDevice => 'Controlla questo dispositivo con il tuo telefono';
@@ -1495,8 +1495,8 @@ extension on TranslationsIt {
 			'settings.autoPipDescription' => 'Attiva automaticamente il picture-in-picture quando si esce dall\'app durante la riproduzione',
 			'settings.matchContentFrameRate' => 'Adatta frequenza fotogrammi',
 			'settings.matchContentFrameRateDescription' => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria',
-			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
+			'settings.tunneledPlayback' => 'Riproduzione tunnelizzata',
+			'settings.tunneledPlaybackDescription' => 'Usa il tunneling video accelerato dall\'hardware. Disattiva se vedi uno schermo nero con audio su contenuti HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Chiedi profilo all\'apertura',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostra la selezione del profilo ogni volta che l\'app viene aperta',
 			'settings.confirmExitOnBack' => 'Conferma prima di uscire',
@@ -1639,8 +1639,8 @@ extension on TranslationsIt {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Si è verificato un errore: ${error}',
 			'videoControls.chapters' => 'Capitoli',
 			'videoControls.noChaptersAvailable' => 'Nessun capitolo disponibile',
-			'videoControls.queue' => 'Queue',
-			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.queue' => 'Coda',
+			'videoControls.noQueueItems' => 'Nessun elemento in coda',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Limitato',
 			'userStatus.protected' => 'Protetto',
@@ -1675,9 +1675,9 @@ extension on TranslationsIt {
 			'messages.failedToCreatePlayQueueNoItems' => 'Impossibile creare la coda di riproduzione - nessun elemento',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Impossibile ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Passaggio al lettore compatibile...',
-			'messages.logsUploaded' => 'Logs uploaded',
-			'messages.logsUploadFailed' => 'Failed to upload logs',
-			'messages.logId' => 'Log ID',
+			'messages.logsUploaded' => 'Log caricati',
+			'messages.logsUploadFailed' => 'Caricamento log fallito',
+			'messages.logId' => 'ID log',
 			'subtitlingStyling.stylingOptions' => 'Opzioni stile',
 			'subtitlingStyling.fontSize' => 'Dimensione',
 			'subtitlingStyling.textColor' => 'Colore testo',
@@ -1685,7 +1685,7 @@ extension on TranslationsIt {
 			'subtitlingStyling.borderColor' => 'Colore bordo',
 			'subtitlingStyling.backgroundOpacity' => 'Opacità sfondo',
 			'subtitlingStyling.backgroundColor' => 'Colore sfondo',
-			'subtitlingStyling.position' => 'Position',
+			'subtitlingStyling.position' => 'Posizione',
 			'mpvConfig.title' => 'Configurazione mpv',
 			'mpvConfig.description' => 'Impostazioni avanzate del lettore video',
 			'mpvConfig.presets' => 'Preset',
@@ -1790,7 +1790,7 @@ extension on TranslationsIt {
 			'hubDetail.noItemsFound' => 'Nessun elemento trovato',
 			'logs.clearLogs' => 'Cancella log',
 			'logs.copyLogs' => 'Copia log',
-			'logs.uploadLogs' => 'Upload Logs',
+			'logs.uploadLogs' => 'Carica log',
 			'logs.error' => 'Errore:',
 			'logs.stackTrace' => 'Traccia dello stack:',
 			'licenses.relatedPackages' => 'Pacchetti correlati',
@@ -1947,13 +1947,13 @@ extension on TranslationsIt {
 			'shaders.qualityFast' => 'Veloce',
 			'shaders.qualityHQ' => 'Alta qualità',
 			'shaders.mode' => 'Modalità',
-			'shaders.importShader' => 'Import Shader',
-			'shaders.customShaderDescription' => 'Custom GLSL shader',
-			'shaders.shaderImported' => 'Shader imported',
-			'shaders.shaderImportFailed' => 'Failed to import shader',
-			'shaders.deleteShader' => 'Delete Shader',
-			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
-			'companionRemote.title' => 'Companion Remote',
+			'shaders.importShader' => 'Importa shader',
+			'shaders.customShaderDescription' => 'Shader GLSL personalizzato',
+			'shaders.shaderImported' => 'Shader importato',
+			'shaders.shaderImportFailed' => 'Importazione shader fallita',
+			'shaders.deleteShader' => 'Elimina shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Eliminare "${name}"?',
+			'companionRemote.title' => 'Telecomando',
 			'companionRemote.connectToDevice' => 'Connetti a un dispositivo',
 			'companionRemote.hostRemoteSession' => 'Ospita sessione remota',
 			'companionRemote.controlThisDevice' => 'Controlla questo dispositivo con il tuo telefono',

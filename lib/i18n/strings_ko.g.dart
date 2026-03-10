@@ -320,8 +320,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get autoPipDescription => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
 	@override String get matchContentFrameRateDescription => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
-	@override String get tunneledPlayback => 'Tunneled Playback';
-	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
+	@override String get tunneledPlayback => '터널 재생';
+	@override String get tunneledPlaybackDescription => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get confirmExitOnBack => '종료 전 확인';
@@ -512,8 +512,8 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 	@override String get chapters => '챕터';
 	@override String get noChaptersAvailable => '사용 가능한 챕터가 없습니다';
-	@override String get queue => 'Queue';
-	@override String get noQueueItems => 'No items in queue';
+	@override String get queue => '재생 대기열';
+	@override String get noQueueItems => '대기열에 항목이 없습니다';
 }
 
 // Path: userStatus
@@ -566,9 +566,9 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => '재생 대기열 생성 실패 - 항목 없음';
 	@override String failedPlayback({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}';
 	@override String get switchingToCompatiblePlayer => '호환되는 플레이어로 전환 중...';
-	@override String get logsUploaded => 'Logs uploaded';
-	@override String get logsUploadFailed => 'Failed to upload logs';
-	@override String get logId => 'Log ID';
+	@override String get logsUploaded => '로그 업로드 완료';
+	@override String get logsUploadFailed => '로그 업로드 실패';
+	@override String get logId => '로그 ID';
 }
 
 // Path: subtitlingStyling
@@ -585,7 +585,7 @@ class _TranslationsSubtitlingStylingKo implements TranslationsSubtitlingStylingE
 	@override String get borderColor => '테두리 색상';
 	@override String get backgroundOpacity => '배경 불투명도';
 	@override String get backgroundColor => '배경색';
-	@override String get position => 'Position';
+	@override String get position => '위치';
 }
 
 // Path: mpvConfig
@@ -763,7 +763,7 @@ class _TranslationsLogsKo implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => '로그 지우기';
 	@override String get copyLogs => '로그 복사';
-	@override String get uploadLogs => 'Upload Logs';
+	@override String get uploadLogs => '로그 업로드';
 	@override String get error => '오류:';
 	@override String get stackTrace => '스택 추적 (Stack Trace):';
 }
@@ -990,12 +990,12 @@ class _TranslationsShadersKo implements TranslationsShadersEn {
 	@override String get qualityFast => '빠름';
 	@override String get qualityHQ => '고품질';
 	@override String get mode => '모드';
-	@override String get importShader => 'Import Shader';
-	@override String get customShaderDescription => 'Custom GLSL shader';
-	@override String get shaderImported => 'Shader imported';
-	@override String get shaderImportFailed => 'Failed to import shader';
-	@override String get deleteShader => 'Delete Shader';
-	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
+	@override String get importShader => '셰이더 가져오기';
+	@override String get customShaderDescription => '사용자 정의 GLSL 셰이더';
+	@override String get shaderImported => '셰이더를 가져왔습니다';
+	@override String get shaderImportFailed => '셰이더 가져오기 실패';
+	@override String get deleteShader => '셰이더 삭제';
+	@override String deleteShaderConfirm({required Object name}) => '"${name}"을(를) 삭제하시겠습니까?';
 }
 
 // Path: companionRemote
@@ -1005,7 +1005,7 @@ class _TranslationsCompanionRemoteKo implements TranslationsCompanionRemoteEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Companion Remote';
+	@override String get title => '컴패니언 리모컨';
 	@override String get connectToDevice => '기기에 연결';
 	@override String get hostRemoteSession => '원격 세션 호스트';
 	@override String get controlThisDevice => '휴대폰으로 이 기기를 제어하세요';
@@ -1495,8 +1495,8 @@ extension on TranslationsKo {
 			'settings.autoPipDescription' => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
 			'settings.matchContentFrameRateDescription' => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다',
-			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
+			'settings.tunneledPlayback' => '터널 재생',
+			'settings.tunneledPlaybackDescription' => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.confirmExitOnBack' => '종료 전 확인',
@@ -1639,8 +1639,8 @@ extension on TranslationsKo {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '오류가 발생했습니다: ${error}',
 			'videoControls.chapters' => '챕터',
 			'videoControls.noChaptersAvailable' => '사용 가능한 챕터가 없습니다',
-			'videoControls.queue' => 'Queue',
-			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.queue' => '재생 대기열',
+			'videoControls.noQueueItems' => '대기열에 항목이 없습니다',
 			'userStatus.admin' => '관리자',
 			'userStatus.restricted' => '제한됨',
 			'userStatus.protected' => '보호됨',
@@ -1675,9 +1675,9 @@ extension on TranslationsKo {
 			'messages.failedToCreatePlayQueueNoItems' => '재생 대기열 생성 실패 - 항목 없음',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}',
 			'messages.switchingToCompatiblePlayer' => '호환되는 플레이어로 전환 중...',
-			'messages.logsUploaded' => 'Logs uploaded',
-			'messages.logsUploadFailed' => 'Failed to upload logs',
-			'messages.logId' => 'Log ID',
+			'messages.logsUploaded' => '로그 업로드 완료',
+			'messages.logsUploadFailed' => '로그 업로드 실패',
+			'messages.logId' => '로그 ID',
 			'subtitlingStyling.stylingOptions' => '스타일 옵션',
 			'subtitlingStyling.fontSize' => '글자 크기',
 			'subtitlingStyling.textColor' => '텍스트 색상',
@@ -1685,7 +1685,7 @@ extension on TranslationsKo {
 			'subtitlingStyling.borderColor' => '테두리 색상',
 			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
 			'subtitlingStyling.backgroundColor' => '배경색',
-			'subtitlingStyling.position' => 'Position',
+			'subtitlingStyling.position' => '위치',
 			'mpvConfig.title' => 'mpv 설정',
 			'mpvConfig.description' => '고급 비디오 플레이어 설정',
 			'mpvConfig.presets' => '사전 설정',
@@ -1790,7 +1790,7 @@ extension on TranslationsKo {
 			'hubDetail.noItemsFound' => '항목이 없습니다',
 			'logs.clearLogs' => '로그 지우기',
 			'logs.copyLogs' => '로그 복사',
-			'logs.uploadLogs' => 'Upload Logs',
+			'logs.uploadLogs' => '로그 업로드',
 			'logs.error' => '오류:',
 			'logs.stackTrace' => '스택 추적 (Stack Trace):',
 			'licenses.relatedPackages' => '관련 소프트웨어 패키지',
@@ -1947,13 +1947,13 @@ extension on TranslationsKo {
 			'shaders.qualityFast' => '빠름',
 			'shaders.qualityHQ' => '고품질',
 			'shaders.mode' => '모드',
-			'shaders.importShader' => 'Import Shader',
-			'shaders.customShaderDescription' => 'Custom GLSL shader',
-			'shaders.shaderImported' => 'Shader imported',
-			'shaders.shaderImportFailed' => 'Failed to import shader',
-			'shaders.deleteShader' => 'Delete Shader',
-			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
-			'companionRemote.title' => 'Companion Remote',
+			'shaders.importShader' => '셰이더 가져오기',
+			'shaders.customShaderDescription' => '사용자 정의 GLSL 셰이더',
+			'shaders.shaderImported' => '셰이더를 가져왔습니다',
+			'shaders.shaderImportFailed' => '셰이더 가져오기 실패',
+			'shaders.deleteShader' => '셰이더 삭제',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => '"${name}"을(를) 삭제하시겠습니까?',
+			'companionRemote.title' => '컴패니언 리모컨',
 			'companionRemote.connectToDevice' => '기기에 연결',
 			'companionRemote.hostRemoteSession' => '원격 세션 호스트',
 			'companionRemote.controlThisDevice' => '휴대폰으로 이 기기를 제어하세요',

@@ -201,8 +201,8 @@
     "autoPipDescription": "Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen",
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
     "matchContentFrameRateDescription": "Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij",
-    "tunneledPlayback": "Tunneled Playback",
-    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
+    "tunneledPlayback": "Getunnelde weergave",
+    "tunneledPlaybackDescription": "Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content",
     "requireProfileSelectionOnOpen": "Vraag om profiel bij openen",
     "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
     "confirmExitOnBack": "Bevestigen voor afsluiten",
@@ -365,8 +365,8 @@
     },
     "chapters": "Hoofdstukken",
     "noChaptersAvailable": "Geen hoofdstukken beschikbaar",
-    "queue": "Queue",
-    "noQueueItems": "No items in queue"
+    "queue": "Wachtrij",
+    "noQueueItems": "Geen items in de wachtrij"
   },
   "userStatus": {
     "admin": "Beheerder",
@@ -405,9 +405,9 @@
     "failedToCreatePlayQueueNoItems": "Kan afspeelwachtrij niet maken - geen items",
     "failedPlayback": "Afspelen van ${action} mislukt: ${error}",
     "switchingToCompatiblePlayer": "Overschakelen naar compatibele speler...",
-    "logsUploaded": "Logs uploaded",
-    "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logsUploaded": "Logs geüpload",
+    "logsUploadFailed": "Uploaden van logs mislukt",
+    "logId": "Log-ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "Opmaak opties",
@@ -417,7 +417,7 @@
     "borderColor": "Randkleur",
     "backgroundOpacity": "Achtergrond transparantie",
     "backgroundColor": "Achtergrondkleur",
-    "position": "Position"
+    "position": "Positie"
   },
   "mpvConfig": {
     "title": "mpv-configuratie",
@@ -544,7 +544,7 @@
   "logs": {
     "clearLogs": "Wis logs",
     "copyLogs": "Kopieer logs",
-    "uploadLogs": "Upload Logs",
+    "uploadLogs": "Logs uploaden",
     "error": "Fout:",
     "stackTrace": "Stacktracering:"
   },
@@ -715,15 +715,15 @@
     "qualityFast": "Snel",
     "qualityHQ": "Hoge kwaliteit",
     "mode": "Modus",
-    "importShader": "Import Shader",
-    "customShaderDescription": "Custom GLSL shader",
-    "shaderImported": "Shader imported",
-    "shaderImportFailed": "Failed to import shader",
-    "deleteShader": "Delete Shader",
-    "deleteShaderConfirm": "Delete \"${name}\"?"
+    "importShader": "Shader importeren",
+    "customShaderDescription": "Aangepaste GLSL-shader",
+    "shaderImported": "Shader geïmporteerd",
+    "shaderImportFailed": "Shader importeren mislukt",
+    "deleteShader": "Shader verwijderen",
+    "deleteShaderConfirm": "\"${name}\" verwijderen?"
   },
   "companionRemote": {
-    "title": "Companion Remote",
+    "title": "Afstandsbediening",
     "connectToDevice": "Verbinden met apparaat",
     "hostRemoteSession": "Externe sessie hosten",
     "controlThisDevice": "Bedien dit apparaat met je telefoon",

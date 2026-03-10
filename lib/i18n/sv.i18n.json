@@ -201,8 +201,8 @@
     "autoPipDescription": "Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning",
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
     "matchContentFrameRateDescription": "Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri",
-    "tunneledPlayback": "Tunneled Playback",
-    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
+    "tunneledPlayback": "Tunneluppspelning",
+    "tunneledPlaybackDescription": "Använd hårdvaruaccelererad videotunnling. Inaktivera om du ser en svart skärm med ljud vid HDR-innehåll",
     "requireProfileSelectionOnOpen": "Fråga efter profil vid appstart",
     "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas",
     "confirmExitOnBack": "Bekräfta innan avslut",
@@ -365,8 +365,8 @@
     },
     "chapters": "Kapitel",
     "noChaptersAvailable": "Inga kapitel tillgängliga",
-    "queue": "Queue",
-    "noQueueItems": "No items in queue"
+    "queue": "Kö",
+    "noQueueItems": "Inga objekt i kön"
   },
   "userStatus": {
     "admin": "Admin",
@@ -405,9 +405,9 @@
     "failedToCreatePlayQueueNoItems": "Det gick inte att skapa uppspelningskö – inga objekt",
     "failedPlayback": "Kunde inte ${action}: ${error}",
     "switchingToCompatiblePlayer": "Byter till kompatibel spelare...",
-    "logsUploaded": "Logs uploaded",
-    "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logsUploaded": "Loggar uppladdade",
+    "logsUploadFailed": "Uppladdning av loggar misslyckades",
+    "logId": "Logg-ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "Stilalternativ",
@@ -544,7 +544,7 @@
   "logs": {
     "clearLogs": "Rensa loggar",
     "copyLogs": "Kopiera loggar",
-    "uploadLogs": "Upload Logs",
+    "uploadLogs": "Ladda upp loggar",
     "error": "Fel:",
     "stackTrace": "Stack trace:"
   },
@@ -715,15 +715,15 @@
     "qualityFast": "Snabb",
     "qualityHQ": "Hög kvalitet",
     "mode": "Läge",
-    "importShader": "Import Shader",
-    "customShaderDescription": "Custom GLSL shader",
-    "shaderImported": "Shader imported",
-    "shaderImportFailed": "Failed to import shader",
-    "deleteShader": "Delete Shader",
-    "deleteShaderConfirm": "Delete \"${name}\"?"
+    "importShader": "Importera shader",
+    "customShaderDescription": "Anpassad GLSL-shader",
+    "shaderImported": "Shader importerad",
+    "shaderImportFailed": "Kunde inte importera shader",
+    "deleteShader": "Ta bort shader",
+    "deleteShaderConfirm": "Ta bort \"${name}\"?"
   },
   "companionRemote": {
-    "title": "Companion Remote",
+    "title": "Fjärrkontroll",
     "connectToDevice": "Anslut till enhet",
     "hostRemoteSession": "Starta fjärrsession",
     "controlThisDevice": "Styr den här enheten med din telefon",

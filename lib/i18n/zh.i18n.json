@@ -201,8 +201,8 @@
     "autoPipDescription": "在播放期间离开应用时自动进入画中画模式",
     "matchContentFrameRate": "匹配内容帧率",
     "matchContentFrameRateDescription": "调整显示刷新率以匹配视频内容，减少画面抖动并节省电量",
-    "tunneledPlayback": "Tunneled Playback",
-    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
+    "tunneledPlayback": "通道化播放",
+    "tunneledPlaybackDescription": "使用硬件加速视频通道。如果在 HDR 内容上看到黑屏但有声音，请禁用此选项",
     "requireProfileSelectionOnOpen": "打开应用时询问配置文件",
     "requireProfileSelectionOnOpenDescription": "每次打开应用时显示配置文件选择",
     "confirmExitOnBack": "退出前确认",
@@ -365,8 +365,8 @@
     },
     "chapters": "章节",
     "noChaptersAvailable": "没有可用的章节",
-    "queue": "Queue",
-    "noQueueItems": "No items in queue"
+    "queue": "播放队列",
+    "noQueueItems": "队列中没有项目"
   },
   "userStatus": {
     "admin": "管理员",
@@ -405,9 +405,9 @@
     "failedToCreatePlayQueueNoItems": "创建播放队列失败 - 没有项目",
     "failedPlayback": "无法${action}: ${error}",
     "switchingToCompatiblePlayer": "正在切换到兼容的播放器...",
-    "logsUploaded": "Logs uploaded",
-    "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logsUploaded": "日志已上传",
+    "logsUploadFailed": "上传日志失败",
+    "logId": "日志 ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "样式选项",
@@ -417,7 +417,7 @@
     "borderColor": "边框颜色",
     "backgroundOpacity": "背景不透明度",
     "backgroundColor": "背景颜色",
-    "position": "Position"
+    "position": "位置"
   },
   "mpvConfig": {
     "title": "mpv 配置",
@@ -544,7 +544,7 @@
   "logs": {
     "clearLogs": "清除日志",
     "copyLogs": "复制日志",
-    "uploadLogs": "Upload Logs",
+    "uploadLogs": "上传日志",
     "error": "错误:",
     "stackTrace": "堆栈跟踪 (Stack Trace):"
   },
@@ -715,15 +715,15 @@
     "qualityFast": "快速",
     "qualityHQ": "高质量",
     "mode": "模式",
-    "importShader": "Import Shader",
-    "customShaderDescription": "Custom GLSL shader",
-    "shaderImported": "Shader imported",
-    "shaderImportFailed": "Failed to import shader",
-    "deleteShader": "Delete Shader",
-    "deleteShaderConfirm": "Delete \"${name}\"?"
+    "importShader": "导入着色器",
+    "customShaderDescription": "自定义 GLSL 着色器",
+    "shaderImported": "着色器已导入",
+    "shaderImportFailed": "导入着色器失败",
+    "deleteShader": "删除着色器",
+    "deleteShaderConfirm": "删除\"${name}\"？"
   },
   "companionRemote": {
-    "title": "Companion Remote",
+    "title": "伴侣遥控",
     "connectToDevice": "连接到设备",
     "hostRemoteSession": "创建远程会话",
     "controlThisDevice": "使用手机控制此设备",

@@ -201,8 +201,8 @@
     "autoPipDescription": "재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환",
     "matchContentFrameRate": "콘텐츠 프레임 레이트 맞춤",
     "matchContentFrameRateDescription": "비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다",
-    "tunneledPlayback": "Tunneled Playback",
-    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
+    "tunneledPlayback": "터널 재생",
+    "tunneledPlaybackDescription": "하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요",
     "requireProfileSelectionOnOpen": "앱 실행 시 프로필 선택",
     "requireProfileSelectionOnOpenDescription": "앱을 열 때마다 프로필 선택 화면을 표시합니다",
     "confirmExitOnBack": "종료 전 확인",
@@ -365,8 +365,8 @@
     },
     "chapters": "챕터",
     "noChaptersAvailable": "사용 가능한 챕터가 없습니다",
-    "queue": "Queue",
-    "noQueueItems": "No items in queue"
+    "queue": "재생 대기열",
+    "noQueueItems": "대기열에 항목이 없습니다"
   },
   "userStatus": {
     "admin": "관리자",
@@ -405,9 +405,9 @@
     "failedToCreatePlayQueueNoItems": "재생 대기열 생성 실패 - 항목 없음",
     "failedPlayback": "${action}을(를) 수행할 수 없습니다: ${error}",
     "switchingToCompatiblePlayer": "호환되는 플레이어로 전환 중...",
-    "logsUploaded": "Logs uploaded",
-    "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logsUploaded": "로그 업로드 완료",
+    "logsUploadFailed": "로그 업로드 실패",
+    "logId": "로그 ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "스타일 옵션",
@@ -417,7 +417,7 @@
     "borderColor": "테두리 색상",
     "backgroundOpacity": "배경 불투명도",
     "backgroundColor": "배경색",
-    "position": "Position"
+    "position": "위치"
   },
   "mpvConfig": {
     "title": "mpv 설정",
@@ -544,7 +544,7 @@
   "logs": {
     "clearLogs": "로그 지우기",
     "copyLogs": "로그 복사",
-    "uploadLogs": "Upload Logs",
+    "uploadLogs": "로그 업로드",
     "error": "오류:",
     "stackTrace": "스택 추적 (Stack Trace):"
   },
@@ -715,15 +715,15 @@
     "qualityFast": "빠름",
     "qualityHQ": "고품질",
     "mode": "모드",
-    "importShader": "Import Shader",
-    "customShaderDescription": "Custom GLSL shader",
-    "shaderImported": "Shader imported",
-    "shaderImportFailed": "Failed to import shader",
-    "deleteShader": "Delete Shader",
-    "deleteShaderConfirm": "Delete \"${name}\"?"
+    "importShader": "셰이더 가져오기",
+    "customShaderDescription": "사용자 정의 GLSL 셰이더",
+    "shaderImported": "셰이더를 가져왔습니다",
+    "shaderImportFailed": "셰이더 가져오기 실패",
+    "deleteShader": "셰이더 삭제",
+    "deleteShaderConfirm": "\"${name}\"을(를) 삭제하시겠습니까?"
   },
   "companionRemote": {
-    "title": "Companion Remote",
+    "title": "컴패니언 리모컨",
     "connectToDevice": "기기에 연결",
     "hostRemoteSession": "원격 세션 호스트",
     "controlThisDevice": "휴대폰으로 이 기기를 제어하세요",

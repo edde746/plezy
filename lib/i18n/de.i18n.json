@@ -201,8 +201,8 @@
     "autoPipDescription": "Automatisch Bild-in-Bild aktivieren, wenn die App während der Wiedergabe verlassen wird",
     "matchContentFrameRate": "Inhalts-Bildrate anpassen",
     "matchContentFrameRateDescription": "Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku",
-    "tunneledPlayback": "Tunneled Playback",
-    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
+    "tunneledPlayback": "Tunnelwiedergabe",
+    "tunneledPlaybackDescription": "Hardware-beschleunigte Video-Tunnelierung verwenden. Deaktivieren, wenn bei HDR-Inhalten ein schwarzer Bildschirm mit Ton erscheint",
     "requireProfileSelectionOnOpen": "Profil beim Öffnen abfragen",
     "requireProfileSelectionOnOpenDescription": "Profilauswahl bei jedem Öffnen der App anzeigen",
     "confirmExitOnBack": "Vor dem Beenden bestätigen",
@@ -365,8 +365,8 @@
     },
     "chapters": "Kapitel",
     "noChaptersAvailable": "Keine Kapitel verfügbar",
-    "queue": "Queue",
-    "noQueueItems": "No items in queue"
+    "queue": "Warteschlange",
+    "noQueueItems": "Keine Elemente in der Warteschlange"
   },
   "userStatus": {
     "admin": "Eigentümer",
@@ -405,9 +405,9 @@
     "failedToCreatePlayQueueNoItems": "Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente",
     "failedPlayback": "Wiedergabe für ${action} fehlgeschlagen: ${error}",
     "switchingToCompatiblePlayer": "Wechsle zu kompatiblem Player...",
-    "logsUploaded": "Logs uploaded",
-    "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logsUploaded": "Protokolle hochgeladen",
+    "logsUploadFailed": "Protokolle konnten nicht hochgeladen werden",
+    "logId": "Protokoll-ID"
   },
   "subtitlingStyling": {
     "stylingOptions": "Stiloptionen",
@@ -544,7 +544,7 @@
   "logs": {
     "clearLogs": "Protokolle löschen",
     "copyLogs": "Protokolle kopieren",
-    "uploadLogs": "Upload Logs",
+    "uploadLogs": "Protokolle hochladen",
     "error": "Fehler:",
     "stackTrace": "Stacktrace:"
   },
@@ -715,15 +715,15 @@
     "qualityFast": "Schnell",
     "qualityHQ": "Hohe Qualität",
     "mode": "Modus",
-    "importShader": "Import Shader",
-    "customShaderDescription": "Custom GLSL shader",
-    "shaderImported": "Shader imported",
-    "shaderImportFailed": "Failed to import shader",
-    "deleteShader": "Delete Shader",
-    "deleteShaderConfirm": "Delete \"${name}\"?"
+    "importShader": "Shader importieren",
+    "customShaderDescription": "Benutzerdefinierter GLSL-Shader",
+    "shaderImported": "Shader importiert",
+    "shaderImportFailed": "Shader konnte nicht importiert werden",
+    "deleteShader": "Shader löschen",
+    "deleteShaderConfirm": "\"${name}\" löschen?"
   },
   "companionRemote": {
-    "title": "Companion Remote",
+    "title": "Companion-Fernbedienung",
     "connectToDevice": "Mit Gerät verbinden",
     "hostRemoteSession": "Fernsteuerungssitzung starten",
     "controlThisDevice": "Dieses Gerät mit dem Handy steuern",
