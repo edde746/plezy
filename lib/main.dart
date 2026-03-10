@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -452,6 +451,9 @@ class SetupScreen extends StatefulWidget {
 class _SetupScreenState extends State<SetupScreen> {
   String _statusMessage = '';
 
+  // Per-server connection status: serverId -> (name, connected?)
+  final Map<String, (String name, bool? connected)> _serverStatus = {};
+
   @override
   void initState() {
     super.initState();
@@ -517,6 +519,15 @@ class _SetupScreenState extends State<SetupScreen> {
 
     _setStatus(t.common.connectingToServers);
 
+    // Populate per-server status for splash display
+    if (mounted) {
+      setState(() {
+        for (final server in servers) {
+          _serverStatus[server.clientIdentifier] = (server.name, null);
+        }
+      });
+    }
+
     try {
       final result = await ServerConnectionOrchestrator.connectAndInitialize(
         servers: servers,
@@ -524,6 +535,16 @@ class _SetupScreenState extends State<SetupScreen> {
         librariesProvider: context.read<LibrariesProvider>(),
         syncService: context.read<OfflineWatchSyncService>(),
         clientIdentifier: storage.getClientIdentifier(),
+        onServerStatus: (serverId, success) {
+          if (mounted) {
+            setState(() {
+              final existing = _serverStatus[serverId];
+              if (existing != null) {
+                _serverStatus[serverId] = (existing.$1, success);
+              }
+            });
+          }
+        },
       );
 
       if (!mounted) return;
@@ -554,30 +575,81 @@ class _SetupScreenState extends State<SetupScreen> {
     }
   }
 
+  Widget _buildStatusText(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      child: Text(
+        _statusMessage,
+        key: ValueKey(_statusMessage),
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServerStatusList(BuildContext context) {
+    if (_serverStatus.isEmpty) return const SizedBox.shrink();
+    final textTheme = Theme.of(context).textTheme;
+    final dimColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5);
+    const coralColor = Color(0xFFE5A00D);
+    const successColor = Color(0xFF4CAF50);
+    const failColor = Color(0xFFEF5350);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: _serverStatus.entries.map((entry) {
+        final (name, connected) = entry.value;
+        final Widget statusIcon;
+        if (connected == null) {
+          statusIcon = const SizedBox(
+            width: 12, height: 12,
+            child: CircularProgressIndicator(strokeWidth: 1.5, color: coralColor),
+          );
+        } else if (connected) {
+          statusIcon = const Icon(Icons.check_circle, size: 14, color: successColor);
+        } else {
+          statusIcon = const Icon(Icons.cancel, size: 14, color: failColor);
+        }
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              statusIcon,
+              const SizedBox(width: 8),
+              Text(name, style: textTheme.bodySmall?.copyWith(color: dimColor)),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const coralColor = Color(0xFFE5A00D);
     return ColoredBox(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Stack(
         children: [
-          // Icon dead-center, matching Android 12+ splash position.
-          // 192dp accounts for the 16% inset in ic_launcher.xml.
           Center(child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288)),
-          // Status text below center, independent of icon position.
           Positioned(
-            left: 0,
-            right: 0,
-            bottom: MediaQuery.of(context).size.height * 0.5 - 140,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Text(
-                _statusMessage,
-                key: ValueKey(_statusMessage),
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
-              ),
+            left: 0, right: 0,
+            bottom: MediaQuery.of(context).size.height * 0.5 - 170,
+            child: _buildStatusText(context),
+          ),
+          Positioned(
+            left: 0, right: 0,
+            top: MediaQuery.of(context).size.height * 0.5 + 180,
+            child: Center(
+              child: _serverStatus.isEmpty
+                  ? const SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: coralColor),
+                    )
+                  : _buildServerStatusList(context),
             ),
           ),
         ],

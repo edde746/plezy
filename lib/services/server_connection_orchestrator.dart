@@ -37,6 +37,7 @@ class ServerConnectionOrchestrator {
     required OfflineWatchSyncService syncService,
     String? clientIdentifier,
     Duration timeout = ConnectionTimeouts.connectAll,
+    void Function(String serverId, bool success)? onServerStatus,
   }) async {
     appLogger.i('Connecting to ${servers.length} servers...');
 
@@ -44,6 +45,12 @@ class ServerConnectionOrchestrator {
       servers,
       clientIdentifier: clientIdentifier,
       timeout: timeout,
+      onServerConnected: onServerStatus != null
+          ? (serverId, _) => onServerStatus(serverId, true)
+          : null,
+      onServerFailed: onServerStatus != null
+          ? (serverId, _) => onServerStatus(serverId, false)
+          : null,
     );
 
     PlexClient? firstClient;
