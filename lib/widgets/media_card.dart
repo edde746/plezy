@@ -283,11 +283,11 @@ class MediaCardState extends State<MediaCard> {
                 ),
               const SizedBox(height: 2),
               // Title (flattened — no inner Column)
-              if (item is PlexMetadata && _canNavigateToShow(item))
+              if (item is PlexMetadata && _hasClickableTitle(item))
                 _ClickableText(
                   text: item.displayTitle,
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
-                  onTap: () => _navigateToShow(context, item, isOffline: widget.isOffline),
+                  onTap: () => _navigateToDetail(context, item, isOffline: widget.isOffline),
                 )
               else
                 Text(
@@ -581,11 +581,11 @@ class _MediaCardList extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   // Title
-                  if (item is PlexMetadata && _canNavigateToShow(item as PlexMetadata))
+                  if (item is PlexMetadata && _hasClickableTitle(item as PlexMetadata))
                     _ClickableText(
                       text: item.displayTitle,
                       style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
-                      onTap: () => _navigateToShow(context, item as PlexMetadata, isOffline: isOffline),
+                      onTap: () => _navigateToDetail(context, item as PlexMetadata, isOffline: isOffline),
                     )
                   else
                     Text(
@@ -926,10 +926,12 @@ class _MediaCardHelpers {
   }
 }
 
-/// Whether this metadata item can navigate to its parent show.
-bool _canNavigateToShow(PlexMetadata metadata) {
+/// Whether this metadata item has a clickable title that navigates somewhere.
+/// Episodes/seasons navigate to their parent show; movies navigate to their detail page.
+bool _hasClickableTitle(PlexMetadata metadata) {
   if (metadata.isEpisode) return metadata.grandparentRatingKey != null;
   if (metadata.isSeason) return metadata.parentRatingKey != null;
+  if (metadata.isMovie) return true;
   return false;
 }
 
@@ -950,41 +952,37 @@ void _navigateToSeason(BuildContext context, PlexMetadata episode, {bool isOffli
   Navigator.push(context, MaterialPageRoute(builder: (_) => SeasonDetailScreen(season: seasonStub, isOffline: isOffline)));
 }
 
-/// Navigate to show detail from episode/season metadata.
-/// For episodes: show info is in grandparent* fields.
-/// For seasons: show info is in parent* fields.
-void _navigateToShow(BuildContext context, PlexMetadata metadata, {bool isOffline = false}) {
-  final String? showRatingKey;
-  final String? showTitle;
-  final String? showThumb;
-  final String? showArt;
+/// Navigate to the detail screen for a metadata item.
+/// For episodes/seasons: navigates to the parent show.
+/// For movies and other types: navigates to the item's own detail page.
+void _navigateToDetail(BuildContext context, PlexMetadata metadata, {bool isOffline = false}) {
+  PlexMetadata target = metadata;
 
-  if (metadata.isEpisode) {
-    showRatingKey = metadata.grandparentRatingKey;
-    showTitle = metadata.grandparentTitle;
-    showThumb = metadata.grandparentThumb;
-    showArt = metadata.grandparentArt;
-  } else if (metadata.isSeason) {
-    showRatingKey = metadata.parentRatingKey;
-    showTitle = metadata.grandparentTitle ?? metadata.parentTitle;
-    showThumb = metadata.grandparentThumb ?? metadata.parentThumb;
-    showArt = metadata.grandparentArt;
-  } else {
-    return;
+  if (metadata.isEpisode && metadata.grandparentRatingKey != null) {
+    target = PlexMetadata(
+      ratingKey: metadata.grandparentRatingKey!,
+      key: '/library/metadata/${metadata.grandparentRatingKey}',
+      type: 'show',
+      title: metadata.grandparentTitle ?? metadata.displayTitle,
+      thumb: metadata.grandparentThumb,
+      art: metadata.grandparentArt,
+      serverId: metadata.serverId,
+      serverName: metadata.serverName,
+    );
+  } else if (metadata.isSeason && metadata.parentRatingKey != null) {
+    target = PlexMetadata(
+      ratingKey: metadata.parentRatingKey!,
+      key: '/library/metadata/${metadata.parentRatingKey}',
+      type: 'show',
+      title: metadata.grandparentTitle ?? metadata.parentTitle ?? metadata.displayTitle,
+      thumb: metadata.grandparentThumb ?? metadata.parentThumb,
+      art: metadata.grandparentArt,
+      serverId: metadata.serverId,
+      serverName: metadata.serverName,
+    );
   }
 
-  if (showRatingKey == null) return;
-  final showStub = PlexMetadata(
-    ratingKey: showRatingKey,
-    key: '/library/metadata/$showRatingKey',
-    type: 'show',
-    title: showTitle ?? metadata.displayTitle,
-    thumb: showThumb,
-    art: showArt,
-    serverId: metadata.serverId,
-    serverName: metadata.serverName,
-  );
-  Navigator.push(context, MaterialPageRoute(builder: (_) => MediaDetailScreen(metadata: showStub, isOffline: isOffline)));
+  Navigator.push(context, MaterialPageRoute(builder: (_) => MediaDetailScreen(metadata: target, isOffline: isOffline)));
 }
 
 /// Text widget that shows hover underline + pointer cursor only in pointer mode.
@@ -1021,12 +1019,8 @@ class _ClickableTextState extends State<_ClickableText> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: Listener(
-        onPointerUp: (event) {
-          if (event.kind == PointerDeviceKind.mouse) {
-            widget.onTap();
-          }
-        },
+      child: GestureDetector(
+        onTap: widget.onTap,
         child: Text(
           widget.text,
           maxLines: 1,
