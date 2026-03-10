@@ -111,6 +111,9 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
 
   // Configure mpv for embedded playback.
   LogToFile("MpvPlayer::Initialize - setting mpv options");
+  // Use gpu-next + Vulkan to avoid D3D11 driver crashes (GH-653)
+  mpv_set_option_string(mpv_, "vo", "gpu-next");
+  mpv_set_option_string(mpv_, "gpu-api", "vulkan");
   // hwdec is set from Flutter via setProperty based on user preference
   mpv_set_option_string(mpv_, "keep-open", "yes");
   mpv_set_option_string(mpv_, "idle", "yes");
@@ -546,7 +549,7 @@ void MpvPlayer::UpdateHDRMode(double sigPeak) {
   // - target-colorspace-hint=yes
   // - Windows HDR is enabled in Display Settings
   // - Display supports HDR
-  // No explicit DXGI calls needed - mpv's gpu/d3d11 handles it
+  // No explicit DXGI calls needed - mpv's gpu-next/vulkan handles it
 }
 
 }  // namespace mpv
