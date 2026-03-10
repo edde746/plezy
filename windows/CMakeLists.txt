@@ -3,14 +3,14 @@ cmake_minimum_required(VERSION 3.14)
 project(plezy LANGUAGES CXX)
 
 # Download and extract mpv-dev (architecture-dependent)
-set(MPV_VERSION "20260303")
-set(MPV_GIT_HASH "c55bdc3")
+set(MPV_VERSION "20251228")
+set(MPV_GIT_HASH "a58dd8a")
 
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
   # ARM64: use file(DOWNLOAD) + 7z extraction (CMake's built-in libarchive
   # can't handle LZMA2 on ARM64)
   set(MPV_FILENAME "mpv-dev-aarch64-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z")
-  set(MPV_URL "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/${MPV_VERSION}/${MPV_FILENAME}")
+  set(MPV_URL "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/${MPV_FILENAME}/download")
   set(MPV_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/mpv-dev-arm64")
   set(MPV_ARCHIVE "${MPV_DOWNLOAD_DIR}/${MPV_FILENAME}")
 
@@ -41,7 +41,7 @@ else()
   include(FetchContent)
   FetchContent_Declare(
     mpv_dev
-    URL https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/${MPV_VERSION}/mpv-dev-x86_64-v3-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z
+    URL https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-v3-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z/download
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   )
   FetchContent_MakeAvailable(mpv_dev)
