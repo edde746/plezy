@@ -513,8 +513,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   @override
   void didUpdateWidget(_DownloadTreeItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reinitialize focus nodes if action count might have changed
-    if (oldWidget.node.status != widget.node.status) {
+    // Reinitialize focus nodes if action count changed
+    if (_getActionCount() != _buttonFocusNodes.length) {
       _disposeButtonFocusNodes();
       _initButtonFocusNodes();
     }
