@@ -220,7 +220,9 @@ class PlayerAndroid extends PlayerBase {
           }
         }
         break;
-      // Other properties are no-ops for ExoPlayer
+      default:
+        // Forward unknown properties to Kotlin for MPV fallback
+        await invoke('setMpvProperty', {'name': name, 'value': value});
     }
   }
 

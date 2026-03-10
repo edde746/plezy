@@ -37,6 +37,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var configuredTunnelingEnabled: Boolean = true
 
     private var debugLoggingEnabled: Boolean = false
+    private val pendingMpvProperties = mutableListOf<Pair<String, String>>()
 
     // FlutterPlugin
 
@@ -133,6 +134,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             }
             "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
             "observeProperty" -> handleObserveProperty(call, result)
+            "setMpvProperty" -> handleSetMpvProperty(call, result)
             "setLogLevel" -> {
                 val level = call.argument<String>("level") ?: "warn"
                 debugLoggingEnabled = (level == "v" || level == "debug" || level == "trace")
@@ -208,6 +210,9 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             result.error("INVALID_ARGS", "Missing 'uri'", null)
             return
         }
+
+        // New media = fresh slate for pending MPV properties
+        pendingMpvProperties.clear()
 
         activity?.runOnUiThread {
             if (usingMpvFallback) {
@@ -472,6 +477,24 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         result.success(null)
     }
 
+    private fun handleSetMpvProperty(call: MethodCall, result: MethodChannel.Result) {
+        val name = call.argument<String>("name")
+        val value = call.argument<String>("value")
+
+        if (name == null || value == null) {
+            result.error("INVALID_ARGS", "Missing 'name' or 'value'", null)
+            return
+        }
+
+        if (usingMpvFallback) {
+            mpvCore?.setProperty(name, value)
+        } else {
+            // Store for later application if ExoPlayer falls back to MPV
+            pendingMpvProperties.add(Pair(name, value))
+        }
+        result.success(null)
+    }
+
     private fun handleGetStats(result: MethodChannel.Result) {
         activity?.runOnUiThread {
             val stats = if (usingMpvFallback) {
@@ -643,6 +666,12 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                             mpvCore?.setProperty("demuxer-max-bytes", bytes.toString())
                         }
                     }
+
+                    // Apply any pending MPV properties from Dart
+                    for ((propName, propValue) in pendingMpvProperties) {
+                        mpvCore?.setProperty(propName, propValue)
+                    }
+                    pendingMpvProperties.clear()
 
                     // Setup property observers
                     mpvCore?.observeProperty("time-pos", "double")

@@ -1053,6 +1053,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             ? Duration(milliseconds: widget.metadata.viewOffset!)
             : null;
 
+        // Enable FFmpeg auto-reconnect for VOD streams (covers network drops up to 10 min)
+        if (!widget.isOffline && !widget.isLive) {
+          await player!.setProperty('stream-lavf-o-append', 'reconnect=1');
+          await player!.setProperty('stream-lavf-o-append', 'reconnect_on_network_error=1');
+          await player!.setProperty('stream-lavf-o-append', 'reconnect_streamed=1');
+          await player!.setProperty('stream-lavf-o-append', 'reconnect_delay_max=600');
+        }
+
         // If we have external subtitles, open paused to add them before playback starts.
         // This prevents a race condition on Android where adding subtitle tracks
         // during active playback can freeze the video decoder (issue #226).
