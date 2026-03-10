@@ -10,10 +10,11 @@ import '../../models/hotkey_model.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
+import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_memory_tracker.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../utils/focus_utils.dart';
 import '../main_screen.dart';
 import '../../mixins/refreshable.dart';
 import '../../services/discord_rpc_service.dart';
@@ -29,7 +30,9 @@ import '../../services/update_service.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/overlay_sheet.dart';
 import '../../widgets/tv_number_spinner.dart';
 import 'hotkey_recorder_widget.dart';
 import '../../providers/companion_remote_provider.dart';
@@ -268,59 +271,179 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           ),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
-              return ListTile(
-                focusNode: _focusTracker.get(_kTheme),
-                leading: AppIcon(themeProvider.themeModeIcon, fill: 1),
-                title: Text(t.settings.theme),
-                subtitle: Text(themeProvider.themeModeDisplayName),
-                trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                onTap: () => _showThemeDialog(themeProvider),
-              );
-            },
-          ),
-          ListTile(
-            focusNode: _focusTracker.get(_kLanguage),
-            leading: const AppIcon(Symbols.language_rounded, fill: 1),
-            title: Text(t.settings.language),
-            subtitle: Text(_getLanguageDisplayName(LocaleSettings.currentLocale)),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-            onTap: () => _showLanguageDialog(),
-          ),
-          Consumer<SettingsProvider>(
-            builder: (context, settingsProvider, child) {
-              return ListTile(
-                focusNode: _focusTracker.get(_kLibraryDensity),
-                leading: const AppIcon(Symbols.grid_view_rounded, fill: 1),
-                title: Text(t.settings.libraryDensity),
-                subtitle: Text(settingsProvider.libraryDensityDisplayName),
-                trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                onTap: () => _showLibraryDensityDialog(),
-              );
-            },
-          ),
-          Consumer<SettingsProvider>(
-            builder: (context, settingsProvider, child) {
-              return ListTile(
-                focusNode: _focusTracker.get(_kViewMode),
-                leading: const AppIcon(Symbols.view_list_rounded, fill: 1),
-                title: Text(t.settings.viewMode),
-                subtitle: Text(
-                  settingsProvider.viewMode == settings.ViewMode.grid ? t.settings.gridView : t.settings.listView,
+              return Builder(
+                builder: (tileContext) => ListTile(
+                  focusNode: _focusTracker.get(_kTheme),
+                  leading: AppIcon(themeProvider.themeModeIcon, fill: 1),
+                  title: Text(t.settings.theme),
+                  subtitle: Text(themeProvider.themeModeDisplayName),
+                  trailing: const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1),
+                  onTap: () async {
+                    final value = await _showSettingsMenu<settings.ThemeMode>(
+                      tileContext: tileContext,
+                      title: t.settings.theme,
+                      options: [
+                        _DialogOption(
+                          value: settings.ThemeMode.system,
+                          title: t.settings.systemTheme,
+                          subtitle: t.settings.systemThemeDescription,
+                        ),
+                        _DialogOption(value: settings.ThemeMode.light, title: t.settings.lightTheme),
+                        _DialogOption(value: settings.ThemeMode.dark, title: t.settings.darkTheme),
+                        _DialogOption(
+                          value: settings.ThemeMode.oled,
+                          title: t.settings.oledTheme,
+                          subtitle: t.settings.oledThemeDescription,
+                        ),
+                      ],
+                      currentValue: themeProvider.themeMode,
+                    );
+                    if (value != null) {
+                      themeProvider.setThemeMode(value);
+                    }
+                  },
                 ),
-                trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                onTap: () => _showViewModeDialog(),
+              );
+            },
+          ),
+          Builder(
+            builder: (tileContext) => ListTile(
+              focusNode: _focusTracker.get(_kLanguage),
+              leading: const AppIcon(Symbols.language_rounded, fill: 1),
+              title: Text(t.settings.language),
+              subtitle: Text(_getLanguageDisplayName(LocaleSettings.currentLocale)),
+              trailing: const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1),
+              onTap: () async {
+                final value = await _showSettingsMenu<AppLocale>(
+                  tileContext: tileContext,
+                  title: t.settings.language,
+                  options: AppLocale.values
+                      .map((locale) => _DialogOption(value: locale, title: _getLanguageDisplayName(locale)))
+                      .toList(),
+                  currentValue: LocaleSettings.currentLocale,
+                );
+                if (value != null) {
+                  await _settingsService.setAppLocale(value);
+                  LocaleSettings.setLocale(value);
+                  _restartApp();
+                }
+              },
+            ),
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return Builder(
+                builder: (tileContext) => ListTile(
+                  focusNode: _focusTracker.get(_kLibraryDensity),
+                  leading: const AppIcon(Symbols.grid_view_rounded, fill: 1),
+                  title: Text(t.settings.libraryDensity),
+                  subtitle: Text(settingsProvider.libraryDensityDisplayName),
+                  trailing: const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1),
+                  onTap: () async {
+                    final value = await _showSettingsMenu<settings.LibraryDensity>(
+                      tileContext: tileContext,
+                      title: t.settings.libraryDensity,
+                      options: [
+                        _DialogOption(
+                          value: settings.LibraryDensity.compact,
+                          title: t.settings.compact,
+                          subtitle: t.settings.compactDescription,
+                        ),
+                        _DialogOption(
+                          value: settings.LibraryDensity.normal,
+                          title: t.settings.normal,
+                          subtitle: t.settings.normalDescription,
+                        ),
+                        _DialogOption(
+                          value: settings.LibraryDensity.comfortable,
+                          title: t.settings.comfortable,
+                          subtitle: t.settings.comfortableDescription,
+                        ),
+                      ],
+                      currentValue: settingsProvider.libraryDensity,
+                    );
+                    if (value != null) {
+                      settingsProvider.setLibraryDensity(value);
+                    }
+                  },
+                ),
               );
             },
           ),
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
-              return ListTile(
-                focusNode: _focusTracker.get(_kEpisodePosterMode),
-                leading: const AppIcon(Symbols.image_rounded, fill: 1),
-                title: Text(t.settings.episodePosterMode),
-                subtitle: Text(settingsProvider.episodePosterModeDisplayName),
-                trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                onTap: () => _showEpisodePosterModeDialog(),
+              return Builder(
+                builder: (tileContext) => ListTile(
+                  focusNode: _focusTracker.get(_kViewMode),
+                  leading: const AppIcon(Symbols.view_list_rounded, fill: 1),
+                  title: Text(t.settings.viewMode),
+                  subtitle: Text(
+                    settingsProvider.viewMode == settings.ViewMode.grid ? t.settings.gridView : t.settings.listView,
+                  ),
+                  trailing: const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1),
+                  onTap: () async {
+                    final value = await _showSettingsMenu<settings.ViewMode>(
+                      tileContext: tileContext,
+                      title: t.settings.viewMode,
+                      options: [
+                        _DialogOption(
+                          value: settings.ViewMode.grid,
+                          title: t.settings.gridView,
+                          subtitle: t.settings.gridViewDescription,
+                        ),
+                        _DialogOption(
+                          value: settings.ViewMode.list,
+                          title: t.settings.listView,
+                          subtitle: t.settings.listViewDescription,
+                        ),
+                      ],
+                      currentValue: settingsProvider.viewMode,
+                    );
+                    if (value != null) {
+                      settingsProvider.setViewMode(value);
+                    }
+                  },
+                ),
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return Builder(
+                builder: (tileContext) => ListTile(
+                  focusNode: _focusTracker.get(_kEpisodePosterMode),
+                  leading: const AppIcon(Symbols.image_rounded, fill: 1),
+                  title: Text(t.settings.episodePosterMode),
+                  subtitle: Text(settingsProvider.episodePosterModeDisplayName),
+                  trailing: const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1),
+                  onTap: () async {
+                    final value = await _showSettingsMenu<settings.EpisodePosterMode>(
+                      tileContext: tileContext,
+                      title: t.settings.episodePosterMode,
+                      options: [
+                        _DialogOption(
+                          value: settings.EpisodePosterMode.seriesPoster,
+                          title: t.settings.seriesPoster,
+                          subtitle: t.settings.seriesPosterDescription,
+                        ),
+                        _DialogOption(
+                          value: settings.EpisodePosterMode.seasonPoster,
+                          title: t.settings.seasonPoster,
+                          subtitle: t.settings.seasonPosterDescription,
+                        ),
+                        _DialogOption(
+                          value: settings.EpisodePosterMode.episodeThumbnail,
+                          title: t.settings.episodeThumbnail,
+                          subtitle: t.settings.episodeThumbnailDescription,
+                        ),
+                      ],
+                      currentValue: settingsProvider.episodePosterMode,
+                    );
+                    if (value != null) {
+                      settingsProvider.setEpisodePosterMode(value);
+                    }
+                  },
+                ),
               );
             },
           ),
@@ -472,13 +595,33 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ),
           ),
           if (Platform.isAndroid)
-            ListTile(
-              focusNode: _focusTracker.get(_kPlayerBackend),
-              leading: const AppIcon(Symbols.play_circle_rounded, fill: 1),
-              title: Text(t.settings.playerBackend),
-              subtitle: Text(_useExoPlayer ? t.settings.exoPlayerDescription : t.settings.mpvDescription),
-              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-              onTap: () => _showPlayerBackendDialog(),
+            Builder(
+              builder: (tileContext) => ListTile(
+                focusNode: _focusTracker.get(_kPlayerBackend),
+                leading: const AppIcon(Symbols.play_circle_rounded, fill: 1),
+                title: Text(t.settings.playerBackend),
+                subtitle: Text(_useExoPlayer ? t.settings.exoPlayerDescription : t.settings.mpvDescription),
+                trailing: const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1),
+                onTap: () async {
+                  final value = await _showSettingsMenu<bool>(
+                    tileContext: tileContext,
+                    title: t.settings.playerBackend,
+                    options: [
+                      _DialogOption(
+                        value: true,
+                        title: t.settings.exoPlayer,
+                        subtitle: t.settings.exoPlayerDescription,
+                      ),
+                      _DialogOption(value: false, title: t.settings.mpv, subtitle: t.settings.mpvDescription),
+                    ],
+                    currentValue: _useExoPlayer,
+                  );
+                  if (value != null) {
+                    setState(() => _useExoPlayer = value);
+                    await _settingsService.setUseExoPlayer(value);
+                  }
+                },
+              ),
             ),
           ListTile(
             focusNode: _focusTracker.get(_kExternalPlayer),
@@ -552,13 +695,45 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 await _settingsService.setTunneledPlayback(value);
               },
             ),
-          ListTile(
-            focusNode: _focusTracker.get(_kBufferSize),
-            leading: const AppIcon(Symbols.memory_rounded, fill: 1),
-            title: Text(t.settings.bufferSize),
-            subtitle: Text(_bufferSize == 0 ? t.settings.bufferSizeAuto : t.settings.bufferSizeMB(size: _bufferSize.toString())),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-            onTap: () => _showBufferSizeDialog(),
+          Builder(
+            builder: (tileContext) => ListTile(
+              focusNode: _focusTracker.get(_kBufferSize),
+              leading: const AppIcon(Symbols.memory_rounded, fill: 1),
+              title: Text(t.settings.bufferSize),
+              subtitle: Text(
+                _bufferSize == 0 ? t.settings.bufferSizeAuto : t.settings.bufferSizeMB(size: _bufferSize.toString()),
+              ),
+              trailing: const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1),
+              onTap: () async {
+                final bufferOptions = [0, 64, 128, 256, 512, 1024];
+                final value = await _showSettingsMenu<int>(
+                  tileContext: tileContext,
+                  title: t.settings.bufferSize,
+                  options: bufferOptions
+                      .map(
+                        (size) =>
+                            _DialogOption(value: size, title: size == 0 ? t.settings.bufferSizeAuto : '${size}MB'),
+                      )
+                      .toList(),
+                  currentValue: _bufferSize,
+                );
+                if (value != null) {
+                  setState(() {
+                    _bufferSize = value;
+                    _settingsService.setBufferSize(value);
+                  });
+                  if (Platform.isAndroid && value > 0) {
+                    final heapMB = await PlayerAndroid.getHeapSize();
+                    if (heapMB > 0 && value > heapMB ~/ 4 && mounted) {
+                      showAppSnackBar(
+                        context,
+                        t.settings.bufferSizeWarning(heap: heapMB.toString(), size: value.toString()),
+                      );
+                    }
+                  }
+                }
+              },
+            ),
           ),
           ListTile(
             focusNode: _focusTracker.get(_kSubtitleStyling),
@@ -1115,113 +1290,73 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     );
   }
 
-  void _showThemeDialog(ThemeProvider themeProvider) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(t.settings.theme),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: AppIcon(
-                  themeProvider.themeMode == settings.ThemeMode.system
-                      ? Symbols.radio_button_checked_rounded
-                      : Symbols.radio_button_unchecked_rounded,
-                  fill: 1,
-                ),
-                title: Text(t.settings.systemTheme),
-                subtitle: Text(t.settings.systemThemeDescription),
-                onTap: () {
-                  themeProvider.setThemeMode(settings.ThemeMode.system);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: AppIcon(
-                  themeProvider.themeMode == settings.ThemeMode.light
-                      ? Symbols.radio_button_checked_rounded
-                      : Symbols.radio_button_unchecked_rounded,
-                  fill: 1,
-                ),
-                title: Text(t.settings.lightTheme),
-                onTap: () {
-                  themeProvider.setThemeMode(settings.ThemeMode.light);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: AppIcon(
-                  themeProvider.themeMode == settings.ThemeMode.dark
-                      ? Symbols.radio_button_checked_rounded
-                      : Symbols.radio_button_unchecked_rounded,
-                  fill: 1,
-                ),
-                title: Text(t.settings.darkTheme),
-                onTap: () {
-                  themeProvider.setThemeMode(settings.ThemeMode.dark);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: AppIcon(
-                  themeProvider.themeMode == settings.ThemeMode.oled
-                      ? Symbols.radio_button_checked_rounded
-                      : Symbols.radio_button_unchecked_rounded,
-                  fill: 1,
-                ),
-                title: Text(t.settings.oledTheme),
-                subtitle: Text(t.settings.oledThemeDescription),
-                onTap: () {
-                  themeProvider.setThemeMode(settings.ThemeMode.oled);
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
-        );
-      },
+  /// Shows a platform-adaptive settings menu: popup dropdown on desktop/TV,
+  /// bottom sheet on mobile.
+  Future<T?> _showSettingsMenu<T>({
+    required BuildContext tileContext,
+    required String title,
+    required List<_DialogOption<T>> options,
+    required T currentValue,
+  }) {
+    final useBottomSheet = Platform.isIOS || Platform.isAndroid;
+    final focusFirstItem = InputModeTracker.isKeyboardMode(context);
+
+    if (useBottomSheet) {
+      return _showSettingsMenuSheet<T>(
+        title: title,
+        options: options,
+        currentValue: currentValue,
+        focusFirstItem: focusFirstItem,
+      );
+    } else {
+      return _showSettingsMenuPopup<T>(
+        tileContext: tileContext,
+        options: options,
+        currentValue: currentValue,
+        focusFirstItem: focusFirstItem,
+      );
+    }
+  }
+
+  /// Mobile path: bottom sheet via OverlaySheetController.showAdaptive
+  Future<T?> _showSettingsMenuSheet<T>({
+    required String title,
+    required List<_DialogOption<T>> options,
+    required T currentValue,
+    required bool focusFirstItem,
+  }) {
+    return OverlaySheetController.showAdaptive<T>(
+      context,
+      showDragHandle: true,
+      builder: (context) => _SettingsMenuSheet<T>(
+        title: title,
+        options: options,
+        currentValue: currentValue,
+        focusFirstItem: focusFirstItem,
+      ),
     );
   }
 
-  void _showBufferSizeDialog() {
-    final options = [0, 64, 128, 256, 512, 1024];
+  /// Desktop/TV path: positioned popup dropdown
+  Future<T?> _showSettingsMenuPopup<T>({
+    required BuildContext tileContext,
+    required List<_DialogOption<T>> options,
+    required T currentValue,
+    required bool focusFirstItem,
+  }) {
+    final renderBox = tileContext.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+    final tileSize = renderBox.size;
 
-    showDialog(
+    return showDialog<T>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(t.settings.bufferSize),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: options.map((size) {
-              return ListTile(
-                leading: AppIcon(
-                  _bufferSize == size ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
-                  fill: 1,
-                ),
-                title: Text(size == 0 ? t.settings.bufferSizeAuto : '${size}MB'),
-                onTap: () async {
-                  setState(() {
-                    _bufferSize = size;
-                    _settingsService.setBufferSize(size);
-                  });
-                  Navigator.pop(context);
-                  if (Platform.isAndroid && size > 0) {
-                    final heapMB = await PlayerAndroid.getHeapSize();
-                    if (heapMB > 0 && size > heapMB ~/ 4 && mounted) {
-                      showAppSnackBar(this.context, t.settings.bufferSizeWarning(heap: heapMB.toString(), size: size.toString()));
-                    }
-                  }
-                },
-              );
-            }).toList(),
-          ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
-        );
-      },
+      barrierColor: Colors.transparent,
+      builder: (context) => _SettingsMenuPopup<T>(
+        position: Offset(position.dx + tileSize.width, position.dy + tileSize.height),
+        options: options,
+        currentValue: currentValue,
+        focusFirstItem: focusFirstItem,
+      ),
     );
   }
 
@@ -1482,53 +1617,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     );
   }
 
-  void _showPlayerBackendDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(t.settings.playerBackend),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: AppIcon(
-                  _useExoPlayer ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
-                  fill: 1,
-                ),
-                title: Text(t.settings.exoPlayer),
-                subtitle: Text(t.settings.exoPlayerDescription),
-                onTap: () async {
-                  setState(() {
-                    _useExoPlayer = true;
-                  });
-                  await _settingsService.setUseExoPlayer(true);
-                  if (context.mounted) Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: AppIcon(
-                  !_useExoPlayer ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
-                  fill: 1,
-                ),
-                title: Text(t.settings.mpv),
-                subtitle: Text(t.settings.mpvDescription),
-                onTap: () async {
-                  setState(() {
-                    _useExoPlayer = false;
-                  });
-                  await _settingsService.setUseExoPlayer(false);
-                  if (context.mounted) Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
-        );
-      },
-    );
-  }
-
   void _showKeyboardShortcutsDialog() {
     if (_keyboardService == null) return;
 
@@ -1546,11 +1634,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(t.settings.clearCache),
           content: Text(t.settings.clearCacheDescription),
           actions: [
-            TextButton(
-              autofocus: true,
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.cancel),
-            ),
+            TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1576,11 +1660,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(t.settings.resetSettings),
           content: Text(t.settings.resetSettingsDescription),
           actions: [
-            TextButton(
-              autofocus: true,
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.cancel),
-            ),
+            TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1633,50 +1713,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       case AppLocale.nb:
         return 'Norsk bokmål';
     }
-  }
-
-  void _showLanguageDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(t.settings.language),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: AppLocale.values.map((locale) {
-              final isSelected = LocaleSettings.currentLocale == locale;
-              return ListTile(
-                title: Text(_getLanguageDisplayName(locale)),
-                leading: AppIcon(
-                  isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
-                  fill: 1,
-                  color: isSelected ? Theme.of(context).colorScheme.primary : null,
-                ),
-                tileColor: isSelected ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3) : null,
-                onTap: () async {
-                  // Save the locale to settings
-                  await _settingsService.setAppLocale(locale);
-
-                  // Set the locale immediately
-                  LocaleSettings.setLocale(locale);
-
-                  // Close dialog
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                  }
-
-                  // Trigger app-wide rebuild by restarting the app
-                  if (context.mounted) {
-                    _restartApp();
-                  }
-                },
-              );
-            }).toList(),
-          ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
-        );
-      },
-    );
   }
 
   void _restartApp() {
@@ -1738,11 +1774,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ],
           ),
           actions: [
-            TextButton(
-              autofocus: true,
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.close),
-            ),
+            TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.close)),
             FilledButton(
               onPressed: () async {
                 final url = Uri.parse(_updateInfo!['releaseUrl']);
@@ -1758,117 +1790,212 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       },
     );
   }
+}
 
-  /// Generic option selection dialog for settings with SettingsProvider
-  void _showOptionSelectionDialog<T>({
-    required String title,
-    required List<_DialogOption<T>> options,
-    required T Function(SettingsProvider) getCurrentValue,
-    required Future<void> Function(T value, SettingsProvider provider) onSelect,
-  }) {
-    final settingsProvider = context.read<SettingsProvider>();
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Consumer<SettingsProvider>(
-          builder: (context, provider, child) {
-            final currentValue = getCurrentValue(provider);
-            return AlertDialog(
-              title: Text(title),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: options.map((option) {
-                  return ListTile(
+/// Bottom sheet content for settings menu (mobile)
+class _SettingsMenuSheet<T> extends StatefulWidget {
+  final String title;
+  final List<_DialogOption<T>> options;
+  final T currentValue;
+  final bool focusFirstItem;
+
+  const _SettingsMenuSheet({
+    required this.title,
+    required this.options,
+    required this.currentValue,
+    this.focusFirstItem = false,
+  });
+
+  @override
+  State<_SettingsMenuSheet<T>> createState() => _SettingsMenuSheetState<T>();
+}
+
+class _SettingsMenuSheetState<T> extends State<_SettingsMenuSheet<T>> {
+  late final FocusNode _initialFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialFocusNode = FocusNode(debugLabel: 'SettingsMenuSheetInitialFocus');
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Text(
+            widget.title,
+            style: Theme.of(context).textTheme.titleMedium,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Flexible(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...widget.options.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final option = entry.value;
+                  final isSelected = widget.currentValue == option.value;
+                  return FocusableListTile(
+                    focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+                    dense: true,
                     leading: AppIcon(
-                      currentValue == option.value
-                          ? Symbols.radio_button_checked_rounded
-                          : Symbols.radio_button_unchecked_rounded,
+                      isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
                       fill: 1,
                     ),
                     title: Text(option.title),
                     subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
-                    onTap: () async {
-                      await onSelect(option.value, settingsProvider);
-                      if (context.mounted) Navigator.pop(context);
-                    },
+                    onTap: () => OverlaySheetController.closeAdaptive(context, option.value),
                   );
-                }).toList(),
+                }),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Positioned popup menu for settings menu (desktop/TV)
+class _SettingsMenuPopup<T> extends StatefulWidget {
+  final Offset position;
+  final List<_DialogOption<T>> options;
+  final T currentValue;
+  final bool focusFirstItem;
+
+  const _SettingsMenuPopup({
+    required this.position,
+    required this.options,
+    required this.currentValue,
+    this.focusFirstItem = false,
+  });
+
+  @override
+  State<_SettingsMenuPopup<T>> createState() => _SettingsMenuPopupState<T>();
+}
+
+class _SettingsMenuPopupState<T> extends State<_SettingsMenuPopup<T>> {
+  late final FocusNode _initialFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialFocusNode = FocusNode(debugLabel: 'SettingsMenuPopupInitialFocus');
+    if (widget.focusFirstItem) {
+      FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
+    }
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    const menuWidth = 280.0;
+    const edgePadding = 8.0;
+
+    // Right-align: position.dx is the tile's right edge
+    final left = (widget.position.dx - menuWidth).clamp(edgePadding, screenSize.width - menuWidth - edgePadding);
+
+    final estimatedHeight = widget.options.length * 56.0 + 16;
+    final spaceBelow = screenSize.height - widget.position.dy - edgePadding;
+    final spaceAbove = widget.position.dy - edgePadding;
+
+    final double top;
+    final double maxHeight;
+    if (estimatedHeight <= spaceBelow) {
+      top = widget.position.dy;
+      maxHeight = spaceBelow;
+    } else if (spaceAbove > spaceBelow) {
+      final menuHeight = estimatedHeight.clamp(0.0, spaceAbove);
+      top = widget.position.dy - menuHeight;
+      maxHeight = menuHeight;
+    } else {
+      top = widget.position.dy;
+      maxHeight = spaceBelow;
+    }
+
+    return FocusScope(
+      autofocus: false,
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: (node, event) {
+          if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+            return KeyEventResult.handled;
+          }
+          if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                behavior: HitTestBehavior.opaque,
+                child: Container(color: Colors.transparent),
               ),
-              actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showLibraryDensityDialog() {
-    _showOptionSelectionDialog<settings.LibraryDensity>(
-      title: t.settings.libraryDensity,
-      options: [
-        _DialogOption(
-          value: settings.LibraryDensity.compact,
-          title: t.settings.compact,
-          subtitle: t.settings.compactDescription,
+            ),
+            Positioned(
+              left: left,
+              top: top,
+              child: Material(
+                elevation: 8,
+                color: Color.alphaBlend(
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                  Theme.of(context).colorScheme.surface,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                clipBehavior: Clip.antiAlias,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth, maxHeight: maxHeight),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: widget.options.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final option = entry.value;
+                        final isSelected = widget.currentValue == option.value;
+                        return FocusableListTile(
+                          focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+                          dense: true,
+                          leading: AppIcon(
+                            isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
+                            fill: 1,
+                          ),
+                          title: Text(option.title),
+                          subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
+                          onTap: () => Navigator.pop(context, option.value),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        _DialogOption(
-          value: settings.LibraryDensity.normal,
-          title: t.settings.normal,
-          subtitle: t.settings.normalDescription,
-        ),
-        _DialogOption(
-          value: settings.LibraryDensity.comfortable,
-          title: t.settings.comfortable,
-          subtitle: t.settings.comfortableDescription,
-        ),
-      ],
-      getCurrentValue: (p) => p.libraryDensity,
-      onSelect: (value, provider) => provider.setLibraryDensity(value),
-    );
-  }
-
-  void _showViewModeDialog() {
-    _showOptionSelectionDialog<settings.ViewMode>(
-      title: t.settings.viewMode,
-      options: [
-        _DialogOption(
-          value: settings.ViewMode.grid,
-          title: t.settings.gridView,
-          subtitle: t.settings.gridViewDescription,
-        ),
-        _DialogOption(
-          value: settings.ViewMode.list,
-          title: t.settings.listView,
-          subtitle: t.settings.listViewDescription,
-        ),
-      ],
-      getCurrentValue: (p) => p.viewMode,
-      onSelect: (value, provider) => provider.setViewMode(value),
-    );
-  }
-
-  void _showEpisodePosterModeDialog() {
-    _showOptionSelectionDialog<settings.EpisodePosterMode>(
-      title: t.settings.episodePosterMode,
-      options: [
-        _DialogOption(
-          value: settings.EpisodePosterMode.seriesPoster,
-          title: t.settings.seriesPoster,
-          subtitle: t.settings.seriesPosterDescription,
-        ),
-        _DialogOption(
-          value: settings.EpisodePosterMode.seasonPoster,
-          title: t.settings.seasonPoster,
-          subtitle: t.settings.seasonPosterDescription,
-        ),
-        _DialogOption(
-          value: settings.EpisodePosterMode.episodeThumbnail,
-          title: t.settings.episodeThumbnail,
-          subtitle: t.settings.episodeThumbnailDescription,
-        ),
-      ],
-      getCurrentValue: (p) => p.episodePosterMode,
-      onSelect: (value, provider) => provider.setEpisodePosterMode(value),
+      ),
     );
   }
 }

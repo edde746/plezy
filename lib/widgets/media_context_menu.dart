@@ -1424,6 +1424,10 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
               top: top,
               child: Material(
                 elevation: 8,
+                color: Color.alphaBlend(
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                  Theme.of(context).colorScheme.surface,
+                ),
                 borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                 clipBehavior: Clip.antiAlias,
                 child: ConstrainedBox(
