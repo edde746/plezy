@@ -226,6 +226,10 @@ class CompanionRemoteProvider with ChangeNotifier {
   }
 
   Future<void> joinSessionMulti(String sessionId, String pin, List<String> hostAddresses) async {
+    if (hostAddresses.isEmpty) {
+      throw ArgumentError('hostAddresses must not be empty');
+    }
+
     await leaveSession();
 
     _lastSessionId = sessionId;

@@ -59,10 +59,10 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
     // If serverId is null, fall back to first available server
     if (serverId == null) {
       final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-      if (!multiServerProvider.hasConnectedServers) {
+      serverId = multiServerProvider.onlineServerIds.firstOrNull;
+      if (serverId == null) {
         throw Exception(t.errors.noClientAvailable);
       }
-      serverId = multiServerProvider.onlineServerIds.first;
     }
 
     return context.getClientForServer(serverId);

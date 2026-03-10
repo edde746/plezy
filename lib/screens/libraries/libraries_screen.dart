@@ -79,10 +79,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   PlexClient get client {
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-    if (!multiServerProvider.hasConnectedServers) {
+    final serverId = multiServerProvider.onlineServerIds.firstOrNull;
+    if (serverId == null) {
       throw Exception(t.errors.noClientAvailable);
     }
-    return context.getClientForServer(multiServerProvider.onlineServerIds.first);
+    return context.getClientForServer(serverId);
   }
 
   // GlobalKeys for tabs to enable refresh

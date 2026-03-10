@@ -63,10 +63,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   PlexClient get client {
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-    if (!multiServerProvider.hasConnectedServers) {
+    final serverId = multiServerProvider.onlineServerIds.firstOrNull;
+    if (serverId == null) {
       throw Exception('No servers available');
     }
-    return context.getClientForServer(multiServerProvider.onlineServerIds.first);
+    return context.getClientForServer(serverId);
   }
 
   List<PlexMetadata> _onDeck = [];
@@ -140,10 +141,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final serverId = item?.serverId;
     if (serverId == null) {
       final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-      if (!multiServerProvider.hasConnectedServers) {
+      final fallbackId = multiServerProvider.onlineServerIds.firstOrNull;
+      if (fallbackId == null) {
         throw Exception('No servers available');
       }
-      return context.getClientForServer(multiServerProvider.onlineServerIds.first);
+      return context.getClientForServer(fallbackId);
     }
     return context.getClientForServer(serverId);
   }

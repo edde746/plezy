@@ -210,7 +210,7 @@ class PlaybackStateProvider with ChangeNotifier {
     }
 
     // Need to load next window
-    if (_client != null && _playQueueId != null) {
+    if (_client != null && _playQueueId != null && _loadedItems.isNotEmpty) {
       // Load next window centered on the item after current
       final nextItemID = _loadedItems.last.playQueueItemID;
       if (nextItemID != null) {
@@ -248,7 +248,7 @@ class PlaybackStateProvider with ChangeNotifier {
     }
 
     // Need to load previous window
-    if (_client != null && _playQueueId != null) {
+    if (_client != null && _playQueueId != null && _loadedItems.isNotEmpty) {
       final prevItemID = _loadedItems.first.playQueueItemID;
       if (prevItemID != null && prevItemID > 0) {
         final loaded = await _ensureItemsLoaded(prevItemID - 1);

@@ -50,10 +50,11 @@ extension ProviderExtensions on BuildContext {
     // If library doesn't have a serverId, fall back to first available server
     if (library.serverId == null) {
       final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
-      if (!multiServerProvider.hasConnectedServers) {
+      final serverId = multiServerProvider.onlineServerIds.firstOrNull;
+      if (serverId == null) {
         throw Exception(t.errors.noClientAvailable);
       }
-      return getClientForServer(multiServerProvider.onlineServerIds.first);
+      return getClientForServer(serverId);
     }
     return getClientForServer(library.serverId!);
   }
@@ -80,10 +81,11 @@ extension ProviderExtensions on BuildContext {
   /// Throws an exception if no servers are available
   PlexClient getFirstAvailableClient() {
     final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
-    if (!multiServerProvider.hasConnectedServers) {
+    final serverId = multiServerProvider.onlineServerIds.firstOrNull;
+    if (serverId == null) {
       throw Exception(t.errors.noClientAvailable);
     }
-    return getClientForServer(multiServerProvider.onlineServerIds.first);
+    return getClientForServer(serverId);
   }
 
   /// Get client for a serverId with fallback to first available server

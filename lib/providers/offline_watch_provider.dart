@@ -145,7 +145,7 @@ class OfflineWatchProvider extends ChangeNotifier {
     }
 
     // All episodes watched - return first episode for replay
-    return episodes.first;
+    return episodes.firstOrNull;
   }
 
   /// Find the next unwatched downloaded episode synchronously.
@@ -164,7 +164,7 @@ class OfflineWatchProvider extends ChangeNotifier {
     }
 
     // All episodes watched - return first episode for replay
-    return episodes.first;
+    return episodes.firstOrNull;
   }
 
   /// Emit a watch state change event for immediate UI update.
