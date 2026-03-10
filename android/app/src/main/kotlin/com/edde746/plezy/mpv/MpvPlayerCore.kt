@@ -586,7 +586,6 @@ class MpvPlayerCore(private val activity: Activity) :
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to remove MPV observers during dispose", e)
             }
-            detachSurfaceInternal()
         }
 
         overlayLayoutListener?.let { listener ->
@@ -621,6 +620,7 @@ class MpvPlayerCore(private val activity: Activity) :
             Thread {
                 synchronized(mpvLock) {
                     try {
+                        detachSurfaceInternal()
                         MPVLib.destroy()
                     } catch (e: Exception) {
                         Log.w(TAG, "MPV destroy failed", e)
