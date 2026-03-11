@@ -6,7 +6,6 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.edde746.plezy.mpv.MpvPlayerCore
-import com.edde746.plezy.mpv.MpvPlayerDelegate
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -15,7 +14,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
-    EventChannel.StreamHandler, ActivityAware, ExoPlayerDelegate, MpvPlayerDelegate {
+    EventChannel.StreamHandler, ActivityAware, ExoPlayerDelegate {
 
     companion object {
         private const val TAG = "ExoPlayerPlugin"
@@ -34,7 +33,6 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var activityBinding: ActivityPluginBinding? = null
     private val nameToId = mutableMapOf<String, Int>()
     private var configuredBufferSizeBytes: Int? = null
-    private var configuredTunnelingEnabled: Boolean = true
 
     private var debugLoggingEnabled: Boolean = false
     private val pendingMpvProperties = mutableListOf<Pair<String, String>>()
@@ -161,7 +159,6 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         val bufferSizeBytes = call.argument<Int>("bufferSizeBytes")
         val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: true
         configuredBufferSizeBytes = bufferSizeBytes
-        configuredTunnelingEnabled = tunnelingEnabled
 
         currentActivity.runOnUiThread {
             try {

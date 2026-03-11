@@ -55,9 +55,7 @@ import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
 import io.github.peerless2012.ass.media.widget.AssSubtitleView
 
-interface ExoPlayerDelegate {
-    fun onPropertyChange(name: String, value: Any?)
-    fun onEvent(name: String, data: Map<String, Any>?)
+interface ExoPlayerDelegate : com.edde746.plezy.shared.PlayerDelegate {
 
     /**
      * Called when ExoPlayer encounters a format it cannot play.

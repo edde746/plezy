@@ -17,7 +17,7 @@ class WatchNextPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     companion object {
         private const val TAG = "WatchNextPlugin"
-        private const val METHOD_CHANNEL = "app.plezy/watch_next"
+        private const val METHOD_CHANNEL = "com.plezy/watch_next"
 
         private var pendingDeepLink: String? = null
 

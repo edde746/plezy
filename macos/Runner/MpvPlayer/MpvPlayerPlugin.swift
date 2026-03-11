@@ -2,14 +2,19 @@ import Cocoa
 import FlutterMacOS
 
 /// Flutter plugin that bridges MPV player to Dart via method and event channels
-class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerDelegate {
+class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginShared {
 
     // MARK: - Properties
 
     private var playerCore: MpvPlayerCore?
-    private var eventSink: FlutterEventSink?
+    var eventSink: FlutterEventSink?
     private weak var registrar: FlutterPluginRegistrar?
-    private var nameToId: [String: Int] = [:]
+    var nameToId: [String: Int] = [:]
+
+    // MpvPluginShared conformance
+    var coreBase: MpvPlayerCoreBase? { playerCore }
+    func setPlayerVisible(_ visible: Bool) { playerCore?.setVisible(visible) }
+    func updatePlayerFrame() { playerCore?.updateFrame() }
 
     // PiP
     private var pipController: MpvPipController?
@@ -33,7 +38,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         )
 
         let pipChannel = FlutterMethodChannel(
-            name: "app.plezy/pip",
+            name: "com.plezy/pip",
             binaryMessenger: registrar.messenger
         )
 
@@ -198,7 +203,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         pip.stopPip()
     }
 
-    // MARK: - Method Handlers
+    // MARK: - Platform-Specific Method Handlers
 
     private func handleInitialize(result: @escaping FlutterResult) {
         DispatchQueue.main.async { [weak self] in
@@ -275,110 +280,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         }
 
         result(nil)
-    }
-
-    private func handleGetProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let name = args["name"] as? String else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'name' argument", details: nil))
-            return
-        }
-
-        let value = playerCore?.getProperty(name)
-        result(value)
-    }
-
-    private func handleObserveProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let name = args["name"] as? String,
-              let format = args["format"] as? String,
-              let id = args["id"] as? Int else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'name', 'format', or 'id' argument", details: nil))
-            return
-        }
-
-        nameToId[name] = id
-        playerCore?.observeProperty(name, format: format)
-        result(nil)
-    }
-
-    private func handleCommand(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let commandArgs = args["args"] as? [String] else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'args' argument", details: nil))
-            return
-        }
-
-        // Use async command to prevent UI blocking during network operations
-        playerCore?.commandAsync(commandArgs) { commandResult in
-            switch commandResult {
-            case .success:
-                result(nil)
-            case .failure(let error):
-                result(FlutterError(code: "COMMAND_FAILED", message: error.localizedDescription, details: nil))
-            }
-        } ?? result(nil)
-    }
-
-    private func handleSetVisible(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let visible = args["visible"] as? Bool else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'visible' argument", details: nil))
-            return
-        }
-
-        DispatchQueue.main.async { [weak self] in
-            self?.playerCore?.setVisible(visible)
-
-            // Update frame when becoming visible
-            if visible {
-                self?.playerCore?.updateFrame()
-            }
-
-            result(nil)
-        }
-    }
-
-    private func handleUpdateFrame(result: @escaping FlutterResult) {
-        DispatchQueue.main.async { [weak self] in
-            self?.playerCore?.updateFrame()
-            result(nil)
-        }
-    }
-
-    private func handleSetLogLevel(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let playerCore = playerCore else {
-            result(FlutterError(code: "NOT_INITIALIZED", message: "Player not initialized", details: nil))
-            return
-        }
-        guard let args = call.arguments as? [String: Any],
-              let level = args["level"] as? String else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'level'", details: nil))
-            return
-        }
-        playerCore.setLogLevel(level)
-        result(nil)
-    }
-
-    // MARK: - MpvPlayerDelegate
-
-    func onPropertyChange(name: String, value: Any?) {
-        guard let eventSink = eventSink else { return }
-
-        if let propId = nameToId[name] {
-            eventSink([propId, value as Any])
-        }
-    }
-
-    func onEvent(name: String, data: [String: Any]?) {
-        guard let eventSink = eventSink else { return }
-
-        var event: [String: Any] = ["type": "event", "name": name]
-        if let data = data {
-            event["data"] = data
-        }
-
-        eventSink(event)
     }
 
     // MARK: - Helpers

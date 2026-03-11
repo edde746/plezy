@@ -11,7 +11,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
-    EventChannel.StreamHandler, ActivityAware, MpvPlayerDelegate {
+    EventChannel.StreamHandler, ActivityAware, com.edde746.plezy.shared.PlayerDelegate {
 
     companion object {
         private const val TAG = "MpvPlayerPlugin"
@@ -281,7 +281,7 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         } ?: result.error("NO_PLAYER", "Player not initialized", null)
     }
 
-    // MpvPlayerDelegate
+    // PlayerDelegate
 
     override fun onPropertyChange(name: String, value: Any?) {
         val propId = nameToId[name] ?: return

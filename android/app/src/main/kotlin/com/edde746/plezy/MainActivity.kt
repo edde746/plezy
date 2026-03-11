@@ -27,9 +27,9 @@ import java.io.File
 
 class MainActivity : FlutterActivity() {
 
-    private val PIP_CHANNEL = "app.plezy/pip"
-    private val EXTERNAL_PLAYER_CHANNEL = "app.plezy/external_player"
-    private val THEME_CHANNEL = "app.plezy/theme"
+    private val PIP_CHANNEL = "com.plezy/pip"
+    private val EXTERNAL_PLAYER_CHANNEL = "com.plezy/external_player"
+    private val THEME_CHANNEL = "com.plezy/theme"
     private var watchNextPlugin: WatchNextPlugin? = null
 
     // Auto PiP state

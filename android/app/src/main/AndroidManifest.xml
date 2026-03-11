@@ -9,11 +9,7 @@
     <!-- Camera permission for QR code scanning (companion remote pairing) -->
     <uses-permission android:name="android.permission.CAMERA"/>
 
-    <!-- PIP Permissions -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-
-    <!-- Media session permissions for OS media controls -->
+    <!-- PIP and media session foreground service permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
 

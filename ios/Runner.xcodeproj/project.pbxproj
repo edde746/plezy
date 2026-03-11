@@ -16,6 +16,7 @@
 		6A8A46252EDB370C0057B88C /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8A46232EDB370C0057B88C /* MpvPlayerPlugin.swift */; };
 		6A8A46262EDB370C0057B88C /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8A46222EDB370C0057B88C /* MpvPlayerCore.swift */; };
 		B1D51A6A2F00110000000001 /* MpvPlayerCoreBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000002 /* MpvPlayerCoreBase.swift */; };
+		B1D51A6A2F00110000000005 /* MpvPlayerPluginShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000006 /* MpvPlayerPluginShared.swift */; };
 		92F969587D0E464D999910F5 /* MpvPipController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92F969587D0E464D999910F4 /* MpvPipController.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -59,7 +60,8 @@
 		6A48DFAF2EA70C7100C1F7CD /* plezy.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = plezy.icon; sourceTree = "<group>"; };
 		6A8A46222EDB370C0057B88C /* MpvPlayerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerCore.swift; sourceTree = "<group>"; };
 		6A8A46232EDB370C0057B88C /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerPlugin.swift; sourceTree = "<group>"; };
-		B1D51A6A2F00110000000002 /* MpvPlayerCoreBase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MpvPlayerCoreBase.swift; path = ../apple/Shared/MpvPlayer/MpvPlayerCoreBase.swift; sourceTree = SOURCE_ROOT; };
+		B1D51A6A2F00110000000002 /* MpvPlayerCoreBase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MpvPlayerCoreBase.swift; path = ../shared/apple/MpvPlayer/MpvPlayerCoreBase.swift; sourceTree = SOURCE_ROOT; };
+		B1D51A6A2F00110000000006 /* MpvPlayerPluginShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MpvPlayerPluginShared.swift; path = ../shared/apple/MpvPlayer/MpvPlayerPluginShared.swift; sourceTree = SOURCE_ROOT; };
 		92F969587D0E464D999910F4 /* MpvPipController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPipController.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 			isa = PBXGroup;
 			children = (
 				B1D51A6A2F00110000000002 /* MpvPlayerCoreBase.swift */,
+				B1D51A6A2F00110000000006 /* MpvPlayerPluginShared.swift */,
 				6A8A46222EDB370C0057B88C /* MpvPlayerCore.swift */,
 				6A8A46232EDB370C0057B88C /* MpvPlayerPlugin.swift */,
 				92F969587D0E464D999910F4 /* MpvPipController.swift */,
@@ -420,6 +423,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B1D51A6A2F00110000000001 /* MpvPlayerCoreBase.swift in Sources */,
+				B1D51A6A2F00110000000005 /* MpvPlayerPluginShared.swift in Sources */,
 				6A8A46252EDB370C0057B88C /* MpvPlayerPlugin.swift in Sources */,
 				6A8A46262EDB370C0057B88C /* MpvPlayerCore.swift in Sources */,
 				92F969587D0E464D999910F5 /* MpvPipController.swift in Sources */,

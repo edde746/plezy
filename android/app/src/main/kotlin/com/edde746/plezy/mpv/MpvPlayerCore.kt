@@ -16,14 +16,10 @@ import android.view.ViewTreeObserver
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.FlutterOverlayHelper
 import com.edde746.plezy.shared.FrameRateManager
+import com.edde746.plezy.shared.PlayerDelegate
 import dev.jdtech.mpv.MPVLib
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executors
-
-interface MpvPlayerDelegate {
-    fun onPropertyChange(name: String, value: Any?)
-    fun onEvent(name: String, data: Map<String, Any>?)
-}
 
 class MpvPlayerCore(private val activity: Activity) :
     SurfaceHolder.Callback,
@@ -59,7 +55,7 @@ class MpvPlayerCore(private val activity: Activity) :
     @Volatile private var disposing: Boolean = false
     private var pendingSurface: Surface? = null
     private var lastSurfaceSize: String? = null
-    var delegate: MpvPlayerDelegate? = null
+    var delegate: PlayerDelegate? = null
     var isInitialized: Boolean = false
         private set
 

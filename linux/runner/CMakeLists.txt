@@ -43,3 +43,4 @@ target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::EPOXY)
 target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
