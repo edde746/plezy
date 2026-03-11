@@ -297,6 +297,11 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Saltar automáticamente los créditos y reproducir el siguiente episodio';
 	@override String get autoSkipDelay => 'Retraso de Salto automático';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Esperar ${seconds} segundos antes de saltar automáticamente';
+	@override String get introPattern => 'Patrón de marcador de intro';
+	@override String get introPatternDescription => 'Expresión regular para reconocer marcadores de intro en los títulos de capítulos';
+	@override String get creditsPattern => 'Patrón de marcador de créditos';
+	@override String get creditsPatternDescription => 'Expresión regular para reconocer marcadores de créditos en los títulos de capítulos';
+	@override String get invalidRegex => 'Expresión regular no válida';
 	@override String get downloads => 'Descargas';
 	@override String get downloadLocationDescription => 'Elegir dónde almacenar el contenido descargado';
 	@override String get downloadLocationDefault => 'Predeterminado (Almacenamiento de la App)';
@@ -1472,6 +1477,11 @@ extension on TranslationsEs {
 			'settings.autoSkipCreditsDescription' => 'Saltar automáticamente los créditos y reproducir el siguiente episodio',
 			'settings.autoSkipDelay' => 'Retraso de Salto automático',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Esperar ${seconds} segundos antes de saltar automáticamente',
+			'settings.introPattern' => 'Patrón de marcador de intro',
+			'settings.introPatternDescription' => 'Expresión regular para reconocer marcadores de intro en los títulos de capítulos',
+			'settings.creditsPattern' => 'Patrón de marcador de créditos',
+			'settings.creditsPatternDescription' => 'Expresión regular para reconocer marcadores de créditos en los títulos de capítulos',
+			'settings.invalidRegex' => 'Expresión regular no válida',
 			'settings.downloads' => 'Descargas',
 			'settings.downloadLocationDescription' => 'Elegir dónde almacenar el contenido descargado',
 			'settings.downloadLocationDefault' => 'Predeterminado (Almacenamiento de la App)',
@@ -1811,13 +1821,13 @@ extension on TranslationsEs {
 			'liveTv.noPrograms' => 'No hay datos de programación disponibles',
 			'liveTv.channelNumber' => ({required Object number}) => 'Canal ${number}',
 			'liveTv.live' => 'EN VIVO',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NUEVO',
 			'liveTv.reloadGuide' => 'Recargar guía',
 			'liveTv.allChannels' => 'Todos los canales',
 			'liveTv.now' => 'Ahora',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Hoy',
 			'liveTv.midnight' => 'Medianoche',
 			'liveTv.overnight' => 'Madrugada',

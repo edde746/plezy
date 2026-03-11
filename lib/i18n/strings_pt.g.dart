@@ -297,6 +297,11 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Pular créditos automaticamente e reproduzir próximo episódio';
 	@override String get autoSkipDelay => 'Atraso do Pulo Automático';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Aguardar ${seconds} segundos antes de pular automaticamente';
+	@override String get introPattern => 'Padrão de marcador de intro';
+	@override String get introPatternDescription => 'Expressão regular para corresponder marcadores de intro nos títulos dos capítulos';
+	@override String get creditsPattern => 'Padrão de marcador de créditos';
+	@override String get creditsPatternDescription => 'Expressão regular para corresponder marcadores de créditos nos títulos dos capítulos';
+	@override String get invalidRegex => 'Expressão regular inválida';
 	@override String get downloads => 'Downloads';
 	@override String get downloadLocationDescription => 'Escolha onde armazenar conteúdo baixado';
 	@override String get downloadLocationDefault => 'Padrão (Armazenamento do App)';
@@ -1472,6 +1477,11 @@ extension on TranslationsPt {
 			'settings.autoSkipCreditsDescription' => 'Pular créditos automaticamente e reproduzir próximo episódio',
 			'settings.autoSkipDelay' => 'Atraso do Pulo Automático',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Aguardar ${seconds} segundos antes de pular automaticamente',
+			'settings.introPattern' => 'Padrão de marcador de intro',
+			'settings.introPatternDescription' => 'Expressão regular para corresponder marcadores de intro nos títulos dos capítulos',
+			'settings.creditsPattern' => 'Padrão de marcador de créditos',
+			'settings.creditsPatternDescription' => 'Expressão regular para corresponder marcadores de créditos nos títulos dos capítulos',
+			'settings.invalidRegex' => 'Expressão regular inválida',
 			'settings.downloads' => 'Downloads',
 			'settings.downloadLocationDescription' => 'Escolha onde armazenar conteúdo baixado',
 			'settings.downloadLocationDefault' => 'Padrão (Armazenamento do App)',
@@ -1811,13 +1821,13 @@ extension on TranslationsPt {
 			'liveTv.noPrograms' => 'Nenhum dado de programação disponível',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'AO VIVO',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NOVO',
 			'liveTv.reloadGuide' => 'Recarregar Guia',
 			'liveTv.allChannels' => 'Todos os Canais',
 			'liveTv.now' => 'Agora',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Hoje',
 			'liveTv.midnight' => 'Meia-noite',
 			'liveTv.overnight' => 'Madrugada',

@@ -637,6 +637,21 @@ class TranslationsSettingsEn {
 	/// en: 'Wait ${seconds} seconds before auto-skipping'
 	String autoSkipDelayDescription({required Object seconds}) => 'Wait ${seconds} seconds before auto-skipping';
 
+	/// en: 'Intro Marker Pattern'
+	String get introPattern => 'Intro Marker Pattern';
+
+	/// en: 'Regex pattern to match intro markers in chapter titles'
+	String get introPatternDescription => 'Regex pattern to match intro markers in chapter titles';
+
+	/// en: 'Credits Marker Pattern'
+	String get creditsPattern => 'Credits Marker Pattern';
+
+	/// en: 'Regex pattern to match credits markers in chapter titles'
+	String get creditsPatternDescription => 'Regex pattern to match credits markers in chapter titles';
+
+	/// en: 'Invalid regular expression'
+	String get invalidRegex => 'Invalid regular expression';
+
 	/// en: 'Downloads'
 	String get downloads => 'Downloads';
 
@@ -3093,6 +3108,11 @@ extension on Translations {
 			'settings.autoSkipCreditsDescription' => 'Automatically skip credits and play next episode',
 			'settings.autoSkipDelay' => 'Auto Skip Delay',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Wait ${seconds} seconds before auto-skipping',
+			'settings.introPattern' => 'Intro Marker Pattern',
+			'settings.introPatternDescription' => 'Regex pattern to match intro markers in chapter titles',
+			'settings.creditsPattern' => 'Credits Marker Pattern',
+			'settings.creditsPatternDescription' => 'Regex pattern to match credits markers in chapter titles',
+			'settings.invalidRegex' => 'Invalid regular expression',
 			'settings.downloads' => 'Downloads',
 			'settings.downloadLocationDescription' => 'Choose where to store downloaded content',
 			'settings.downloadLocationDefault' => 'Default (App Storage)',
@@ -3432,13 +3452,13 @@ extension on Translations {
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'LIVE',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEW',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.allChannels' => 'All Channels',
 			'liveTv.now' => 'Now',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',

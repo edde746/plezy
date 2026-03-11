@@ -227,29 +227,42 @@ class PlaybackExtras {
 
   PlaybackExtras({required this.chapters, required this.markers});
 
-  static final _introPattern = RegExp(
-    r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$',
-    caseSensitive: false,
-  );
-  static final _creditsPattern = RegExp(
-    r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
-    caseSensitive: false,
-  );
-
-  static String? _classifyChapterTitle(String title) {
-    if (_introPattern.hasMatch(title)) return 'intro';
-    if (_creditsPattern.hasMatch(title)) return 'credits';
+  static String? _classifyChapterTitle(String title, RegExp introPattern, RegExp creditsPattern) {
+    if (introPattern.hasMatch(title)) return 'intro';
+    if (creditsPattern.hasMatch(title)) return 'credits';
     return null;
   }
 
   /// Returns [PlaybackExtras] using real markers when available, otherwise
   /// synthesises markers from chapter titles matching intro/credits patterns.
+  /// When real markers exist, reclassifies markers with unknown types against
+  /// the patterns so non-standard type strings (e.g. "OP-Song") get recognized.
   factory PlaybackExtras.withChapterFallback({
     required List<PlexChapter> chapters,
     required List<PlexMarker> markers,
+    String? introPatternStr,
+    String? creditsPatternStr,
   }) {
+    final introPattern = RegExp(
+      introPatternStr ?? r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$',
+      caseSensitive: false,
+    );
+    final creditsPattern = RegExp(
+      creditsPatternStr ?? r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
+      caseSensitive: false,
+    );
+
     if (markers.isNotEmpty) {
-      return PlaybackExtras(chapters: chapters, markers: markers);
+      // Reclassify markers with non-standard types against the patterns
+      final reclassified = markers.map((m) {
+        if (m.type == 'intro' || m.type == 'credits') return m;
+        final newType = _classifyChapterTitle(m.type, introPattern, creditsPattern);
+        if (newType != null) {
+          return PlexMarker(id: m.id, type: newType, startTimeOffset: m.startTimeOffset, endTimeOffset: m.endTimeOffset);
+        }
+        return m;
+      }).toList();
+      return PlaybackExtras(chapters: chapters, markers: reclassified);
     }
 
     final synthetic = <PlexMarker>[];
@@ -258,7 +271,7 @@ class PlaybackExtras {
       final title = ch.title;
       if (title == null || title.isEmpty) continue;
 
-      final type = _classifyChapterTitle(title);
+      final type = _classifyChapterTitle(title, introPattern, creditsPattern);
       if (type == null) continue;
 
       final start = ch.startTimeOffset;

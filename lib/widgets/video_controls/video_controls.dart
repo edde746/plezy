@@ -929,7 +929,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       final client = _getClientForMetadata();
       appLogger.d('_loadPlaybackExtras: got client with serverId=${client.serverId}');
 
-      final extras = await client.getPlaybackExtras(widget.metadata.ratingKey);
+      final settings = await SettingsService.getInstance();
+      final introPattern = settings.getIntroPattern();
+      final creditsPattern = settings.getCreditsPattern();
+      final extras = await client.getPlaybackExtras(widget.metadata.ratingKey, introPattern: introPattern, creditsPattern: creditsPattern);
       appLogger.d('_loadPlaybackExtras: got ${extras.chapters.length} chapters');
 
       if (mounted) {
@@ -948,7 +951,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         final cacheKey = '/library/metadata/${widget.metadata.ratingKey}';
         final cached = await PlexApiCache.instance.get(serverId, cacheKey);
         if (cached != null) {
-          final extras = _parsePlaybackExtrasFromCache(cached);
+          final extras = await _parsePlaybackExtrasFromCache(cached);
           appLogger.d('_loadPlaybackExtras: loaded ${extras.chapters.length} chapters from cache');
           if (mounted) {
             setState(() {
@@ -966,7 +969,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Parse PlaybackExtras from cached API response (for offline playback)
-  PlaybackExtras _parsePlaybackExtrasFromCache(Map<String, dynamic> cached) {
+  Future<PlaybackExtras> _parsePlaybackExtrasFromCache(Map<String, dynamic> cached) async {
     final chapters = <PlexChapter>[];
     final markers = <PlexMarker>[];
 
@@ -1003,7 +1006,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       }
     }
 
-    return PlaybackExtras.withChapterFallback(chapters: chapters, markers: markers);
+    final settings = await SettingsService.getInstance();
+    return PlaybackExtras.withChapterFallback(
+      chapters: chapters,
+      markers: markers,
+      introPatternStr: settings.getIntroPattern(),
+      creditsPatternStr: settings.getCreditsPattern(),
+    );
   }
 
   TrackControlsState _buildTrackControlsState({

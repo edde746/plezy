@@ -297,6 +297,11 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Abspann automatisch überspringen und nächste Episode abspielen';
 	@override String get autoSkipDelay => 'Verzögerung für automatisches Überspringen';
 	@override String autoSkipDelayDescription({required Object seconds}) => '${seconds} Sekunden vor dem automatischen Überspringen warten';
+	@override String get introPattern => 'Intro-Markierungsmuster';
+	@override String get introPatternDescription => 'Regulärer Ausdruck zum Erkennen von Intro-Markierungen in Kapiteltiteln';
+	@override String get creditsPattern => 'Abspann-Markierungsmuster';
+	@override String get creditsPatternDescription => 'Regulärer Ausdruck zum Erkennen von Abspann-Markierungen in Kapiteltiteln';
+	@override String get invalidRegex => 'Ungültiger regulärer Ausdruck';
 	@override String get downloads => 'Downloads';
 	@override String get downloadLocationDescription => 'Speicherort für heruntergeladene Inhalte wählen';
 	@override String get downloadLocationDefault => 'Standard (App-Speicher)';
@@ -1472,6 +1477,11 @@ extension on TranslationsDe {
 			'settings.autoSkipCreditsDescription' => 'Abspann automatisch überspringen und nächste Episode abspielen',
 			'settings.autoSkipDelay' => 'Verzögerung für automatisches Überspringen',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '${seconds} Sekunden vor dem automatischen Überspringen warten',
+			'settings.introPattern' => 'Intro-Markierungsmuster',
+			'settings.introPatternDescription' => 'Regulärer Ausdruck zum Erkennen von Intro-Markierungen in Kapiteltiteln',
+			'settings.creditsPattern' => 'Abspann-Markierungsmuster',
+			'settings.creditsPatternDescription' => 'Regulärer Ausdruck zum Erkennen von Abspann-Markierungen in Kapiteltiteln',
+			'settings.invalidRegex' => 'Ungültiger regulärer Ausdruck',
 			'settings.downloads' => 'Downloads',
 			'settings.downloadLocationDescription' => 'Speicherort für heruntergeladene Inhalte wählen',
 			'settings.downloadLocationDefault' => 'Standard (App-Speicher)',
@@ -1811,13 +1821,13 @@ extension on TranslationsDe {
 			'liveTv.noPrograms' => 'Keine Programmdaten verfügbar',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEU',
 			'liveTv.reloadGuide' => 'Programmführer neu laden',
 			'liveTv.allChannels' => 'Alle Kanäle',
 			'liveTv.now' => 'Jetzt',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Heute',
 			'liveTv.midnight' => 'Mitternacht',
 			'liveTv.overnight' => 'Nacht',

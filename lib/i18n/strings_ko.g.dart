@@ -297,6 +297,11 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생';
 	@override String get autoSkipDelay => '자동 건너뛰기 지연';
 	@override String autoSkipDelayDescription({required Object seconds}) => '자동 건너뛰기 전 ${seconds} 초 대기';
+	@override String get introPattern => '인트로 마커 패턴';
+	@override String get introPatternDescription => '챕터 제목에서 인트로 마커를 인식하는 정규식 패턴';
+	@override String get creditsPattern => '크레딧 마커 패턴';
+	@override String get creditsPatternDescription => '챕터 제목에서 크레딧 마커를 인식하는 정규식 패턴';
+	@override String get invalidRegex => '잘못된 정규식';
 	@override String get downloads => '다운로드';
 	@override String get downloadLocationDescription => '다운로드 콘텐츠 저장 위치 선택';
 	@override String get downloadLocationDefault => '기본값 (앱 저장소)';
@@ -1472,6 +1477,11 @@ extension on TranslationsKo {
 			'settings.autoSkipCreditsDescription' => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생',
 			'settings.autoSkipDelay' => '자동 건너뛰기 지연',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '자동 건너뛰기 전 ${seconds} 초 대기',
+			'settings.introPattern' => '인트로 마커 패턴',
+			'settings.introPatternDescription' => '챕터 제목에서 인트로 마커를 인식하는 정규식 패턴',
+			'settings.creditsPattern' => '크레딧 마커 패턴',
+			'settings.creditsPatternDescription' => '챕터 제목에서 크레딧 마커를 인식하는 정규식 패턴',
+			'settings.invalidRegex' => '잘못된 정규식',
 			'settings.downloads' => '다운로드',
 			'settings.downloadLocationDescription' => '다운로드 콘텐츠 저장 위치 선택',
 			'settings.downloadLocationDefault' => '기본값 (앱 저장소)',
@@ -1811,13 +1821,13 @@ extension on TranslationsKo {
 			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
 			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
 			'liveTv.live' => '실시간',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '신규',
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.allChannels' => '전체 채널',
 			'liveTv.now' => '지금',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
 			'liveTv.overnight' => '심야',

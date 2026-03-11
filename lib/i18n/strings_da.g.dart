@@ -297,6 +297,11 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Spring automatisk rulletekster over og afspil næste episode';
 	@override String get autoSkipDelay => 'Auto-spring forsinkelse';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk spring';
+	@override String get introPattern => 'Intromarkørmønster';
+	@override String get introPatternDescription => 'Regulært udtryk til at genkende intromarkører i kapiteltitler';
+	@override String get creditsPattern => 'Rulletekstmarkørmønster';
+	@override String get creditsPatternDescription => 'Regulært udtryk til at genkende rulletekstmarkører i kapiteltitler';
+	@override String get invalidRegex => 'Ugyldigt regulært udtryk';
 	@override String get downloads => 'Downloads';
 	@override String get downloadLocationDescription => 'Vælg hvor downloadet indhold skal gemmes';
 	@override String get downloadLocationDefault => 'Standard (App-lagring)';
@@ -1472,6 +1477,11 @@ extension on TranslationsDa {
 			'settings.autoSkipCreditsDescription' => 'Spring automatisk rulletekster over og afspil næste episode',
 			'settings.autoSkipDelay' => 'Auto-spring forsinkelse',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk spring',
+			'settings.introPattern' => 'Intromarkørmønster',
+			'settings.introPatternDescription' => 'Regulært udtryk til at genkende intromarkører i kapiteltitler',
+			'settings.creditsPattern' => 'Rulletekstmarkørmønster',
+			'settings.creditsPatternDescription' => 'Regulært udtryk til at genkende rulletekstmarkører i kapiteltitler',
+			'settings.invalidRegex' => 'Ugyldigt regulært udtryk',
 			'settings.downloads' => 'Downloads',
 			'settings.downloadLocationDescription' => 'Vælg hvor downloadet indhold skal gemmes',
 			'settings.downloadLocationDefault' => 'Standard (App-lagring)',
@@ -1811,13 +1821,13 @@ extension on TranslationsDa {
 			'liveTv.noPrograms' => 'Ingen programdata tilgængelig',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kn. ${number}',
 			'liveTv.live' => 'LIVE',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Genindlæs guide',
 			'liveTv.allChannels' => 'Alle kanaler',
 			'liveTv.now' => 'Nu',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'I dag',
 			'liveTv.midnight' => 'Midnat',
 			'liveTv.overnight' => 'Nat',

@@ -297,6 +297,11 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Hoppa automatiskt över credits och spela nästa avsnitt';
 	@override String get autoSkipDelay => 'Fördröjning Auto Hoppa Över';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Vänta ${seconds} sekunder innan automatisk överhoppning';
+	@override String get introPattern => 'Intromarkörsmönster';
+	@override String get introPatternDescription => 'Reguljärt uttryck för att matcha intromarkörer i kapiteltitlar';
+	@override String get creditsPattern => 'Eftertextmarkörsmönster';
+	@override String get creditsPatternDescription => 'Reguljärt uttryck för att matcha eftertextmarkörer i kapiteltitlar';
+	@override String get invalidRegex => 'Ogiltigt reguljärt uttryck';
 	@override String get downloads => 'Nedladdningar';
 	@override String get downloadLocationDescription => 'Välj var nedladdat innehåll ska lagras';
 	@override String get downloadLocationDefault => 'Standard (App-lagring)';
@@ -1472,6 +1477,11 @@ extension on TranslationsSv {
 			'settings.autoSkipCreditsDescription' => 'Hoppa automatiskt över credits och spela nästa avsnitt',
 			'settings.autoSkipDelay' => 'Fördröjning Auto Hoppa Över',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Vänta ${seconds} sekunder innan automatisk överhoppning',
+			'settings.introPattern' => 'Intromarkörsmönster',
+			'settings.introPatternDescription' => 'Reguljärt uttryck för att matcha intromarkörer i kapiteltitlar',
+			'settings.creditsPattern' => 'Eftertextmarkörsmönster',
+			'settings.creditsPatternDescription' => 'Reguljärt uttryck för att matcha eftertextmarkörer i kapiteltitlar',
+			'settings.invalidRegex' => 'Ogiltigt reguljärt uttryck',
 			'settings.downloads' => 'Nedladdningar',
 			'settings.downloadLocationDescription' => 'Välj var nedladdat innehåll ska lagras',
 			'settings.downloadLocationDefault' => 'Standard (App-lagring)',
@@ -1811,13 +1821,13 @@ extension on TranslationsSv {
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.allChannels' => 'Alla kanaler',
 			'liveTv.now' => 'Nu',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
 			'liveTv.overnight' => 'Natt',

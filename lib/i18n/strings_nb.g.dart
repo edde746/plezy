@@ -297,6 +297,11 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Hopp automatisk over rulletekst og spill neste episode';
 	@override String get autoSkipDelay => 'Forsinkelse for automatisk hopp';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk hopping';
+	@override String get introPattern => 'Intromarkørmønster';
+	@override String get introPatternDescription => 'Regulært uttrykk for å gjenkjenne intromarkører i kapitteltitler';
+	@override String get creditsPattern => 'Rulletekstmarkørmønster';
+	@override String get creditsPatternDescription => 'Regulært uttrykk for å gjenkjenne rulletekstmarkører i kapitteltitler';
+	@override String get invalidRegex => 'Ugyldig regulært uttrykk';
 	@override String get downloads => 'Nedlastinger';
 	@override String get downloadLocationDescription => 'Velg hvor nedlastet innhold skal lagres';
 	@override String get downloadLocationDefault => 'Standard (App-lagring)';
@@ -1472,6 +1477,11 @@ extension on TranslationsNb {
 			'settings.autoSkipCreditsDescription' => 'Hopp automatisk over rulletekst og spill neste episode',
 			'settings.autoSkipDelay' => 'Forsinkelse for automatisk hopp',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk hopping',
+			'settings.introPattern' => 'Intromarkørmønster',
+			'settings.introPatternDescription' => 'Regulært uttrykk for å gjenkjenne intromarkører i kapitteltitler',
+			'settings.creditsPattern' => 'Rulletekstmarkørmønster',
+			'settings.creditsPatternDescription' => 'Regulært uttrykk for å gjenkjenne rulletekstmarkører i kapitteltitler',
+			'settings.invalidRegex' => 'Ugyldig regulært uttrykk',
 			'settings.downloads' => 'Nedlastinger',
 			'settings.downloadLocationDescription' => 'Velg hvor nedlastet innhold skal lagres',
 			'settings.downloadLocationDefault' => 'Standard (App-lagring)',
@@ -1811,13 +1821,13 @@ extension on TranslationsNb {
 			'liveTv.noPrograms' => 'Ingen programdata tilgjengelig',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'DIREKTE',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Last inn programguide på nytt',
 			'liveTv.allChannels' => 'Alle kanaler',
 			'liveTv.now' => 'Nå',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'I dag',
 			'liveTv.midnight' => 'Midnatt',
 			'liveTv.overnight' => 'Natt',

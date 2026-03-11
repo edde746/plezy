@@ -98,6 +98,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kAutoSkipIntro = 'auto_skip_intro';
   static const _kAutoSkipCredits = 'auto_skip_credits';
   static const _kAutoSkipDelay = 'auto_skip_delay';
+  static const _kIntroPattern = 'intro_pattern';
+  static const _kCreditsPattern = 'credits_pattern';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kVideoPlayerControls = 'video_player_controls';
@@ -125,6 +127,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _autoSkipIntro = false;
   bool _autoSkipCredits = false;
   int _autoSkipDelay = 5;
+  String _introPattern = settings.SettingsService.defaultIntroPattern;
+  String _creditsPattern = settings.SettingsService.defaultCreditsPattern;
   bool _downloadOnWifiOnly = false;
   bool _videoPlayerNavigationEnabled = false;
   int _maxVolume = 100;
@@ -202,6 +206,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _autoSkipIntro = _settingsService.getAutoSkipIntro();
       _autoSkipCredits = _settingsService.getAutoSkipCredits();
       _autoSkipDelay = _settingsService.getAutoSkipDelay();
+      _introPattern = _settingsService.getIntroPattern();
+      _creditsPattern = _settingsService.getCreditsPattern();
       _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
       _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
       _maxVolume = _settingsService.getMaxVolume();
@@ -873,6 +879,38 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             subtitle: Text(t.settings.autoSkipDelayDescription(seconds: _autoSkipDelay.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showAutoSkipDelayDialog(),
+          ),
+          ListTile(
+            focusNode: _focusTracker.get(_kIntroPattern),
+            leading: const AppIcon(Symbols.match_case_rounded, fill: 1),
+            title: Text(t.settings.introPattern),
+            subtitle: Text(t.settings.introPatternDescription),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            onTap: () => _showTextInputDialog(
+              title: t.settings.introPattern,
+              currentValue: _introPattern,
+              defaultValue: settings.SettingsService.defaultIntroPattern,
+              onSave: (value) async {
+                setState(() => _introPattern = value);
+                await _settingsService.setIntroPattern(value);
+              },
+            ),
+          ),
+          ListTile(
+            focusNode: _focusTracker.get(_kCreditsPattern),
+            leading: const AppIcon(Symbols.match_case_rounded, fill: 1),
+            title: Text(t.settings.creditsPattern),
+            subtitle: Text(t.settings.creditsPatternDescription),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            onTap: () => _showTextInputDialog(
+              title: t.settings.creditsPattern,
+              currentValue: _creditsPattern,
+              defaultValue: settings.SettingsService.defaultCreditsPattern,
+              onSave: (value) async {
+                setState(() => _creditsPattern = value);
+                await _settingsService.setCreditsPattern(value);
+              },
+            ),
           ),
         ],
       ),
@@ -1600,6 +1638,69 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         await _settingsService.setAutoSkipDelay(value);
       },
     );
+  }
+
+  void _showTextInputDialog({
+    required String title,
+    required String currentValue,
+    required String defaultValue,
+    required Future<void> Function(String value) onSave,
+  }) {
+    final controller = TextEditingController(text: currentValue);
+    String? errorText;
+    final saveFocusNode = FocusNode();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(title),
+              content: TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: 'Regex',
+                  errorText: errorText,
+                ),
+                autofocus: true,
+                textInputAction: TextInputAction.done,
+                onEditingComplete: () => saveFocusNode.requestFocus(),
+                onChanged: (value) {
+                  setDialogState(() {
+                    try {
+                      RegExp(value, caseSensitive: false);
+                      errorText = null;
+                    } catch (_) {
+                      errorText = t.settings.invalidRegex;
+                    }
+                  });
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    controller.text = defaultValue;
+                    setDialogState(() => errorText = null);
+                  },
+                  child: Text(t.settings.resetToDefault),
+                ),
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
+                TextButton(
+                  focusNode: saveFocusNode,
+                  onPressed: () async {
+                    if (errorText != null) return;
+                    await onSave(controller.text);
+                    if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  },
+                  child: Text(t.common.save),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((_) => saveFocusNode.dispose());
   }
 
   void _showMaxVolumeDialog() {

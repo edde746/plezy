@@ -297,6 +297,11 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Автоматически пропускать титры и воспроизводить следующий эпизод';
 	@override String get autoSkipDelay => 'Задержка автопропуска';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Подождать ${seconds} секунд перед автопропуском';
+	@override String get introPattern => 'Шаблон маркера вступления';
+	@override String get introPatternDescription => 'Регулярное выражение для распознавания маркеров вступления в заголовках глав';
+	@override String get creditsPattern => 'Шаблон маркера титров';
+	@override String get creditsPatternDescription => 'Регулярное выражение для распознавания маркеров титров в заголовках глав';
+	@override String get invalidRegex => 'Недопустимое регулярное выражение';
 	@override String get downloads => 'Загрузки';
 	@override String get downloadLocationDescription => 'Выберите место для хранения загруженного контента';
 	@override String get downloadLocationDefault => 'По умолчанию (Хранилище приложения)';
@@ -1472,6 +1477,11 @@ extension on TranslationsRu {
 			'settings.autoSkipCreditsDescription' => 'Автоматически пропускать титры и воспроизводить следующий эпизод',
 			'settings.autoSkipDelay' => 'Задержка автопропуска',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Подождать ${seconds} секунд перед автопропуском',
+			'settings.introPattern' => 'Шаблон маркера вступления',
+			'settings.introPatternDescription' => 'Регулярное выражение для распознавания маркеров вступления в заголовках глав',
+			'settings.creditsPattern' => 'Шаблон маркера титров',
+			'settings.creditsPatternDescription' => 'Регулярное выражение для распознавания маркеров титров в заголовках глав',
+			'settings.invalidRegex' => 'Недопустимое регулярное выражение',
 			'settings.downloads' => 'Загрузки',
 			'settings.downloadLocationDescription' => 'Выберите место для хранения загруженного контента',
 			'settings.downloadLocationDefault' => 'По умолчанию (Хранилище приложения)',
@@ -1811,13 +1821,13 @@ extension on TranslationsRu {
 			'liveTv.noPrograms' => 'Нет данных о программах',
 			'liveTv.channelNumber' => ({required Object number}) => 'Кн. ${number}',
 			'liveTv.live' => 'ЭФИР',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'НОВОЕ',
 			'liveTv.reloadGuide' => 'Перезагрузить программу',
 			'liveTv.allChannels' => 'Все каналы',
 			'liveTv.now' => 'Сейчас',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Сегодня',
 			'liveTv.midnight' => 'Полночь',
 			'liveTv.overnight' => 'Ночь',

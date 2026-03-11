@@ -297,6 +297,11 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Automatycznie pomijaj napisy końcowe i odtwórz następny odcinek';
 	@override String get autoSkipDelay => 'Opóźnienie automatycznego pomijania';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Czekaj ${seconds} sekund przed automatycznym pominięciem';
+	@override String get introPattern => 'Wzorzec znacznika intro';
+	@override String get introPatternDescription => 'Wyrażenie regularne do rozpoznawania znaczników intro w tytułach rozdziałów';
+	@override String get creditsPattern => 'Wzorzec znacznika napisów końcowych';
+	@override String get creditsPatternDescription => 'Wyrażenie regularne do rozpoznawania znaczników napisów końcowych w tytułach rozdziałów';
+	@override String get invalidRegex => 'Nieprawidłowe wyrażenie regularne';
 	@override String get downloads => 'Pobrania';
 	@override String get downloadLocationDescription => 'Wybierz miejsce przechowywania pobranych treści';
 	@override String get downloadLocationDefault => 'Domyślne (Pamięć aplikacji)';
@@ -1472,6 +1477,11 @@ extension on TranslationsPl {
 			'settings.autoSkipCreditsDescription' => 'Automatycznie pomijaj napisy końcowe i odtwórz następny odcinek',
 			'settings.autoSkipDelay' => 'Opóźnienie automatycznego pomijania',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Czekaj ${seconds} sekund przed automatycznym pominięciem',
+			'settings.introPattern' => 'Wzorzec znacznika intro',
+			'settings.introPatternDescription' => 'Wyrażenie regularne do rozpoznawania znaczników intro w tytułach rozdziałów',
+			'settings.creditsPattern' => 'Wzorzec znacznika napisów końcowych',
+			'settings.creditsPatternDescription' => 'Wyrażenie regularne do rozpoznawania znaczników napisów końcowych w tytułach rozdziałów',
+			'settings.invalidRegex' => 'Nieprawidłowe wyrażenie regularne',
 			'settings.downloads' => 'Pobrania',
 			'settings.downloadLocationDescription' => 'Wybierz miejsce przechowywania pobranych treści',
 			'settings.downloadLocationDefault' => 'Domyślne (Pamięć aplikacji)',
@@ -1811,13 +1821,13 @@ extension on TranslationsPl {
 			'liveTv.noPrograms' => 'Brak danych o programach',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kn. ${number}',
 			'liveTv.live' => 'NA ŻYWO',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NOWE',
 			'liveTv.reloadGuide' => 'Odśwież przewodnik',
 			'liveTv.allChannels' => 'Wszystkie kanały',
 			'liveTv.now' => 'Teraz',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Dzisiaj',
 			'liveTv.midnight' => 'Północ',
 			'liveTv.overnight' => 'Nocą',

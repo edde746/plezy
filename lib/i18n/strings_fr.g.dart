@@ -297,6 +297,11 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Passer les crédits et passer à l\'épisode suivant automatiquement';
 	@override String get autoSkipDelay => 'Délai avant skip automatique';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Attendre ${seconds} secondes avant l\'auto-skip';
+	@override String get introPattern => 'Modèle de marqueur d\'intro';
+	@override String get introPatternDescription => 'Expression régulière pour reconnaître les marqueurs d\'intro dans les titres de chapitres';
+	@override String get creditsPattern => 'Modèle de marqueur de générique';
+	@override String get creditsPatternDescription => 'Expression régulière pour reconnaître les marqueurs de générique dans les titres de chapitres';
+	@override String get invalidRegex => 'Expression régulière invalide';
 	@override String get downloads => 'Téléchargement';
 	@override String get downloadLocationDescription => 'Choisissez où stocker le contenu téléchargé';
 	@override String get downloadLocationDefault => 'Par défaut (stockage de l\'application)';
@@ -1472,6 +1477,11 @@ extension on TranslationsFr {
 			'settings.autoSkipCreditsDescription' => 'Passer les crédits et passer à l\'épisode suivant automatiquement',
 			'settings.autoSkipDelay' => 'Délai avant skip automatique',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Attendre ${seconds} secondes avant l\'auto-skip',
+			'settings.introPattern' => 'Modèle de marqueur d\'intro',
+			'settings.introPatternDescription' => 'Expression régulière pour reconnaître les marqueurs d\'intro dans les titres de chapitres',
+			'settings.creditsPattern' => 'Modèle de marqueur de générique',
+			'settings.creditsPatternDescription' => 'Expression régulière pour reconnaître les marqueurs de générique dans les titres de chapitres',
+			'settings.invalidRegex' => 'Expression régulière invalide',
 			'settings.downloads' => 'Téléchargement',
 			'settings.downloadLocationDescription' => 'Choisissez où stocker le contenu téléchargé',
 			'settings.downloadLocationDefault' => 'Par défaut (stockage de l\'application)',
@@ -1811,13 +1821,13 @@ extension on TranslationsFr {
 			'liveTv.noPrograms' => 'Aucune donnée de programme disponible',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'EN DIRECT',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NOUVEAU',
 			'liveTv.reloadGuide' => 'Recharger le guide',
 			'liveTv.allChannels' => 'Toutes les chaînes',
 			'liveTv.now' => 'Maintenant',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Aujourd\'hui',
 			'liveTv.midnight' => 'Minuit',
 			'liveTv.overnight' => 'Nuit',

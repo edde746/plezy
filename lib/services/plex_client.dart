@@ -954,7 +954,7 @@ class PlexClient {
 
   /// Get chapters and markers from cached metadata or fetch if needed
   /// Uses same cache key as other metadata methods for consistency
-  Future<PlaybackExtras> getPlaybackExtras(String ratingKey) async {
+  Future<PlaybackExtras> getPlaybackExtras(String ratingKey, {String? introPattern, String? creditsPattern}) async {
     try {
       final data = await _fetchWithCacheFirst<Map<String, dynamic>>(
         cacheKey: '/library/metadata/$ratingKey',
@@ -964,7 +964,7 @@ class PlexClient {
         parseResponse: (response) => response.data as Map<String, dynamic>?,
       );
       final metadataJson = _getFirstMetadataJsonFromData(data);
-      return _parsePlaybackExtrasFromMetadataJson(metadataJson);
+      return _parsePlaybackExtrasFromMetadataJson(metadataJson, introPattern: introPattern, creditsPattern: creditsPattern);
     } catch (e) {
       appLogger.w('Failed to get playback extras', error: e);
       return PlaybackExtras(chapters: [], markers: []);
@@ -972,10 +972,12 @@ class PlexClient {
   }
 
   /// Parse PlaybackExtras from metadata JSON
-  PlaybackExtras _parsePlaybackExtrasFromMetadataJson(Map<String, dynamic>? metadataJson) {
+  PlaybackExtras _parsePlaybackExtrasFromMetadataJson(Map<String, dynamic>? metadataJson, {String? introPattern, String? creditsPattern}) {
     return PlaybackExtras.withChapterFallback(
       chapters: _parseChapters(metadataJson),
       markers: _parseMarkers(metadataJson),
+      introPatternStr: introPattern,
+      creditsPatternStr: creditsPattern,
     );
   }
 

@@ -57,6 +57,13 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyAutoSkipIntro = 'auto_skip_intro';
   static const String _keyAutoSkipCredits = 'auto_skip_credits';
   static const String _keyAutoSkipDelay = 'auto_skip_delay';
+  static const String _keyIntroPattern = 'intro_pattern';
+  static const String _keyCreditsPattern = 'credits_pattern';
+
+  static const String defaultIntroPattern =
+      r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
+  static const String defaultCreditsPattern =
+      r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
   static const String _keyCustomDownloadPath = 'custom_download_path';
   static const String _keyCustomDownloadPathType = 'custom_download_path_type';
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
@@ -894,6 +901,24 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getInt(_keyAutoSkipDelay) ?? 5; // Default: 5 seconds
   }
 
+  // Intro Pattern
+  Future<void> setIntroPattern(String value) async {
+    await prefs.setString(_keyIntroPattern, value);
+  }
+
+  String getIntroPattern() {
+    return prefs.getString(_keyIntroPattern) ?? defaultIntroPattern;
+  }
+
+  // Credits Pattern
+  Future<void> setCreditsPattern(String value) async {
+    await prefs.setString(_keyCreditsPattern, value);
+  }
+
+  String getCreditsPattern() {
+    return prefs.getString(_keyCreditsPattern) ?? defaultCreditsPattern;
+  }
+
   // Custom Download Path
   Future<void> setCustomDownloadPath(String? path, {String type = 'file'}) async {
     if (path == null) {
@@ -1381,6 +1406,8 @@ class SettingsService extends BaseSharedPreferencesService {
       'autoSkipIntro': getAutoSkipIntro(),
       'autoSkipCredits': getAutoSkipCredits(),
       'autoSkipDelay': getAutoSkipDelay(),
+      'introPattern': getIntroPattern(),
+      'creditsPattern': getCreditsPattern(),
     };
   }
 }

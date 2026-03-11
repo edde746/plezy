@@ -297,6 +297,11 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => '自动跳过片尾并播放下一集';
 	@override String get autoSkipDelay => '自动跳过延迟';
 	@override String autoSkipDelayDescription({required Object seconds}) => '自动跳过前等待 ${seconds} 秒';
+	@override String get introPattern => '片头标记模式';
+	@override String get introPatternDescription => '用于匹配章节标题中片头标记的正则表达式';
+	@override String get creditsPattern => '片尾标记模式';
+	@override String get creditsPatternDescription => '用于匹配章节标题中片尾标记的正则表达式';
+	@override String get invalidRegex => '无效的正则表达式';
 	@override String get downloads => '下载';
 	@override String get downloadLocationDescription => '选择下载内容的存储位置';
 	@override String get downloadLocationDefault => '默认（应用存储）';
@@ -1472,6 +1477,11 @@ extension on TranslationsZh {
 			'settings.autoSkipCreditsDescription' => '自动跳过片尾并播放下一集',
 			'settings.autoSkipDelay' => '自动跳过延迟',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '自动跳过前等待 ${seconds} 秒',
+			'settings.introPattern' => '片头标记模式',
+			'settings.introPatternDescription' => '用于匹配章节标题中片头标记的正则表达式',
+			'settings.creditsPattern' => '片尾标记模式',
+			'settings.creditsPatternDescription' => '用于匹配章节标题中片尾标记的正则表达式',
+			'settings.invalidRegex' => '无效的正则表达式',
 			'settings.downloads' => '下载',
 			'settings.downloadLocationDescription' => '选择下载内容的存储位置',
 			'settings.downloadLocationDefault' => '默认（应用存储）',
@@ -1811,13 +1821,13 @@ extension on TranslationsZh {
 			'liveTv.noPrograms' => '没有可用的节目数据',
 			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			'liveTv.live' => '直播',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => '高清',
 			'liveTv.premiere' => '新',
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.allChannels' => '所有频道',
 			'liveTv.now' => '现在',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
 			'liveTv.overnight' => '凌晨',

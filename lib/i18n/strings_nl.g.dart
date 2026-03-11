@@ -297,6 +297,11 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Credits automatisch overslaan en volgende aflevering afspelen';
 	@override String get autoSkipDelay => 'Vertraging Automatisch Overslaan';
 	@override String autoSkipDelayDescription({required Object seconds}) => '${seconds} seconden wachten voor automatisch overslaan';
+	@override String get introPattern => 'Intromarkeringspatroon';
+	@override String get introPatternDescription => 'Reguliere expressie om intromarkeringen in hoofdstuktitels te herkennen';
+	@override String get creditsPattern => 'Aftitelingmarkeringspatroon';
+	@override String get creditsPatternDescription => 'Reguliere expressie om aftitelingmarkeringen in hoofdstuktitels te herkennen';
+	@override String get invalidRegex => 'Ongeldige reguliere expressie';
 	@override String get downloads => 'Downloads';
 	@override String get downloadLocationDescription => 'Kies waar gedownloade content wordt opgeslagen';
 	@override String get downloadLocationDefault => 'Standaard (App-opslag)';
@@ -1472,6 +1477,11 @@ extension on TranslationsNl {
 			'settings.autoSkipCreditsDescription' => 'Credits automatisch overslaan en volgende aflevering afspelen',
 			'settings.autoSkipDelay' => 'Vertraging Automatisch Overslaan',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '${seconds} seconden wachten voor automatisch overslaan',
+			'settings.introPattern' => 'Intromarkeringspatroon',
+			'settings.introPatternDescription' => 'Reguliere expressie om intromarkeringen in hoofdstuktitels te herkennen',
+			'settings.creditsPattern' => 'Aftitelingmarkeringspatroon',
+			'settings.creditsPatternDescription' => 'Reguliere expressie om aftitelingmarkeringen in hoofdstuktitels te herkennen',
+			'settings.invalidRegex' => 'Ongeldige reguliere expressie',
 			'settings.downloads' => 'Downloads',
 			'settings.downloadLocationDescription' => 'Kies waar gedownloade content wordt opgeslagen',
 			'settings.downloadLocationDefault' => 'Standaard (App-opslag)',
@@ -1811,13 +1821,13 @@ extension on TranslationsNl {
 			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
 			'liveTv.live' => 'LIVE',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NIEUW',
 			'liveTv.reloadGuide' => 'Gids herladen',
 			'liveTv.allChannels' => 'Alle zenders',
 			'liveTv.now' => 'Nu',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Vandaag',
 			'liveTv.midnight' => 'Middernacht',
 			'liveTv.overnight' => 'Nacht',
