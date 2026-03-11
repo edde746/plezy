@@ -357,10 +357,14 @@ class PlexOptimizedImage extends StatelessWidget {
   }
 
   Widget _buildPlaceholder(BuildContext _) {
-    return SkeletonLoader(
-      child: fallbackIcon != null
-          ? Center(child: AppIcon(fallbackIcon!, fill: 1, size: 40, color: Colors.white54))
-          : null,
+    return SizedBox(
+      width: width,
+      height: height,
+      child: SkeletonLoader(
+        child: fallbackIcon != null
+            ? Center(child: AppIcon(fallbackIcon!, fill: 1, size: 40, color: Colors.white54))
+            : null,
+      ),
     );
   }
 
