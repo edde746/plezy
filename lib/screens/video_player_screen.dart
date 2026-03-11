@@ -158,6 +158,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<Duration>? _mediaControlsPositionSubscription;
   StreamSubscription<double>? _mediaControlsRateSubscription;
   StreamSubscription<bool>? _mediaControlsSeekableSubscription;
+  StreamSubscription<Map<String, bool>>? _serverStatusSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
@@ -596,6 +597,25 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _bufferingSubscription = player!.streams.buffering.listen((isBuffering) {
         _isBuffering.value = isBuffering;
       });
+
+      // When server comes back online while buffering, force mpv to reconnect
+      // immediately instead of waiting for ffmpeg's exponential backoff
+      if (!widget.isOffline && !widget.isLive) {
+        final serverId = widget.metadata.serverId;
+        if (serverId != null) {
+          final serverManager = context.read<MultiServerProvider>().serverManager;
+          bool wasOffline = false;
+          _serverStatusSubscription = serverManager.statusStream.listen((statusMap) {
+            final isOnline = statusMap[serverId] == true;
+            if (!isOnline) {
+              wasOffline = true;
+            } else if (wasOffline && _isBuffering.value) {
+              wasOffline = false;
+              _forceStreamReconnect();
+            }
+          });
+        }
+      }
 
       // Listen to playback restart to detect first frame ready
       _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
@@ -1752,6 +1772,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _mediaControlsPositionSubscription?.cancel();
     _mediaControlsRateSubscription?.cancel();
     _mediaControlsSeekableSubscription?.cancel();
+    _serverStatusSubscription?.cancel();
 
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
@@ -2079,6 +2100,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     } catch (e) {
       appLogger.d('Live timeline update failed', error: e);
     }
+  }
+
+  /// Force mpv to reconnect its HTTP stream by seeking to the current position.
+  /// This bypasses ffmpeg's exponential reconnect backoff when the app detects
+  /// that network connectivity has been restored.
+  void _forceStreamReconnect() {
+    final p = player;
+    if (p == null || !_isPlayerInitialized) return;
+    final pos = p.state.position;
+    appLogger.i('Network restored while buffering, forcing stream reconnect at ${pos.inSeconds}s');
+    p.seek(pos);
   }
 
   /// Configure MPV/FFmpeg options for live streaming resilience.
