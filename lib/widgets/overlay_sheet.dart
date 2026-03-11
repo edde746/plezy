@@ -577,6 +577,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
     Widget sheet = FocusScope(
       node: _sheetFocusScopeNode,
+      onKeyEvent: _handleKeyEvent,
       child: Focus(
         canRequestFocus: false,
         skipTraversal: true,
