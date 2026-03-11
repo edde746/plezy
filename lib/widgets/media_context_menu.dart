@@ -8,8 +8,10 @@ import '../services/play_queue_launcher.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../providers/download_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../providers/offline_watch_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
@@ -135,6 +137,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Check if we should use bottom sheet (on iOS and Android)
     final useBottomSheet = Platform.isIOS || Platform.isAndroid;
 
+    // Check if user has admin privileges (server owned + admin or single user)
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+    final server = _itemServerId != null ? multiServerProvider.serverManager.getServer(_itemServerId!) : null;
+    final currentUser = context.read<UserProfileProvider>().currentUser;
+    final isAdmin = server?.owned == true && (currentUser == null || currentUser.admin);
+
     // Build menu actions
     final menuActions = <_MenuAction>[];
 
@@ -190,11 +198,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate));
       }
 
-      // Edit Metadata (for movies, shows, seasons, and episodes)
-      if (mediaType == PlexMediaType.movie ||
-          mediaType == PlexMediaType.show ||
-          mediaType == PlexMediaType.season ||
-          mediaType == PlexMediaType.episode) {
+      // Edit Metadata (for movies, shows, seasons, and episodes) — admin only
+      if (isAdmin &&
+          (mediaType == PlexMediaType.movie ||
+              mediaType == PlexMediaType.show ||
+              mediaType == PlexMediaType.season ||
+              mediaType == PlexMediaType.episode)) {
         menuActions.add(
           _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
         );
@@ -289,11 +298,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo));
       }
 
-      // Delete media item (for episodes, movies, shows, and seasons)
-      if (mediaType == PlexMediaType.episode ||
-          mediaType == PlexMediaType.movie ||
-          mediaType == PlexMediaType.show ||
-          mediaType == PlexMediaType.season) {
+      // Delete media item (for episodes, movies, shows, and seasons) — admin only
+      if (isAdmin &&
+          (mediaType == PlexMediaType.episode ||
+              mediaType == PlexMediaType.movie ||
+              mediaType == PlexMediaType.show ||
+              mediaType == PlexMediaType.season)) {
         menuActions.add(
           _MenuAction(
             value: 'delete_media',
