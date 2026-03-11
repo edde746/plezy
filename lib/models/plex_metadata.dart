@@ -9,6 +9,12 @@ import '../utils/global_key_utils.dart';
 
 part 'plex_metadata.g.dart';
 
+int? _flexibleInt(Object? v) => switch (v) {
+      num n => n.toInt(),
+      String s => int.tryParse(s),
+      _ => null,
+    };
+
 /// Media type enum for type-safe media type handling
 enum PlexMediaType {
   movie,
@@ -85,11 +91,13 @@ class PlexMetadata with MultiServerFields {
   final int? viewCount;
   final int? leafCount; // Total number of episodes in a series/season
   final int? viewedLeafCount; // Number of watched episodes in a series/season
+  @JsonKey(fromJson: _flexibleInt)
   final int? childCount; // Number of items in a collection or playlist
   @JsonKey(name: 'Role')
   final List<PlexRole>? role; // Cast members
   final String? audioLanguage; // Per-media preferred audio language
   final String? subtitleLanguage; // Per-media preferred subtitle language
+  @JsonKey(fromJson: _flexibleInt)
   final int? subtitleMode; // Per-media subtitle mode (0=manual, 1=foreign audio, 2=always, -1=account default)
   final int? playlistItemID; // Playlist item ID (for dumb playlists only)
   final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
@@ -458,10 +466,6 @@ class PlexMetadata with MultiServerFields {
   }
 
   factory PlexMetadata.fromJson(Map<String, dynamic> json) {
-    // Plex API returns subtitleMode as a string
-    if (json['subtitleMode'] is String) {
-      json = {...json, 'subtitleMode': num.tryParse(json['subtitleMode'] as String)};
-    }
     try {
       return _$PlexMetadataFromJson(kBlurArtwork ? _obfuscateJson(json) : json);
     } on TypeError catch (e, st) {
