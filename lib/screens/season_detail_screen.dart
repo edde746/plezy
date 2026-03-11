@@ -292,7 +292,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                     final artworkRef = downloadProvider.getArtworkPaths(globalKey);
                     localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, episode.serverId!);
                   }
-                  return _EpisodeCard(
+                  return EpisodeCard(
                     episode: episode,
                     client: _client,
                     isOffline: widget.isOffline,
@@ -332,7 +332,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
 }
 
 /// Episode card widget with D-pad long-press support
-class _EpisodeCard extends StatefulWidget {
+class EpisodeCard extends StatefulWidget {
   final PlexMetadata episode;
   final PlexClient? client;
   final VoidCallback onTap;
@@ -342,7 +342,8 @@ class _EpisodeCard extends StatefulWidget {
   final bool isOffline;
   final String? localPosterPath;
 
-  const _EpisodeCard({
+  const EpisodeCard({
+    super.key,
     required this.episode,
     this.client,
     required this.onTap,
@@ -354,10 +355,10 @@ class _EpisodeCard extends StatefulWidget {
   });
 
   @override
-  State<_EpisodeCard> createState() => _EpisodeCardState();
+  State<EpisodeCard> createState() => _EpisodeCardState();
 }
 
-class _EpisodeCardState extends State<_EpisodeCard> {
+class _EpisodeCardState extends State<EpisodeCard> {
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
   Offset? _tapPosition;
 

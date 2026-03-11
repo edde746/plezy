@@ -28,6 +28,7 @@ import '../models/plex_video_playback_data.dart';
 import '../utils/content_utils.dart';
 import '../utils/rating_utils.dart';
 import '../models/download_models.dart';
+import '../services/download_storage_service.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
@@ -67,6 +68,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   List<PlexMetadata> _seasons = [];
   bool _isLoadingSeasons = false;
   Completer<void>? _seasonsCompleter;
+  List<PlexMetadata> _episodes = [];
+  bool _isLoadingEpisodes = false;
   PlexMetadata? _fullMetadata;
   PlexMetadata? _onDeckEpisode;
   PlexVideoPlaybackData? _playbackData;
@@ -1045,15 +1048,53 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
 
-      final seasons = await client?.getChildren(widget.metadata.ratingKey) ?? [];
+      // Fetch seasons and library prefs in parallel
+      final sectionId = (_fullMetadata ?? widget.metadata).librarySectionID?.toString();
+      final seasonsFuture = client?.getChildren(widget.metadata.ratingKey) ?? Future.value(<PlexMetadata>[]);
+      final prefsFuture = (sectionId != null && client != null)
+          ? client.getLibrarySectionPrefs(sectionId)
+          : Future.value(<String, dynamic>{});
+
+      final results = await Future.wait([seasonsFuture, prefsFuture]);
+      final seasons = results[0] as List<PlexMetadata>;
+      final prefs = results[1] as Map<String, dynamic>;
+
       // Preserve serverId for each season
       final seasonsWithServerId = seasons
           .map((season) => season.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
           .toList();
+
+      // Check the server setting the season display mode
+      const flattenSeasonsAlways = 1;
+      const flattenSeasonsSingleSeason = 2;
+      final flattenSeasons = prefs['flattenSeasons'];
+      final isAlways = flattenSeasons == flattenSeasonsAlways;
+      final isSingleSeason = flattenSeasons == flattenSeasonsSingleSeason;
+      final shouldShowEpisodesDirectly =
+          isAlways || (isSingleSeason && seasonsWithServerId.length == 1);
+
       setStateIfMounted(() {
         _seasons = seasonsWithServerId;
         _isLoadingSeasons = false;
+        if (shouldShowEpisodesDirectly) _isLoadingEpisodes = true;
       });
+
+      if (shouldShowEpisodesDirectly) {
+        try {
+          final episodeLists = await Future.wait(
+            seasonsWithServerId.map((season) => client!.getChildren(season.ratingKey)),
+          );
+          final episodes = episodeLists.expand((e) => e).toList();
+          setStateIfMounted(() {
+            _episodes = episodes;
+            _isLoadingEpisodes = false;
+          });
+        } catch (e) {
+          setStateIfMounted(() {
+            _isLoadingEpisodes = false;
+          });
+        }
+      }
     } catch (e) {
       setStateIfMounted(() {
         _isLoadingSeasons = false;
@@ -1558,6 +1599,67 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     return KeyEventResult.ignored;
+  }
+
+  /// Build episode list directly when the library hides seasons for single-season shows
+  Widget _buildEpisodesList() {
+    final client = _getClientForMetadata(context);
+    return Column(
+      children: _episodes.asMap().entries.map((entry) {
+        final index = entry.key;
+        final episode = entry.value;
+        String? localPosterPath;
+        if (widget.isOffline && episode.serverId != null) {
+          final artworkRef = context.read<DownloadProvider>().getArtworkPaths(episode.globalKey);
+          localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, episode.serverId!);
+        }
+        return EpisodeCard(
+          episode: episode,
+          client: client,
+          isOffline: widget.isOffline,
+          autofocus: false,
+          localPosterPath: localPosterPath,
+          onTap: () async {
+            await navigateToVideoPlayerWithRefresh(
+              context,
+              metadata: episode,
+              isOffline: widget.isOffline,
+              onRefresh: () async {
+                final refreshed = await client?.getMetadataWithImages(episode.ratingKey);
+                if (refreshed != null) {
+                  setStateIfMounted(() {
+                    _episodes[index] = refreshed;
+                  });
+                }
+              },
+            );
+          },
+          onRefresh: widget.isOffline
+              ? null
+              : (ratingKey) async {
+                  final refreshed = await client?.getMetadataWithImages(ratingKey);
+                  if (refreshed != null) {
+                    setStateIfMounted(() {
+                      final i = _episodes.indexWhere((e) => e.ratingKey == ratingKey);
+                      if (i != -1) _episodes[i] = refreshed;
+                    });
+                  }
+                },
+          onListRefresh: widget.isOffline ? null : _reloadEpisodes,
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _reloadEpisodes() async {
+    if (_seasons.isEmpty) return;
+    final client = _getClientForMetadata(context);
+    try {
+      final episodes = await client?.getChildren(_seasons[0].ratingKey) ?? [];
+      setStateIfMounted(() {
+        _episodes = episodes;
+      });
+    } catch (_) {}
   }
 
   /// Build vertical seasons list for smaller screens (<600px)
@@ -2114,18 +2216,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             const SizedBox(height: 24),
                           ],
 
-                          // Seasons (for TV shows)
+                          // Seasons / Episodes (for TV shows)
                           if (isShow) ...[
                             Text(
                               key: _seasonsSectionKey,
-                              t.discover.seasons,
+                              _episodes.isNotEmpty ? t.libraries.groupings.episodes : t.discover.seasons,
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 12),
-                            if (_isLoadingSeasons)
+                            if (_isLoadingSeasons || _isLoadingEpisodes)
                               const Center(
                                 child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
                               )
+                            else if (_episodes.isNotEmpty)
+                              _buildEpisodesList()
                             else if (_seasons.isEmpty)
                               Padding(
                                 padding: const EdgeInsets.all(32),
