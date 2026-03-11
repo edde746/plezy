@@ -9,6 +9,9 @@ import '../utils/global_key_utils.dart';
 
 part 'plex_metadata.g.dart';
 
+Object? _readRatingKey(Map json, String key) =>
+    json['ratingKey'] ?? json['key'] ?? '';
+
 int? _flexibleInt(Object? v) => switch (v) {
       num n => n.toInt(),
       String s => int.tryParse(s),
@@ -57,6 +60,7 @@ enum PlexMediaType {
 
 @JsonSerializable()
 class PlexMetadata with MultiServerFields {
+  @JsonKey(readValue: _readRatingKey)
   final String ratingKey;
   final String key;
   final String? guid;
