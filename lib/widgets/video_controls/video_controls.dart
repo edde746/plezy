@@ -671,9 +671,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
-    // Remove window listener
+    // Remove window listener and reset always-on-top if it was enabled
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.removeListener(this);
+      if (_isAlwaysOnTop) {
+        windowManager.setAlwaysOnTop(false);
+      }
     }
     if (Platform.isMacOS) {
       _pipService.isPipActive.removeListener(_onMacPipChanged);
