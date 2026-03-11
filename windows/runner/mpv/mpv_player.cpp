@@ -367,6 +367,8 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       if (end->reason == MPV_END_FILE_REASON_ERROR) {
         data[flutter::EncodableValue("error")] =
             flutter::EncodableValue(static_cast<int>(end->error));
+        data[flutter::EncodableValue("message")] =
+            flutter::EncodableValue(SanitizeUtf8(mpv_error_string(end->error)));
       }
       SendEvent("end-file", data);
       break;

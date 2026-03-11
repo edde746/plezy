@@ -532,6 +532,8 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       if (end->reason == MPV_END_FILE_REASON_ERROR) {
         fl_value_set_string_take(data, "error",
                                  fl_value_new_int(static_cast<int>(end->error)));
+        fl_value_set_string_take(data, "message",
+                                 fl_value_new_string(SanitizeUtf8(mpv_error_string(end->error)).c_str()));
       }
       SendEvent("end-file", data);
       fl_value_unref(data);

@@ -152,6 +152,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<void>? _playbackRestartSubscription;
   StreamSubscription<void>? _backendSwitchedSubscription;
+  StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<void>? _sleepTimerSubscription;
   StreamSubscription<bool>? _mediaControlsPlayingSubscription;
   StreamSubscription<Duration>? _mediaControlsPositionSubscription;
@@ -581,6 +582,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Listen to MPV errors
       _errorSubscription = player!.streams.error.listen(_onPlayerError);
 
+      // Listen to error-level log messages for user-visible snackbars
+      _logSubscription = player!.streams.log
+          .where((log) => log.level == PlayerLogLevel.error || log.level == PlayerLogLevel.fatal)
+          .listen(_onPlayerLogError);
+
       // Listen for backend switched event (ExoPlayer -> MPV fallback on Android)
       if (Platform.isAndroid && useExoPlayer) {
         _backendSwitchedSubscription = player!.streams.backendSwitched.listen((_) => _onBackendSwitched());
@@ -593,6 +599,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Listen to playback restart to detect first frame ready
       _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
+        _lastLogError = null;
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
           Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player'));
@@ -1742,6 +1749,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _positionSubscription?.cancel();
     _playbackRestartSubscription?.cancel();
     _backendSwitchedSubscription?.cancel();
+    _logSubscription?.cancel();
     _sleepTimerSubscription?.cancel();
     _mediaControlsPlayingSubscription?.cancel();
     _mediaControlsPositionSubscription?.cancel();
@@ -1901,9 +1909,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   void _onPlayerError(String error) {
     appLogger.e('[Player ERROR] $error');
-    if (!mounted) return;
+    if (!mounted || _isExiting.value) return;
+    showGlobalErrorSnackBar(_lastLogError ?? error);
+    _handleBackButton();
+  }
 
-    showErrorSnackBar(context, t.messages.failedPlayback(action: 'play', error: error));
+  String? _lastLogError;
+
+  void _onPlayerLogError(PlayerLog log) {
+    appLogger.e('[Player LOG ERROR] [${log.prefix}] ${log.text}');
+    _lastLogError = log.text.trim();
   }
 
   /// Handle notification when native player switched from ExoPlayer to MPV

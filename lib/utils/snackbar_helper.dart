@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// Global key for the root ScaffoldMessenger, allowing snackbars to survive navigation.
+final rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 /// Types of snackbars available in the app
 enum SnackBarType {
   /// Standard informational snackbar
@@ -49,6 +52,13 @@ void showAppSnackBar(BuildContext context, String message, {Duration? duration})
 /// [message] The error message to display
 void showErrorSnackBar(BuildContext context, String message) {
   showSnackBar(context, message, type: SnackBarType.error);
+}
+
+/// Shows an error snackbar using the root ScaffoldMessenger (survives navigation).
+void showGlobalErrorSnackBar(String message) {
+  rootScaffoldMessengerKey.currentState?.showSnackBar(
+    SnackBar(content: Text(message), backgroundColor: Colors.red, duration: const Duration(seconds: 4)),
+  );
 }
 
 /// Shows a success snackbar with a message

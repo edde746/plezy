@@ -361,15 +361,21 @@ class MpvPlayerCore(private val activity: Activity) :
     }
 
     override fun event(eventId: Int) {
-        val eventName = when (eventId) {
-            MPVLib.MPV_EVENT_FILE_LOADED -> "file-loaded"
-            MPVLib.MPV_EVENT_END_FILE -> "end-file"
-            MPVLib.MPV_EVENT_PLAYBACK_RESTART -> "playback-restart"
-            else -> null
-        }
-        eventName?.let { name ->
-            activity.runOnUiThread {
-                delegate?.onEvent(name, null)
+        when (eventId) {
+            MPVLib.MPV_EVENT_END_FILE -> {
+                val eofReached = try { MPVLib.getPropertyBoolean("eof-reached") } catch (_: Exception) { false }
+                val data: Map<String, Any>? = if (eofReached) {
+                    mapOf("reason" to 0) // EOF
+                } else {
+                    null // Could be stop, quit, or error — no way to distinguish from JNI
+                }
+                activity.runOnUiThread { delegate?.onEvent("end-file", data) }
+            }
+            MPVLib.MPV_EVENT_FILE_LOADED -> {
+                activity.runOnUiThread { delegate?.onEvent("file-loaded", null) }
+            }
+            MPVLib.MPV_EVENT_PLAYBACK_RESTART -> {
+                activity.runOnUiThread { delegate?.onEvent("playback-restart", null) }
             }
         }
     }
