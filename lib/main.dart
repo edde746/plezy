@@ -472,11 +472,17 @@ class _SetupScreenState extends State<SetupScreen> {
 
     // Check network connectivity early to fast-path airplane mode.
     // Timeout guards against connectivity_plus hanging on some Android TV devices after force-close.
-    final connectivityResult = await Connectivity().checkConnectivity().timeout(
-      const Duration(seconds: 3),
-      onTimeout: () => [ConnectivityResult.other],
-    );
-    final hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
+    bool hasNetwork;
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => [ConnectivityResult.other],
+      );
+      hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
+    } catch (e) {
+      // connectivity_plus throws DBusServiceUnknownException on Linux without NetworkManager
+      hasNetwork = true;
+    }
 
     if (hasNetwork) {
       _setStatus(t.common.refreshingServers);
