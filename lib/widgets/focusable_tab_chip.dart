@@ -33,6 +33,9 @@ class FocusableTabChip extends StatefulWidget {
   /// Called when the user presses BACK from this chip.
   final VoidCallback? onBack;
 
+  /// Called when SELECT key is held (D-pad long press).
+  final VoidCallback? onLongPress;
+
   const FocusableTabChip({
     super.key,
     required this.label,
@@ -43,6 +46,7 @@ class FocusableTabChip extends StatefulWidget {
     this.onNavigateRight,
     this.onNavigateDown,
     this.onBack,
+    this.onLongPress,
   });
 
   @override
@@ -80,6 +84,7 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       event,
       ChipKeyCallbacks(
         onSelect: widget.onSelect,
+        onLongPress: widget.onLongPress,
         onNavigateLeft: widget.onNavigateLeft,
         onNavigateRight: widget.onNavigateRight,
         onNavigateDown: widget.onNavigateDown,

@@ -240,7 +240,15 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       final renderObject = context.findRenderObject();
       if (renderObject == null) return;
 
-      final scrollable = Scrollable.maybeOf(context);
+      // Find the nearest scrollable that actually has scroll range.
+      // Skip inner scrollables with no extent (e.g. shrinkWrap ListView
+      // with NeverScrollableScrollPhysics inside an outer scroll view).
+      var scrollable = Scrollable.maybeOf(context);
+      while (scrollable != null) {
+        final pos = scrollable.position;
+        if (pos.maxScrollExtent > pos.minScrollExtent) break;
+        scrollable = Scrollable.maybeOf(scrollable.context);
+      }
       if (scrollable == null) return;
 
       final viewport = scrollable.context.findRenderObject() as RenderBox?;

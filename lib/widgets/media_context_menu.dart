@@ -462,10 +462,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'season':
           didNavigate = true;
+          // Navigate to the show with the season tab pre-selected
+          final seasonParentKey = metadata!.mediaType == PlexMediaType.episode
+              ? metadata.grandparentRatingKey
+              : metadata.parentRatingKey;
+          final seasonIndex = metadata.parentIndex;
           await _navigateToRelated(
             context,
-            metadata!.parentRatingKey,
-            (metadata) => MediaDetailScreen(metadata: metadata),
+            seasonParentKey,
+            (show) => MediaDetailScreen(metadata: show, initialSeasonIndex: seasonIndex),
             t.messages.errorLoadingSeason,
           );
           break;

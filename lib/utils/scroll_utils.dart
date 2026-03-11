@@ -1,5 +1,17 @@
 import 'package:flutter/widgets.dart';
 
+/// Scroll the nearest scrollable ancestor so [context] is centered.
+///
+/// Uses [Scrollable.ensureVisible] with alignment 0.5 (center).
+/// Runs in a post-frame callback to ensure layout is complete.
+void scrollContextToCenter(BuildContext? context) {
+  if (context == null) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) return;
+    Scrollable.ensureVisible(context, alignment: 0.5, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+  });
+}
+
 /// Scroll a horizontal list to center the item at the given index.
 ///
 /// Assumes items are laid out with [leadingPadding] before the first item,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../focus/focus_theme.dart';
 import '../focus/focusable_wrapper.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
@@ -30,6 +31,8 @@ class EpisodeCard extends StatefulWidget {
   final bool autofocus;
   final bool isOffline;
   final String? localPosterPath;
+  final FocusNode? focusNode;
+  final VoidCallback? onNavigateUp;
 
   const EpisodeCard({
     super.key,
@@ -41,6 +44,8 @@ class EpisodeCard extends StatefulWidget {
     this.autofocus = false,
     this.isOffline = false,
     this.localPosterPath,
+    this.focusNode,
+    this.onNavigateUp,
   });
 
   @override
@@ -106,33 +111,37 @@ class _EpisodeCardState extends State<EpisodeCard> {
 
     final hasActiveProgress = hasProgress && widget.episode.viewOffset! < widget.episode.duration!;
 
-    return FocusableWrapper(
-      autofocus: widget.autofocus,
-      enableLongPress: true,
-      onSelect: widget.onTap,
-      onLongPress: _showContextMenu,
-      borderRadius: 0, // Episode cards have no border radius
-      useBackgroundFocus: true, // Use background color instead of outline
-      disableScale: true, // No scale animation for list items
-      child: MediaContextMenu(
-        key: _contextMenuKey,
-        item: widget.episode,
-        onRefresh: widget.onRefresh,
-        onListRefresh: widget.onListRefresh,
-        onTap: widget.onTap,
-        child: InkWell(
-          key: Key(widget.episode.ratingKey),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: FocusableWrapper(
+        focusNode: widget.focusNode,
+        autofocus: widget.autofocus,
+        enableLongPress: true,
+        onNavigateUp: widget.onNavigateUp,
+        onSelect: widget.onTap,
+        onLongPress: _showContextMenu,
+        disableScale: true,
+        child: MediaContextMenu(
+          key: _contextMenuKey,
+          item: widget.episode,
+          onRefresh: widget.onRefresh,
+          onListRefresh: widget.onListRefresh,
           onTap: widget.onTap,
-          onTapDown: _storeTapPosition,
-          onLongPress: _showContextMenu,
-          onSecondaryTapDown: _storeTapPosition,
-          onSecondaryTap: _showContextMenu,
-          hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: tokens(context).outline, width: 0.5)),
-            ),
-            padding: const EdgeInsets.all(16),
+          child: InkWell(
+            key: Key(widget.episode.ratingKey),
+            borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
+            onTap: widget.onTap,
+            onTapDown: _storeTapPosition,
+            onLongPress: _showContextMenu,
+            onSecondaryTapDown: _storeTapPosition,
+            onSecondaryTap: _showContextMenu,
+            hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
+              ),
+              padding: const EdgeInsets.all(12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -393,6 +402,7 @@ class _EpisodeCardState extends State<EpisodeCard> {
           ),
         ),
       ),
+    ),
     );
   }
 

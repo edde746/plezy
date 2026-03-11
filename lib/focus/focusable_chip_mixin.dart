@@ -1,12 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'dpad_navigator.dart';
 import 'key_event_utils.dart';
 
 /// Callbacks for chip key event handling.
 class ChipKeyCallbacks {
-  /// Called when SELECT key is pressed.
+  /// Called when SELECT key is pressed (short press when [onLongPress] is set).
   final VoidCallback? onSelect;
+
+  /// Called when SELECT key is held for 500ms.
+  final VoidCallback? onLongPress;
 
   /// Called when DOWN arrow is pressed.
   final VoidCallback? onNavigateDown;
@@ -25,6 +31,7 @@ class ChipKeyCallbacks {
 
   const ChipKeyCallbacks({
     this.onSelect,
+    this.onLongPress,
     this.onNavigateDown,
     this.onNavigateUp,
     this.onNavigateLeft,
@@ -53,6 +60,8 @@ class ChipKeyCallbacks {
 mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   FocusNode? _internalFocusNode;
   bool _isFocused = false;
+  Timer? _longPressTimer;
+  bool _isSelectKeyDown = false;
 
   /// Override to return the widget's optional external focus node.
   FocusNode? get widgetFocusNode;
@@ -85,6 +94,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   void disposeFocusNode() {
     focusNode.removeListener(_onFocusChange);
     _internalFocusNode?.dispose();
+    _longPressTimer?.cancel();
   }
 
   void _onFocusChange() {
@@ -96,7 +106,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   /// Shared key event handler for chip widgets.
   ///
   /// Handles common key patterns:
-  /// - SELECT key -> onSelect
+  /// - SELECT key -> onSelect (short press) / onLongPress (hold 500ms)
   /// - Arrow keys -> navigation callbacks
   /// - BACK key -> onBack
   ///
@@ -112,14 +122,51 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
       }
     }
 
-    if (!event.isActionable) {
-      return KeyEventResult.ignored;
+    if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+      return KeyEventResult.handled;
     }
 
-    // SELECT key activates the chip
-    if (key.isSelectKey && callbacks.onSelect != null) {
-      callbacks.onSelect!();
+    // SELECT key with long press support
+    if (key.isSelectKey) {
+      if (callbacks.onLongPress != null) {
+        if (event is KeyDownEvent) {
+          if (!_isSelectKeyDown) {
+            _isSelectKeyDown = true;
+            _longPressTimer?.cancel();
+            _longPressTimer = Timer(const Duration(milliseconds: 500), () {
+              if (mounted) {
+                SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+                callbacks.onLongPress?.call();
+              }
+            });
+          }
+          return KeyEventResult.handled;
+        } else if (event is KeyRepeatEvent) {
+          return KeyEventResult.handled;
+        } else if (event is KeyUpEvent) {
+          final timerWasActive = _longPressTimer?.isActive ?? false;
+          _longPressTimer?.cancel();
+          if (timerWasActive && _isSelectKeyDown) {
+            callbacks.onSelect?.call();
+          }
+          _isSelectKeyDown = false;
+          return KeyEventResult.handled;
+        }
+      } else if (event.isActionable && callbacks.onSelect != null) {
+        callbacks.onSelect!();
+        return KeyEventResult.handled;
+      }
+    }
+
+    // Context menu key triggers long press directly
+    if (event.isActionable && key.isContextMenuKey && callbacks.onLongPress != null) {
+      SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+      callbacks.onLongPress!();
       return KeyEventResult.handled;
+    }
+
+    if (!event.isActionable) {
+      return KeyEventResult.ignored;
     }
 
     // LEFT arrow - call callback if provided, otherwise propagate to parent

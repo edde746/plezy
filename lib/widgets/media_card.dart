@@ -934,28 +934,53 @@ bool _hasClickableTitle(PlexMetadata metadata) {
   return false;
 }
 
-/// Navigate to season detail from episode metadata
+/// Navigate to a show with the season tab pre-selected from episode metadata
 void _navigateToSeason(BuildContext context, PlexMetadata episode, {bool isOffline = false}) {
-  if (episode.parentRatingKey == null) return;
-  final seasonStub = PlexMetadata(
-    ratingKey: episode.parentRatingKey!,
-    key: '/library/metadata/${episode.parentRatingKey}',
-    type: 'season',
-    title: episode.parentTitle ?? 'Season ${episode.parentIndex ?? ''}',
-    index: episode.parentIndex,
-    parentRatingKey: episode.grandparentRatingKey,
-    thumb: episode.parentThumb,
-    serverId: episode.serverId,
-    serverName: episode.serverName,
-  );
-  Navigator.push(context, MaterialPageRoute(builder: (_) => MediaDetailScreen(metadata: seasonStub, isOffline: isOffline)));
+  if (episode.grandparentRatingKey != null) {
+    // Navigate to the show with the season pre-selected
+    final showStub = PlexMetadata(
+      ratingKey: episode.grandparentRatingKey!,
+      key: '/library/metadata/${episode.grandparentRatingKey}',
+      type: 'show',
+      title: episode.grandparentTitle ?? episode.displayTitle,
+      thumb: episode.grandparentThumb,
+      art: episode.grandparentArt,
+      serverId: episode.serverId,
+      serverName: episode.serverName,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MediaDetailScreen(
+          metadata: showStub,
+          isOffline: isOffline,
+          initialSeasonIndex: episode.parentIndex,
+        ),
+      ),
+    );
+  } else if (episode.parentRatingKey != null) {
+    // Fallback: navigate to season directly if no grandparent
+    final seasonStub = PlexMetadata(
+      ratingKey: episode.parentRatingKey!,
+      key: '/library/metadata/${episode.parentRatingKey}',
+      type: 'season',
+      title: episode.parentTitle ?? 'Season ${episode.parentIndex ?? ''}',
+      index: episode.parentIndex,
+      parentRatingKey: episode.grandparentRatingKey,
+      thumb: episode.parentThumb,
+      serverId: episode.serverId,
+      serverName: episode.serverName,
+    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => MediaDetailScreen(metadata: seasonStub, isOffline: isOffline)));
+  }
 }
 
 /// Navigate to the detail screen for a metadata item.
-/// For episodes/seasons: navigates to the parent show.
+/// For episodes/seasons: navigates to the parent show with season pre-selected.
 /// For movies and other types: navigates to the item's own detail page.
 void _navigateToDetail(BuildContext context, PlexMetadata metadata, {bool isOffline = false}) {
   PlexMetadata target = metadata;
+  int? initialSeasonIndex;
 
   if (metadata.isEpisode && metadata.grandparentRatingKey != null) {
     target = PlexMetadata(
@@ -969,6 +994,7 @@ void _navigateToDetail(BuildContext context, PlexMetadata metadata, {bool isOffl
       serverName: metadata.serverName,
     );
   } else if (metadata.isSeason && metadata.parentRatingKey != null) {
+    initialSeasonIndex = metadata.index;
     target = PlexMetadata(
       ratingKey: metadata.parentRatingKey!,
       key: '/library/metadata/${metadata.parentRatingKey}',
@@ -981,7 +1007,12 @@ void _navigateToDetail(BuildContext context, PlexMetadata metadata, {bool isOffl
     );
   }
 
-  Navigator.push(context, MaterialPageRoute(builder: (_) => MediaDetailScreen(metadata: target, isOffline: isOffline)));
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => MediaDetailScreen(metadata: target, isOffline: isOffline, initialSeasonIndex: initialSeasonIndex),
+    ),
+  );
 }
 
 /// Text widget that shows hover underline + pointer cursor only in pointer mode.
