@@ -7,6 +7,7 @@ import '../services/plex_client.dart';
 import '../services/play_queue_launcher.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
+import '../utils/content_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
@@ -23,7 +24,6 @@ import '../focus/focusable_button.dart';
 import '../focus/dpad_navigator.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/metadata_edit_screen.dart';
-import '../screens/season_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
@@ -220,12 +220,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Go to Series (for episodes and seasons) — hide if already on that series' detail screen,
-      // or on a season screen belonging to the same series
+      // Go to Series (for episodes and seasons) — hide if already on that series' detail screen
       final ancestorMediaDetail = context.findAncestorWidgetOfExactType<MediaDetailScreen>();
-      final ancestorSeasonDetail = context.findAncestorWidgetOfExactType<SeasonDetailScreen>();
-      final ancestorSeriesKey =
-          ancestorMediaDetail?.metadata.ratingKey ?? ancestorSeasonDetail?.season.parentRatingKey;
+      final ancestorMeta = ancestorMediaDetail?.metadata;
+      final ancestorSeriesKey = ancestorMeta != null && ancestorMeta.isSeason
+          ? ancestorMeta.parentRatingKey
+          : ancestorMeta?.ratingKey;
       // For episodes, the show key is grandparentRatingKey; for seasons, it's parentRatingKey
       final itemSeriesKey =
           mediaType == PlexMediaType.episode ? metadata.grandparentRatingKey : metadata.parentRatingKey;
@@ -235,11 +235,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries));
       }
 
-      // Go to Season (for episodes) — hide if already on that season's detail screen
+      // Go to Season (for episodes) — hide if already viewing that season's MediaDetailScreen
       if (mediaType == PlexMediaType.episode &&
           metadata.parentTitle != null &&
-          context.findAncestorWidgetOfExactType<SeasonDetailScreen>()?.season.ratingKey !=
-              metadata.parentRatingKey) {
+          !(ancestorMeta != null &&
+              ancestorMeta.isSeason &&
+              ancestorMeta.ratingKey == metadata.parentRatingKey)) {
         menuActions.add(
           _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
         );
@@ -464,7 +465,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             metadata!.parentRatingKey,
-            (metadata) => SeasonDetailScreen(season: metadata),
+            (metadata) => MediaDetailScreen(metadata: metadata),
             t.messages.errorLoadingSeason,
           );
           break;

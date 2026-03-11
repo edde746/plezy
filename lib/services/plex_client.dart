@@ -1226,6 +1226,19 @@ class PlexClient {
     return response.data;
   }
 
+  /// Get preferences for a library section.
+  ///
+  /// Returns a map of setting id --> value for all settings in the library.
+  Future<Map<String, dynamic>> getLibrarySectionPrefs(String sectionId) async {
+    final response = await _dio.get('/library/sections/$sectionId/prefs');
+    final container = _getMediaContainer(response);
+    if (container == null) return {};
+    final settings = container['Setting'];
+    if (settings == null) return {};
+    final list = settings is List ? settings : [settings];
+    return {for (final s in list) s['id'] as String: s['value']};
+  }
+
   /// Get sessions (currently playing)
   Future<List<dynamic>> getSessions() async {
     final response = await _dio.get('/status/sessions');

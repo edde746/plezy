@@ -12,7 +12,6 @@ import '../providers/download_provider.dart';
 import '../services/download_storage_service.dart';
 import '../providers/settings_provider.dart';
 import '../screens/media_detail_screen.dart';
-import '../screens/season_detail_screen.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/formatters.dart';
@@ -949,7 +948,7 @@ void _navigateToSeason(BuildContext context, PlexMetadata episode, {bool isOffli
     serverId: episode.serverId,
     serverName: episode.serverName,
   );
-  Navigator.push(context, MaterialPageRoute(builder: (_) => SeasonDetailScreen(season: seasonStub, isOffline: isOffline)));
+  Navigator.push(context, MaterialPageRoute(builder: (_) => MediaDetailScreen(metadata: seasonStub, isOffline: isOffline)));
 }
 
 /// Navigate to the detail screen for a metadata item.
