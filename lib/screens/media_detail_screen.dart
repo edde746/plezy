@@ -1067,7 +1067,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // Check the server setting the season display mode
       const flattenSeasonsAlways = 1;
       const flattenSeasonsSingleSeason = 2;
-      final flattenSeasons = prefs['flattenSeasons'];
+      final flattenSeasons = int.tryParse(prefs['flattenSeasons']?.toString() ?? '');
       final isAlways = flattenSeasons == flattenSeasonsAlways;
       final isSingleSeason = flattenSeasons == flattenSeasonsSingleSeason;
       final shouldShowEpisodesDirectly =
