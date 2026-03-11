@@ -441,14 +441,30 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   Future<void> _skipMarker() async {
-    if (_currentMarker != null) {
-      final endTime = _currentMarker!.endTime;
+    if (_currentMarker == null) return;
+
+    final marker = _currentMarker!;
+    final endTime = marker.endTime;
+    final duration = widget.player.state.duration;
+    final isAtEnd = duration > Duration.zero &&
+        (duration - endTime).inMilliseconds <= 1000;
+
+    if (marker.isCredits && isAtEnd) {
+      // Credits extend to end of video — don't seek (unreliable due to
+      // position stream throttling). Go to next episode or exit player.
+      if (widget.onNext != null) {
+        widget.onNext!.call();
+      } else {
+        widget.onBack?.call();
+      }
+    } else {
       await _seekToPosition(endTime);
-      if (!mounted) return;
-      setState(() {
-        _currentMarker = null;
-      });
     }
+
+    if (!mounted) return;
+    setState(() {
+      _currentMarker = null;
+    });
     _cancelAutoSkipTimer();
     _cancelSkipButtonDismissTimer();
   }
@@ -514,16 +530,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Perform the appropriate skip action based on marker type and next episode availability
   void _performAutoSkip() {
     if (_currentMarker == null) return;
-
-    final isCredits = _currentMarker!.isCredits;
-    final hasNextEpisode = widget.onNext != null;
-    final showNextEpisode = isCredits && hasNextEpisode;
-
-    if (showNextEpisode) {
-      widget.onNext?.call();
-    } else {
-      unawaited(_skipMarker());
-    }
+    unawaited(_skipMarker());
   }
 
   /// Check if auto-skip should be active for the current marker
@@ -2106,8 +2113,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final isCredits = _currentMarker!.isCredits;
     final hasNextEpisode = widget.onNext != null;
 
-    // Show "Next Episode" for credits when next episode is available
-    final bool showNextEpisode = isCredits && hasNextEpisode;
+    // Show "Next Episode" only when credits extend to end AND there's a next episode
+    final bool creditsAtEnd = isCredits &&
+        widget.player.state.duration > Duration.zero &&
+        (widget.player.state.duration - _currentMarker!.endTime).inMilliseconds <= 1000;
+    final bool showNextEpisode = creditsAtEnd && hasNextEpisode;
     String baseButtonText;
     if (showNextEpisode) {
       baseButtonText = 'Next Episode';
