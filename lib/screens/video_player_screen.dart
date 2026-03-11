@@ -749,37 +749,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Set up media control event handling
     _mediaControlSubscription = _mediaControlsManager!.controlEvents.listen((event) {
+      final currentPlayer = player;
+      if (currentPlayer == null && event is! NextTrackEvent && event is! PreviousTrackEvent) return;
+
       if (event is PlayEvent) {
         appLogger.d('Media control: Play event received');
-        if (player != null) {
-          player!.play();
-          _wasPlayingBeforeInactive = false;
-          appLogger.d('Cleared _wasPlayingBeforeInactive due to manual play via media controls');
-          _updateMediaControlsPlaybackState();
-        }
+        currentPlayer!.play();
+        _wasPlayingBeforeInactive = false;
+        _updateMediaControlsPlaybackState();
       } else if (event is PauseEvent) {
         appLogger.d('Media control: Pause event received');
-        if (player != null) {
-          player!.pause();
-          appLogger.d('Video paused via media controls');
-          _updateMediaControlsPlaybackState();
+        currentPlayer!.pause();
+        _updateMediaControlsPlaybackState();
+      } else if (event is TogglePlayPauseEvent) {
+        appLogger.d('Media control: Toggle play/pause event received');
+        if (currentPlayer!.state.playing) {
+          currentPlayer.pause();
+        } else {
+          currentPlayer.play();
+          _wasPlayingBeforeInactive = false;
         }
+        _updateMediaControlsPlaybackState();
       } else if (event is SeekEvent) {
         appLogger.d('Media control: Seek event received to ${event.position}');
-        final currentPlayer = player;
-        if (currentPlayer != null) {
-          unawaited(currentPlayer.seek(clampSeekPosition(currentPlayer, event.position)));
-        }
+        unawaited(currentPlayer!.seek(clampSeekPosition(currentPlayer, event.position)));
       } else if (event is NextTrackEvent) {
         appLogger.d('Media control: Next track event received');
-        if (_nextEpisode != null) {
-          _playNext();
-        }
+        if (_nextEpisode != null) _playNext();
       } else if (event is PreviousTrackEvent) {
         appLogger.d('Media control: Previous track event received');
-        if (_previousEpisode != null) {
-          _playPrevious();
-        }
+        if (_previousEpisode != null) _playPrevious();
       }
     });
 
