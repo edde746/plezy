@@ -54,6 +54,7 @@ import 'utils/log_redaction_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
+const String _gitCommit = String.fromEnvironment('GIT_COMMIT');
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
@@ -81,7 +82,9 @@ Future<void> main() async {
 
     await SentryFlutter.init((options) {
       options.dsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
-      options.release = 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
+      options.release = _gitCommit.isNotEmpty
+          ? 'plezy@${_gitCommit.substring(0, 7)}'
+          : 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
       options.tracesSampleRate = 0;
       options.attachStacktrace = true;
       options.enableAutoSessionTracking = false;
