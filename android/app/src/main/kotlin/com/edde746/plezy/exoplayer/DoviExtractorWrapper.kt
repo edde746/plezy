@@ -11,7 +11,7 @@ import androidx.media3.extractor.TrackOutput
 /**
  * ExtractorOutput wrapper that intercepts video track creation
  * to insert DoviConvertingTrackOutput for DV processing.
- * Shared by DoviExtractorWrapper (MP4) and DoviMatroskaExtractor (MKV).
+ * Shared by DoviExtractorWrapper for both MP4 and MKV containers.
  */
 class DoviExtractorOutputWrapper(
     private val delegate: ExtractorOutput,

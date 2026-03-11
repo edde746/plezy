@@ -204,7 +204,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     // DV conversion state
     private var dvMode: DvConversionMode = DvConversionMode.DISABLED
     private var dv7RetryAttempted = false
-    @Volatile private var activeDoviMkvExtractor: DoviMatroskaExtractor? = null
+    @Volatile private var activeDoviMkvWrapper: DoviExtractorWrapper? = null
     @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
 
     fun initialize(bufferSizeBytes: Int? = null, tunnelingEnabled: Boolean = true): Boolean {
@@ -359,12 +359,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 extractorsFactory.createExtractors().map { extractor ->
                     when {
                         extractor is MatroskaExtractor -> {
+                            val assExtractor = AssMatroskaExtractor(assParserFactory, handler)
                             if (doviEnabled) {
-                                DoviMatroskaExtractor(assParserFactory, handler, currentDvMode).also {
-                                    activeDoviMkvExtractor = it
+                                DoviExtractorWrapper(assExtractor, currentDvMode).also {
+                                    activeDoviMkvWrapper = it
                                 }
                             } else {
-                                AssMatroskaExtractor(assParserFactory, handler)
+                                assExtractor
                             }
                         }
                         doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
@@ -1502,7 +1503,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             "isPlaying" to player.isPlaying,
             "playbackState" to player.playbackState,
             // DV conversion (query extractor's track output, which is set during extraction)
-            *(activeDoviMkvExtractor?.doviTrackOutput
+            *(activeDoviMkvWrapper?.doviTrackOutput
                 ?: activeDoviMp4Wrapper?.doviTrackOutput).let { dovi ->
                 arrayOf(
                     "dvConversionActive" to (dovi?.conversionActive == true),
