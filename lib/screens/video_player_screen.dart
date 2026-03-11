@@ -1062,10 +1062,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
         // Enable FFmpeg auto-reconnect for VOD streams (covers network drops up to 10 min)
         if (!widget.isOffline && !widget.isLive) {
-          await player!.setProperty('stream-lavf-o-append', 'reconnect=1');
-          await player!.setProperty('stream-lavf-o-append', 'reconnect_on_network_error=1');
-          await player!.setProperty('stream-lavf-o-append', 'reconnect_streamed=1');
-          await player!.setProperty('stream-lavf-o-append', 'reconnect_delay_max=600');
+          await player!.setProperty('stream-lavf-o',
+              'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600');
         }
 
         // If we have external subtitles, open paused to add them before playback starts.
@@ -2089,11 +2087,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _setLiveStreamOptions() async {
     final p = player!;
     // FFmpeg HTTP protocol reconnection
-    await p.setProperty('stream-lavf-o-append', 'reconnect=1');
-    await p.setProperty('stream-lavf-o-append', 'reconnect_at_eof=1');
-    await p.setProperty('stream-lavf-o-append', 'reconnect_streamed=1');
-    await p.setProperty('stream-lavf-o-append', 'reconnect_on_network_error=1');
-    await p.setProperty('stream-lavf-o-append', 'reconnect_delay_max=30');
+    await p.setProperty('stream-lavf-o',
+        'reconnect=1,reconnect_at_eof=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=30');
     // Demuxer: retry up to 1000 times on stream reload failures
     await p.setProperty('demuxer-lavf-o', 'max_reload=1000');
     await p.setProperty('force-seekable', 'no');
