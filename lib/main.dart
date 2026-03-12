@@ -301,6 +301,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final DownloadManagerService _downloadManager;
   late final OfflineWatchSyncService _offlineWatchSyncService;
 
+  /// Last time server health probes ran from a resume event (cooldown for desktop)
+  DateTime _lastResumeProbe = DateTime(0);
+
   @override
   void initState() {
     super.initState();
@@ -335,9 +338,18 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // App came back to foreground - trigger sync check and start new session
         _offlineWatchSyncService.onAppResumed();
         InAppReviewService.instance.startSession();
-        // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep
-        _serverManager.checkServerHealth();
-        _serverManager.reconnectOfflineServers();
+        // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep.
+        // On desktop, resumed fires on every window focus (alt-tab), so apply a cooldown
+        // to avoid piling up network probes from rapid alt-tabbing.
+        final now = DateTime.now();
+        final cooldown = (Platform.isIOS || Platform.isAndroid)
+            ? const Duration(seconds: 10)
+            : const Duration(minutes: 2);
+        if (now.difference(_lastResumeProbe) >= cooldown) {
+          _lastResumeProbe = now;
+          _serverManager.checkServerHealth();
+          _serverManager.reconnectOfflineServers();
+        }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
         // App went to background or is closing - end session
