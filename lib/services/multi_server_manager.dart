@@ -316,33 +316,37 @@ class MultiServerManager {
     }
 
     appLogger.i('Starting network monitoring for all servers');
-    final connectivity = Connectivity();
-    _connectivitySubscription = connectivity.onConnectivityChanged.listen(
-      (results) {
-        final status = results.isNotEmpty ? results.first : ConnectivityResult.none;
+    runZonedGuarded(() {
+      final connectivity = Connectivity();
+      _connectivitySubscription = connectivity.onConnectivityChanged.listen(
+        (results) {
+          final status = results.isNotEmpty ? results.first : ConnectivityResult.none;
 
-        if (status == ConnectivityResult.none) {
-          appLogger.w('Connectivity lost, pausing optimization until network returns');
-          return;
-        }
+          if (status == ConnectivityResult.none) {
+            appLogger.w('Connectivity lost, pausing optimization until network returns');
+            return;
+          }
 
-        appLogger.d(
-          'Connectivity change detected, re-optimizing all servers',
-          error: {
-            'status': status.name,
-            'interfaces': results.map((r) => r.name).toList(),
-            'serverCount': _servers.length,
-          },
-        );
+          appLogger.d(
+            'Connectivity change detected, re-optimizing all servers',
+            error: {
+              'status': status.name,
+              'interfaces': results.map((r) => r.name).toList(),
+              'serverCount': _servers.length,
+            },
+          );
 
-        // Re-optimize all servers and re-probe offline ones
-        _reoptimizeAllServers(reason: 'connectivity:${status.name}');
-        checkServerHealth();
-      },
-      onError: (error, stackTrace) {
-        appLogger.w('Connectivity listener error', error: error, stackTrace: stackTrace);
-      },
-    );
+          // Re-optimize all servers and re-probe offline ones
+          _reoptimizeAllServers(reason: 'connectivity:${status.name}');
+          checkServerHealth();
+        },
+        onError: (error, stackTrace) {
+          appLogger.w('Connectivity listener error', error: error, stackTrace: stackTrace);
+        },
+      );
+    }, (error, stack) {
+      appLogger.w('Connectivity monitoring unavailable', error: error);
+    });
   }
 
   /// Stop monitoring network connectivity

@@ -48,9 +48,9 @@ class OfflineModeProvider extends ChangeNotifier {
     // Check initial connectivity
     await _updateConnectionFlags();
 
-    // Monitor connectivity changes — wrapped in try-catch because
-    // connectivity_plus can throw synchronously on Windows (NetworkManager::StartListen)
-    try {
+    // Monitor connectivity changes — runZonedGuarded catches async errors from
+    // connectivity_plus (e.g. DBusServiceUnknownException on Linux without NetworkManager)
+    runZonedGuarded(() {
       _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
         (results) {
           final wasOffline = isOffline;
@@ -61,14 +61,13 @@ class OfflineModeProvider extends ChangeNotifier {
           }
         },
         onError: (e) {
-          // Assume network available on stream error
           _hasNetworkConnection = true;
         },
       );
-    } catch (e) {
-      // Assume network available if stream activation fails
+    }, (error, stack) {
+      // connectivity_plus throws DBusServiceUnknownException on Linux without NetworkManager
       _hasNetworkConnection = true;
-    }
+    });
 
     // Monitor server status from MultiServerManager
     _serverStatusSubscription = _serverManager.statusStream.listen((statusMap) {

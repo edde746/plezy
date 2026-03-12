@@ -198,6 +198,11 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
     return null;
   }
 
+  // Drop DBusServiceUnknownException from Linux without NetworkManager
+  if (exceptions != null && exceptions.any((e) => e.type == 'DBusServiceUnknownException')) {
+    return null;
+  }
+
   // Scrub Plex tokens and server URLs from exception messages
   if (exceptions != null) {
     exceptions = exceptions.map((e) {
