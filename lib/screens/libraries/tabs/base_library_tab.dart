@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../models/plex_library.dart';
 import '../../../utils/app_logger.dart';
 import '../../../mixins/library_tab_state.dart';
@@ -164,6 +165,9 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   void tryFocus() {
     // Don't auto-focus if suppressed (e.g., when navigating via tab bar)
     if (widget.suppressAutoFocus) return;
+    // On mobile (touch mode), skip auto-focus to prevent ensureVisible()
+    // from interfering with TabBarView page animations
+    if (!InputModeTracker.isKeyboardMode(context)) return;
 
     if (widget.isActive && _hasLoadedData && !hasFocused && _items.isNotEmpty) {
       hasFocused = true;

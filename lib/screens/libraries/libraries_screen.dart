@@ -219,6 +219,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     if (tabController.indexIsChanging) {
       return;
     }
+    // On mobile (touch mode), skip auto-focus to prevent ensureVisible()
+    // from interfering with TabBarView page animations
+    if (!InputModeTracker.isKeyboardMode(context)) return;
 
     // Re-enable auto-focus since user is navigating into tab content
     // Only call setState if the value actually changes to avoid unnecessary rebuilds
@@ -1064,38 +1067,50 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                       // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
                       // See: https://github.com/flutter/flutter/issues/11132
                       physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
+                      // Wrap each tab in ClipRect so horizontal overflow (e.g. hub rows
+                      // with Clip.none) doesn't bleed into adjacent tabs during swipe transitions.
+                      // The TabBarView's own clipBehavior only clips at the viewport level,
+                      // not per-page, so we need per-child clipping.
                       children: [
-                        LibraryRecommendedTab(
-                          key: _recommendedTabKey,
-                          library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                          isActive: tabController.index == 0,
-                          suppressAutoFocus: suppressAutoFocus,
-                          onDataLoaded: () => _handleTabDataLoaded(0),
-                          onBack: focusTabBar,
+                        ClipRect(
+                          child: LibraryRecommendedTab(
+                            key: _recommendedTabKey,
+                            library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                            isActive: tabController.index == 0,
+                            suppressAutoFocus: suppressAutoFocus,
+                            onDataLoaded: () => _handleTabDataLoaded(0),
+                            onBack: focusTabBar,
+                          ),
                         ),
-                        LibraryBrowseTab(
-                          key: _browseTabKey,
-                          library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                          isActive: tabController.index == 1,
-                          suppressAutoFocus: suppressAutoFocus,
-                          onDataLoaded: () => _handleTabDataLoaded(1),
-                          onBack: focusTabBar,
+                        ClipRect(
+                          child: LibraryBrowseTab(
+                            key: _browseTabKey,
+                            library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                            isActive: tabController.index == 1,
+                            suppressAutoFocus: suppressAutoFocus,
+                            onDataLoaded: () => _handleTabDataLoaded(1),
+                            onBack: focusTabBar,
+                          ),
                         ),
-                        LibraryCollectionsTab(
-                          key: _collectionsTabKey,
-                          library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                          isActive: tabController.index == 2,
-                          suppressAutoFocus: suppressAutoFocus,
-                          onDataLoaded: () => _handleTabDataLoaded(2),
-                          onBack: focusTabBar,
+                        ClipRect(
+                          child: LibraryCollectionsTab(
+                            key: _collectionsTabKey,
+                            library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                            isActive: tabController.index == 2,
+                            suppressAutoFocus: suppressAutoFocus,
+                            onDataLoaded: () => _handleTabDataLoaded(2),
+                            onBack: focusTabBar,
+                          ),
                         ),
-                        LibraryPlaylistsTab(
-                          key: _playlistsTabKey,
-                          library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                          isActive: tabController.index == 3,
-                          suppressAutoFocus: suppressAutoFocus,
-                          onDataLoaded: () => _handleTabDataLoaded(3),
-                          onBack: focusTabBar,
+                        ClipRect(
+                          child: LibraryPlaylistsTab(
+                            key: _playlistsTabKey,
+                            library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                            isActive: tabController.index == 3,
+                            suppressAutoFocus: suppressAutoFocus,
+                            onDataLoaded: () => _handleTabDataLoaded(3),
+                            onBack: focusTabBar,
+                          ),
                         ),
                       ],
                     ),

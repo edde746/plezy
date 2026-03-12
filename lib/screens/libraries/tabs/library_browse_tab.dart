@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../../../focus/dpad_navigator.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../../services/plex_client.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../models/plex_filter.dart';
@@ -224,6 +225,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   @override
   void tryFocus() {
     if (widget.suppressAutoFocus) return;
+    // On mobile (touch mode), skip auto-focus to prevent ensureVisible()
+    // from interfering with TabBarView page animations
+    if (!InputModeTracker.isKeyboardMode(context)) return;
     if (widget.isActive && hasLoadedData && !hasFocused && _loadedItems.isNotEmpty) {
       hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
