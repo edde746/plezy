@@ -361,6 +361,7 @@ class MpvPlayerCore(private val activity: Activity) :
     }
 
     override fun event(eventId: Int) {
+        if (disposing) return
         when (eventId) {
             MPVLib.MPV_EVENT_END_FILE -> {
                 val eofReached = try { MPVLib.getPropertyBoolean("eof-reached") } catch (_: Exception) { false }
