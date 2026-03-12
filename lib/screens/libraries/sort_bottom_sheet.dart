@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../models/plex_sort.dart';
 import '../../widgets/bottom_sheet_header.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -41,6 +42,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
     _initialFocusNode = FocusNode(debugLabel: 'SortBottomSheetInitialFocus');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (!InputModeTracker.isKeyboardMode(context)) return;
       final ctx = _initialFocusNode.context;
       if (ctx != null) {
         Scrollable.ensureVisible(ctx, alignment: 0.5);

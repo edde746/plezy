@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/overlay_sheet.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 
 class RatingBottomSheet extends StatefulWidget {
@@ -59,7 +60,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
           const SizedBox(height: 16),
           Focus(
             focusNode: _starsFocusNode,
-            autofocus: true,
+            autofocus: InputModeTracker.isKeyboardMode(context),
             onKeyEvent: _handleStarsKeyEvent,
             child: LayoutBuilder(
               builder: (context, constraints) {
