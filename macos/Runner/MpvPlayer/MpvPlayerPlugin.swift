@@ -277,6 +277,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         if name == "pause" {
             let isPlaying = value == "no"
             pipController?.setPlaying(isPlaying)
+            playerCore?.setPaused(!isPlaying)
         }
 
         result(nil)

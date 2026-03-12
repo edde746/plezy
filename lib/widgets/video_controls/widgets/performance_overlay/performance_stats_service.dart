@@ -33,6 +33,8 @@ class PerformanceStatsService {
   int _frameCount = 0;
   DateTime _lastFpsUpdate = DateTime.now();
   double? _currentUiFps;
+  bool _fpsTrackingActive = false;
+  bool _fpsCallbackRegistered = false;
 
   // Track runtime player type for logging (can differ from Dart object type after fallback)
   // Values: 'exoplayer', 'mpv', or 'unknown'
@@ -77,11 +79,16 @@ class PerformanceStatsService {
   void _startFpsTracking() {
     _frameCount = 0;
     _lastFpsUpdate = DateTime.now();
-    SchedulerBinding.instance.addPersistentFrameCallback(_onFrame);
+    _fpsTrackingActive = true;
+    if (!_fpsCallbackRegistered) {
+      _fpsCallbackRegistered = true;
+      SchedulerBinding.instance.addPersistentFrameCallback(_onFrame);
+    }
   }
 
   /// Called every frame to count FPS.
   void _onFrame(Duration timestamp) {
+    if (!_fpsTrackingActive) return;
     _frameCount++;
     final now = DateTime.now();
     final elapsed = now.difference(_lastFpsUpdate);
@@ -96,6 +103,8 @@ class PerformanceStatsService {
   void stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
+    _fpsTrackingActive = false;
+    _currentUiFps = null;
   }
 
   /// Fetch all performance stats from the player.

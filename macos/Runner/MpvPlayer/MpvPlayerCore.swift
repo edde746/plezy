@@ -85,7 +85,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     override func configurePlatformMpvOptions() {
         guard let mpv else { return }
         checkError(mpv_set_option_string(mpv, "ao", "avfoundation,coreaudio"))
-        checkError(mpv_set_option_string(mpv, "vulkan-swap-mode", "mailbox"))
+        // Default fifo (vsync) mode — mailbox was causing continuous GPU rendering even when paused
     }
 
     var videoLayer: CAMetalLayer? { metalLayer }
@@ -113,8 +113,12 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         command(["seek", "0", "relative+exact"])
     }
 
+    private var isVisible = false
+
     func setVisible(_ visible: Bool) {
         guard let metalLayer, !isPipActive else { return }
+
+        isVisible = visible
 
         if visible {
             metalLayer.removeFromSuperlayer()
@@ -128,6 +132,14 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
         metalLayer.isHidden = !visible
         print("[MpvPlayerCore] setVisible(\(visible))")
+    }
+
+    func setPaused(_ paused: Bool) {
+        if paused {
+            endPlaybackActivity()
+        } else if isVisible {
+            beginPlaybackActivity()
+        }
     }
 
     func updateFrame(_ frame: CGRect? = nil) {
