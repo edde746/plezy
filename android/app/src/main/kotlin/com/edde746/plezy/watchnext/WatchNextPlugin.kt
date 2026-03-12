@@ -3,11 +3,14 @@ package com.edde746.plezy.watchnext
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.tvprovider.media.tv.TvContractCompat
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executors
 
 /**
  * Flutter plugin for Android TV Watch Next integration.
@@ -37,6 +40,8 @@ class WatchNextPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var methodChannel: MethodChannel
     private var applicationContext: Context? = null
     private var watchNextProvider: WatchNextProvider? = null
+    private val ioExecutor by lazy { Executors.newSingleThreadExecutor() }
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         applicationContext = binding.applicationContext
@@ -49,6 +54,7 @@ class WatchNextPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         methodChannel.setMethodCallHandler(null)
         applicationContext = null
         watchNextProvider = null
+        ioExecutor.shutdown()
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -85,7 +91,7 @@ class WatchNextPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
 
         val items = itemsData.mapNotNull { parseWatchNextItem(it) }
-        result.success(provider.syncWatchNextPrograms(items))
+        executeOnIo(result) { provider.syncWatchNextPrograms(items) }
     }
 
     private fun handleClear(result: MethodChannel.Result) {
@@ -94,7 +100,7 @@ class WatchNextPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             result.error("NOT_INITIALIZED", "WatchNextProvider not initialized", null)
             return
         }
-        result.success(provider.clearAll())
+        executeOnIo(result) { provider.clearAll() }
     }
 
     private fun handleRemove(call: MethodCall, result: MethodChannel.Result) {
@@ -109,7 +115,23 @@ class WatchNextPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             result.error("INVALID_ARGS", "Missing 'contentId' argument", null)
             return
         }
-        result.success(provider.removeItem(contentId))
+        executeOnIo(result) { provider.removeItem(contentId) }
+    }
+
+    private fun executeOnIo(result: MethodChannel.Result, block: () -> Any?) {
+        try {
+            ioExecutor.execute {
+                try {
+                    val value = block()
+                    mainHandler.post { result.success(value) }
+                } catch (e: Exception) {
+                    Log.e(TAG, "IO operation failed: ${e.message}", e)
+                    mainHandler.post { result.error("IO_ERROR", e.message, null) }
+                }
+            }
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            result.error("SHUTDOWN", "Plugin is shutting down", null)
+        }
     }
 
     private fun handleGetInitialDeepLink(result: MethodChannel.Result) {

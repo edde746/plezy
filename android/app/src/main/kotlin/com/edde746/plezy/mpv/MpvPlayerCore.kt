@@ -439,17 +439,22 @@ class MpvPlayerCore(private val activity: Activity) :
      * This prevents ANR when mpv_get_property blocks waiting for internal locks.
      */
     fun getPropertyAsync(name: String, result: MethodChannel.Result) {
-        if (!isInitialized) {
+        if (!isInitialized || disposing) {
             result.success(null)
             return
         }
-        commandExecutor.execute {
-            try {
-                val value = MPVLib.getPropertyString(name)
-                activity.runOnUiThread { result.success(value) }
-            } catch (e: Exception) {
-                activity.runOnUiThread { result.success(null) }
+        try {
+            commandExecutor.execute {
+                try {
+                    val value = MPVLib.getPropertyString(name)
+                    activity.runOnUiThread { result.success(value) }
+                } catch (e: Exception) {
+                    activity.runOnUiThread { result.success(null) }
+                }
             }
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            Log.w(TAG, "getPropertyAsync rejected (executor shut down)")
+            result.success(null)
         }
     }
 
@@ -458,18 +463,23 @@ class MpvPlayerCore(private val activity: Activity) :
      * This prevents ANR when mpv_set_property blocks waiting for internal locks.
      */
     fun setPropertyAsync(name: String, value: String, result: MethodChannel.Result) {
-        if (!isInitialized) {
+        if (!isInitialized || disposing) {
             result.success(null)
             return
         }
-        commandExecutor.execute {
-            try {
-                MPVLib.setPropertyString(name, value)
-                activity.runOnUiThread { result.success(null) }
-            } catch (e: Exception) {
-                Log.e(TAG, "Async setProperty failed: ${e.message}", e)
-                activity.runOnUiThread { result.success(null) }
+        try {
+            commandExecutor.execute {
+                try {
+                    MPVLib.setPropertyString(name, value)
+                    activity.runOnUiThread { result.success(null) }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Async setProperty failed: ${e.message}", e)
+                    activity.runOnUiThread { result.success(null) }
+                }
             }
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            Log.w(TAG, "setPropertyAsync rejected (executor shut down)")
+            result.success(null)
         }
     }
 
@@ -478,7 +488,7 @@ class MpvPlayerCore(private val activity: Activity) :
      * This prevents ANR when mpv_observe_property blocks waiting for internal locks.
      */
     fun observePropertyAsync(name: String, format: String, result: MethodChannel.Result) {
-        if (!isInitialized) {
+        if (!isInitialized || disposing) {
             result.success(null)
             return
         }
@@ -489,14 +499,19 @@ class MpvPlayerCore(private val activity: Activity) :
             "node" -> MPVLib.MPV_FORMAT_NODE
             else -> MPVLib.MPV_FORMAT_NONE
         }
-        commandExecutor.execute {
-            try {
-                MPVLib.observeProperty(name, mpvFormat)
-                activity.runOnUiThread { result.success(null) }
-            } catch (e: Exception) {
-                Log.e(TAG, "Async observeProperty failed: ${e.message}", e)
-                activity.runOnUiThread { result.success(null) }
+        try {
+            commandExecutor.execute {
+                try {
+                    MPVLib.observeProperty(name, mpvFormat)
+                    activity.runOnUiThread { result.success(null) }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Async observeProperty failed: ${e.message}", e)
+                    activity.runOnUiThread { result.success(null) }
+                }
             }
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            Log.w(TAG, "observePropertyAsync rejected (executor shut down)")
+            result.success(null)
         }
     }
 
@@ -505,7 +520,12 @@ class MpvPlayerCore(private val activity: Activity) :
      * Used by the plugin for I/O operations that shouldn't block the main thread.
      */
     fun runOnExecutor(block: () -> Unit) {
-        commandExecutor.execute(block)
+        if (disposing) return
+        try {
+            commandExecutor.execute(block)
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            Log.w(TAG, "runOnExecutor rejected (executor shut down)")
+        }
     }
 
     fun command(args: Array<String>) {
@@ -519,23 +539,28 @@ class MpvPlayerCore(private val activity: Activity) :
      * The result is called back on the UI thread when the command completes.
      */
     fun commandAsync(args: Array<String>, result: MethodChannel.Result) {
-        if (!isInitialized || args.isEmpty()) {
+        if (!isInitialized || disposing || args.isEmpty()) {
             result.success(null)
             return
         }
 
-        commandExecutor.execute {
-            try {
-                MPVLib.command(args)
-                activity.runOnUiThread {
-                    result.success(null)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Async command failed: ${e.message}", e)
-                activity.runOnUiThread {
-                    result.error("COMMAND_FAILED", e.message, null)
+        try {
+            commandExecutor.execute {
+                try {
+                    MPVLib.command(args)
+                    activity.runOnUiThread {
+                        result.success(null)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Async command failed: ${e.message}", e)
+                    activity.runOnUiThread {
+                        result.error("COMMAND_FAILED", e.message, null)
+                    }
                 }
             }
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            Log.w(TAG, "commandAsync rejected (executor shut down)")
+            result.success(null)
         }
     }
 

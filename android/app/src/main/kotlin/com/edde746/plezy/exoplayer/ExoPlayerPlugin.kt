@@ -224,7 +224,9 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 val optionsStr = options.joinToString(",")
                 // Convert content:// URIs to fdclose:// for MPV (SAF SD card downloads)
                 val mpvUri = openContentFd(uri)?.let { "fdclose://$it" } ?: uri
-                mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
+                mpvCore?.runOnExecutor {
+                    mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
+                }
             } else {
                 playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive)
             }
@@ -235,7 +237,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun handlePlay(result: MethodChannel.Result) {
         activity?.runOnUiThread {
             if (usingMpvFallback) {
-                mpvCore?.setProperty("pause", "no")
+                mpvCore?.runOnExecutor { mpvCore?.setProperty("pause", "no") }
             } else {
                 playerCore?.play()
             }
@@ -246,7 +248,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun handlePause(result: MethodChannel.Result) {
         activity?.runOnUiThread {
             if (usingMpvFallback) {
-                mpvCore?.setProperty("pause", "yes")
+                mpvCore?.runOnExecutor { mpvCore?.setProperty("pause", "yes") }
             } else {
                 playerCore?.pause()
             }
@@ -257,8 +259,10 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun handleStop(result: MethodChannel.Result) {
         activity?.runOnUiThread {
             if (usingMpvFallback) {
-                mpvCore?.command(arrayOf("stop"))
-                mpvCore?.setVisible(false)
+                mpvCore?.runOnExecutor {
+                    mpvCore?.command(arrayOf("stop"))
+                    mpvCore?.setVisible(false)
+                }
             } else {
                 playerCore?.stop()
             }
@@ -277,7 +281,9 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         activity?.runOnUiThread {
             if (usingMpvFallback) {
                 val positionSeconds = positionMs / 1000.0
-                mpvCore?.command(arrayOf("seek", positionSeconds.toString(), "absolute"))
+                mpvCore?.runOnExecutor {
+                    mpvCore?.command(arrayOf("seek", positionSeconds.toString(), "absolute"))
+                }
             } else {
                 playerCore?.seekTo(positionMs)
             }
@@ -295,7 +301,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
         activity?.runOnUiThread {
             if (usingMpvFallback) {
-                mpvCore?.setProperty("volume", volume.toString())
+                mpvCore?.runOnExecutor { mpvCore?.setProperty("volume", volume.toString()) }
             } else {
                 playerCore?.setVolume(volume / 100f) // Convert 0-100 to 0-1
             }
@@ -313,7 +319,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
         activity?.runOnUiThread {
             if (usingMpvFallback) {
-                mpvCore?.setProperty("speed", rate.toString())
+                mpvCore?.runOnExecutor { mpvCore?.setProperty("speed", rate.toString()) }
             } else {
                 playerCore?.setPlaybackSpeed(rate)
             }
@@ -333,7 +339,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             if (usingMpvFallback) {
                 // MPV uses numeric track IDs - extract from string format
                 val numericId = trackId.split("_").lastOrNull()?.toIntOrNull() ?: 1
-                mpvCore?.setProperty("aid", numericId.toString())
+                mpvCore?.runOnExecutor { mpvCore?.setProperty("aid", numericId.toString()) }
             } else {
                 playerCore?.selectAudioTrack(trackId)
             }
@@ -347,11 +353,13 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         // trackId can be null or "no" to disable subtitles
         activity?.runOnUiThread {
             if (usingMpvFallback) {
-                if (trackId == null || trackId == "no") {
-                    mpvCore?.setProperty("sid", "no")
-                } else {
-                    val numericId = trackId.split("_").lastOrNull()?.toIntOrNull() ?: 1
-                    mpvCore?.setProperty("sid", numericId.toString())
+                mpvCore?.runOnExecutor {
+                    if (trackId == null || trackId == "no") {
+                        mpvCore?.setProperty("sid", "no")
+                    } else {
+                        val numericId = trackId.split("_").lastOrNull()?.toIntOrNull() ?: 1
+                        mpvCore?.setProperty("sid", numericId.toString())
+                    }
                 }
             } else {
                 playerCore?.selectSubtitleTrack(trackId)
@@ -375,7 +383,9 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         activity?.runOnUiThread {
             if (usingMpvFallback) {
                 val selectFlag = if (select) "select" else "auto"
-                mpvCore?.command(arrayOf("sub-add", uri, selectFlag, title ?: "External"))
+                mpvCore?.runOnExecutor {
+                    mpvCore?.command(arrayOf("sub-add", uri, selectFlag, title ?: "External"))
+                }
             } else {
                 playerCore?.addSubtitleTrack(uri, title, language, mimeType, select)
             }
@@ -484,7 +494,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         if (usingMpvFallback) {
-            mpvCore?.setProperty(name, value)
+            mpvCore?.runOnExecutor { mpvCore?.setProperty(name, value) }
         } else {
             // Store for later application if ExoPlayer falls back to MPV
             pendingMpvProperties.add(Pair(name, value))
@@ -493,16 +503,17 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     }
 
     private fun handleGetStats(result: MethodChannel.Result) {
-        activity?.runOnUiThread {
-            val stats = if (usingMpvFallback) {
-                // For MPV fallback, query MPV properties directly
-                getMpvStats()
-            } else {
+        if (usingMpvFallback) {
+            mpvCore?.runOnExecutor {
+                val stats = getMpvStats()
+                activity?.runOnUiThread { result.success(stats) }
+            } ?: result.success(mapOf("playerType" to "mpv"))
+        } else {
+            activity?.runOnUiThread {
                 val coreStats = playerCore?.getStats() ?: emptyMap()
-                coreStats + mapOf("playerType" to "exoplayer")
-            }
-            result.success(stats)
-        } ?: result.success(mapOf("playerType" to "unknown"))
+                result.success(coreStats + mapOf("playerType" to "exoplayer"))
+            } ?: result.success(mapOf("playerType" to "unknown"))
+        }
     }
 
     /**
@@ -652,71 +663,80 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     usingMpvFallback = true
                     fallbackInProgress = false
 
-                    // Configure basic MPV properties for Plex playback
-                    mpvCore?.setProperty("hwdec", "mediacodec,mediacodec-copy")
-                    mpvCore?.setProperty("vo", "gpu")
-                    mpvCore?.setProperty("ao", "audiotrack")
-
-                    // Forward user's buffer config to MPV fallback
-                    configuredBufferSizeBytes?.let { bytes ->
-                        if (bytes > 0) {
-                            mpvCore?.setProperty("demuxer-max-bytes", bytes.toString())
-                        }
-                    }
-
-                    // Apply any pending MPV properties from Dart
-                    for ((propName, propValue) in pendingMpvProperties) {
-                        mpvCore?.setProperty(propName, propValue)
-                    }
+                    // Snapshot pending properties on main thread before clearing
+                    val pendingProps = pendingMpvProperties.toList()
                     pendingMpvProperties.clear()
 
-                    // Setup property observers
-                    mpvCore?.observeProperty("time-pos", "double")
-                    mpvCore?.observeProperty("duration", "double")
-                    mpvCore?.observeProperty("seekable", "flag")
-                    mpvCore?.observeProperty("pause", "flag")
-                    mpvCore?.observeProperty("paused-for-cache", "flag")
-                    mpvCore?.observeProperty("demuxer-cache-time", "double")
-                    mpvCore?.observeProperty("eof-reached", "flag")
-                    mpvCore?.observeProperty("track-list", "string")
-                    mpvCore?.observeProperty("aid", "string")
-                    mpvCore?.observeProperty("sid", "string")
-                    mpvCore?.observeProperty("volume", "double")
-                    mpvCore?.observeProperty("speed", "double")
-
-                    // Show the MPV surface
-                    mpvCore?.setVisible(true)
-
-                    // Load media at the same position
-                    val startSeconds = positionMs / 1000.0
-                    val options = mutableListOf<String>()
-                    options.add("start=$startSeconds")
-                    headers?.forEach { (key, value) ->
-                        options.add("http-header-fields-append=$key: $value")
-                    }
-                    val optionsStr = options.joinToString(",")
-                    // Convert content:// URIs to fdclose:// for MPV (SAF SD card downloads)
+                    // Compute content FD on main thread (needs contentResolver)
                     val mpvUri = openContentFd(uri)?.let { "fdclose://$it" } ?: uri
-                    mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
 
-                    // On GPUs without compute shaders, MPV can't do dynamic peak detection
-                    // and spline tone-mapping produces dim/washed-out results with extreme
-                    // static HDR peak metadata. Use reinhard which handles this better.
-                    val peakDetection = mpvCore?.getProperty("hdr-compute-peak")
-                    if (peakDetection == "no") {
-                        Log.i(TAG, "No compute shaders — overriding tone-mapping to reinhard")
-                        mpvCore?.setProperty("tone-mapping", "reinhard")
-                        mpvCore?.setProperty("tone-mapping-param", "0.7")
-                        mpvCore?.setProperty("tone-mapping-mode", "luma")
+                    // Buffer size for closure
+                    val bufferSize = configuredBufferSizeBytes
+
+                    mpvCore?.runOnExecutor {
+                        // Configure basic MPV properties for Plex playback
+                        mpvCore?.setProperty("hwdec", "mediacodec,mediacodec-copy")
+                        mpvCore?.setProperty("vo", "gpu")
+                        mpvCore?.setProperty("ao", "audiotrack")
+
+                        // Forward user's buffer config to MPV fallback
+                        if (bufferSize != null && bufferSize > 0) {
+                            mpvCore?.setProperty("demuxer-max-bytes", bufferSize.toString())
+                        }
+
+                        // Apply pending MPV properties from Dart
+                        for ((propName, propValue) in pendingProps) {
+                            mpvCore?.setProperty(propName, propValue)
+                        }
+
+                        // Setup property observers
+                        mpvCore?.observeProperty("time-pos", "double")
+                        mpvCore?.observeProperty("duration", "double")
+                        mpvCore?.observeProperty("seekable", "flag")
+                        mpvCore?.observeProperty("pause", "flag")
+                        mpvCore?.observeProperty("paused-for-cache", "flag")
+                        mpvCore?.observeProperty("demuxer-cache-time", "double")
+                        mpvCore?.observeProperty("eof-reached", "flag")
+                        mpvCore?.observeProperty("track-list", "string")
+                        mpvCore?.observeProperty("aid", "string")
+                        mpvCore?.observeProperty("sid", "string")
+                        mpvCore?.observeProperty("volume", "double")
+                        mpvCore?.observeProperty("speed", "double")
+
+                        // Show the MPV surface (internally posts to UI)
+                        mpvCore?.setVisible(true)
+
+                        // Load media at the same position
+                        val startSeconds = positionMs / 1000.0
+                        val options = mutableListOf<String>()
+                        options.add("start=$startSeconds")
+                        headers?.forEach { (key, value) ->
+                            options.add("http-header-fields-append=$key: $value")
+                        }
+                        val optionsStr = options.joinToString(",")
+                        mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
+
+                        // On GPUs without compute shaders, MPV can't do dynamic peak detection
+                        // and spline tone-mapping produces dim/washed-out results with extreme
+                        // static HDR peak metadata. Use reinhard which handles this better.
+                        val peakDetection = mpvCore?.getProperty("hdr-compute-peak")
+                        if (peakDetection == "no") {
+                            Log.i(TAG, "No compute shaders — overriding tone-mapping to reinhard")
+                            mpvCore?.setProperty("tone-mapping", "reinhard")
+                            mpvCore?.setProperty("tone-mapping-param", "0.7")
+                            mpvCore?.setProperty("tone-mapping-mode", "luma")
+                        }
+
+                        // Request audio focus
+                        mpvCore?.requestAudioFocus()
+
+                        // Emit backend-switched event on main thread
+                        activity?.runOnUiThread {
+                            onEvent("backend-switched", null)
+                        }
+
+                        Log.i(TAG, "Successfully switched to MPV fallback")
                     }
-
-                    // Request audio focus
-                    mpvCore?.requestAudioFocus()
-
-                    // Emit backend-switched event so Flutter can show notification
-                    onEvent("backend-switched", null)
-
-                    Log.i(TAG, "Successfully switched to MPV fallback")
                 }
             } catch (e: Exception) {
                 fallbackInProgress = false
