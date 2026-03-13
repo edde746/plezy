@@ -1049,8 +1049,8 @@ class GuideTabState extends State<GuideTab> {
                 children: [
                   Text(
                     program.grandparentTitle ?? program.title,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: isCurrentlyAiring ? FontWeight.w600 : FontWeight.normal,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                       color: titleColor,
                     ),
                     maxLines: 1,
