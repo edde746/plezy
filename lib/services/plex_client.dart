@@ -2180,8 +2180,8 @@ class PlexClient {
     if (providers.isEmpty) return [];
 
     final queryParams = <String, dynamic>{};
-    if (beginsAt != null) queryParams['beginsAt>'] = beginsAt;
-    if (endsAt != null) queryParams['endsAt<'] = endsAt;
+    if (beginsAt != null) queryParams['endsAt>'] = beginsAt;
+    if (endsAt != null) queryParams['beginsAt<'] = endsAt;
 
     final allPrograms = <LiveTvProgram>[];
 
