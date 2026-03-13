@@ -519,6 +519,7 @@
       "playlists": "プレイリスト"
     },
     "groupings": {
+      "title": "グループ",
       "all": "すべて",
       "movies": "映画",
       "shows": "テレビ番組",

@@ -519,6 +519,7 @@
       "playlists": "播放列表"
     },
     "groupings": {
+      "title": "分组",
       "all": "全部",
       "movies": "电影",
       "shows": "剧集",

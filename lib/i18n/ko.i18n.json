@@ -519,6 +519,7 @@
       "playlists": "재생 목록"
     },
     "groupings": {
+      "title": "그룹",
       "all": "전체",
       "movies": "영화",
       "shows": "TV 프로그램",

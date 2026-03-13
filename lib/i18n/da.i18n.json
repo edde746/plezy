@@ -300,7 +300,7 @@
     "noCollections": "Ingen samlinger i dette bibliotek",
     "noFoldersFound": "Ingen mapper fundet", "folders": "mapper",
     "tabs": { "recommended": "Anbefalet", "browse": "Gennemse", "collections": "Samlinger", "playlists": "Playlister" },
-    "groupings": { "all": "Alle", "movies": "Film", "shows": "TV-serier", "seasons": "Sæsoner", "episodes": "Episoder", "folders": "Mapper" }
+    "groupings": { "title": "Gruppering", "all": "Alle", "movies": "Film", "shows": "TV-serier", "seasons": "Sæsoner", "episodes": "Episoder", "folders": "Mapper" }
   },
   "about": {
     "title": "Om", "openSourceLicenses": "Open source-licenser", "versionLabel": "Version ${version}",

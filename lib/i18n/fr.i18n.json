@@ -519,6 +519,7 @@
       "playlists": "Playlists"
     },
     "groupings": {
+      "title": "Regroupement",
       "all": "Tous",
       "movies": "Films",
       "shows": "Show TV",

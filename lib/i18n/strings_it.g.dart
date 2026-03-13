@@ -1197,6 +1197,7 @@ class _TranslationsLibrariesGroupingsIt implements TranslationsLibrariesGrouping
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
+	@override String get title => 'Raggruppamento';
 	@override String get all => 'Tutti';
 	@override String get movies => 'Film';
 	@override String get shows => 'Serie TV';
@@ -1779,6 +1780,7 @@ extension on TranslationsIt {
 			'libraries.tabs.browse' => 'Esplora',
 			'libraries.tabs.collections' => 'Raccolte',
 			'libraries.tabs.playlists' => 'Playlist',
+			'libraries.groupings.title' => 'Raggruppamento',
 			'libraries.groupings.all' => 'Tutti',
 			'libraries.groupings.movies' => 'Film',
 			'libraries.groupings.shows' => 'Serie TV',
@@ -1820,9 +1822,9 @@ extension on TranslationsIt {
 			'liveTv.nowPlaying' => 'In riproduzione',
 			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
 			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
-			'liveTv.live' => 'IN DIRETTA',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.live' => 'IN DIRETTA',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NUOVO',
 			'liveTv.reloadGuide' => 'Ricarica guida',

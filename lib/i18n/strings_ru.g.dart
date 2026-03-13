@@ -1197,6 +1197,7 @@ class _TranslationsLibrariesGroupingsRu implements TranslationsLibrariesGrouping
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
+	@override String get title => 'Группировка';
 	@override String get all => 'Все';
 	@override String get movies => 'Фильмы';
 	@override String get shows => 'Сериалы';
@@ -1779,6 +1780,7 @@ extension on TranslationsRu {
 			'libraries.tabs.browse' => 'Обзор',
 			'libraries.tabs.collections' => 'Коллекции',
 			'libraries.tabs.playlists' => 'Плейлисты',
+			'libraries.groupings.title' => 'Группировка',
 			'libraries.groupings.all' => 'Все',
 			'libraries.groupings.movies' => 'Фильмы',
 			'libraries.groupings.shows' => 'Сериалы',
@@ -1820,9 +1822,9 @@ extension on TranslationsRu {
 			'liveTv.nowPlaying' => 'Сейчас воспроизводится',
 			'liveTv.noPrograms' => 'Нет данных о программах',
 			'liveTv.channelNumber' => ({required Object number}) => 'Кн. ${number}',
-			'liveTv.live' => 'ЭФИР',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.live' => 'ЭФИР',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'НОВОЕ',
 			'liveTv.reloadGuide' => 'Перезагрузить программу',

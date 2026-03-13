@@ -519,6 +519,7 @@
       "playlists": "Playlists"
     },
     "groupings": {
+      "title": "Grouping",
       "all": "All",
       "movies": "Movies",
       "shows": "TV Shows",

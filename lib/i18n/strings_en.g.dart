@@ -2679,6 +2679,9 @@ class TranslationsLibrariesGroupingsEn {
 
 	// Translations
 
+	/// en: 'Grouping'
+	String get title => 'Grouping';
+
 	/// en: 'All'
 	String get all => 'All';
 
@@ -3410,6 +3413,7 @@ extension on Translations {
 			'libraries.tabs.browse' => 'Browse',
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
+			'libraries.groupings.title' => 'Grouping',
 			'libraries.groupings.all' => 'All',
 			'libraries.groupings.movies' => 'Movies',
 			'libraries.groupings.shows' => 'TV Shows',
@@ -3451,9 +3455,9 @@ extension on Translations {
 			'liveTv.nowPlaying' => 'Now Playing',
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
-			'liveTv.live' => 'LIVE',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEW',
 			'liveTv.reloadGuide' => 'Reload Guide',

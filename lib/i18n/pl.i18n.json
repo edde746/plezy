@@ -519,6 +519,7 @@
       "playlists": "Playlisty"
     },
     "groupings": {
+      "title": "Grupowanie",
       "all": "Wszystkie",
       "movies": "Filmy",
       "shows": "Seriale TV",

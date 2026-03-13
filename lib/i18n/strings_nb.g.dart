@@ -1197,6 +1197,7 @@ class _TranslationsLibrariesGroupingsNb implements TranslationsLibrariesGrouping
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
+	@override String get title => 'Gruppering';
 	@override String get all => 'Alle';
 	@override String get movies => 'Filmer';
 	@override String get shows => 'TV-serier';
@@ -1779,6 +1780,7 @@ extension on TranslationsNb {
 			'libraries.tabs.browse' => 'Bla gjennom',
 			'libraries.tabs.collections' => 'Samlinger',
 			'libraries.tabs.playlists' => 'Spillelister',
+			'libraries.groupings.title' => 'Gruppering',
 			'libraries.groupings.all' => 'Alle',
 			'libraries.groupings.movies' => 'Filmer',
 			'libraries.groupings.shows' => 'TV-serier',
@@ -1820,9 +1822,9 @@ extension on TranslationsNb {
 			'liveTv.nowPlaying' => 'Spilles nå',
 			'liveTv.noPrograms' => 'Ingen programdata tilgjengelig',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
-			'liveTv.live' => 'DIREKTE',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.live' => 'DIREKTE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Last inn programguide på nytt',

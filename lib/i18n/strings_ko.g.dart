@@ -1197,6 +1197,7 @@ class _TranslationsLibrariesGroupingsKo implements TranslationsLibrariesGrouping
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
+	@override String get title => '그룹';
 	@override String get all => '전체';
 	@override String get movies => '영화';
 	@override String get shows => 'TV 프로그램';
@@ -1779,6 +1780,7 @@ extension on TranslationsKo {
 			'libraries.tabs.browse' => '찾아보기',
 			'libraries.tabs.collections' => '컬렉션',
 			'libraries.tabs.playlists' => '재생 목록',
+			'libraries.groupings.title' => '그룹',
 			'libraries.groupings.all' => '전체',
 			'libraries.groupings.movies' => '영화',
 			'libraries.groupings.shows' => 'TV 프로그램',
@@ -1820,9 +1822,9 @@ extension on TranslationsKo {
 			'liveTv.nowPlaying' => '현재 재생 중',
 			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
 			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
-			'liveTv.live' => '실시간',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.live' => '실시간',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '신규',
 			'liveTv.reloadGuide' => '편성표 새로고침',

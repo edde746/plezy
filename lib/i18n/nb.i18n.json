@@ -519,6 +519,7 @@
       "playlists": "Spillelister"
     },
     "groupings": {
+      "title": "Gruppering",
       "all": "Alle",
       "movies": "Filmer",
       "shows": "TV-serier",

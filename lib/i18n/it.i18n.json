@@ -519,6 +519,7 @@
       "playlists": "Playlist"
     },
     "groupings": {
+      "title": "Raggruppamento",
       "all": "Tutti",
       "movies": "Film",
       "shows": "Serie TV",

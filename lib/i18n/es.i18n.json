@@ -519,6 +519,7 @@
       "playlists": "Listas"
     },
     "groupings": {
+      "title": "Agrupación",
       "all": "Todo",
       "movies": "Películas",
       "shows": "Series",

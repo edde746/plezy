@@ -27,6 +27,8 @@ import '../../../mixins/library_tab_focus_mixin.dart';
 import '../folder_tree_view.dart';
 import '../filters_bottom_sheet.dart';
 import '../sort_bottom_sheet.dart';
+import '../../../widgets/app_icon.dart';
+import '../../../widgets/focusable_list_tile.dart';
 import '../state_messages.dart';
 import '../../../services/storage_service.dart';
 import '../../../services/settings_service.dart' show ViewMode, EpisodePosterMode;
@@ -609,49 +611,54 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   void _showGroupingBottomSheet() {
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-    var pendingGrouping = _selectedGrouping;
-    OverlaySheetController.of(context)
-        .show(
-          builder: (sheetContext) {
-            final options = _getGroupingOptions();
-            return StatefulBuilder(
-              builder: (context, setSheetState) {
-                return RadioGroup<String>(
-                  groupValue: pendingGrouping,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setSheetState(() {
-                      pendingGrouping = value;
-                    });
-                  },
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: options.length,
-                    itemBuilder: (context, index) {
-                      final grouping = options[index];
-                      return RadioListTile<String>(
-                        title: Text(_getGroupingLabel(grouping)),
-                        value: grouping,
-                      );
-                    },
-                  ),
-                );
-              },
-            );
-          },
-        )
-        .then((_) {
-          if (!mounted) return;
-          if (pendingGrouping == _selectedGrouping) return;
-          setState(() {
-            _selectedGrouping = pendingGrouping;
-          });
-          StorageService.getInstance().then((storage) {
-            storage.saveLibraryGrouping(widget.library.globalKey, pendingGrouping);
-          });
-          _loadItems();
-          _loadFirstCharacters();
-        });
+    final options = _getGroupingOptions();
+    final controller = OverlaySheetController.of(context);
+    controller.show<String>(
+      showDragHandle: true,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Text(
+              t.libraries.groupings.title,
+              style: Theme.of(sheetContext).textTheme.titleMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: options.map((grouping) {
+                  final isSelected = _selectedGrouping == grouping;
+                  return FocusableListTile(
+                    dense: true,
+                    leading: AppIcon(
+                      isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
+                      fill: 1,
+                    ),
+                    title: Text(_getGroupingLabel(grouping)),
+                    onTap: () => controller.close(grouping),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).then((value) {
+      if (!mounted || value == null || value == _selectedGrouping) return;
+      setState(() {
+        _selectedGrouping = value;
+      });
+      StorageService.getInstance().then((storage) {
+        storage.saveLibraryGrouping(widget.library.globalKey, value);
+      });
+      _loadItems();
+      _loadFirstCharacters();
+    });
   }
 
   void _showFiltersBottomSheet() {

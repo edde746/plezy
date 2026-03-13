@@ -1197,6 +1197,7 @@ class _TranslationsLibrariesGroupingsZh implements TranslationsLibrariesGrouping
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
+	@override String get title => '分组';
 	@override String get all => '全部';
 	@override String get movies => '电影';
 	@override String get shows => '剧集';
@@ -1779,6 +1780,7 @@ extension on TranslationsZh {
 			'libraries.tabs.browse' => '浏览',
 			'libraries.tabs.collections' => '合集',
 			'libraries.tabs.playlists' => '播放列表',
+			'libraries.groupings.title' => '分组',
 			'libraries.groupings.all' => '全部',
 			'libraries.groupings.movies' => '电影',
 			'libraries.groupings.shows' => '剧集',
@@ -1820,9 +1822,9 @@ extension on TranslationsZh {
 			'liveTv.nowPlaying' => '正在播放',
 			'liveTv.noPrograms' => '没有可用的节目数据',
 			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
-			'liveTv.live' => '直播',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.live' => '直播',
 			'liveTv.hd' => '高清',
 			'liveTv.premiere' => '新',
 			'liveTv.reloadGuide' => '重新加载节目指南',

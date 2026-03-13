@@ -519,6 +519,7 @@
       "playlists": "Afspeellijsten"
     },
     "groupings": {
+      "title": "Groepering",
       "all": "Alles",
       "movies": "Films",
       "shows": "Series",

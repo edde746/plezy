@@ -1197,6 +1197,7 @@ class _TranslationsLibrariesGroupingsJa implements TranslationsLibrariesGrouping
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
+	@override String get title => 'グループ';
 	@override String get all => 'すべて';
 	@override String get movies => '映画';
 	@override String get shows => 'テレビ番組';
@@ -1779,6 +1780,7 @@ extension on TranslationsJa {
 			'libraries.tabs.browse' => 'ブラウズ',
 			'libraries.tabs.collections' => 'コレクション',
 			'libraries.tabs.playlists' => 'プレイリスト',
+			'libraries.groupings.title' => 'グループ',
 			'libraries.groupings.all' => 'すべて',
 			'libraries.groupings.movies' => '映画',
 			'libraries.groupings.shows' => 'テレビ番組',
@@ -1820,9 +1822,9 @@ extension on TranslationsJa {
 			'liveTv.nowPlaying' => '現在放送中',
 			'liveTv.noPrograms' => '番組データがありません',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
-			'liveTv.live' => 'ライブ',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.live' => 'ライブ',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '新着',
 			'liveTv.reloadGuide' => '番組表を再読込',

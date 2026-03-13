@@ -519,6 +519,7 @@
       "playlists": "Spellistor"
     },
     "groupings": {
+      "title": "Gruppering",
       "all": "Alla",
       "movies": "Filmer",
       "shows": "Serier",
