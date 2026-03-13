@@ -970,7 +970,8 @@ class GuideTabState extends State<GuideTab> {
             channel,
             program,
             theme,
-            isLast: program == programs.last,
+            isFirst: progStart == gridStartEpoch,
+            isLast: program == programs.last && progEnd != gridEndEpoch,
             isFocused: identical(program, focusProg),
           ),
         ),
@@ -990,6 +991,7 @@ class GuideTabState extends State<GuideTab> {
     LiveTvChannel channel,
     LiveTvProgram program,
     ThemeData theme, {
+    bool isFirst = false,
     bool isLast = false,
     bool isFocused = false,
   }) {
@@ -998,11 +1000,11 @@ class GuideTabState extends State<GuideTab> {
 
     Color materialColor;
     if (isFocused) {
-      materialColor = theme.colorScheme.primary.withValues(alpha: 0.25);
+      materialColor = theme.colorScheme.primary.withValues(alpha: 0.15);
     } else if (isCurrentlyAiring) {
-      materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.3);
-    } else {
       materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.12);
+    } else {
+      materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.05);
     }
 
     Color titleColor;
@@ -1036,7 +1038,7 @@ class GuideTabState extends State<GuideTab> {
           child: Container(
             decoration: BoxDecoration(
               border: Border(
-                left: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
+                left: isFirst ? BorderSide.none : BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
                 right: isLast ? BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)) : BorderSide.none,
               ),
             ),
