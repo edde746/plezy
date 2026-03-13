@@ -31,6 +31,9 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
@@ -84,6 +87,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         private val tunneledPlaybackCache = HashMap<String, Boolean>()
 
         private var assGlCrashHandlerInstalled = false
+
+        // Process-wide OkHttp client with connection pooling — reuses TCP connections
+        // on buffer refill to prevent reconnect-induced frame drops at high bitrates
+        private val okHttpClient: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(15, TimeUnit.SECONDS)
+                .build()
+        }
     }
 
     private var surfaceView: SurfaceView? = null
@@ -93,6 +106,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
     private var lastVideoSize: VideoSize? = null
     private var exoPlayer: ExoPlayer? = null
+    private var httpDataSourceFactory: OkHttpDataSource.Factory? = null
+    private var dataSourceFactory: DefaultDataSource.Factory? = null
     private var trackSelector: DefaultTrackSelector? = null
     private var tunnelingUserEnabled: Boolean = true
     private var tunnelingDisabledForAudioCodec: Boolean = false
@@ -334,8 +349,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 }
             }
 
-            // Create factories for buildWithAssSupport (like AndroidTV-FireTV)
-            val dataSourceFactory = DefaultDataSource.Factory(activity)
+            // OkHttp DataSource for TCP connection pooling — prevents reconnect stutter at high bitrates
+            httpDataSourceFactory = OkHttpDataSource.Factory(okHttpClient)
+            dataSourceFactory = DefaultDataSource.Factory(activity, httpDataSourceFactory!!)
             val extractorsFactory = DefaultExtractorsFactory()
 
             // Inline buildWithAssSupport to retain AssHandler reference for font scale control.
@@ -378,7 +394,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 }.toTypedArray()
             }
 
-            val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory, wrappedExtractorsFactory)
+            val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
                 .setSubtitleParserFactory(assParserFactory)
 
             val wrappedRenderersFactory = AssRenderersFactory(handler, renderersFactory)
@@ -392,12 +408,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val targetBufferBytes = if (bufferSizeBytes != null && bufferSizeBytes > 0) {
                 bufferSizeBytes
             } else {
-                // Scale buffer to available memory to reduce hardware decoder pressure
+                // Scale buffer to available memory to reduce hardware decoder pressure.
+                // Larger buffers reduce oscillation frequency at high bitrates (50-100Mbps).
                 when {
                     availableMB <= 512 -> 30 * 1024 * 1024
-                    availableMB <= 1024 -> 50 * 1024 * 1024
-                    availableMB <= 2048 -> 60 * 1024 * 1024
-                    else -> 130 * 1024 * 1024
+                    availableMB <= 1024 -> 80 * 1024 * 1024
+                    availableMB <= 2048 -> 120 * 1024 * 1024
+                    else -> 200 * 1024 * 1024
                 }
             }
 
@@ -410,7 +427,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     setBufferDurationsMs(30_000, 60_000, 2_500, 5_000)
                 }
             }.build()
-            emitLog("info", "init", "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB, tunneling=${tunnelingUserEnabled}")
+            emitLog("info", "init", "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB, tunneling=${tunnelingUserEnabled}, dataSource=OkHttp")
 
             exoPlayer = ExoPlayer.Builder(activity)
                 .setTrackSelector(trackSelector!!)
@@ -1147,6 +1164,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         currentMediaUri = uri
         currentHeaders = headers
         currentMediaIsLive = isLive
+
+        // Apply auth/custom headers to the OkHttp DataSource for this session
+        httpDataSourceFactory?.setDefaultRequestProperties(
+            if (!headers.isNullOrEmpty()) headers else emptyMap()
+        )
+
         externalSubtitles.clear()
         selectedExternalSubtitleIndex = null
         selectedAudioTrackId = null
@@ -1164,19 +1187,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             // Live MKV streams lack Cues (seek index). FLAG_DISABLE_SEEK_FOR_CUES tells
             // MatroskaExtractor to not seek for them, treating the stream as unseekable
             // so data flows immediately without hanging.
-            val dataSourceFactory = if (!headers.isNullOrEmpty()) {
-                DefaultDataSource.Factory(activity,
-                    androidx.media3.datasource.DefaultHttpDataSource.Factory()
-                        .setDefaultRequestProperties(headers))
-            } else {
-                DefaultDataSource.Factory(activity)
-            }
-
+            // Headers already applied to httpDataSourceFactory above.
             val extractorsFactory = androidx.media3.extractor.ExtractorsFactory {
                 arrayOf(MatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
             }
 
-            val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
+            val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory!!, extractorsFactory)
                 .createMediaSource(MediaItem.fromUri(uri))
 
             exoPlayer?.apply {
@@ -1583,6 +1599,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         exoPlayer?.release()
         exoPlayer = null
         trackSelector = null
+        httpDataSourceFactory = null
+        dataSourceFactory = null
         assHandler = null
 
         val cb = surfaceCallback

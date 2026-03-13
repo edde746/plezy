@@ -138,6 +138,10 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.9.2")
     implementation("androidx.media3:media3-common:1.9.2")
 
+    // OkHttp for connection pooling (prevents TCP reconnect stutter at high bitrates)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.media3:media3-datasource-okhttp:1.9.2")
+
     // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
