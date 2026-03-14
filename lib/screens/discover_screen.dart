@@ -18,6 +18,7 @@ import '../utils/content_utils.dart';
 import '../models/plex_hub.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
+import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import 'profile/user_avatar_widget.dart';
 import '../widgets/hub_section.dart';
@@ -522,6 +523,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             !title.contains('on deck');
       }).toList();
 
+      // Sort hubs by the user's library order
+      final libraryOrder = context.read<LibrariesProvider>().libraries;
+      if (libraryOrder.isNotEmpty) {
+        final orderMap = <String, int>{};
+        for (var i = 0; i < libraryOrder.length; i++) {
+          orderMap[libraryOrder[i].globalKey] = i;
+        }
+        filteredHubs.sort((a, b) {
+          final aKey = _hubLibraryGlobalKey(a);
+          final bKey = _hubLibraryGlobalKey(b);
+          final aIndex = aKey != null ? orderMap[aKey] : null;
+          final bIndex = bKey != null ? orderMap[bKey] : null;
+          if (aIndex == null && bIndex == null) return 0;
+          if (aIndex == null) return 1;
+          if (bIndex == null) return -1;
+          return aIndex.compareTo(bIndex);
+        });
+      }
+
       appLogger.d('Received ${onDeck.length} on deck items and ${filteredHubs.length} global hubs from all servers');
       if (!mounted) return;
       setState(() {
@@ -539,6 +559,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _areHubsLoading = false;
       });
     }
+  }
+
+  /// Resolve the library globalKey for a hub (for sorting by library order).
+  String? _hubLibraryGlobalKey(PlexHub hub) {
+    final serverId = hub.serverId;
+    if (serverId == null) return null;
+    final sectionId = hub.librarySectionID ?? hub.items.firstOrNull?.librarySectionID;
+    if (sectionId == null) return null;
+    return buildGlobalKey(serverId, sectionId.toString());
   }
 
   /// Refresh only the Continue Watching section in the background
