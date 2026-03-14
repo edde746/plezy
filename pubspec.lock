@@ -337,10 +337,10 @@ packages:
     dependency: "direct main"
     description:
       name: dart_discord_presence
-      sha256: "4679b197eb37af3676766bbfba9f1f766ba27131588237f13ea7085e9dfe068a"
+      sha256: d4085c88052f3c47ef46f9b2eb249b6993d12f84d3268716979a9e1c250da6ac
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   dart_style:
     dependency: transitive
     description:
