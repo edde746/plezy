@@ -52,3 +52,27 @@ jobs:
           identifier: edde746.Plezy
           installers-regex: 'plezy-windows-installer\.exe$'
           token: ${{ secrets.WINGET_TOKEN }}
+
+  update-appcast-branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download appcast.xml from release
+        run: |
+          gh release download "${{ github.event.release.tag_name }}" \
+            --pattern "appcast.xml"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push to appcast branch
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BLOB=$(git hash-object -w appcast.xml)
+          TREE=$(printf "100644 blob %s\tappcast.xml\n" "$BLOB" | git mktree)
+          COMMIT=$(git commit-tree "$TREE" -m "Update appcast for $VERSION")
+          git push origin "$COMMIT:refs/heads/appcast" --force
