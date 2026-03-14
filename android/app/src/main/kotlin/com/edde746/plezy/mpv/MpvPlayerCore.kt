@@ -115,7 +115,7 @@ class MpvPlayerCore(private val activity: Activity) :
                     }
                 },
                 isPaused = {
-                    try { MPVLib.getPropertyBoolean("pause") }
+                    try { MPVLib.getPropertyBoolean("pause") == true }
                     catch (e: Exception) { true }
                 }
             )
@@ -124,7 +124,7 @@ class MpvPlayerCore(private val activity: Activity) :
                 handler = handler,
                 onDisplayChanged = {
                     try {
-                        if (MPVLib.getPropertyBoolean("pause")) {
+                        if (MPVLib.getPropertyBoolean("pause") == true) {
                             Log.d(TAG, "Display changed, resuming playback")
                             MPVLib.setPropertyBoolean("pause", false)
                         }
@@ -364,7 +364,7 @@ class MpvPlayerCore(private val activity: Activity) :
         if (disposing) return
         when (eventId) {
             MPVLib.MPV_EVENT_END_FILE -> {
-                val eofReached = try { MPVLib.getPropertyBoolean("eof-reached") } catch (_: Exception) { false }
+                val eofReached = try { MPVLib.getPropertyBoolean("eof-reached") == true } catch (_: Exception) { false }
                 val data: Map<String, Any>? = if (eofReached) {
                     mapOf("reason" to 0) // EOF
                 } else {
