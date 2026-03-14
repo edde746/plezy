@@ -30,7 +30,9 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.TransferListener
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -93,7 +95,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         private val okHttpClient: OkHttpClient by lazy {
             OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
                 .writeTimeout(15, TimeUnit.SECONDS)
                 .build()
         }
@@ -352,6 +354,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             // OkHttp DataSource for TCP connection pooling — prevents reconnect stutter at high bitrates
             httpDataSourceFactory = OkHttpDataSource.Factory(okHttpClient)
             dataSourceFactory = DefaultDataSource.Factory(activity, httpDataSourceFactory!!)
+                .setTransferListener(HttpTimingTransferListener())
             val extractorsFactory = DefaultExtractorsFactory()
 
             // Inline buildWithAssSupport to retain AssHandler reference for font scale control.
@@ -422,9 +425,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 setTargetBufferBytes(targetBufferBytes)
                 setPrioritizeTimeOverSizeThresholds(false)
                 if (availableMB <= 2048) {
-                    setBufferDurationsMs(15_000, 50_000, 2_500, 5_000)
+                    setBufferDurationsMs(15_000, 50_000, 1_000, 5_000)
                 } else {
-                    setBufferDurationsMs(30_000, 60_000, 2_500, 5_000)
+                    setBufferDurationsMs(30_000, 60_000, 1_000, 5_000)
                 }
             }.build()
             emitLog("info", "init", "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB, tunneling=${tunnelingUserEnabled}, dataSource=OkHttp")
@@ -1626,5 +1629,44 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
         isInitialized = false
         Log.d(TAG, "Disposed")
+    }
+
+    /** Logs HTTP request timing: TTFB, bytes transferred, errors. */
+    private inner class HttpTimingTransferListener : TransferListener {
+        private val startTimes = HashMap<DataSpec, Long>()
+        private val firstByteTimes = HashMap<DataSpec, Long>()
+        private val byteCounts = HashMap<DataSpec, Long>()
+
+        override fun onTransferInitializing(source: androidx.media3.datasource.DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
+            if (!isNetwork) return
+            startTimes[dataSpec] = System.currentTimeMillis()
+            val range = dataSpec.position.let { if (it > 0) "bytes=$it-" else "" }
+            val uri = dataSpec.uri.path?.let { if (it.length > 60) "…${it.takeLast(50)}" else it } ?: dataSpec.uri.toString()
+            emitLog("info", "http", "GET $uri ${if (range.isNotEmpty()) range else ""}")
+        }
+
+        override fun onTransferStart(source: androidx.media3.datasource.DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
+            if (!isNetwork) return
+            val start = startTimes[dataSpec] ?: return
+            val ttfb = System.currentTimeMillis() - start
+            firstByteTimes[dataSpec] = System.currentTimeMillis()
+            byteCounts[dataSpec] = 0
+            emitLog("info", "http", "→ first byte in ${ttfb}ms")
+        }
+
+        override fun onBytesTransferred(source: androidx.media3.datasource.DataSource, dataSpec: DataSpec, isNetwork: Boolean, bytesTransferred: Int) {
+            if (!isNetwork) return
+            byteCounts[dataSpec] = (byteCounts[dataSpec] ?: 0) + bytesTransferred
+        }
+
+        override fun onTransferEnd(source: androidx.media3.datasource.DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
+            if (!isNetwork) return
+            val start = startTimes.remove(dataSpec) ?: return
+            firstByteTimes.remove(dataSpec)
+            val bytes = byteCounts.remove(dataSpec) ?: 0
+            val elapsed = System.currentTimeMillis() - start
+            val sizeStr = if (bytes > 1_000_000) "${"%.1f".format(bytes / 1_000_000.0)}MB" else "${bytes / 1000}KB"
+            emitLog("info", "http", "← $sizeStr in ${elapsed}ms")
+        }
     }
 }
