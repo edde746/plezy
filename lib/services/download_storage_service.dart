@@ -65,7 +65,7 @@ class DownloadStorageService {
   String _formatEpisodeFileName(PlexMetadata episode) {
     final season = padNumber(episode.parentIndex ?? 0, 2);
     final ep = padNumber(episode.index ?? 0, 2);
-    final episodeName = _sanitizeFileName(episode.title);
+    final episodeName = _sanitizeFileName(episode.title!);
     return 'S${season}E$ep - $episodeName';
   }
 
@@ -246,13 +246,13 @@ class DownloadStorageService {
 
   /// Get the folder name for a movie: "Movie Name (YYYY)"
   String _getMovieFolderName(PlexMetadata movie) {
-    return _formatTitleWithYear(movie.title, movie.year);
+    return _formatTitleWithYear(movie.title!, movie.year);
   }
 
   /// Get the folder name for a TV show: "Show Name (YYYY)"
   /// [showYear]: Pass explicitly for episodes (episode.year may differ from show's year)
   String _getShowFolderName(PlexMetadata metadata, {int? showYear}) {
-    final title = metadata.grandparentTitle ?? metadata.title;
+    final title = metadata.grandparentTitle ?? metadata.title!;
     final year = showYear ?? metadata.year;
     return _formatTitleWithYear(title, year);
   }

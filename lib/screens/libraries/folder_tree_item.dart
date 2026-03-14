@@ -42,21 +42,14 @@ class FolderTreeItem extends StatelessWidget {
     }
 
     // File icons based on type
-    final type = item.type.toLowerCase();
-    switch (type) {
-      case 'movie':
-        return Symbols.movie_rounded;
-      case 'show':
-        return Symbols.tv_rounded;
-      case 'season':
-        return Symbols.video_library_rounded;
-      case 'episode':
-        return Symbols.play_circle_rounded;
-      case 'collection':
-        return Symbols.collections_rounded;
-      default:
-        return Symbols.insert_drive_file_rounded;
-    }
+    return switch (item.mediaType) {
+      PlexMediaType.movie => Symbols.movie_rounded,
+      PlexMediaType.show => Symbols.tv_rounded,
+      PlexMediaType.season => Symbols.video_library_rounded,
+      PlexMediaType.episode => Symbols.play_circle_rounded,
+      PlexMediaType.collection => Symbols.collections_rounded,
+      _ => Symbols.insert_drive_file_rounded,
+    };
   }
 
   void _handleTap() {
@@ -104,7 +97,7 @@ class FolderTreeItem extends StatelessWidget {
           // Item title
           Expanded(
             child: Text(
-              item.title,
+              item.displayTitle,
               style: TextStyle(fontSize: 14, fontWeight: isFolder ? FontWeight.w500 : FontWeight.w400),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

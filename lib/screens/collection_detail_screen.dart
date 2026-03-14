@@ -31,7 +31,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   PlexMetadata get mediaItem => widget.collection;
 
   @override
-  String get title => widget.collection.title;
+  String get title => widget.collection.title!;
 
   @override
   String get emptyMessage => t.collections.empty;
@@ -93,7 +93,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.collections.deleteCollection,
-      message: t.collections.deleteConfirm(title: widget.collection.title),
+      message: t.collections.deleteConfirm(title: widget.collection.displayTitle),
     );
 
     if (!confirmed) return;
@@ -134,7 +134,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         body: CustomScrollView(
           controller: scrollController,
           slivers: [
-            CustomAppBar(title: Text(widget.collection.title), actions: buildFocusableAppBarActions()),
+            CustomAppBar(title: Text(widget.collection.title!), actions: buildFocusableAppBarActions()),
             ...buildStateSlivers(),
             if (items.isNotEmpty)
               buildFocusableGrid(

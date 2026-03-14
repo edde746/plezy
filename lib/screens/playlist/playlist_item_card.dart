@@ -237,9 +237,9 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
   }
 
   String _buildSubtitle() {
-    final itemType = widget.item.type.toLowerCase();
+    final itemType = widget.item.mediaType;
 
-    if (itemType == 'episode') {
+    if (itemType == PlexMediaType.episode) {
       // For episodes, show "S#E# - Episode Title"
       final season = widget.item.parentIndex;
       final episode = widget.item.index;
@@ -247,7 +247,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
         return 'S${season}E$episode${widget.item.displaySubtitle != null ? ' - ${widget.item.displaySubtitle}' : ''}';
       }
       return widget.item.displaySubtitle ?? t.discover.tvShow;
-    } else if (itemType == 'movie') {
+    } else if (itemType == PlexMediaType.movie) {
       // For movies, show year and edition
       final year = widget.item.year?.toString();
       if (year != null && widget.item.editionTitle != null) {
@@ -257,6 +257,6 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
     }
 
     // Default to type
-    return widget.item.type;
+    return widget.item.mediaType.name;
   }
 }

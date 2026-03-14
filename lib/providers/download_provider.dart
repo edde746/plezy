@@ -515,10 +515,10 @@ class DownloadProvider extends ChangeNotifier {
     }
 
     // We have metadata, check type
-    final type = meta.type.toLowerCase();
-    if (type == 'show') {
+    final mt = meta.mediaType;
+    if (mt == PlexMediaType.show) {
       return getAggregateProgressForShow(serverId, ratingKey);
-    } else if (type == 'season') {
+    } else if (mt == PlexMediaType.season) {
       return getAggregateProgressForSeason(serverId, ratingKey);
     }
 
@@ -606,19 +606,19 @@ class DownloadProvider extends ChangeNotifier {
       _queueing.add(globalKey);
       notifyListeners();
 
-      final type = metadata.type.toLowerCase();
+      final mt = metadata.mediaType;
 
-      if (type == 'movie' || type == 'episode') {
+      if (mt == PlexMediaType.movie || mt == PlexMediaType.episode) {
         // Direct download of a single item
         await _queueSingleDownload(metadata, client);
         return 1;
-      } else if (type == 'show') {
+      } else if (mt == PlexMediaType.show) {
         // Store show metadata so getProgress() can identify it as a show
         _metadata[globalKey] = metadata;
 
         // Download all episodes from all seasons
         return await _queueShowDownload(metadata, client);
-      } else if (type == 'season') {
+      } else if (mt == PlexMediaType.season) {
         // Store season metadata so getProgress() can identify it as a season
         _metadata[globalKey] = metadata;
 
@@ -765,11 +765,11 @@ class DownloadProvider extends ChangeNotifier {
   /// Used for resuming partial downloads
   /// Returns the number of episodes queued
   Future<int> queueMissingEpisodes(PlexMetadata metadata, PlexClient client) async {
-    final type = metadata.type.toLowerCase();
+    final mt = metadata.mediaType;
 
-    if (type == 'show') {
+    if (mt == PlexMediaType.show) {
       return await _queueMissingShowEpisodes(metadata, client);
-    } else if (type == 'season') {
+    } else if (mt == PlexMediaType.season) {
       return await _queueMissingSeasonEpisodes(metadata, client);
     } else {
       throw Exception('queueMissingEpisodes only supports shows/seasons');

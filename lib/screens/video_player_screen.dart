@@ -1485,7 +1485,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         watchTogether.setCurrentMedia(
           ratingKey: targetMetadata.ratingKey,
           serverId: targetMetadata.serverId!,
-          mediaTitle: targetMetadata.title,
+          mediaTitle: targetMetadata.displayTitle,
         );
       }
     } catch (e) {
@@ -2898,7 +2898,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                                           )
                                         else
                                           Text(
-                                            _nextEpisode!.title,
+                                            _nextEpisode!.title!,
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 14,

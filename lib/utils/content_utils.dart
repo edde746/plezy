@@ -86,7 +86,7 @@ String formatContentRating(String? contentRating) {
 
 /// Extension on PlexMetadata for type checking convenience methods
 extension PlexMetadataType on PlexMetadata {
-  String get _lowerType => type.toLowerCase();
+  String get _lowerType => type?.toLowerCase() ?? '';
 
   bool get isShow => _lowerType == ContentTypes.show;
   bool get isMovie => _lowerType == ContentTypes.movie;

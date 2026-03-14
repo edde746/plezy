@@ -341,7 +341,7 @@ class DownloadManagerService {
       serverId: metadata.serverId!,
       ratingKey: metadata.ratingKey,
       globalKey: globalKey,
-      type: metadata.type,
+      type: metadata.type ?? '',
       parentRatingKey: metadata.parentRatingKey,
       grandparentRatingKey: metadata.grandparentRatingKey,
       status: DownloadStatus.queued.index,
@@ -446,8 +446,8 @@ class DownloadManagerService {
 
       // Build display name for notifications
       final displayName = metadata.type == 'episode'
-          ? '${metadata.grandparentTitle ?? metadata.title} - ${metadata.title}'
-          : metadata.title;
+          ? '${metadata.grandparentTitle ?? metadata.displayTitle} - ${metadata.displayTitle}'
+          : metadata.displayTitle;
 
       // Get WiFi-only setting for native enforcement
       final settings = await SettingsService.getInstance();
@@ -1234,7 +1234,7 @@ class DownloadManagerService {
 
     // Emit initial progress
     _emitDeletionProgress(
-      DeletionProgress(globalKey: globalKey, itemTitle: metadata.title, currentItem: 0, totalItems: totalItems),
+      DeletionProgress(globalKey: globalKey, itemTitle: metadata.displayTitle, currentItem: 0, totalItems: totalItems),
     );
 
     // Delete files from storage (with progress updates)
@@ -1250,7 +1250,7 @@ class DownloadManagerService {
     _emitDeletionProgress(
       DeletionProgress(
         globalKey: globalKey,
-        itemTitle: metadata.title,
+        itemTitle: metadata.displayTitle,
         currentItem: totalItems,
         totalItems: totalItems,
       ),
@@ -1264,17 +1264,14 @@ class DownloadManagerService {
 
   /// Calculate total items to delete (for progress tracking)
   Future<int> _getTotalItemsToDelete(PlexMetadata metadata, String _) async {
-    switch (metadata.type.toLowerCase()) {
-      case 'episode':
-        return 1; // Single episode
-      case 'movie':
-        return 1; // Single movie
-      case 'season':
-        // Count episodes in season
+    switch (metadata.mediaType) {
+      case PlexMediaType.episode:
+      case PlexMediaType.movie:
+        return 1;
+      case PlexMediaType.season:
         final episodes = await _database.getEpisodesBySeason(metadata.ratingKey);
         return episodes.length;
-      case 'show':
-        // Count all episodes in show
+      case PlexMediaType.show:
         final episodes = await _database.getEpisodesByShow(metadata.ratingKey);
         return episodes.length;
       default:
@@ -1301,17 +1298,17 @@ class DownloadManagerService {
       }
 
       // Delete based on type
-      switch (metadata.type.toLowerCase()) {
-        case 'episode':
+      switch (metadata.mediaType) {
+        case PlexMediaType.episode:
           await _deleteEpisodeFiles(metadata, serverId);
           break;
-        case 'season':
+        case PlexMediaType.season:
           await _deleteSeasonFiles(metadata, serverId);
           break;
-        case 'show':
+        case PlexMediaType.show:
           await _deleteShowFiles(metadata, serverId);
           break;
-        case 'movie':
+        case PlexMediaType.movie:
           await _deleteMovieFiles(metadata, serverId);
           break;
         default:
@@ -1447,7 +1444,7 @@ class DownloadManagerService {
         episodes: episodesInSeason,
         serverId: serverId,
         parentKey: season.ratingKey,
-        parentTitle: season.title,
+        parentTitle: season.displayTitle,
       );
 
       final seasonDir = await _storageService.getSeasonDirectory(season, showYear: showYear);
@@ -1510,7 +1507,7 @@ class DownloadManagerService {
         episodes: episodesInShow,
         serverId: serverId,
         parentKey: show.ratingKey,
-        parentTitle: show.title,
+        parentTitle: show.displayTitle,
       );
 
       final showDir = await _storageService.getShowDirectory(show);

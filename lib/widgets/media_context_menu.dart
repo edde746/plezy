@@ -327,7 +327,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         context,
         showDragHandle: true,
         builder: (context) => _FocusableContextMenuSheet(
-          title: widget.item.title,
+          title: widget.item.displayTitle,
           actions: menuActions,
           focusFirstItem: openedFromKeyboard,
         ),
@@ -597,7 +597,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await OverlaySheetController.showAdaptive(
           context,
           isScrollControlled: true,
-          builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
+          builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.displayTitle),
         );
       } else if (context.mounted) {
         showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
@@ -667,7 +667,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     try {
       final metadata = widget.item as PlexMetadata;
-      final itemType = metadata.type.toLowerCase();
+      final itemType = metadata.mediaType.name;
 
       // Load playlists
       final playlists = await client.getPlaylists(playlistType: 'video');
@@ -752,7 +752,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     try {
       final metadata = widget.item as PlexMetadata;
-      final itemType = metadata.type.toLowerCase();
+      final itemType = metadata.mediaType;
 
       // Get the library section ID from the item
       // First try from the metadata itself
@@ -776,8 +776,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // If still not found, try to extract from the key field
-      if (sectionId == null) {
-        final keyMatch = RegExp(r'/library/sections/(\d+)').firstMatch(metadata.key);
+      if (sectionId == null && metadata.key != null) {
+        final keyMatch = RegExp(r'/library/sections/(\d+)').firstMatch(metadata.key!);
         if (keyMatch != null) {
           sectionId = int.tryParse(keyMatch.group(1)!);
           appLogger.d('  - Extracted from key: $sectionId');
@@ -841,17 +841,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         // Determine the collection type based on the item type
         int? collectionType;
         switch (itemType) {
-          case 'movie':
+          case PlexMediaType.movie:
             collectionType = 1;
             break;
-          case 'show':
+          case PlexMediaType.show:
             collectionType = 2;
             break;
-          case 'season':
+          case PlexMediaType.season:
             collectionType = 3;
             break;
-          case 'episode':
+          case PlexMediaType.episode:
             collectionType = 4;
+            break;
+          default:
             break;
         }
 
@@ -951,7 +953,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.collections.removeFromCollection,
-      message: t.collections.removeFromCollectionConfirm(title: metadata.title),
+      message: t.collections.removeFromCollectionConfirm(title: metadata.displayTitle),
     );
 
     if (!confirmed || !context.mounted) return;
@@ -1008,7 +1010,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _handleDelete(BuildContext context, bool isCollection, bool isPlaylist) async {
     final client = _getClientForItem();
 
-    final itemTitle = widget.item.title;
+    final itemTitle = widget.item.displayTitle;
     final itemTypeLabel = isCollection ? t.collections.collection : t.playlists.playlist;
 
     // Show confirmation dialog
@@ -1110,7 +1112,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.downloads.deleteDownload,
-      message: t.downloads.deleteConfirm(title: metadata.title),
+      message: t.downloads.deleteConfirm(title: metadata.displayTitle),
     );
 
     if (!confirmed || !context.mounted) return;
@@ -1264,7 +1266,7 @@ class _CollectionSelectionDialog extends StatelessWidget {
             final collection = collections[index - 1];
             return ListTile(
               leading: const AppIcon(Symbols.collections_rounded, fill: 1),
-              title: Text(collection.title),
+              title: Text(collection.title!),
               subtitle: collection.childCount != null ? Text('${collection.childCount} items') : null,
               onTap: () => Navigator.pop(context, collection.ratingKey),
             );

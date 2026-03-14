@@ -134,7 +134,7 @@ class WatchNextService {
       title = item.grandparentTitle!;
       episodeTitle = item.title;
     } else {
-      title = item.title;
+      title = item.title!;
       episodeTitle = null;
     }
 
@@ -148,7 +148,7 @@ class WatchNextService {
       'episodeTitle': episodeTitle,
       'description': item.summary,
       'posterUri': posterUri,
-      'type': item.type.toLowerCase(),
+      'type': item.mediaType.name,
       'duration': item.duration ?? 0,
       'lastPlaybackPosition': item.viewOffset ?? 0,
       'lastEngagementTime': lastEngagementTime,

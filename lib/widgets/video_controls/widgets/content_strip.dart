@@ -474,7 +474,7 @@ class ContentStripState extends State<ContentStrip> {
                           const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
                     )
                   : null,
-              title: item.title,
+              title: item.title!,
               subtitle: _buildQueueSubtitle(item),
               onTap: onTap,
             );
@@ -511,7 +511,7 @@ class ContentStripState extends State<ContentStrip> {
     }
     if (item.grandparentTitle != null) return item.grandparentTitle!;
     if (item.year != null) return item.editionTitle != null ? '${item.year} · ${item.editionTitle}' : '${item.year}';
-    return item.type;
+    return item.mediaType.name;
   }
 
   Widget _buildStripItem({

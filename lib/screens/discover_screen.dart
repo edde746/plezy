@@ -1263,7 +1263,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   Widget _buildHeroItem(PlexMetadata heroItem, double heroHeight) {
     final isEpisode = heroItem.isEpisode;
-    final showName = heroItem.grandparentTitle ?? heroItem.title;
+    final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
 

@@ -87,32 +87,32 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
   Future<void> _loadFolderChildren(PlexMetadata folder) async {
     // Already loading this folder
-    if (_loadingFolders.contains(folder.key)) return;
+    if (_loadingFolders.contains(folder.key!)) return;
 
     // Already loaded and cached
-    if (_childrenCache.containsKey(folder.key)) {
+    if (_childrenCache.containsKey(folder.key!)) {
       setState(() {
-        _expandedFolders.add(folder.key);
+        _expandedFolders.add(folder.key!);
       });
       return;
     }
 
     setState(() {
-      _loadingFolders.add(folder.key);
+      _loadingFolders.add(folder.key!);
     });
 
     try {
       final client = context.getClientForServer(widget.serverId!);
 
       // Items are automatically tagged with server info by PlexClient
-      final children = await client.getFolderChildren(folder.key);
+      final children = await client.getFolderChildren(folder.key!);
 
       if (!mounted) return;
 
       setState(() {
-        _childrenCache[folder.key] = children;
-        _expandedFolders.add(folder.key);
-        _loadingFolders.remove(folder.key);
+        _childrenCache[folder.key!] = children;
+        _expandedFolders.add(folder.key!);
+        _loadingFolders.remove(folder.key!);
       });
 
       appLogger.d('Loaded ${children.length} children for folder: ${folder.title}');
@@ -121,7 +121,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
       appLogger.e('Failed to load folder children', error: e);
       setState(() {
-        _loadingFolders.remove(folder.key);
+        _loadingFolders.remove(folder.key!);
       });
 
       if (mounted) {
@@ -131,9 +131,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   }
 
   void _toggleFolder(PlexMetadata folder) {
-    if (_expandedFolders.contains(folder.key)) {
+    if (_expandedFolders.contains(folder.key!)) {
       setState(() {
-        _expandedFolders.remove(folder.key);
+        _expandedFolders.remove(folder.key!);
       });
     } else {
       _loadFolderChildren(folder);
@@ -147,19 +147,19 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   Future<void> _handleFolderPlay(PlexMetadata folder) async {
     final client = context.getClientForServer(widget.serverId!);
     final launcher = PlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
-    await launcher.launchFromFolder(folderKey: folder.key, shuffle: false);
+    await launcher.launchFromFolder(folderKey: folder.key!, shuffle: false);
   }
 
   Future<void> _handleFolderShuffle(PlexMetadata folder) async {
     final client = context.getClientForServer(widget.serverId!);
     final launcher = PlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
-    await launcher.launchFromFolder(folderKey: folder.key, shuffle: true);
+    await launcher.launchFromFolder(folderKey: folder.key!, shuffle: true);
   }
 
   bool _isFolder(PlexMetadata item) {
     // Folders typically don't have a specific type or might have special indicators
     // Check for common folder indicators
-    return item.key.contains('/folder') || item.type.isEmpty || item.type.toLowerCase() == 'folder';
+    return item.key?.contains('/folder') == true || item.type == null || item.type!.isEmpty || item.mediaType == PlexMediaType.unknown;
   }
 
   List<Widget> _buildTreeItems(List<PlexMetadata> items, int depth, [String parentPath = '']) {

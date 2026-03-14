@@ -80,7 +80,7 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
         ratingKey: metadata.ratingKey,
         serverId: metadata.serverId ?? '',
         parentChain: _buildParentChain(metadata),
-        mediaType: metadata.type,
+        mediaType: metadata.type ?? '',
         leafCount: metadata.leafCount ?? 1,
         isDownloadOnly: isDownloadOnly,
       ),

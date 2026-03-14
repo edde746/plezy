@@ -351,7 +351,7 @@ class DiscordRPCService {
           timestamps: _buildTimestamps(),
           statusDisplayType: DiscordStatusDisplayType.details,
           largeAsset: _cachedThumbnailUrl != null
-              ? DiscordAsset(url: _cachedThumbnailUrl!, text: metadata.grandparentTitle ?? metadata.title)
+              ? DiscordAsset(url: _cachedThumbnailUrl!, text: metadata.grandparentTitle ?? metadata.title!)
               : null,
         ),
       );
@@ -392,14 +392,14 @@ class DiscordRPCService {
     switch (metadata.mediaType) {
       case PlexMediaType.movie:
         final year = metadata.year != null ? ' (${metadata.year})' : '';
-        return metadata.title + year;
+        return metadata.title! + year;
 
       case PlexMediaType.episode:
         // Show: "Show Name" or just episode title if no show name
-        return metadata.grandparentTitle ?? metadata.title;
+        return metadata.grandparentTitle ?? metadata.title!;
 
       default:
-        return metadata.title;
+        return metadata.title!;
     }
   }
 
@@ -411,9 +411,9 @@ class DiscordRPCService {
         final season = metadata.parentIndex;
         final episode = metadata.index;
         if (season != null && episode != null) {
-          return 'S$season E$episode - ${metadata.title}';
+          return 'S$season E$episode - ${metadata.title!}';
         }
-        return metadata.title;
+        return metadata.title!;
 
       case PlexMediaType.movie:
         return metadata.studio;

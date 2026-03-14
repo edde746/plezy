@@ -86,7 +86,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         serverId: metadata.serverId ?? '',
         changeType: isNowWatched ? WatchStateChangeType.watched : WatchStateChangeType.unwatched,
         parentChain: _buildParentChain(metadata),
-        mediaType: metadata.type,
+        mediaType: metadata.type ?? '',
         isNowWatched: isNowWatched,
       ),
     );
@@ -103,7 +103,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         serverId: metadata.serverId ?? '',
         changeType: WatchStateChangeType.progressUpdate,
         parentChain: _buildParentChain(metadata),
-        mediaType: metadata.type,
+        mediaType: metadata.type ?? '',
         viewOffset: viewOffset,
         isNowWatched: isNowWatched,
       ),

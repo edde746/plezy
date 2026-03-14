@@ -11,6 +11,7 @@ import '../../../focus/locked_hub_controller.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/livetv_channel.dart';
 import '../../../models/livetv_hub_result.dart';
+import '../../../models/plex_metadata.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/settings_service.dart' show LibraryDensity;
@@ -168,12 +169,12 @@ class WhatsOnTabState extends State<WhatsOnTab> {
     if (entry.program.isCurrentlyAiring && channel != null) {
       // Live → play directly
       _tuneChannel(channel);
-    } else if (entry.metadata.type.toLowerCase() == 'show') {
+    } else if (entry.metadata.mediaType == PlexMediaType.show) {
       // Show with upcoming episodes → show full schedule
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => LiveTvShowScheduleScreen(
-            showTitle: entry.metadata.title,
+            showTitle: entry.metadata.displayTitle,
             serverId: entry.metadata.serverId ?? '',
             channels: widget.channels,
           ),

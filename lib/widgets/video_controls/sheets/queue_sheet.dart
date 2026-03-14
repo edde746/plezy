@@ -57,7 +57,7 @@ class QueueSheet extends StatelessWidget {
               return FocusableListTile(
                 leading: _buildThumbnail(context, item, isCurrent, isTablet: isTablet),
                 title: Text(
-                  item.title,
+                  item.title!,
                   style: TextStyle(
                     color: isCurrent ? primaryColor : null,
                     fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
@@ -139,7 +139,7 @@ class QueueSheet extends StatelessWidget {
     if (item.year != null) {
       return item.editionTitle != null ? '${item.year} · ${item.editionTitle}' : '${item.year}';
     }
-    return item.type;
+    return item.mediaType.name;
   }
 
   static dynamic _tryGetClient(BuildContext context, PlexMetadata item) {

@@ -740,7 +740,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       final confirmed = await showDeleteConfirmation(
                         context,
                         title: t.downloads.deleteDownload,
-                        message: t.downloads.deleteConfirm(title: metadata.title),
+                        message: t.downloads.deleteConfirm(title: metadata.displayTitle),
                       );
 
                       if (confirmed && context.mounted) {
@@ -1579,7 +1579,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   onSecondaryTapDown: (details) => tapPosition = details.globalPosition,
                   onSecondaryTap: () => _showSeasonTabContextMenu(index, position: tapPosition),
                   child: FocusableTabChip(
-                    label: season.title,
+                    label: season.title!,
                     isSelected: index == _selectedSeasonIndex,
                     focusNode: _seasonTabFocusNodes.length > index ? _seasonTabFocusNodes[index] : null,
                     onSelect: () {
@@ -2251,11 +2251,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                                 fit: BoxFit.contain,
                                                 alignment: Alignment.centerLeft,
                                                 errorBuilder: (context, error, stackTrace) =>
-                                                    _buildTitleText(context, metadata.title),
+                                                    _buildTitleText(context, metadata.displayTitle),
                                               );
                                             }
                                             // Offline but no local file - show title text
-                                            return _buildTitleText(context, metadata.title);
+                                            return _buildTitleText(context, metadata.displayTitle);
                                           }
 
                                           // Online - use network image
@@ -2280,7 +2280,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                               placeholder: (context, url) => Align(
                                                 alignment: Alignment.centerLeft,
                                                 child: Text(
-                                                  metadata.title,
+                                                  metadata.displayTitle,
                                                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                                                     color: Colors.white.withValues(alpha: 0.3),
                                                     fontWeight: FontWeight.bold,
@@ -2293,7 +2293,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                                 ),
                                               ),
                                               errorWidget: (context, url, error) {
-                                                return _buildTitleText(context, metadata.title);
+                                                return _buildTitleText(context, metadata.displayTitle);
                                               },
                                             ),
                                             sigma: 10,
@@ -2304,7 +2304,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                     )
                                   else
                                     Text(
-                                      metadata.title,
+                                      metadata.displayTitle,
                                       style: Theme.of(context).textTheme.displaySmall?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,

@@ -62,11 +62,11 @@ enum PlexMediaType {
 class PlexMetadata with MultiServerFields {
   @JsonKey(readValue: _readRatingKey)
   final String ratingKey;
-  final String key;
+  final String? key;
   final String? guid;
   final String? studio;
-  final String type;
-  final String title;
+  final String? type;
+  final String? title;
   final String? titleSort;
   final String? contentRating;
   final String? summary;
@@ -135,7 +135,8 @@ class PlexMetadata with MultiServerFields {
 
   /// Parsed media type enum for type-safe comparisons
   PlexMediaType get mediaType {
-    return switch (type.toLowerCase()) {
+    if (type == null) return PlexMediaType.unknown;
+    return switch (type!.toLowerCase()) {
       'movie' => PlexMediaType.movie,
       'show' => PlexMediaType.show,
       'season' => PlexMediaType.season,
@@ -153,11 +154,11 @@ class PlexMetadata with MultiServerFields {
 
   PlexMetadata({
     required this.ratingKey,
-    required this.key,
+    this.key,
     this.guid,
     this.studio,
-    required this.type,
-    required this.title,
+    this.type,
+    this.title,
     this.titleSort,
     this.contentRating,
     this.summary,
@@ -366,7 +367,7 @@ class PlexMetadata with MultiServerFields {
 
   // Helper to get the display title (show name for episodes/seasons, title otherwise)
   String get displayTitle {
-    final itemType = type.toLowerCase();
+    final itemType = type?.toLowerCase();
 
     // For episodes and seasons, prefer grandparent title (show name)
     if ((itemType == 'episode' || itemType == 'season') && grandparentTitle != null) {
@@ -376,12 +377,12 @@ class PlexMetadata with MultiServerFields {
     if (itemType == 'season' && parentTitle != null) {
       return parentTitle!;
     }
-    return title;
+    return title ?? '';
   }
 
   // Helper to get the subtitle (episode/season title)
   String? get displaySubtitle {
-    final itemType = type.toLowerCase();
+    final itemType = type?.toLowerCase();
 
     if (itemType == 'episode' || itemType == 'season') {
       // If we showed grandparent/parent as title, show this item's title as subtitle
@@ -401,7 +402,7 @@ class PlexMetadata with MultiServerFields {
   /// For movies/shows/seasons in mixed hub context: returns art (16:9 background)
   /// For other types: returns thumb
   String? posterThumb({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
-    final itemType = type.toLowerCase();
+    final itemType = type?.toLowerCase();
 
     if (itemType == 'episode') {
       switch (mode) {
@@ -436,7 +437,7 @@ class PlexMetadata with MultiServerFields {
   /// Clips (trailers, extras) always use 16:9.
   /// Movies, shows, and seasons use 16:9 in mixed hub context with episodeThumbnail mode.
   bool usesWideAspectRatio(EpisodePosterMode mode, {bool mixedHubContext = false}) {
-    final itemType = type.toLowerCase();
+    final itemType = type?.toLowerCase();
     // Clips (trailers, extras) are always 16:9
     if (itemType == 'clip') return true;
     if (itemType == 'episode' && mode == EpisodePosterMode.episodeThumbnail) {

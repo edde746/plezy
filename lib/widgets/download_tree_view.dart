@@ -145,7 +145,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
         movies.add(
           DownloadTreeNode(
             key: globalKey,
-            title: meta.title,
+            title: meta.displayTitle,
             type: DownloadNodeType.movie,
             progress: download.progressPercent,
             status: download.status,
@@ -202,7 +202,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           if (meta == null) continue;
 
           final episodeNumber = meta.index;
-          final episodeTitle = episodeNumber != null ? 'Episode $episodeNumber - ${meta.title}' : meta.title;
+          final episodeTitle = episodeNumber != null ? 'Episode $episodeNumber - ${meta.title!}' : meta.title!;
 
           episodeNodes.add(
             DownloadTreeNode(

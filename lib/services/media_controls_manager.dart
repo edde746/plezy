@@ -53,7 +53,7 @@ class MediaControlsManager {
       // Update OS media controls
       await OsMediaControls.setMetadata(
         MediaMetadata(
-          title: metadata.title,
+          title: metadata.title!,
           artist: _buildArtist(metadata),
           artworkUrl: artworkUrl,
           duration: duration,

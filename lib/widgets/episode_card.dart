@@ -357,7 +357,7 @@ class _EpisodeCardState extends State<EpisodeCard> {
                               // Episode title
                               Expanded(
                                 child: Text(
-                                  widget.episode.title,
+                                  widget.episode.title!,
                                   style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,

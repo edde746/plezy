@@ -518,7 +518,7 @@ class _MediaCardList extends StatelessWidget {
       color: tokens(context).textMuted.withValues(alpha: 0.85),
       fontSize: _subtitleFontSize,
     );
-    final episodeTitle = metadata.displaySubtitle ?? metadata.title;
+    final episodeTitle = metadata.displaySubtitle ?? metadata.displayTitle;
     final episodeNum = metadata.index != null ? ' E${metadata.index}' : '';
     return Row(
       children: [
@@ -783,7 +783,7 @@ class _MediaCardHelpers {
 
     // For episodes, show "S# · Episode Title" with clickable season link
     if (metadata.isEpisode && metadata.parentIndex != null) {
-      final episodeTitle = metadata.displaySubtitle ?? metadata.title;
+      final episodeTitle = metadata.displaySubtitle ?? metadata.displayTitle;
       if (metadata.parentRatingKey != null) {
         return Row(
           children: [

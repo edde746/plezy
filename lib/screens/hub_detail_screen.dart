@@ -180,7 +180,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
           switch (sortKey) {
             case 'titleSort':
             case 'title':
-              comparison = a.title.compareTo(b.title);
+              comparison = (a.title ?? '').compareTo(b.title ?? '');
               break;
             case 'addedAt':
               comparison = (a.addedAt ?? 0).compareTo(b.addedAt ?? 0);
@@ -193,7 +193,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
               comparison = (a.rating ?? 0).compareTo(b.rating ?? 0);
               break;
             default:
-              comparison = a.title.compareTo(b.title);
+              comparison = (a.title ?? '').compareTo(b.title ?? '');
           }
 
           return _isSortDescending ? -comparison : comparison;
