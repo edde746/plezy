@@ -1205,7 +1205,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final isAlways = flattenSeasons == flattenSeasonsAlways;
       final isSingleSeason = flattenSeasons == flattenSeasonsSingleSeason;
       final shouldShowEpisodesDirectly =
-          isAlways || (isSingleSeason && seasonsWithServerId.length == 1);
+          isAlways || seasonsWithServerId.length <= 1 || (isSingleSeason && seasonsWithServerId.length == 1);
 
       // Create focus nodes for season tabs
       _updateSeasonTabFocusNodes(seasonsWithServerId.length);
@@ -1460,6 +1460,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
+    if (_episodes.isNotEmpty) {
+      _firstEpisodeFocusNode.requestFocus();
+      _scrollSectionIntoView(_seasonsSectionKey);
+      return KeyEventResult.handled;
+    }
+
     if (metadata.role != null && metadata.role!.isNotEmpty) {
       _castFocusNode.requestFocus();
       _scrollSectionIntoView(_castSectionKey);
@@ -1503,6 +1509,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isDownKey) {
       if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
         _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
+        _scrollSectionIntoView(_seasonsSectionKey);
+      } else if (_episodes.isNotEmpty) {
+        _firstEpisodeFocusNode.requestFocus();
         _scrollSectionIntoView(_seasonsSectionKey);
       } else if (metadata.role != null && metadata.role!.isNotEmpty) {
         _castFocusNode.requestFocus();
@@ -1798,7 +1807,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               : index == _episodes.length - 1 && _episodes.length > 1
                   ? _lastEpisodeFocusNode
                   : null,
-          onNavigateUp: index == 0 ? _focusSelectedSeasonTab : null,
+          onNavigateUp: index == 0
+              ? () {
+                  if (!_showEpisodesDirectly) {
+                    _focusSelectedSeasonTab();
+                  } else if ((_fullMetadata ?? widget.metadata).summary?.isNotEmpty == true) {
+                    _overviewFocusNode.requestFocus();
+                    _scrollSectionIntoView(_overviewSectionKey);
+                  } else {
+                    _scrollController.animateTo(0,
+                        duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+                    _playButtonFocusNode.requestFocus();
+                  }
+                }
+              : null,
           localPosterPath: localPosterPath,
           onTap: () async {
             await navigateToVideoPlayerWithRefresh(
