@@ -136,6 +136,12 @@ class PlexClient {
   /// Whether to operate in offline mode (use cache only)
   bool _offlineMode = false;
 
+  /// Libraries parsed from /media/providers (includes individually shared items)
+  late final List<PlexLibrary> _providerLibraries;
+
+  /// EPG providers parsed from /media/providers
+  late final List<({String identifier, String gridEndpoint})> _providerEpg;
+
   /// Set offline mode - when true, only cached responses are returned
   void setOfflineMode(bool offline) {
     _offlineMode = offline;
@@ -157,7 +163,29 @@ class PlexClient {
     return utf8.decode(responseBytes, allowMalformed: true);
   }
 
-  PlexClient(
+  /// Create a fully initialized PlexClient.
+  /// Fetches /media/providers to discover libraries (including individually shared items) and EPG providers.
+  static Future<PlexClient> create(
+    PlexConfig config, {
+    required String serverId,
+    String? serverName,
+    List<String>? prioritizedEndpoints,
+    Future<void> Function(String newBaseUrl)? onEndpointChanged,
+    VoidCallback? onAllEndpointsExhausted,
+  }) async {
+    final client = PlexClient._(
+      config,
+      serverId: serverId,
+      serverName: serverName,
+      prioritizedEndpoints: prioritizedEndpoints,
+      onEndpointChanged: onEndpointChanged,
+      onAllEndpointsExhausted: onAllEndpointsExhausted,
+    );
+    await client._initMediaProviders();
+    return client;
+  }
+
+  PlexClient._(
     this.config, {
     required this.serverId,
     this.serverName,
@@ -200,6 +228,91 @@ class PlexClient {
           onAllEndpointsExhausted: _onAllEndpointsExhausted,
         ),
       );
+    }
+  }
+
+  /// Fetch /media/providers and parse libraries + EPG providers from the response.
+  /// This discovers individually shared items that don't appear in /library/sections.
+  Future<void> _initMediaProviders() async {
+    try {
+      final response = await _dio.get('/media/providers');
+      final container = _getMediaContainer(response);
+      if (container == null) {
+        _providerLibraries = [];
+        _providerEpg = [];
+        return;
+      }
+
+      final providers = container['MediaProvider'] as List?;
+      if (providers == null) {
+        _providerLibraries = [];
+        _providerEpg = [];
+        return;
+      }
+
+      // Parse libraries from the library provider
+      final libraries = <PlexLibrary>[];
+      final epg = <({String identifier, String gridEndpoint})>[];
+
+      for (final provider in providers) {
+        if (provider is! Map) continue;
+        final identifier = provider['identifier'] as String?;
+        if (identifier == null) continue;
+
+        final features = provider['Feature'] as List?;
+        if (features == null) continue;
+
+        // Library provider — extract directories as libraries
+        if (identifier == 'com.plexapp.plugins.library') {
+          for (final feature in features) {
+            if (feature is! Map) continue;
+            if (feature['type'] != 'content') continue;
+
+            final directories = feature['Directory'] as List?;
+            if (directories == null) continue;
+
+            for (final dir in directories) {
+              if (dir is! Map<String, dynamic>) continue;
+
+              // Skip entries without id (Home hub) and playlists
+              final id = dir['id'] as String?;
+              if (id == null) continue;
+              if (dir['type'] == 'playlist') continue;
+
+              // Set key = id so downstream code gets a plain section ID (e.g. "1")
+              final json = Map<String, dynamic>.from(dir);
+              json['key'] = id;
+
+              libraries.add(
+                PlexLibrary.fromJson(json).copyWith(serverId: serverId, serverName: serverName),
+              );
+            }
+          }
+        }
+
+        // EPG provider — extract grid endpoints
+        final protocols = provider['protocols'] as String?;
+        if (protocols != null && protocols.contains('livetv')) {
+          for (final feature in features) {
+            if (feature is! Map) continue;
+            if (feature['type'] == 'grid') {
+              final gridEndpoint = feature['key'] as String?;
+              if (gridEndpoint != null) {
+                epg.add((identifier: identifier, gridEndpoint: gridEndpoint));
+                appLogger.d('Discovered EPG provider: $identifier (grid: $gridEndpoint)');
+              }
+            }
+          }
+        }
+      }
+
+      _providerLibraries = libraries;
+      _providerEpg = epg;
+      appLogger.d('Media providers: ${libraries.length} libraries, ${epg.length} EPG provider(s)');
+    } catch (e) {
+      appLogger.w('Failed to fetch /media/providers, will fall back to /library/sections', error: e);
+      _providerLibraries = [];
+      _providerEpg = [];
     }
   }
 
@@ -413,8 +526,12 @@ class PlexClient {
   }
 
   /// Get library sections
-  /// Returns libraries automatically tagged with this client's serverId and serverName
+  /// Returns libraries automatically tagged with this client's serverId and serverName.
+  /// Prefers /media/providers data (includes individually shared items),
+  /// falls back to /library/sections for old servers.
   Future<List<PlexLibrary>> getLibraries() async {
+    if (_providerLibraries.isNotEmpty) return _providerLibraries;
+    // Fallback for old servers that don't support /media/providers
     final response = await _dio.get('/library/sections');
     return _extractLibraryList(response);
   }
@@ -2112,55 +2229,9 @@ class PlexClient {
     }, 'Failed to get EPG channels');
   }
 
-  /// Cached EPG providers (discovered from /media/providers)
-  List<({String identifier, String gridEndpoint})>? _epgProviders;
-
-  /// Discover all EPG providers from media providers
+  /// Return EPG providers (already parsed from /media/providers during initialization)
   Future<List<({String identifier, String gridEndpoint})>> _discoverEpgProviders() async {
-    if (_epgProviders != null) return _epgProviders!;
-
-    try {
-      final response = await _dio.get('/media/providers');
-      final container = _getMediaContainer(response);
-      if (container == null) return [];
-
-      final providers = container['MediaProvider'] as List?;
-      if (providers == null) return [];
-
-      final results = <({String identifier, String gridEndpoint})>[];
-
-      for (final provider in providers) {
-        if (provider is! Map) continue;
-        final protocols = provider['protocols'] as String?;
-        if (protocols == null || !protocols.contains('livetv')) continue;
-
-        final identifier = provider['identifier'] as String?;
-        if (identifier == null) continue;
-
-        final features = provider['Feature'] as List?;
-        if (features == null) continue;
-        for (final feature in features) {
-          if (feature is! Map) continue;
-          if (feature['type'] == 'grid') {
-            final gridEndpoint = feature['key'] as String?;
-            if (gridEndpoint != null) {
-              results.add((identifier: identifier, gridEndpoint: gridEndpoint));
-              appLogger.d('Discovered EPG provider: $identifier (grid: $gridEndpoint)');
-            }
-          }
-        }
-      }
-
-      _epgProviders = results;
-      appLogger.d('Discovered ${results.length} EPG provider(s)');
-      if (results.isEmpty) {
-        appLogger.w('No EPG providers found');
-      }
-      return results;
-    } catch (e) {
-      appLogger.e('Failed to discover EPG providers', error: e);
-    }
-    return [];
+    return _providerEpg;
   }
 
   /// Parse a list of JSON items into [LiveTvProgram] objects, skipping any that fail.

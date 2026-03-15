@@ -3,7 +3,6 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:dio/dio.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_button.dart';
@@ -14,7 +13,6 @@ import '../../mixins/tab_navigation_mixin.dart';
 import '../../../services/plex_client.dart';
 import '../../models/plex_library.dart';
 import '../../models/plex_metadata.dart';
-import '../../models/plex_sort.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
@@ -30,7 +28,6 @@ import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/item_updatable.dart';
 import '../../i18n/strings.g.dart';
-import '../../utils/error_message_utils.dart';
 import 'state_messages.dart';
 import 'tabs/library_browse_tab.dart';
 import 'tabs/library_recommended_tab.dart';
@@ -96,15 +93,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   String? _selectedLibraryGlobalKey;
   bool _isInitialLoad = true;
 
-  Map<String, String> _selectedFilters = {};
-  PlexSort? _selectedSort;
-  bool _isSortDescending = false;
-  List<PlexMetadata> _items = [];
-  int _currentPage = 0;
-  bool _hasMoreItems = true;
-  CancelToken? _cancelToken;
-  int _requestId = 0;
-  static const int _pageSize = 1000;
 
   /// Flag to prevent onTabChanged from focusing when we're programmatically changing tabs
   bool _isRestoringTab = false;
@@ -182,10 +170,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     if (libraryGlobalKeyToLoad != null && mounted) {
-      final savedFilters = storage.getLibraryFilters(sectionId: libraryGlobalKeyToLoad);
-      if (savedFilters.isNotEmpty) {
-        _selectedFilters = Map.from(savedFilters);
-      }
       _loadLibraryContent(libraryGlobalKeyToLoad);
     }
   }
@@ -337,7 +321,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   @override
   void dispose() {
-    _cancelToken?.cancel();
     _outerScrollController.dispose();
     _recommendedTabChipFocusNode.dispose();
     _browseTabChipFocusNode.dispose();
@@ -350,15 +333,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void _updateState(VoidCallback fn) {
     if (!mounted) return;
     setState(fn);
-  }
-
-  /// Helper method to get user-friendly error message from exception
-  String _getErrorMessage(dynamic error, String context) {
-    if (error is DioException) {
-      return mapDioErrorToMessage(error, context: context);
-    }
-
-    return mapUnexpectedErrorToMessage(error, context: context);
   }
 
   /// Check if libraries come from multiple servers
@@ -392,22 +366,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final libraryIndex = visibleLibraries.indexWhere((lib) => lib.globalKey == libraryGlobalKey);
     if (libraryIndex == -1) return; // Library not found or hidden
 
-    final library = visibleLibraries[libraryIndex];
-
-    final isChangingLibrary = !_isInitialLoad && _selectedLibraryGlobalKey != libraryGlobalKey;
-
-    // Get the correct client for this library's server
-    final client = context.getClientForLibrary(library);
-
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;
       _errorMessage = null;
       // Clear loaded tabs tracking for new library
       _loadedTabs.clear();
-      // Only clear filters when explicitly changing library (not on initial load)
-      if (isChangingLibrary) {
-        _selectedFilters.clear();
-      }
     });
 
     // Mark that initial load is complete
@@ -439,137 +402,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       }
     });
 
-    // Cancel any existing requests
-    _cancelToken?.cancel();
-    _cancelToken = CancelToken();
-    final currentRequestId = ++_requestId;
-
-    // Reset pagination state
-    _updateState(() {
-      _currentPage = 0;
-      _hasMoreItems = true;
-      _items = [];
-    });
-
-    try {
-      // Load sort options for the new library
-      await _loadSortOptions(library);
-
-      final filtersWithSort = _buildFiltersWithSort();
-
-      // Load pages sequentially
-      await _loadAllPagesSequentially(library, filtersWithSort, currentRequestId, client);
-    } catch (e) {
-      // Ignore cancellation errors
-      if (e is DioException && e.type == DioExceptionType.cancel) {
-        return;
-      }
-
-      _updateState(() {
-        _errorMessage = _getErrorMessage(e, 'library content');
-      });
-    }
-  }
-
-  /// Load all pages sequentially until all items are fetched
-  Future<void> _loadAllPagesSequentially(
-    PlexLibrary library,
-    Map<String, String> filtersWithSort,
-    int requestId,
-    PlexClient client,
-  ) async {
-    while (_hasMoreItems && requestId == _requestId) {
-      try {
-        final result = await client.getLibraryContent(
-          library.key,
-          start: _currentPage * _pageSize,
-          size: _pageSize,
-          filters: filtersWithSort,
-          cancelToken: _cancelToken,
-        );
-
-        // Tag items with server info for multi-server support
-        final taggedItems = result.items
-            .map((item) => item.copyWith(serverId: library.serverId, serverName: library.serverName))
-            .toList();
-
-        // Check if request is still valid
-        if (requestId != _requestId) {
-          return; // Request was superseded
-        }
-
-        _updateState(() {
-          _items.addAll(taggedItems);
-          _currentPage++;
-          _hasMoreItems = taggedItems.length >= _pageSize;
-        });
-      } catch (e) {
-        // Check if it's a cancellation
-        if (e is DioException && e.type == DioExceptionType.cancel) {
-          return;
-        }
-
-        // For other errors, update state and rethrow
-        _updateState(() {
-          _hasMoreItems = false;
-        });
-        rethrow;
-      }
-    }
-  }
-
-  Future<void> _loadSortOptions(PlexLibrary library) async {
-    try {
-      final client = context.getClientForLibrary(library);
-
-      final sortOptions = await client.getLibrarySorts(library.key);
-
-      // Load saved sort preference for this library
-      final storage = await StorageService.getInstance();
-      final savedSortData = storage.getLibrarySort(library.globalKey);
-
-      // Find the saved sort in the options
-      PlexSort? savedSort;
-      bool descending = false;
-
-      if (savedSortData != null) {
-        final sortKey = savedSortData['key'] as String?;
-        if (sortKey != null) {
-          savedSort = sortOptions.firstWhere((s) => s.key == sortKey, orElse: () => sortOptions.first);
-          descending = (savedSortData['descending'] as bool?) ?? false;
-        } else {
-          savedSort = sortOptions.first;
-        }
-      } else {
-        savedSort = sortOptions.first;
-      }
-
-      _updateState(() {
-        _selectedSort = savedSort;
-        _isSortDescending = descending;
-      });
-    } catch (e) {
-      _updateState(() {
-        _selectedSort = null;
-        _isSortDescending = false;
-      });
-    }
-  }
-
-  Map<String, String> _buildFiltersWithSort() {
-    final filtersWithSort = Map<String, String>.from(_selectedFilters);
-    if (_selectedSort != null) {
-      filtersWithSort['sort'] = _selectedSort!.getSortKey(descending: _isSortDescending);
-    }
-    return filtersWithSort;
   }
 
   @override
   void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
-    final index = _items.indexWhere((item) => item.ratingKey == ratingKey);
-    if (index != -1) {
-      _items[index] = updatedMetadata;
-    }
+    // Delegate to the active tab — parent doesn't maintain its own item list
   }
 
   // Public method to refresh content (for normal navigation)
@@ -597,8 +434,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     appLogger.d('LibrariesScreen.fullRefresh() called - reloading all content');
     setState(() {
       _selectedLibraryGlobalKey = null;
-      _selectedFilters.clear();
-      _items.clear();
       _errorMessage = null;
     });
 

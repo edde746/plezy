@@ -84,6 +84,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final ValueNotifier<double> _indicatorProgress = ValueNotifier(0.0);
   bool _isAutoScrollPaused = false;
   HiddenLibrariesProvider? _hiddenLibrariesProvider;
+  Set<String> _lastSeenHiddenKeys = {};
 
   // WatchStateAware: watch on-deck items and their parent shows/seasons
   @override
@@ -258,6 +259,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   void _onHiddenLibrariesChanged() {
+    final currentKeys = _hiddenLibrariesProvider?.hiddenLibraryKeys ?? {};
+    if (currentKeys.length == _lastSeenHiddenKeys.length && currentKeys.containsAll(_lastSeenHiddenKeys)) {
+      return; // No actual change
+    }
+    _lastSeenHiddenKeys = Set.of(currentKeys);
     _loadContent();
   }
 
@@ -451,9 +457,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
       // Get hidden libraries for filtering
       final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
+      _lastSeenHiddenKeys = Set.of(hiddenLibrariesProvider.hiddenLibraryKeys);
 
       // Get settings for hub mode preference (ensure initialized before accessing)
       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+
+      // Reuse already-loaded libraries to avoid a redundant API call inside hub fetching
+      final librariesProvider = context.read<LibrariesProvider>();
+      final librariesByServer = librariesProvider.libraries.isNotEmpty
+          ? multiServerProvider.aggregationService.groupLibrariesByServer(librariesProvider.libraries)
+          : null;
+
       await settingsProvider.ensureInitialized();
 
       // Start OnDeck and hubs fetch in parallel
@@ -464,6 +478,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
         useGlobalHubs: settingsProvider.useGlobalHubs,
+        librariesByServer: librariesByServer,
       );
 
       // Wait for OnDeck to complete and show it immediately

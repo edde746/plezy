@@ -130,21 +130,14 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         'Live TV DVRs: ${liveTvServers.map((s) => '${s.serverId}/${s.dvrKey} lineup=${s.lineup}').join(', ')}',
       );
 
-      // Build a set of enabled channel keys per server from DVR mappings
+      // Build a set of enabled channel keys per server from cached DVR data
       final enabledKeysByServer = <String, Set<String>>{};
-      final queriedServers = <String>{};
+      final processedServers = <String>{};
       for (final serverInfo in liveTvServers) {
-        if (!queriedServers.add(serverInfo.serverId)) continue;
-        try {
-          final client = multiServer.getClientForServer(serverInfo.serverId);
-          if (client == null) continue;
-          final dvrs = await client.getDvrs();
-          final enabledKeys = _extractEnabledChannelKeys(dvrs);
-          if (enabledKeys != null) {
-            enabledKeysByServer[serverInfo.serverId] = enabledKeys;
-          }
-        } catch (e) {
-          appLogger.e('Failed to load DVR mappings for server ${serverInfo.serverId}', error: e);
+        if (!processedServers.add(serverInfo.serverId)) continue;
+        final enabledKeys = _extractEnabledChannelKeys(serverInfo.dvrs);
+        if (enabledKeys != null) {
+          enabledKeysByServer[serverInfo.serverId] = enabledKeys;
         }
       }
 

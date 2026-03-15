@@ -110,7 +110,7 @@ class MultiServerManager {
       clientIdentifier: clientIdentifier,
     );
 
-    final client = PlexClient(
+    final client = await PlexClient.create(
       config,
       serverId: serverId,
       serverName: server.name,

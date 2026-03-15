@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/livetv_dvr.dart';
 import '../services/plex_client.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/multi_server_manager.dart';
@@ -14,7 +15,10 @@ class LiveTvServerInfo {
   final String dvrKey;
   final String? lineup;
 
-  LiveTvServerInfo({required this.serverId, required this.dvrKey, this.lineup});
+  /// Full DVR objects including channel mappings (avoids re-fetching in LiveTvScreen)
+  final List<LiveTvDvr> dvrs;
+
+  LiveTvServerInfo({required this.serverId, required this.dvrKey, this.lineup, this.dvrs = const []});
 }
 
 /// Provider for multi-server Plex connections
@@ -32,12 +36,22 @@ class MultiServerProvider extends ChangeNotifier {
   final List<LiveTvServerInfo> _liveTvServers = [];
   List<LiveTvServerInfo> get liveTvServers => List.unmodifiable(_liveTvServers);
 
+  /// Previously-seen set of online server IDs, used to detect new servers
+  Set<String> _previousOnlineServerIds = {};
+
   MultiServerProvider(this._serverManager, this._aggregationService) {
     // Listen to server status changes
     _statusSubscription = _serverManager.statusStream.listen((_) {
+      final currentOnline = Set<String>.from(onlineServerIds);
+      final hasNewServer = currentOnline.any((id) => !_previousOnlineServerIds.contains(id));
+      _previousOnlineServerIds = currentOnline;
+
       notifyListeners();
-      // Re-check live TV availability when servers come online
-      checkLiveTvAvailability();
+
+      // Only re-check live TV when a new server came online
+      if (hasNewServer) {
+        checkLiveTvAvailability();
+      }
     });
   }
 
@@ -123,7 +137,7 @@ class MultiServerProvider extends ChangeNotifier {
       try {
         final dvrs = await client.getDvrs();
         for (final dvr in dvrs) {
-          newLiveTvServers.add(LiveTvServerInfo(serverId: serverId, dvrKey: dvr.key, lineup: dvr.lineup));
+          newLiveTvServers.add(LiveTvServerInfo(serverId: serverId, dvrKey: dvr.key, lineup: dvr.lineup, dvrs: dvrs));
         }
       } catch (e) {
         appLogger.d('LiveTV check failed for server $serverId', error: e);
