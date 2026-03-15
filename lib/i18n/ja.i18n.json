@@ -30,7 +30,6 @@
     "shuffle": "シャッフル",
     "addTo": "追加...",
     "createNew": "新規作成",
-    "remove": "削除",
     "paste": "貼り付け",
     "connect": "接続",
     "disconnect": "切断",
@@ -44,7 +43,6 @@
     "settings": "設定",
     "mute": "ミュート",
     "ok": "OK",
-    "loading": "読み込み中...",
     "reconnect": "再接続",
     "exitConfirmTitle": "アプリを終了しますか？",
     "exitConfirmMessage": "終了してもよろしいですか？",
@@ -248,11 +246,6 @@
       "skipMarker": "イントロ/クレジットをスキップ"
     }
   },
-  "pinEntry": {
-    "enterPin": "PINを入力",
-    "showPin": "PINを表示",
-    "hidePin": "PINを非表示"
-  },
   "fileInfo": {
     "title": "ファイル情報",
     "video": "映像",
@@ -325,7 +318,6 @@
     "unlockRotation": "回転のロックを解除",
     "timerActive": "タイマー動作中",
     "playbackWillPauseIn": "再生は${duration}後に一時停止します",
-    "sleepTimerCompleted": "スリープタイマー完了 - 再生を一時停止しました",
     "stillWatching": "まだ視聴中ですか？",
     "pausingIn": "${seconds}秒後に一時停止",
     "continueWatching": "続ける",
@@ -342,16 +334,12 @@
     "muteButton": "ミュート",
     "unmuteButton": "ミュート解除",
     "settingsButton": "動画設定",
-    "audioTrackButton": "音声トラック",
-    "subtitlesButton": "字幕",
     "tracksButton": "音声と字幕",
     "chaptersButton": "チャプター",
     "versionsButton": "動画バージョン",
     "pipButton": "ピクチャーインピクチャーモード",
     "aspectRatioButton": "アスペクト比",
     "ambientLighting": "アンビエントライティング",
-    "ambientLightingOn": "アンビエントライティングを有効化",
-    "ambientLightingOff": "アンビエントライティングを無効化",
     "fullscreenButton": "フルスクリーンに入る",
     "exitFullscreenButton": "フルスクリーンを終了",
     "alwaysOnTopButton": "常に前面に表示",
@@ -455,11 +443,8 @@
     "overview": "あらすじ",
     "cast": "キャスト",
     "extras": "予告編とエクストラ",
-    "seasons": "シーズン",
     "studio": "スタジオ",
     "rating": "評価",
-    "episodeCount": "${count}エピソード",
-    "watchedProgress": "${watched}/${total}視聴済み",
     "movie": "映画",
     "tvShow": "テレビ番組",
     "minutesLeft": "残り${minutes}分"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "ログをクリア",
     "copyLogs": "ログをコピー",
-    "uploadLogs": "ログをアップロード",
-    "error": "エラー:",
-    "stackTrace": "スタックトレース:"
+    "uploadLogs": "ログをアップロード"
   },
   "licenses": {
     "relatedPackages": "関連パッケージ",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "ライブTV",
-    "channels": "チャンネル",
     "guide": "番組表",
     "noChannels": "チャンネルがありません",
     "noDvr": "どのサーバーにもDVRが設定されていません",
-    "tuneFailed": "チャンネルのチューニングに失敗しました",
-    "loading": "チャンネルを読み込み中...",
-    "nowPlaying": "現在放送中",
     "noPrograms": "番組データがありません",
-    "channelNumber": "Ch. ${number}",
     "live": "ライブ",
-    "hd": "HD",
-    "premiere": "新着",
     "reloadGuide": "番組表を再読込",
-    "allChannels": "すべてのチャンネル",
     "now": "現在",
     "today": "今日",
     "midnight": "深夜",
@@ -593,10 +568,7 @@
     "lateNight": "深夜",
     "whatsOn": "放送中",
     "watchChannel": "チャンネルを視聴",
-    "favorites": "お気に入り",
-    "addToFavorites": "お気に入りに追加",
-    "removeFromFavorites": "お気に入りから削除",
-    "noFavorites": "お気に入りチャンネルがありません。チャンネルを長押しして追加してください。"
+    "favorites": "お気に入り"
   },
   "collections": {
     "title": "コレクション",
@@ -841,7 +813,6 @@
     "playerCommand": "コマンド",
     "playerPackage": "パッケージ名",
     "playerUrlScheme": "URLスキーム",
-    "customPlayer": "カスタムプレーヤー",
     "off": "オフ",
     "launchFailed": "外部プレーヤーの起動に失敗しました",
     "appNotInstalled": "${name}がインストールされていません",

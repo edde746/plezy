@@ -30,7 +30,6 @@
     "shuffle": "Zufall",
     "addTo": "Hinzufügen zu...",
     "createNew": "Neu erstellen",
-    "remove": "Entfernen",
     "paste": "Einfügen",
     "connect": "Verbinden",
     "disconnect": "Trennen",
@@ -44,7 +43,6 @@
     "settings": "Optionen",
     "mute": "Stumm",
     "ok": "OK",
-    "loading": "Laden...",
     "reconnect": "Erneut verbinden",
     "exitConfirmTitle": "App beenden?",
     "exitConfirmMessage": "Möchtest du die App wirklich beenden?",
@@ -248,11 +246,6 @@
       "skipMarker": "Intro/Abspann überspringen"
     }
   },
-  "pinEntry": {
-    "enterPin": "PIN eingeben",
-    "showPin": "PIN anzeigen",
-    "hidePin": "PIN verbergen"
-  },
   "fileInfo": {
     "title": "Dateiinfo",
     "video": "Video",
@@ -325,7 +318,6 @@
     "unlockRotation": "Rotation entsperren",
     "timerActive": "Schlaftimer aktiv",
     "playbackWillPauseIn": "Wiedergabe wird in ${duration} pausiert",
-    "sleepTimerCompleted": "Schlaftimer abgelaufen – Wiedergabe pausiert",
     "stillWatching": "Schaust du noch?",
     "pausingIn": "Pause in ${seconds}s",
     "continueWatching": "Weiter",
@@ -342,16 +334,12 @@
     "muteButton": "Stumm schalten",
     "unmuteButton": "Stummschaltung aufheben",
     "settingsButton": "Videoeinstellungen",
-    "audioTrackButton": "Tonspuren",
-    "subtitlesButton": "Untertitel",
     "tracksButton": "Audio und Untertitel",
     "chaptersButton": "Kapitel",
     "versionsButton": "Videoversionen",
     "pipButton": "Bild-in-Bild Modus",
     "aspectRatioButton": "Seitenverhältnis",
     "ambientLighting": "Umgebungsbeleuchtung",
-    "ambientLightingOn": "Umgebungsbeleuchtung aktivieren",
-    "ambientLightingOff": "Umgebungsbeleuchtung deaktivieren",
     "fullscreenButton": "Vollbild aktivieren",
     "exitFullscreenButton": "Vollbild verlassen",
     "alwaysOnTopButton": "Immer im Vordergrund",
@@ -455,11 +443,8 @@
     "overview": "Übersicht",
     "cast": "Besetzung",
     "extras": "Trailer & Extras",
-    "seasons": "Staffeln",
     "studio": "Studio",
     "rating": "Altersfreigabe",
-    "episodeCount": "${count} Episoden",
-    "watchedProgress": "${watched} von ${total} gesehen",
     "movie": "Film",
     "tvShow": "Serie",
     "minutesLeft": "${minutes} Min übrig"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "Protokolle löschen",
     "copyLogs": "Protokolle kopieren",
-    "uploadLogs": "Protokolle hochladen",
-    "error": "Fehler:",
-    "stackTrace": "Stacktrace:"
+    "uploadLogs": "Protokolle hochladen"
   },
   "licenses": {
     "relatedPackages": "Verwandte Pakete",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "Live-TV",
-    "channels": "Kanäle",
     "guide": "Programmführer",
     "noChannels": "Keine Kanäle verfügbar",
     "noDvr": "Kein DVR auf einem Server konfiguriert",
-    "tuneFailed": "Kanal konnte nicht eingestellt werden",
-    "loading": "Kanäle werden geladen...",
-    "nowPlaying": "Läuft gerade",
     "noPrograms": "Keine Programmdaten verfügbar",
-    "channelNumber": "Kanal ${number}",
     "live": "LIVE",
-    "hd": "HD",
-    "premiere": "NEU",
     "reloadGuide": "Programmführer neu laden",
-    "allChannels": "Alle Kanäle",
     "now": "Jetzt",
     "today": "Heute",
     "midnight": "Mitternacht",
@@ -593,10 +568,7 @@
     "lateNight": "Spätnacht",
     "whatsOn": "Jetzt im TV",
     "watchChannel": "Kanal ansehen",
-    "favorites": "Favoriten",
-    "addToFavorites": "Zu Favoriten hinzufügen",
-    "removeFromFavorites": "Aus Favoriten entfernen",
-    "noFavorites": "Keine Favoritenkanäle. Kanal lange drücken, um ihn hinzuzufügen."
+    "favorites": "Favoriten"
   },
   "downloads": {
     "title": "Downloads",
@@ -841,7 +813,6 @@
     "playerCommand": "Befehl",
     "playerPackage": "Paketname",
     "playerUrlScheme": "URL-Schema",
-    "customPlayer": "Benutzerdefinierter Player",
     "off": "Aus",
     "launchFailed": "Externer Player konnte nicht geöffnet werden",
     "appNotInstalled": "${name} ist nicht installiert",

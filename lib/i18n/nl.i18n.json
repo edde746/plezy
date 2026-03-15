@@ -30,7 +30,6 @@
     "shuffle": "Willekeurig",
     "addTo": "Toevoegen aan...",
     "createNew": "Nieuw aanmaken",
-    "remove": "Verwijderen",
     "paste": "Plakken",
     "connect": "Verbinden",
     "disconnect": "Verbinding verbreken",
@@ -44,7 +43,6 @@
     "settings": "Opties",
     "mute": "Dempen",
     "ok": "OK",
-    "loading": "Laden...",
     "reconnect": "Opnieuw verbinden",
     "exitConfirmTitle": "App afsluiten?",
     "exitConfirmMessage": "Weet je zeker dat je wilt afsluiten?",
@@ -248,11 +246,6 @@
       "skipMarker": "Intro/aftiteling overslaan"
     }
   },
-  "pinEntry": {
-    "enterPin": "Voer PIN in",
-    "showPin": "Toon PIN",
-    "hidePin": "Verberg PIN"
-  },
   "fileInfo": {
     "title": "Bestand info",
     "video": "Video",
@@ -325,7 +318,6 @@
     "unlockRotation": "Ontgrendel rotatie",
     "timerActive": "Timer actief",
     "playbackWillPauseIn": "Afspelen wordt gepauzeerd over ${duration}",
-    "sleepTimerCompleted": "Slaaptimer voltooid - afspelen gepauzeerd",
     "stillWatching": "Kijk je nog?",
     "pausingIn": "Pauze over ${seconds}s",
     "continueWatching": "Doorgaan",
@@ -342,16 +334,12 @@
     "muteButton": "Dempen",
     "unmuteButton": "Dempen opheffen",
     "settingsButton": "Video-instellingen",
-    "audioTrackButton": "Audiosporen",
-    "subtitlesButton": "Ondertitels",
     "tracksButton": "Audio en ondertitels",
     "chaptersButton": "Hoofdstukken",
     "versionsButton": "Videoversies",
     "pipButton": "Beeld-in-beeld modus",
     "aspectRatioButton": "Beeldverhouding",
     "ambientLighting": "Omgevingsverlichting",
-    "ambientLightingOn": "Omgevingsverlichting inschakelen",
-    "ambientLightingOff": "Omgevingsverlichting uitschakelen",
     "fullscreenButton": "Volledig scherm activeren",
     "exitFullscreenButton": "Volledig scherm verlaten",
     "alwaysOnTopButton": "Altijd bovenop",
@@ -455,11 +443,8 @@
     "overview": "Overzicht",
     "cast": "Acteurs",
     "extras": "Trailers & Extra's",
-    "seasons": "Seizoenen",
     "studio": "Studio",
     "rating": "Leeftijd",
-    "episodeCount": "${count} afleveringen",
-    "watchedProgress": "${watched}/${total} gekeken",
     "movie": "Film",
     "tvShow": "TV Serie",
     "minutesLeft": "${minutes} min over"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "Wis logs",
     "copyLogs": "Kopieer logs",
-    "uploadLogs": "Logs uploaden",
-    "error": "Fout:",
-    "stackTrace": "Stacktracering:"
+    "uploadLogs": "Logs uploaden"
   },
   "licenses": {
     "relatedPackages": "Gerelateerde pakketten",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "Live TV",
-    "channels": "Zenders",
     "guide": "Gids",
     "noChannels": "Geen zenders beschikbaar",
     "noDvr": "Geen DVR geconfigureerd op een server",
-    "tuneFailed": "Kan zender niet afstemmen",
-    "loading": "Zenders laden...",
-    "nowPlaying": "Nu aan het afspelen",
     "noPrograms": "Geen programmagegevens beschikbaar",
-    "channelNumber": "Kanaal ${number}",
     "live": "LIVE",
-    "hd": "HD",
-    "premiere": "NIEUW",
     "reloadGuide": "Gids herladen",
-    "allChannels": "Alle zenders",
     "now": "Nu",
     "today": "Vandaag",
     "midnight": "Middernacht",
@@ -593,10 +568,7 @@
     "lateNight": "Late avond",
     "whatsOn": "Nu op TV",
     "watchChannel": "Kanaal bekijken",
-    "favorites": "Favorieten",
-    "addToFavorites": "Toevoegen aan favorieten",
-    "removeFromFavorites": "Verwijderen uit favorieten",
-    "noFavorites": "Geen favoriete zenders. Houd een zender ingedrukt om toe te voegen."
+    "favorites": "Favorieten"
   },
   "downloads": {
     "title": "Downloads",
@@ -841,7 +813,6 @@
     "playerCommand": "Commando",
     "playerPackage": "Pakketnaam",
     "playerUrlScheme": "URL-schema",
-    "customPlayer": "Aangepaste speler",
     "off": "Uit",
     "launchFailed": "Kan externe speler niet openen",
     "appNotInstalled": "${name} is niet geïnstalleerd",

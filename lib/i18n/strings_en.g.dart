@@ -48,7 +48,6 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsSettingsEn settings = TranslationsSettingsEn._(_root);
 	late final TranslationsSearchEn search = TranslationsSearchEn._(_root);
 	late final TranslationsHotkeysEn hotkeys = TranslationsHotkeysEn._(_root);
-	late final TranslationsPinEntryEn pinEntry = TranslationsPinEntryEn._(_root);
 	late final TranslationsFileInfoEn fileInfo = TranslationsFileInfoEn._(_root);
 	late final TranslationsMediaMenuEn mediaMenu = TranslationsMediaMenuEn._(_root);
 	late final TranslationsAccessibilityEn accessibility = TranslationsAccessibilityEn._(_root);
@@ -184,9 +183,6 @@ class TranslationsCommonEn {
 	/// en: 'Create new'
 	String get createNew => 'Create new';
 
-	/// en: 'Remove'
-	String get remove => 'Remove';
-
 	/// en: 'Paste'
 	String get paste => 'Paste';
 
@@ -225,9 +221,6 @@ class TranslationsCommonEn {
 
 	/// en: 'OK'
 	String get ok => 'OK';
-
-	/// en: 'Loading...'
-	String get loading => 'Loading...';
 
 	/// en: 'Reconnect'
 	String get reconnect => 'Reconnect';
@@ -790,24 +783,6 @@ class TranslationsHotkeysEn {
 	late final TranslationsHotkeysActionsEn actions = TranslationsHotkeysActionsEn._(_root);
 }
 
-// Path: pinEntry
-class TranslationsPinEntryEn {
-	TranslationsPinEntryEn._(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Enter PIN'
-	String get enterPin => 'Enter PIN';
-
-	/// en: 'Show PIN'
-	String get showPin => 'Show PIN';
-
-	/// en: 'Hide PIN'
-	String get hidePin => 'Hide PIN';
-}
-
 // Path: fileInfo
 class TranslationsFileInfoEn {
 	TranslationsFileInfoEn._(this._root);
@@ -1041,9 +1016,6 @@ class TranslationsVideoControlsEn {
 	/// en: 'Playback will pause in ${duration}'
 	String playbackWillPauseIn({required Object duration}) => 'Playback will pause in ${duration}';
 
-	/// en: 'Sleep timer completed - playback paused'
-	String get sleepTimerCompleted => 'Sleep timer completed - playback paused';
-
 	/// en: 'Still watching?'
 	String get stillWatching => 'Still watching?';
 
@@ -1092,12 +1064,6 @@ class TranslationsVideoControlsEn {
 	/// en: 'Video settings'
 	String get settingsButton => 'Video settings';
 
-	/// en: 'Audio tracks'
-	String get audioTrackButton => 'Audio tracks';
-
-	/// en: 'Subtitles'
-	String get subtitlesButton => 'Subtitles';
-
 	/// en: 'Audio & Subtitles'
 	String get tracksButton => 'Audio & Subtitles';
 
@@ -1115,12 +1081,6 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Ambient lighting'
 	String get ambientLighting => 'Ambient lighting';
-
-	/// en: 'Enable ambient lighting'
-	String get ambientLightingOn => 'Enable ambient lighting';
-
-	/// en: 'Disable ambient lighting'
-	String get ambientLightingOff => 'Disable ambient lighting';
 
 	/// en: 'Enter fullscreen'
 	String get fullscreenButton => 'Enter fullscreen';
@@ -1424,20 +1384,11 @@ class TranslationsDiscoverEn {
 	/// en: 'Trailers & Extras'
 	String get extras => 'Trailers & Extras';
 
-	/// en: 'Seasons'
-	String get seasons => 'Seasons';
-
 	/// en: 'Studio'
 	String get studio => 'Studio';
 
 	/// en: 'Rating'
 	String get rating => 'Rating';
-
-	/// en: '${count} episodes'
-	String episodeCount({required Object count}) => '${count} episodes';
-
-	/// en: '${watched}/${total} watched'
-	String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} watched';
 
 	/// en: 'Movie'
 	String get movie => 'Movie';
@@ -1693,12 +1644,6 @@ class TranslationsLogsEn {
 
 	/// en: 'Upload Logs'
 	String get uploadLogs => 'Upload Logs';
-
-	/// en: 'Error:'
-	String get error => 'Error:';
-
-	/// en: 'Stack Trace:'
-	String get stackTrace => 'Stack Trace:';
 }
 
 // Path: licenses
@@ -1751,9 +1696,6 @@ class TranslationsLiveTvEn {
 	/// en: 'Live TV'
 	String get title => 'Live TV';
 
-	/// en: 'Channels'
-	String get channels => 'Channels';
-
 	/// en: 'Guide'
 	String get guide => 'Guide';
 
@@ -1763,35 +1705,14 @@ class TranslationsLiveTvEn {
 	/// en: 'No DVR configured on any server'
 	String get noDvr => 'No DVR configured on any server';
 
-	/// en: 'Failed to tune channel'
-	String get tuneFailed => 'Failed to tune channel';
-
-	/// en: 'Loading channels...'
-	String get loading => 'Loading channels...';
-
-	/// en: 'Now Playing'
-	String get nowPlaying => 'Now Playing';
-
 	/// en: 'No program data available'
 	String get noPrograms => 'No program data available';
-
-	/// en: 'Ch. ${number}'
-	String channelNumber({required Object number}) => 'Ch. ${number}';
 
 	/// en: 'LIVE'
 	String get live => 'LIVE';
 
-	/// en: 'HD'
-	String get hd => 'HD';
-
-	/// en: 'NEW'
-	String get premiere => 'NEW';
-
 	/// en: 'Reload Guide'
 	String get reloadGuide => 'Reload Guide';
-
-	/// en: 'All Channels'
-	String get allChannels => 'All Channels';
 
 	/// en: 'Now'
 	String get now => 'Now';
@@ -1825,15 +1746,6 @@ class TranslationsLiveTvEn {
 
 	/// en: 'Favorites'
 	String get favorites => 'Favorites';
-
-	/// en: 'Add to Favorites'
-	String get addToFavorites => 'Add to Favorites';
-
-	/// en: 'Remove from Favorites'
-	String get removeFromFavorites => 'Remove from Favorites';
-
-	/// en: 'No favorite channels. Long-press a channel to add it.'
-	String get noFavorites => 'No favorite channels. Long-press a channel to add it.';
 }
 
 // Path: collections
@@ -2369,9 +2281,6 @@ class TranslationsExternalPlayerEn {
 
 	/// en: 'URL Scheme'
 	String get playerUrlScheme => 'URL Scheme';
-
-	/// en: 'Custom Player'
-	String get customPlayer => 'Custom Player';
 
 	/// en: 'Off'
 	String get off => 'Off';
@@ -2987,7 +2896,6 @@ extension on Translations {
 			'common.shuffle' => 'Shuffle',
 			'common.addTo' => 'Add to...',
 			'common.createNew' => 'Create new',
-			'common.remove' => 'Remove',
 			'common.paste' => 'Paste',
 			'common.connect' => 'Connect',
 			'common.disconnect' => 'Disconnect',
@@ -3001,7 +2909,6 @@ extension on Translations {
 			'common.settings' => 'Settings',
 			'common.mute' => 'Mute',
 			'common.ok' => 'OK',
-			'common.loading' => 'Loading...',
 			'common.reconnect' => 'Reconnect',
 			'common.exitConfirmTitle' => 'Exit app?',
 			'common.exitConfirmMessage' => 'Are you sure you want to exit?',
@@ -3192,9 +3099,6 @@ extension on Translations {
 			'hotkeys.actions.subSeekPrev' => 'Seek to Previous Subtitle',
 			'hotkeys.actions.shaderToggle' => 'Toggle Shaders',
 			'hotkeys.actions.skipMarker' => 'Skip Intro/Credits',
-			'pinEntry.enterPin' => 'Enter PIN',
-			'pinEntry.showPin' => 'Show PIN',
-			'pinEntry.hidePin' => 'Hide PIN',
 			'fileInfo.title' => 'File Info',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
@@ -3258,7 +3162,6 @@ extension on Translations {
 			'videoControls.unlockRotation' => 'Unlock rotation',
 			'videoControls.timerActive' => 'Timer Active',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Playback will pause in ${duration}',
-			'videoControls.sleepTimerCompleted' => 'Sleep timer completed - playback paused',
 			'videoControls.stillWatching' => 'Still watching?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausing in ${seconds}s',
 			'videoControls.continueWatching' => 'Continue',
@@ -3275,16 +3178,12 @@ extension on Translations {
 			'videoControls.muteButton' => 'Mute',
 			'videoControls.unmuteButton' => 'Unmute',
 			'videoControls.settingsButton' => 'Video settings',
-			'videoControls.audioTrackButton' => 'Audio tracks',
-			'videoControls.subtitlesButton' => 'Subtitles',
 			'videoControls.tracksButton' => 'Audio & Subtitles',
 			'videoControls.chaptersButton' => 'Chapters',
 			'videoControls.versionsButton' => 'Video versions',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
 			'videoControls.ambientLighting' => 'Ambient lighting',
-			'videoControls.ambientLightingOn' => 'Enable ambient lighting',
-			'videoControls.ambientLightingOff' => 'Disable ambient lighting',
 			'videoControls.fullscreenButton' => 'Enter fullscreen',
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Always on top',
@@ -3374,11 +3273,8 @@ extension on Translations {
 			'discover.overview' => 'Overview',
 			'discover.cast' => 'Cast',
 			'discover.extras' => 'Trailers & Extras',
-			'discover.seasons' => 'Seasons',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
-			'discover.episodeCount' => ({required Object count}) => '${count} episodes',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} watched',
 			'discover.movie' => 'Movie',
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
@@ -3456,8 +3352,6 @@ extension on Translations {
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
 			'logs.uploadLogs' => 'Upload Logs',
-			'logs.error' => 'Error:',
-			'logs.stackTrace' => 'Stack Trace:',
 			'licenses.relatedPackages' => 'Related Packages',
 			'licenses.license' => 'License',
 			'licenses.licenseNumber' => ({required Object number}) => 'License ${number}',
@@ -3466,22 +3360,12 @@ extension on Translations {
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live TV',
 			'liveTv.title' => 'Live TV',
-			'liveTv.channels' => 'Channels',
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
-			'liveTv.tuneFailed' => 'Failed to tune channel',
-			'liveTv.loading' => 'Loading channels...',
-			'liveTv.nowPlaying' => 'Now Playing',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'No program data available',
-			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'LIVE',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NEW',
 			'liveTv.reloadGuide' => 'Reload Guide',
-			'liveTv.allChannels' => 'All Channels',
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
@@ -3493,14 +3377,13 @@ extension on Translations {
 			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',
-			'liveTv.addToFavorites' => 'Add to Favorites',
-			'liveTv.removeFromFavorites' => 'Remove from Favorites',
-			'liveTv.noFavorites' => 'No favorite channels. Long-press a channel to add it.',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
 			'collections.unknownLibrarySection' => 'Cannot delete: Unknown library section',
 			'collections.deleteCollection' => 'Delete Collection',
+			_ => null,
+		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.',
 			'collections.deleted' => 'Collection deleted',
 			'collections.deleteFailed' => 'Failed to delete collection',
@@ -3718,7 +3601,6 @@ extension on Translations {
 			'externalPlayer.playerCommand' => 'Command',
 			'externalPlayer.playerPackage' => 'Package Name',
 			'externalPlayer.playerUrlScheme' => 'URL Scheme',
-			'externalPlayer.customPlayer' => 'Custom Player',
 			'externalPlayer.off' => 'Off',
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',

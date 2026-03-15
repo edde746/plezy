@@ -45,7 +45,6 @@ class TranslationsJa with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSettingsJa settings = _TranslationsSettingsJa._(_root);
 	@override late final _TranslationsSearchJa search = _TranslationsSearchJa._(_root);
 	@override late final _TranslationsHotkeysJa hotkeys = _TranslationsHotkeysJa._(_root);
-	@override late final _TranslationsPinEntryJa pinEntry = _TranslationsPinEntryJa._(_root);
 	@override late final _TranslationsFileInfoJa fileInfo = _TranslationsFileInfoJa._(_root);
 	@override late final _TranslationsMediaMenuJa mediaMenu = _TranslationsMediaMenuJa._(_root);
 	@override late final _TranslationsAccessibilityJa accessibility = _TranslationsAccessibilityJa._(_root);
@@ -128,7 +127,6 @@ class _TranslationsCommonJa implements TranslationsCommonEn {
 	@override String get shuffle => 'シャッフル';
 	@override String get addTo => '追加...';
 	@override String get createNew => '新規作成';
-	@override String get remove => '削除';
 	@override String get paste => '貼り付け';
 	@override String get connect => '接続';
 	@override String get disconnect => '切断';
@@ -142,7 +140,6 @@ class _TranslationsCommonJa implements TranslationsCommonEn {
 	@override String get settings => '設定';
 	@override String get mute => 'ミュート';
 	@override String get ok => 'OK';
-	@override String get loading => '読み込み中...';
 	@override String get reconnect => '再接続';
 	@override String get exitConfirmTitle => 'アプリを終了しますか？';
 	@override String get exitConfirmMessage => '終了してもよろしいですか？';
@@ -362,18 +359,6 @@ class _TranslationsHotkeysJa implements TranslationsHotkeysEn {
 	@override late final _TranslationsHotkeysActionsJa actions = _TranslationsHotkeysActionsJa._(_root);
 }
 
-// Path: pinEntry
-class _TranslationsPinEntryJa implements TranslationsPinEntryEn {
-	_TranslationsPinEntryJa._(this._root);
-
-	final TranslationsJa _root; // ignore: unused_field
-
-	// Translations
-	@override String get enterPin => 'PINを入力';
-	@override String get showPin => 'PINを表示';
-	@override String get hidePin => 'PINを非表示';
-}
-
 // Path: fileInfo
 class _TranslationsFileInfoJa implements TranslationsFileInfoEn {
 	_TranslationsFileInfoJa._(this._root);
@@ -480,7 +465,6 @@ class _TranslationsVideoControlsJa implements TranslationsVideoControlsEn {
 	@override String get unlockRotation => '回転のロックを解除';
 	@override String get timerActive => 'タイマー動作中';
 	@override String playbackWillPauseIn({required Object duration}) => '再生は${duration}後に一時停止します';
-	@override String get sleepTimerCompleted => 'スリープタイマー完了 - 再生を一時停止しました';
 	@override String get stillWatching => 'まだ視聴中ですか？';
 	@override String pausingIn({required Object seconds}) => '${seconds}秒後に一時停止';
 	@override String get continueWatching => '続ける';
@@ -497,16 +481,12 @@ class _TranslationsVideoControlsJa implements TranslationsVideoControlsEn {
 	@override String get muteButton => 'ミュート';
 	@override String get unmuteButton => 'ミュート解除';
 	@override String get settingsButton => '動画設定';
-	@override String get audioTrackButton => '音声トラック';
-	@override String get subtitlesButton => '字幕';
 	@override String get tracksButton => '音声と字幕';
 	@override String get chaptersButton => 'チャプター';
 	@override String get versionsButton => '動画バージョン';
 	@override String get pipButton => 'ピクチャーインピクチャーモード';
 	@override String get aspectRatioButton => 'アスペクト比';
 	@override String get ambientLighting => 'アンビエントライティング';
-	@override String get ambientLightingOn => 'アンビエントライティングを有効化';
-	@override String get ambientLightingOff => 'アンビエントライティングを無効化';
 	@override String get fullscreenButton => 'フルスクリーンに入る';
 	@override String get exitFullscreenButton => 'フルスクリーンを終了';
 	@override String get alwaysOnTopButton => '常に前面に表示';
@@ -644,11 +624,8 @@ class _TranslationsDiscoverJa implements TranslationsDiscoverEn {
 	@override String get overview => 'あらすじ';
 	@override String get cast => 'キャスト';
 	@override String get extras => '予告編とエクストラ';
-	@override String get seasons => 'シーズン';
 	@override String get studio => 'スタジオ';
 	@override String get rating => '評価';
-	@override String episodeCount({required Object count}) => '${count}エピソード';
-	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total}視聴済み';
 	@override String get movie => '映画';
 	@override String get tvShow => 'テレビ番組';
 	@override String minutesLeft({required Object minutes}) => '残り${minutes}分';
@@ -771,8 +748,6 @@ class _TranslationsLogsJa implements TranslationsLogsEn {
 	@override String get clearLogs => 'ログをクリア';
 	@override String get copyLogs => 'ログをコピー';
 	@override String get uploadLogs => 'ログをアップロード';
-	@override String get error => 'エラー:';
-	@override String get stackTrace => 'スタックトレース:';
 }
 
 // Path: licenses
@@ -808,20 +783,12 @@ class _TranslationsLiveTvJa implements TranslationsLiveTvEn {
 
 	// Translations
 	@override String get title => 'ライブTV';
-	@override String get channels => 'チャンネル';
 	@override String get guide => '番組表';
 	@override String get noChannels => 'チャンネルがありません';
 	@override String get noDvr => 'どのサーバーにもDVRが設定されていません';
-	@override String get tuneFailed => 'チャンネルのチューニングに失敗しました';
-	@override String get loading => 'チャンネルを読み込み中...';
-	@override String get nowPlaying => '現在放送中';
 	@override String get noPrograms => '番組データがありません';
-	@override String channelNumber({required Object number}) => 'Ch. ${number}';
 	@override String get live => 'ライブ';
-	@override String get hd => 'HD';
-	@override String get premiere => '新着';
 	@override String get reloadGuide => '番組表を再読込';
-	@override String get allChannels => 'すべてのチャンネル';
 	@override String get now => '現在';
 	@override String get today => '今日';
 	@override String get midnight => '深夜';
@@ -833,9 +800,6 @@ class _TranslationsLiveTvJa implements TranslationsLiveTvEn {
 	@override String get whatsOn => '放送中';
 	@override String get watchChannel => 'チャンネルを視聴';
 	@override String get favorites => 'お気に入り';
-	@override String get addToFavorites => 'お気に入りに追加';
-	@override String get removeFromFavorites => 'お気に入りから削除';
-	@override String get noFavorites => 'お気に入りチャンネルがありません。チャンネルを長押しして追加してください。';
 }
 
 // Path: collections
@@ -1064,7 +1028,6 @@ class _TranslationsExternalPlayerJa implements TranslationsExternalPlayerEn {
 	@override String get playerCommand => 'コマンド';
 	@override String get playerPackage => 'パッケージ名';
 	@override String get playerUrlScheme => 'URLスキーム';
-	@override String get customPlayer => 'カスタムプレーヤー';
 	@override String get off => 'オフ';
 	@override String get launchFailed => '外部プレーヤーの起動に失敗しました';
 	@override String appNotInstalled({required Object name}) => '${name}がインストールされていません';
@@ -1342,7 +1305,6 @@ extension on TranslationsJa {
 			'common.shuffle' => 'シャッフル',
 			'common.addTo' => '追加...',
 			'common.createNew' => '新規作成',
-			'common.remove' => '削除',
 			'common.paste' => '貼り付け',
 			'common.connect' => '接続',
 			'common.disconnect' => '切断',
@@ -1356,7 +1318,6 @@ extension on TranslationsJa {
 			'common.settings' => '設定',
 			'common.mute' => 'ミュート',
 			'common.ok' => 'OK',
-			'common.loading' => '読み込み中...',
 			'common.reconnect' => '再接続',
 			'common.exitConfirmTitle' => 'アプリを終了しますか？',
 			'common.exitConfirmMessage' => '終了してもよろしいですか？',
@@ -1547,9 +1508,6 @@ extension on TranslationsJa {
 			'hotkeys.actions.subSeekPrev' => '前の字幕にシーク',
 			'hotkeys.actions.shaderToggle' => 'シェーダー切替',
 			'hotkeys.actions.skipMarker' => 'イントロ/クレジットをスキップ',
-			'pinEntry.enterPin' => 'PINを入力',
-			'pinEntry.showPin' => 'PINを表示',
-			'pinEntry.hidePin' => 'PINを非表示',
 			'fileInfo.title' => 'ファイル情報',
 			'fileInfo.video' => '映像',
 			'fileInfo.audio' => '音声',
@@ -1613,7 +1571,6 @@ extension on TranslationsJa {
 			'videoControls.unlockRotation' => '回転のロックを解除',
 			'videoControls.timerActive' => 'タイマー動作中',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '再生は${duration}後に一時停止します',
-			'videoControls.sleepTimerCompleted' => 'スリープタイマー完了 - 再生を一時停止しました',
 			'videoControls.stillWatching' => 'まだ視聴中ですか？',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}秒後に一時停止',
 			'videoControls.continueWatching' => '続ける',
@@ -1630,16 +1587,12 @@ extension on TranslationsJa {
 			'videoControls.muteButton' => 'ミュート',
 			'videoControls.unmuteButton' => 'ミュート解除',
 			'videoControls.settingsButton' => '動画設定',
-			'videoControls.audioTrackButton' => '音声トラック',
-			'videoControls.subtitlesButton' => '字幕',
 			'videoControls.tracksButton' => '音声と字幕',
 			'videoControls.chaptersButton' => 'チャプター',
 			'videoControls.versionsButton' => '動画バージョン',
 			'videoControls.pipButton' => 'ピクチャーインピクチャーモード',
 			'videoControls.aspectRatioButton' => 'アスペクト比',
 			'videoControls.ambientLighting' => 'アンビエントライティング',
-			'videoControls.ambientLightingOn' => 'アンビエントライティングを有効化',
-			'videoControls.ambientLightingOff' => 'アンビエントライティングを無効化',
 			'videoControls.fullscreenButton' => 'フルスクリーンに入る',
 			'videoControls.exitFullscreenButton' => 'フルスクリーンを終了',
 			'videoControls.alwaysOnTopButton' => '常に前面に表示',
@@ -1729,11 +1682,8 @@ extension on TranslationsJa {
 			'discover.overview' => 'あらすじ',
 			'discover.cast' => 'キャスト',
 			'discover.extras' => '予告編とエクストラ',
-			'discover.seasons' => 'シーズン',
 			'discover.studio' => 'スタジオ',
 			'discover.rating' => '評価',
-			'discover.episodeCount' => ({required Object count}) => '${count}エピソード',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total}視聴済み',
 			'discover.movie' => '映画',
 			'discover.tvShow' => 'テレビ番組',
 			'discover.minutesLeft' => ({required Object minutes}) => '残り${minutes}分',
@@ -1811,8 +1761,6 @@ extension on TranslationsJa {
 			'logs.clearLogs' => 'ログをクリア',
 			'logs.copyLogs' => 'ログをコピー',
 			'logs.uploadLogs' => 'ログをアップロード',
-			'logs.error' => 'エラー:',
-			'logs.stackTrace' => 'スタックトレース:',
 			'licenses.relatedPackages' => '関連パッケージ',
 			'licenses.license' => 'ライセンス',
 			'licenses.licenseNumber' => ({required Object number}) => 'ライセンス ${number}',
@@ -1821,22 +1769,12 @@ extension on TranslationsJa {
 			'navigation.downloads' => 'ダウンロード',
 			'navigation.liveTv' => 'ライブTV',
 			'liveTv.title' => 'ライブTV',
-			'liveTv.channels' => 'チャンネル',
 			'liveTv.guide' => '番組表',
 			'liveTv.noChannels' => 'チャンネルがありません',
 			'liveTv.noDvr' => 'どのサーバーにもDVRが設定されていません',
-			'liveTv.tuneFailed' => 'チャンネルのチューニングに失敗しました',
-			'liveTv.loading' => 'チャンネルを読み込み中...',
-			'liveTv.nowPlaying' => '現在放送中',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => '番組データがありません',
-			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'ライブ',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => '新着',
 			'liveTv.reloadGuide' => '番組表を再読込',
-			'liveTv.allChannels' => 'すべてのチャンネル',
 			'liveTv.now' => '現在',
 			'liveTv.today' => '今日',
 			'liveTv.midnight' => '深夜',
@@ -1848,14 +1786,13 @@ extension on TranslationsJa {
 			'liveTv.whatsOn' => '放送中',
 			'liveTv.watchChannel' => 'チャンネルを視聴',
 			'liveTv.favorites' => 'お気に入り',
-			'liveTv.addToFavorites' => 'お気に入りに追加',
-			'liveTv.removeFromFavorites' => 'お気に入りから削除',
-			'liveTv.noFavorites' => 'お気に入りチャンネルがありません。チャンネルを長押しして追加してください。',
 			'collections.title' => 'コレクション',
 			'collections.collection' => 'コレクション',
 			'collections.empty' => 'コレクションは空です',
 			'collections.unknownLibrarySection' => '削除できません：不明なライブラリセクション',
 			'collections.deleteCollection' => 'コレクションを削除',
+			_ => null,
+		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => '"${title}"を削除してもよろしいですか？この操作は元に戻せません。',
 			'collections.deleted' => 'コレクションを削除しました',
 			'collections.deleteFailed' => 'コレクションの削除に失敗しました',
@@ -2073,7 +2010,6 @@ extension on TranslationsJa {
 			'externalPlayer.playerCommand' => 'コマンド',
 			'externalPlayer.playerPackage' => 'パッケージ名',
 			'externalPlayer.playerUrlScheme' => 'URLスキーム',
-			'externalPlayer.customPlayer' => 'カスタムプレーヤー',
 			'externalPlayer.off' => 'オフ',
 			'externalPlayer.launchFailed' => '外部プレーヤーの起動に失敗しました',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}がインストールされていません',

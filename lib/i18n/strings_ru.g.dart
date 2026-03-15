@@ -45,7 +45,6 @@ class TranslationsRu with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSettingsRu settings = _TranslationsSettingsRu._(_root);
 	@override late final _TranslationsSearchRu search = _TranslationsSearchRu._(_root);
 	@override late final _TranslationsHotkeysRu hotkeys = _TranslationsHotkeysRu._(_root);
-	@override late final _TranslationsPinEntryRu pinEntry = _TranslationsPinEntryRu._(_root);
 	@override late final _TranslationsFileInfoRu fileInfo = _TranslationsFileInfoRu._(_root);
 	@override late final _TranslationsMediaMenuRu mediaMenu = _TranslationsMediaMenuRu._(_root);
 	@override late final _TranslationsAccessibilityRu accessibility = _TranslationsAccessibilityRu._(_root);
@@ -128,7 +127,6 @@ class _TranslationsCommonRu implements TranslationsCommonEn {
 	@override String get shuffle => 'Перемешать';
 	@override String get addTo => 'Добавить в...';
 	@override String get createNew => 'Создать новый';
-	@override String get remove => 'Удалить';
 	@override String get paste => 'Вставить';
 	@override String get connect => 'Подключить';
 	@override String get disconnect => 'Отключить';
@@ -142,7 +140,6 @@ class _TranslationsCommonRu implements TranslationsCommonEn {
 	@override String get settings => 'Настройки';
 	@override String get mute => 'Без звука';
 	@override String get ok => 'OK';
-	@override String get loading => 'Загрузка...';
 	@override String get reconnect => 'Переподключить';
 	@override String get exitConfirmTitle => 'Выйти из приложения?';
 	@override String get exitConfirmMessage => 'Вы уверены, что хотите выйти?';
@@ -362,18 +359,6 @@ class _TranslationsHotkeysRu implements TranslationsHotkeysEn {
 	@override late final _TranslationsHotkeysActionsRu actions = _TranslationsHotkeysActionsRu._(_root);
 }
 
-// Path: pinEntry
-class _TranslationsPinEntryRu implements TranslationsPinEntryEn {
-	_TranslationsPinEntryRu._(this._root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get enterPin => 'Введите PIN';
-	@override String get showPin => 'Показать PIN';
-	@override String get hidePin => 'Скрыть PIN';
-}
-
 // Path: fileInfo
 class _TranslationsFileInfoRu implements TranslationsFileInfoEn {
 	_TranslationsFileInfoRu._(this._root);
@@ -480,7 +465,6 @@ class _TranslationsVideoControlsRu implements TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Разблокировать поворот';
 	@override String get timerActive => 'Таймер активен';
 	@override String playbackWillPauseIn({required Object duration}) => 'Воспроизведение будет приостановлено через ${duration}';
-	@override String get sleepTimerCompleted => 'Таймер сна завершён — воспроизведение приостановлено';
 	@override String get stillWatching => 'Всё ещё смотрите?';
 	@override String pausingIn({required Object seconds}) => 'Пауза через ${seconds}с';
 	@override String get continueWatching => 'Продолжить';
@@ -497,16 +481,12 @@ class _TranslationsVideoControlsRu implements TranslationsVideoControlsEn {
 	@override String get muteButton => 'Без звука';
 	@override String get unmuteButton => 'Включить звук';
 	@override String get settingsButton => 'Настройки видео';
-	@override String get audioTrackButton => 'Аудиодорожки';
-	@override String get subtitlesButton => 'Субтитры';
 	@override String get tracksButton => 'Аудио и субтитры';
 	@override String get chaptersButton => 'Главы';
 	@override String get versionsButton => 'Версии видео';
 	@override String get pipButton => 'Режим «картинка в картинке»';
 	@override String get aspectRatioButton => 'Соотношение сторон';
 	@override String get ambientLighting => 'Фоновая подсветка';
-	@override String get ambientLightingOn => 'Включить фоновую подсветку';
-	@override String get ambientLightingOff => 'Выключить фоновую подсветку';
 	@override String get fullscreenButton => 'Полноэкранный режим';
 	@override String get exitFullscreenButton => 'Выйти из полноэкранного режима';
 	@override String get alwaysOnTopButton => 'Всегда поверх';
@@ -644,11 +624,8 @@ class _TranslationsDiscoverRu implements TranslationsDiscoverEn {
 	@override String get overview => 'Обзор';
 	@override String get cast => 'В ролях';
 	@override String get extras => 'Трейлеры и доп. материалы';
-	@override String get seasons => 'Сезоны';
 	@override String get studio => 'Студия';
 	@override String get rating => 'Рейтинг';
-	@override String episodeCount({required Object count}) => '${count} эпизодов';
-	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} просмотрено';
 	@override String get movie => 'Фильм';
 	@override String get tvShow => 'Сериал';
 	@override String minutesLeft({required Object minutes}) => 'Осталось ${minutes} мин';
@@ -771,8 +748,6 @@ class _TranslationsLogsRu implements TranslationsLogsEn {
 	@override String get clearLogs => 'Очистить логи';
 	@override String get copyLogs => 'Скопировать логи';
 	@override String get uploadLogs => 'Загрузить логи';
-	@override String get error => 'Ошибка:';
-	@override String get stackTrace => 'Стек вызовов:';
 }
 
 // Path: licenses
@@ -808,20 +783,12 @@ class _TranslationsLiveTvRu implements TranslationsLiveTvEn {
 
 	// Translations
 	@override String get title => 'ТВ в прямом эфире';
-	@override String get channels => 'Каналы';
 	@override String get guide => 'Программа';
 	@override String get noChannels => 'Нет доступных каналов';
 	@override String get noDvr => 'DVR не настроен ни на одном сервере';
-	@override String get tuneFailed => 'Не удалось настроить канал';
-	@override String get loading => 'Загрузка каналов...';
-	@override String get nowPlaying => 'Сейчас воспроизводится';
 	@override String get noPrograms => 'Нет данных о программах';
-	@override String channelNumber({required Object number}) => 'Кн. ${number}';
 	@override String get live => 'ЭФИР';
-	@override String get hd => 'HD';
-	@override String get premiere => 'НОВОЕ';
 	@override String get reloadGuide => 'Перезагрузить программу';
-	@override String get allChannels => 'Все каналы';
 	@override String get now => 'Сейчас';
 	@override String get today => 'Сегодня';
 	@override String get midnight => 'Полночь';
@@ -833,9 +800,6 @@ class _TranslationsLiveTvRu implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'Что идёт';
 	@override String get watchChannel => 'Смотреть канал';
 	@override String get favorites => 'Избранное';
-	@override String get addToFavorites => 'Добавить в избранное';
-	@override String get removeFromFavorites => 'Удалить из избранного';
-	@override String get noFavorites => 'Нет избранных каналов. Удерживайте канал, чтобы добавить его.';
 }
 
 // Path: collections
@@ -1064,7 +1028,6 @@ class _TranslationsExternalPlayerRu implements TranslationsExternalPlayerEn {
 	@override String get playerCommand => 'Команда';
 	@override String get playerPackage => 'Имя пакета';
 	@override String get playerUrlScheme => 'URL-схема';
-	@override String get customPlayer => 'Свой плеер';
 	@override String get off => 'Выкл.';
 	@override String get launchFailed => 'Не удалось открыть внешний плеер';
 	@override String appNotInstalled({required Object name}) => '${name} не установлен';
@@ -1342,7 +1305,6 @@ extension on TranslationsRu {
 			'common.shuffle' => 'Перемешать',
 			'common.addTo' => 'Добавить в...',
 			'common.createNew' => 'Создать новый',
-			'common.remove' => 'Удалить',
 			'common.paste' => 'Вставить',
 			'common.connect' => 'Подключить',
 			'common.disconnect' => 'Отключить',
@@ -1356,7 +1318,6 @@ extension on TranslationsRu {
 			'common.settings' => 'Настройки',
 			'common.mute' => 'Без звука',
 			'common.ok' => 'OK',
-			'common.loading' => 'Загрузка...',
 			'common.reconnect' => 'Переподключить',
 			'common.exitConfirmTitle' => 'Выйти из приложения?',
 			'common.exitConfirmMessage' => 'Вы уверены, что хотите выйти?',
@@ -1547,9 +1508,6 @@ extension on TranslationsRu {
 			'hotkeys.actions.subSeekPrev' => 'К предыдущему субтитру',
 			'hotkeys.actions.shaderToggle' => 'Вкл./выкл. шейдеры',
 			'hotkeys.actions.skipMarker' => 'Пропустить вступление/титры',
-			'pinEntry.enterPin' => 'Введите PIN',
-			'pinEntry.showPin' => 'Показать PIN',
-			'pinEntry.hidePin' => 'Скрыть PIN',
 			'fileInfo.title' => 'Информация о файле',
 			'fileInfo.video' => 'Видео',
 			'fileInfo.audio' => 'Аудио',
@@ -1613,7 +1571,6 @@ extension on TranslationsRu {
 			'videoControls.unlockRotation' => 'Разблокировать поворот',
 			'videoControls.timerActive' => 'Таймер активен',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Воспроизведение будет приостановлено через ${duration}',
-			'videoControls.sleepTimerCompleted' => 'Таймер сна завершён — воспроизведение приостановлено',
 			'videoControls.stillWatching' => 'Всё ещё смотрите?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Пауза через ${seconds}с',
 			'videoControls.continueWatching' => 'Продолжить',
@@ -1630,16 +1587,12 @@ extension on TranslationsRu {
 			'videoControls.muteButton' => 'Без звука',
 			'videoControls.unmuteButton' => 'Включить звук',
 			'videoControls.settingsButton' => 'Настройки видео',
-			'videoControls.audioTrackButton' => 'Аудиодорожки',
-			'videoControls.subtitlesButton' => 'Субтитры',
 			'videoControls.tracksButton' => 'Аудио и субтитры',
 			'videoControls.chaptersButton' => 'Главы',
 			'videoControls.versionsButton' => 'Версии видео',
 			'videoControls.pipButton' => 'Режим «картинка в картинке»',
 			'videoControls.aspectRatioButton' => 'Соотношение сторон',
 			'videoControls.ambientLighting' => 'Фоновая подсветка',
-			'videoControls.ambientLightingOn' => 'Включить фоновую подсветку',
-			'videoControls.ambientLightingOff' => 'Выключить фоновую подсветку',
 			'videoControls.fullscreenButton' => 'Полноэкранный режим',
 			'videoControls.exitFullscreenButton' => 'Выйти из полноэкранного режима',
 			'videoControls.alwaysOnTopButton' => 'Всегда поверх',
@@ -1729,11 +1682,8 @@ extension on TranslationsRu {
 			'discover.overview' => 'Обзор',
 			'discover.cast' => 'В ролях',
 			'discover.extras' => 'Трейлеры и доп. материалы',
-			'discover.seasons' => 'Сезоны',
 			'discover.studio' => 'Студия',
 			'discover.rating' => 'Рейтинг',
-			'discover.episodeCount' => ({required Object count}) => '${count} эпизодов',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} просмотрено',
 			'discover.movie' => 'Фильм',
 			'discover.tvShow' => 'Сериал',
 			'discover.minutesLeft' => ({required Object minutes}) => 'Осталось ${minutes} мин',
@@ -1811,8 +1761,6 @@ extension on TranslationsRu {
 			'logs.clearLogs' => 'Очистить логи',
 			'logs.copyLogs' => 'Скопировать логи',
 			'logs.uploadLogs' => 'Загрузить логи',
-			'logs.error' => 'Ошибка:',
-			'logs.stackTrace' => 'Стек вызовов:',
 			'licenses.relatedPackages' => 'Связанные пакеты',
 			'licenses.license' => 'Лицензия',
 			'licenses.licenseNumber' => ({required Object number}) => 'Лицензия ${number}',
@@ -1821,22 +1769,12 @@ extension on TranslationsRu {
 			'navigation.downloads' => 'Загрузки',
 			'navigation.liveTv' => 'ТВ в прямом эфире',
 			'liveTv.title' => 'ТВ в прямом эфире',
-			'liveTv.channels' => 'Каналы',
 			'liveTv.guide' => 'Программа',
 			'liveTv.noChannels' => 'Нет доступных каналов',
 			'liveTv.noDvr' => 'DVR не настроен ни на одном сервере',
-			'liveTv.tuneFailed' => 'Не удалось настроить канал',
-			'liveTv.loading' => 'Загрузка каналов...',
-			'liveTv.nowPlaying' => 'Сейчас воспроизводится',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Нет данных о программах',
-			'liveTv.channelNumber' => ({required Object number}) => 'Кн. ${number}',
 			'liveTv.live' => 'ЭФИР',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'НОВОЕ',
 			'liveTv.reloadGuide' => 'Перезагрузить программу',
-			'liveTv.allChannels' => 'Все каналы',
 			'liveTv.now' => 'Сейчас',
 			'liveTv.today' => 'Сегодня',
 			'liveTv.midnight' => 'Полночь',
@@ -1848,14 +1786,13 @@ extension on TranslationsRu {
 			'liveTv.whatsOn' => 'Что идёт',
 			'liveTv.watchChannel' => 'Смотреть канал',
 			'liveTv.favorites' => 'Избранное',
-			'liveTv.addToFavorites' => 'Добавить в избранное',
-			'liveTv.removeFromFavorites' => 'Удалить из избранного',
-			'liveTv.noFavorites' => 'Нет избранных каналов. Удерживайте канал, чтобы добавить его.',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
 			'collections.empty' => 'Коллекция пуста',
 			'collections.unknownLibrarySection' => 'Невозможно удалить: неизвестный раздел библиотеки',
 			'collections.deleteCollection' => 'Удалить коллекцию',
+			_ => null,
+		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Вы уверены, что хотите удалить "${title}"? Это действие нельзя отменить.',
 			'collections.deleted' => 'Коллекция удалена',
 			'collections.deleteFailed' => 'Не удалось удалить коллекцию',
@@ -2073,7 +2010,6 @@ extension on TranslationsRu {
 			'externalPlayer.playerCommand' => 'Команда',
 			'externalPlayer.playerPackage' => 'Имя пакета',
 			'externalPlayer.playerUrlScheme' => 'URL-схема',
-			'externalPlayer.customPlayer' => 'Свой плеер',
 			'externalPlayer.off' => 'Выкл.',
 			'externalPlayer.launchFailed' => 'Не удалось открыть внешний плеер',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не установлен',

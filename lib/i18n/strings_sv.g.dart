@@ -45,7 +45,6 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSettingsSv settings = _TranslationsSettingsSv._(_root);
 	@override late final _TranslationsSearchSv search = _TranslationsSearchSv._(_root);
 	@override late final _TranslationsHotkeysSv hotkeys = _TranslationsHotkeysSv._(_root);
-	@override late final _TranslationsPinEntrySv pinEntry = _TranslationsPinEntrySv._(_root);
 	@override late final _TranslationsFileInfoSv fileInfo = _TranslationsFileInfoSv._(_root);
 	@override late final _TranslationsMediaMenuSv mediaMenu = _TranslationsMediaMenuSv._(_root);
 	@override late final _TranslationsAccessibilitySv accessibility = _TranslationsAccessibilitySv._(_root);
@@ -128,7 +127,6 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get shuffle => 'Blanda';
 	@override String get addTo => 'Lägg till i...';
 	@override String get createNew => 'Skapa ny';
-	@override String get remove => 'Ta bort';
 	@override String get paste => 'Klistra in';
 	@override String get connect => 'Anslut';
 	@override String get disconnect => 'Koppla från';
@@ -142,7 +140,6 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get settings => 'Mer';
 	@override String get mute => 'Ljud av';
 	@override String get ok => 'OK';
-	@override String get loading => 'Laddar...';
 	@override String get reconnect => 'Återanslut';
 	@override String get exitConfirmTitle => 'Avsluta appen?';
 	@override String get exitConfirmMessage => 'Är du säker på att du vill avsluta?';
@@ -362,18 +359,6 @@ class _TranslationsHotkeysSv implements TranslationsHotkeysEn {
 	@override late final _TranslationsHotkeysActionsSv actions = _TranslationsHotkeysActionsSv._(_root);
 }
 
-// Path: pinEntry
-class _TranslationsPinEntrySv implements TranslationsPinEntryEn {
-	_TranslationsPinEntrySv._(this._root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get enterPin => 'Ange PIN';
-	@override String get showPin => 'Visa PIN';
-	@override String get hidePin => 'Dölj PIN';
-}
-
 // Path: fileInfo
 class _TranslationsFileInfoSv implements TranslationsFileInfoEn {
 	_TranslationsFileInfoSv._(this._root);
@@ -480,7 +465,6 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Lås upp rotation';
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
-	@override String get sleepTimerCompleted => 'Sovtimer slutförd - uppspelning pausad';
 	@override String get stillWatching => 'Tittar du fortfarande?';
 	@override String pausingIn({required Object seconds}) => 'Pausar om ${seconds}s';
 	@override String get continueWatching => 'Fortsätt';
@@ -497,16 +481,12 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get muteButton => 'Tysta';
 	@override String get unmuteButton => 'Slå på ljud';
 	@override String get settingsButton => 'Videoinställningar';
-	@override String get audioTrackButton => 'Ljudspår';
-	@override String get subtitlesButton => 'Undertexter';
 	@override String get tracksButton => 'Ljud och undertexter';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversioner';
 	@override String get pipButton => 'Bild-i-bild läge';
 	@override String get aspectRatioButton => 'Bildförhållande';
 	@override String get ambientLighting => 'Ambientbelysning';
-	@override String get ambientLightingOn => 'Aktivera ambientbelysning';
-	@override String get ambientLightingOff => 'Inaktivera ambientbelysning';
 	@override String get fullscreenButton => 'Aktivera helskärm';
 	@override String get exitFullscreenButton => 'Avsluta helskärm';
 	@override String get alwaysOnTopButton => 'Alltid överst';
@@ -644,11 +624,8 @@ class _TranslationsDiscoverSv implements TranslationsDiscoverEn {
 	@override String get overview => 'Översikt';
 	@override String get cast => 'Rollbesättning';
 	@override String get extras => 'Trailers och Extra';
-	@override String get seasons => 'Säsonger';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Åldersgräns';
-	@override String episodeCount({required Object count}) => '${count} avsnitt';
-	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} sedda';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'TV-serie';
 	@override String minutesLeft({required Object minutes}) => '${minutes} min kvar';
@@ -771,8 +748,6 @@ class _TranslationsLogsSv implements TranslationsLogsEn {
 	@override String get clearLogs => 'Rensa loggar';
 	@override String get copyLogs => 'Kopiera loggar';
 	@override String get uploadLogs => 'Ladda upp loggar';
-	@override String get error => 'Fel:';
-	@override String get stackTrace => 'Stack trace:';
 }
 
 // Path: licenses
@@ -808,20 +783,12 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 
 	// Translations
 	@override String get title => 'Live-TV';
-	@override String get channels => 'Kanaler';
 	@override String get guide => 'Programguide';
 	@override String get noChannels => 'Inga kanaler tillgängliga';
 	@override String get noDvr => 'Ingen DVR konfigurerad på någon server';
-	@override String get tuneFailed => 'Kunde inte ställa in kanalen';
-	@override String get loading => 'Laddar kanaler...';
-	@override String get nowPlaying => 'Spelas nu';
 	@override String get noPrograms => 'Ingen programdata tillgänglig';
-	@override String channelNumber({required Object number}) => 'Kanal ${number}';
 	@override String get live => 'LIVE';
-	@override String get hd => 'HD';
-	@override String get premiere => 'NY';
 	@override String get reloadGuide => 'Ladda om programguide';
-	@override String get allChannels => 'Alla kanaler';
 	@override String get now => 'Nu';
 	@override String get today => 'Idag';
 	@override String get midnight => 'Midnatt';
@@ -833,9 +800,6 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'På TV nu';
 	@override String get watchChannel => 'Titta på kanal';
 	@override String get favorites => 'Favoriter';
-	@override String get addToFavorites => 'Lägg till i favoriter';
-	@override String get removeFromFavorites => 'Ta bort från favoriter';
-	@override String get noFavorites => 'Inga favoritkanaler. Tryck länge på en kanal för att lägga till den.';
 }
 
 // Path: downloads
@@ -1064,7 +1028,6 @@ class _TranslationsExternalPlayerSv implements TranslationsExternalPlayerEn {
 	@override String get playerCommand => 'Kommando';
 	@override String get playerPackage => 'Paketnamn';
 	@override String get playerUrlScheme => 'URL-schema';
-	@override String get customPlayer => 'Anpassad spelare';
 	@override String get off => 'Av';
 	@override String get launchFailed => 'Kunde inte öppna extern spelare';
 	@override String appNotInstalled({required Object name}) => '${name} är inte installerad';
@@ -1342,7 +1305,6 @@ extension on TranslationsSv {
 			'common.shuffle' => 'Blanda',
 			'common.addTo' => 'Lägg till i...',
 			'common.createNew' => 'Skapa ny',
-			'common.remove' => 'Ta bort',
 			'common.paste' => 'Klistra in',
 			'common.connect' => 'Anslut',
 			'common.disconnect' => 'Koppla från',
@@ -1356,7 +1318,6 @@ extension on TranslationsSv {
 			'common.settings' => 'Mer',
 			'common.mute' => 'Ljud av',
 			'common.ok' => 'OK',
-			'common.loading' => 'Laddar...',
 			'common.reconnect' => 'Återanslut',
 			'common.exitConfirmTitle' => 'Avsluta appen?',
 			'common.exitConfirmMessage' => 'Är du säker på att du vill avsluta?',
@@ -1547,9 +1508,6 @@ extension on TranslationsSv {
 			'hotkeys.actions.subSeekPrev' => 'Hoppa till föregående undertext',
 			'hotkeys.actions.shaderToggle' => 'Växla shaders',
 			'hotkeys.actions.skipMarker' => 'Hoppa över intro/eftertexter',
-			'pinEntry.enterPin' => 'Ange PIN',
-			'pinEntry.showPin' => 'Visa PIN',
-			'pinEntry.hidePin' => 'Dölj PIN',
 			'fileInfo.title' => 'Filinformation',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Ljud',
@@ -1613,7 +1571,6 @@ extension on TranslationsSv {
 			'videoControls.unlockRotation' => 'Lås upp rotation',
 			'videoControls.timerActive' => 'Timer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Uppspelningen pausas om ${duration}',
-			'videoControls.sleepTimerCompleted' => 'Sovtimer slutförd - uppspelning pausad',
 			'videoControls.stillWatching' => 'Tittar du fortfarande?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausar om ${seconds}s',
 			'videoControls.continueWatching' => 'Fortsätt',
@@ -1630,16 +1587,12 @@ extension on TranslationsSv {
 			'videoControls.muteButton' => 'Tysta',
 			'videoControls.unmuteButton' => 'Slå på ljud',
 			'videoControls.settingsButton' => 'Videoinställningar',
-			'videoControls.audioTrackButton' => 'Ljudspår',
-			'videoControls.subtitlesButton' => 'Undertexter',
 			'videoControls.tracksButton' => 'Ljud och undertexter',
 			'videoControls.chaptersButton' => 'Kapitel',
 			'videoControls.versionsButton' => 'Videoversioner',
 			'videoControls.pipButton' => 'Bild-i-bild läge',
 			'videoControls.aspectRatioButton' => 'Bildförhållande',
 			'videoControls.ambientLighting' => 'Ambientbelysning',
-			'videoControls.ambientLightingOn' => 'Aktivera ambientbelysning',
-			'videoControls.ambientLightingOff' => 'Inaktivera ambientbelysning',
 			'videoControls.fullscreenButton' => 'Aktivera helskärm',
 			'videoControls.exitFullscreenButton' => 'Avsluta helskärm',
 			'videoControls.alwaysOnTopButton' => 'Alltid överst',
@@ -1729,11 +1682,8 @@ extension on TranslationsSv {
 			'discover.overview' => 'Översikt',
 			'discover.cast' => 'Rollbesättning',
 			'discover.extras' => 'Trailers och Extra',
-			'discover.seasons' => 'Säsonger',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Åldersgräns',
-			'discover.episodeCount' => ({required Object count}) => '${count} avsnitt',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} sedda',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'TV-serie',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min kvar',
@@ -1811,8 +1761,6 @@ extension on TranslationsSv {
 			'logs.clearLogs' => 'Rensa loggar',
 			'logs.copyLogs' => 'Kopiera loggar',
 			'logs.uploadLogs' => 'Ladda upp loggar',
-			'logs.error' => 'Fel:',
-			'logs.stackTrace' => 'Stack trace:',
 			'licenses.relatedPackages' => 'Relaterade paket',
 			'licenses.license' => 'Licens',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licens ${number}',
@@ -1821,22 +1769,12 @@ extension on TranslationsSv {
 			'navigation.downloads' => 'Nerladdat',
 			'navigation.liveTv' => 'Live-TV',
 			'liveTv.title' => 'Live-TV',
-			'liveTv.channels' => 'Kanaler',
 			'liveTv.guide' => 'Programguide',
 			'liveTv.noChannels' => 'Inga kanaler tillgängliga',
 			'liveTv.noDvr' => 'Ingen DVR konfigurerad på någon server',
-			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
-			'liveTv.loading' => 'Laddar kanaler...',
-			'liveTv.nowPlaying' => 'Spelas nu',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
-			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Ladda om programguide',
-			'liveTv.allChannels' => 'Alla kanaler',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
@@ -1848,14 +1786,13 @@ extension on TranslationsSv {
 			'liveTv.whatsOn' => 'På TV nu',
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'liveTv.favorites' => 'Favoriter',
-			'liveTv.addToFavorites' => 'Lägg till i favoriter',
-			'liveTv.removeFromFavorites' => 'Ta bort från favoriter',
-			'liveTv.noFavorites' => 'Inga favoritkanaler. Tryck länge på en kanal för att lägga till den.',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Filmer',
 			'downloads.noDownloads' => 'Inga nedladdningar ännu',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
 			'downloads.downloadNow' => 'Ladda ner',
 			'downloads.deleteDownload' => 'Ta bort nedladdning',
@@ -2073,7 +2010,6 @@ extension on TranslationsSv {
 			'externalPlayer.playerCommand' => 'Kommando',
 			'externalPlayer.playerPackage' => 'Paketnamn',
 			'externalPlayer.playerUrlScheme' => 'URL-schema',
-			'externalPlayer.customPlayer' => 'Anpassad spelare',
 			'externalPlayer.off' => 'Av',
 			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',

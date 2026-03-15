@@ -45,7 +45,6 @@ class TranslationsIt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSettingsIt settings = _TranslationsSettingsIt._(_root);
 	@override late final _TranslationsSearchIt search = _TranslationsSearchIt._(_root);
 	@override late final _TranslationsHotkeysIt hotkeys = _TranslationsHotkeysIt._(_root);
-	@override late final _TranslationsPinEntryIt pinEntry = _TranslationsPinEntryIt._(_root);
 	@override late final _TranslationsFileInfoIt fileInfo = _TranslationsFileInfoIt._(_root);
 	@override late final _TranslationsMediaMenuIt mediaMenu = _TranslationsMediaMenuIt._(_root);
 	@override late final _TranslationsAccessibilityIt accessibility = _TranslationsAccessibilityIt._(_root);
@@ -128,7 +127,6 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get shuffle => 'Casuale';
 	@override String get addTo => 'Aggiungi a...';
 	@override String get createNew => 'Crea';
-	@override String get remove => 'Rimuovi';
 	@override String get paste => 'Incolla';
 	@override String get connect => 'Connetti';
 	@override String get disconnect => 'Disconnetti';
@@ -142,7 +140,6 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get settings => 'Opzioni';
 	@override String get mute => 'Muto';
 	@override String get ok => 'OK';
-	@override String get loading => 'Caricamento...';
 	@override String get reconnect => 'Riconnetti';
 	@override String get exitConfirmTitle => 'Uscire dall\'app?';
 	@override String get exitConfirmMessage => 'Sei sicuro di voler uscire?';
@@ -362,18 +359,6 @@ class _TranslationsHotkeysIt implements TranslationsHotkeysEn {
 	@override late final _TranslationsHotkeysActionsIt actions = _TranslationsHotkeysActionsIt._(_root);
 }
 
-// Path: pinEntry
-class _TranslationsPinEntryIt implements TranslationsPinEntryEn {
-	_TranslationsPinEntryIt._(this._root);
-
-	final TranslationsIt _root; // ignore: unused_field
-
-	// Translations
-	@override String get enterPin => 'Inserisci PIN';
-	@override String get showPin => 'Mostra PIN';
-	@override String get hidePin => 'Nascondi PIN';
-}
-
 // Path: fileInfo
 class _TranslationsFileInfoIt implements TranslationsFileInfoEn {
 	_TranslationsFileInfoIt._(this._root);
@@ -480,7 +465,6 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Sblocca rotazione';
 	@override String get timerActive => 'Timer attivo';
 	@override String playbackWillPauseIn({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
-	@override String get sleepTimerCompleted => 'Timer di spegnimento completato - riproduzione in pausa';
 	@override String get stillWatching => 'Stai ancora guardando?';
 	@override String pausingIn({required Object seconds}) => 'Pausa tra ${seconds}s';
 	@override String get continueWatching => 'Continua';
@@ -497,16 +481,12 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get muteButton => 'Silenzia';
 	@override String get unmuteButton => 'Riattiva audio';
 	@override String get settingsButton => 'Impostazioni video';
-	@override String get audioTrackButton => 'Tracce audio';
-	@override String get subtitlesButton => 'Sottotitoli';
 	@override String get tracksButton => 'Audio e sottotitoli';
 	@override String get chaptersButton => 'Capitoli';
 	@override String get versionsButton => 'Versioni video';
 	@override String get pipButton => 'Modalità Picture-in-Picture';
 	@override String get aspectRatioButton => 'Proporzioni';
 	@override String get ambientLighting => 'Illuminazione ambientale';
-	@override String get ambientLightingOn => 'Attiva illuminazione ambientale';
-	@override String get ambientLightingOff => 'Disattiva illuminazione ambientale';
 	@override String get fullscreenButton => 'Attiva schermo intero';
 	@override String get exitFullscreenButton => 'Esci da schermo intero';
 	@override String get alwaysOnTopButton => 'Sempre in primo piano';
@@ -644,11 +624,8 @@ class _TranslationsDiscoverIt implements TranslationsDiscoverEn {
 	@override String get overview => 'Panoramica';
 	@override String get cast => 'Attori';
 	@override String get extras => 'Trailer ed Extra';
-	@override String get seasons => 'Stagioni';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Classificazione';
-	@override String episodeCount({required Object count}) => '${count} episodi';
-	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} guardati';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'Serie TV';
 	@override String minutesLeft({required Object minutes}) => '${minutes} minuti rimanenti';
@@ -771,8 +748,6 @@ class _TranslationsLogsIt implements TranslationsLogsEn {
 	@override String get clearLogs => 'Cancella log';
 	@override String get copyLogs => 'Copia log';
 	@override String get uploadLogs => 'Carica log';
-	@override String get error => 'Errore:';
-	@override String get stackTrace => 'Traccia dello stack:';
 }
 
 // Path: licenses
@@ -808,20 +783,12 @@ class _TranslationsLiveTvIt implements TranslationsLiveTvEn {
 
 	// Translations
 	@override String get title => 'TV in diretta';
-	@override String get channels => 'Canali';
 	@override String get guide => 'Guida';
 	@override String get noChannels => 'Nessun canale disponibile';
 	@override String get noDvr => 'Nessun DVR configurato su nessun server';
-	@override String get tuneFailed => 'Impossibile sintonizzare il canale';
-	@override String get loading => 'Caricamento canali...';
-	@override String get nowPlaying => 'In riproduzione';
 	@override String get noPrograms => 'Nessun dato di programma disponibile';
-	@override String channelNumber({required Object number}) => 'Canale ${number}';
 	@override String get live => 'IN DIRETTA';
-	@override String get hd => 'HD';
-	@override String get premiere => 'NUOVO';
 	@override String get reloadGuide => 'Ricarica guida';
-	@override String get allChannels => 'Tutti i canali';
 	@override String get now => 'Ora';
 	@override String get today => 'Oggi';
 	@override String get midnight => 'Mezzanotte';
@@ -833,9 +800,6 @@ class _TranslationsLiveTvIt implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'In onda ora';
 	@override String get watchChannel => 'Guarda canale';
 	@override String get favorites => 'Preferiti';
-	@override String get addToFavorites => 'Aggiungi ai preferiti';
-	@override String get removeFromFavorites => 'Rimuovi dai preferiti';
-	@override String get noFavorites => 'Nessun canale preferito. Tieni premuto un canale per aggiungerlo.';
 }
 
 // Path: downloads
@@ -1064,7 +1028,6 @@ class _TranslationsExternalPlayerIt implements TranslationsExternalPlayerEn {
 	@override String get playerCommand => 'Comando';
 	@override String get playerPackage => 'Nome pacchetto';
 	@override String get playerUrlScheme => 'Schema URL';
-	@override String get customPlayer => 'Lettore personalizzato';
 	@override String get off => 'Disattivato';
 	@override String get launchFailed => 'Impossibile aprire il lettore esterno';
 	@override String appNotInstalled({required Object name}) => '${name} non è installato';
@@ -1342,7 +1305,6 @@ extension on TranslationsIt {
 			'common.shuffle' => 'Casuale',
 			'common.addTo' => 'Aggiungi a...',
 			'common.createNew' => 'Crea',
-			'common.remove' => 'Rimuovi',
 			'common.paste' => 'Incolla',
 			'common.connect' => 'Connetti',
 			'common.disconnect' => 'Disconnetti',
@@ -1356,7 +1318,6 @@ extension on TranslationsIt {
 			'common.settings' => 'Opzioni',
 			'common.mute' => 'Muto',
 			'common.ok' => 'OK',
-			'common.loading' => 'Caricamento...',
 			'common.reconnect' => 'Riconnetti',
 			'common.exitConfirmTitle' => 'Uscire dall\'app?',
 			'common.exitConfirmMessage' => 'Sei sicuro di voler uscire?',
@@ -1547,9 +1508,6 @@ extension on TranslationsIt {
 			'hotkeys.actions.subSeekPrev' => 'Vai al sottotitolo precedente',
 			'hotkeys.actions.shaderToggle' => 'Attiva/disattiva shader',
 			'hotkeys.actions.skipMarker' => 'Salta intro/titoli di coda',
-			'pinEntry.enterPin' => 'Inserisci PIN',
-			'pinEntry.showPin' => 'Mostra PIN',
-			'pinEntry.hidePin' => 'Nascondi PIN',
 			'fileInfo.title' => 'Info sul file',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
@@ -1613,7 +1571,6 @@ extension on TranslationsIt {
 			'videoControls.unlockRotation' => 'Sblocca rotazione',
 			'videoControls.timerActive' => 'Timer attivo',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'La riproduzione si interromperà tra ${duration}',
-			'videoControls.sleepTimerCompleted' => 'Timer di spegnimento completato - riproduzione in pausa',
 			'videoControls.stillWatching' => 'Stai ancora guardando?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausa tra ${seconds}s',
 			'videoControls.continueWatching' => 'Continua',
@@ -1630,16 +1587,12 @@ extension on TranslationsIt {
 			'videoControls.muteButton' => 'Silenzia',
 			'videoControls.unmuteButton' => 'Riattiva audio',
 			'videoControls.settingsButton' => 'Impostazioni video',
-			'videoControls.audioTrackButton' => 'Tracce audio',
-			'videoControls.subtitlesButton' => 'Sottotitoli',
 			'videoControls.tracksButton' => 'Audio e sottotitoli',
 			'videoControls.chaptersButton' => 'Capitoli',
 			'videoControls.versionsButton' => 'Versioni video',
 			'videoControls.pipButton' => 'Modalità Picture-in-Picture',
 			'videoControls.aspectRatioButton' => 'Proporzioni',
 			'videoControls.ambientLighting' => 'Illuminazione ambientale',
-			'videoControls.ambientLightingOn' => 'Attiva illuminazione ambientale',
-			'videoControls.ambientLightingOff' => 'Disattiva illuminazione ambientale',
 			'videoControls.fullscreenButton' => 'Attiva schermo intero',
 			'videoControls.exitFullscreenButton' => 'Esci da schermo intero',
 			'videoControls.alwaysOnTopButton' => 'Sempre in primo piano',
@@ -1729,11 +1682,8 @@ extension on TranslationsIt {
 			'discover.overview' => 'Panoramica',
 			'discover.cast' => 'Attori',
 			'discover.extras' => 'Trailer ed Extra',
-			'discover.seasons' => 'Stagioni',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Classificazione',
-			'discover.episodeCount' => ({required Object count}) => '${count} episodi',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} guardati',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'Serie TV',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} minuti rimanenti',
@@ -1811,8 +1761,6 @@ extension on TranslationsIt {
 			'logs.clearLogs' => 'Cancella log',
 			'logs.copyLogs' => 'Copia log',
 			'logs.uploadLogs' => 'Carica log',
-			'logs.error' => 'Errore:',
-			'logs.stackTrace' => 'Traccia dello stack:',
 			'licenses.relatedPackages' => 'Pacchetti correlati',
 			'licenses.license' => 'Licenza',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licenza ${number}',
@@ -1821,22 +1769,12 @@ extension on TranslationsIt {
 			'navigation.downloads' => 'Download',
 			'navigation.liveTv' => 'TV Live',
 			'liveTv.title' => 'TV in diretta',
-			'liveTv.channels' => 'Canali',
 			'liveTv.guide' => 'Guida',
 			'liveTv.noChannels' => 'Nessun canale disponibile',
 			'liveTv.noDvr' => 'Nessun DVR configurato su nessun server',
-			'liveTv.tuneFailed' => 'Impossibile sintonizzare il canale',
-			'liveTv.loading' => 'Caricamento canali...',
-			'liveTv.nowPlaying' => 'In riproduzione',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
-			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
 			'liveTv.live' => 'IN DIRETTA',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NUOVO',
 			'liveTv.reloadGuide' => 'Ricarica guida',
-			'liveTv.allChannels' => 'Tutti i canali',
 			'liveTv.now' => 'Ora',
 			'liveTv.today' => 'Oggi',
 			'liveTv.midnight' => 'Mezzanotte',
@@ -1848,14 +1786,13 @@ extension on TranslationsIt {
 			'liveTv.whatsOn' => 'In onda ora',
 			'liveTv.watchChannel' => 'Guarda canale',
 			'liveTv.favorites' => 'Preferiti',
-			'liveTv.addToFavorites' => 'Aggiungi ai preferiti',
-			'liveTv.removeFromFavorites' => 'Rimuovi dai preferiti',
-			'liveTv.noFavorites' => 'Nessun canale preferito. Tieni premuto un canale per aggiungerlo.',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',
 			'downloads.movies' => 'Film',
 			'downloads.noDownloads' => 'Nessun download',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'I contenuti scaricati appariranno qui per la visualizzazione offline',
 			'downloads.downloadNow' => 'Scarica',
 			'downloads.deleteDownload' => 'Elimina download',
@@ -2073,7 +2010,6 @@ extension on TranslationsIt {
 			'externalPlayer.playerCommand' => 'Comando',
 			'externalPlayer.playerPackage' => 'Nome pacchetto',
 			'externalPlayer.playerUrlScheme' => 'Schema URL',
-			'externalPlayer.customPlayer' => 'Lettore personalizzato',
 			'externalPlayer.off' => 'Disattivato',
 			'externalPlayer.launchFailed' => 'Impossibile aprire il lettore esterno',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} non è installato',

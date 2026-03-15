@@ -45,7 +45,6 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSettingsKo settings = _TranslationsSettingsKo._(_root);
 	@override late final _TranslationsSearchKo search = _TranslationsSearchKo._(_root);
 	@override late final _TranslationsHotkeysKo hotkeys = _TranslationsHotkeysKo._(_root);
-	@override late final _TranslationsPinEntryKo pinEntry = _TranslationsPinEntryKo._(_root);
 	@override late final _TranslationsFileInfoKo fileInfo = _TranslationsFileInfoKo._(_root);
 	@override late final _TranslationsMediaMenuKo mediaMenu = _TranslationsMediaMenuKo._(_root);
 	@override late final _TranslationsAccessibilityKo accessibility = _TranslationsAccessibilityKo._(_root);
@@ -128,7 +127,6 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
 	@override String get createNew => '새로 만들기';
-	@override String get remove => '삭제';
 	@override String get paste => '붙여넣기';
 	@override String get connect => '연결';
 	@override String get disconnect => '연결 해제';
@@ -142,7 +140,6 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get settings => '설정';
 	@override String get mute => '음소거';
 	@override String get ok => '확인';
-	@override String get loading => '로딩 중...';
 	@override String get reconnect => '다시 연결';
 	@override String get exitConfirmTitle => '앱을 종료하시겠습니까?';
 	@override String get exitConfirmMessage => '정말 종료하시겠습니까?';
@@ -362,18 +359,6 @@ class _TranslationsHotkeysKo implements TranslationsHotkeysEn {
 	@override late final _TranslationsHotkeysActionsKo actions = _TranslationsHotkeysActionsKo._(_root);
 }
 
-// Path: pinEntry
-class _TranslationsPinEntryKo implements TranslationsPinEntryEn {
-	_TranslationsPinEntryKo._(this._root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get enterPin => 'PIN 입력';
-	@override String get showPin => 'PIN 표시';
-	@override String get hidePin => 'PIN 숨기기';
-}
-
 // Path: fileInfo
 class _TranslationsFileInfoKo implements TranslationsFileInfoEn {
 	_TranslationsFileInfoKo._(this._root);
@@ -480,7 +465,6 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get unlockRotation => '회전 잠금 해제';
 	@override String get timerActive => '타이머 활성화됨';
 	@override String playbackWillPauseIn({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다';
-	@override String get sleepTimerCompleted => '수면 타이머 완료됨 - 재생이 일시 중지되었습니다';
 	@override String get stillWatching => '아직 시청 중이신가요?';
 	@override String pausingIn({required Object seconds}) => '${seconds}초 후 일시 정지';
 	@override String get continueWatching => '계속';
@@ -497,16 +481,12 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get muteButton => '음소거';
 	@override String get unmuteButton => '음소거 해제';
 	@override String get settingsButton => '동영상 설정';
-	@override String get audioTrackButton => '음원 트랙';
-	@override String get subtitlesButton => '자막';
 	@override String get tracksButton => '오디오 및 자막';
 	@override String get chaptersButton => '챕터';
 	@override String get versionsButton => '동영상 버전';
 	@override String get pipButton => '픽처 인 픽처 모드';
 	@override String get aspectRatioButton => '화면비율';
 	@override String get ambientLighting => '주변 조명';
-	@override String get ambientLightingOn => '주변 조명 켜기';
-	@override String get ambientLightingOff => '주변 조명 끄기';
 	@override String get fullscreenButton => '전체화면';
 	@override String get exitFullscreenButton => '전체화면 종료';
 	@override String get alwaysOnTopButton => '창 최상위 고정';
@@ -644,11 +624,8 @@ class _TranslationsDiscoverKo implements TranslationsDiscoverEn {
 	@override String get overview => '개요';
 	@override String get cast => '출연진';
 	@override String get extras => '예고편 및 부가영상';
-	@override String get seasons => '시즌 수';
 	@override String get studio => '제작사';
 	@override String get rating => '연령 등급';
-	@override String episodeCount({required Object count}) => '${count} 편';
-	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} 편 시청 완료';
 	@override String get movie => '영화';
 	@override String get tvShow => 'TV 시리즈';
 	@override String minutesLeft({required Object minutes}) => '${minutes}분 남음';
@@ -771,8 +748,6 @@ class _TranslationsLogsKo implements TranslationsLogsEn {
 	@override String get clearLogs => '로그 지우기';
 	@override String get copyLogs => '로그 복사';
 	@override String get uploadLogs => '로그 업로드';
-	@override String get error => '오류:';
-	@override String get stackTrace => '스택 추적 (Stack Trace):';
 }
 
 // Path: licenses
@@ -808,20 +783,12 @@ class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
 
 	// Translations
 	@override String get title => '실시간 TV';
-	@override String get channels => '채널';
 	@override String get guide => '편성표';
 	@override String get noChannels => '사용 가능한 채널이 없습니다';
 	@override String get noDvr => '서버에 DVR이 구성되어 있지 않습니다';
-	@override String get tuneFailed => '채널 튜닝에 실패했습니다';
-	@override String get loading => '채널 로딩 중...';
-	@override String get nowPlaying => '현재 재생 중';
 	@override String get noPrograms => '프로그램 데이터가 없습니다';
-	@override String channelNumber({required Object number}) => '채널 ${number}';
 	@override String get live => '실시간';
-	@override String get hd => 'HD';
-	@override String get premiere => '신규';
 	@override String get reloadGuide => '편성표 새로고침';
-	@override String get allChannels => '전체 채널';
 	@override String get now => '지금';
 	@override String get today => '오늘';
 	@override String get midnight => '자정';
@@ -833,9 +800,6 @@ class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
 	@override String get whatsOn => '지금 방송 중';
 	@override String get watchChannel => '채널 시청';
 	@override String get favorites => '즐겨찾기';
-	@override String get addToFavorites => '즐겨찾기에 추가';
-	@override String get removeFromFavorites => '즐겨찾기에서 제거';
-	@override String get noFavorites => '즐겨찾기 채널이 없습니다. 채널을 길게 눌러 추가하세요.';
 }
 
 // Path: collections
@@ -1064,7 +1028,6 @@ class _TranslationsExternalPlayerKo implements TranslationsExternalPlayerEn {
 	@override String get playerCommand => '명령어';
 	@override String get playerPackage => '패키지 이름';
 	@override String get playerUrlScheme => 'URL 스킴';
-	@override String get customPlayer => '사용자 정의 플레이어';
 	@override String get off => '꺼짐';
 	@override String get launchFailed => '외부 플레이어를 열 수 없습니다';
 	@override String appNotInstalled({required Object name}) => '${name}이(가) 설치되어 있지 않습니다';
@@ -1342,7 +1305,6 @@ extension on TranslationsKo {
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
 			'common.createNew' => '새로 만들기',
-			'common.remove' => '삭제',
 			'common.paste' => '붙여넣기',
 			'common.connect' => '연결',
 			'common.disconnect' => '연결 해제',
@@ -1356,7 +1318,6 @@ extension on TranslationsKo {
 			'common.settings' => '설정',
 			'common.mute' => '음소거',
 			'common.ok' => '확인',
-			'common.loading' => '로딩 중...',
 			'common.reconnect' => '다시 연결',
 			'common.exitConfirmTitle' => '앱을 종료하시겠습니까?',
 			'common.exitConfirmMessage' => '정말 종료하시겠습니까?',
@@ -1547,9 +1508,6 @@ extension on TranslationsKo {
 			'hotkeys.actions.subSeekPrev' => '이전 자막으로 이동',
 			'hotkeys.actions.shaderToggle' => '셰이더 전환',
 			'hotkeys.actions.skipMarker' => '인트로/크레딧 건너뛰기',
-			'pinEntry.enterPin' => 'PIN 입력',
-			'pinEntry.showPin' => 'PIN 표시',
-			'pinEntry.hidePin' => 'PIN 숨기기',
 			'fileInfo.title' => '파일 정보',
 			'fileInfo.video' => '비디오',
 			'fileInfo.audio' => '오디오',
@@ -1613,7 +1571,6 @@ extension on TranslationsKo {
 			'videoControls.unlockRotation' => '회전 잠금 해제',
 			'videoControls.timerActive' => '타이머 활성화됨',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다',
-			'videoControls.sleepTimerCompleted' => '수면 타이머 완료됨 - 재생이 일시 중지되었습니다',
 			'videoControls.stillWatching' => '아직 시청 중이신가요?',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}초 후 일시 정지',
 			'videoControls.continueWatching' => '계속',
@@ -1630,16 +1587,12 @@ extension on TranslationsKo {
 			'videoControls.muteButton' => '음소거',
 			'videoControls.unmuteButton' => '음소거 해제',
 			'videoControls.settingsButton' => '동영상 설정',
-			'videoControls.audioTrackButton' => '음원 트랙',
-			'videoControls.subtitlesButton' => '자막',
 			'videoControls.tracksButton' => '오디오 및 자막',
 			'videoControls.chaptersButton' => '챕터',
 			'videoControls.versionsButton' => '동영상 버전',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
 			'videoControls.aspectRatioButton' => '화면비율',
 			'videoControls.ambientLighting' => '주변 조명',
-			'videoControls.ambientLightingOn' => '주변 조명 켜기',
-			'videoControls.ambientLightingOff' => '주변 조명 끄기',
 			'videoControls.fullscreenButton' => '전체화면',
 			'videoControls.exitFullscreenButton' => '전체화면 종료',
 			'videoControls.alwaysOnTopButton' => '창 최상위 고정',
@@ -1729,11 +1682,8 @@ extension on TranslationsKo {
 			'discover.overview' => '개요',
 			'discover.cast' => '출연진',
 			'discover.extras' => '예고편 및 부가영상',
-			'discover.seasons' => '시즌 수',
 			'discover.studio' => '제작사',
 			'discover.rating' => '연령 등급',
-			'discover.episodeCount' => ({required Object count}) => '${count} 편',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} 편 시청 완료',
 			'discover.movie' => '영화',
 			'discover.tvShow' => 'TV 시리즈',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes}분 남음',
@@ -1811,8 +1761,6 @@ extension on TranslationsKo {
 			'logs.clearLogs' => '로그 지우기',
 			'logs.copyLogs' => '로그 복사',
 			'logs.uploadLogs' => '로그 업로드',
-			'logs.error' => '오류:',
-			'logs.stackTrace' => '스택 추적 (Stack Trace):',
 			'licenses.relatedPackages' => '관련 소프트웨어 패키지',
 			'licenses.license' => '라이선스',
 			'licenses.licenseNumber' => ({required Object number}) => '라이선스 ${number}',
@@ -1821,22 +1769,12 @@ extension on TranslationsKo {
 			'navigation.downloads' => '다운로드',
 			'navigation.liveTv' => '실시간 TV',
 			'liveTv.title' => '실시간 TV',
-			'liveTv.channels' => '채널',
 			'liveTv.guide' => '편성표',
 			'liveTv.noChannels' => '사용 가능한 채널이 없습니다',
 			'liveTv.noDvr' => '서버에 DVR이 구성되어 있지 않습니다',
-			'liveTv.tuneFailed' => '채널 튜닝에 실패했습니다',
-			'liveTv.loading' => '채널 로딩 중...',
-			'liveTv.nowPlaying' => '현재 재생 중',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
-			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
 			'liveTv.live' => '실시간',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => '신규',
 			'liveTv.reloadGuide' => '편성표 새로고침',
-			'liveTv.allChannels' => '전체 채널',
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
@@ -1848,14 +1786,13 @@ extension on TranslationsKo {
 			'liveTv.whatsOn' => '지금 방송 중',
 			'liveTv.watchChannel' => '채널 시청',
 			'liveTv.favorites' => '즐겨찾기',
-			'liveTv.addToFavorites' => '즐겨찾기에 추가',
-			'liveTv.removeFromFavorites' => '즐겨찾기에서 제거',
-			'liveTv.noFavorites' => '즐겨찾기 채널이 없습니다. 채널을 길게 눌러 추가하세요.',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',
 			'collections.unknownLibrarySection' => '삭제할 수 없습니다: 알 수 없는 미디어 라이브러리 섹션입니다',
 			'collections.deleteCollection' => '컬렉션 삭제',
+			_ => null,
+		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => '"${title}"을(를) 삭제 하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
 			'collections.deleted' => '컬렉션 삭제됨',
 			'collections.deleteFailed' => '컬렉션 삭제 실패',
@@ -2073,7 +2010,6 @@ extension on TranslationsKo {
 			'externalPlayer.playerCommand' => '명령어',
 			'externalPlayer.playerPackage' => '패키지 이름',
 			'externalPlayer.playerUrlScheme' => 'URL 스킴',
-			'externalPlayer.customPlayer' => '사용자 정의 플레이어',
 			'externalPlayer.off' => '꺼짐',
 			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',

@@ -45,7 +45,6 @@ class TranslationsDe with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSettingsDe settings = _TranslationsSettingsDe._(_root);
 	@override late final _TranslationsSearchDe search = _TranslationsSearchDe._(_root);
 	@override late final _TranslationsHotkeysDe hotkeys = _TranslationsHotkeysDe._(_root);
-	@override late final _TranslationsPinEntryDe pinEntry = _TranslationsPinEntryDe._(_root);
 	@override late final _TranslationsFileInfoDe fileInfo = _TranslationsFileInfoDe._(_root);
 	@override late final _TranslationsMediaMenuDe mediaMenu = _TranslationsMediaMenuDe._(_root);
 	@override late final _TranslationsAccessibilityDe accessibility = _TranslationsAccessibilityDe._(_root);
@@ -128,7 +127,6 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get shuffle => 'Zufall';
 	@override String get addTo => 'Hinzufügen zu...';
 	@override String get createNew => 'Neu erstellen';
-	@override String get remove => 'Entfernen';
 	@override String get paste => 'Einfügen';
 	@override String get connect => 'Verbinden';
 	@override String get disconnect => 'Trennen';
@@ -142,7 +140,6 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get settings => 'Optionen';
 	@override String get mute => 'Stumm';
 	@override String get ok => 'OK';
-	@override String get loading => 'Laden...';
 	@override String get reconnect => 'Erneut verbinden';
 	@override String get exitConfirmTitle => 'App beenden?';
 	@override String get exitConfirmMessage => 'Möchtest du die App wirklich beenden?';
@@ -362,18 +359,6 @@ class _TranslationsHotkeysDe implements TranslationsHotkeysEn {
 	@override late final _TranslationsHotkeysActionsDe actions = _TranslationsHotkeysActionsDe._(_root);
 }
 
-// Path: pinEntry
-class _TranslationsPinEntryDe implements TranslationsPinEntryEn {
-	_TranslationsPinEntryDe._(this._root);
-
-	final TranslationsDe _root; // ignore: unused_field
-
-	// Translations
-	@override String get enterPin => 'PIN eingeben';
-	@override String get showPin => 'PIN anzeigen';
-	@override String get hidePin => 'PIN verbergen';
-}
-
 // Path: fileInfo
 class _TranslationsFileInfoDe implements TranslationsFileInfoEn {
 	_TranslationsFileInfoDe._(this._root);
@@ -480,7 +465,6 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Rotation entsperren';
 	@override String get timerActive => 'Schlaftimer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert';
-	@override String get sleepTimerCompleted => 'Schlaftimer abgelaufen – Wiedergabe pausiert';
 	@override String get stillWatching => 'Schaust du noch?';
 	@override String pausingIn({required Object seconds}) => 'Pause in ${seconds}s';
 	@override String get continueWatching => 'Weiter';
@@ -497,16 +481,12 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get muteButton => 'Stumm schalten';
 	@override String get unmuteButton => 'Stummschaltung aufheben';
 	@override String get settingsButton => 'Videoeinstellungen';
-	@override String get audioTrackButton => 'Tonspuren';
-	@override String get subtitlesButton => 'Untertitel';
 	@override String get tracksButton => 'Audio und Untertitel';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversionen';
 	@override String get pipButton => 'Bild-in-Bild Modus';
 	@override String get aspectRatioButton => 'Seitenverhältnis';
 	@override String get ambientLighting => 'Umgebungsbeleuchtung';
-	@override String get ambientLightingOn => 'Umgebungsbeleuchtung aktivieren';
-	@override String get ambientLightingOff => 'Umgebungsbeleuchtung deaktivieren';
 	@override String get fullscreenButton => 'Vollbild aktivieren';
 	@override String get exitFullscreenButton => 'Vollbild verlassen';
 	@override String get alwaysOnTopButton => 'Immer im Vordergrund';
@@ -644,11 +624,8 @@ class _TranslationsDiscoverDe implements TranslationsDiscoverEn {
 	@override String get overview => 'Übersicht';
 	@override String get cast => 'Besetzung';
 	@override String get extras => 'Trailer & Extras';
-	@override String get seasons => 'Staffeln';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Altersfreigabe';
-	@override String episodeCount({required Object count}) => '${count} Episoden';
-	@override String watchedProgress({required Object watched, required Object total}) => '${watched} von ${total} gesehen';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'Serie';
 	@override String minutesLeft({required Object minutes}) => '${minutes} Min übrig';
@@ -771,8 +748,6 @@ class _TranslationsLogsDe implements TranslationsLogsEn {
 	@override String get clearLogs => 'Protokolle löschen';
 	@override String get copyLogs => 'Protokolle kopieren';
 	@override String get uploadLogs => 'Protokolle hochladen';
-	@override String get error => 'Fehler:';
-	@override String get stackTrace => 'Stacktrace:';
 }
 
 // Path: licenses
@@ -808,20 +783,12 @@ class _TranslationsLiveTvDe implements TranslationsLiveTvEn {
 
 	// Translations
 	@override String get title => 'Live-TV';
-	@override String get channels => 'Kanäle';
 	@override String get guide => 'Programmführer';
 	@override String get noChannels => 'Keine Kanäle verfügbar';
 	@override String get noDvr => 'Kein DVR auf einem Server konfiguriert';
-	@override String get tuneFailed => 'Kanal konnte nicht eingestellt werden';
-	@override String get loading => 'Kanäle werden geladen...';
-	@override String get nowPlaying => 'Läuft gerade';
 	@override String get noPrograms => 'Keine Programmdaten verfügbar';
-	@override String channelNumber({required Object number}) => 'Kanal ${number}';
 	@override String get live => 'LIVE';
-	@override String get hd => 'HD';
-	@override String get premiere => 'NEU';
 	@override String get reloadGuide => 'Programmführer neu laden';
-	@override String get allChannels => 'Alle Kanäle';
 	@override String get now => 'Jetzt';
 	@override String get today => 'Heute';
 	@override String get midnight => 'Mitternacht';
@@ -833,9 +800,6 @@ class _TranslationsLiveTvDe implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'Jetzt im TV';
 	@override String get watchChannel => 'Kanal ansehen';
 	@override String get favorites => 'Favoriten';
-	@override String get addToFavorites => 'Zu Favoriten hinzufügen';
-	@override String get removeFromFavorites => 'Aus Favoriten entfernen';
-	@override String get noFavorites => 'Keine Favoritenkanäle. Kanal lange drücken, um ihn hinzuzufügen.';
 }
 
 // Path: downloads
@@ -1064,7 +1028,6 @@ class _TranslationsExternalPlayerDe implements TranslationsExternalPlayerEn {
 	@override String get playerCommand => 'Befehl';
 	@override String get playerPackage => 'Paketname';
 	@override String get playerUrlScheme => 'URL-Schema';
-	@override String get customPlayer => 'Benutzerdefinierter Player';
 	@override String get off => 'Aus';
 	@override String get launchFailed => 'Externer Player konnte nicht geöffnet werden';
 	@override String appNotInstalled({required Object name}) => '${name} ist nicht installiert';
@@ -1342,7 +1305,6 @@ extension on TranslationsDe {
 			'common.shuffle' => 'Zufall',
 			'common.addTo' => 'Hinzufügen zu...',
 			'common.createNew' => 'Neu erstellen',
-			'common.remove' => 'Entfernen',
 			'common.paste' => 'Einfügen',
 			'common.connect' => 'Verbinden',
 			'common.disconnect' => 'Trennen',
@@ -1356,7 +1318,6 @@ extension on TranslationsDe {
 			'common.settings' => 'Optionen',
 			'common.mute' => 'Stumm',
 			'common.ok' => 'OK',
-			'common.loading' => 'Laden...',
 			'common.reconnect' => 'Erneut verbinden',
 			'common.exitConfirmTitle' => 'App beenden?',
 			'common.exitConfirmMessage' => 'Möchtest du die App wirklich beenden?',
@@ -1547,9 +1508,6 @@ extension on TranslationsDe {
 			'hotkeys.actions.subSeekPrev' => 'Zum vorherigen Untertitel springen',
 			'hotkeys.actions.shaderToggle' => 'Shader umschalten',
 			'hotkeys.actions.skipMarker' => 'Intro/Abspann überspringen',
-			'pinEntry.enterPin' => 'PIN eingeben',
-			'pinEntry.showPin' => 'PIN anzeigen',
-			'pinEntry.hidePin' => 'PIN verbergen',
 			'fileInfo.title' => 'Dateiinfo',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
@@ -1613,7 +1571,6 @@ extension on TranslationsDe {
 			'videoControls.unlockRotation' => 'Rotation entsperren',
 			'videoControls.timerActive' => 'Schlaftimer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert',
-			'videoControls.sleepTimerCompleted' => 'Schlaftimer abgelaufen – Wiedergabe pausiert',
 			'videoControls.stillWatching' => 'Schaust du noch?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pause in ${seconds}s',
 			'videoControls.continueWatching' => 'Weiter',
@@ -1630,16 +1587,12 @@ extension on TranslationsDe {
 			'videoControls.muteButton' => 'Stumm schalten',
 			'videoControls.unmuteButton' => 'Stummschaltung aufheben',
 			'videoControls.settingsButton' => 'Videoeinstellungen',
-			'videoControls.audioTrackButton' => 'Tonspuren',
-			'videoControls.subtitlesButton' => 'Untertitel',
 			'videoControls.tracksButton' => 'Audio und Untertitel',
 			'videoControls.chaptersButton' => 'Kapitel',
 			'videoControls.versionsButton' => 'Videoversionen',
 			'videoControls.pipButton' => 'Bild-in-Bild Modus',
 			'videoControls.aspectRatioButton' => 'Seitenverhältnis',
 			'videoControls.ambientLighting' => 'Umgebungsbeleuchtung',
-			'videoControls.ambientLightingOn' => 'Umgebungsbeleuchtung aktivieren',
-			'videoControls.ambientLightingOff' => 'Umgebungsbeleuchtung deaktivieren',
 			'videoControls.fullscreenButton' => 'Vollbild aktivieren',
 			'videoControls.exitFullscreenButton' => 'Vollbild verlassen',
 			'videoControls.alwaysOnTopButton' => 'Immer im Vordergrund',
@@ -1729,11 +1682,8 @@ extension on TranslationsDe {
 			'discover.overview' => 'Übersicht',
 			'discover.cast' => 'Besetzung',
 			'discover.extras' => 'Trailer & Extras',
-			'discover.seasons' => 'Staffeln',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Altersfreigabe',
-			'discover.episodeCount' => ({required Object count}) => '${count} Episoden',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched} von ${total} gesehen',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'Serie',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} Min übrig',
@@ -1811,8 +1761,6 @@ extension on TranslationsDe {
 			'logs.clearLogs' => 'Protokolle löschen',
 			'logs.copyLogs' => 'Protokolle kopieren',
 			'logs.uploadLogs' => 'Protokolle hochladen',
-			'logs.error' => 'Fehler:',
-			'logs.stackTrace' => 'Stacktrace:',
 			'licenses.relatedPackages' => 'Verwandte Pakete',
 			'licenses.license' => 'Lizenz',
 			'licenses.licenseNumber' => ({required Object number}) => 'Lizenz ${number}',
@@ -1821,22 +1769,12 @@ extension on TranslationsDe {
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live-TV',
 			'liveTv.title' => 'Live-TV',
-			'liveTv.channels' => 'Kanäle',
 			'liveTv.guide' => 'Programmführer',
 			'liveTv.noChannels' => 'Keine Kanäle verfügbar',
 			'liveTv.noDvr' => 'Kein DVR auf einem Server konfiguriert',
-			'liveTv.tuneFailed' => 'Kanal konnte nicht eingestellt werden',
-			'liveTv.loading' => 'Kanäle werden geladen...',
-			'liveTv.nowPlaying' => 'Läuft gerade',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Keine Programmdaten verfügbar',
-			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NEU',
 			'liveTv.reloadGuide' => 'Programmführer neu laden',
-			'liveTv.allChannels' => 'Alle Kanäle',
 			'liveTv.now' => 'Jetzt',
 			'liveTv.today' => 'Heute',
 			'liveTv.midnight' => 'Mitternacht',
@@ -1848,14 +1786,13 @@ extension on TranslationsDe {
 			'liveTv.whatsOn' => 'Jetzt im TV',
 			'liveTv.watchChannel' => 'Kanal ansehen',
 			'liveTv.favorites' => 'Favoriten',
-			'liveTv.addToFavorites' => 'Zu Favoriten hinzufügen',
-			'liveTv.removeFromFavorites' => 'Aus Favoriten entfernen',
-			'liveTv.noFavorites' => 'Keine Favoritenkanäle. Kanal lange drücken, um ihn hinzuzufügen.',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
 			'downloads.movies' => 'Filme',
 			'downloads.noDownloads' => 'Noch keine Downloads',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
 			'downloads.downloadNow' => 'Herunterladen',
 			'downloads.deleteDownload' => 'Download löschen',
@@ -2073,7 +2010,6 @@ extension on TranslationsDe {
 			'externalPlayer.playerCommand' => 'Befehl',
 			'externalPlayer.playerPackage' => 'Paketname',
 			'externalPlayer.playerUrlScheme' => 'URL-Schema',
-			'externalPlayer.customPlayer' => 'Benutzerdefinierter Player',
 			'externalPlayer.off' => 'Aus',
 			'externalPlayer.launchFailed' => 'Externer Player konnte nicht geöffnet werden',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} ist nicht installiert',

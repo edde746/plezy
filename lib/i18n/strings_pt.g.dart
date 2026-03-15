@@ -45,7 +45,6 @@ class TranslationsPt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSettingsPt settings = _TranslationsSettingsPt._(_root);
 	@override late final _TranslationsSearchPt search = _TranslationsSearchPt._(_root);
 	@override late final _TranslationsHotkeysPt hotkeys = _TranslationsHotkeysPt._(_root);
-	@override late final _TranslationsPinEntryPt pinEntry = _TranslationsPinEntryPt._(_root);
 	@override late final _TranslationsFileInfoPt fileInfo = _TranslationsFileInfoPt._(_root);
 	@override late final _TranslationsMediaMenuPt mediaMenu = _TranslationsMediaMenuPt._(_root);
 	@override late final _TranslationsAccessibilityPt accessibility = _TranslationsAccessibilityPt._(_root);
@@ -128,7 +127,6 @@ class _TranslationsCommonPt implements TranslationsCommonEn {
 	@override String get shuffle => 'Aleatório';
 	@override String get addTo => 'Adicionar a...';
 	@override String get createNew => 'Criar novo';
-	@override String get remove => 'Remover';
 	@override String get paste => 'Colar';
 	@override String get connect => 'Conectar';
 	@override String get disconnect => 'Desconectar';
@@ -142,7 +140,6 @@ class _TranslationsCommonPt implements TranslationsCommonEn {
 	@override String get settings => 'Configurações';
 	@override String get mute => 'Silenciar';
 	@override String get ok => 'OK';
-	@override String get loading => 'Carregando...';
 	@override String get reconnect => 'Reconectar';
 	@override String get exitConfirmTitle => 'Sair do app?';
 	@override String get exitConfirmMessage => 'Tem certeza que deseja sair?';
@@ -362,18 +359,6 @@ class _TranslationsHotkeysPt implements TranslationsHotkeysEn {
 	@override late final _TranslationsHotkeysActionsPt actions = _TranslationsHotkeysActionsPt._(_root);
 }
 
-// Path: pinEntry
-class _TranslationsPinEntryPt implements TranslationsPinEntryEn {
-	_TranslationsPinEntryPt._(this._root);
-
-	final TranslationsPt _root; // ignore: unused_field
-
-	// Translations
-	@override String get enterPin => 'Inserir PIN';
-	@override String get showPin => 'Mostrar PIN';
-	@override String get hidePin => 'Ocultar PIN';
-}
-
 // Path: fileInfo
 class _TranslationsFileInfoPt implements TranslationsFileInfoEn {
 	_TranslationsFileInfoPt._(this._root);
@@ -480,7 +465,6 @@ class _TranslationsVideoControlsPt implements TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Destravar rotação';
 	@override String get timerActive => 'Timer Ativo';
 	@override String playbackWillPauseIn({required Object duration}) => 'A reprodução pausará em ${duration}';
-	@override String get sleepTimerCompleted => 'Timer de sono concluído - reprodução pausada';
 	@override String get stillWatching => 'Ainda assistindo?';
 	@override String pausingIn({required Object seconds}) => 'Pausando em ${seconds}s';
 	@override String get continueWatching => 'Continuar';
@@ -497,16 +481,12 @@ class _TranslationsVideoControlsPt implements TranslationsVideoControlsEn {
 	@override String get muteButton => 'Silenciar';
 	@override String get unmuteButton => 'Ativar som';
 	@override String get settingsButton => 'Configurações de vídeo';
-	@override String get audioTrackButton => 'Faixas de áudio';
-	@override String get subtitlesButton => 'Legendas';
 	@override String get tracksButton => 'Áudio e Legendas';
 	@override String get chaptersButton => 'Capítulos';
 	@override String get versionsButton => 'Versões do vídeo';
 	@override String get pipButton => 'Modo Picture-in-Picture';
 	@override String get aspectRatioButton => 'Proporção';
 	@override String get ambientLighting => 'Iluminação ambiente';
-	@override String get ambientLightingOn => 'Ativar iluminação ambiente';
-	@override String get ambientLightingOff => 'Desativar iluminação ambiente';
 	@override String get fullscreenButton => 'Entrar em tela cheia';
 	@override String get exitFullscreenButton => 'Sair da tela cheia';
 	@override String get alwaysOnTopButton => 'Sempre no topo';
@@ -644,11 +624,8 @@ class _TranslationsDiscoverPt implements TranslationsDiscoverEn {
 	@override String get overview => 'Sinopse';
 	@override String get cast => 'Elenco';
 	@override String get extras => 'Trailers e Extras';
-	@override String get seasons => 'Temporadas';
 	@override String get studio => 'Estúdio';
 	@override String get rating => 'Avaliação';
-	@override String episodeCount({required Object count}) => '${count} episódios';
-	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} assistidos';
 	@override String get movie => 'Filme';
 	@override String get tvShow => 'Série de TV';
 	@override String minutesLeft({required Object minutes}) => '${minutes} min restantes';
@@ -771,8 +748,6 @@ class _TranslationsLogsPt implements TranslationsLogsEn {
 	@override String get clearLogs => 'Limpar Logs';
 	@override String get copyLogs => 'Copiar Logs';
 	@override String get uploadLogs => 'Enviar Logs';
-	@override String get error => 'Erro:';
-	@override String get stackTrace => 'Stack Trace:';
 }
 
 // Path: licenses
@@ -808,20 +783,12 @@ class _TranslationsLiveTvPt implements TranslationsLiveTvEn {
 
 	// Translations
 	@override String get title => 'TV ao Vivo';
-	@override String get channels => 'Canais';
 	@override String get guide => 'Guia';
 	@override String get noChannels => 'Nenhum canal disponível';
 	@override String get noDvr => 'Nenhum DVR configurado em nenhum servidor';
-	@override String get tuneFailed => 'Falha ao sintonizar canal';
-	@override String get loading => 'Carregando canais...';
-	@override String get nowPlaying => 'Reproduzindo Agora';
 	@override String get noPrograms => 'Nenhum dado de programação disponível';
-	@override String channelNumber({required Object number}) => 'Ch. ${number}';
 	@override String get live => 'AO VIVO';
-	@override String get hd => 'HD';
-	@override String get premiere => 'NOVO';
 	@override String get reloadGuide => 'Recarregar Guia';
-	@override String get allChannels => 'Todos os Canais';
 	@override String get now => 'Agora';
 	@override String get today => 'Hoje';
 	@override String get midnight => 'Meia-noite';
@@ -833,9 +800,6 @@ class _TranslationsLiveTvPt implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'O que Está Passando';
 	@override String get watchChannel => 'Assistir Canal';
 	@override String get favorites => 'Favoritos';
-	@override String get addToFavorites => 'Adicionar aos favoritos';
-	@override String get removeFromFavorites => 'Remover dos favoritos';
-	@override String get noFavorites => 'Nenhum canal favorito. Pressione e segure um canal para adicioná-lo.';
 }
 
 // Path: collections
@@ -1064,7 +1028,6 @@ class _TranslationsExternalPlayerPt implements TranslationsExternalPlayerEn {
 	@override String get playerCommand => 'Comando';
 	@override String get playerPackage => 'Nome do Pacote';
 	@override String get playerUrlScheme => 'Esquema de URL';
-	@override String get customPlayer => 'Player Personalizado';
 	@override String get off => 'Desativado';
 	@override String get launchFailed => 'Falha ao abrir player externo';
 	@override String appNotInstalled({required Object name}) => '${name} não está instalado';
@@ -1342,7 +1305,6 @@ extension on TranslationsPt {
 			'common.shuffle' => 'Aleatório',
 			'common.addTo' => 'Adicionar a...',
 			'common.createNew' => 'Criar novo',
-			'common.remove' => 'Remover',
 			'common.paste' => 'Colar',
 			'common.connect' => 'Conectar',
 			'common.disconnect' => 'Desconectar',
@@ -1356,7 +1318,6 @@ extension on TranslationsPt {
 			'common.settings' => 'Configurações',
 			'common.mute' => 'Silenciar',
 			'common.ok' => 'OK',
-			'common.loading' => 'Carregando...',
 			'common.reconnect' => 'Reconectar',
 			'common.exitConfirmTitle' => 'Sair do app?',
 			'common.exitConfirmMessage' => 'Tem certeza que deseja sair?',
@@ -1547,9 +1508,6 @@ extension on TranslationsPt {
 			'hotkeys.actions.subSeekPrev' => 'Ir para Legenda Anterior',
 			'hotkeys.actions.shaderToggle' => 'Alternar Shaders',
 			'hotkeys.actions.skipMarker' => 'Pular Intro/Créditos',
-			'pinEntry.enterPin' => 'Inserir PIN',
-			'pinEntry.showPin' => 'Mostrar PIN',
-			'pinEntry.hidePin' => 'Ocultar PIN',
 			'fileInfo.title' => 'Info do Arquivo',
 			'fileInfo.video' => 'Vídeo',
 			'fileInfo.audio' => 'Áudio',
@@ -1613,7 +1571,6 @@ extension on TranslationsPt {
 			'videoControls.unlockRotation' => 'Destravar rotação',
 			'videoControls.timerActive' => 'Timer Ativo',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'A reprodução pausará em ${duration}',
-			'videoControls.sleepTimerCompleted' => 'Timer de sono concluído - reprodução pausada',
 			'videoControls.stillWatching' => 'Ainda assistindo?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausando em ${seconds}s',
 			'videoControls.continueWatching' => 'Continuar',
@@ -1630,16 +1587,12 @@ extension on TranslationsPt {
 			'videoControls.muteButton' => 'Silenciar',
 			'videoControls.unmuteButton' => 'Ativar som',
 			'videoControls.settingsButton' => 'Configurações de vídeo',
-			'videoControls.audioTrackButton' => 'Faixas de áudio',
-			'videoControls.subtitlesButton' => 'Legendas',
 			'videoControls.tracksButton' => 'Áudio e Legendas',
 			'videoControls.chaptersButton' => 'Capítulos',
 			'videoControls.versionsButton' => 'Versões do vídeo',
 			'videoControls.pipButton' => 'Modo Picture-in-Picture',
 			'videoControls.aspectRatioButton' => 'Proporção',
 			'videoControls.ambientLighting' => 'Iluminação ambiente',
-			'videoControls.ambientLightingOn' => 'Ativar iluminação ambiente',
-			'videoControls.ambientLightingOff' => 'Desativar iluminação ambiente',
 			'videoControls.fullscreenButton' => 'Entrar em tela cheia',
 			'videoControls.exitFullscreenButton' => 'Sair da tela cheia',
 			'videoControls.alwaysOnTopButton' => 'Sempre no topo',
@@ -1729,11 +1682,8 @@ extension on TranslationsPt {
 			'discover.overview' => 'Sinopse',
 			'discover.cast' => 'Elenco',
 			'discover.extras' => 'Trailers e Extras',
-			'discover.seasons' => 'Temporadas',
 			'discover.studio' => 'Estúdio',
 			'discover.rating' => 'Avaliação',
-			'discover.episodeCount' => ({required Object count}) => '${count} episódios',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} assistidos',
 			'discover.movie' => 'Filme',
 			'discover.tvShow' => 'Série de TV',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min restantes',
@@ -1811,8 +1761,6 @@ extension on TranslationsPt {
 			'logs.clearLogs' => 'Limpar Logs',
 			'logs.copyLogs' => 'Copiar Logs',
 			'logs.uploadLogs' => 'Enviar Logs',
-			'logs.error' => 'Erro:',
-			'logs.stackTrace' => 'Stack Trace:',
 			'licenses.relatedPackages' => 'Pacotes Relacionados',
 			'licenses.license' => 'Licença',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licença ${number}',
@@ -1821,22 +1769,12 @@ extension on TranslationsPt {
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'TV ao Vivo',
 			'liveTv.title' => 'TV ao Vivo',
-			'liveTv.channels' => 'Canais',
 			'liveTv.guide' => 'Guia',
 			'liveTv.noChannels' => 'Nenhum canal disponível',
 			'liveTv.noDvr' => 'Nenhum DVR configurado em nenhum servidor',
-			'liveTv.tuneFailed' => 'Falha ao sintonizar canal',
-			'liveTv.loading' => 'Carregando canais...',
-			'liveTv.nowPlaying' => 'Reproduzindo Agora',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Nenhum dado de programação disponível',
-			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'AO VIVO',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NOVO',
 			'liveTv.reloadGuide' => 'Recarregar Guia',
-			'liveTv.allChannels' => 'Todos os Canais',
 			'liveTv.now' => 'Agora',
 			'liveTv.today' => 'Hoje',
 			'liveTv.midnight' => 'Meia-noite',
@@ -1848,14 +1786,13 @@ extension on TranslationsPt {
 			'liveTv.whatsOn' => 'O que Está Passando',
 			'liveTv.watchChannel' => 'Assistir Canal',
 			'liveTv.favorites' => 'Favoritos',
-			'liveTv.addToFavorites' => 'Adicionar aos favoritos',
-			'liveTv.removeFromFavorites' => 'Remover dos favoritos',
-			'liveTv.noFavorites' => 'Nenhum canal favorito. Pressione e segure um canal para adicioná-lo.',
 			'collections.title' => 'Coleções',
 			'collections.collection' => 'Coleção',
 			'collections.empty' => 'A coleção está vazia',
 			'collections.unknownLibrarySection' => 'Não é possível excluir: Seção de biblioteca desconhecida',
 			'collections.deleteCollection' => 'Excluir Coleção',
+			_ => null,
+		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Tem certeza que deseja excluir "${title}"? Esta ação não pode ser desfeita.',
 			'collections.deleted' => 'Coleção excluída',
 			'collections.deleteFailed' => 'Falha ao excluir coleção',
@@ -2073,7 +2010,6 @@ extension on TranslationsPt {
 			'externalPlayer.playerCommand' => 'Comando',
 			'externalPlayer.playerPackage' => 'Nome do Pacote',
 			'externalPlayer.playerUrlScheme' => 'Esquema de URL',
-			'externalPlayer.customPlayer' => 'Player Personalizado',
 			'externalPlayer.off' => 'Desativado',
 			'externalPlayer.launchFailed' => 'Falha ao abrir player externo',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} não está instalado',

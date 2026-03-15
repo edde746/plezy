@@ -45,7 +45,6 @@ class TranslationsDa with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSettingsDa settings = _TranslationsSettingsDa._(_root);
 	@override late final _TranslationsSearchDa search = _TranslationsSearchDa._(_root);
 	@override late final _TranslationsHotkeysDa hotkeys = _TranslationsHotkeysDa._(_root);
-	@override late final _TranslationsPinEntryDa pinEntry = _TranslationsPinEntryDa._(_root);
 	@override late final _TranslationsFileInfoDa fileInfo = _TranslationsFileInfoDa._(_root);
 	@override late final _TranslationsMediaMenuDa mediaMenu = _TranslationsMediaMenuDa._(_root);
 	@override late final _TranslationsAccessibilityDa accessibility = _TranslationsAccessibilityDa._(_root);
@@ -128,7 +127,6 @@ class _TranslationsCommonDa implements TranslationsCommonEn {
 	@override String get shuffle => 'Bland';
 	@override String get addTo => 'Tilføj til...';
 	@override String get createNew => 'Opret ny';
-	@override String get remove => 'Fjern';
 	@override String get paste => 'Indsæt';
 	@override String get connect => 'Forbind';
 	@override String get disconnect => 'Afbryd';
@@ -142,7 +140,6 @@ class _TranslationsCommonDa implements TranslationsCommonEn {
 	@override String get settings => 'Indstillinger';
 	@override String get mute => 'Lydløs';
 	@override String get ok => 'OK';
-	@override String get loading => 'Indlæser...';
 	@override String get reconnect => 'Genopret forbindelse';
 	@override String get exitConfirmTitle => 'Luk app?';
 	@override String get exitConfirmMessage => 'Er du sikker på, at du vil afslutte?';
@@ -362,18 +359,6 @@ class _TranslationsHotkeysDa implements TranslationsHotkeysEn {
 	@override late final _TranslationsHotkeysActionsDa actions = _TranslationsHotkeysActionsDa._(_root);
 }
 
-// Path: pinEntry
-class _TranslationsPinEntryDa implements TranslationsPinEntryEn {
-	_TranslationsPinEntryDa._(this._root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get enterPin => 'Indtast PIN';
-	@override String get showPin => 'Vis PIN';
-	@override String get hidePin => 'Skjul PIN';
-}
-
 // Path: fileInfo
 class _TranslationsFileInfoDa implements TranslationsFileInfoEn {
 	_TranslationsFileInfoDa._(this._root);
@@ -480,7 +465,6 @@ class _TranslationsVideoControlsDa implements TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Lås rotation op';
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Afspilning pauses om ${duration}';
-	@override String get sleepTimerCompleted => 'Sove-timer fuldført — afspilning sat på pause';
 	@override String get stillWatching => 'Ser du stadig?';
 	@override String pausingIn({required Object seconds}) => 'Pauser om ${seconds}s';
 	@override String get continueWatching => 'Fortsæt';
@@ -497,16 +481,12 @@ class _TranslationsVideoControlsDa implements TranslationsVideoControlsEn {
 	@override String get muteButton => 'Lydløs';
 	@override String get unmuteButton => 'Slå lyd til';
 	@override String get settingsButton => 'Videoindstillinger';
-	@override String get audioTrackButton => 'Lydspor';
-	@override String get subtitlesButton => 'Undertekster';
 	@override String get tracksButton => 'Lyd og undertekster';
 	@override String get chaptersButton => 'Kapitler';
 	@override String get versionsButton => 'Videoversioner';
 	@override String get pipButton => 'Billede-i-billede-tilstand';
 	@override String get aspectRatioButton => 'Billedformat';
 	@override String get ambientLighting => 'Omgivelsesbelysning';
-	@override String get ambientLightingOn => 'Aktivér omgivelsesbelysning';
-	@override String get ambientLightingOff => 'Deaktivér omgivelsesbelysning';
 	@override String get fullscreenButton => 'Fuldskærm';
 	@override String get exitFullscreenButton => 'Forlad fuldskærm';
 	@override String get alwaysOnTopButton => 'Altid øverst';
@@ -644,11 +624,8 @@ class _TranslationsDiscoverDa implements TranslationsDiscoverEn {
 	@override String get overview => 'Oversigt';
 	@override String get cast => 'Rollebesætning';
 	@override String get extras => 'Trailere og ekstra';
-	@override String get seasons => 'Sæsoner';
 	@override String get studio => 'Studie';
 	@override String get rating => 'Bedømmelse';
-	@override String episodeCount({required Object count}) => '${count} episoder';
-	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} set';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'TV-serie';
 	@override String minutesLeft({required Object minutes}) => '${minutes} min tilbage';
@@ -771,8 +748,6 @@ class _TranslationsLogsDa implements TranslationsLogsEn {
 	@override String get clearLogs => 'Ryd logs';
 	@override String get copyLogs => 'Kopiér logs';
 	@override String get uploadLogs => 'Upload logs';
-	@override String get error => 'Fejl:';
-	@override String get stackTrace => 'Staksporing:';
 }
 
 // Path: licenses
@@ -808,20 +783,12 @@ class _TranslationsLiveTvDa implements TranslationsLiveTvEn {
 
 	// Translations
 	@override String get title => 'Live TV';
-	@override String get channels => 'Kanaler';
 	@override String get guide => 'Guide';
 	@override String get noChannels => 'Ingen kanaler tilgængelige';
 	@override String get noDvr => 'Ingen DVR konfigureret på nogen server';
-	@override String get tuneFailed => 'Kunne ikke tune kanal';
-	@override String get loading => 'Indlæser kanaler...';
-	@override String get nowPlaying => 'Afspiller nu';
 	@override String get noPrograms => 'Ingen programdata tilgængelig';
-	@override String channelNumber({required Object number}) => 'Kn. ${number}';
 	@override String get live => 'LIVE';
-	@override String get hd => 'HD';
-	@override String get premiere => 'NY';
 	@override String get reloadGuide => 'Genindlæs guide';
-	@override String get allChannels => 'Alle kanaler';
 	@override String get now => 'Nu';
 	@override String get today => 'I dag';
 	@override String get midnight => 'Midnat';
@@ -833,9 +800,6 @@ class _TranslationsLiveTvDa implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'Hvad der kører';
 	@override String get watchChannel => 'Se kanal';
 	@override String get favorites => 'Favoritter';
-	@override String get addToFavorites => 'Føj til favoritter';
-	@override String get removeFromFavorites => 'Fjern fra favoritter';
-	@override String get noFavorites => 'Ingen favoritkanaler. Tryk længe på en kanal for at tilføje den.';
 }
 
 // Path: collections
@@ -1064,7 +1028,6 @@ class _TranslationsExternalPlayerDa implements TranslationsExternalPlayerEn {
 	@override String get playerCommand => 'Kommando';
 	@override String get playerPackage => 'Pakkenavn';
 	@override String get playerUrlScheme => 'URL-skema';
-	@override String get customPlayer => 'Brugerdefineret afspiller';
 	@override String get off => 'Fra';
 	@override String get launchFailed => 'Kunne ikke åbne ekstern afspiller';
 	@override String appNotInstalled({required Object name}) => '${name} er ikke installeret';
@@ -1342,7 +1305,6 @@ extension on TranslationsDa {
 			'common.shuffle' => 'Bland',
 			'common.addTo' => 'Tilføj til...',
 			'common.createNew' => 'Opret ny',
-			'common.remove' => 'Fjern',
 			'common.paste' => 'Indsæt',
 			'common.connect' => 'Forbind',
 			'common.disconnect' => 'Afbryd',
@@ -1356,7 +1318,6 @@ extension on TranslationsDa {
 			'common.settings' => 'Indstillinger',
 			'common.mute' => 'Lydløs',
 			'common.ok' => 'OK',
-			'common.loading' => 'Indlæser...',
 			'common.reconnect' => 'Genopret forbindelse',
 			'common.exitConfirmTitle' => 'Luk app?',
 			'common.exitConfirmMessage' => 'Er du sikker på, at du vil afslutte?',
@@ -1547,9 +1508,6 @@ extension on TranslationsDa {
 			'hotkeys.actions.subSeekPrev' => 'Søg til forrige undertekst',
 			'hotkeys.actions.shaderToggle' => 'Skift shadere',
 			'hotkeys.actions.skipMarker' => 'Spring intro/rulletekster over',
-			'pinEntry.enterPin' => 'Indtast PIN',
-			'pinEntry.showPin' => 'Vis PIN',
-			'pinEntry.hidePin' => 'Skjul PIN',
 			'fileInfo.title' => 'Filinfo',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Lyd',
@@ -1613,7 +1571,6 @@ extension on TranslationsDa {
 			'videoControls.unlockRotation' => 'Lås rotation op',
 			'videoControls.timerActive' => 'Timer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Afspilning pauses om ${duration}',
-			'videoControls.sleepTimerCompleted' => 'Sove-timer fuldført — afspilning sat på pause',
 			'videoControls.stillWatching' => 'Ser du stadig?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pauser om ${seconds}s',
 			'videoControls.continueWatching' => 'Fortsæt',
@@ -1630,16 +1587,12 @@ extension on TranslationsDa {
 			'videoControls.muteButton' => 'Lydløs',
 			'videoControls.unmuteButton' => 'Slå lyd til',
 			'videoControls.settingsButton' => 'Videoindstillinger',
-			'videoControls.audioTrackButton' => 'Lydspor',
-			'videoControls.subtitlesButton' => 'Undertekster',
 			'videoControls.tracksButton' => 'Lyd og undertekster',
 			'videoControls.chaptersButton' => 'Kapitler',
 			'videoControls.versionsButton' => 'Videoversioner',
 			'videoControls.pipButton' => 'Billede-i-billede-tilstand',
 			'videoControls.aspectRatioButton' => 'Billedformat',
 			'videoControls.ambientLighting' => 'Omgivelsesbelysning',
-			'videoControls.ambientLightingOn' => 'Aktivér omgivelsesbelysning',
-			'videoControls.ambientLightingOff' => 'Deaktivér omgivelsesbelysning',
 			'videoControls.fullscreenButton' => 'Fuldskærm',
 			'videoControls.exitFullscreenButton' => 'Forlad fuldskærm',
 			'videoControls.alwaysOnTopButton' => 'Altid øverst',
@@ -1729,11 +1682,8 @@ extension on TranslationsDa {
 			'discover.overview' => 'Oversigt',
 			'discover.cast' => 'Rollebesætning',
 			'discover.extras' => 'Trailere og ekstra',
-			'discover.seasons' => 'Sæsoner',
 			'discover.studio' => 'Studie',
 			'discover.rating' => 'Bedømmelse',
-			'discover.episodeCount' => ({required Object count}) => '${count} episoder',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} set',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'TV-serie',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min tilbage',
@@ -1811,8 +1761,6 @@ extension on TranslationsDa {
 			'logs.clearLogs' => 'Ryd logs',
 			'logs.copyLogs' => 'Kopiér logs',
 			'logs.uploadLogs' => 'Upload logs',
-			'logs.error' => 'Fejl:',
-			'logs.stackTrace' => 'Staksporing:',
 			'licenses.relatedPackages' => 'Relaterede pakker',
 			'licenses.license' => 'Licens',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licens ${number}',
@@ -1821,22 +1769,12 @@ extension on TranslationsDa {
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live TV',
 			'liveTv.title' => 'Live TV',
-			'liveTv.channels' => 'Kanaler',
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'Ingen kanaler tilgængelige',
 			'liveTv.noDvr' => 'Ingen DVR konfigureret på nogen server',
-			'liveTv.tuneFailed' => 'Kunne ikke tune kanal',
-			'liveTv.loading' => 'Indlæser kanaler...',
-			'liveTv.nowPlaying' => 'Afspiller nu',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Ingen programdata tilgængelig',
-			'liveTv.channelNumber' => ({required Object number}) => 'Kn. ${number}',
 			'liveTv.live' => 'LIVE',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Genindlæs guide',
-			'liveTv.allChannels' => 'Alle kanaler',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'I dag',
 			'liveTv.midnight' => 'Midnat',
@@ -1848,14 +1786,13 @@ extension on TranslationsDa {
 			'liveTv.whatsOn' => 'Hvad der kører',
 			'liveTv.watchChannel' => 'Se kanal',
 			'liveTv.favorites' => 'Favoritter',
-			'liveTv.addToFavorites' => 'Føj til favoritter',
-			'liveTv.removeFromFavorites' => 'Fjern fra favoritter',
-			'liveTv.noFavorites' => 'Ingen favoritkanaler. Tryk længe på en kanal for at tilføje den.',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',
 			'collections.unknownLibrarySection' => 'Kan ikke slette: Ukendt bibliotekssektion',
 			'collections.deleteCollection' => 'Slet samling',
+			_ => null,
+		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Er du sikker på, at du vil slette "${title}"? Denne handling kan ikke fortrydes.',
 			'collections.deleted' => 'Samling slettet',
 			'collections.deleteFailed' => 'Kunne ikke slette samling',
@@ -2073,7 +2010,6 @@ extension on TranslationsDa {
 			'externalPlayer.playerCommand' => 'Kommando',
 			'externalPlayer.playerPackage' => 'Pakkenavn',
 			'externalPlayer.playerUrlScheme' => 'URL-skema',
-			'externalPlayer.customPlayer' => 'Brugerdefineret afspiller',
 			'externalPlayer.off' => 'Fra',
 			'externalPlayer.launchFailed' => 'Kunne ikke åbne ekstern afspiller',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} er ikke installeret',

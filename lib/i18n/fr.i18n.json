@@ -30,7 +30,6 @@
     "shuffle": "Mélanger",
     "addTo": "Ajouter à...",
     "createNew": "Créer",
-    "remove": "Supprimer",
     "paste": "Coller",
     "connect": "Connecter",
     "disconnect": "Déconnecter",
@@ -44,7 +43,6 @@
     "settings": "Réglages",
     "mute": "Muet",
     "ok": "OK",
-    "loading": "Chargement...",
     "reconnect": "Reconnecter",
     "exitConfirmTitle": "Quitter l'application ?",
     "exitConfirmMessage": "Êtes-vous sûr de vouloir quitter ?",
@@ -248,11 +246,6 @@
       "skipMarker": "Passer l'intro/le générique"
     }
   },
-  "pinEntry": {
-    "enterPin": "Entrer le code PIN",
-    "showPin": "Afficher le code PIN",
-    "hidePin": "Masquer le code PIN"
-  },
   "fileInfo": {
     "title": "Informations sur le fichier",
     "video": "Vidéo",
@@ -325,7 +318,6 @@
     "unlockRotation": "Déverrouiller la rotation",
     "timerActive": "Minuterie active",
     "playbackWillPauseIn": "La lecture sera mise en pause dans ${duration}",
-    "sleepTimerCompleted": "Minuterie de mise en veille terminée - lecture en pause",
     "stillWatching": "Toujours en train de regarder ?",
     "pausingIn": "Pause dans ${seconds}s",
     "continueWatching": "Continuer",
@@ -342,16 +334,12 @@
     "muteButton": "Mute",
     "unmuteButton": "Dé-mute",
     "settingsButton": "Paramètres vidéo",
-    "audioTrackButton": "Pistes audio",
-    "subtitlesButton": "Sous-titres",
     "tracksButton": "Audio et sous-titres",
     "chaptersButton": "Chapitres",
     "versionsButton": "Versions vidéo",
     "pipButton": "Mode PiP (Picture-in-Picture)",
     "aspectRatioButton": "Format d'image",
     "ambientLighting": "Éclairage ambiant",
-    "ambientLightingOn": "Activer l'éclairage ambiant",
-    "ambientLightingOff": "Désactiver l'éclairage ambiant",
     "fullscreenButton": "Passer en mode plein écran",
     "exitFullscreenButton": "Quitter le mode plein écran",
     "alwaysOnTopButton": "Toujours au premier plan",
@@ -455,11 +443,8 @@
     "overview": "Aperçu",
     "cast": "Cast",
     "extras": "Bandes-annonces et Extras",
-    "seasons": "Saisons",
     "studio": "Studio",
     "rating": "Évaluation",
-    "episodeCount": "${count} épisodes",
-    "watchedProgress": "${watched}/${total} vu",
     "movie": "Film",
     "tvShow": "Show TV",
     "minutesLeft": "${minutes} min restantes"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "Effacer les logs",
     "copyLogs": "Copier les logs",
-    "uploadLogs": "Envoyer les logs",
-    "error": "Erreur:",
-    "stackTrace": "Liste des appels:"
+    "uploadLogs": "Envoyer les logs"
   },
   "licenses": {
     "relatedPackages": "Package associés",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "TV en direct",
-    "channels": "Chaînes",
     "guide": "Guide",
     "noChannels": "Aucune chaîne disponible",
     "noDvr": "Aucun DVR configuré sur les serveurs",
-    "tuneFailed": "Impossible de syntoniser la chaîne",
-    "loading": "Chargement des chaînes...",
-    "nowPlaying": "En cours de lecture",
     "noPrograms": "Aucune donnée de programme disponible",
-    "channelNumber": "Ch. ${number}",
     "live": "EN DIRECT",
-    "hd": "HD",
-    "premiere": "NOUVEAU",
     "reloadGuide": "Recharger le guide",
-    "allChannels": "Toutes les chaînes",
     "now": "Maintenant",
     "today": "Aujourd'hui",
     "midnight": "Minuit",
@@ -593,10 +568,7 @@
     "lateNight": "Nuit tardive",
     "whatsOn": "En ce moment",
     "watchChannel": "Regarder la chaîne",
-    "favorites": "Favoris",
-    "addToFavorites": "Ajouter aux favoris",
-    "removeFromFavorites": "Retirer des favoris",
-    "noFavorites": "Aucune chaîne favorite. Appuyez longuement sur une chaîne pour l'ajouter."
+    "favorites": "Favoris"
   },
   "collections": {
     "title": "Collections",
@@ -841,7 +813,6 @@
     "playerCommand": "Commande",
     "playerPackage": "Nom du paquet",
     "playerUrlScheme": "Schéma URL",
-    "customPlayer": "Lecteur personnalisé",
     "off": "Désactivé",
     "launchFailed": "Impossible d'ouvrir le lecteur externe",
     "appNotInstalled": "${name} n'est pas installé",

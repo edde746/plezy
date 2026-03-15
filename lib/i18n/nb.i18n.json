@@ -30,7 +30,6 @@
     "shuffle": "Tilfeldig",
     "addTo": "Legg til i...",
     "createNew": "Opprett ny",
-    "remove": "Fjern",
     "paste": "Lim inn",
     "connect": "Koble til",
     "disconnect": "Koble fra",
@@ -44,7 +43,6 @@
     "settings": "Innstillinger",
     "mute": "Demp",
     "ok": "OK",
-    "loading": "Laster...",
     "reconnect": "Koble til på nytt",
     "exitConfirmTitle": "Avslutte appen?",
     "exitConfirmMessage": "Er du sikker på at du vil avslutte?",
@@ -248,11 +246,6 @@
       "skipMarker": "Hopp over intro/rulletekst"
     }
   },
-  "pinEntry": {
-    "enterPin": "Skriv inn PIN",
-    "showPin": "Vis PIN",
-    "hidePin": "Skjul PIN"
-  },
   "fileInfo": {
     "title": "Filinformasjon",
     "video": "Video",
@@ -325,7 +318,6 @@
     "unlockRotation": "Lås opp rotasjon",
     "timerActive": "Timer aktiv",
     "playbackWillPauseIn": "Avspilling vil pause om ${duration}",
-    "sleepTimerCompleted": "Søvntimer fullført – avspilling satt på pause",
     "stillWatching": "Ser du fortsatt?",
     "pausingIn": "Pauser om ${seconds}s",
     "continueWatching": "Fortsett",
@@ -342,16 +334,12 @@
     "muteButton": "Demp",
     "unmuteButton": "Opphev demping",
     "settingsButton": "Videoinnstillinger",
-    "audioTrackButton": "Lydspor",
-    "subtitlesButton": "Undertekster",
     "tracksButton": "Lyd og undertekster",
     "chaptersButton": "Kapitler",
     "versionsButton": "Videoversjoner",
     "pipButton": "Bilde-i-bilde-modus",
     "aspectRatioButton": "Sideforhold",
     "ambientLighting": "Omgivelseslys",
-    "ambientLightingOn": "Aktiver omgivelseslys",
-    "ambientLightingOff": "Deaktiver omgivelseslys",
     "fullscreenButton": "Gå til fullskjerm",
     "exitFullscreenButton": "Avslutt fullskjerm",
     "alwaysOnTopButton": "Alltid øverst",
@@ -455,11 +443,8 @@
     "overview": "Oversikt",
     "cast": "Skuespillere",
     "extras": "Trailere og ekstra",
-    "seasons": "Sesonger",
     "studio": "Studio",
     "rating": "Vurdering",
-    "episodeCount": "${count} episoder",
-    "watchedProgress": "${watched}/${total} sett",
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min igjen"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "Tøm logger",
     "copyLogs": "Kopier logger",
-    "uploadLogs": "Last opp logger",
-    "error": "Feil:",
-    "stackTrace": "Stabelsporing:"
+    "uploadLogs": "Last opp logger"
   },
   "licenses": {
     "relatedPackages": "Relaterte pakker",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "Direkte-TV",
-    "channels": "Kanaler",
     "guide": "Programguide",
     "noChannels": "Ingen kanaler tilgjengelig",
     "noDvr": "Ingen DVR konfigurert på noen server",
-    "tuneFailed": "Kunne ikke stille inn kanal",
-    "loading": "Laster kanaler...",
-    "nowPlaying": "Spilles nå",
     "noPrograms": "Ingen programdata tilgjengelig",
-    "channelNumber": "Kanal ${number}",
     "live": "DIREKTE",
-    "hd": "HD",
-    "premiere": "NY",
     "reloadGuide": "Last inn programguide på nytt",
-    "allChannels": "Alle kanaler",
     "now": "Nå",
     "today": "I dag",
     "midnight": "Midnatt",
@@ -593,10 +568,7 @@
     "lateNight": "Sen kveld",
     "whatsOn": "Hva går nå",
     "watchChannel": "Se kanal",
-    "favorites": "Favoritter",
-    "addToFavorites": "Legg til i favoritter",
-    "removeFromFavorites": "Fjern fra favoritter",
-    "noFavorites": "Ingen favorittkanaler. Trykk lenge på en kanal for å legge den til."
+    "favorites": "Favoritter"
   },
   "collections": {
     "title": "Samlinger",
@@ -841,7 +813,6 @@
     "playerCommand": "Kommando",
     "playerPackage": "Pakkenavn",
     "playerUrlScheme": "URL-skjema",
-    "customPlayer": "Egendefinert spiller",
     "off": "Av",
     "launchFailed": "Kunne ikke åpne ekstern spiller",
     "appNotInstalled": "${name} er ikke installert",

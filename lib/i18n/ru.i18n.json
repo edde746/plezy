@@ -30,7 +30,6 @@
     "shuffle": "Перемешать",
     "addTo": "Добавить в...",
     "createNew": "Создать новый",
-    "remove": "Удалить",
     "paste": "Вставить",
     "connect": "Подключить",
     "disconnect": "Отключить",
@@ -44,7 +43,6 @@
     "settings": "Настройки",
     "mute": "Без звука",
     "ok": "OK",
-    "loading": "Загрузка...",
     "reconnect": "Переподключить",
     "exitConfirmTitle": "Выйти из приложения?",
     "exitConfirmMessage": "Вы уверены, что хотите выйти?",
@@ -248,11 +246,6 @@
       "skipMarker": "Пропустить вступление/титры"
     }
   },
-  "pinEntry": {
-    "enterPin": "Введите PIN",
-    "showPin": "Показать PIN",
-    "hidePin": "Скрыть PIN"
-  },
   "fileInfo": {
     "title": "Информация о файле",
     "video": "Видео",
@@ -325,7 +318,6 @@
     "unlockRotation": "Разблокировать поворот",
     "timerActive": "Таймер активен",
     "playbackWillPauseIn": "Воспроизведение будет приостановлено через ${duration}",
-    "sleepTimerCompleted": "Таймер сна завершён — воспроизведение приостановлено",
     "stillWatching": "Всё ещё смотрите?",
     "pausingIn": "Пауза через ${seconds}с",
     "continueWatching": "Продолжить",
@@ -342,16 +334,12 @@
     "muteButton": "Без звука",
     "unmuteButton": "Включить звук",
     "settingsButton": "Настройки видео",
-    "audioTrackButton": "Аудиодорожки",
-    "subtitlesButton": "Субтитры",
     "tracksButton": "Аудио и субтитры",
     "chaptersButton": "Главы",
     "versionsButton": "Версии видео",
     "pipButton": "Режим «картинка в картинке»",
     "aspectRatioButton": "Соотношение сторон",
     "ambientLighting": "Фоновая подсветка",
-    "ambientLightingOn": "Включить фоновую подсветку",
-    "ambientLightingOff": "Выключить фоновую подсветку",
     "fullscreenButton": "Полноэкранный режим",
     "exitFullscreenButton": "Выйти из полноэкранного режима",
     "alwaysOnTopButton": "Всегда поверх",
@@ -455,11 +443,8 @@
     "overview": "Обзор",
     "cast": "В ролях",
     "extras": "Трейлеры и доп. материалы",
-    "seasons": "Сезоны",
     "studio": "Студия",
     "rating": "Рейтинг",
-    "episodeCount": "${count} эпизодов",
-    "watchedProgress": "${watched}/${total} просмотрено",
     "movie": "Фильм",
     "tvShow": "Сериал",
     "minutesLeft": "Осталось ${minutes} мин"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "Очистить логи",
     "copyLogs": "Скопировать логи",
-    "uploadLogs": "Загрузить логи",
-    "error": "Ошибка:",
-    "stackTrace": "Стек вызовов:"
+    "uploadLogs": "Загрузить логи"
   },
   "licenses": {
     "relatedPackages": "Связанные пакеты",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "ТВ в прямом эфире",
-    "channels": "Каналы",
     "guide": "Программа",
     "noChannels": "Нет доступных каналов",
     "noDvr": "DVR не настроен ни на одном сервере",
-    "tuneFailed": "Не удалось настроить канал",
-    "loading": "Загрузка каналов...",
-    "nowPlaying": "Сейчас воспроизводится",
     "noPrograms": "Нет данных о программах",
-    "channelNumber": "Кн. ${number}",
     "live": "ЭФИР",
-    "hd": "HD",
-    "premiere": "НОВОЕ",
     "reloadGuide": "Перезагрузить программу",
-    "allChannels": "Все каналы",
     "now": "Сейчас",
     "today": "Сегодня",
     "midnight": "Полночь",
@@ -593,10 +568,7 @@
     "lateNight": "Поздний вечер",
     "whatsOn": "Что идёт",
     "watchChannel": "Смотреть канал",
-    "favorites": "Избранное",
-    "addToFavorites": "Добавить в избранное",
-    "removeFromFavorites": "Удалить из избранного",
-    "noFavorites": "Нет избранных каналов. Удерживайте канал, чтобы добавить его."
+    "favorites": "Избранное"
   },
   "collections": {
     "title": "Коллекции",
@@ -841,7 +813,6 @@
     "playerCommand": "Команда",
     "playerPackage": "Имя пакета",
     "playerUrlScheme": "URL-схема",
-    "customPlayer": "Свой плеер",
     "off": "Выкл.",
     "launchFailed": "Не удалось открыть внешний плеер",
     "appNotInstalled": "${name} не установлен",

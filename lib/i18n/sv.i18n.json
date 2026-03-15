@@ -30,7 +30,6 @@
     "shuffle": "Blanda",
     "addTo": "Lägg till i...",
     "createNew": "Skapa ny",
-    "remove": "Ta bort",
     "paste": "Klistra in",
     "connect": "Anslut",
     "disconnect": "Koppla från",
@@ -44,7 +43,6 @@
     "settings": "Mer",
     "mute": "Ljud av",
     "ok": "OK",
-    "loading": "Laddar...",
     "reconnect": "Återanslut",
     "exitConfirmTitle": "Avsluta appen?",
     "exitConfirmMessage": "Är du säker på att du vill avsluta?",
@@ -248,11 +246,6 @@
       "skipMarker": "Hoppa över intro/eftertexter"
     }
   },
-  "pinEntry": {
-    "enterPin": "Ange PIN",
-    "showPin": "Visa PIN",
-    "hidePin": "Dölj PIN"
-  },
   "fileInfo": {
     "title": "Filinformation",
     "video": "Video",
@@ -325,7 +318,6 @@
     "unlockRotation": "Lås upp rotation",
     "timerActive": "Timer aktiv",
     "playbackWillPauseIn": "Uppspelningen pausas om ${duration}",
-    "sleepTimerCompleted": "Sovtimer slutförd - uppspelning pausad",
     "stillWatching": "Tittar du fortfarande?",
     "pausingIn": "Pausar om ${seconds}s",
     "continueWatching": "Fortsätt",
@@ -342,16 +334,12 @@
     "muteButton": "Tysta",
     "unmuteButton": "Slå på ljud",
     "settingsButton": "Videoinställningar",
-    "audioTrackButton": "Ljudspår",
-    "subtitlesButton": "Undertexter",
     "tracksButton": "Ljud och undertexter",
     "chaptersButton": "Kapitel",
     "versionsButton": "Videoversioner",
     "pipButton": "Bild-i-bild läge",
     "aspectRatioButton": "Bildförhållande",
     "ambientLighting": "Ambientbelysning",
-    "ambientLightingOn": "Aktivera ambientbelysning",
-    "ambientLightingOff": "Inaktivera ambientbelysning",
     "fullscreenButton": "Aktivera helskärm",
     "exitFullscreenButton": "Avsluta helskärm",
     "alwaysOnTopButton": "Alltid överst",
@@ -455,11 +443,8 @@
     "overview": "Översikt",
     "cast": "Rollbesättning",
     "extras": "Trailers och Extra",
-    "seasons": "Säsonger",
     "studio": "Studio",
     "rating": "Åldersgräns",
-    "episodeCount": "${count} avsnitt",
-    "watchedProgress": "${watched}/${total} sedda",
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min kvar"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "Rensa loggar",
     "copyLogs": "Kopiera loggar",
-    "uploadLogs": "Ladda upp loggar",
-    "error": "Fel:",
-    "stackTrace": "Stack trace:"
+    "uploadLogs": "Ladda upp loggar"
   },
   "licenses": {
     "relatedPackages": "Relaterade paket",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "Live-TV",
-    "channels": "Kanaler",
     "guide": "Programguide",
     "noChannels": "Inga kanaler tillgängliga",
     "noDvr": "Ingen DVR konfigurerad på någon server",
-    "tuneFailed": "Kunde inte ställa in kanalen",
-    "loading": "Laddar kanaler...",
-    "nowPlaying": "Spelas nu",
     "noPrograms": "Ingen programdata tillgänglig",
-    "channelNumber": "Kanal ${number}",
     "live": "LIVE",
-    "hd": "HD",
-    "premiere": "NY",
     "reloadGuide": "Ladda om programguide",
-    "allChannels": "Alla kanaler",
     "now": "Nu",
     "today": "Idag",
     "midnight": "Midnatt",
@@ -593,10 +568,7 @@
     "lateNight": "Sen kväll",
     "whatsOn": "På TV nu",
     "watchChannel": "Titta på kanal",
-    "favorites": "Favoriter",
-    "addToFavorites": "Lägg till i favoriter",
-    "removeFromFavorites": "Ta bort från favoriter",
-    "noFavorites": "Inga favoritkanaler. Tryck länge på en kanal för att lägga till den."
+    "favorites": "Favoriter"
   },
   "downloads": {
     "title": "Nedladdningar",
@@ -841,7 +813,6 @@
     "playerCommand": "Kommando",
     "playerPackage": "Paketnamn",
     "playerUrlScheme": "URL-schema",
-    "customPlayer": "Anpassad spelare",
     "off": "Av",
     "launchFailed": "Kunde inte öppna extern spelare",
     "appNotInstalled": "${name} är inte installerad",

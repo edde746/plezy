@@ -45,7 +45,6 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSettingsZh settings = _TranslationsSettingsZh._(_root);
 	@override late final _TranslationsSearchZh search = _TranslationsSearchZh._(_root);
 	@override late final _TranslationsHotkeysZh hotkeys = _TranslationsHotkeysZh._(_root);
-	@override late final _TranslationsPinEntryZh pinEntry = _TranslationsPinEntryZh._(_root);
 	@override late final _TranslationsFileInfoZh fileInfo = _TranslationsFileInfoZh._(_root);
 	@override late final _TranslationsMediaMenuZh mediaMenu = _TranslationsMediaMenuZh._(_root);
 	@override late final _TranslationsAccessibilityZh accessibility = _TranslationsAccessibilityZh._(_root);
@@ -128,7 +127,6 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get shuffle => '随机播放';
 	@override String get addTo => '添加到...';
 	@override String get createNew => '新建';
-	@override String get remove => '删除';
 	@override String get paste => '粘贴';
 	@override String get connect => '连接';
 	@override String get disconnect => '断开连接';
@@ -142,7 +140,6 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get settings => '设置';
 	@override String get mute => '静音';
 	@override String get ok => '确定';
-	@override String get loading => '加载中...';
 	@override String get reconnect => '重新连接';
 	@override String get exitConfirmTitle => '退出应用？';
 	@override String get exitConfirmMessage => '确定要退出吗？';
@@ -362,18 +359,6 @@ class _TranslationsHotkeysZh implements TranslationsHotkeysEn {
 	@override late final _TranslationsHotkeysActionsZh actions = _TranslationsHotkeysActionsZh._(_root);
 }
 
-// Path: pinEntry
-class _TranslationsPinEntryZh implements TranslationsPinEntryEn {
-	_TranslationsPinEntryZh._(this._root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get enterPin => '输入 PIN';
-	@override String get showPin => '显示 PIN';
-	@override String get hidePin => '隐藏 PIN';
-}
-
 // Path: fileInfo
 class _TranslationsFileInfoZh implements TranslationsFileInfoEn {
 	_TranslationsFileInfoZh._(this._root);
@@ -480,7 +465,6 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get unlockRotation => '解锁旋转';
 	@override String get timerActive => '定时器已激活';
 	@override String playbackWillPauseIn({required Object duration}) => '播放将在 ${duration} 后暂停';
-	@override String get sleepTimerCompleted => '睡眠定时器已完成 - 播放已暂停';
 	@override String get stillWatching => '还在看吗？';
 	@override String pausingIn({required Object seconds}) => '${seconds}秒后暂停';
 	@override String get continueWatching => '继续';
@@ -497,16 +481,12 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get muteButton => '静音';
 	@override String get unmuteButton => '取消静音';
 	@override String get settingsButton => '视频设置';
-	@override String get audioTrackButton => '音轨';
-	@override String get subtitlesButton => '字幕';
 	@override String get tracksButton => '音频和字幕';
 	@override String get chaptersButton => '章节';
 	@override String get versionsButton => '视频版本';
 	@override String get pipButton => '画中画模式';
 	@override String get aspectRatioButton => '宽高比';
 	@override String get ambientLighting => '氛围灯光';
-	@override String get ambientLightingOn => '开启氛围灯光';
-	@override String get ambientLightingOff => '关闭氛围灯光';
 	@override String get fullscreenButton => '进入全屏';
 	@override String get exitFullscreenButton => '退出全屏';
 	@override String get alwaysOnTopButton => '置顶窗口';
@@ -644,11 +624,8 @@ class _TranslationsDiscoverZh implements TranslationsDiscoverEn {
 	@override String get overview => '概述';
 	@override String get cast => '演员表';
 	@override String get extras => '预告片与花絮';
-	@override String get seasons => '季数';
 	@override String get studio => '制作公司';
 	@override String get rating => '年龄分级';
-	@override String episodeCount({required Object count}) => '${count} 集';
-	@override String watchedProgress({required Object watched, required Object total}) => '已观看 ${watched}/${total} 集';
 	@override String get movie => '电影';
 	@override String get tvShow => '电视剧';
 	@override String minutesLeft({required Object minutes}) => '剩余 ${minutes} 分钟';
@@ -771,8 +748,6 @@ class _TranslationsLogsZh implements TranslationsLogsEn {
 	@override String get clearLogs => '清除日志';
 	@override String get copyLogs => '复制日志';
 	@override String get uploadLogs => '上传日志';
-	@override String get error => '错误:';
-	@override String get stackTrace => '堆栈跟踪 (Stack Trace):';
 }
 
 // Path: licenses
@@ -808,20 +783,12 @@ class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
 
 	// Translations
 	@override String get title => '电视直播';
-	@override String get channels => '频道';
 	@override String get guide => '节目指南';
 	@override String get noChannels => '没有可用的频道';
 	@override String get noDvr => '没有服务器配置了DVR';
-	@override String get tuneFailed => '无法调谐频道';
-	@override String get loading => '正在加载频道...';
-	@override String get nowPlaying => '正在播放';
 	@override String get noPrograms => '没有可用的节目数据';
-	@override String channelNumber({required Object number}) => '频道 ${number}';
 	@override String get live => '直播';
-	@override String get hd => '高清';
-	@override String get premiere => '新';
 	@override String get reloadGuide => '重新加载节目指南';
-	@override String get allChannels => '所有频道';
 	@override String get now => '现在';
 	@override String get today => '今天';
 	@override String get midnight => '午夜';
@@ -833,9 +800,6 @@ class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
 	@override String get whatsOn => '正在播出';
 	@override String get watchChannel => '观看频道';
 	@override String get favorites => '收藏';
-	@override String get addToFavorites => '添加到收藏';
-	@override String get removeFromFavorites => '从收藏中移除';
-	@override String get noFavorites => '没有收藏频道。长按频道即可添加。';
 }
 
 // Path: downloads
@@ -1064,7 +1028,6 @@ class _TranslationsExternalPlayerZh implements TranslationsExternalPlayerEn {
 	@override String get playerCommand => '命令';
 	@override String get playerPackage => '包名';
 	@override String get playerUrlScheme => 'URL 方案';
-	@override String get customPlayer => '自定义播放器';
 	@override String get off => '关闭';
 	@override String get launchFailed => '无法打开外部播放器';
 	@override String appNotInstalled({required Object name}) => '${name} 未安装';
@@ -1342,7 +1305,6 @@ extension on TranslationsZh {
 			'common.shuffle' => '随机播放',
 			'common.addTo' => '添加到...',
 			'common.createNew' => '新建',
-			'common.remove' => '删除',
 			'common.paste' => '粘贴',
 			'common.connect' => '连接',
 			'common.disconnect' => '断开连接',
@@ -1356,7 +1318,6 @@ extension on TranslationsZh {
 			'common.settings' => '设置',
 			'common.mute' => '静音',
 			'common.ok' => '确定',
-			'common.loading' => '加载中...',
 			'common.reconnect' => '重新连接',
 			'common.exitConfirmTitle' => '退出应用？',
 			'common.exitConfirmMessage' => '确定要退出吗？',
@@ -1547,9 +1508,6 @@ extension on TranslationsZh {
 			'hotkeys.actions.subSeekPrev' => '跳转到上一字幕',
 			'hotkeys.actions.shaderToggle' => '切换着色器',
 			'hotkeys.actions.skipMarker' => '跳过片头/片尾',
-			'pinEntry.enterPin' => '输入 PIN',
-			'pinEntry.showPin' => '显示 PIN',
-			'pinEntry.hidePin' => '隐藏 PIN',
 			'fileInfo.title' => '文件信息',
 			'fileInfo.video' => '视频',
 			'fileInfo.audio' => '音频',
@@ -1613,7 +1571,6 @@ extension on TranslationsZh {
 			'videoControls.unlockRotation' => '解锁旋转',
 			'videoControls.timerActive' => '定时器已激活',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '播放将在 ${duration} 后暂停',
-			'videoControls.sleepTimerCompleted' => '睡眠定时器已完成 - 播放已暂停',
 			'videoControls.stillWatching' => '还在看吗？',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}秒后暂停',
 			'videoControls.continueWatching' => '继续',
@@ -1630,16 +1587,12 @@ extension on TranslationsZh {
 			'videoControls.muteButton' => '静音',
 			'videoControls.unmuteButton' => '取消静音',
 			'videoControls.settingsButton' => '视频设置',
-			'videoControls.audioTrackButton' => '音轨',
-			'videoControls.subtitlesButton' => '字幕',
 			'videoControls.tracksButton' => '音频和字幕',
 			'videoControls.chaptersButton' => '章节',
 			'videoControls.versionsButton' => '视频版本',
 			'videoControls.pipButton' => '画中画模式',
 			'videoControls.aspectRatioButton' => '宽高比',
 			'videoControls.ambientLighting' => '氛围灯光',
-			'videoControls.ambientLightingOn' => '开启氛围灯光',
-			'videoControls.ambientLightingOff' => '关闭氛围灯光',
 			'videoControls.fullscreenButton' => '进入全屏',
 			'videoControls.exitFullscreenButton' => '退出全屏',
 			'videoControls.alwaysOnTopButton' => '置顶窗口',
@@ -1729,11 +1682,8 @@ extension on TranslationsZh {
 			'discover.overview' => '概述',
 			'discover.cast' => '演员表',
 			'discover.extras' => '预告片与花絮',
-			'discover.seasons' => '季数',
 			'discover.studio' => '制作公司',
 			'discover.rating' => '年龄分级',
-			'discover.episodeCount' => ({required Object count}) => '${count} 集',
-			'discover.watchedProgress' => ({required Object watched, required Object total}) => '已观看 ${watched}/${total} 集',
 			'discover.movie' => '电影',
 			'discover.tvShow' => '电视剧',
 			'discover.minutesLeft' => ({required Object minutes}) => '剩余 ${minutes} 分钟',
@@ -1811,8 +1761,6 @@ extension on TranslationsZh {
 			'logs.clearLogs' => '清除日志',
 			'logs.copyLogs' => '复制日志',
 			'logs.uploadLogs' => '上传日志',
-			'logs.error' => '错误:',
-			'logs.stackTrace' => '堆栈跟踪 (Stack Trace):',
 			'licenses.relatedPackages' => '相关软件包',
 			'licenses.license' => '许可证',
 			'licenses.licenseNumber' => ({required Object number}) => '许可证 ${number}',
@@ -1821,22 +1769,12 @@ extension on TranslationsZh {
 			'navigation.downloads' => '下载',
 			'navigation.liveTv' => '电视直播',
 			'liveTv.title' => '电视直播',
-			'liveTv.channels' => '频道',
 			'liveTv.guide' => '节目指南',
 			'liveTv.noChannels' => '没有可用的频道',
 			'liveTv.noDvr' => '没有服务器配置了DVR',
-			'liveTv.tuneFailed' => '无法调谐频道',
-			'liveTv.loading' => '正在加载频道...',
-			'liveTv.nowPlaying' => '正在播放',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => '没有可用的节目数据',
-			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			'liveTv.live' => '直播',
-			'liveTv.hd' => '高清',
-			'liveTv.premiere' => '新',
 			'liveTv.reloadGuide' => '重新加载节目指南',
-			'liveTv.allChannels' => '所有频道',
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
@@ -1848,14 +1786,13 @@ extension on TranslationsZh {
 			'liveTv.whatsOn' => '正在播出',
 			'liveTv.watchChannel' => '观看频道',
 			'liveTv.favorites' => '收藏',
-			'liveTv.addToFavorites' => '添加到收藏',
-			'liveTv.removeFromFavorites' => '从收藏中移除',
-			'liveTv.noFavorites' => '没有收藏频道。长按频道即可添加。',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
 			'downloads.movies' => '电影',
 			'downloads.noDownloads' => '暂无下载',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',
 			'downloads.downloadNow' => '下载',
 			'downloads.deleteDownload' => '删除下载',
@@ -2073,7 +2010,6 @@ extension on TranslationsZh {
 			'externalPlayer.playerCommand' => '命令',
 			'externalPlayer.playerPackage' => '包名',
 			'externalPlayer.playerUrlScheme' => 'URL 方案',
-			'externalPlayer.customPlayer' => '自定义播放器',
 			'externalPlayer.off' => '关闭',
 			'externalPlayer.launchFailed' => '无法打开外部播放器',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',

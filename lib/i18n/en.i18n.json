@@ -30,7 +30,6 @@
     "shuffle": "Shuffle",
     "addTo": "Add to...",
     "createNew": "Create new",
-    "remove": "Remove",
     "paste": "Paste",
     "connect": "Connect",
     "disconnect": "Disconnect",
@@ -44,7 +43,6 @@
     "settings": "Settings",
     "mute": "Mute",
     "ok": "OK",
-    "loading": "Loading...",
     "reconnect": "Reconnect",
     "exitConfirmTitle": "Exit app?",
     "exitConfirmMessage": "Are you sure you want to exit?",
@@ -248,11 +246,6 @@
       "skipMarker": "Skip Intro/Credits"
     }
   },
-  "pinEntry": {
-    "enterPin": "Enter PIN",
-    "showPin": "Show PIN",
-    "hidePin": "Hide PIN"
-  },
   "fileInfo": {
     "title": "File Info",
     "video": "Video",
@@ -325,7 +318,6 @@
     "unlockRotation": "Unlock rotation",
     "timerActive": "Timer Active",
     "playbackWillPauseIn": "Playback will pause in ${duration}",
-    "sleepTimerCompleted": "Sleep timer completed - playback paused",
     "stillWatching": "Still watching?",
     "pausingIn": "Pausing in ${seconds}s",
     "continueWatching": "Continue",
@@ -342,16 +334,12 @@
     "muteButton": "Mute",
     "unmuteButton": "Unmute",
     "settingsButton": "Video settings",
-    "audioTrackButton": "Audio tracks",
-    "subtitlesButton": "Subtitles",
     "tracksButton": "Audio & Subtitles",
     "chaptersButton": "Chapters",
     "versionsButton": "Video versions",
     "pipButton": "Picture-in-Picture mode",
     "aspectRatioButton": "Aspect ratio",
     "ambientLighting": "Ambient lighting",
-    "ambientLightingOn": "Enable ambient lighting",
-    "ambientLightingOff": "Disable ambient lighting",
     "fullscreenButton": "Enter fullscreen",
     "exitFullscreenButton": "Exit fullscreen",
     "alwaysOnTopButton": "Always on top",
@@ -455,11 +443,8 @@
     "overview": "Overview",
     "cast": "Cast",
     "extras": "Trailers & Extras",
-    "seasons": "Seasons",
     "studio": "Studio",
     "rating": "Rating",
-    "episodeCount": "${count} episodes",
-    "watchedProgress": "${watched}/${total} watched",
     "movie": "Movie",
     "tvShow": "TV Show",
     "minutesLeft": "${minutes} min left"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "Clear Logs",
     "copyLogs": "Copy Logs",
-    "uploadLogs": "Upload Logs",
-    "error": "Error:",
-    "stackTrace": "Stack Trace:"
+    "uploadLogs": "Upload Logs"
   },
   "licenses": {
     "relatedPackages": "Related Packages",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "Live TV",
-    "channels": "Channels",
     "guide": "Guide",
     "noChannels": "No channels available",
     "noDvr": "No DVR configured on any server",
-    "tuneFailed": "Failed to tune channel",
-    "loading": "Loading channels...",
-    "nowPlaying": "Now Playing",
     "noPrograms": "No program data available",
-    "channelNumber": "Ch. ${number}",
     "live": "LIVE",
-    "hd": "HD",
-    "premiere": "NEW",
     "reloadGuide": "Reload Guide",
-    "allChannels": "All Channels",
     "now": "Now",
     "today": "Today",
     "midnight": "Midnight",
@@ -593,10 +568,7 @@
     "lateNight": "Late Night",
     "whatsOn": "What's On",
     "watchChannel": "Watch Channel",
-    "favorites": "Favorites",
-    "addToFavorites": "Add to Favorites",
-    "removeFromFavorites": "Remove from Favorites",
-    "noFavorites": "No favorite channels. Long-press a channel to add it."
+    "favorites": "Favorites"
   },
   "collections": {
     "title": "Collections",
@@ -841,7 +813,6 @@
     "playerCommand": "Command",
     "playerPackage": "Package Name",
     "playerUrlScheme": "URL Scheme",
-    "customPlayer": "Custom Player",
     "off": "Off",
     "launchFailed": "Failed to open external player",
     "appNotInstalled": "${name} is not installed",

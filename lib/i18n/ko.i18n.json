@@ -30,7 +30,6 @@
     "shuffle": "무작위 재생",
     "addTo": "추가하기...",
     "createNew": "새로 만들기",
-    "remove": "삭제",
     "paste": "붙여넣기",
     "connect": "연결",
     "disconnect": "연결 해제",
@@ -44,7 +43,6 @@
     "settings": "설정",
     "mute": "음소거",
     "ok": "확인",
-    "loading": "로딩 중...",
     "reconnect": "다시 연결",
     "exitConfirmTitle": "앱을 종료하시겠습니까?",
     "exitConfirmMessage": "정말 종료하시겠습니까?",
@@ -248,11 +246,6 @@
       "skipMarker": "인트로/크레딧 건너뛰기"
     }
   },
-  "pinEntry": {
-    "enterPin": "PIN 입력",
-    "showPin": "PIN 표시",
-    "hidePin": "PIN 숨기기"
-  },
   "fileInfo": {
     "title": "파일 정보",
     "video": "비디오",
@@ -325,7 +318,6 @@
     "unlockRotation": "회전 잠금 해제",
     "timerActive": "타이머 활성화됨",
     "playbackWillPauseIn": "재생이 ${duration} 후에 일시 중지 됩니다",
-    "sleepTimerCompleted": "수면 타이머 완료됨 - 재생이 일시 중지되었습니다",
     "stillWatching": "아직 시청 중이신가요?",
     "pausingIn": "${seconds}초 후 일시 정지",
     "continueWatching": "계속",
@@ -342,16 +334,12 @@
     "muteButton": "음소거",
     "unmuteButton": "음소거 해제",
     "settingsButton": "동영상 설정",
-    "audioTrackButton": "음원 트랙",
-    "subtitlesButton": "자막",
     "tracksButton": "오디오 및 자막",
     "chaptersButton": "챕터",
     "versionsButton": "동영상 버전",
     "pipButton": "픽처 인 픽처 모드",
     "aspectRatioButton": "화면비율",
     "ambientLighting": "주변 조명",
-    "ambientLightingOn": "주변 조명 켜기",
-    "ambientLightingOff": "주변 조명 끄기",
     "fullscreenButton": "전체화면",
     "exitFullscreenButton": "전체화면 종료",
     "alwaysOnTopButton": "창 최상위 고정",
@@ -455,11 +443,8 @@
     "overview": "개요",
     "cast": "출연진",
     "extras": "예고편 및 부가영상",
-    "seasons": "시즌 수",
     "studio": "제작사",
     "rating": "연령 등급",
-    "episodeCount": "${count} 편",
-    "watchedProgress": "${watched}/${total} 편 시청 완료",
     "movie": "영화",
     "tvShow": "TV 시리즈",
     "minutesLeft": "${minutes}분 남음"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "로그 지우기",
     "copyLogs": "로그 복사",
-    "uploadLogs": "로그 업로드",
-    "error": "오류:",
-    "stackTrace": "스택 추적 (Stack Trace):"
+    "uploadLogs": "로그 업로드"
   },
   "licenses": {
     "relatedPackages": "관련 소프트웨어 패키지",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "실시간 TV",
-    "channels": "채널",
     "guide": "편성표",
     "noChannels": "사용 가능한 채널이 없습니다",
     "noDvr": "서버에 DVR이 구성되어 있지 않습니다",
-    "tuneFailed": "채널 튜닝에 실패했습니다",
-    "loading": "채널 로딩 중...",
-    "nowPlaying": "현재 재생 중",
     "noPrograms": "프로그램 데이터가 없습니다",
-    "channelNumber": "채널 ${number}",
     "live": "실시간",
-    "hd": "HD",
-    "premiere": "신규",
     "reloadGuide": "편성표 새로고침",
-    "allChannels": "전체 채널",
     "now": "지금",
     "today": "오늘",
     "midnight": "자정",
@@ -593,10 +568,7 @@
     "lateNight": "심야 방송",
     "whatsOn": "지금 방송 중",
     "watchChannel": "채널 시청",
-    "favorites": "즐겨찾기",
-    "addToFavorites": "즐겨찾기에 추가",
-    "removeFromFavorites": "즐겨찾기에서 제거",
-    "noFavorites": "즐겨찾기 채널이 없습니다. 채널을 길게 눌러 추가하세요."
+    "favorites": "즐겨찾기"
   },
   "collections": {
     "title": "컬렉션",
@@ -841,7 +813,6 @@
     "playerCommand": "명령어",
     "playerPackage": "패키지 이름",
     "playerUrlScheme": "URL 스킴",
-    "customPlayer": "사용자 정의 플레이어",
     "off": "꺼짐",
     "launchFailed": "외부 플레이어를 열 수 없습니다",
     "appNotInstalled": "${name}이(가) 설치되어 있지 않습니다",

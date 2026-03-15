@@ -30,7 +30,6 @@
     "shuffle": "随机播放",
     "addTo": "添加到...",
     "createNew": "新建",
-    "remove": "删除",
     "paste": "粘贴",
     "connect": "连接",
     "disconnect": "断开连接",
@@ -44,7 +43,6 @@
     "settings": "设置",
     "mute": "静音",
     "ok": "确定",
-    "loading": "加载中...",
     "reconnect": "重新连接",
     "exitConfirmTitle": "退出应用？",
     "exitConfirmMessage": "确定要退出吗？",
@@ -248,11 +246,6 @@
       "skipMarker": "跳过片头/片尾"
     }
   },
-  "pinEntry": {
-    "enterPin": "输入 PIN",
-    "showPin": "显示 PIN",
-    "hidePin": "隐藏 PIN"
-  },
   "fileInfo": {
     "title": "文件信息",
     "video": "视频",
@@ -325,7 +318,6 @@
     "unlockRotation": "解锁旋转",
     "timerActive": "定时器已激活",
     "playbackWillPauseIn": "播放将在 ${duration} 后暂停",
-    "sleepTimerCompleted": "睡眠定时器已完成 - 播放已暂停",
     "stillWatching": "还在看吗？",
     "pausingIn": "${seconds}秒后暂停",
     "continueWatching": "继续",
@@ -342,16 +334,12 @@
     "muteButton": "静音",
     "unmuteButton": "取消静音",
     "settingsButton": "视频设置",
-    "audioTrackButton": "音轨",
-    "subtitlesButton": "字幕",
     "tracksButton": "音频和字幕",
     "chaptersButton": "章节",
     "versionsButton": "视频版本",
     "pipButton": "画中画模式",
     "aspectRatioButton": "宽高比",
     "ambientLighting": "氛围灯光",
-    "ambientLightingOn": "开启氛围灯光",
-    "ambientLightingOff": "关闭氛围灯光",
     "fullscreenButton": "进入全屏",
     "exitFullscreenButton": "退出全屏",
     "alwaysOnTopButton": "置顶窗口",
@@ -455,11 +443,8 @@
     "overview": "概述",
     "cast": "演员表",
     "extras": "预告片与花絮",
-    "seasons": "季数",
     "studio": "制作公司",
     "rating": "年龄分级",
-    "episodeCount": "${count} 集",
-    "watchedProgress": "已观看 ${watched}/${total} 集",
     "movie": "电影",
     "tvShow": "电视剧",
     "minutesLeft": "剩余 ${minutes} 分钟"
@@ -552,9 +537,7 @@
   "logs": {
     "clearLogs": "清除日志",
     "copyLogs": "复制日志",
-    "uploadLogs": "上传日志",
-    "error": "错误:",
-    "stackTrace": "堆栈跟踪 (Stack Trace):"
+    "uploadLogs": "上传日志"
   },
   "licenses": {
     "relatedPackages": "相关软件包",
@@ -569,20 +552,12 @@
   },
   "liveTv": {
     "title": "电视直播",
-    "channels": "频道",
     "guide": "节目指南",
     "noChannels": "没有可用的频道",
     "noDvr": "没有服务器配置了DVR",
-    "tuneFailed": "无法调谐频道",
-    "loading": "正在加载频道...",
-    "nowPlaying": "正在播放",
     "noPrograms": "没有可用的节目数据",
-    "channelNumber": "频道 ${number}",
     "live": "直播",
-    "hd": "高清",
-    "premiere": "新",
     "reloadGuide": "重新加载节目指南",
-    "allChannels": "所有频道",
     "now": "现在",
     "today": "今天",
     "midnight": "午夜",
@@ -593,10 +568,7 @@
     "lateNight": "深夜",
     "whatsOn": "正在播出",
     "watchChannel": "观看频道",
-    "favorites": "收藏",
-    "addToFavorites": "添加到收藏",
-    "removeFromFavorites": "从收藏中移除",
-    "noFavorites": "没有收藏频道。长按频道即可添加。"
+    "favorites": "收藏"
   },
   "downloads": {
     "title": "下载",
@@ -841,7 +813,6 @@
     "playerCommand": "命令",
     "playerPackage": "包名",
     "playerUrlScheme": "URL 方案",
-    "customPlayer": "自定义播放器",
     "off": "关闭",
     "launchFailed": "无法打开外部播放器",
     "appNotInstalled": "${name} 未安装",
