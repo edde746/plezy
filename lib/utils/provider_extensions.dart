@@ -13,11 +13,7 @@ import 'app_logger.dart';
 extension ProviderExtensions on BuildContext {
   UserProfileProvider get userProfile => Provider.of<UserProfileProvider>(this, listen: false);
 
-  UserProfileProvider watchUserProfile() => Provider.of<UserProfileProvider>(this, listen: true);
-
   HiddenLibrariesProvider get hiddenLibraries => Provider.of<HiddenLibrariesProvider>(this, listen: false);
-
-  HiddenLibrariesProvider watchHiddenLibraries() => Provider.of<HiddenLibrariesProvider>(this, listen: true);
 
   // Direct profile settings access (nullable)
   PlexUserProfile? get profileSettings => userProfile.profileSettings;

@@ -44,11 +44,6 @@ class ContentTypeHelper {
     }
   }
 
-  /// Filters out music content from a list of items
-  static List<T> filterOutMusic<T>(List<T> items, String Function(T) getType) {
-    return items.where((item) => !isMusicContent(getType(item))).toList();
-  }
-
   /// Returns the appropriate icon for a given library type
   static IconData getLibraryIcon(String type) {
     switch (type.toLowerCase()) {
