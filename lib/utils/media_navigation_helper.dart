@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../screens/collection_detail_screen.dart';
+import '../screens/main_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
+import '../utils/global_key_utils.dart';
 import 'video_player_navigation.dart';
 
 /// Result of media navigation indicating what action was taken
@@ -16,6 +18,9 @@ enum MediaNavigationResult {
 
   /// Item type not supported (e.g., music content)
   unsupported,
+
+  /// Item is a library section — navigated to that library
+  librarySelected,
 }
 
 /// Navigates to the appropriate screen based on the item type.
@@ -54,6 +59,17 @@ Future<MediaNavigationResult> navigateToMediaItem(
   }
 
   final metadata = item as PlexMetadata;
+
+  // Handle library section items (shared whole-library entries)
+  if (metadata.isLibrarySection) {
+    final sectionKey = metadata.librarySectionKey;
+    if (sectionKey != null && metadata.serverId != null) {
+      final libraryGlobalKey = buildGlobalKey(metadata.serverId!, sectionKey);
+      MainScreenFocusScope.of(context)?.selectLibrary?.call(libraryGlobalKey);
+      return MediaNavigationResult.librarySelected;
+    }
+    return MediaNavigationResult.unsupported;
+  }
 
   switch (metadata.mediaType) {
     case PlexMediaType.collection:

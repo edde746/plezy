@@ -12,7 +12,7 @@ import '../screens/main_screen.dart';
 /// - Tab bar back navigation to sidebar
 ///
 /// Subclasses must provide [tabChipFocusNodes] — one [FocusNode] per tab.
-mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, SingleTickerProviderStateMixin<T> {
+mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderStateMixin<T> {
   late TabController tabController;
 
   /// When true, suppress auto-focus in tabs (used when navigating via tab bar).

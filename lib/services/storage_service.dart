@@ -191,13 +191,20 @@ class StorageService extends BaseSharedPreferencesService {
     return _getScopedString('$_prefixLibraryGrouping$sectionId');
   }
 
-  // Library Tab (per-library, saves last selected tab index)
-  Future<void> saveLibraryTab(String sectionId, int tabIndex) async {
-    await prefs.setInt('$_userPrefix$_prefixLibraryTab$sectionId', tabIndex);
+  // Library Tab (per-library, saves last selected tab name)
+  Future<void> saveLibraryTab(String sectionId, String tabName) async {
+    await prefs.setString('$_userPrefix$_prefixLibraryTab$sectionId', tabName);
   }
 
-  int? getLibraryTab(String sectionId) {
-    return _getScopedInt('$_prefixLibraryTab$sectionId');
+  String? getLibraryTab(String sectionId) {
+    final key = '$_userPrefix$_prefixLibraryTab$sectionId';
+    // Handle migration from old int storage: try string first, fall back to removing stale int
+    try {
+      return prefs.getString(key);
+    } catch (_) {
+      prefs.remove(key);
+      return null;
+    }
   }
 
   // Hidden Libraries (stored as JSON array of library section IDs)

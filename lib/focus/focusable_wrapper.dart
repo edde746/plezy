@@ -240,13 +240,15 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       final renderObject = context.findRenderObject();
       if (renderObject == null) return;
 
-      // Find the nearest scrollable that actually has scroll range.
+      // Find the nearest vertical scrollable that actually has scroll range.
       // Skip inner scrollables with no extent (e.g. shrinkWrap ListView
-      // with NeverScrollableScrollPhysics inside an outer scroll view).
+      // with NeverScrollableScrollPhysics inside an outer scroll view)
+      // and horizontal scrollables (e.g. TabBarView) since we only do
+      // vertical scroll calculations.
       var scrollable = Scrollable.maybeOf(context);
       while (scrollable != null) {
         final pos = scrollable.position;
-        if (pos.maxScrollExtent > pos.minScrollExtent) break;
+        if (pos.axis == Axis.vertical && pos.maxScrollExtent > pos.minScrollExtent) break;
         scrollable = Scrollable.maybeOf(scrollable.context);
       }
       if (scrollable == null) return;

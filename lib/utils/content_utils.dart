@@ -60,6 +60,8 @@ class ContentTypeHelper {
         return Symbols.music_note_rounded;
       case 'photo':
         return Symbols.photo_rounded;
+      case 'mixed':
+        return Symbols.share_rounded;
       default:
         return Symbols.folder_rounded;
     }

@@ -272,20 +272,35 @@ class PlexClient {
             if (directories == null) continue;
 
             for (final dir in directories) {
-              if (dir is! Map<String, dynamic>) continue;
+              try {
+                if (dir is! Map<String, dynamic>) continue;
 
-              // Skip entries without id (Home hub) and playlists
-              final id = dir['id'] as String?;
-              if (id == null) continue;
-              if (dir['type'] == 'playlist') continue;
+                // Skip entries without id (Home hub) and playlists
+                final id = dir['id']?.toString();
+                if (id == null) continue;
+                if (dir['type'] == 'playlist') continue;
 
-              // Set key = id so downstream code gets a plain section ID (e.g. "1")
-              final json = Map<String, dynamic>.from(dir);
-              json['key'] = id;
+                final isNumericId = int.tryParse(id) != null;
+                final isSharedLibrary = !isNumericId &&
+                    dir['key']?.toString().startsWith('/library/shared') == true;
 
-              libraries.add(
-                PlexLibrary.fromJson(json).copyWith(serverId: serverId, serverName: serverName),
-              );
+                // Skip non-numeric IDs unless it's a shared library
+                if (!isNumericId && !isSharedLibrary) continue;
+
+                // Set key = id so downstream code gets a plain section ID (e.g. "1" or "shared")
+                final json = Map<String, dynamic>.from(dir);
+                json['key'] = id;
+
+                libraries.add(
+                  PlexLibrary.fromJson(json).copyWith(
+                    serverId: serverId,
+                    serverName: serverName,
+                    isShared: isSharedLibrary,
+                  ),
+                );
+              } catch (e) {
+                appLogger.w('Failed to parse media provider directory entry', error: e);
+              }
             }
           }
         }
@@ -553,8 +568,12 @@ class PlexClient {
       queryParams.addAll(filters);
     }
 
+    final endpoint = sectionId == 'shared'
+        ? '/library/shared/all'
+        : '/library/sections/$sectionId/all';
+
     final response = await _dio.get(
-      '/library/sections/$sectionId/all',
+      endpoint,
       queryParameters: queryParams,
       cancelToken: cancelToken,
     );
@@ -912,52 +931,41 @@ class PlexClient {
     return true;
   }
 
-  /// Search across all libraries using the hub search endpoint
-  /// Only returns movies and shows, filtering out seasons and episodes
-  Future<List<PlexMetadata>> search(String query, {int limit = 10}) async {
+  /// Search across all libraries including individually shared items.
+  /// Uses /library/search (same endpoint as Plex Web) which finds shared content.
+  /// Only returns movies and shows, filtering out other types.
+  Future<List<PlexMetadata>> search(String query, {int limit = 30}) async {
     final response = await _dio.get(
-      '/hubs/search',
-      queryParameters: {'query': query, 'limit': limit, 'includeCollections': 1},
+      '/library/search',
+      queryParameters: {
+        'query': query,
+        'limit': limit,
+        'searchTypes': 'movies,tv',
+        'includeCollections': 1,
+        'includeExternalMedia': 1,
+      },
     );
 
     final results = <PlexMetadata>[];
 
     final container = _getMediaContainer(response);
-    if (container != null) {
-      if (container['Hub'] != null) {
-        // Each hub contains results of a specific type (movies, shows, etc.)
-        for (final hub in container['Hub'] as List) {
-          final hubType = hub['type'] as String?;
+    if (container == null) return results;
 
-          // Only include movie and show hubs
-          if (hubType != 'movie' && hubType != 'show') {
-            continue;
-          }
+    final searchResults = container['SearchResult'] as List?;
+    if (searchResults == null) return results;
 
-          // Hubs can contain either Metadata (for movies) or Directory (for shows)
-          if (hub['Metadata'] != null) {
-            for (final json in hub['Metadata'] as List) {
-              try {
-                results.add(_createTaggedMetadata(json));
-              } catch (e) {
-                // Skip items that fail to parse
-                appLogger.w('Failed to parse search result', error: e);
-                appLogger.d('Problematic JSON: $json');
-              }
-            }
-          }
-          if (hub['Directory'] != null) {
-            for (final json in hub['Directory'] as List) {
-              try {
-                results.add(_createTaggedMetadata(json));
-              } catch (e) {
-                // Skip items that fail to parse
-                appLogger.w('Failed to parse search result', error: e);
-                appLogger.d('Problematic JSON: $json');
-              }
-            }
-          }
-        }
+    for (final result in searchResults) {
+      try {
+        if (result is! Map) continue;
+        final metadata = result['Metadata'];
+        if (metadata is! Map<String, dynamic>) continue;
+
+        final type = metadata['type'] as String?;
+        if (type != 'movie' && type != 'show') continue;
+
+        results.add(_createTaggedMetadata(metadata));
+      } catch (e) {
+        appLogger.w('Failed to parse search result', error: e);
       }
     }
 
@@ -981,7 +989,7 @@ class PlexClient {
     final response = await _dio.get('/library/onDeck');
     final sid = serverId;
     final sname = serverName;
-    return Isolate.run(() => _processOnDeckResponse(response.data as Map<String, dynamic>, sid, sname));
+    return await Isolate.run(() => _processOnDeckResponse(response.data as Map<String, dynamic>, sid, sname));
   }
 
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)
@@ -1369,6 +1377,7 @@ class PlexClient {
 
   /// Get available filters for a library section
   Future<List<PlexFilter>> getLibraryFilters(String sectionId) async {
+    if (sectionId == 'shared') return [];
     final response = await _dio.get('/library/sections/$sectionId/filters');
     return _extractDirectoryList(response, PlexFilter.fromJson);
   }
@@ -1398,6 +1407,12 @@ class PlexClient {
   /// If [libraryType] is provided (e.g., 'movie', 'show'), it's used for fallback
   /// sorts without needing to re-fetch the library sections list.
   Future<List<PlexSort>> getLibrarySorts(String sectionId, {String? libraryType}) async {
+    if (sectionId == 'shared') {
+      return [
+        PlexSort(key: 'titleSort', descKey: 'titleSort:desc', title: 'Title', defaultDirection: 'asc'),
+        PlexSort(key: 'taggingCreatedAt', descKey: 'taggingCreatedAt:desc', title: 'Date Shared', defaultDirection: 'desc'),
+      ];
+    }
     try {
       // Use the dedicated sorts endpoint
       final response = await _dio.get('/library/sections/$sectionId/sorts');
@@ -1462,7 +1477,7 @@ class PlexClient {
       );
       final sid = serverId;
       final sname = serverName;
-      return Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
+      return await Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get library hubs: $e');
     }
@@ -1477,7 +1492,7 @@ class PlexClient {
       final response = await _dio.get('/hubs', queryParameters: {'count': limit, 'includeGuids': 1});
       final sid = serverId;
       final sname = serverName;
-      return Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
+      return await Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get global hubs: $e');
     }

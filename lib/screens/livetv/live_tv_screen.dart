@@ -26,7 +26,7 @@ class LiveTvScreen extends StatefulWidget {
 }
 
 class _LiveTvScreenState extends State<LiveTvScreen>
-    with SingleTickerProviderStateMixin, TabNavigationMixin
+    with TickerProviderStateMixin, TabNavigationMixin
     implements FocusableTab {
   final _guideTabFocusNode = FocusNode(debugLabel: 'tab_chip_guide');
   final _whatsOnTabFocusNode = FocusNode(debugLabel: 'tab_chip_whats_on');

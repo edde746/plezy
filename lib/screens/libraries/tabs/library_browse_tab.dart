@@ -302,8 +302,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// Focus the chips bar (for navigating from tab bar to content).
   /// Called by libraries screen when pressing DOWN on tab bar.
   void focusChipsBar() {
-    // Grouping chip is always visible (including in folder mode)
-    _groupingChipFocusNode.requestFocus();
+    if (widget.library.isShared) {
+      // Shared libraries have no grouping chip — focus sort instead
+      _sortChipFocusNode.requestFocus();
+    } else {
+      _groupingChipFocusNode.requestFocus();
+    }
   }
 
   /// Reset transient browse state before loading a different library.
@@ -796,9 +800,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     }
   }
 
-  /// Navigate focus from grid up to the grouping chip
+  /// Navigate focus from grid up to the chips bar
   void _navigateToChips() {
-    _groupingChipFocusNode.requestFocus();
+    if (!widget.library.isShared) {
+      _groupingChipFocusNode.requestFocus();
+    } else if (_isSortChipVisible) {
+      _sortChipFocusNode.requestFocus();
+    } else if (_isFiltersChipVisible) {
+      _filtersChipFocusNode.requestFocus();
+    } else {
+      _navigateToSidebar();
+    }
   }
 
   /// Navigate focus to the sidebar
@@ -834,6 +846,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   /// Fetch first characters for the current library/filter state
   Future<void> _loadFirstCharacters({int? requestId}) async {
+    // Shared libraries don't support first characters
+    if (widget.library.isShared) return;
     final currentRequestId = requestId ?? ++_firstCharactersRequestId;
     final client = getClientForLibrary();
     final filterParams = Map<String, String>.from(_selectedFilters);
@@ -983,7 +997,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
               serverId: widget.library.serverId,
               onRefresh: updateItem,
               firstItemFocusNode: firstItemFocusNode,
-              onNavigateUp: () => _groupingChipFocusNode.requestFocus(),
+              onNavigateUp: _navigateToChips,
             ),
           ),
         ],
@@ -1107,6 +1121,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       groupingNavigateRight = () => _sortChipFocusNode.requestFocus();
     }
 
+    final isShared = widget.library.isShared;
+
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1114,19 +1130,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Grouping chip
-          FocusableFilterChip(
-            focusNode: _groupingChipFocusNode,
-            icon: Symbols.category_rounded,
-            label: _getGroupingLabel(_selectedGrouping),
-            onPressed: _showGroupingBottomSheet,
-            onNavigateDown: _navigateToGrid,
-            onNavigateUp: widget.onBack,
-            onNavigateLeft: _navigateToSidebar,
-            onNavigateRight: groupingNavigateRight,
-            onBack: widget.onBack,
-          ),
-          const SizedBox(width: 8),
+          // Grouping chip (hidden for shared libraries — mixed content, no grouping)
+          if (!isShared) ...[
+            FocusableFilterChip(
+              focusNode: _groupingChipFocusNode,
+              icon: Symbols.category_rounded,
+              label: _getGroupingLabel(_selectedGrouping),
+              onPressed: _showGroupingBottomSheet,
+              onNavigateDown: _navigateToGrid,
+              onNavigateUp: widget.onBack,
+              onNavigateLeft: _navigateToSidebar,
+              onNavigateRight: groupingNavigateRight,
+              onBack: widget.onBack,
+            ),
+            const SizedBox(width: 8),
+          ],
           // Filters chip
           if (_isFiltersChipVisible)
             FocusableFilterChip(
@@ -1138,7 +1156,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
               onPressed: _showFiltersBottomSheet,
               onNavigateDown: _navigateToGrid,
               onNavigateUp: widget.onBack,
-              onNavigateLeft: () => _groupingChipFocusNode.requestFocus(),
+              onNavigateLeft: isShared ? _navigateToSidebar : () => _groupingChipFocusNode.requestFocus(),
               onNavigateRight: _isSortChipVisible ? () => _sortChipFocusNode.requestFocus() : null,
               onBack: widget.onBack,
             ),
@@ -1154,7 +1172,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
               onNavigateUp: widget.onBack,
               onNavigateLeft: _isFiltersChipVisible
                   ? () => _filtersChipFocusNode.requestFocus()
-                  : () => _groupingChipFocusNode.requestFocus(),
+                  : isShared
+                      ? _navigateToSidebar
+                      : () => _groupingChipFocusNode.requestFocus(),
               onBack: widget.onBack,
             ),
         ],

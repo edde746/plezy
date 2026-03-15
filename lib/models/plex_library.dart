@@ -26,6 +26,10 @@ class PlexLibrary with MultiServerFields {
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverName;
 
+  /// Whether this is a shared library (individually shared items, not a real section)
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final bool isShared;
+
   /// Global unique identifier across all servers (serverId:key)
   String get globalKey => serverId != null ? buildGlobalKey(serverId!, key) : key;
 
@@ -42,6 +46,7 @@ class PlexLibrary with MultiServerFields {
     this.hidden,
     this.serverId,
     this.serverName,
+    this.isShared = false,
   });
 
   factory PlexLibrary.fromJson(Map<String, dynamic> json) => _$PlexLibraryFromJson(json);
@@ -62,6 +67,7 @@ class PlexLibrary with MultiServerFields {
     int? hidden,
     String? serverId,
     String? serverName,
+    bool? isShared,
   }) {
     return PlexLibrary(
       key: key ?? this.key,
@@ -76,6 +82,7 @@ class PlexLibrary with MultiServerFields {
       hidden: hidden ?? this.hidden,
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
+      isShared: isShared ?? this.isShared,
     );
   }
 }

@@ -52,12 +52,14 @@ class MainScreenFocusScope extends InheritedWidget {
   final VoidCallback focusSidebar;
   final VoidCallback focusContent;
   final bool isSidebarFocused;
+  final void Function(String libraryGlobalKey)? selectLibrary;
 
   const MainScreenFocusScope({
     super.key,
     required this.focusSidebar,
     required this.focusContent,
     required this.isSidebarFocused,
+    this.selectLibrary,
     required super.child,
   });
 
@@ -137,6 +139,13 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
     _autoSwitchedToDownloads = _isOffline;
 
+    // Synchronize _lastHasLiveTv with provider before building screens
+    // so _buildScreens and _hasLiveTv getter agree from the start.
+    try {
+      _lastHasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
+    } catch (_) {
+      _lastHasLiveTv = false;
+    }
     _screens = _buildScreens(_isOffline);
 
     // Set up Watch Together callbacks immediately (must be synchronous to catch early messages)
@@ -539,7 +548,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       return [DownloadsScreen(key: _downloadsKey), SettingsScreen(key: _settingsKey)];
     }
 
-    final hasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
+    // Use _lastHasLiveTv (the value synchronized with _handleLiveTvChanged)
+    // so screens and nav bar always agree on whether LiveTV is included.
+    final hasLiveTv = _lastHasLiveTv;
 
     return [
       DiscoverScreen(key: _discoverKey, onBecameVisible: _onDiscoverBecameVisible),
@@ -983,13 +994,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   /// Whether the Live TV tab is currently visible
-  bool get _hasLiveTv {
-    try {
-      return context.read<MultiServerProvider>().hasLiveTv;
-    } catch (_) {
-      return false;
-    }
-  }
+  /// Use the synchronized value so screens list and nav bar always agree.
+  /// Updated by _handleLiveTvChanged when the provider notifies.
+  bool get _hasLiveTv => _lastHasLiveTv;
 
   /// Get navigation tabs filtered by offline mode
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
@@ -1040,6 +1047,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                   focusSidebar: _focusSidebar,
                   focusContent: _focusContent,
                   isSidebarFocused: _isSidebarFocused,
+                  selectLibrary: _selectLibrary,
                   child: SideNavigationScope(
                     child: Stack(
                       children: [

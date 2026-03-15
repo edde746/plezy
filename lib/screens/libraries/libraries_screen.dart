@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -33,6 +34,13 @@ import 'tabs/library_browse_tab.dart';
 import 'tabs/library_recommended_tab.dart';
 import 'tabs/library_collections_tab.dart';
 import 'tabs/library_playlists_tab.dart';
+
+enum LibraryTabType { recommended, browse, collections, playlists }
+
+List<LibraryTabType> _getVisibleTabs(PlexLibrary library) {
+  if (library.isShared) return [LibraryTabType.browse, LibraryTabType.playlists];
+  return LibraryTabType.values;
+}
 
 /// A menu action item for context menus
 class ContextMenuItem {
@@ -71,7 +79,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         FocusableTab,
         LibraryLoadable,
         ItemUpdatable,
-        SingleTickerProviderStateMixin,
+        TickerProviderStateMixin,
         TabNavigationMixin {
   @override
   PlexClient get client {
@@ -103,19 +111,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// Key for the library dropdown popup menu button
   final _libraryDropdownKey = GlobalKey<PopupMenuButtonState<String>>();
 
-  // Focus nodes for tab chips
-  final _recommendedTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_recommended');
-  final _browseTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_browse');
-  final _collectionsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_collections');
-  final _playlistsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_playlists');
+  // Dynamic visible tabs and their focus nodes
+  List<LibraryTabType> _visibleTabs = LibraryTabType.values;
+  List<FocusNode> _tabFocusNodes = List.generate(
+    LibraryTabType.values.length,
+    (i) => FocusNode(debugLabel: 'tab_chip_${LibraryTabType.values[i].name}'),
+  );
 
   @override
-  List<FocusNode> get tabChipFocusNodes => [
-    _recommendedTabChipFocusNode,
-    _browseTabChipFocusNode,
-    _collectionsTabChipFocusNode,
-    _playlistsTabChipFocusNode,
-  ];
+  List<FocusNode> get tabChipFocusNodes => _tabFocusNodes;
 
   // App bar action bar
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
@@ -176,12 +180,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   @override
   void onTabChanged() {
-    // Save tab index when changed (but not when restoring from storage)
+    // Save tab name when changed (but not when restoring from storage)
     if (_selectedLibraryGlobalKey != null && !tabController.indexIsChanging) {
       // Only save if this was a user-initiated tab change, not a restore
       if (!_isRestoringTab) {
         StorageService.getInstance().then((storage) {
-          storage.saveLibraryTab(_selectedLibraryGlobalKey!, tabController.index);
+          storage.saveLibraryTab(_selectedLibraryGlobalKey!, _visibleTabs[tabController.index].name);
         });
 
         // Focus first item in the current tab (only for user-initiated changes)
@@ -264,7 +268,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final tabState = _getTabState(tabController.index);
       if (tabState != null) {
         // Browse tab has a chips bar - focus that first so DOWN navigates to grid
-        if (tabController.index == 1) {
+        if (_visibleTabs[tabController.index] == LibraryTabType.browse) {
           (tabState as dynamic).focusChipsBar();
         } else {
           (tabState as dynamic).focusFirstItem();
@@ -275,18 +279,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Get the state for a tab by index
   State? _getTabState(int index) {
-    switch (index) {
-      case 0:
-        return _recommendedTabKey.currentState;
-      case 1:
-        return _browseTabKey.currentState;
-      case 2:
-        return _collectionsTabKey.currentState;
-      case 3:
-        return _playlistsTabKey.currentState;
-      default:
-        return null;
-    }
+    if (index < 0 || index >= _visibleTabs.length) return null;
+    return switch (_visibleTabs[index]) {
+      LibraryTabType.recommended => _recommendedTabKey.currentState,
+      LibraryTabType.browse => _browseTabKey.currentState,
+      LibraryTabType.collections => _collectionsTabKey.currentState,
+      LibraryTabType.playlists => _playlistsTabKey.currentState,
+    };
   }
 
   /// Handle when a tab's data has finished loading
@@ -322,10 +321,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   void dispose() {
     _outerScrollController.dispose();
-    _recommendedTabChipFocusNode.dispose();
-    _browseTabChipFocusNode.dispose();
-    _collectionsTabChipFocusNode.dispose();
-    _playlistsTabChipFocusNode.dispose();
+    for (final node in _tabFocusNodes) {
+      node.dispose();
+    }
     disposeTabNavigation();
     super.dispose();
   }
@@ -333,6 +331,80 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void _updateState(VoidCallback fn) {
     if (!mounted) return;
     setState(fn);
+  }
+
+  /// Rebuild tab infrastructure when the visible tab set changes.
+  void _updateVisibleTabs(List<LibraryTabType> newTabs) {
+    if (listEquals(_visibleTabs, newTabs)) return;
+
+    // Save current tab type before changing
+    final currentTabType = _visibleTabs.length > tabController.index
+        ? _visibleTabs[tabController.index]
+        : null;
+
+    // Dispose old focus nodes and controller
+    for (final node in _tabFocusNodes) {
+      node.dispose();
+    }
+    disposeTabNavigation();
+
+    // Build new
+    _visibleTabs = newTabs;
+    _tabFocusNodes = List.generate(
+      newTabs.length,
+      (i) => FocusNode(debugLabel: 'tab_chip_${newTabs[i].name}'),
+    );
+    initTabNavigation();
+
+    // Restore tab position: find current tab type in new set, default to first
+    final newIndex = currentTabType != null ? newTabs.indexOf(currentTabType) : -1;
+    if (newIndex > 0) {
+      tabController.index = newIndex;
+    }
+  }
+
+  String _getTabLabel(LibraryTabType type) => switch (type) {
+    LibraryTabType.recommended => t.libraries.tabs.recommended,
+    LibraryTabType.browse => t.libraries.tabs.browse,
+    LibraryTabType.collections => t.libraries.tabs.collections,
+    LibraryTabType.playlists => t.libraries.tabs.playlists,
+  };
+
+  Widget _buildTabContent(LibraryTabType type, {required PlexLibrary library, required bool isActive, required int tabIndex}) {
+    return switch (type) {
+      LibraryTabType.recommended => LibraryRecommendedTab(
+        key: _recommendedTabKey,
+        library: library,
+        isActive: isActive,
+        suppressAutoFocus: suppressAutoFocus,
+        onDataLoaded: () => _handleTabDataLoaded(tabIndex),
+        onBack: focusTabBar,
+      ),
+      LibraryTabType.browse => LibraryBrowseTab(
+        key: _browseTabKey,
+        library: library,
+        isActive: isActive,
+        suppressAutoFocus: suppressAutoFocus,
+        onDataLoaded: () => _handleTabDataLoaded(tabIndex),
+        onBack: focusTabBar,
+      ),
+      LibraryTabType.collections => LibraryCollectionsTab(
+        key: _collectionsTabKey,
+        library: library,
+        isActive: isActive,
+        suppressAutoFocus: suppressAutoFocus,
+        onDataLoaded: () => _handleTabDataLoaded(tabIndex),
+        onBack: focusTabBar,
+      ),
+      LibraryTabType.playlists => LibraryPlaylistsTab(
+        key: _playlistsTabKey,
+        library: library,
+        isActive: isActive,
+        suppressAutoFocus: suppressAutoFocus,
+        onDataLoaded: () => _handleTabDataLoaded(tabIndex),
+        onBack: focusTabBar,
+      ),
+    };
   }
 
   /// Check if libraries come from multiple servers
@@ -366,6 +438,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final libraryIndex = visibleLibraries.indexWhere((lib) => lib.globalKey == libraryGlobalKey);
     if (libraryIndex == -1) return; // Library not found or hidden
 
+    // Update visible tabs and state in the same synchronous block so no
+    // intermediate rebuild can see a mismatched controller/key pair.
+    final selectedLibrary = visibleLibraries[libraryIndex];
+    _updateVisibleTabs(_getVisibleTabs(selectedLibrary));
+
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;
       _errorMessage = null;
@@ -378,17 +455,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       _isInitialLoad = false;
     }
 
-    // Save selected library key and restore saved tab
+    // Save selected library key and restore saved tab (async — safe after state is consistent)
     final storage = await StorageService.getInstance();
+    if (!mounted) return;
     await storage.saveSelectedLibraryKey(libraryGlobalKey);
 
-    // Restore saved tab index for this library
-    final savedTabIndex = storage.getLibraryTab(libraryGlobalKey);
-    if (savedTabIndex != null && savedTabIndex >= 0 && savedTabIndex < 4) {
+    // Restore saved tab by name
+    final savedTabName = storage.getLibraryTab(libraryGlobalKey);
+    final savedType = LibraryTabType.values.where((t) => t.name == savedTabName).firstOrNull;
+    final targetTabIndex = savedType != null ? _visibleTabs.indexOf(savedType) : -1;
+    if (targetTabIndex > 0) {
       // Set flag to prevent _onTabChanged from triggering focus
       _isRestoringTab = true;
       // Use animateTo with zero duration for instant switch without animation race conditions
-      tabController.animateTo(savedTabIndex, duration: Duration.zero);
+      tabController.animateTo(targetTabIndex, duration: Duration.zero);
       // Clear flag synchronously - animateTo with zero duration completes immediately
       _isRestoringTab = false;
     }
@@ -418,14 +498,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   // Refresh the currently active tab
   void _refreshCurrentTab() {
-    final key = switch (tabController.index) {
-      0 => _recommendedTabKey,
-      1 => _browseTabKey,
-      2 => _collectionsTabKey,
-      3 => _playlistsTabKey,
-      _ => null,
+    if (tabController.index < 0 || tabController.index >= _visibleTabs.length) return;
+    final key = switch (_visibleTabs[tabController.index]) {
+      LibraryTabType.recommended => _recommendedTabKey,
+      LibraryTabType.browse => _browseTabKey,
+      LibraryTabType.collections => _collectionsTabKey,
+      LibraryTabType.playlists => _playlistsTabKey,
     };
-    (key?.currentState as dynamic)?.refresh();
+    (key.currentState as dynamic)?.refresh();
   }
 
   // Public method to fully reload all content (for profile switches)
@@ -745,13 +825,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildTabChip(t.libraries.tabs.recommended, 0),
-          const SizedBox(width: 8),
-          _buildTabChip(t.libraries.tabs.browse, 1),
-          const SizedBox(width: 8),
-          _buildTabChip(t.libraries.tabs.collections, 2),
-          const SizedBox(width: 8),
-          _buildTabChip(t.libraries.tabs.playlists, 3),
+          for (int i = 0; i < _visibleTabs.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            _buildTabChip(_getTabLabel(_visibleTabs[i]), i),
+          ],
         ],
       );
     }
@@ -835,7 +912,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 actions: [
                   FocusableActionBar(
                     key: _actionBarKey,
-                    onNavigateLeft: () => getTabChipFocusNode(3).requestFocus(),
+                    onNavigateLeft: () => getTabChipFocusNode(_visibleTabs.length - 1).requestFocus(),
                     onNavigateDown: _focusCurrentTab,
                     actions: [
                       if (allLibraries.isNotEmpty)
@@ -880,13 +957,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            _buildTabChip(t.libraries.tabs.recommended, 0),
-                            const SizedBox(width: 8),
-                            _buildTabChip(t.libraries.tabs.browse, 1),
-                            const SizedBox(width: 8),
-                            _buildTabChip(t.libraries.tabs.collections, 2),
-                            const SizedBox(width: 8),
-                            _buildTabChip(t.libraries.tabs.playlists, 3),
+                            for (int i = 0; i < _visibleTabs.length; i++) ...[
+                              if (i > 0) const SizedBox(width: 8),
+                              _buildTabChip(_getTabLabel(_visibleTabs[i]), i),
+                            ],
                           ],
                         ),
                       ),
@@ -907,46 +981,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                       // The TabBarView's own clipBehavior only clips at the viewport level,
                       // not per-page, so we need per-child clipping.
                       children: [
-                        ClipRect(
-                          child: LibraryRecommendedTab(
-                            key: _recommendedTabKey,
+                        for (int i = 0; i < _visibleTabs.length; i++)
+                          ClipRect(child: _buildTabContent(
+                            _visibleTabs[i],
                             library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                            isActive: tabController.index == 0,
-                            suppressAutoFocus: suppressAutoFocus,
-                            onDataLoaded: () => _handleTabDataLoaded(0),
-                            onBack: focusTabBar,
-                          ),
-                        ),
-                        ClipRect(
-                          child: LibraryBrowseTab(
-                            key: _browseTabKey,
-                            library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                            isActive: tabController.index == 1,
-                            suppressAutoFocus: suppressAutoFocus,
-                            onDataLoaded: () => _handleTabDataLoaded(1),
-                            onBack: focusTabBar,
-                          ),
-                        ),
-                        ClipRect(
-                          child: LibraryCollectionsTab(
-                            key: _collectionsTabKey,
-                            library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                            isActive: tabController.index == 2,
-                            suppressAutoFocus: suppressAutoFocus,
-                            onDataLoaded: () => _handleTabDataLoaded(2),
-                            onBack: focusTabBar,
-                          ),
-                        ),
-                        ClipRect(
-                          child: LibraryPlaylistsTab(
-                            key: _playlistsTabKey,
-                            library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                            isActive: tabController.index == 3,
-                            suppressAutoFocus: suppressAutoFocus,
-                            onDataLoaded: () => _handleTabDataLoaded(3),
-                            onBack: focusTabBar,
-                          ),
-                        ),
+                            isActive: tabController.index == i,
+                            tabIndex: i,
+                          )),
                       ],
                     ),
                   ),

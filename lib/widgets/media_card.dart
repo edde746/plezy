@@ -148,6 +148,7 @@ class MediaCardState extends State<MediaCard> {
       case MediaNavigationResult.listRefreshNeeded:
         widget.onListRefresh?.call();
       case MediaNavigationResult.navigated:
+      case MediaNavigationResult.librarySelected:
         // Item refresh already handled by onRefresh callback in helper
         break;
     }

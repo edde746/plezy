@@ -133,6 +133,18 @@ class PlexMetadata with MultiServerFields {
   /// Global unique identifier across all servers (serverId:ratingKey)
   String get globalKey => serverId != null ? buildGlobalKey(serverId!, ratingKey) : ratingKey;
 
+  /// Whether this item represents a library section (shared whole-library, not a media item).
+  /// These have keys like `/library/sections/5/all` instead of `/library/metadata/12345`.
+  bool get isLibrarySection => key != null && key!.startsWith('/library/sections/');
+
+  /// Extract the library section ID from a library-section item's key.
+  /// Returns null if this is not a library section item.
+  String? get librarySectionKey {
+    if (!isLibrarySection) return null;
+    final match = RegExp(r'/library/sections/(\d+)').firstMatch(key!);
+    return match?.group(1);
+  }
+
   /// Parsed media type enum for type-safe comparisons
   PlexMediaType get mediaType {
     if (type == null) return PlexMediaType.unknown;
