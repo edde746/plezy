@@ -706,6 +706,19 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         }
       });
     }
+    // When content regains focus while on Search, focus the search input
+    final searchIndex = NavigationTab.indexFor(
+      NavigationTabId.search,
+      isOffline: _isOffline,
+      hasLiveTv: _hasLiveTv,
+    );
+    if (_currentIndex == searchIndex && searchIndex >= 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_searchKey.currentState case final SearchInputFocusable searchable) {
+          searchable.focusSearchInput();
+        }
+      });
+    }
   }
 
   /// Suppress stray back events after a child route pops.
