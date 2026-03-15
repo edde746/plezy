@@ -675,61 +675,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   void _focusContent() {
     setState(() => _isSidebarFocused = false);
     _contentFocusScope.requestFocus();
-    // When content regains focus while on Discover, focus the hero section
-    if (_currentIndex == 0 && !_isOffline) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_discoverKey.currentState case final TabVisibilityAware aware) {
-          aware.onTabShown();
-        }
-      });
-    }
-    // When content regains focus while on Libraries, only focus the active tab
-    // if no child already has focus (avoids stale focus requests stealing focus
-    // from the current item when scrolling back to item 0)
-    if (_currentIndex == 1 && !_isOffline) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_contentFocusScope.focusedChild == null) {
-          if (_librariesKey.currentState case final FocusableTab focusable) {
-            focusable.focusActiveTabIfReady();
-          }
-        }
-      });
-    }
-    // When content regains focus while on Live TV, focus the active guide/whats-on tab
-    final liveTvIndex = NavigationTab.indexFor(NavigationTabId.liveTv, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-    if (_currentIndex == liveTvIndex && liveTvIndex >= 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_liveTvKey.currentState case final FocusableTab focusable) {
+    // Only programmatically focus if the scope didn't auto-restore a child.
+    // This preserves the user's focus position when returning from sidebar.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_contentFocusScope.focusedChild == null) {
+        if (_screenKeyForIndex(_currentIndex)?.currentState case final FocusableTab focusable) {
           focusable.focusActiveTabIfReady();
         }
-      });
-    }
-    // When content regains focus while on Settings, restore focus to last focused setting
-    final settingsIndex = NavigationTab.indexFor(
-      NavigationTabId.settings,
-      isOffline: _isOffline,
-      hasLiveTv: _hasLiveTv,
-    );
-    if (_currentIndex == settingsIndex) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_settingsKey.currentState case final FocusableTab focusable) {
-          focusable.focusActiveTabIfReady();
-        }
-      });
-    }
-    // When content regains focus while on Search, focus the search input
-    final searchIndex = NavigationTab.indexFor(
-      NavigationTabId.search,
-      isOffline: _isOffline,
-      hasLiveTv: _hasLiveTv,
-    );
-    if (_currentIndex == searchIndex && searchIndex >= 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_searchKey.currentState case final SearchInputFocusable searchable) {
-          searchable.focusSearchInput();
-        }
-      });
-    }
+      }
+    });
   }
 
   /// Suppress stray back events after a child route pops.
@@ -834,7 +788,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     // Called when returning to this route from a child route (e.g., from video player)
     if (_currentIndex == 0 && !_isOffline) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
-        aware.onTabShown(scrollToTop: false);
+        aware.onTabShown();
       }
       _onDiscoverBecameVisible();
     }
@@ -922,56 +876,24 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       }
     });
 
-    // Handle screen-specific logic
-    final settingsIndex = NavigationTab.indexFor(
-      NavigationTabId.settings,
-      isOffline: _isOffline,
-      hasLiveTv: _hasLiveTv,
-    );
-
-    // Skip online-only screen logic in offline mode
-    if (!_isOffline) {
-      // Pause/resume discover auto-scroll when switching tabs
-      if (previousIndex == 0 && index != 0) {
-        if (_discoverKey.currentState case final TabVisibilityAware aware) {
-          aware.onTabHidden();
-        }
+    if (previousIndex != index) {
+      // Notify previous screen it's being hidden
+      if (_screenKeyForIndex(previousIndex)?.currentState case final TabVisibilityAware aware) {
+        aware.onTabHidden();
       }
-      // Notify discover screen when it becomes visible via tab switch
-      if (index == 0) {
-        if (previousIndex != 0) {
-          if (_discoverKey.currentState case final TabVisibilityAware aware) {
-            aware.onTabShown();
-          }
-        }
-        _onDiscoverBecameVisible();
+      // Notify and focus new screen
+      final newState = _screenKeyForIndex(index)?.currentState;
+      if (newState case final TabVisibilityAware aware) {
+        aware.onTabShown();
       }
-      // Ensure the libraries screen applies focus when brought into view
-      if (index == 1 && previousIndex != 1) {
-        if (_librariesKey.currentState case final FocusableTab focusable) {
-          focusable.focusActiveTabIfReady();
-        }
-      }
-      // Ensure the Live TV screen applies focus when brought into view
-      final liveTvIdx = NavigationTab.indexFor(NavigationTabId.liveTv, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-      if (index == liveTvIdx && liveTvIdx >= 0 && previousIndex != liveTvIdx) {
-        if (_liveTvKey.currentState case final FocusableTab focusable) {
-          focusable.focusActiveTabIfReady();
-        }
-      }
-      // Focus search input when selecting Search tab
-      if (NavigationTab.isTabAtIndex(NavigationTabId.search, index, isOffline: _isOffline, hasLiveTv: _hasLiveTv)) {
-        if (_searchKey.currentState case final SearchInputFocusable searchable) {
-          searchable.focusSearchInput();
-        }
+      if (newState case final FocusableTab focusable) {
+        focusable.focusActiveTabIfReady();
       }
     }
 
-    // Restore focus when switching to Settings tab (works in both online and offline mode)
-    if (index == settingsIndex && previousIndex != settingsIndex) {
-      if (_settingsKey.currentState case final FocusableTab focusable) {
-        focusable.focusActiveTabIfReady();
-      }
+    // Discover: always refresh content (even on re-selection)
+    if (!_isOffline && _tabIdForIndex(_isOffline, index) == NavigationTabId.discover) {
+      _onDiscoverBecameVisible();
     }
   }
 
@@ -1009,6 +931,18 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     if (tabs.isEmpty) return NavigationTabId.discover;
     final safeIndex = index.clamp(0, tabs.length - 1).toInt();
     return tabs[safeIndex].id;
+  }
+
+  /// Get the GlobalKey for the screen at the given tab index.
+  GlobalKey? _screenKeyForIndex(int index) {
+    return switch (_tabIdForIndex(_isOffline, index)) {
+      NavigationTabId.discover => _discoverKey,
+      NavigationTabId.libraries => _librariesKey,
+      NavigationTabId.liveTv => _liveTvKey,
+      NavigationTabId.search => _searchKey,
+      NavigationTabId.downloads => _downloadsKey,
+      NavigationTabId.settings => _settingsKey,
+    };
   }
 
   /// Build navigation destinations for bottom navigation bar.

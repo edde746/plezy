@@ -57,7 +57,7 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen>
-    with Refreshable, FullRefreshable, ItemUpdatable, WatchStateAware, TabVisibilityAware, WidgetsBindingObserver {
+    with Refreshable, FullRefreshable, ItemUpdatable, WatchStateAware, TabVisibilityAware, FocusableTab, WidgetsBindingObserver {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
   static const Duration _indicatorUpdateInterval = Duration(milliseconds: 200);
 
@@ -395,13 +395,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   @override
-  void onTabShown({bool scrollToTop = true}) {
+  void onTabShown() {
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
-    if (scrollToTop) {
-      _focusTopBoundary();
-    }
+  }
+
+  @override
+  void focusActiveTabIfReady() {
+    _focusTopBoundary();
   }
 
   // Helper method to calculate visible dot range (max 5 dots)

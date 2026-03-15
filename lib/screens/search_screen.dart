@@ -24,7 +24,7 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefreshable, SearchInputFocusable {
+class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
   final _firstResultFocusNode = FocusNode(debugLabel: 'SearchFirstResult');
@@ -126,6 +126,11 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
   /// Focus the search input field
   @override
   void focusSearchInput() {
+    _searchFocusNode.requestFocus();
+  }
+
+  @override
+  void focusActiveTabIfReady() {
     _searchFocusNode.requestFocus();
   }
 
