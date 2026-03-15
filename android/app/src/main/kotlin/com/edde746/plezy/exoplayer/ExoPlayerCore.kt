@@ -660,7 +660,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     override fun onPlayerError(error: PlaybackException) {
-        emitLog("error", "player", "Error code=${error.errorCode}: ${error.message}, cause=${error.cause?.javaClass?.simpleName}")
+        // Log full exception chain unminified — R8 mangles simpleName but not toString/message
+        val causeChain = buildString {
+            var t: Throwable? = error.cause
+            while (t != null) {
+                if (isNotEmpty()) append(" → ")
+                append("${t.javaClass.name}: ${t.message}")
+                t = t.cause
+            }
+        }
+        emitLog("error", "player", "Error code=${error.errorCode}: ${error.message}, cause=${causeChain.ifEmpty { "none" }}")
         stopFrameWatchdog()
         cancelDecoderHangCheck()
         emitSeekable(false, force = true)
