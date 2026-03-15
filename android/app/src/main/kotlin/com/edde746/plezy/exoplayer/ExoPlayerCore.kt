@@ -33,9 +33,10 @@ import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.TransferListener
-import androidx.media3.datasource.okhttp.OkHttpDataSource
-import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
+import androidx.media3.datasource.HttpDataSource
+import androidx.media3.datasource.cronet.CronetDataSource
+import org.chromium.net.CronetEngine
+import java.util.concurrent.Executors
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
@@ -90,15 +91,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
         private var assGlCrashHandlerInstalled = false
 
-        // Process-wide OkHttp client with connection pooling — reuses TCP connections
-        // on buffer refill to prevent reconnect-induced frame drops at high bitrates
-        private val okHttpClient: OkHttpClient by lazy {
-            OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
-                .build()
+        private var cronetEngine: CronetEngine? = null
+        private fun getCronetEngine(context: Context): CronetEngine {
+            return cronetEngine ?: synchronized(this) {
+                cronetEngine ?: CronetEngine.Builder(context.applicationContext)
+                    .enableHttp2(true)
+                    .enableQuic(true)
+                    .build()
+                    .also { cronetEngine = it }
+            }
         }
+        private val cronetExecutor by lazy { Executors.newSingleThreadExecutor() }
     }
 
     private var surfaceView: SurfaceView? = null
@@ -108,7 +111,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
     private var lastVideoSize: VideoSize? = null
     private var exoPlayer: ExoPlayer? = null
-    private var httpDataSourceFactory: OkHttpDataSource.Factory? = null
+    private var httpDataSourceFactory: HttpDataSource.Factory? = null
     private var dataSourceFactory: DefaultDataSource.Factory? = null
     private var trackSelector: DefaultTrackSelector? = null
     private var tunnelingUserEnabled: Boolean = true
@@ -353,8 +356,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 }
             }
 
-            // OkHttp DataSource for TCP connection pooling — prevents reconnect stutter at high bitrates
-            httpDataSourceFactory = OkHttpDataSource.Factory(okHttpClient)
+            // Cronet DataSource for HTTP/2 multiplexing — all range requests share one connection
+            httpDataSourceFactory = CronetDataSource.Factory(getCronetEngine(activity), cronetExecutor)
+                .setConnectionTimeoutMs(15_000)
+                .setReadTimeoutMs(10_000)
             dataSourceFactory = DefaultDataSource.Factory(activity, httpDataSourceFactory!!)
                 .setTransferListener(HttpTimingTransferListener())
             val extractorsFactory = DefaultExtractorsFactory()
@@ -432,7 +437,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     setBufferDurationsMs(30_000, 60_000, 1_000, 5_000)
                 }
             }.build()
-            emitLog("info", "init", "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB, tunneling=${tunnelingUserEnabled}, dataSource=OkHttp")
+            emitLog("info", "init", "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB, tunneling=${tunnelingUserEnabled}, dataSource=Cronet")
 
             exoPlayer = ExoPlayer.Builder(activity)
                 .setTrackSelector(trackSelector!!)
@@ -1179,7 +1184,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         currentHeaders = headers
         currentMediaIsLive = isLive
 
-        // Apply auth/custom headers to the OkHttp DataSource for this session
+        // Apply auth/custom headers to the HTTP DataSource for this session
         httpDataSourceFactory?.setDefaultRequestProperties(
             if (!headers.isNullOrEmpty()) headers else emptyMap()
         )
