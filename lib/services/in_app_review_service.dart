@@ -139,31 +139,4 @@ class InAppReviewService {
     // Reset session count so user needs to use app more before next prompt
     await prefs.setInt(_keyQualifyingSessionsCount, 0);
   }
-
-  /// Get debug info about the current state (for development/testing)
-  Future<Map<String, dynamic>> getDebugInfo() async {
-    final prefs = await _getPrefs();
-    final sessionCount = prefs.getInt(_keyQualifyingSessionsCount) ?? 0;
-    final lastPromptString = prefs.getString(_keyLastPromptTime);
-    final isAvailable = await _inAppReview.isAvailable();
-
-    return {
-      'isEnabled': isEnabled,
-      'isAvailable': isAvailable,
-      'qualifyingSessions': sessionCount,
-      'requiredSessions': _requiredSessions,
-      'lastPromptTime': lastPromptString,
-      'cooldownDays': _promptCooldown.inDays,
-      'currentSessionStartTime': _sessionStartTime?.toIso8601String(),
-    };
-  }
-
-  /// Reset all stored data (for testing purposes)
-  Future<void> reset() async {
-    final prefs = await _getPrefs();
-    await prefs.remove(_keyQualifyingSessionsCount);
-    await prefs.remove(_keyLastPromptTime);
-    _sessionStartTime = null;
-    appLogger.d('In-app review: State reset');
-  }
 }

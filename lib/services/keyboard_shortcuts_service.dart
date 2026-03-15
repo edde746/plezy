@@ -368,23 +368,6 @@ class KeyboardShortcutsService {
     }
   }
 
-  // Validate if a key combination is valid (legacy method for backward compatibility)
-  bool isValidKeyShortcut(String keyString) {
-    // For backward compatibility, assume all non-empty strings are valid
-    // The new system will use HotKey objects for validation
-    return keyString.isNotEmpty;
-  }
-
-  // Check if a shortcut is already assigned to another action
-  String? getActionForShortcut(String keyString) {
-    for (final entry in _shortcuts.entries) {
-      if (entry.value == keyString) {
-        return entry.key;
-      }
-    }
-    return null;
-  }
-
   // Check if a hotkey is already assigned to another action
   String? getActionForHotkey(HotKey hotkey) {
     for (final entry in _hotkeys.entries) {
