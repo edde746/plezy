@@ -1557,7 +1557,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       builder: (scrollController) => SingleChildScrollView(
         controller: scrollController,
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           children: List.generate(_seasons.length, (index) {
             final season = _seasons[index];
@@ -1675,7 +1674,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isLeftKey) {
       if (_focusedExtraIndex > 0) {
         setState(() => _focusedExtraIndex--);
-        scrollListToIndex(_extrasScrollController, _focusedExtraIndex, itemExtent: _getResponsiveCardWidth() + 4);
+        scrollListToIndex(_extrasScrollController, _focusedExtraIndex, itemExtent: _getResponsiveCardWidth() + 4, leadingPadding: 0);
       }
       return KeyEventResult.handled;
     }
@@ -1684,7 +1683,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isRightKey) {
       if (_focusedExtraIndex < _extras!.length - 1) {
         setState(() => _focusedExtraIndex++);
-        scrollListToIndex(_extrasScrollController, _focusedExtraIndex, itemExtent: _getResponsiveCardWidth() + 4);
+        scrollListToIndex(_extrasScrollController, _focusedExtraIndex, itemExtent: _getResponsiveCardWidth() + 4, leadingPadding: 0);
       }
       return KeyEventResult.handled;
     }
@@ -1729,7 +1728,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isLeftKey) {
       if (_focusedCastIndex > 0) {
         setState(() => _focusedCastIndex--);
-        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: 120.0 + 4);
+        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: 120.0 + 8 + 4, leadingPadding: 0);
       }
       return KeyEventResult.handled;
     }
@@ -1738,7 +1737,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isRightKey) {
       if (_focusedCastIndex < roleCount - 1) {
         setState(() => _focusedCastIndex++);
-        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: 120.0 + 4);
+        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: 120.0 + 8 + 4, leadingPadding: 0);
       }
       return KeyEventResult.handled;
     }
@@ -2249,7 +2248,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           right: 0,
                           child: SafeArea(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
@@ -2366,7 +2365,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   // Main content
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -2388,7 +2387,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                       _overviewFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
                                   return AnimatedContainer(
                                     duration: const Duration(milliseconds: 150),
-                                    padding: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.all(4),
                                     decoration: BoxDecoration(
                                       borderRadius: const BorderRadius.all(Radius.circular(8)),
                                       border: Border.all(
@@ -2615,7 +2614,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Uses same layout pattern as seasons/extras (ListView.builder + Padding(horizontal: 2))
   Widget _buildCastSection(PlexMetadata metadata) {
     const cardWidth = 120.0;
-    const innerPadding = 6.0;
+    const innerPadding = 4.0;
     // image + inner padding + text area + outer list padding + focus scale headroom
     const containerHeight = 120.0 + innerPadding * 2 + 66 + 16;
 
@@ -2632,14 +2631,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           builder: (scrollController) => ListView.builder(
             controller: scrollController,
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 5),
             itemCount: metadata.role!.length,
             itemBuilder: (context, index) {
               final actor = metadata.role![index];
               final isFocused = hasFocus && index == _focusedCastIndex;
 
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.only(right: 4),
                 child: FocusBuilders.buildLockedFocusWrapper(
                   context: context,
                   isFocused: isFocused,
@@ -2719,7 +2718,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           builder: (scrollController) => ListView.builder(
             controller: scrollController,
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 5),
             itemCount: _extras!.length,
             itemBuilder: (context, index) {
               final extra = _extras![index];
@@ -2727,7 +2726,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               final cardKey = _extraCardKeys.putIfAbsent(index, () => GlobalKey<MediaCardState>());
 
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.only(right: 4),
                 child: FocusBuilders.buildLockedFocusWrapper(
                   context: context,
                   isFocused: isFocused,

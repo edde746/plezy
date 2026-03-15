@@ -112,7 +112,7 @@ class _EpisodeCardState extends State<EpisodeCard> {
     final hasActiveProgress = hasProgress && widget.episode.viewOffset! < widget.episode.duration!;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: FocusableWrapper(
         focusNode: widget.focusNode,
         autofocus: widget.autofocus,
@@ -141,7 +141,7 @@ class _EpisodeCardState extends State<EpisodeCard> {
                 color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
               ),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
