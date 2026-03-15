@@ -66,13 +66,6 @@ class PlaybackStateProvider with ChangeNotifier {
   /// Total number of items in the play queue
   int get queueLength => _playQueueTotalCount;
 
-  /// Gets the current position in the queue (1-indexed)
-  int get currentPosition {
-    if (_currentPlayQueueItemID == null || _loadedItems.isEmpty) return 0;
-    final index = _loadedItems.indexWhere((item) => item.playQueueItemID == _currentPlayQueueItemID);
-    return index != -1 ? index + 1 : 0;
-  }
-
   /// Set the client reference for loading more items
   void setClient(PlexClient client) {
     _client = client;

@@ -86,18 +86,6 @@ class MultiServerProvider extends ChangeNotifier {
   /// Check if any servers are connected
   bool get hasConnectedServers => onlineServerCount > 0;
 
-  /// Update token for a specific server
-  void updateTokenForServer(String serverId, String newToken) {
-    final client = _serverManager.getClient(serverId);
-    if (client != null) {
-      client.updateToken(newToken);
-      appLogger.d('MultiServerProvider: Token updated for server $serverId');
-      notifyListeners();
-    } else {
-      appLogger.w('MultiServerProvider: Cannot update token - server $serverId not found');
-    }
-  }
-
   /// Clear all server connections
   void clearAllConnections() {
     _serverManager.disconnectAll();
