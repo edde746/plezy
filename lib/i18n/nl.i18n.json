@@ -213,7 +213,9 @@
     "confirmExitOnBack": "Bevestigen voor afsluiten",
     "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten",
     "showNavBarLabels": "Navigatiebalk labels tonen",
-    "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen van de navigatiebalk weergeven"
+    "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen van de navigatiebalk weergeven",
+    "liveTvDefaultFavorites": "Standaard favoriete zenders",
+    "liveTvDefaultFavoritesDescription": "Toon alleen favoriete zenders bij het openen van Live TV"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",
@@ -590,7 +592,11 @@
     "evening": "Avond",
     "lateNight": "Late avond",
     "whatsOn": "Nu op TV",
-    "watchChannel": "Kanaal bekijken"
+    "watchChannel": "Kanaal bekijken",
+    "favorites": "Favorieten",
+    "addToFavorites": "Toevoegen aan favorieten",
+    "removeFromFavorites": "Verwijderen uit favorieten",
+    "noFavorites": "Geen favoriete zenders. Houd een zender ingedrukt om toe te voegen."
   },
   "downloads": {
     "title": "Downloads",

@@ -333,6 +333,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Mostra una finestra di conferma quando si preme indietro per uscire dall\'app';
 	@override String get showNavBarLabels => 'Mostra etichette barra di navigazione';
 	@override String get showNavBarLabelsDescription => 'Mostra le etichette sotto le icone della barra di navigazione';
+	@override String get liveTvDefaultFavorites => 'Canali preferiti predefiniti';
+	@override String get liveTvDefaultFavoritesDescription => 'Mostra solo i canali preferiti all\'apertura della TV dal vivo';
 }
 
 // Path: search
@@ -830,6 +832,10 @@ class _TranslationsLiveTvIt implements TranslationsLiveTvEn {
 	@override String get lateNight => 'Notte tarda';
 	@override String get whatsOn => 'In onda ora';
 	@override String get watchChannel => 'Guarda canale';
+	@override String get favorites => 'Preferiti';
+	@override String get addToFavorites => 'Aggiungi ai preferiti';
+	@override String get removeFromFavorites => 'Rimuovi dai preferiti';
+	@override String get noFavorites => 'Nessun canale preferito. Tieni premuto un canale per aggiungerlo.';
 }
 
 // Path: downloads
@@ -1514,6 +1520,8 @@ extension on TranslationsIt {
 			'settings.confirmExitOnBackDescription' => 'Mostra una finestra di conferma quando si preme indietro per uscire dall\'app',
 			'settings.showNavBarLabels' => 'Mostra etichette barra di navigazione',
 			'settings.showNavBarLabelsDescription' => 'Mostra le etichette sotto le icone della barra di navigazione',
+			'settings.liveTvDefaultFavorites' => 'Canali preferiti predefiniti',
+			'settings.liveTvDefaultFavoritesDescription' => 'Mostra solo i canali preferiti all\'apertura della TV dal vivo',
 			'search.hint' => 'Cerca film. spettacoli, musica...',
 			'search.tryDifferentTerm' => 'Prova altri termini di ricerca',
 			'search.searchYourMedia' => 'Cerca nei tuoi media',
@@ -1820,10 +1828,10 @@ extension on TranslationsIt {
 			'liveTv.tuneFailed' => 'Impossibile sintonizzare il canale',
 			'liveTv.loading' => 'Caricamento canali...',
 			'liveTv.nowPlaying' => 'In riproduzione',
-			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
-			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
+			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
 			'liveTv.live' => 'IN DIRETTA',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NUOVO',
@@ -1839,6 +1847,10 @@ extension on TranslationsIt {
 			'liveTv.lateNight' => 'Notte tarda',
 			'liveTv.whatsOn' => 'In onda ora',
 			'liveTv.watchChannel' => 'Guarda canale',
+			'liveTv.favorites' => 'Preferiti',
+			'liveTv.addToFavorites' => 'Aggiungi ai preferiti',
+			'liveTv.removeFromFavorites' => 'Rimuovi dai preferiti',
+			'liveTv.noFavorites' => 'Nessun canale preferito. Tieni premuto un canale per aggiungerlo.',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',

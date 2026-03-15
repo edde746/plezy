@@ -2475,6 +2475,50 @@ class PlexClient {
     );
   }
 
+  static const _favoriteChannelsUrl = 'https://epg.provider.plex.tv/settings/favoriteChannels';
+  static const _providerVersionHeader = {'X-Plex-Provider-Version': '5.1'};
+
+  /// Build the source URI for favorite channels: `server://{machineIdentifier}/{providerIdentifier}`
+  Future<String> buildFavoriteChannelSource() async {
+    final providers = await _discoverEpgProviders();
+    final providerIdentifier = providers.isNotEmpty ? providers.first.identifier : 'tv.plex.provider.epg';
+    final machineId = config.machineIdentifier ?? serverId;
+    return 'server://$machineId/$providerIdentifier';
+  }
+
+  /// Get favorite channels from the Plex cloud.
+  Future<List<FavoriteChannel>> getFavoriteChannels() async {
+    try {
+      final response = await _dio.get(
+        _favoriteChannelsUrl,
+        options: Options(headers: _providerVersionHeader),
+      );
+      final container = _getMediaContainer(response);
+      if (container != null && container['FavoriteChannel'] != null) {
+        return (container['FavoriteChannel'] as List)
+            .map((json) => FavoriteChannel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      appLogger.e('Failed to get favorite channels', error: e);
+      return [];
+    }
+  }
+
+  /// Update favorite channels on the Plex cloud.
+  Future<void> setFavoriteChannels(List<FavoriteChannel> channels) async {
+    try {
+      await _dio.put(
+        _favoriteChannelsUrl,
+        data: channels.map((c) => c.toJson()).toList(),
+        options: Options(headers: _providerVersionHeader),
+      );
+    } catch (e) {
+      appLogger.e('Failed to update favorite channels', error: e);
+    }
+  }
+
   Future<void> _handleEndpointSwitch(String newBaseUrl) async {
     if (config.baseUrl == newBaseUrl) {
       return;

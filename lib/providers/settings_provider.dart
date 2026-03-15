@@ -14,6 +14,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _showUnwatchedCount = true;
   bool _hideSpoilers = false;
   bool _showNavBarLabels = true;
+  bool _liveTvDefaultFavorites = false;
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
@@ -40,6 +41,7 @@ class SettingsProvider extends ChangeNotifier {
     _showUnwatchedCount = _settingsService!.getShowUnwatchedCount();
     _hideSpoilers = _settingsService!.getHideSpoilers();
     _showNavBarLabels = _settingsService!.getShowNavBarLabels();
+    _liveTvDefaultFavorites = _settingsService!.getLiveTvDefaultFavorites();
     _isInitialized = true;
     notifyListeners();
   }
@@ -66,6 +68,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get hideSpoilers => _hideSpoilers;
 
   bool get showNavBarLabels => _showNavBarLabels;
+
+  bool get liveTvDefaultFavorites => _liveTvDefaultFavorites;
 
   /// Helper to update a setting: ensures init, deduplicates, persists, notifies.
   Future<void> _updateSetting<T>({
@@ -140,6 +144,12 @@ class SettingsProvider extends ChangeNotifier {
     current: _showNavBarLabels, value: value,
     setLocal: (v) => _showNavBarLabels = v,
     persist: _settingsService!.setShowNavBarLabels,
+  );
+
+  Future<void> setLiveTvDefaultFavorites(bool value) => _updateSetting(
+    current: _liveTvDefaultFavorites, value: value,
+    setLocal: (v) => _liveTvDefaultFavorites = v,
+    persist: _settingsService!.setLiveTvDefaultFavorites,
   );
 
   String get libraryDensityDisplayName {

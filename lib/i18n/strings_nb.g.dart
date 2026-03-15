@@ -333,6 +333,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Vis en bekreftelsesdialog når du trykker tilbake for å avslutte appen';
 	@override String get showNavBarLabels => 'Vis navigasjonsfeltlabeler';
 	@override String get showNavBarLabelsDescription => 'Vis tekstlabeler under navigasjonsfeltikoner';
+	@override String get liveTvDefaultFavorites => 'Standard til favorittkanaler';
+	@override String get liveTvDefaultFavoritesDescription => 'Vis kun favorittkanaler når du åpner Live TV';
 }
 
 // Path: search
@@ -830,6 +832,10 @@ class _TranslationsLiveTvNb implements TranslationsLiveTvEn {
 	@override String get lateNight => 'Sen kveld';
 	@override String get whatsOn => 'Hva går nå';
 	@override String get watchChannel => 'Se kanal';
+	@override String get favorites => 'Favoritter';
+	@override String get addToFavorites => 'Legg til i favoritter';
+	@override String get removeFromFavorites => 'Fjern fra favoritter';
+	@override String get noFavorites => 'Ingen favorittkanaler. Trykk lenge på en kanal for å legge den til.';
 }
 
 // Path: collections
@@ -1514,6 +1520,8 @@ extension on TranslationsNb {
 			'settings.confirmExitOnBackDescription' => 'Vis en bekreftelsesdialog når du trykker tilbake for å avslutte appen',
 			'settings.showNavBarLabels' => 'Vis navigasjonsfeltlabeler',
 			'settings.showNavBarLabelsDescription' => 'Vis tekstlabeler under navigasjonsfeltikoner',
+			'settings.liveTvDefaultFavorites' => 'Standard til favorittkanaler',
+			'settings.liveTvDefaultFavoritesDescription' => 'Vis kun favorittkanaler når du åpner Live TV',
 			'search.hint' => 'Søk i filmer, serier, musikk...',
 			'search.tryDifferentTerm' => 'Prøv et annet søkeord',
 			'search.searchYourMedia' => 'Søk i mediene dine',
@@ -1820,10 +1828,10 @@ extension on TranslationsNb {
 			'liveTv.tuneFailed' => 'Kunne ikke stille inn kanal',
 			'liveTv.loading' => 'Laster kanaler...',
 			'liveTv.nowPlaying' => 'Spilles nå',
-			'liveTv.noPrograms' => 'Ingen programdata tilgjengelig',
-			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'Ingen programdata tilgjengelig',
+			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'DIREKTE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
@@ -1839,6 +1847,10 @@ extension on TranslationsNb {
 			'liveTv.lateNight' => 'Sen kveld',
 			'liveTv.whatsOn' => 'Hva går nå',
 			'liveTv.watchChannel' => 'Se kanal',
+			'liveTv.favorites' => 'Favoritter',
+			'liveTv.addToFavorites' => 'Legg til i favoritter',
+			'liveTv.removeFromFavorites' => 'Fjern fra favoritter',
+			'liveTv.noFavorites' => 'Ingen favorittkanaler. Trykk lenge på en kanal for å legge den til.',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',

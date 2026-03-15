@@ -213,7 +213,9 @@
     "confirmExitOnBack": "Vor dem Beenden bestätigen",
     "confirmExitOnBackDescription": "Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird",
     "showNavBarLabels": "Navigationsleisten-Beschriftungen anzeigen",
-    "showNavBarLabelsDescription": "Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen"
+    "showNavBarLabelsDescription": "Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen",
+    "liveTvDefaultFavorites": "Standardmäßig Favoritenkanäle",
+    "liveTvDefaultFavoritesDescription": "Beim Öffnen von Live TV nur Favoritenkanäle anzeigen"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",
@@ -590,7 +592,11 @@
     "evening": "Abend",
     "lateNight": "Spätnacht",
     "whatsOn": "Jetzt im TV",
-    "watchChannel": "Kanal ansehen"
+    "watchChannel": "Kanal ansehen",
+    "favorites": "Favoriten",
+    "addToFavorites": "Zu Favoriten hinzufügen",
+    "removeFromFavorites": "Aus Favoriten entfernen",
+    "noFavorites": "Keine Favoritenkanäle. Kanal lange drücken, um ihn hinzuzufügen."
   },
   "downloads": {
     "title": "Downloads",

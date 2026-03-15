@@ -213,7 +213,9 @@
     "confirmExitOnBack": "Confirmer avant de quitter",
     "confirmExitOnBackDescription": "Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter",
     "showNavBarLabels": "Afficher les libellés de la barre de navigation",
-    "showNavBarLabelsDescription": "Afficher les libellés sous les icônes de la barre de navigation"
+    "showNavBarLabelsDescription": "Afficher les libellés sous les icônes de la barre de navigation",
+    "liveTvDefaultFavorites": "Chaînes favorites par défaut",
+    "liveTvDefaultFavoritesDescription": "Afficher uniquement les chaînes favorites à l'ouverture de la TV en direct"
   },
   "search": {
     "hint": "Rechercher des films, des séries, de la musique...",
@@ -590,7 +592,11 @@
     "evening": "Soirée",
     "lateNight": "Nuit tardive",
     "whatsOn": "En ce moment",
-    "watchChannel": "Regarder la chaîne"
+    "watchChannel": "Regarder la chaîne",
+    "favorites": "Favoris",
+    "addToFavorites": "Ajouter aux favoris",
+    "removeFromFavorites": "Retirer des favoris",
+    "noFavorites": "Aucune chaîne favorite. Appuyez longuement sur une chaîne pour l'ajouter."
   },
   "collections": {
     "title": "Collections",

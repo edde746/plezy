@@ -333,6 +333,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다';
 	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
 	@override String get showNavBarLabelsDescription => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다';
+	@override String get liveTvDefaultFavorites => '즐겨찾기 채널 기본 설정';
+	@override String get liveTvDefaultFavoritesDescription => '라이브 TV를 열 때 즐겨찾기 채널만 표시';
 }
 
 // Path: search
@@ -830,6 +832,10 @@ class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
 	@override String get lateNight => '심야 방송';
 	@override String get whatsOn => '지금 방송 중';
 	@override String get watchChannel => '채널 시청';
+	@override String get favorites => '즐겨찾기';
+	@override String get addToFavorites => '즐겨찾기에 추가';
+	@override String get removeFromFavorites => '즐겨찾기에서 제거';
+	@override String get noFavorites => '즐겨찾기 채널이 없습니다. 채널을 길게 눌러 추가하세요.';
 }
 
 // Path: collections
@@ -1514,6 +1520,8 @@ extension on TranslationsKo {
 			'settings.confirmExitOnBackDescription' => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다',
 			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
 			'settings.showNavBarLabelsDescription' => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다',
+			'settings.liveTvDefaultFavorites' => '즐겨찾기 채널 기본 설정',
+			'settings.liveTvDefaultFavoritesDescription' => '라이브 TV를 열 때 즐겨찾기 채널만 표시',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -1820,10 +1828,10 @@ extension on TranslationsKo {
 			'liveTv.tuneFailed' => '채널 튜닝에 실패했습니다',
 			'liveTv.loading' => '채널 로딩 중...',
 			'liveTv.nowPlaying' => '현재 재생 중',
-			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
-			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
+			'liveTv.channelNumber' => ({required Object number}) => '채널 ${number}',
 			'liveTv.live' => '실시간',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '신규',
@@ -1839,6 +1847,10 @@ extension on TranslationsKo {
 			'liveTv.lateNight' => '심야 방송',
 			'liveTv.whatsOn' => '지금 방송 중',
 			'liveTv.watchChannel' => '채널 시청',
+			'liveTv.favorites' => '즐겨찾기',
+			'liveTv.addToFavorites' => '즐겨찾기에 추가',
+			'liveTv.removeFromFavorites' => '즐겨찾기에서 제거',
+			'liveTv.noFavorites' => '즐겨찾기 채널이 없습니다. 채널을 길게 눌러 추가하세요.',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',

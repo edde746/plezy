@@ -128,7 +128,9 @@
     "confirmExitOnBack": "Bekræft før lukning",
     "confirmExitOnBackDescription": "Vis bekræftelsesdialog ved tryk på tilbage for at lukke appen",
     "showNavBarLabels": "Vis navigationsbarlabels",
-    "showNavBarLabelsDescription": "Vis tekstlabels under navigationsbarikoner"
+    "showNavBarLabelsDescription": "Vis tekstlabels under navigationsbarikoner",
+    "liveTvDefaultFavorites": "Standard til favoritkanaler",
+    "liveTvDefaultFavoritesDescription": "Vis kun favoritkanaler ved åbning af Live TV"
   },
   "search": {
     "hint": "Søg film, serier, musik...", "tryDifferentTerm": "Prøv en anden søgning",
@@ -323,7 +325,11 @@
     "channelNumber": "Kn. ${number}", "live": "LIVE", "hd": "HD", "premiere": "NY",
     "reloadGuide": "Genindlæs guide", "allChannels": "Alle kanaler", "now": "Nu", "today": "I dag",
     "midnight": "Midnat", "overnight": "Nat", "morning": "Morgen", "daytime": "Dagtid",
-    "evening": "Aften", "lateNight": "Sen aften", "whatsOn": "Hvad der kører", "watchChannel": "Se kanal"
+    "evening": "Aften", "lateNight": "Sen aften", "whatsOn": "Hvad der kører", "watchChannel": "Se kanal",
+    "favorites": "Favoritter",
+    "addToFavorites": "Føj til favoritter",
+    "removeFromFavorites": "Fjern fra favoritter",
+    "noFavorites": "Ingen favoritkanaler. Tryk længe på en kanal for at tilføje den."
   },
   "collections": {
     "title": "Samlinger", "collection": "Samling", "empty": "Samlingen er tom",

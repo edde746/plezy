@@ -13,6 +13,9 @@ class FocusableAction {
   /// Icon color. Ignored when [child] is provided.
   final Color? iconColor;
 
+  /// Icon fill weight (0.0–1.0). Defaults to 1.0. Ignored when [child] is provided.
+  final double iconFill;
+
   final String? tooltip;
   final VoidCallback? onPressed;
 
@@ -23,6 +26,7 @@ class FocusableAction {
   const FocusableAction({
     this.icon = Icons.circle,
     this.iconColor,
+    this.iconFill = 1.0,
     this.tooltip,
     this.onPressed,
     this.child,
@@ -173,7 +177,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
           decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: 20),
           child: action.child ??
               IconButton(
-                icon: AppIcon(action.icon, fill: 1, color: action.iconColor),
+                icon: AppIcon(action.icon, fill: action.iconFill, color: action.iconColor),
                 tooltip: action.tooltip,
                 onPressed: action.onPressed,
               ),

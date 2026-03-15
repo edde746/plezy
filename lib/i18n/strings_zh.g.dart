@@ -333,6 +333,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => '按返回键退出应用时显示确认对话框';
 	@override String get showNavBarLabels => '显示导航栏标签';
 	@override String get showNavBarLabelsDescription => '在导航栏图标下方显示文字标签';
+	@override String get liveTvDefaultFavorites => '默认显示收藏频道';
+	@override String get liveTvDefaultFavoritesDescription => '打开直播电视时仅显示收藏频道';
 }
 
 // Path: search
@@ -830,6 +832,10 @@ class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
 	@override String get lateNight => '深夜';
 	@override String get whatsOn => '正在播出';
 	@override String get watchChannel => '观看频道';
+	@override String get favorites => '收藏';
+	@override String get addToFavorites => '添加到收藏';
+	@override String get removeFromFavorites => '从收藏中移除';
+	@override String get noFavorites => '没有收藏频道。长按频道即可添加。';
 }
 
 // Path: downloads
@@ -1514,6 +1520,8 @@ extension on TranslationsZh {
 			'settings.confirmExitOnBackDescription' => '按返回键退出应用时显示确认对话框',
 			'settings.showNavBarLabels' => '显示导航栏标签',
 			'settings.showNavBarLabelsDescription' => '在导航栏图标下方显示文字标签',
+			'settings.liveTvDefaultFavorites' => '默认显示收藏频道',
+			'settings.liveTvDefaultFavoritesDescription' => '打开直播电视时仅显示收藏频道',
 			'search.hint' => '搜索电影、系列、音乐...',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -1820,10 +1828,10 @@ extension on TranslationsZh {
 			'liveTv.tuneFailed' => '无法调谐频道',
 			'liveTv.loading' => '正在加载频道...',
 			'liveTv.nowPlaying' => '正在播放',
-			'liveTv.noPrograms' => '没有可用的节目数据',
-			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => '没有可用的节目数据',
+			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			'liveTv.live' => '直播',
 			'liveTv.hd' => '高清',
 			'liveTv.premiere' => '新',
@@ -1839,6 +1847,10 @@ extension on TranslationsZh {
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '正在播出',
 			'liveTv.watchChannel' => '观看频道',
+			'liveTv.favorites' => '收藏',
+			'liveTv.addToFavorites' => '添加到收藏',
+			'liveTv.removeFromFavorites' => '从收藏中移除',
+			'liveTv.noFavorites' => '没有收藏频道。长按频道即可添加。',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',

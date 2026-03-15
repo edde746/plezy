@@ -213,7 +213,9 @@
     "confirmExitOnBack": "Bekräfta innan avslut",
     "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen",
     "showNavBarLabels": "Visa navigeringsfältets etiketter",
-    "showNavBarLabelsDescription": "Visa textetiketter under navigeringsfältets ikoner"
+    "showNavBarLabelsDescription": "Visa textetiketter under navigeringsfältets ikoner",
+    "liveTvDefaultFavorites": "Standard till favoritkanaler",
+    "liveTvDefaultFavoritesDescription": "Visa bara favoritkanaler när du öppnar Live TV"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
@@ -590,7 +592,11 @@
     "evening": "Kväll",
     "lateNight": "Sen kväll",
     "whatsOn": "På TV nu",
-    "watchChannel": "Titta på kanal"
+    "watchChannel": "Titta på kanal",
+    "favorites": "Favoriter",
+    "addToFavorites": "Lägg till i favoriter",
+    "removeFromFavorites": "Ta bort från favoriter",
+    "noFavorites": "Inga favoritkanaler. Tryck länge på en kanal för att lägga till den."
   },
   "downloads": {
     "title": "Nedladdningar",

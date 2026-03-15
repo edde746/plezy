@@ -213,7 +213,9 @@
     "confirmExitOnBack": "Confirmar antes de sair",
     "confirmExitOnBackDescription": "Mostrar diálogo de confirmação ao pressionar voltar para sair do app",
     "showNavBarLabels": "Mostrar Rótulos da Barra de Navegação",
-    "showNavBarLabelsDescription": "Exibir rótulos de texto sob os ícones da barra de navegação"
+    "showNavBarLabelsDescription": "Exibir rótulos de texto sob os ícones da barra de navegação",
+    "liveTvDefaultFavorites": "Canais favoritos por padrão",
+    "liveTvDefaultFavoritesDescription": "Mostrar apenas canais favoritos ao abrir TV ao vivo"
   },
   "search": {
     "hint": "Buscar filmes, séries, músicas...",
@@ -590,7 +592,11 @@
     "evening": "Noite",
     "lateNight": "Madrugada",
     "whatsOn": "O que Está Passando",
-    "watchChannel": "Assistir Canal"
+    "watchChannel": "Assistir Canal",
+    "favorites": "Favoritos",
+    "addToFavorites": "Adicionar aos favoritos",
+    "removeFromFavorites": "Remover dos favoritos",
+    "noFavorites": "Nenhum canal favorito. Pressione e segure um canal para adicioná-lo."
   },
   "collections": {
     "title": "Coleções",

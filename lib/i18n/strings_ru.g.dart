@@ -333,6 +333,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Показывать диалог подтверждения при нажатии «назад» для выхода из приложения';
 	@override String get showNavBarLabels => 'Показывать подписи панели навигации';
 	@override String get showNavBarLabelsDescription => 'Отображать текстовые подписи под иконками панели навигации';
+	@override String get liveTvDefaultFavorites => 'Избранные каналы по умолчанию';
+	@override String get liveTvDefaultFavoritesDescription => 'Показывать только избранные каналы при открытии ТВ';
 }
 
 // Path: search
@@ -830,6 +832,10 @@ class _TranslationsLiveTvRu implements TranslationsLiveTvEn {
 	@override String get lateNight => 'Поздний вечер';
 	@override String get whatsOn => 'Что идёт';
 	@override String get watchChannel => 'Смотреть канал';
+	@override String get favorites => 'Избранное';
+	@override String get addToFavorites => 'Добавить в избранное';
+	@override String get removeFromFavorites => 'Удалить из избранного';
+	@override String get noFavorites => 'Нет избранных каналов. Удерживайте канал, чтобы добавить его.';
 }
 
 // Path: collections
@@ -1514,6 +1520,8 @@ extension on TranslationsRu {
 			'settings.confirmExitOnBackDescription' => 'Показывать диалог подтверждения при нажатии «назад» для выхода из приложения',
 			'settings.showNavBarLabels' => 'Показывать подписи панели навигации',
 			'settings.showNavBarLabelsDescription' => 'Отображать текстовые подписи под иконками панели навигации',
+			'settings.liveTvDefaultFavorites' => 'Избранные каналы по умолчанию',
+			'settings.liveTvDefaultFavoritesDescription' => 'Показывать только избранные каналы при открытии ТВ',
 			'search.hint' => 'Поиск фильмов, сериалов, музыки...',
 			'search.tryDifferentTerm' => 'Попробуйте другой запрос',
 			'search.searchYourMedia' => 'Поиск в вашей медиатеке',
@@ -1820,10 +1828,10 @@ extension on TranslationsRu {
 			'liveTv.tuneFailed' => 'Не удалось настроить канал',
 			'liveTv.loading' => 'Загрузка каналов...',
 			'liveTv.nowPlaying' => 'Сейчас воспроизводится',
-			'liveTv.noPrograms' => 'Нет данных о программах',
-			'liveTv.channelNumber' => ({required Object number}) => 'Кн. ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'Нет данных о программах',
+			'liveTv.channelNumber' => ({required Object number}) => 'Кн. ${number}',
 			'liveTv.live' => 'ЭФИР',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'НОВОЕ',
@@ -1839,6 +1847,10 @@ extension on TranslationsRu {
 			'liveTv.lateNight' => 'Поздний вечер',
 			'liveTv.whatsOn' => 'Что идёт',
 			'liveTv.watchChannel' => 'Смотреть канал',
+			'liveTv.favorites' => 'Избранное',
+			'liveTv.addToFavorites' => 'Добавить в избранное',
+			'liveTv.removeFromFavorites' => 'Удалить из избранного',
+			'liveTv.noFavorites' => 'Нет избранных каналов. Удерживайте канал, чтобы добавить его.',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
 			'collections.empty' => 'Коллекция пуста',

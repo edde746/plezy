@@ -744,6 +744,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Display text labels under navigation bar icons'
 	String get showNavBarLabelsDescription => 'Display text labels under navigation bar icons';
+
+	/// en: 'Default to Favorite Channels'
+	String get liveTvDefaultFavorites => 'Default to Favorite Channels';
+
+	/// en: 'Show only favorite channels when opening Live TV'
+	String get liveTvDefaultFavoritesDescription => 'Show only favorite channels when opening Live TV';
 }
 
 // Path: search
@@ -1816,6 +1822,18 @@ class TranslationsLiveTvEn {
 
 	/// en: 'Watch Channel'
 	String get watchChannel => 'Watch Channel';
+
+	/// en: 'Favorites'
+	String get favorites => 'Favorites';
+
+	/// en: 'Add to Favorites'
+	String get addToFavorites => 'Add to Favorites';
+
+	/// en: 'Remove from Favorites'
+	String get removeFromFavorites => 'Remove from Favorites';
+
+	/// en: 'No favorite channels. Long-press a channel to add it.'
+	String get noFavorites => 'No favorite channels. Long-press a channel to add it.';
 }
 
 // Path: collections
@@ -3147,6 +3165,8 @@ extension on Translations {
 			'settings.confirmExitOnBackDescription' => 'Show a confirmation dialog when pressing back to exit the app',
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
 			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
+			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
+			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -3453,10 +3473,10 @@ extension on Translations {
 			'liveTv.tuneFailed' => 'Failed to tune channel',
 			'liveTv.loading' => 'Loading channels...',
 			'liveTv.nowPlaying' => 'Now Playing',
-			'liveTv.noPrograms' => 'No program data available',
-			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'No program data available',
+			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEW',
@@ -3472,6 +3492,10 @@ extension on Translations {
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
+			'liveTv.favorites' => 'Favorites',
+			'liveTv.addToFavorites' => 'Add to Favorites',
+			'liveTv.removeFromFavorites' => 'Remove from Favorites',
+			'liveTv.noFavorites' => 'No favorite channels. Long-press a channel to add it.',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',

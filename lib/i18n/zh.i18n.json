@@ -213,7 +213,9 @@
     "confirmExitOnBack": "退出前确认",
     "confirmExitOnBackDescription": "按返回键退出应用时显示确认对话框",
     "showNavBarLabels": "显示导航栏标签",
-    "showNavBarLabelsDescription": "在导航栏图标下方显示文字标签"
+    "showNavBarLabelsDescription": "在导航栏图标下方显示文字标签",
+    "liveTvDefaultFavorites": "默认显示收藏频道",
+    "liveTvDefaultFavoritesDescription": "打开直播电视时仅显示收藏频道"
   },
   "search": {
     "hint": "搜索电影、系列、音乐...",
@@ -590,7 +592,11 @@
     "evening": "晚上",
     "lateNight": "深夜",
     "whatsOn": "正在播出",
-    "watchChannel": "观看频道"
+    "watchChannel": "观看频道",
+    "favorites": "收藏",
+    "addToFavorites": "添加到收藏",
+    "removeFromFavorites": "从收藏中移除",
+    "noFavorites": "没有收藏频道。长按频道即可添加。"
   },
   "downloads": {
     "title": "下载",

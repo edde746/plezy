@@ -213,7 +213,9 @@
     "confirmExitOnBack": "종료 전 확인",
     "confirmExitOnBackDescription": "뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다",
     "showNavBarLabels": "내비게이션 바 라벨 표시",
-    "showNavBarLabelsDescription": "내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다"
+    "showNavBarLabelsDescription": "내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다",
+    "liveTvDefaultFavorites": "즐겨찾기 채널 기본 설정",
+    "liveTvDefaultFavoritesDescription": "라이브 TV를 열 때 즐겨찾기 채널만 표시"
   },
   "search": {
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",
@@ -590,7 +592,11 @@
     "evening": "저녁",
     "lateNight": "심야 방송",
     "whatsOn": "지금 방송 중",
-    "watchChannel": "채널 시청"
+    "watchChannel": "채널 시청",
+    "favorites": "즐겨찾기",
+    "addToFavorites": "즐겨찾기에 추가",
+    "removeFromFavorites": "즐겨찾기에서 제거",
+    "noFavorites": "즐겨찾기 채널이 없습니다. 채널을 길게 눌러 추가하세요."
   },
   "collections": {
     "title": "컬렉션",

@@ -213,7 +213,9 @@
     "confirmExitOnBack": "Potwierdź przed wyjściem",
     "confirmExitOnBackDescription": "Pokaż dialog potwierdzenia przy naciśnięciu wstecz, aby wyjść z aplikacji",
     "showNavBarLabels": "Pokaż etykiety paska nawigacji",
-    "showNavBarLabelsDescription": "Wyświetl tekstowe etykiety pod ikonami paska nawigacji"
+    "showNavBarLabelsDescription": "Wyświetl tekstowe etykiety pod ikonami paska nawigacji",
+    "liveTvDefaultFavorites": "Domyślnie ulubione kanały",
+    "liveTvDefaultFavoritesDescription": "Pokaż tylko ulubione kanały po otwarciu telewizji na żywo"
   },
   "search": {
     "hint": "Szukaj filmów, seriali, muzyki...",
@@ -590,7 +592,11 @@
     "evening": "Wieczorem",
     "lateNight": "Późna noc",
     "whatsOn": "Co leci",
-    "watchChannel": "Oglądaj kanał"
+    "watchChannel": "Oglądaj kanał",
+    "favorites": "Ulubione",
+    "addToFavorites": "Dodaj do ulubionych",
+    "removeFromFavorites": "Usuń z ulubionych",
+    "noFavorites": "Brak ulubionych kanałów. Przytrzymaj kanał, aby go dodać."
   },
   "collections": {
     "title": "Kolekcje",

@@ -333,6 +333,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen';
 	@override String get showNavBarLabels => 'Visa navigeringsfältets etiketter';
 	@override String get showNavBarLabelsDescription => 'Visa textetiketter under navigeringsfältets ikoner';
+	@override String get liveTvDefaultFavorites => 'Standard till favoritkanaler';
+	@override String get liveTvDefaultFavoritesDescription => 'Visa bara favoritkanaler när du öppnar Live TV';
 }
 
 // Path: search
@@ -830,6 +832,10 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get lateNight => 'Sen kväll';
 	@override String get whatsOn => 'På TV nu';
 	@override String get watchChannel => 'Titta på kanal';
+	@override String get favorites => 'Favoriter';
+	@override String get addToFavorites => 'Lägg till i favoriter';
+	@override String get removeFromFavorites => 'Ta bort från favoriter';
+	@override String get noFavorites => 'Inga favoritkanaler. Tryck länge på en kanal för att lägga till den.';
 }
 
 // Path: downloads
@@ -1514,6 +1520,8 @@ extension on TranslationsSv {
 			'settings.confirmExitOnBackDescription' => 'Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen',
 			'settings.showNavBarLabels' => 'Visa navigeringsfältets etiketter',
 			'settings.showNavBarLabelsDescription' => 'Visa textetiketter under navigeringsfältets ikoner',
+			'settings.liveTvDefaultFavorites' => 'Standard till favoritkanaler',
+			'settings.liveTvDefaultFavoritesDescription' => 'Visa bara favoritkanaler när du öppnar Live TV',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -1820,10 +1828,10 @@ extension on TranslationsSv {
 			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
 			'liveTv.loading' => 'Laddar kanaler...',
 			'liveTv.nowPlaying' => 'Spelas nu',
-			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
-			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
+			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
@@ -1839,6 +1847,10 @@ extension on TranslationsSv {
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
 			'liveTv.watchChannel' => 'Titta på kanal',
+			'liveTv.favorites' => 'Favoriter',
+			'liveTv.addToFavorites' => 'Lägg till i favoriter',
+			'liveTv.removeFromFavorites' => 'Ta bort från favoriter',
+			'liveTv.noFavorites' => 'Inga favoritkanaler. Tryck länge på en kanal för att lägga till den.',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',

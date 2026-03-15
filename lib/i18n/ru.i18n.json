@@ -213,7 +213,9 @@
     "confirmExitOnBack": "Подтверждать выход",
     "confirmExitOnBackDescription": "Показывать диалог подтверждения при нажатии «назад» для выхода из приложения",
     "showNavBarLabels": "Показывать подписи панели навигации",
-    "showNavBarLabelsDescription": "Отображать текстовые подписи под иконками панели навигации"
+    "showNavBarLabelsDescription": "Отображать текстовые подписи под иконками панели навигации",
+    "liveTvDefaultFavorites": "Избранные каналы по умолчанию",
+    "liveTvDefaultFavoritesDescription": "Показывать только избранные каналы при открытии ТВ"
   },
   "search": {
     "hint": "Поиск фильмов, сериалов, музыки...",
@@ -590,7 +592,11 @@
     "evening": "Вечер",
     "lateNight": "Поздний вечер",
     "whatsOn": "Что идёт",
-    "watchChannel": "Смотреть канал"
+    "watchChannel": "Смотреть канал",
+    "favorites": "Избранное",
+    "addToFavorites": "Добавить в избранное",
+    "removeFromFavorites": "Удалить из избранного",
+    "noFavorites": "Нет избранных каналов. Удерживайте канал, чтобы добавить его."
   },
   "collections": {
     "title": "Коллекции",

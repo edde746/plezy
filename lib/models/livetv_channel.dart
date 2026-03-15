@@ -69,3 +69,50 @@ class LiveTvChannel {
   /// Display name: prefer callSign, fallback to title
   String get displayName => callSign ?? title ?? 'Channel $number';
 }
+
+/// A channel entry in the Plex cloud favorites list.
+/// Stored at `https://epg.provider.plex.tv/settings/favoriteChannels`.
+class FavoriteChannel {
+  final String source;
+  final String id;
+  final String? title;
+  final String? thumb;
+  final String? vcn;
+
+  FavoriteChannel({
+    required this.source,
+    required this.id,
+    this.title,
+    this.thumb,
+    this.vcn,
+  });
+
+  factory FavoriteChannel.fromJson(Map<String, dynamic> json) {
+    return FavoriteChannel(
+      source: json['source'] as String? ?? '',
+      id: json['id'] as String? ?? json['key'] as String? ?? '',
+      title: json['title'] as String?,
+      thumb: json['thumb'] as String?,
+      vcn: json['vcn'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'source': source,
+    'id': id,
+    if (title != null) 'title': title,
+    if (thumb != null) 'thumb': thumb,
+    if (vcn != null) 'vcn': vcn,
+  };
+
+  /// Create from a [LiveTvChannel] and a source URI.
+  factory FavoriteChannel.fromLiveTvChannel(LiveTvChannel channel, String source) {
+    return FavoriteChannel(
+      source: source,
+      id: channel.key,
+      title: channel.title ?? channel.callSign,
+      thumb: channel.thumb,
+      vcn: channel.number,
+    );
+  }
+}

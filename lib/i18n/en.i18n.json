@@ -213,7 +213,9 @@
     "confirmExitOnBack": "Confirm before exiting",
     "confirmExitOnBackDescription": "Show a confirmation dialog when pressing back to exit the app",
     "showNavBarLabels": "Show Navigation Bar Labels",
-    "showNavBarLabelsDescription": "Display text labels under navigation bar icons"
+    "showNavBarLabelsDescription": "Display text labels under navigation bar icons",
+    "liveTvDefaultFavorites": "Default to Favorite Channels",
+    "liveTvDefaultFavoritesDescription": "Show only favorite channels when opening Live TV"
   },
   "search": {
     "hint": "Search movies, shows, music...",
@@ -590,7 +592,11 @@
     "evening": "Evening",
     "lateNight": "Late Night",
     "whatsOn": "What's On",
-    "watchChannel": "Watch Channel"
+    "watchChannel": "Watch Channel",
+    "favorites": "Favorites",
+    "addToFavorites": "Add to Favorites",
+    "removeFromFavorites": "Remove from Favorites",
+    "noFavorites": "No favorite channels. Long-press a channel to add it."
   },
   "collections": {
     "title": "Collections",

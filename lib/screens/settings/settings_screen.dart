@@ -77,6 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kShowUnwatchedCount = 'show_unwatched_count';
   static const _kHideSpoilers = 'hide_spoilers';
   static const _kShowNavBarLabels = 'show_nav_bar_labels';
+  static const _kLiveTvDefaultFavorites = 'live_tv_default_favorites';
   static const _kRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const _kConfirmExitOnBack = 'confirm_exit_on_back';
   static const _kPlayerBackend = 'player_backend';
@@ -525,6 +526,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 );
               },
             ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                focusNode: _focusTracker.get(_kLiveTvDefaultFavorites),
+                secondary: const AppIcon(Symbols.star_rounded, fill: 1),
+                title: Text(t.settings.liveTvDefaultFavorites),
+                subtitle: Text(t.settings.liveTvDefaultFavoritesDescription),
+                value: settingsProvider.liveTvDefaultFavorites,
+                onChanged: (value) async {
+                  await settingsProvider.setLiveTvDefaultFavorites(value);
+                },
+              );
+            },
+          ),
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return SwitchListTile(

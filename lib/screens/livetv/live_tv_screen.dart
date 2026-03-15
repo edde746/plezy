@@ -9,6 +9,7 @@ import '../../models/livetv_dvr.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../providers/multi_server_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
@@ -39,6 +40,18 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   bool _isLoading = true;
   String? _error;
 
+  // Favorites
+  bool _showFavoritesOnly = false;
+  Set<String> _favoriteChannelIds = {};
+  List<FavoriteChannel> _favoriteChannels = [];
+  /// Source URI per server, built from machineIdentifier + EPG provider identifier.
+  final Map<String, String> _favoriteSourceByServer = {};
+
+  List<LiveTvChannel> get _filteredChannels {
+    if (!_showFavoritesOnly || _favoriteChannelIds.isEmpty) return _channels;
+    return _channels.where((c) => _favoriteChannelIds.contains(c.key)).toList();
+  }
+
   @override
   List<FocusNode> get tabChipFocusNodes => [_guideTabFocusNode, _whatsOnTabFocusNode];
 
@@ -46,6 +59,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void initState() {
     super.initState();
     suppressAutoFocus = true;
+    _showFavoritesOnly = context.read<SettingsProvider>().liveTvDefaultFavorites;
     initTabNavigation();
     _loadChannels();
   }
@@ -172,6 +186,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         _isLoading = false;
       });
 
+      // Load favorites from the first available server (favorites are cloud-synced)
+      _loadFavorites(multiServer);
+
       if (allChannels.isNotEmpty && PlatformDetector.shouldUseSideNavigation(context)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _focusCurrentTab();
@@ -184,6 +201,62 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           _isLoading = false;
           _error = e.toString();
         });
+      }
+    }
+  }
+
+  Future<void> _loadFavorites(MultiServerProvider multiServer) async {
+    try {
+      // Use the first available server's client to fetch favorites
+      for (final serverInfo in multiServer.liveTvServers) {
+        final client = multiServer.getClientForServer(serverInfo.serverId);
+        if (client == null) continue;
+
+        // Build and cache the source URI for this server
+        final source = await client.buildFavoriteChannelSource();
+        _favoriteSourceByServer[serverInfo.serverId] = source;
+
+        final favorites = await client.getFavoriteChannels();
+        if (!mounted) return;
+
+        setState(() {
+          _favoriteChannels = favorites;
+          _favoriteChannelIds = favorites.map((f) => f.id).toSet();
+        });
+        appLogger.d('Live TV: loaded ${favorites.length} favorite channels');
+        break; // Favorites are cloud-synced, only need to fetch once
+      }
+    } catch (e) {
+      appLogger.e('Failed to load favorite channels', error: e);
+    }
+  }
+
+  void _toggleFavoritesFilter() {
+    setState(() {
+      _showFavoritesOnly = !_showFavoritesOnly;
+    });
+  }
+
+  void _toggleFavorite(LiveTvChannel channel) {
+    final multiServer = context.read<MultiServerProvider>();
+    final source = _favoriteSourceByServer[channel.serverId] ?? '';
+
+    setState(() {
+      if (_favoriteChannelIds.contains(channel.key)) {
+        _favoriteChannelIds = Set.from(_favoriteChannelIds)..remove(channel.key);
+        _favoriteChannels = _favoriteChannels.where((f) => f.id != channel.key).toList();
+      } else {
+        _favoriteChannelIds = Set.from(_favoriteChannelIds)..add(channel.key);
+        _favoriteChannels = [..._favoriteChannels, FavoriteChannel.fromLiveTvChannel(channel, source)];
+      }
+    });
+
+    // Persist to server (fire-and-forget, optimistic UI)
+    for (final serverInfo in multiServer.liveTvServers) {
+      final client = multiServer.getClientForServer(serverInfo.serverId);
+      if (client != null) {
+        client.setFavoriteChannels(_favoriteChannels);
+        break;
       }
     }
   }
@@ -275,6 +348,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             onNavigateDown: _focusCurrentTab,
             actions: [
               FocusableAction(
+                icon: _showFavoritesOnly ? Symbols.star_rounded : Symbols.star_outline_rounded,
+                iconFill: _showFavoritesOnly ? 1.0 : 0.0,
+                tooltip: t.liveTv.favorites,
+                onPressed: _toggleFavoritesFilter,
+              ),
+              FocusableAction(
                 icon: Symbols.refresh_rounded,
                 tooltip: t.liveTv.reloadGuide,
                 onPressed: _loadChannels,
@@ -312,6 +391,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     if (_channels.isEmpty) {
       return Center(child: Text(t.liveTv.noChannels));
     }
+
+    final guideChannels = _filteredChannels;
+
     return Column(
       children: [
         if (!useSideNav)
@@ -333,7 +415,14 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           child: TabBarView(
             controller: tabController,
             children: [
-              GuideTab(key: _guideTabKey, channels: _channels, onNavigateUp: focusTabBar, onBack: onTabBarBack),
+              GuideTab(
+                key: _guideTabKey,
+                channels: guideChannels,
+                favoriteChannelIds: _favoriteChannelIds,
+                onToggleFavorite: _toggleFavorite,
+                onNavigateUp: focusTabBar,
+                onBack: onTabBarBack,
+              ),
               WhatsOnTab(key: _whatsOnTabKey, channels: _channels, onNavigateUp: focusTabBar, onBack: onTabBarBack),
             ],
           ),

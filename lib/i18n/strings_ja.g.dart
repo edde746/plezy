@@ -333,6 +333,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => '戻るボタンでアプリを終了する際に確認ダイアログを表示';
 	@override String get showNavBarLabels => 'ナビゲーションバーラベルを表示';
 	@override String get showNavBarLabelsDescription => 'ナビゲーションバーアイコンの下にテキストラベルを表示';
+	@override String get liveTvDefaultFavorites => 'お気に入りチャンネルをデフォルトに';
+	@override String get liveTvDefaultFavoritesDescription => 'ライブTV を開いたときにお気に入りチャンネルのみ表示';
 }
 
 // Path: search
@@ -830,6 +832,10 @@ class _TranslationsLiveTvJa implements TranslationsLiveTvEn {
 	@override String get lateNight => '深夜';
 	@override String get whatsOn => '放送中';
 	@override String get watchChannel => 'チャンネルを視聴';
+	@override String get favorites => 'お気に入り';
+	@override String get addToFavorites => 'お気に入りに追加';
+	@override String get removeFromFavorites => 'お気に入りから削除';
+	@override String get noFavorites => 'お気に入りチャンネルがありません。チャンネルを長押しして追加してください。';
 }
 
 // Path: collections
@@ -1514,6 +1520,8 @@ extension on TranslationsJa {
 			'settings.confirmExitOnBackDescription' => '戻るボタンでアプリを終了する際に確認ダイアログを表示',
 			'settings.showNavBarLabels' => 'ナビゲーションバーラベルを表示',
 			'settings.showNavBarLabelsDescription' => 'ナビゲーションバーアイコンの下にテキストラベルを表示',
+			'settings.liveTvDefaultFavorites' => 'お気に入りチャンネルをデフォルトに',
+			'settings.liveTvDefaultFavoritesDescription' => 'ライブTV を開いたときにお気に入りチャンネルのみ表示',
 			'search.hint' => '映画、番組、音楽を検索...',
 			'search.tryDifferentTerm' => '別の検索語をお試しください',
 			'search.searchYourMedia' => 'メディアを検索',
@@ -1820,10 +1828,10 @@ extension on TranslationsJa {
 			'liveTv.tuneFailed' => 'チャンネルのチューニングに失敗しました',
 			'liveTv.loading' => 'チャンネルを読み込み中...',
 			'liveTv.nowPlaying' => '現在放送中',
-			'liveTv.noPrograms' => '番組データがありません',
-			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => '番組データがありません',
+			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'ライブ',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '新着',
@@ -1839,6 +1847,10 @@ extension on TranslationsJa {
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '放送中',
 			'liveTv.watchChannel' => 'チャンネルを視聴',
+			'liveTv.favorites' => 'お気に入り',
+			'liveTv.addToFavorites' => 'お気に入りに追加',
+			'liveTv.removeFromFavorites' => 'お気に入りから削除',
+			'liveTv.noFavorites' => 'お気に入りチャンネルがありません。チャンネルを長押しして追加してください。',
 			'collections.title' => 'コレクション',
 			'collections.collection' => 'コレクション',
 			'collections.empty' => 'コレクションは空です',

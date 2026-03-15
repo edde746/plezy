@@ -95,6 +95,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyAudioPassthrough = 'audio_passthrough';
   static const String _keyAudioNormalization = 'audio_normalization';
   static const String _keyCustomShaderPresets = 'custom_shader_presets';
+  static const String _keyLiveTvDefaultFavorites = 'live_tv_default_favorites';
 
   SettingsService._();
 
@@ -1178,6 +1179,14 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getShowNavBarLabels() {
     return prefs.getBool(_keyShowNavBarLabels) ?? true; // Default: show labels
+  }
+
+  Future<void> setLiveTvDefaultFavorites(bool enabled) async {
+    await prefs.setBool(_keyLiveTvDefaultFavorites, enabled);
+  }
+
+  bool getLiveTvDefaultFavorites() {
+    return prefs.getBool(_keyLiveTvDefaultFavorites) ?? false;
   }
 
   // Global Shader Preset (for MPV video enhancement)

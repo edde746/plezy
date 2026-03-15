@@ -333,6 +333,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten';
 	@override String get showNavBarLabels => 'Navigatiebalk labels tonen';
 	@override String get showNavBarLabelsDescription => 'Tekstlabels onder de pictogrammen van de navigatiebalk weergeven';
+	@override String get liveTvDefaultFavorites => 'Standaard favoriete zenders';
+	@override String get liveTvDefaultFavoritesDescription => 'Toon alleen favoriete zenders bij het openen van Live TV';
 }
 
 // Path: search
@@ -830,6 +832,10 @@ class _TranslationsLiveTvNl implements TranslationsLiveTvEn {
 	@override String get lateNight => 'Late avond';
 	@override String get whatsOn => 'Nu op TV';
 	@override String get watchChannel => 'Kanaal bekijken';
+	@override String get favorites => 'Favorieten';
+	@override String get addToFavorites => 'Toevoegen aan favorieten';
+	@override String get removeFromFavorites => 'Verwijderen uit favorieten';
+	@override String get noFavorites => 'Geen favoriete zenders. Houd een zender ingedrukt om toe te voegen.';
 }
 
 // Path: downloads
@@ -1514,6 +1520,8 @@ extension on TranslationsNl {
 			'settings.confirmExitOnBackDescription' => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten',
 			'settings.showNavBarLabels' => 'Navigatiebalk labels tonen',
 			'settings.showNavBarLabelsDescription' => 'Tekstlabels onder de pictogrammen van de navigatiebalk weergeven',
+			'settings.liveTvDefaultFavorites' => 'Standaard favoriete zenders',
+			'settings.liveTvDefaultFavoritesDescription' => 'Toon alleen favoriete zenders bij het openen van Live TV',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -1820,10 +1828,10 @@ extension on TranslationsNl {
 			'liveTv.tuneFailed' => 'Kan zender niet afstemmen',
 			'liveTv.loading' => 'Zenders laden...',
 			'liveTv.nowPlaying' => 'Nu aan het afspelen',
-			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
-			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
+			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NIEUW',
@@ -1839,6 +1847,10 @@ extension on TranslationsNl {
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
 			'liveTv.watchChannel' => 'Kanaal bekijken',
+			'liveTv.favorites' => 'Favorieten',
+			'liveTv.addToFavorites' => 'Toevoegen aan favorieten',
+			'liveTv.removeFromFavorites' => 'Verwijderen uit favorieten',
+			'liveTv.noFavorites' => 'Geen favoriete zenders. Houd een zender ingedrukt om toe te voegen.',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',

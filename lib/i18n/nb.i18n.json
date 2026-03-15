@@ -213,7 +213,9 @@
     "confirmExitOnBack": "Bekreft før avslutning",
     "confirmExitOnBackDescription": "Vis en bekreftelsesdialog når du trykker tilbake for å avslutte appen",
     "showNavBarLabels": "Vis navigasjonsfeltlabeler",
-    "showNavBarLabelsDescription": "Vis tekstlabeler under navigasjonsfeltikoner"
+    "showNavBarLabelsDescription": "Vis tekstlabeler under navigasjonsfeltikoner",
+    "liveTvDefaultFavorites": "Standard til favorittkanaler",
+    "liveTvDefaultFavoritesDescription": "Vis kun favorittkanaler når du åpner Live TV"
   },
   "search": {
     "hint": "Søk i filmer, serier, musikk...",
@@ -590,7 +592,11 @@
     "evening": "Kveld",
     "lateNight": "Sen kveld",
     "whatsOn": "Hva går nå",
-    "watchChannel": "Se kanal"
+    "watchChannel": "Se kanal",
+    "favorites": "Favoritter",
+    "addToFavorites": "Legg til i favoritter",
+    "removeFromFavorites": "Fjern fra favoritter",
+    "noFavorites": "Ingen favorittkanaler. Trykk lenge på en kanal for å legge den til."
   },
   "collections": {
     "title": "Samlinger",

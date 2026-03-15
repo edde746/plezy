@@ -25,10 +25,19 @@ import '../program_details_sheet.dart';
 
 class GuideTab extends StatefulWidget {
   final List<LiveTvChannel> channels;
+  final Set<String> favoriteChannelIds;
+  final void Function(LiveTvChannel)? onToggleFavorite;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onBack;
 
-  const GuideTab({super.key, required this.channels, this.onNavigateUp, this.onBack});
+  const GuideTab({
+    super.key,
+    required this.channels,
+    this.favoriteChannelIds = const {},
+    this.onToggleFavorite,
+    this.onNavigateUp,
+    this.onBack,
+  });
 
   @override
   State<GuideTab> createState() => GuideTabState();
@@ -407,6 +416,13 @@ class GuideTabState extends State<GuideTab> {
         } else if (_focusedProgram != null) {
           _showProgramDetails(channel, _focusedProgram!);
         }
+      }
+      return KeyEventResult.handled;
+    }
+    // 'F' key toggles favorite on focused channel
+    if (key == LogicalKeyboardKey.keyF && _gridColumn == 0) {
+      if (_gridChannelIndex >= 0 && _gridChannelIndex < widget.channels.length) {
+        widget.onToggleFavorite?.call(widget.channels[_gridChannelIndex]);
       }
       return KeyEventResult.handled;
     }
@@ -888,7 +904,9 @@ class GuideTabState extends State<GuideTab> {
       channel: channel,
       theme: theme,
       onTap: () => _tuneChannel(channel),
+      onLongPress: widget.onToggleFavorite != null ? () => widget.onToggleFavorite!(channel) : null,
       isFocused: isFocused,
+      isFavorite: widget.favoriteChannelIds.contains(channel.key),
       fallbackBuilder: () => _buildChannelNameFallback(channel, theme),
     );
   }
@@ -1113,7 +1131,9 @@ class _ChannelCell extends StatefulWidget {
   final LiveTvChannel channel;
   final ThemeData theme;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final bool isFocused;
+  final bool isFavorite;
   final Widget Function() fallbackBuilder;
 
   const _ChannelCell({
@@ -1124,7 +1144,9 @@ class _ChannelCell extends StatefulWidget {
     required this.channel,
     required this.theme,
     required this.onTap,
+    this.onLongPress,
     required this.isFocused,
+    this.isFavorite = false,
     required this.fallbackBuilder,
   });
 
@@ -1143,12 +1165,15 @@ class _ChannelCellState extends State<_ChannelCell> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: Material(
-        color: widget.isFocused ? theme.colorScheme.primary.withValues(alpha: 0.15) : Colors.transparent,
-        child: InkWell(
-          canRequestFocus: false,
-          onTap: widget.onTap,
-          child: Container(
+      child: GestureDetector(
+        onSecondaryTap: widget.onLongPress,
+        child: Material(
+          color: widget.isFocused ? theme.colorScheme.primary.withValues(alpha: 0.15) : Colors.transparent,
+          child: InkWell(
+            canRequestFocus: false,
+            onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
+            child: Container(
             height: widget.rowHeight,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
@@ -1174,10 +1199,17 @@ class _ChannelCellState extends State<_ChannelCell> {
                       : widget.fallbackBuilder(),
                 ),
                 if (showAction) AppIcon(Symbols.play_arrow_rounded, size: 32, color: theme.colorScheme.onSurface),
+                if (widget.isFavorite)
+                  Positioned(
+                    top: 2,
+                    right: 0,
+                    child: AppIcon(Symbols.star_rounded, size: 14, color: theme.colorScheme.primary),
+                  ),
               ],
             ),
           ),
         ),
+      ),
       ),
     );
   }

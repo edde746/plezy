@@ -213,7 +213,9 @@
     "confirmExitOnBack": "終了前に確認",
     "confirmExitOnBackDescription": "戻るボタンでアプリを終了する際に確認ダイアログを表示",
     "showNavBarLabels": "ナビゲーションバーラベルを表示",
-    "showNavBarLabelsDescription": "ナビゲーションバーアイコンの下にテキストラベルを表示"
+    "showNavBarLabelsDescription": "ナビゲーションバーアイコンの下にテキストラベルを表示",
+    "liveTvDefaultFavorites": "お気に入りチャンネルをデフォルトに",
+    "liveTvDefaultFavoritesDescription": "ライブTV を開いたときにお気に入りチャンネルのみ表示"
   },
   "search": {
     "hint": "映画、番組、音楽を検索...",
@@ -590,7 +592,11 @@
     "evening": "夕方",
     "lateNight": "深夜",
     "whatsOn": "放送中",
-    "watchChannel": "チャンネルを視聴"
+    "watchChannel": "チャンネルを視聴",
+    "favorites": "お気に入り",
+    "addToFavorites": "お気に入りに追加",
+    "removeFromFavorites": "お気に入りから削除",
+    "noFavorites": "お気に入りチャンネルがありません。チャンネルを長押しして追加してください。"
   },
   "collections": {
     "title": "コレクション",
