@@ -133,5 +133,4 @@ class UserSwitchResponse {
   bool get isRestrictedUser => restricted;
   bool get isGuestUser => guest;
   bool get requiresPassword => hasPassword;
-  bool get isSecureUser => twoFactorEnabled || backupCodesCreated;
 }
