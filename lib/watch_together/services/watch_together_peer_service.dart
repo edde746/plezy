@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:uuid/uuid.dart';
+import '../../utils/future_extensions.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../services/base_peer_service.dart';
@@ -280,7 +281,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
           _sendRaw({'type': 'join', 'sessionId': _sessionId, 'peerId': _myPeerId});
         }
 
-        await completer.future.timeout(const Duration(seconds: 10));
+        await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'WatchTogether reconnect');
         appLogger.d('WatchTogether: Reconnected successfully');
       } catch (e) {
         appLogger.e('WatchTogether: Reconnect failed', error: e);

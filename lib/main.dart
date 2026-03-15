@@ -501,6 +501,7 @@ class _SetupScreenState extends State<SetupScreen> {
     // Check network connectivity early to fast-path airplane mode.
     // Timeout guards against connectivity_plus hanging on some Android TV devices after force-close.
     bool hasNetwork;
+    Sentry.addBreadcrumb(Breadcrumb(message: 'Checking network connectivity', category: 'setup'));
     try {
       final connectivityResult = await Connectivity().checkConnectivity().timeout(
         const Duration(seconds: 3),
@@ -511,6 +512,8 @@ class _SetupScreenState extends State<SetupScreen> {
       // connectivity_plus throws DBusServiceUnknownException on Linux without NetworkManager
       hasNetwork = true;
     }
+
+    Sentry.addBreadcrumb(Breadcrumb(message: 'Network check done: hasNetwork=$hasNetwork', category: 'setup'));
 
     if (hasNetwork) {
       _setStatus(t.common.refreshingServers);
@@ -551,6 +554,7 @@ class _SetupScreenState extends State<SetupScreen> {
       return;
     }
 
+    Sentry.addBreadcrumb(Breadcrumb(message: 'Connecting to ${servers.length} server(s)', category: 'setup'));
     _setStatus(t.common.connectingToServers);
 
     // Populate per-server status for splash display

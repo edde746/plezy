@@ -20,6 +20,7 @@ import '../utils/app_logger.dart';
 import '../utils/codec_utils.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/plex_cache_parser.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// Context for a download that's been enqueued with background_downloader.
 /// Carries metadata needed between enqueue and completion callback.
@@ -158,9 +159,11 @@ class DownloadManagerService {
   /// then scans drift for orphaned items.
   Future<void> recoverInterruptedDownloads() async {
     try {
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Initializing FileDownloader', category: 'downloads'));
       await _initializeFileDownloader();
 
       // Let background_downloader re-enqueue tasks killed by the OS
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Rescheduling killed tasks', category: 'downloads'));
       final (rescheduled, _) = await FileDownloader().rescheduleKilledTasks();
       if (rescheduled.isNotEmpty) {
         appLogger.i('Rescheduled ${rescheduled.length} killed download task(s)');
@@ -206,6 +209,7 @@ class DownloadManagerService {
       }
 
       // Scan drift for orphaned items stuck in 'downloading'
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Scanning for orphaned downloads', category: 'downloads'));
       final allDownloads = await _database.select(_database.downloadedMedia).get();
       for (final item in allDownloads) {
         if (item.status == DownloadStatus.downloading.index) {

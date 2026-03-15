@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../../utils/future_extensions.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -91,7 +92,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
       final client = HttpClient();
       client.connectionTimeout = const Duration(seconds: 5);
       final request = await client.getUrl(Uri.parse(WatchTogetherPeerService.healthUrl));
-      final response = await request.close().timeout(const Duration(seconds: 5));
+      final response = await request.close().namedTimeout(const Duration(seconds: 5), operation: 'WatchTogether health check');
       final body = await response.transform(const SystemEncoding().decoder).join();
       client.close();
       if (!mounted) return;

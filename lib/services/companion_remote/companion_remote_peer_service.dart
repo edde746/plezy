@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:web_socket_channel/io.dart';
+import '../../utils/future_extensions.dart';
 
 import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
@@ -506,7 +507,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
 
     try {
-      final winner = await completer.future.timeout(const Duration(seconds: 10));
+      final winner = await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'CompanionRemote race connect');
       cleanup();
 
       // Now set up the proper managed connection on the winning address

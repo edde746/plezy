@@ -6,6 +6,7 @@ import 'plex_client.dart';
 import '../models/plex_config.dart';
 import '../utils/app_logger.dart';
 import '../utils/connection_constants.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'plex_auth_service.dart';
 import 'storage_service.dart';
 
@@ -183,6 +184,7 @@ class MultiServerManager {
     }
 
     appLogger.i('Connecting to ${servers.length} servers...');
+    Sentry.addBreadcrumb(Breadcrumb(message: 'Connecting to ${servers.length} server(s)', category: 'servers'));
 
     // Use provided client ID or generate a unique one for this app instance
     final effectiveClientId = clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
@@ -486,6 +488,7 @@ class MultiServerManager {
     if (offline.isEmpty) return;
 
     appLogger.d('Attempting reconnection for ${offline.length} offline servers');
+    Sentry.addBreadcrumb(Breadcrumb(message: 'Reconnecting ${offline.length} offline server(s)', category: 'servers'));
 
     final futures = offline.map((serverId) {
       final server = _servers[serverId];
