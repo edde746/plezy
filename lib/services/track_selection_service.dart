@@ -39,9 +39,12 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(PlexSubtitleTrack plexTrack, List<Sub
 
     int score = 0;
 
-    // Language match is most important (+10)
+    // Language match is most important (+10, +1 bonus for exact code match)
     if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
       score += 10;
+      if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
+        score += 1;
+      }
     }
 
     // Codec match (+5)
@@ -94,9 +97,12 @@ PlexSubtitleTrack? findPlexTrackForMpvSubtitle(SubtitleTrack mpvTrack, List<Plex
 
     int score = 0;
 
-    // Language match is most important (+10)
+    // Language match is most important (+10, +1 bonus for exact code match)
     if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
       score += 10;
+      if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
+        score += 1;
+      }
     }
 
     // Codec match (+5)
@@ -134,9 +140,12 @@ AudioTrack? findMpvTrackForPlexAudio(PlexAudioTrack plexTrack, List<AudioTrack> 
   for (final mpvTrack in mpvTracks) {
     int score = 0;
 
-    // Language match is most important (+10)
+    // Language match is most important (+10, +1 bonus for exact code match)
     if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
       score += 10;
+      if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
+        score += 1;
+      }
     }
 
     // Codec match (+5)
@@ -176,9 +185,12 @@ PlexAudioTrack? findPlexTrackForMpvAudio(AudioTrack mpvTrack, List<PlexAudioTrac
   for (final plexTrack in plexTracks) {
     int score = 0;
 
-    // Language match is most important (+10)
+    // Language match is most important (+10, +1 bonus for exact code match)
     if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
       score += 10;
+      if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
+        score += 1;
+      }
     }
 
     // Codec match (+5)
@@ -206,6 +218,12 @@ PlexAudioTrack? findPlexTrackForMpvAudio(AudioTrack mpvTrack, List<PlexAudioTrac
 
   // Require at least language match for a valid match
   return bestScore >= 10 ? bestMatch : null;
+}
+
+/// Check if two language codes match exactly (after normalizing case and stripping region suffixes)
+bool _languageCodesExactMatch(String? a, String? b) {
+  if (a == null || b == null) return false;
+  return a.toLowerCase().split('-').first == b.toLowerCase().split('-').first;
 }
 
 /// Check if two language codes refer to the same language
