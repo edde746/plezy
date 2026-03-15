@@ -497,7 +497,7 @@ class _DigitBox extends StatelessWidget {
             color: isActive ? focusColor.withValues(alpha: 0.08) : Colors.transparent,
           ),
           child: Text(
-            digit != null ? digit.toString() : '–',
+            digit != null ? (isActive ? digit.toString() : '•') : '–',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: digit != null
