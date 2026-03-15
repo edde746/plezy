@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show protected;
 import 'package:flutter/services.dart';
 
 import '../../utils/app_logger.dart';
+import '../font_loader.dart';
 import '../models.dart';
 import 'player.dart';
 import 'player_state.dart';
@@ -549,6 +550,28 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setLogLevel(String level) async {}
+
+  // ============================================
+  // Subtitle Fonts
+  // ============================================
+
+  @override
+  Future<void> configureSubtitleFonts() async {
+    try {
+      final fontDir = await SubtitleFontLoader.loadSubtitleFont();
+      if (fontDir != null) {
+        await setProperty('sub-fonts-dir', fontDir);
+        await setProperty('sub-font', SubtitleFontLoader.fontName);
+      }
+    } catch (e) {
+      // Font configuration is not critical - continue without it
+      logController.add(PlayerLog(
+        prefix: 'fonts',
+        level: PlayerLogLevel.warn,
+        text: 'Failed to configure subtitle fonts: $e',
+      ));
+    }
+  }
 
   // ============================================
   // Lifecycle

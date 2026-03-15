@@ -413,6 +413,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Create player (on Android, uses ExoPlayer by default, MPV as fallback)
       player = Player(useExoPlayer: useExoPlayer);
 
+      await player!.configureSubtitleFonts();
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
       if (Platform.isAndroid && useExoPlayer) {
         final tunneledPlayback = settingsService.getTunneledPlayback();

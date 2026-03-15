@@ -2,7 +2,6 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
-import '../font_loader.dart';
 import '../models.dart';
 import '../../utils/app_logger.dart';
 import 'player_base.dart';
@@ -55,9 +54,6 @@ class PlayerNative extends PlayerBase {
         throw Exception('Failed to initialize player');
       }
 
-      // Configure subtitle fonts for libass support
-      await _configureSubtitleFonts();
-
       // Subscribe to MPV properties
       await observeProperty('time-pos', 'double');
       await observeProperty('duration', 'double');
@@ -77,24 +73,6 @@ class PlayerNative extends PlayerBase {
     } catch (e) {
       errorController.add('Initialization failed: $e');
       rethrow;
-    }
-  }
-
-  /// Configures subtitle fonts for libass support.
-  /// Provides a comprehensive Unicode font (Go Noto) with CJK coverage to ensure
-  /// proper rendering of non-Latin characters in subtitles.
-  Future<void> _configureSubtitleFonts() async {
-    try {
-      final fontDir = await SubtitleFontLoader.loadSubtitleFont();
-      if (fontDir != null) {
-        // Configure MPV to use the extracted font for libass
-        await setProperty('config', 'yes');
-        await setProperty('sub-fonts-dir', fontDir);
-        await setProperty('sub-font', SubtitleFontLoader.fontName);
-      }
-    } catch (e) {
-      // Font configuration is not critical - continue without it
-      errorController.add('Failed to configure subtitle fonts: $e');
     }
   }
 

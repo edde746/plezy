@@ -143,6 +143,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     // Track state for event emission
     private var lastPosition: Long = 0
+    /** Position to use for fallback: max of current position and pending start position. */
+    private val effectivePosition: Long get() = maxOf(lastPosition, pendingStartPositionMs)
     private var lastDuration: Long = 0
     private var lastBufferedPosition: Long = 0
     private var positionUpdateRunnable: Runnable? = null
@@ -645,7 +647,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             delegate?.onFormatUnsupported(
                 uri = currentMediaUri!!,
                 headers = currentHeaders,
-                positionMs = lastPosition,
+                positionMs = effectivePosition,
                 errorMessage = "Video track present but no decoder available"
             )
             return
@@ -671,7 +673,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val handled = delegate?.onFormatUnsupported(
                 uri = currentMediaUri!!,
                 headers = currentHeaders,
-                positionMs = lastPosition,
+                positionMs = effectivePosition,
                 errorMessage = error.message ?: "Unknown error"
             ) ?: false
 
@@ -1069,7 +1071,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 delegate?.onFormatUnsupported(
                     uri = uri,
                     headers = currentHeaders,
-                    positionMs = lastPosition,
+                    positionMs = effectivePosition,
                     errorMessage = "Decoder hang: $decoderName accepted input but produced no output"
                 )
             }

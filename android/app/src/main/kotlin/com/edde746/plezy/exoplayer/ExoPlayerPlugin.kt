@@ -211,8 +211,11 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        // New media = fresh slate for pending MPV properties
-        pendingMpvProperties.clear()
+        // Only clear pending MPV properties when MPV is the active backend.
+        // When ExoPlayer is active, keep them for potential ExoPlayer→MPV fallback.
+        if (usingMpvFallback) {
+            pendingMpvProperties.clear()
+        }
 
         activity?.runOnUiThread {
             if (usingMpvFallback) {
