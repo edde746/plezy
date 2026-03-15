@@ -59,17 +59,6 @@ class OfflineWatchProvider extends ChangeNotifier {
     return false;
   }
 
-  /// Check watch status synchronously using cached metadata.
-  ///
-  /// This is useful for UI that can't await, but may not reflect
-  /// the most recent local actions.
-  bool isWatchedSync(PlexMetadata metadata) {
-    // Note: This doesn't check local actions synchronously
-    // because that would require async database access.
-    // For real-time accuracy, use isWatched() instead.
-    return metadata.isWatched;
-  }
-
   /// Get the effective view offset (resume position) for a media item.
   ///
   /// Priority:
@@ -148,25 +137,6 @@ class OfflineWatchProvider extends ChangeNotifier {
     return episodes.firstOrNull;
   }
 
-  /// Find the next unwatched downloaded episode synchronously.
-  ///
-  /// This uses cached metadata without checking local offline actions.
-  /// For real-time accuracy, use getNextUnwatchedEpisode() instead.
-  PlexMetadata? getNextUnwatchedEpisodeSync(String showRatingKey) {
-    final episodes = _getSortedEpisodes(showRatingKey);
-    if (episodes.isEmpty) return null;
-
-    // Find first unwatched episode (using metadata's isWatched)
-    for (final episode in episodes) {
-      if (!episode.isWatched) {
-        return episode;
-      }
-    }
-
-    // All episodes watched - return first episode for replay
-    return episodes.firstOrNull;
-  }
-
   /// Emit a watch state change event for immediate UI update.
   void _emitWatchStateChange({
     required String serverId,
@@ -232,11 +202,6 @@ class OfflineWatchProvider extends ChangeNotifier {
     final watchStatuses = await _resolveEpisodeWatchStatuses(episodes);
 
     return [for (final episode in episodes) (episode, watchStatuses[episode.globalKey]!)];
-  }
-
-  /// Trigger a manual sync of pending items.
-  Future<void> syncNow() async {
-    await _syncService.syncPendingItems();
   }
 
   @override

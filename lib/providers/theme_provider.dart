@@ -114,20 +114,4 @@ class ThemeProvider extends ChangeNotifier {
     }
   }
 
-  void toggleTheme() {
-    switch (_themeMode) {
-      case settings.ThemeMode.system:
-        setThemeMode(settings.ThemeMode.light);
-        break;
-      case settings.ThemeMode.light:
-        setThemeMode(settings.ThemeMode.dark);
-        break;
-      case settings.ThemeMode.dark:
-        setThemeMode(settings.ThemeMode.oled);
-        break;
-      case settings.ThemeMode.oled:
-        setThemeMode(settings.ThemeMode.system);
-        break;
-    }
-  }
 }
