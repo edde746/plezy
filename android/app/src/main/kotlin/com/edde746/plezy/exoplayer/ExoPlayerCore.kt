@@ -32,7 +32,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.TransferListener
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cronet.CronetDataSource
 import org.chromium.net.CronetEngine
@@ -361,7 +360,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 .setConnectionTimeoutMs(15_000)
                 .setReadTimeoutMs(10_000)
             dataSourceFactory = DefaultDataSource.Factory(activity, httpDataSourceFactory!!)
-                .setTransferListener(HttpTimingTransferListener())
             val extractorsFactory = DefaultExtractorsFactory()
 
             // Inline buildWithAssSupport to retain AssHandler reference for font scale control.
@@ -1647,42 +1645,4 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         Log.d(TAG, "Disposed")
     }
 
-    /** Logs HTTP request timing: TTFB, bytes transferred, errors. */
-    private inner class HttpTimingTransferListener : TransferListener {
-        private val startTimes = HashMap<DataSpec, Long>()
-        private val firstByteTimes = HashMap<DataSpec, Long>()
-        private val byteCounts = HashMap<DataSpec, Long>()
-
-        override fun onTransferInitializing(source: androidx.media3.datasource.DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
-            if (!isNetwork) return
-            startTimes[dataSpec] = System.currentTimeMillis()
-            val range = dataSpec.position.let { if (it > 0) "bytes=$it-" else "" }
-            val uri = dataSpec.uri.path?.let { if (it.length > 60) "…${it.takeLast(50)}" else it } ?: dataSpec.uri.toString()
-            emitLog("info", "http", "GET $uri ${if (range.isNotEmpty()) range else ""}")
-        }
-
-        override fun onTransferStart(source: androidx.media3.datasource.DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
-            if (!isNetwork) return
-            val start = startTimes[dataSpec] ?: return
-            val ttfb = System.currentTimeMillis() - start
-            firstByteTimes[dataSpec] = System.currentTimeMillis()
-            byteCounts[dataSpec] = 0
-            emitLog("info", "http", "→ first byte in ${ttfb}ms")
-        }
-
-        override fun onBytesTransferred(source: androidx.media3.datasource.DataSource, dataSpec: DataSpec, isNetwork: Boolean, bytesTransferred: Int) {
-            if (!isNetwork) return
-            byteCounts[dataSpec] = (byteCounts[dataSpec] ?: 0) + bytesTransferred
-        }
-
-        override fun onTransferEnd(source: androidx.media3.datasource.DataSource, dataSpec: DataSpec, isNetwork: Boolean) {
-            if (!isNetwork) return
-            val start = startTimes.remove(dataSpec) ?: return
-            firstByteTimes.remove(dataSpec)
-            val bytes = byteCounts.remove(dataSpec) ?: 0
-            val elapsed = System.currentTimeMillis() - start
-            val sizeStr = if (bytes > 1_000_000) "${"%.1f".format(bytes / 1_000_000.0)}MB" else "${bytes / 1000}KB"
-            emitLog("info", "http", "← $sizeStr in ${elapsed}ms")
-        }
-    }
 }
