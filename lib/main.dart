@@ -54,7 +54,7 @@ import 'utils/log_redaction_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
-const String _gitCommit = String.fromEnvironment('GIT_COMMIT');
+const String gitCommit = String.fromEnvironment('GIT_COMMIT');
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
@@ -82,8 +82,8 @@ Future<void> main() async {
 
     await SentryFlutter.init((options) {
       options.dsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
-      options.release = _gitCommit.isNotEmpty
-          ? 'plezy@${_gitCommit.substring(0, 7)}'
+      options.release = gitCommit.isNotEmpty
+          ? 'plezy@${gitCommit.substring(0, 7)}'
           : 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
       options.tracesSampleRate = 0;
       options.attachStacktrace = true;
@@ -143,6 +143,11 @@ Future<void> _bootstrapApp() async {
   // Initialize logger level based on debug setting
   final debugEnabled = settings.getEnableDebugLogging();
   setLoggerLevel(debugEnabled);
+
+  // Log app version and git commit at startup
+  final packageInfo = await PackageInfo.fromPlatform();
+  final commitSuffix = gitCommit.isNotEmpty ? ' (${gitCommit.substring(0, 7)})' : '';
+  appLogger.i('Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix');
 
   // Initialize download storage service with settings
   await DownloadStorageService.instance.initialize(settings);

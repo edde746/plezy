@@ -13,6 +13,7 @@ import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
+import '../../main.dart' show gitCommit;
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
@@ -41,7 +42,8 @@ class _LogsScreenState extends State<LogsScreen> {
     final packageInfo = await PackageInfo.fromPlatform();
     final deviceInfo = DeviceInfoPlugin();
     final buffer = StringBuffer();
-    buffer.writeln('${t.app.title} v${packageInfo.version} (${packageInfo.buildNumber})');
+    final commitSuffix = gitCommit.isNotEmpty ? ' ${gitCommit.substring(0, 7)}' : '';
+    buffer.writeln('${t.app.title} v${packageInfo.version} (${packageInfo.buildNumber})$commitSuffix');
 
     if (Platform.isAndroid) {
       final info = await deviceInfo.androidInfo;
