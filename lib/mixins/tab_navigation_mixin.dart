@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/gamepad_service.dart';
 import '../screens/main_screen.dart';
+import '../widgets/focusable_tab_chip.dart';
 
 /// Mixin that provides common tab navigation infrastructure.
 ///
@@ -82,5 +83,44 @@ mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderSt
   /// Navigate back from the tab bar to the sidebar.
   void onTabBarBack() {
     MainScreenFocusScope.of(context)?.focusSidebar();
+  }
+
+  /// Shared tab chip builder — eliminates duplication between screens.
+  Widget buildTabChip(
+    String label,
+    int index, {
+    required VoidCallback onSelectWhenActive,
+    required VoidCallback onNavigateDown,
+    VoidCallback? onNavigateRightFromLast,
+  }) {
+    final isSelected = tabController.index == index;
+    return FocusableTabChip(
+      label: label,
+      isSelected: isSelected,
+      focusNode: getTabChipFocusNode(index),
+      onSelect: () {
+        if (isSelected) {
+          onSelectWhenActive();
+        } else {
+          setState(() { tabController.index = index; });
+        }
+      },
+      onNavigateLeft: index > 0
+          ? () {
+              final newIndex = index - 1;
+              setState(() { suppressAutoFocus = true; tabController.index = newIndex; });
+              getTabChipFocusNode(newIndex).requestFocus();
+            }
+          : onTabBarBack,
+      onNavigateRight: index < tabCount - 1
+          ? () {
+              final newIndex = index + 1;
+              setState(() { suppressAutoFocus = true; tabController.index = newIndex; });
+              getTabChipFocusNode(newIndex).requestFocus();
+            }
+          : onNavigateRightFromLast,
+      onNavigateDown: onNavigateDown,
+      onBack: onTabBarBack,
+    );
   }
 }

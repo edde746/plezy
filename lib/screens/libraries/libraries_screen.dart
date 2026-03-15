@@ -23,7 +23,6 @@ import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/content_utils.dart';
 import '../../widgets/desktop_app_bar.dart';
-import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
@@ -768,51 +767,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }).toList();
   }
 
-  Widget _buildTabChip(String label, int index) {
-    final isSelected = tabController.index == index;
-
-    return FocusableTabChip(
-      label: label,
-      isSelected: isSelected,
-      focusNode: getTabChipFocusNode(index),
-      onSelect: () {
-        if (isSelected) {
-          // Already selected - navigate to tab content
-          _focusCurrentTab();
-        } else {
-          // Switch to this tab
-          setState(() {
-            tabController.index = index;
-          });
-        }
-      },
-      onNavigateLeft: index > 0
-          ? () {
-              final newIndex = index - 1;
-              setState(() {
-                suppressAutoFocus = true;
-                tabController.index = newIndex;
-              });
-              getTabChipFocusNode(newIndex).requestFocus();
-            }
-          : onTabBarBack,
-      onNavigateRight: index < tabCount - 1
-          ? () {
-              final newIndex = index + 1;
-              setState(() {
-                suppressAutoFocus = true;
-                tabController.index = newIndex;
-              });
-              getTabChipFocusNode(newIndex).requestFocus();
-            }
-          : () {
-              _actionBarKey.currentState?.getFocusNode(0).requestFocus();
-            },
-      onNavigateDown: _focusCurrentTabFromTabBar,
-      onBack: onTabBarBack,
-    );
-  }
-
   /// Build the app bar title - either dropdown on mobile or simple title on desktop
   Widget _buildAppBarTitle(List<PlexLibrary> visibleLibraries) {
     // No libraries or no selection
@@ -827,7 +781,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         children: [
           for (int i = 0; i < _visibleTabs.length; i++) ...[
             if (i > 0) const SizedBox(width: 8),
-            _buildTabChip(_getTabLabel(_visibleTabs[i]), i),
+            buildTabChip(
+              _getTabLabel(_visibleTabs[i]),
+              i,
+              onSelectWhenActive: _focusCurrentTab,
+              onNavigateDown: _focusCurrentTabFromTabBar,
+              onNavigateRightFromLast: () => _actionBarKey.currentState?.getFocusNode(0).requestFocus(),
+            ),
           ],
         ],
       );
@@ -959,7 +919,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                           children: [
                             for (int i = 0; i < _visibleTabs.length; i++) ...[
                               if (i > 0) const SizedBox(width: 8),
-                              _buildTabChip(_getTabLabel(_visibleTabs[i]), i),
+                              buildTabChip(
+              _getTabLabel(_visibleTabs[i]),
+              i,
+              onSelectWhenActive: _focusCurrentTab,
+              onNavigateDown: _focusCurrentTabFromTabBar,
+              onNavigateRightFromLast: () => _actionBarKey.currentState?.getFocusNode(0).requestFocus(),
+            ),
                             ],
                           ],
                         ),

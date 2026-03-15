@@ -128,13 +128,13 @@ class NavigationRailItem extends StatelessWidget {
 
 /// Side navigation rail for Desktop and Android TV platforms
 class SideNavigationRail extends StatefulWidget {
-  final int selectedIndex;
+  final NavigationTabId selectedTab;
   final String? selectedLibraryKey;
   final bool isOfflineMode;
   final bool isSidebarFocused;
   final bool alwaysExpanded;
   final bool isReconnecting;
-  final ValueChanged<int> onDestinationSelected;
+  final ValueChanged<NavigationTabId> onDestinationSelected;
   final ValueChanged<String> onLibrarySelected;
 
   /// Called when RIGHT arrow is pressed to navigate to content without selecting.
@@ -145,7 +145,7 @@ class SideNavigationRail extends StatefulWidget {
 
   const SideNavigationRail({
     super.key,
-    required this.selectedIndex,
+    required this.selectedTab,
     this.selectedLibraryKey,
     this.isOfflineMode = false,
     this.isSidebarFocused = false,
@@ -209,7 +209,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   void didUpdateWidget(covariant SideNavigationRail oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Auto-collapse after navigation (selection changed)
-    if (oldWidget.selectedIndex != widget.selectedIndex || oldWidget.selectedLibraryKey != widget.selectedLibraryKey) {
+    if (oldWidget.selectedTab != widget.selectedTab || oldWidget.selectedLibraryKey != widget.selectedLibraryKey) {
       _isTouchExpanded = false;
     }
   }
@@ -427,9 +427,9 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                                 icon: Symbols.home_rounded,
                                 selectedIcon: Symbols.home_rounded,
                                 label: Translations.of(context).common.home,
-                                isSelected: widget.selectedIndex == 0,
+                                isSelected: widget.selectedTab == NavigationTabId.discover,
                                 isFocused: _focusTracker.isFocused(_kHome),
-                                onTap: () => widget.onDestinationSelected(0),
+                                onTap: () => widget.onDestinationSelected(NavigationTabId.discover),
                                 focusNode: _focusTracker.get(_kHome),
                                 isCollapsed: isCollapsed,
                               ),
@@ -447,20 +447,9 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                                   icon: Symbols.live_tv_rounded,
                                   selectedIcon: Symbols.live_tv_rounded,
                                   label: Translations.of(context).navigation.liveTv,
-                                  isSelected: NavigationTab.isTabAtIndex(
-                                    NavigationTabId.liveTv,
-                                    widget.selectedIndex,
-                                    isOffline: widget.isOfflineMode,
-                                    hasLiveTv: true,
-                                  ),
+                                  isSelected: widget.selectedTab == NavigationTabId.liveTv,
                                   isFocused: _focusTracker.isFocused('liveTv'),
-                                  onTap: () => widget.onDestinationSelected(
-                                    NavigationTab.indexFor(
-                                      NavigationTabId.liveTv,
-                                      isOffline: widget.isOfflineMode,
-                                      hasLiveTv: true,
-                                    ),
-                                  ),
+                                  onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
                                   focusNode: _focusTracker.get('liveTv'),
                                   isCollapsed: isCollapsed,
                                 ),
@@ -473,20 +462,9 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                                 icon: Symbols.search_rounded,
                                 selectedIcon: Symbols.search_rounded,
                                 label: Translations.of(context).common.search,
-                                isSelected: NavigationTab.isTabAtIndex(
-                                  NavigationTabId.search,
-                                  widget.selectedIndex,
-                                  isOffline: widget.isOfflineMode,
-                                  hasLiveTv: context.read<MultiServerProvider>().hasLiveTv,
-                                ),
+                                isSelected: widget.selectedTab == NavigationTabId.search,
                                 isFocused: _focusTracker.isFocused(_kSearch),
-                                onTap: () => widget.onDestinationSelected(
-                                  NavigationTab.indexFor(
-                                    NavigationTabId.search,
-                                    isOffline: widget.isOfflineMode,
-                                    hasLiveTv: context.read<MultiServerProvider>().hasLiveTv,
-                                  ),
-                                ),
+                                onTap: () => widget.onDestinationSelected(NavigationTabId.search),
                                 focusNode: _focusTracker.get(_kSearch),
                                 isCollapsed: isCollapsed,
                               ),
@@ -495,61 +473,29 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                             ],
 
                             // Downloads
-                            Builder(
-                              builder: (context) {
-                                final hasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
-                                return _buildNavItem(
-                                  icon: Symbols.download_rounded,
-                                  selectedIcon: Symbols.download_rounded,
-                                  label: Translations.of(context).navigation.downloads,
-                                  isSelected: NavigationTab.isTabAtIndex(
-                                    NavigationTabId.downloads,
-                                    widget.selectedIndex,
-                                    isOffline: widget.isOfflineMode,
-                                    hasLiveTv: hasLiveTv,
-                                  ),
-                                  isFocused: _focusTracker.isFocused(_kDownloads),
-                                  onTap: () => widget.onDestinationSelected(
-                                    NavigationTab.indexFor(
-                                      NavigationTabId.downloads,
-                                      isOffline: widget.isOfflineMode,
-                                      hasLiveTv: hasLiveTv,
-                                    ),
-                                  ),
-                                  focusNode: _focusTracker.get(_kDownloads),
-                                  isCollapsed: isCollapsed,
-                                );
-                              },
+                            _buildNavItem(
+                              icon: Symbols.download_rounded,
+                              selectedIcon: Symbols.download_rounded,
+                              label: Translations.of(context).navigation.downloads,
+                              isSelected: widget.selectedTab == NavigationTabId.downloads,
+                              isFocused: _focusTracker.isFocused(_kDownloads),
+                              onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
+                              focusNode: _focusTracker.get(_kDownloads),
+                              isCollapsed: isCollapsed,
                             ),
 
                             const SizedBox(height: 8),
 
                             // Settings
-                            Builder(
-                              builder: (context) {
-                                final hasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
-                                return _buildNavItem(
-                                  icon: Symbols.settings_rounded,
-                                  selectedIcon: Symbols.settings_rounded,
-                                  label: Translations.of(context).common.settings,
-                                  isSelected: NavigationTab.isTabAtIndex(
-                                    NavigationTabId.settings,
-                                    widget.selectedIndex,
-                                    isOffline: widget.isOfflineMode,
-                                    hasLiveTv: hasLiveTv,
-                                  ),
-                                  isFocused: _focusTracker.isFocused(_kSettings),
-                                  onTap: () => widget.onDestinationSelected(
-                                    NavigationTab.indexFor(
-                                      NavigationTabId.settings,
-                                      isOffline: widget.isOfflineMode,
-                                      hasLiveTv: hasLiveTv,
-                                    ),
-                                  ),
-                                  focusNode: _focusTracker.get(_kSettings),
-                                  isCollapsed: isCollapsed,
-                                );
-                              },
+                            _buildNavItem(
+                              icon: Symbols.settings_rounded,
+                              selectedIcon: Symbols.settings_rounded,
+                              label: Translations.of(context).common.settings,
+                              isSelected: widget.selectedTab == NavigationTabId.settings,
+                              isFocused: _focusTracker.isFocused(_kSettings),
+                              onTap: () => widget.onDestinationSelected(NavigationTabId.settings),
+                              focusNode: _focusTracker.get(_kSettings),
+                              isCollapsed: isCollapsed,
                             ),
                           ],
                         ),
@@ -629,7 +575,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   Widget _buildLibrariesSection(List<PlexLibrary> visibleLibraries, dynamic t, {bool isCollapsed = false}) {
     final librariesProvider = context.watch<LibrariesProvider>();
     final isLoading = librariesProvider.isLoading;
-    final isLibrariesSelected = widget.selectedIndex == 1 && widget.selectedLibraryKey == null;
+    final isLibrariesSelected = widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == null;
     final isLibrariesFocused = _focusTracker.isFocused(_kLibraries);
 
     return Column(
@@ -687,7 +633,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                             Symbols.video_library_rounded,
                             fill: 1,
                             size: 22,
-                            color: widget.selectedIndex == 1 ? t.text : t.textMuted,
+                            color: widget.selectedTab == NavigationTabId.libraries ? t.text : t.textMuted,
                           ),
                           const SizedBox(width: 11),
                           Expanded(
@@ -698,8 +644,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                                 Translations.of(context).navigation.libraries,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: widget.selectedIndex == 1 ? FontWeight.w600 : FontWeight.w400,
-                                  color: widget.selectedIndex == 1 ? t.text : t.textMuted,
+                                  fontWeight: widget.selectedTab == NavigationTabId.libraries ? FontWeight.w600 : FontWeight.w400,
+                                  color: widget.selectedTab == NavigationTabId.libraries ? t.text : t.textMuted,
                                 ),
                               ),
                             ),
@@ -793,7 +739,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   Widget _buildLibraryItem(PlexLibrary library, dynamic t, {bool showServerName = false}) {
-    final isSelected = widget.selectedIndex == 1 && widget.selectedLibraryKey == library.globalKey;
+    final isSelected = widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == library.globalKey;
     final isFocused = _focusTracker.isFocused(library.globalKey);
     final focusNode = _focusTracker.get(library.globalKey);
 

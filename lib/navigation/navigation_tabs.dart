@@ -35,10 +35,6 @@ class NavigationTab {
     }).toList();
   }
 
-  /// Check if a visual index corresponds to a specific tab ID
-  static bool isTabAtIndex(NavigationTabId id, int index, {required bool isOffline, bool hasLiveTv = false}) {
-    return indexFor(id, isOffline: isOffline, hasLiveTv: hasLiveTv) == index;
-  }
 }
 
 // Label getters (must be top-level for const constructor)

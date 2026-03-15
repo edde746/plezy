@@ -14,9 +14,10 @@ import '../../utils/app_logger.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
-import '../../widgets/focusable_tab_chip.dart';
 import 'tabs/guide_tab.dart';
 import 'tabs/whats_on_tab.dart';
+
+enum LiveTvTab { guide, whatsOn }
 
 class LiveTvScreen extends StatefulWidget {
   const LiveTvScreen({super.key});
@@ -78,12 +79,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     if (!tabController.indexIsChanging) {
       super.onTabChanged();
       // Pause/resume timers based on active tab
-      if (tabController.index == 0) {
-        _whatsOnTabKey.currentState?.pauseRefresh();
-        _guideTabKey.currentState?.resumeRefresh();
-      } else {
-        _guideTabKey.currentState?.pauseRefresh();
-        _whatsOnTabKey.currentState?.resumeRefresh();
+      switch (LiveTvTab.values[tabController.index]) {
+        case LiveTvTab.guide:
+          _whatsOnTabKey.currentState?.pauseRefresh();
+          _guideTabKey.currentState?.resumeRefresh();
+        case LiveTvTab.whatsOn:
+          _guideTabKey.currentState?.pauseRefresh();
+          _whatsOnTabKey.currentState?.resumeRefresh();
       }
     }
   }
@@ -255,10 +257,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   void _focusCurrentTab() {
-    if (tabController.index == 0) {
-      _guideTabKey.currentState?.focusContent();
-    } else if (tabController.index == 1) {
-      _whatsOnTabKey.currentState?.focusFirstHub();
+    switch (LiveTvTab.values[tabController.index]) {
+      case LiveTvTab.guide:
+        _guideTabKey.currentState?.focusContent();
+      case LiveTvTab.whatsOn:
+        _whatsOnTabKey.currentState?.focusFirstHub();
     }
     setState(() {
       suppressAutoFocus = false;
@@ -273,45 +276,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   // Tab chips
   // ---------------------------------------------------------------------------
 
-  Widget _buildTabChip(String label, int index) {
-    final isSelected = tabController.index == index;
-
-    return FocusableTabChip(
-      label: label,
-      isSelected: isSelected,
-      focusNode: getTabChipFocusNode(index),
-      onSelect: () {
-        if (isSelected) {
-          _focusCurrentTab();
-        } else {
-          setState(() {
-            tabController.index = index;
-          });
-        }
-      },
-      onNavigateLeft: index > 0
-          ? () {
-              final newIndex = index - 1;
-              setState(() {
-                suppressAutoFocus = true;
-                tabController.index = newIndex;
-              });
-              getTabChipFocusNode(newIndex).requestFocus();
-            }
-          : onTabBarBack,
-      onNavigateRight: index < tabCount - 1
-          ? () {
-              final newIndex = index + 1;
-              setState(() {
-                suppressAutoFocus = true;
-                tabController.index = newIndex;
-              });
-              getTabChipFocusNode(newIndex).requestFocus();
-            }
-          : () => _actionBarKey.currentState?.getFocusNode(0).requestFocus(),
-      onNavigateDown: _focusCurrentTab,
-      onBack: onTabBarBack,
-    );
+  String _getTabLabel(LiveTvTab tab) {
+    return switch (tab) {
+      LiveTvTab.guide => t.liveTv.guide,
+      LiveTvTab.whatsOn => t.liveTv.whatsOn,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -328,9 +297,16 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         title: useSideNav
             ? Row(
                 children: [
-                  _buildTabChip(t.liveTv.guide, 0),
-                  const SizedBox(width: 8),
-                  _buildTabChip(t.liveTv.whatsOn, 1),
+                  for (int i = 0; i < LiveTvTab.values.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    buildTabChip(
+                      _getTabLabel(LiveTvTab.values[i]),
+                      i,
+                      onSelectWhenActive: _focusCurrentTab,
+                      onNavigateDown: _focusCurrentTab,
+                      onNavigateRightFromLast: () => _actionBarKey.currentState?.getFocusNode(0).requestFocus(),
+                    ),
+                  ],
                 ],
               )
             : Text(t.liveTv.title),
@@ -397,9 +373,16 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildTabChip(t.liveTv.guide, 0),
-                  const SizedBox(width: 8),
-                  _buildTabChip(t.liveTv.whatsOn, 1),
+                  for (int i = 0; i < LiveTvTab.values.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    buildTabChip(
+                      _getTabLabel(LiveTvTab.values[i]),
+                      i,
+                      onSelectWhenActive: _focusCurrentTab,
+                      onNavigateDown: _focusCurrentTab,
+                      onNavigateRightFromLast: () => _actionBarKey.currentState?.getFocusNode(0).requestFocus(),
+                    ),
+                  ],
                 ],
               ),
             ),

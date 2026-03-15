@@ -84,11 +84,19 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener, WidgetsBindingObserver {
-  late int _currentIndex;
+  NavigationTabId _currentTab = NavigationTabId.discover;
   String? _selectedLibraryGlobalKey;
 
   /// Whether the app is in offline mode (no server connection)
   bool _isOffline = false;
+
+  /// Computed index — searches the same _getVisibleTabs() that _buildScreens iterates,
+  /// so _screens[_currentIndex] is always the widget for _currentTab.
+  int get _currentIndex {
+    final tabs = _getVisibleTabs(_isOffline);
+    final idx = tabs.indexWhere((t) => t.id == _currentTab);
+    return (idx >= 0 ? idx : 0).clamp(0, _screens.length - 1);
+  }
 
   /// Last selected online tab (restored when coming back online after an offline fallback)
   NavigationTabId? _lastOnlineTabId;
@@ -132,10 +140,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       windowManager.setPreventClose(true);
     }
 
-    // Start on Downloads tab when in offline mode
-    // In offline mode: visual index 0 = Downloads (screen 3), 1 = Settings (screen 4)
-    // In online mode: indices match directly
-    _currentIndex = 0;
+    _currentTab = _isOffline ? NavigationTabId.downloads : NavigationTabId.discover;
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
     _autoSwitchedToDownloads = _isOffline;
 
@@ -434,48 +439,29 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     final receiver = CompanionRemoteReceiver.instance;
 
     receiver.onTabNext = () {
-      final tabCount = _getVisibleTabs(_isOffline).length;
-      _selectTab((_currentIndex + 1) % tabCount);
+      final tabs = _getVisibleTabs(_isOffline);
+      final idx = tabs.indexWhere((t) => t.id == _currentTab);
+      if (idx >= 0) _selectTab(tabs[(idx + 1) % tabs.length].id);
     };
     receiver.onTabPrevious = () {
-      final tabCount = _getVisibleTabs(_isOffline).length;
-      _selectTab((_currentIndex - 1 + tabCount) % tabCount);
+      final tabs = _getVisibleTabs(_isOffline);
+      final idx = tabs.indexWhere((t) => t.id == _currentTab);
+      if (idx >= 0) _selectTab(tabs[(idx - 1 + tabs.length) % tabs.length].id);
     };
-    receiver.onTabDiscover = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.discover, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-      if (idx >= 0) _selectTab(idx);
-    };
-    receiver.onTabLibraries = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.libraries, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-      if (idx >= 0) _selectTab(idx);
-    };
-    receiver.onTabSearch = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.search, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-      if (idx >= 0) _selectTab(idx);
-    };
-    receiver.onTabDownloads = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.downloads, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-      if (idx >= 0) _selectTab(idx);
-    };
-    receiver.onTabSettings = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-      if (idx >= 0) _selectTab(idx);
-    };
-    receiver.onHome = () {
-      final idx = NavigationTab.indexFor(NavigationTabId.discover, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-      if (idx >= 0) _selectTab(idx);
-    };
+    receiver.onTabDiscover = () => _selectTab(NavigationTabId.discover);
+    receiver.onTabLibraries = () => _selectTab(NavigationTabId.libraries);
+    receiver.onTabSearch = () => _selectTab(NavigationTabId.search);
+    receiver.onTabDownloads = () => _selectTab(NavigationTabId.downloads);
+    receiver.onTabSettings = () => _selectTab(NavigationTabId.settings);
+    receiver.onHome = () => _selectTab(NavigationTabId.discover);
     receiver.onSearchAction = (query) {
-      final idx = NavigationTab.indexFor(NavigationTabId.search, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-      if (idx >= 0) {
-        _selectTab(idx);
-        if (query != null && query.isNotEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (_searchKey.currentState case final SearchInputFocusable searchable) {
-              searchable.setSearchQuery(query);
-            }
-          });
-        }
+      _selectTab(NavigationTabId.search);
+      if (query != null && query.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_searchKey.currentState case final SearchInputFocusable searchable) {
+            searchable.setSearchQuery(query);
+          }
+        });
       }
     };
   }
@@ -543,41 +529,25 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   List<Widget> _buildScreens(bool offline) {
-    // In offline mode, only show Downloads and Settings
-    if (offline) {
-      return [DownloadsScreen(key: _downloadsKey), SettingsScreen(key: _settingsKey)];
-    }
-
-    // Use _lastHasLiveTv (the value synchronized with _handleLiveTvChanged)
-    // so screens and nav bar always agree on whether LiveTV is included.
-    final hasLiveTv = _lastHasLiveTv;
-
     return [
-      DiscoverScreen(key: _discoverKey, onBecameVisible: _onDiscoverBecameVisible),
-      LibrariesScreen(key: _librariesKey, onLibraryOrderChanged: _onLibraryOrderChanged),
-      if (hasLiveTv) LiveTvScreen(key: _liveTvKey),
-      SearchScreen(key: _searchKey),
-      DownloadsScreen(key: _downloadsKey),
-      SettingsScreen(key: _settingsKey),
+      for (final tab in _getVisibleTabs(offline))
+        switch (tab.id) {
+          NavigationTabId.discover => DiscoverScreen(key: _discoverKey, onBecameVisible: _onDiscoverBecameVisible),
+          NavigationTabId.libraries => LibrariesScreen(key: _librariesKey, onLibraryOrderChanged: _onLibraryOrderChanged),
+          NavigationTabId.liveTv => LiveTvScreen(key: _liveTvKey),
+          NavigationTabId.search => SearchScreen(key: _searchKey),
+          NavigationTabId.downloads => DownloadsScreen(key: _downloadsKey),
+          NavigationTabId.settings => SettingsScreen(key: _settingsKey),
+        },
     ];
   }
 
-  /// Normalize tab index when switching between offline/online modes.
+  /// Normalize tab ID when switching between offline/online modes.
   /// Preserves the current tab if it exists in the new mode, otherwise defaults to first tab.
-  int _normalizeIndexForMode(int currentIndex, bool wasOffline, bool isOffline) {
-    if (wasOffline == isOffline) return currentIndex;
-
-    final oldTabs = _getVisibleTabs(wasOffline);
-    final newTabs = _getVisibleTabs(isOffline);
-
-    // Get the tab ID at the current index (or first tab if out of bounds)
-    final currentTabId = currentIndex >= 0 && currentIndex < oldTabs.length
-        ? oldTabs[currentIndex].id
-        : oldTabs.first.id;
-
-    // Find the same tab in the new mode's tab list
-    final newIndex = newTabs.indexWhere((tab) => tab.id == currentTabId);
-    return newIndex >= 0 ? newIndex : 0;
+  NavigationTabId _normalizeTabForMode(NavigationTabId currentTab, bool isOffline) {
+    final tabs = _getVisibleTabs(isOffline);
+    if (tabs.any((t) => t.id == currentTab)) return currentTab;
+    return tabs.first.id;
   }
 
   void _triggerReconnect() {
@@ -600,11 +570,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     _lastHasLiveTv = hasLiveTv;
 
     setState(() {
-      final currentTabId = _tabIdForIndex(_isOffline, _currentIndex);
       _screens = _buildScreens(_isOffline);
-      // Restore the correct tab index after rebuilding
-      final newIndex = NavigationTab.indexFor(currentTabId, isOffline: _isOffline, hasLiveTv: hasLiveTv);
-      _currentIndex = newIndex >= 0 ? newIndex : 0;
+      _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
     });
   }
 
@@ -613,7 +580,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     if (newOffline == _isOffline) return;
 
-    final previousTabId = _tabIdForIndex(_isOffline, _currentIndex);
+    final previousTab = _currentTab;
     final wasOffline = _isOffline;
     setState(() {
       _isReconnecting = false;
@@ -624,23 +591,23 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       if (_isOffline) {
         // Remember the online tab so we can restore it when reconnecting.
         if (!wasOffline) {
-          _lastOnlineTabId = previousTabId;
+          _lastOnlineTabId = previousTab;
         }
 
-        _currentIndex = _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
+        final normalizedTab = _normalizeTabForMode(_currentTab, _isOffline);
+        _currentTab = normalizedTab;
 
         // Track if we auto-switched to Downloads because the previous tab was unavailable.
         _autoSwitchedToDownloads =
-            previousTabId != NavigationTabId.downloads &&
-            _tabIdForIndex(true, _currentIndex) == NavigationTabId.downloads;
+            previousTab != NavigationTabId.downloads &&
+            normalizedTab == NavigationTabId.downloads;
       } else {
         // Coming back online: restore the last online tab if we forced a switch to Downloads.
         if (_autoSwitchedToDownloads) {
           final restoredTab = _lastOnlineTabId ?? NavigationTabId.discover;
-          final restoredIndex = NavigationTab.indexFor(restoredTab, isOffline: _isOffline, hasLiveTv: _hasLiveTv);
-          _currentIndex = restoredIndex >= 0 ? restoredIndex : 0;
+          _currentTab = _normalizeTabForMode(restoredTab, _isOffline);
         } else {
-          _currentIndex = _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
+          _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
         }
         _autoSwitchedToDownloads = false;
       }
@@ -679,7 +646,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     // This preserves the user's focus position when returning from sidebar.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_contentFocusScope.focusedChild == null) {
-        if (_screenKeyForIndex(_currentIndex)?.currentState case final FocusableTab focusable) {
+        if (_screenKeyFor(_currentTab)?.currentState case final FocusableTab focusable) {
           focusable.focusActiveTabIfReady();
         }
       }
@@ -738,14 +705,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     if (!isMacShortcut && !isOtherShortcut) return KeyEventResult.ignored;
     if (_isOffline) return KeyEventResult.handled;
 
-    final searchIndex = NavigationTab.indexFor(
-      NavigationTabId.search,
-      isOffline: _isOffline,
-      hasLiveTv: _hasLiveTv,
-    );
-    if (searchIndex < 0) return KeyEventResult.handled;
-
-    _selectTab(searchIndex);
+    _selectTab(NavigationTabId.search);
     if (_isSidebarFocused) _focusContent();
     // Schedule focus after the frame so the search screen is visible in the IndexedStack
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -759,7 +719,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   @override
   void didPush() {
     // Called when this route has been pushed (initial navigation)
-    if (_currentIndex == 0 && !_isOffline) {
+    if (_currentTab == NavigationTabId.discover) {
       _onDiscoverBecameVisible();
     }
   }
@@ -767,7 +727,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   @override
   void didPushNext() {
     // Called when a child route is pushed on top (e.g., video player)
-    if (_currentIndex == 0 && !_isOffline) {
+    if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
         aware.onTabHidden();
       }
@@ -786,7 +746,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     });
 
     // Called when returning to this route from a child route (e.g., from video player)
-    if (_currentIndex == 0 && !_isOffline) {
+    if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
         aware.onTabShown();
       }
@@ -864,25 +824,28 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     // Sidebar automatically updates since it watches LibrariesProvider
   }
 
-  void _selectTab(int index) {
-    final previousIndex = _currentIndex;
+  void _selectTab(NavigationTabId tab) {
+    // Guard: ignore if tab isn't available in current mode
+    if (!_getVisibleTabs(_isOffline).any((t) => t.id == tab)) return;
+
+    final previousTab = _currentTab;
     setState(() {
-      _currentIndex = index;
+      _currentTab = tab;
       if (!_isOffline) {
-        _lastOnlineTabId = _tabIdForIndex(false, index);
-      } else if (previousIndex != index) {
+        _lastOnlineTabId = tab;
+      } else if (previousTab != tab) {
         // User made an explicit offline selection, so don't auto-restore later.
         _autoSwitchedToDownloads = false;
       }
     });
 
-    if (previousIndex != index) {
+    if (previousTab != tab) {
       // Notify previous screen it's being hidden
-      if (_screenKeyForIndex(previousIndex)?.currentState case final TabVisibilityAware aware) {
+      if (_screenKeyFor(previousTab)?.currentState case final TabVisibilityAware aware) {
         aware.onTabHidden();
       }
       // Notify and focus new screen
-      final newState = _screenKeyForIndex(index)?.currentState;
+      final newState = _screenKeyFor(tab)?.currentState;
       if (newState case final TabVisibilityAware aware) {
         aware.onTabShown();
       }
@@ -892,21 +855,16 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
 
     // Discover: always refresh content (even on re-selection)
-    if (!_isOffline && _tabIdForIndex(_isOffline, index) == NavigationTabId.discover) {
+    if (!_isOffline && tab == NavigationTabId.discover) {
       _onDiscoverBecameVisible();
     }
   }
 
   /// Handle library selection from side navigation rail
   void _selectLibrary(String libraryGlobalKey) {
-    setState(() {
-      _selectedLibraryGlobalKey = libraryGlobalKey;
-      _currentIndex = 1; // Switch to Libraries tab
-      if (!_isOffline) {
-        _lastOnlineTabId = NavigationTabId.libraries;
-      }
-    });
-    // Tell LibrariesScreen to load this library
+    _selectedLibraryGlobalKey = libraryGlobalKey;
+    _selectTab(NavigationTabId.libraries);
+    // Tell LibrariesScreen to load this library after tab switch
     if (_librariesKey.currentState case final LibraryLoadable loadable) {
       loadable.loadLibraryByKey(libraryGlobalKey);
     }
@@ -925,17 +883,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv);
   }
 
-  /// Get the tab ID for a given index, clamping to the available range.
-  NavigationTabId _tabIdForIndex(bool isOffline, int index) {
-    final tabs = _getVisibleTabs(isOffline);
-    if (tabs.isEmpty) return NavigationTabId.discover;
-    final safeIndex = index.clamp(0, tabs.length - 1).toInt();
-    return tabs[safeIndex].id;
-  }
-
-  /// Get the GlobalKey for the screen at the given tab index.
-  GlobalKey? _screenKeyForIndex(int index) {
-    return switch (_tabIdForIndex(_isOffline, index)) {
+  /// Get the GlobalKey for a given tab.
+  GlobalKey? _screenKeyFor(NavigationTabId tab) {
+    return switch (tab) {
       NavigationTabId.discover => _discoverKey,
       NavigationTabId.libraries => _librariesKey,
       NavigationTabId.liveTv => _liveTvKey,
@@ -1008,14 +958,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                             node: _sidebarFocusScope,
                             child: SideNavigationRail(
                               key: _sideNavKey,
-                              selectedIndex: _currentIndex,
+                              selectedTab: _currentTab,
                               selectedLibraryKey: _selectedLibraryGlobalKey,
                               isOfflineMode: _isOffline,
                               isSidebarFocused: _isSidebarFocused,
                               alwaysExpanded: alwaysExpanded,
                               isReconnecting: _isReconnecting,
-                              onDestinationSelected: (index) {
-                                _selectTab(index);
+                              onDestinationSelected: (tab) {
+                                _selectTab(tab);
                                 _focusContent();
                               },
                               onLibrarySelected: (key) {
@@ -1087,7 +1037,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                   data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
                   child: NavigationBar(
                     selectedIndex: _currentIndex,
-                    onDestinationSelected: _selectTab,
+                    onDestinationSelected: (i) {
+                      final tabs = _getVisibleTabs(_isOffline);
+                      if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
+                    },
                     labelBehavior: hideLabels
                         ? NavigationDestinationLabelBehavior.alwaysHide
                         : NavigationDestinationLabelBehavior.alwaysShow,
