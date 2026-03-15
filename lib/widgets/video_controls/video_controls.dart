@@ -212,6 +212,7 @@ class PlexVideoControls extends StatefulWidget {
 class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListener, WidgetsBindingObserver {
   bool _showControls = true;
   bool _forceShowControls = false;
+  bool _isLoadingExtras = false;
   List<PlexChapter> _chapters = [];
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
@@ -334,6 +335,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _onFirstFrameReady() {
     if (widget.hasFirstFrame?.value == true) {
       _startHideTimer();
+      // Retry with network-first if initial cache-first returned empty
+      if (_chapters.isEmpty && _markers.isEmpty) {
+        _loadPlaybackExtras(forceRefresh: true);
+      }
     }
   }
 
@@ -930,19 +935,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
-  Future<void> _loadPlaybackExtras() async {
+  Future<void> _loadPlaybackExtras({bool forceRefresh = false}) async {
     // Live TV metadata uses EPG rating keys, not library items
     if (widget.isLive) return;
+    if (_isLoadingExtras) return;
+    _isLoadingExtras = true;
 
     try {
-      appLogger.d('_loadPlaybackExtras: starting for ${widget.metadata.ratingKey}');
+      appLogger.d('_loadPlaybackExtras: starting for ${widget.metadata.ratingKey} (forceRefresh=$forceRefresh)');
       final client = _getClientForMetadata();
       appLogger.d('_loadPlaybackExtras: got client with serverId=${client.serverId}');
 
       final settings = await SettingsService.getInstance();
       final introPattern = settings.getIntroPattern();
       final creditsPattern = settings.getCreditsPattern();
-      final extras = await client.getPlaybackExtras(widget.metadata.ratingKey, introPattern: introPattern, creditsPattern: creditsPattern);
+      final extras = await client.getPlaybackExtras(widget.metadata.ratingKey, introPattern: introPattern, creditsPattern: creditsPattern, forceRefresh: forceRefresh);
       appLogger.d('_loadPlaybackExtras: got ${extras.chapters.length} chapters');
 
       if (mounted) {
@@ -975,6 +982,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         }
       }
       appLogger.e('_loadPlaybackExtras failed', error: e, stackTrace: stack);
+    } finally {
+      _isLoadingExtras = false;
     }
   }
 

@@ -1673,13 +1673,32 @@ class DownloadManagerService {
 
   /// Cache metadata in the API response format for offline access
   /// This simulates what PlexClient would receive from the server
+  /// Merges with existing cache to preserve Chapter/Marker/Media arrays
   Future<void> _cacheMetadataForOffline(String serverId, String ratingKey, PlexMetadata metadata) async {
     final endpoint = '/library/metadata/$ratingKey';
 
-    // Build a response structure that matches the Plex API format
+    // Check for existing cache entry to preserve fields not in PlexMetadata
+    final existing = await _apiCache.get(serverId, endpoint);
+    final existingMeta = PlexCacheParser.extractFirstMetadata(existing);
+
+    Map<String, dynamic> merged;
+    if (existingMeta != null) {
+      // Start with existing (has Chapter/Marker/Media), overlay new metadata
+      merged = existingMeta;
+      final newJson = metadata.toJson();
+      // Only update fields that toJson() sets to non-null values
+      for (final entry in newJson.entries) {
+        if (entry.value != null) {
+          merged[entry.key] = entry.value;
+        }
+      }
+    } else {
+      merged = metadata.toJson();
+    }
+
     final cachedResponse = {
       'MediaContainer': {
-        'Metadata': [metadata.toJson()],
+        'Metadata': [merged],
       },
     };
 

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../database/app_database.dart';
 import '../providers/offline_mode_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/plex_cache_parser.dart';
 import 'multi_server_manager.dart';
 import 'plex_api_cache.dart';
 import 'plex_client.dart';
@@ -421,11 +422,32 @@ class OfflineWatchSyncService extends ChangeNotifier {
       for (final episode in seasonEpisodes) {
         if (!downloadedEpisodeKeys.contains(episode.ratingKey)) continue;
 
-        await PlexApiCache.instance.put(serverId, '/library/metadata/${episode.ratingKey}', {
-          'MediaContainer': {
-            'Metadata': [episode.toJson()],
-          },
-        });
+        final cacheKey = '/library/metadata/${episode.ratingKey}';
+        final existing = await PlexApiCache.instance.get(serverId, cacheKey);
+        final existingMeta = PlexCacheParser.extractFirstMetadata(existing);
+
+        if (existingMeta != null) {
+          // Only update watch-state fields — preserves Chapter/Marker/Media/etc.
+          existingMeta['viewCount'] = episode.viewCount;
+          existingMeta['viewOffset'] = episode.viewOffset;
+          existingMeta['lastViewedAt'] = episode.lastViewedAt;
+          existingMeta['viewedLeafCount'] = episode.viewedLeafCount;
+          await PlexApiCache.instance.put(serverId, cacheKey, {
+            'MediaContainer': {'Metadata': [existingMeta]},
+          });
+
+          // Repair corrupted entries (missing Media/Chapter from previous overwrites)
+          if (existingMeta['Media'] == null) {
+            try {
+              await client.getMetadataWithImages(episode.ratingKey);
+            } catch (_) {}
+          }
+        } else {
+          // No existing entry — write what we have
+          await PlexApiCache.instance.put(serverId, cacheKey, {
+            'MediaContainer': {'Metadata': [episode.toJson()]},
+          });
+        }
         synced++;
       }
 
@@ -501,13 +523,10 @@ class OfflineWatchSyncService extends ChangeNotifier {
         await _withOnlineClient(serverId, (client) async {
           for (final ratingKey in ratingKeys) {
             try {
+              // getMetadataWithImages already caches the full API response
+              // (with chapters/markers) via _fetchWithCacheFallback internally
               final metadata = await client.getMetadataWithImages(ratingKey);
               if (metadata != null) {
-                await PlexApiCache.instance.put(serverId, '/library/metadata/$ratingKey', {
-                  'MediaContainer': {
-                    'Metadata': [metadata.toJson()],
-                  },
-                });
                 syncedCount++;
               }
             } catch (e) {

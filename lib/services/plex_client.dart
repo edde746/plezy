@@ -954,9 +954,10 @@ class PlexClient {
 
   /// Get chapters and markers from cached metadata or fetch if needed
   /// Uses same cache key as other metadata methods for consistency
-  Future<PlaybackExtras> getPlaybackExtras(String ratingKey, {String? introPattern, String? creditsPattern}) async {
+  Future<PlaybackExtras> getPlaybackExtras(String ratingKey, {String? introPattern, String? creditsPattern, bool forceRefresh = false}) async {
     try {
-      final data = await _fetchWithCacheFirst<Map<String, dynamic>>(
+      final fetch = forceRefresh ? _fetchWithCacheFallback : _fetchWithCacheFirst;
+      final data = await fetch<Map<String, dynamic>>(
         cacheKey: '/library/metadata/$ratingKey',
         networkCall: () =>
             _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1, 'includeMarkers': 1}),
