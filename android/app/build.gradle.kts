@@ -140,7 +140,7 @@ dependencies {
 
     // Cronet for HTTP/2 multiplexing + better connection management
     implementation("androidx.media3:media3-datasource-cronet:1.9.2")
-    implementation("org.chromium.net:cronet-embedded:119.6045.31")
+    implementation("org.chromium.net:cronet-embedded:143.7445.0")
 
     // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
