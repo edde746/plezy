@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.edde746.plezy.mpv.MpvPlayerCore
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -32,6 +34,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var activity: Activity? = null
     private var activityBinding: ActivityPluginBinding? = null
     private val nameToId = mutableMapOf<String, Int>()
+    private val mainHandler = Handler(Looper.getMainLooper())
     private var configuredBufferSizeBytes: Int? = null
 
     private var debugLoggingEnabled: Boolean = false
@@ -587,7 +590,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
     override fun onPropertyChange(name: String, value: Any?) {
         val propId = nameToId[name] ?: return
-        eventSink?.success(listOf(propId, value))
+        mainHandler.post { eventSink?.success(listOf(propId, value)) }
     }
 
     override fun onEvent(name: String, data: Map<String, Any>?) {
@@ -596,7 +599,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "name" to name
         )
         data?.let { event["data"] = it }
-        eventSink?.success(event)
+        mainHandler.post { eventSink?.success(event) }
     }
 
     /**
