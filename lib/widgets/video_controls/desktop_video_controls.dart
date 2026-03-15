@@ -11,6 +11,7 @@ import '../../models/plex_media_info.dart';
 import '../../models/plex_metadata.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../utils/desktop_window_padding.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/formatters.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/focusable_wrapper.dart';
@@ -235,9 +236,27 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     }
   }
 
-  /// Handle left navigation from first track control - go to volume
+  /// Dismiss content strip and restore focus (called by parent on BACK key)
+  void dismissContentStrip() {
+    if (!_contentStripVisible) return;
+    _onContentStripNavigateUp();
+  }
+
+  /// Handle left navigation from first track control - go to volume (or last button on TV)
   void navigateFromTrackToVolume() {
-    _volumeFocusNode.requestFocus();
+    if (PlatformDetector.isTV()) {
+      // On TV (no volume), go to last mounted button
+      for (int i = _buttonFocusNodes.length - 1; i >= 0; i--) {
+        if (_buttonFocusNodes[i].context != null) {
+          _buttonFocusNodes[i].requestFocus();
+          widget.onFocusActivity?.call();
+          return;
+        }
+      }
+      _playPauseFocusNode.requestFocus(); // fallback
+    } else {
+      _volumeFocusNode.requestFocus();
+    }
     widget.onFocusActivity?.call();
   }
 
@@ -353,8 +372,26 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   /// Handle key events for horizontal button navigation
   KeyEventResult _handleButtonKeyEvent(FocusNode _, KeyEvent event, int index) {
-    final leftTarget = index > 0 ? _buttonFocusNodes[index - 1] : null;
-    final rightTarget = index < _buttonFocusNodes.length - 1 ? _buttonFocusNodes[index + 1] : _volumeFocusNode;
+    // Find nearest mounted left neighbor
+    FocusNode? leftTarget;
+    for (int i = index - 1; i >= 0; i--) {
+      if (_buttonFocusNodes[i].context != null) {
+        leftTarget = _buttonFocusNodes[i];
+        break;
+      }
+    }
+
+    // Find nearest mounted right neighbor, falling through to volume/track controls
+    FocusNode? rightTarget;
+    for (int i = index + 1; i < _buttonFocusNodes.length; i++) {
+      if (_buttonFocusNodes[i].context != null) {
+        rightTarget = _buttonFocusNodes[i];
+        break;
+      }
+    }
+    rightTarget ??= PlatformDetector.isTV()
+        ? (_trackControlFocusNodes.isNotEmpty ? _trackControlFocusNodes.first : null)
+        : _volumeFocusNode;
 
     return _handleDirectionalNavigation(event, leftTarget: leftTarget, rightTarget: rightTarget);
   }
@@ -783,15 +820,17 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       },
                     ),
                   ),
-                // Volume control
-                VolumeControl(
-                  player: widget.player,
-                  focusNode: _volumeFocusNode,
-                  onKeyEvent: _handleVolumeKeyEvent,
-                  onFocusChange: _onFocusChange,
-                  onFocusActivity: widget.onFocusActivity,
-                ),
-                const SizedBox(width: 16),
+                // Volume control (hidden on TV — hardware handles volume)
+                if (!PlatformDetector.isTV()) ...[
+                  VolumeControl(
+                    player: widget.player,
+                    focusNode: _volumeFocusNode,
+                    onKeyEvent: _handleVolumeKeyEvent,
+                    onFocusChange: _onFocusChange,
+                    onFocusActivity: widget.onFocusActivity,
+                  ),
+                  const SizedBox(width: 16),
+                ],
                 // Audio track, subtitle, and chapter controls
                 TrackChapterControls(
                   player: widget.player,

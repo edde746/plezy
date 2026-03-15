@@ -770,11 +770,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // sheet navigation (e.g. the compact sync bar).
     final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
     if (!sheetOpen) {
-      if (!_focusNode.hasFocus) {
-        _focusNode.requestFocus();
-      }
+      // Always request primary focus on _focusNode — not just when hasFocus is
+      // false. hasFocus is true when a descendant (e.g. play/pause) has focus,
+      // but we need _focusNode itself to hold primary focus so its onKeyEvent
+      // fires for the next d-pad press (otherwise focus escapes to the screen-
+      // level self-heal handler which shows controls with play/pause focus).
+      _focusNode.requestFocus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_focusNode.hasFocus) {
+        if (mounted && !_focusNode.hasPrimaryFocus) {
           _focusNode.requestFocus();
         }
       });
@@ -1047,7 +1050,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
       isAlwaysOnTop: _isAlwaysOnTop,
-      onTogglePIPMode: (_isPipSupported && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS))
+      onTogglePIPMode: (_isPipSupported && !PlatformDetector.isTV())
           ? widget.onTogglePIPMode
           : null,
       onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
@@ -1540,7 +1543,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         // handler would call Navigator.pop() alongside the sheet's handler.
         final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
         if (sheetOpen) return false;
+        // On TV, mark coordinator early (KeyDown) so PopScope.onPopInvokedWithResult
+        // sees it before KeyUp — prevents the system back from racing ahead.
+        if (PlatformDetector.isTV() && event is KeyDownEvent) {
+          BackKeyCoordinator.markHandled();
+        }
         final backResult = handleBackKeyAction(event, () {
+          if (PlatformDetector.isTV()) {
+            if (_showControls) {
+              if (_isContentStripVisible) {
+                _desktopControlsKey.currentState?.dismissContentStrip();
+                setState(() => _isContentStripVisible = false);
+                _restartHideTimerIfPlaying();
+                return;
+              }
+              _hideControls();
+              return;
+            }
+            (widget.onBack ?? () => Navigator.of(context).pop(true))();
+            return;
+          }
           if (!_showControls) {
             _showControlsWithFocus();
           } else {
@@ -1699,7 +1721,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               }
               return KeyEventResult.handled;
             }
+            // On TV, mark coordinator early (KeyDown) so PopScope.onPopInvokedWithResult
+            // sees it before KeyUp — prevents the system back from racing ahead.
+            if (PlatformDetector.isTV() && event.logicalKey.isBackKey && event is KeyDownEvent) {
+              BackKeyCoordinator.markHandled();
+            }
             final backResult = handleBackKeyAction(event, () {
+              if (PlatformDetector.isTV()) {
+                if (_showControls) {
+                  if (_isContentStripVisible) {
+                    _desktopControlsKey.currentState?.dismissContentStrip();
+                    setState(() => _isContentStripVisible = false);
+                    _restartHideTimerIfPlaying();
+                    return;
+                  }
+                  _hideControls();
+                  return;
+                }
+                (widget.onBack ?? () => Navigator.of(context).pop(true))();
+                return;
+              }
               if (!_showControls) {
                 _showControlsWithFocus();
                 return;
@@ -1771,7 +1812,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
             // On desktop/TV, show controls on directional input
             // LEFT/RIGHT focuses timeline for seeking, UP/DOWN focuses play/pause
-            if (!isMobile && _isDirectionalKey(key) && _videoPlayerNavigationEnabled) {
+            if (!isMobile && _isDirectionalKey(key) && (_videoPlayerNavigationEnabled || PlatformDetector.isTV())) {
               if (!_showControls) {
                 final isHorizontal = key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight;
                 if (isHorizontal) {
