@@ -53,21 +53,6 @@ class ServerRegistry {
     }
   }
 
-  /// Update server status (called when server connection status changes)
-  Future<void> updateServerStatus(String serverId) async {
-    final servers = await getServers();
-    final serverIndex = servers.indexWhere((s) => s.clientIdentifier == serverId);
-
-    if (serverIndex == -1) {
-      appLogger.w('Server not found for status update: $serverId');
-      return;
-    }
-
-    // Note: PlexServer from auth service doesn't have mutable status fields
-    // Status tracking is handled by MultiServerManager
-    // This method is kept for future extension if we add status to PlexServer model
-  }
-
   /// Add or update a single server
   Future<void> upsertServer(PlexServer server) async {
     final servers = await getServers();

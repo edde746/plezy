@@ -147,22 +147,4 @@ class ShaderService {
   Future<void> disable() async {
     await applyPreset(ShaderPreset.none);
   }
-
-  /// Cycle to the next preset in the available list.
-  Future<ShaderPreset> cyclePreset({List<ShaderPreset>? presets}) async {
-    presets ??= ShaderPreset.allPresets;
-    final currentIndex = presets.indexWhere((p) => p.id == _currentPreset.id);
-    final nextIndex = (currentIndex + 1) % presets.length;
-    final nextPreset = presets[nextIndex];
-
-    await applyPreset(nextPreset);
-    return nextPreset;
-  }
-
-  /// Reapply current preset (useful after video source changes).
-  Future<void> reapply() async {
-    if (_currentPreset.type != ShaderPresetType.none) {
-      await applyPreset(_currentPreset);
-    }
-  }
 }
