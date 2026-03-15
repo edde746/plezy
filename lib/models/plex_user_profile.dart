@@ -72,10 +72,4 @@ class PlexUserProfile {
       },
     };
   }
-
-  /// Returns true if subtitles should be automatically selected
-  bool get shouldAutoSelectSubtitle => autoSelectSubtitle > 0;
-
-  /// Returns true if forced subtitles should be preferred
-  bool get preferForcedSubtitles => defaultSubtitleForced == 1;
 }
