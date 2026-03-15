@@ -204,6 +204,7 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
             key: Key(item.globalKey),
             item: item,
             forceListMode: true,
+            disableScale: true,
             focusNode: index == 0 ? _firstResultFocusNode : null,
             onListRefresh: () => updateItem(item.ratingKey),
             onNavigateLeft: _navigateToSidebar,

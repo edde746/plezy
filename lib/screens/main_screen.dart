@@ -1,7 +1,7 @@
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show KeyUpEvent, SystemNavigator;
+import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, SystemNavigator;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -746,6 +746,38 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     });
   }
 
+  /// Handle Cmd+F (macOS) / Ctrl+F (Windows/Linux) to navigate to search.
+  KeyEventResult _handleSearchShortcut(KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey != LogicalKeyboardKey.keyF) return KeyEventResult.ignored;
+
+    final isMetaPressed = HardwareKeyboard.instance.isMetaPressed;
+    final isControlPressed = HardwareKeyboard.instance.isControlPressed;
+
+    final isMacShortcut = Platform.isMacOS && isMetaPressed && !isControlPressed;
+    final isOtherShortcut = !Platform.isMacOS && isControlPressed && !isMetaPressed;
+
+    if (!isMacShortcut && !isOtherShortcut) return KeyEventResult.ignored;
+    if (_isOffline) return KeyEventResult.handled;
+
+    final searchIndex = NavigationTab.indexFor(
+      NavigationTabId.search,
+      isOffline: _isOffline,
+      hasLiveTv: _hasLiveTv,
+    );
+    if (searchIndex < 0) return KeyEventResult.handled;
+
+    _selectTab(searchIndex);
+    if (_isSidebarFocused) _focusContent();
+    // Schedule focus after the frame so the search screen is visible in the IndexedStack
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_searchKey.currentState case final SearchInputFocusable searchable) {
+        searchable.focusSearchInput();
+      }
+    });
+    return KeyEventResult.handled;
+  }
+
   @override
   void didPush() {
     // Called when this route has been pushed (initial navigation)
@@ -986,7 +1018,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
               // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
               onPopInvokedWithResult: (didPop, result) {},
               child: Focus(
-                onKeyEvent: (node, event) => _handleBackKey(event),
+                onKeyEvent: (node, event) {
+                  final searchResult = _handleSearchShortcut(event);
+                  if (searchResult == KeyEventResult.handled) return searchResult;
+                  return _handleBackKey(event);
+                },
                 child: MainScreenFocusScope(
                   focusSidebar: _focusSidebar,
                   focusContent: _focusContent,
