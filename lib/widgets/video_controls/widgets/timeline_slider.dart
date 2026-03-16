@@ -72,20 +72,35 @@ class _TimelineSliderState extends State<TimelineSlider> {
     final hasThumbnail = thumbnailData != null;
 
     final tooltipWidth = hasThumbnail ? _thumbWidth : 64.0;
-    final timestampOffset = 16.0;
-    final tooltipTop = hasThumbnail ? -(_thumbHeight + timestampOffset) : -timestampOffset;
+    final tooltipHeight = hasThumbnail ? _thumbHeight : 26.0;
+    final tooltipTop = -(tooltipHeight + 2.0);
 
     // Center tooltip on cursor, clamped so it stays within the slider bounds
     final left = (pixelX - tooltipWidth / 2).clamp(0.0, sliderWidth - tooltipWidth);
+
+    final timeLabel = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.6),
+        borderRadius: const BorderRadius.all(Radius.circular(4)),
+      ),
+      child: Text(
+        formatDurationTimestamp(time),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          height: 1.0,
+          fontFeatures: [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+
     return Positioned(
       left: left,
       top: tooltipTop,
       child: IgnorePointer(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (hasThumbnail)
-              Container(
+        child: hasThumbnail
+            ? Container(
                 width: _thumbWidth,
                 height: _thumbHeight,
                 decoration: BoxDecoration(
@@ -94,34 +109,25 @@ class _TimelineSliderState extends State<TimelineSlider> {
                   boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.memory(
-                  thumbnailData,
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.memory(
+                      thumbnailData,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                    Positioned(
+                      bottom: 4,
+                      left: 0,
+                      right: 0,
+                      child: Center(child: timeLabel),
+                    ),
+                  ],
                 ),
-              ),
-            if (hasThumbnail) const SizedBox(height: 4),
-            Container(
-              width: 64.0,
-              height: 26,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                borderRadius: const BorderRadius.all(Radius.circular(4)),
-              ),
-              child: Text(
-                formatDurationTimestamp(time),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  height: 1.0,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
-              ),
-            ),
-          ],
-        ),
+              )
+            : timeLabel,
       ),
     );
   }
