@@ -595,6 +595,7 @@ class MpvPlayerCore(private val activity: Activity) :
             return
         }
         disposing = true
+        check(Looper.myLooper() == Looper.getMainLooper())
         Log.d(TAG, "Disposing")
 
         // Shutdown command executor
@@ -616,26 +617,34 @@ class MpvPlayerCore(private val activity: Activity) :
             }
         }
 
+        // Capture locals for deferred cleanup
+        val sv = surfaceView
+        val container = surfaceContainer
+        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+
+        // Synchronous ownership invalidation — stale code can no longer
+        // reach surface state through instance fields.
+        surfaceContainer = null
+        surfaceView = null
+
+        // Remove layout listener synchronously
         overlayLayoutListener?.let { listener ->
-            val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
             contentView.viewTreeObserver.removeOnGlobalLayoutListener(listener)
         }
         overlayLayoutListener = null
 
-        // Defer all view removal to avoid AOSP bug where
-        // dispatchWindowVisibilityChanged iterates stale children array
-        // when removeView() runs during an active performTraversals pass.
-        val sv = surfaceView
-        val container = surfaceContainer
-        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-        contentView.post {
-            sv?.holder?.removeCallback(this)
-            container?.let { contentView.removeView(it) }
-            surfaceContainer = null
-            surfaceView = null
-        }
         pendingSurface = null
         isInitialized = false
+
+        // Deferred view removal only — uses captured locals.
+        // postAtFrontOfQueue as defense-in-depth: orders removal before
+        // queued initialize messages.
+        Handler(Looper.getMainLooper()).postAtFrontOfQueue {
+            sv?.holder?.removeCallback(this)
+            if (container?.parent != null) {
+                contentView.removeView(container)
+            }
+        }
 
         // Run native destroy on background thread to avoid ANR —
         // MPVLib.destroy() blocks on pthread_cond_wait while mpv's

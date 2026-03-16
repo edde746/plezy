@@ -1588,6 +1588,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     fun dispose() {
         if (disposing) return
         disposing = true
+        check(Looper.myLooper() == Looper.getMainLooper())
         Log.d(TAG, "Disposing")
 
         stopFrameWatchdog()
@@ -1620,28 +1621,36 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         dataSourceFactory = null
         assHandler = null
 
+        // Capture locals for deferred cleanup
         val cb = surfaceCallback
         val sv = surfaceView
+        val container = surfaceContainer
+        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+
+        // Synchronous ownership invalidation — stale code can no longer
+        // reach surface state through instance fields.
+        surfaceContainer = null
+        surfaceView = null
+        subtitleView = null
+
+        // Remove layout listener synchronously
         overlayLayoutListener?.let { listener ->
-            val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
             contentView.viewTreeObserver.removeOnGlobalLayoutListener(listener)
         }
         overlayLayoutListener = null
 
-        // Defer all view removal to avoid AOSP bug where
-        // dispatchWindowVisibilityChanged iterates stale children array
-        // when removeView() runs during an active performTraversals pass.
-        val container = surfaceContainer
-        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-        contentView.post {
+        isInitialized = false
+
+        // Deferred view removal only — uses captured locals.
+        // postAtFrontOfQueue as defense-in-depth: orders removal before
+        // queued initialize messages.
+        Handler(Looper.getMainLooper()).postAtFrontOfQueue {
             sv?.holder?.removeCallback(cb)
-            container?.let { contentView.removeView(it) }
-            surfaceContainer = null
-            surfaceView = null
-            subtitleView = null
+            if (container?.parent != null) {
+                contentView.removeView(container)
+            }
         }
 
-        isInitialized = false
         Log.d(TAG, "Disposed")
     }
 
