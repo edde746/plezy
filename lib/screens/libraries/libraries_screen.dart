@@ -856,6 +856,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // Compute visible libraries (filtered from all libraries)
     final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
+    // Resolve selected library defensively — may be null if server temporarily dropped during refresh
+    final selectedLibrary = _selectedLibraryGlobalKey != null
+        ? allLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull
+        : null;
+
     return Scaffold(
       body: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -909,7 +914,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 )
               else ...[
                 // Tab selector chips (only on mobile - desktop has them in app bar)
-                if (_selectedLibraryGlobalKey != null && !PlatformDetector.shouldUseSideNavigation(context))
+                if (selectedLibrary != null && !PlatformDetector.shouldUseSideNavigation(context))
                   SliverToBoxAdapter(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -934,7 +939,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   ),
 
                 // Tab content
-                if (_selectedLibraryGlobalKey != null)
+                if (selectedLibrary != null)
                   SliverFillRemaining(
                     child: TabBarView(
                       key: ValueKey(_selectedLibraryGlobalKey),
@@ -950,7 +955,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                         for (int i = 0; i < _visibleTabs.length; i++)
                           ClipRect(child: _buildTabContent(
                             _visibleTabs[i],
-                            library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                            library: selectedLibrary,
                             isActive: tabController.index == i,
                             tabIndex: i,
                           )),
@@ -1204,7 +1209,8 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
     if (selected != null && mounted) {
       // Find the selected item to check if confirmation is needed
-      final selectedItem = menuItems.firstWhere((item) => item.value == selected);
+      final selectedItem = menuItems.where((item) => item.value == selected).firstOrNull;
+      if (selectedItem == null) return;
 
       if (selectedItem.requiresConfirmation) {
         if (!mounted || !context.mounted) return;
