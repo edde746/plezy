@@ -302,12 +302,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// Focus the chips bar (for navigating from tab bar to content).
   /// Called by libraries screen when pressing DOWN on tab bar.
   void focusChipsBar() {
-    if (widget.library.isShared) {
-      // Shared libraries have no grouping chip — focus sort instead
-      _sortChipFocusNode.requestFocus();
-    } else {
-      _groupingChipFocusNode.requestFocus();
-    }
+    _groupingChipFocusNode.requestFocus();
   }
 
   /// Reset transient browse state before loading a different library.
@@ -422,6 +417,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       if (typeId.isNotEmpty) {
         filterParams['type'] = typeId;
       }
+    } else if (_selectedGrouping == 'all' && widget.library.isShared) {
+      // Shared libraries: filter to video content only (exclude library section entries)
+      filterParams['type'] = '1,2,3,4';
     }
 
     // Add sort
@@ -555,11 +553,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   String _getDefaultGrouping() {
     final type = widget.library.type.toLowerCase();
-    if (type == 'show') {
-      return 'shows';
-    } else if (type == 'movie') {
-      return 'movies';
-    }
+    if (type == 'show') return 'shows';
+    if (type == 'movie') return 'movies';
     return 'all';
   }
 
@@ -584,8 +579,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       return ['shows', 'seasons', 'episodes', 'folders'];
     } else if (type == 'movie') {
       return ['movies', 'folders'];
+    } else if (type == 'mixed') {
+      // Shared libraries: all video content types, no folders
+      return ['all', 'movies', 'shows', 'seasons', 'episodes'];
     }
-    // All library types support folder browsing
     return ['all', 'folders'];
   }
 
@@ -802,15 +799,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   /// Navigate focus from grid up to the chips bar
   void _navigateToChips() {
-    if (!widget.library.isShared) {
-      _groupingChipFocusNode.requestFocus();
-    } else if (_isSortChipVisible) {
-      _sortChipFocusNode.requestFocus();
-    } else if (_isFiltersChipVisible) {
-      _filtersChipFocusNode.requestFocus();
-    } else {
-      _navigateToSidebar();
-    }
+    _groupingChipFocusNode.requestFocus();
   }
 
   /// Navigate focus to the sidebar
@@ -1121,8 +1110,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       groupingNavigateRight = () => _sortChipFocusNode.requestFocus();
     }
 
-    final isShared = widget.library.isShared;
-
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1130,21 +1117,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Grouping chip (hidden for shared libraries — mixed content, no grouping)
-          if (!isShared) ...[
-            FocusableFilterChip(
-              focusNode: _groupingChipFocusNode,
-              icon: Symbols.category_rounded,
-              label: _getGroupingLabel(_selectedGrouping),
-              onPressed: _showGroupingBottomSheet,
-              onNavigateDown: _navigateToGrid,
-              onNavigateUp: widget.onBack,
-              onNavigateLeft: _navigateToSidebar,
-              onNavigateRight: groupingNavigateRight,
-              onBack: widget.onBack,
-            ),
-            const SizedBox(width: 8),
-          ],
+          // Grouping chip
+          FocusableFilterChip(
+            focusNode: _groupingChipFocusNode,
+            icon: Symbols.category_rounded,
+            label: _getGroupingLabel(_selectedGrouping),
+            onPressed: _showGroupingBottomSheet,
+            onNavigateDown: _navigateToGrid,
+            onNavigateUp: widget.onBack,
+            onNavigateLeft: _navigateToSidebar,
+            onNavigateRight: groupingNavigateRight,
+            onBack: widget.onBack,
+          ),
+          const SizedBox(width: 8),
           // Filters chip
           if (_isFiltersChipVisible)
             FocusableFilterChip(
@@ -1156,7 +1141,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
               onPressed: _showFiltersBottomSheet,
               onNavigateDown: _navigateToGrid,
               onNavigateUp: widget.onBack,
-              onNavigateLeft: isShared ? _navigateToSidebar : () => _groupingChipFocusNode.requestFocus(),
+              onNavigateLeft: () => _groupingChipFocusNode.requestFocus(),
               onNavigateRight: _isSortChipVisible ? () => _sortChipFocusNode.requestFocus() : null,
               onBack: widget.onBack,
             ),
@@ -1172,9 +1157,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
               onNavigateUp: widget.onBack,
               onNavigateLeft: _isFiltersChipVisible
                   ? () => _filtersChipFocusNode.requestFocus()
-                  : isShared
-                      ? _navigateToSidebar
-                      : () => _groupingChipFocusNode.requestFocus(),
+                  : () => _groupingChipFocusNode.requestFocus(),
               onBack: widget.onBack,
             ),
         ],
