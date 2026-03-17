@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, ProcessInfo;
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -109,9 +109,14 @@ Future<void> _bootstrapApp() async {
   // Needed for formatting dates in different locales
   await initializeDateFormatting(savedLocale.languageCode, null);
 
-  // Configure image cache for large libraries
-  PaintingBinding.instance.imageCache.maximumSize = 2000; // default 1000
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300MB
+  // Configure image cache — keep budget modest to leave headroom for Skia decode buffers
+  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    PaintingBinding.instance.imageCache.maximumSize = 1000;
+    PaintingBinding.instance.imageCache.maximumSizeBytes = 150 << 20; // 150MB
+  } else {
+    PaintingBinding.instance.imageCache.maximumSize = 800;
+    PaintingBinding.instance.imageCache.maximumSizeBytes = 100 << 20; // 100MB
+  }
 
   // Initialize services in parallel where possible
   final futures = <Future<void>>[];
@@ -309,10 +314,24 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   /// Last time server health probes ran from a resume event (cooldown for desktop)
   DateTime _lastResumeProbe = DateTime(0);
 
+  /// Periodic memory check timer for desktop platforms
+  Timer? _memoryCheckTimer;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // On desktop, periodically check RSS and evict image cache if too high
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      _memoryCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        final rss = ProcessInfo.currentRss;
+        if (rss > 1536 * 1024 * 1024) { // 1.5GB
+          appLogger.w('RSS high ($rss bytes), evicting image caches');
+          _evictImageCaches();
+        }
+      });
+    }
 
     _serverManager = MultiServerManager();
     _aggregationService = DataAggregationService(_serverManager);
@@ -332,8 +351,21 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _memoryCheckTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    super.didHaveMemoryPressure();
+    appLogger.w('System memory pressure, evicting image caches');
+    _evictImageCaches();
+  }
+
+  void _evictImageCaches() {
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
   }
 
   @override
@@ -357,8 +389,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
-        // App went to background or is closing - end session
         InAppReviewService.instance.endSession();
+        if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+          if (ProcessInfo.currentRss > 1024 * 1024 * 1024) { // 1GB
+            _evictImageCaches();
+          }
+        }
       case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
         // Transitional states - don't trigger session events

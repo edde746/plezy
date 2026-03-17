@@ -17,8 +17,8 @@ class PlexImageCacheManager extends CacheManager with ImageCacheManager {
       : super(
           Config(
             _key,
-            stalePeriod: const Duration(days: 30),
-            maxNrOfCacheObjects: 5000,
+            stalePeriod: const Duration(days: 14),
+            maxNrOfCacheObjects: 3000,
             fileService: HttpFileService(
               httpClient: IOClient(
                 HttpClient()..maxConnectionsPerHost = 6,

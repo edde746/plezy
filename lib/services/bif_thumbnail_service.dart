@@ -72,6 +72,10 @@ class BifThumbnailService {
     try {
       final bytes = await client.downloadBifFile(partId);
       if (bytes == null || bytes.isEmpty) return;
+      if (bytes.length > 50 * 1024 * 1024) {
+        appLogger.w('BIF file too large (${bytes.length} bytes), skipping');
+        return;
+      }
       _entries = await Isolate.run(() => _parseBifBytes(bytes));
     } catch (e) {
       appLogger.w('BIF download/parse failed', error: e);

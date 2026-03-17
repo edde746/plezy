@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
+import 'image_cache_service.dart';
 import 'package:plezy/utils/app_logger.dart';
 import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
@@ -1386,11 +1388,9 @@ class SettingsService extends BaseSharedPreferencesService {
 
   // Clear cache (for storage cleanup)
   Future<void> clearCache() async {
-    // This would be expanded to clear various cache directories
-    // For now, we'll just clear any cache-related preferences
-    await Future.wait([
-      // Add cache clearing logic here
-    ]);
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    await PlexImageCacheManager.instance.emptyCache();
   }
 
   // Get all settings as a map for debugging/export
