@@ -13,12 +13,9 @@ import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
 import '../../plex_optimized_image.dart';
 
-const _kItemHeight = 72.0;
-const _kItemHeightTablet = 116.0;
+const _kEstimatedItemHeight = 72.0;
 const _kThumbWidth = 60.0;
 const _kThumbHeight = 34.0;
-const _kThumbWidthTablet = 120.0;
-const _kThumbHeightTablet = 68.0;
 
 /// Bottom sheet for viewing and navigating the play queue
 class QueueSheet extends StatelessWidget {
@@ -28,9 +25,6 @@ class QueueSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
-    final itemHeight = isTablet ? _kItemHeightTablet : _kItemHeight;
-
     return Consumer<PlaybackStateProvider>(
       builder: (context, playbackState, _) {
         final items = playbackState.loadedItems;
@@ -46,8 +40,9 @@ class QueueSheet extends StatelessWidget {
           final currentIndex = items.indexWhere((item) => item.playQueueItemID == currentItemID);
 
           content = ListView.builder(
-            controller: currentIndex > 0 ? ScrollController(initialScrollOffset: currentIndex * itemHeight) : null,
-            itemExtent: itemHeight,
+            controller: currentIndex > 0
+                ? ScrollController(initialScrollOffset: currentIndex * _kEstimatedItemHeight)
+                : null,
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
@@ -55,7 +50,7 @@ class QueueSheet extends StatelessWidget {
 
               final primaryColor = Theme.of(context).colorScheme.primary;
               return FocusableListTile(
-                leading: _buildThumbnail(context, item, isCurrent, isTablet: isTablet),
+                leading: _buildThumbnail(context, item, isCurrent),
                 title: Text(
                   item.title!,
                   style: TextStyle(
@@ -89,18 +84,15 @@ class QueueSheet extends StatelessWidget {
     );
   }
 
-  Widget? _buildThumbnail(BuildContext context, PlexMetadata item, bool isCurrent, {bool isTablet = false}) {
+  Widget? _buildThumbnail(BuildContext context, PlexMetadata item, bool isCurrent) {
     if (item.thumb == null) return null;
-
-    final thumbWidth = isTablet ? _kThumbWidthTablet : _kThumbWidth;
-    final thumbHeight = isTablet ? _kThumbHeightTablet : _kThumbHeight;
 
     // Try to get client for thumbnails, may fail in offline mode
     final client = _tryGetClient(context, item);
 
     return SizedBox(
-      width: thumbWidth,
-      height: thumbHeight,
+      width: _kThumbWidth,
+      height: _kThumbHeight,
       child: Stack(
         children: [
           ClipRRect(
@@ -108,11 +100,11 @@ class QueueSheet extends StatelessWidget {
             child: PlexOptimizedImage.thumb(
               client: client,
               imagePath: item.thumb,
-              width: thumbWidth,
-              height: thumbHeight,
+              width: _kThumbWidth,
+              height: _kThumbHeight,
               fit: BoxFit.cover,
               errorWidget: (context, url, error) =>
-                  AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: thumbHeight),
+                  AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: _kThumbHeight),
             ),
           ),
           if (isCurrent)
