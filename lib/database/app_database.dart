@@ -225,6 +225,9 @@ LazyDatabase _openConnection() {
       }
     }
 
-    return NativeDatabase(file);
+    return NativeDatabase(file, setup: (db) {
+      db.execute('PRAGMA journal_mode=WAL');
+      db.execute('PRAGMA synchronous=NORMAL');
+    });
   });
 }
