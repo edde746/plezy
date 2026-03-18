@@ -1,20 +1,25 @@
 package com.edde746.plezy
 
 import android.content.Intent
+import android.graphics.SurfaceTexture
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.app.AppOpsManager
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.res.Configuration
 import android.util.Rational
 import android.view.KeyEvent
+import android.view.TextureView
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterTextureView
 import io.flutter.embedding.android.RenderMode
 import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
@@ -117,6 +122,38 @@ class MainActivity : FlutterActivity() {
     override fun getTransparencyMode(): TransparencyMode {
         // Keep Flutter transparent so video/subtitles are visible below.
         return TransparencyMode.transparent
+    }
+
+    override fun onFlutterTextureViewCreated(flutterTextureView: FlutterTextureView) {
+        val original = flutterTextureView.surfaceTextureListener ?: return
+        val handler = Handler(Looper.getMainLooper())
+        var pendingResize: Runnable? = null
+        var lastWidth = 0
+        var lastHeight = 0
+
+        flutterTextureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+            override fun onSurfaceTextureAvailable(surface: SurfaceTexture, w: Int, h: Int) {
+                original.onSurfaceTextureAvailable(surface, w, h)
+            }
+            override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, w: Int, h: Int) {
+                if (w == lastWidth && h == lastHeight) return
+                lastWidth = w; lastHeight = h
+                pendingResize?.let { handler.removeCallbacks(it) }
+                pendingResize = Runnable {
+                    original.onSurfaceTextureSizeChanged(surface, w, h)
+                }
+                handler.post(pendingResize!!)
+            }
+            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
+                original.onSurfaceTextureUpdated(surface)
+            }
+            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+                pendingResize?.let { handler.removeCallbacks(it) }
+                pendingResize = null
+                lastWidth = 0; lastHeight = 0
+                return original.onSurfaceTextureDestroyed(surface)
+            }
+        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
