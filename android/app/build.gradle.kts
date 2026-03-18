@@ -8,6 +8,24 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val assVersion = "flags"
+val assDir = layout.buildDirectory.dir("libass-android").get().asFile
+val assAars = listOf("lib_ass-release.aar", "lib_ass_kt-release.aar", "lib_ass_media-release.aar")
+
+val downloadLibassAndroid by tasks.registering {
+    val stamp = File(assDir, ".version")
+    outputs.upToDateWhen { stamp.exists() && stamp.readText().trim() == assVersion }
+    doLast {
+        assDir.mkdirs()
+        val baseUrl = "https://github.com/edde746/libass-android/releases/download/$assVersion"
+        assAars.forEach { name ->
+            val dest = File(assDir, name)
+            exec { commandLine("curl", "-sfL", "$baseUrl/$name", "-o", dest.absolutePath) }
+        }
+        stamp.writeText(assVersion)
+    }
+}
+
 val doviVersion = "2.3.1"
 val doviDir = layout.buildDirectory.dir("libdovi").get().asFile
 val doviAbis = mapOf(
@@ -127,6 +145,11 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative")
     dependsOn(downloadLibdovi)
 }
 
+// Download libass-android AARs before compilation
+tasks.matching { it.name.startsWith("compile") || it.name.startsWith("pre") }.configureEach {
+    dependsOn(downloadLibassAndroid)
+}
+
 dependencies {
     implementation("dev.jdtech.mpv:libmpv:0.5.1")
 
@@ -145,8 +168,8 @@ dependencies {
     // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
-    // libass-android for ASS/SSA subtitle rendering
-    implementation("io.github.peerless2012:ass-media:0.4.0")
-    // ass-kt core library (needed for AssRender.setFontScale)
-    implementation("io.github.peerless2012:ass-kt:0.4.0")
+    // libass-android for ASS/SSA subtitle rendering (forked for AssMatroskaExtractor flags constructor)
+    implementation(files("${assDir.absolutePath}/lib_ass-release.aar"))
+    implementation(files("${assDir.absolutePath}/lib_ass_kt-release.aar"))
+    implementation(files("${assDir.absolutePath}/lib_ass_media-release.aar"))
 }

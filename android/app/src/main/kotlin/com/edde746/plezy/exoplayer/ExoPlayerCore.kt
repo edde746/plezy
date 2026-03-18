@@ -384,13 +384,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     when {
                         extractor is MatroskaExtractor -> {
                             val assExtractor = AssMatroskaExtractor(assParserFactory, handler)
-                            if (doviEnabled) {
+                            val inner = if (doviEnabled) {
                                 DoviExtractorWrapper(assExtractor, currentDvMode).also {
                                     activeDoviMkvWrapper = it
                                 }
                             } else {
                                 assExtractor
                             }
+                            // Wrap with approximate seeking for MKV files without Cues
+                            CuelessSeekExtractorWrapper(inner)
                         }
                         doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
                             DoviExtractorWrapper(extractor, currentDvMode).also {
