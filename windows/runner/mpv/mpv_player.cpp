@@ -37,9 +37,8 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
   mpv_set_option(mpv_, "wid", MPV_FORMAT_INT64, &wid);
 
   // Configure mpv for embedded playback.
-  // Use gpu-next with Vulkan preferred, D3D11 fallback (GH-653, GH-672)
   mpv_set_option_string(mpv_, "vo", "gpu-next");
-  mpv_set_option_string(mpv_, "gpu-api", "vulkan,d3d11");
+  mpv_set_option_string(mpv_, "gpu-api", "auto");
   // hwdec is set from Flutter via setProperty based on user preference
   mpv_set_option_string(mpv_, "keep-open", "yes");
   mpv_set_option_string(mpv_, "idle", "yes");
