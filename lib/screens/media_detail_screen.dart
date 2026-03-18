@@ -217,7 +217,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         setState(() {
           _episodes.removeAt(epIndex);
         });
-        if (_episodes.isEmpty && widget.metadata.isSeason && mounted) {
+        if (_episodes.isEmpty && (widget.metadata.isSeason || widget.metadata.isShow) && mounted) {
           Navigator.of(context).pop();
         }
         return;
