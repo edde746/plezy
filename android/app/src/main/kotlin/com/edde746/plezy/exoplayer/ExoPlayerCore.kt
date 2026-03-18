@@ -53,7 +53,7 @@ import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.FlutterOverlayHelper
 import com.edde746.plezy.shared.FrameRateManager
 import io.github.peerless2012.ass.media.AssHandler
-import io.github.peerless2012.ass.media.extractor.AssMatroskaExtractor
+
 import io.github.peerless2012.ass.media.factory.AssRenderersFactory
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
@@ -383,7 +383,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 extractorsFactory.createExtractors().map { extractor ->
                     when {
                         extractor is MatroskaExtractor -> {
-                            val assExtractor = AssMatroskaExtractor(assParserFactory, handler)
+                            val assExtractor = ZlibMatroskaExtractor(assParserFactory, handler)
                             val inner = if (doviEnabled) {
                                 DoviExtractorWrapper(assExtractor, currentDvMode).also {
                                     activeDoviMkvWrapper = it
