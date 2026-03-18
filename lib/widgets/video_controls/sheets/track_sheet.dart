@@ -319,7 +319,7 @@ class _ColumnHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Text(

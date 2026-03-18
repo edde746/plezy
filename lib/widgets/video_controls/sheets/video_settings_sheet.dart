@@ -383,7 +383,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // HDR Toggle (iOS, macOS, and Windows)
         if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
-          ListTile(
+          FocusableListTile(
             leading: AppIcon(Symbols.hdr_strong_rounded, fill: 1, color: _enableHDR ? Colors.amber : tokens(context).textMuted),
             title: Text(t.videoSettings.hdr),
             trailing: Switch(value: _enableHDR, onChanged: (_) => _toggleHDR(), activeThumbColor: Colors.amber),
@@ -391,7 +391,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
 
         // Auto-Play Next Episode Toggle
-        ListTile(
+        FocusableListTile(
           leading: AppIcon(
             Symbols.skip_next_rounded,
             fill: 1,
@@ -429,7 +429,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // Audio Passthrough (Desktop only)
         if (isDesktop)
-          ListTile(
+          FocusableListTile(
             leading: AppIcon(
               Symbols.surround_sound_rounded,
               fill: 1,
@@ -446,7 +446,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // Audio Normalization (MPV only)
         if (widget.player.playerType == 'mpv')
-          ListTile(
+          FocusableListTile(
             leading: AppIcon(
               Symbols.graphic_eq_rounded,
               fill: 1,
@@ -473,7 +473,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // Ambient Lighting (MPV only)
         if (widget.onToggleAmbientLighting != null)
-          ListTile(
+          FocusableListTile(
             leading: AppIcon(
               Symbols.blur_on,
               fill: 1,
@@ -495,7 +495,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
 
         // Performance Overlay Toggle
-        ListTile(
+        FocusableListTile(
           leading: AppIcon(
             Symbols.analytics_rounded,
             fill: 1,

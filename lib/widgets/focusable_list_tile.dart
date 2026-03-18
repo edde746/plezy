@@ -55,6 +55,9 @@ class FocusableListTile extends StatefulWidget {
   /// An optional color for the icon of the list tile.
   final Color? iconColor;
 
+  /// Visual density for the list tile.
+  final VisualDensity? visualDensity;
+
   const FocusableListTile({
     super.key,
     this.title,
@@ -63,7 +66,7 @@ class FocusableListTile extends StatefulWidget {
     this.trailing,
     this.onTap,
     this.onLongPress,
-    this.dense = false,
+    this.dense = true,
     this.enabled = true,
     this.selected = false,
     this.focusNode,
@@ -73,6 +76,7 @@ class FocusableListTile extends StatefulWidget {
     this.hoverColor,
     this.textColor,
     this.iconColor,
+    this.visualDensity = const VisualDensity(vertical: -3),
   });
 
   @override
@@ -150,6 +154,7 @@ class _FocusableListTileState extends State<FocusableListTile> {
         enabled: widget.enabled,
         selected: widget.selected,
         contentPadding: widget.contentPadding,
+        visualDensity: widget.visualDensity,
         focusNode: widget.suppressInitialSelect ? null : _effectiveFocusNode,
         autofocus: widget.suppressInitialSelect ? false : widget.autofocus,
         hoverColor: widget.hoverColor,
@@ -209,16 +214,20 @@ class FocusableRadioListTile<T> extends StatefulWidget {
   /// Whether the radio tile is interactive.
   final bool? enabled;
 
+  /// Visual density for the list tile.
+  final VisualDensity? visualDensity;
+
   const FocusableRadioListTile({
     super.key,
     this.title,
     this.subtitle,
     this.secondary,
     required this.value,
-    this.dense = false,
+    this.dense = true,
     this.focusNode,
     this.autofocus = false,
     this.enabled,
+    this.visualDensity = const VisualDensity(vertical: -3),
   });
 
   @override
@@ -281,6 +290,7 @@ class _FocusableRadioListTileState<T> extends State<FocusableRadioListTile<T>> {
       value: widget.value,
       // groupValue and onChanged provided by RadioGroup ancestor
       dense: widget.dense,
+      visualDensity: widget.visualDensity,
       focusNode: _effectiveFocusNode,
       autofocus: widget.autofocus,
       enabled: widget.enabled,
@@ -316,6 +326,9 @@ class FocusableSwitchListTile extends StatefulWidget {
   /// Whether this tile should autofocus when first built.
   final bool autofocus;
 
+  /// Visual density for the list tile.
+  final VisualDensity? visualDensity;
+
   const FocusableSwitchListTile({
     super.key,
     this.title,
@@ -323,9 +336,10 @@ class FocusableSwitchListTile extends StatefulWidget {
     this.secondary,
     required this.value,
     required this.onChanged,
-    this.dense = false,
+    this.dense = true,
     this.focusNode,
     this.autofocus = false,
+    this.visualDensity = const VisualDensity(vertical: -3),
   });
 
   @override
@@ -388,6 +402,7 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile> {
       value: widget.value,
       onChanged: widget.onChanged,
       dense: widget.dense,
+      visualDensity: widget.visualDensity,
       focusNode: _effectiveFocusNode,
       autofocus: widget.autofocus,
     );

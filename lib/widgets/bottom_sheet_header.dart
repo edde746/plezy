@@ -81,10 +81,10 @@ class BottomSheetHeader extends StatelessWidget {
     }
 
     // Determine the title style
-    final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: titleColor);
+    final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: titleColor);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: showBorder
           ? BoxDecoration(
               border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
