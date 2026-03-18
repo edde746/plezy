@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:path/path.dart' as p;
+
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -1276,11 +1278,43 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       appLogger.d('Could not load cached media info for offline playback', error: e);
     }
 
+    // Discover downloaded subtitle files for offline playback
+    final offlineSubtitles = <SubtitleTrack>[];
+    if (!videoPath.startsWith('content://')) {
+      final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
+      var subsDir = Directory(subsPath);
+
+      // Fallback: legacy structure uses 'subtitles/' in parent dir
+      if (!await subsDir.exists()) {
+        final legacyDir = Directory(p.join(File(videoPath).parent.path, 'subtitles'));
+        if (await legacyDir.exists()) subsDir = legacyDir;
+      }
+
+      if (await subsDir.exists()) {
+        final entities = await subsDir.list().toList();
+        for (final entity in entities) {
+          if (entity is! File) continue;
+          final fileName = p.basenameWithoutExtension(entity.path);
+          final trackId = int.tryParse(fileName);
+
+          final plexTrack = trackId != null
+              ? mediaInfo?.subtitleTracks.where((t) => t.id == trackId).firstOrNull
+              : null;
+
+          offlineSubtitles.add(SubtitleTrack.uri(
+            'file://${entity.path}',
+            title: plexTrack?.displayTitle ?? plexTrack?.language ?? 'Subtitle $fileName',
+            language: plexTrack?.languageCode,
+          ));
+        }
+      }
+    }
+
     return PlaybackInitializationResult(
       availableVersions: [],
       videoUrl: videoPath.contains('://') ? videoPath : 'file://$videoPath',
       mediaInfo: mediaInfo,
-      externalSubtitles: const [],
+      externalSubtitles: offlineSubtitles,
       isOffline: true,
     );
   }
