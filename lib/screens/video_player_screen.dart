@@ -166,6 +166,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _waitingForExternalSubsTrackSelection = false;
   bool _isApplyingTrackSelection = false;
   bool _isHandlingBack = false;
+  List<SubtitleTrack> _lastExternalSubtitles = const [];
   BifThumbnailService? _bifService;
 
   // Live TV channel navigation
@@ -1014,6 +1015,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _livePlaybackStartTime = DateTime.now();
         await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
 
+        _lastExternalSubtitles = const [];
+
         if (mounted) {
           setState(() {
             _availableVersions = [];
@@ -1185,6 +1188,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             await _restoreAmbientLighting();
           }
         }
+
+        // Store external subtitles for re-use after backend fallback
+        _lastExternalSubtitles = result.externalSubtitles;
 
         // Add external subtitles while paused, then start playback
         if (result.externalSubtitles.isNotEmpty) {
@@ -1981,6 +1987,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (mounted) {
       showAppSnackBar(context, t.messages.switchingToCompatiblePlayer);
     }
+
+    // Re-add external subtitles to MPV (lost when ExoPlayer was disposed)
+    if (_lastExternalSubtitles.isNotEmpty) {
+      _addExternalSubtitles(_lastExternalSubtitles);
+    }
+
+    // Re-subscribe to tracks so we reapply Plex/user preferences when MPV's track list arrives
+    _trackLoadingSubscription?.cancel();
+    _trackLoadingSubscription = player?.streams.tracks.listen((tracks) {
+      if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
+
+      _trackLoadingSubscription?.cancel();
+      _trackLoadingSubscription = null;
+      _applyTrackSelection();
+    });
   }
 
   // OS Media Controls Integration
