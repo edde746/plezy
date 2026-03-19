@@ -160,6 +160,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var selectedAudioTrackId: String? = null
     private var selectedSubtitleTrackId: String? = null
     private var selectedExternalSubtitleIndex: Int? = null
+    private val audioTrackGroupMap = mutableMapOf<String, TrackGroup>()
+    private val subtitleTrackGroupMap = mutableMapOf<String, TrackGroup>()
 
     private fun emitLog(level: String, prefix: String, message: String) {
         when (level) {
@@ -782,6 +784,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val tracks = player.currentTracks
 
         val trackList = mutableListOf<Map<String, Any?>>()
+        audioTrackGroupMap.clear()
+        subtitleTrackGroupMap.clear()
 
         // Group tracks by type and use group index as track ID (matching select functions)
         val audioGroups = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
@@ -797,6 +801,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             // Use first format in group as the representative track
             val format = trackGroup.getFormat(0)
             val trackId = "${C.TRACK_TYPE_AUDIO}_$groupIndex"
+            audioTrackGroupMap[trackId] = trackGroup
             val isSelected = group.isSelected
 
             val track = mutableMapOf<String, Any?>(
@@ -823,6 +828,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val trackGroup = group.mediaTrackGroup
             val format = trackGroup.getFormat(0)
             val trackId = "${C.TRACK_TYPE_TEXT}_$groupIndex"
+            subtitleTrackGroupMap[trackId] = trackGroup
             val isSelected = group.isSelected
 
             Log.d(TAG, "Subtitle track $groupIndex: codec=${format.codecs}, lang=${format.language}, selected=$isSelected")
@@ -1190,6 +1196,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         )
 
         externalSubtitles.clear()
+        audioTrackGroupMap.clear()
+        subtitleTrackGroupMap.clear()
         selectedExternalSubtitleIndex = null
         selectedAudioTrackId = null
         selectedSubtitleTrackId = null
@@ -1198,7 +1206,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         currentTunneledPlayback = tunnelingUserEnabled
         pendingStartPositionMs = startPositionMs
         trackSelector?.setParameters(
-            trackSelector!!.buildUponParameters().setTunnelingEnabled(tunnelingUserEnabled)
+            trackSelector!!.buildUponParameters()
+                .setTunnelingEnabled(tunnelingUserEnabled)
+                .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
+                .clearOverridesOfType(C.TRACK_TYPE_TEXT)
         )
         emitSeekable(false, force = true)
 
@@ -1268,34 +1279,22 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     fun selectAudioTrack(trackId: String) {
-        val player = exoPlayer ?: return
         val selector = trackSelector ?: return
+        val trackGroup = audioTrackGroupMap[trackId] ?: return
 
-        // Parse track ID (format: "type_index")
-        val parts = trackId.split("_")
-        if (parts.size < 2) return
+        selector.parameters = selector.buildUponParameters()
+            .setOverrideForType(TrackSelectionOverride(trackGroup, 0))
+            .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+            .build()
 
-        val trackIndex = parts[1].toIntOrNull() ?: return
-
-        val audioGroups = player.currentTracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
-        if (trackIndex >= 0 && trackIndex < audioGroups.size) {
-            val group = audioGroups[trackIndex]
-            selector.parameters = selector.buildUponParameters()
-                .setOverrideForType(TrackSelectionOverride(group.mediaTrackGroup, 0))
-                .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
-                .build()
-
-            selectedAudioTrackId = trackId
-            delegate?.onPropertyChange("aid", trackId)
-        }
+        selectedAudioTrackId = trackId
+        delegate?.onPropertyChange("aid", trackId)
     }
 
     fun selectSubtitleTrack(trackId: String?) {
-        val player = exoPlayer ?: return
         val selector = trackSelector ?: return
 
         if (trackId == null || trackId == "no") {
-            // Disable subtitles
             selectedExternalSubtitleIndex = null
             selectedSubtitleTrackId = "no"
             selector.parameters = selector.buildUponParameters()
@@ -1305,11 +1304,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             return
         }
 
-        // Check if external subtitle
         if (trackId.startsWith("ext_sub_")) {
             val index = trackId.removePrefix("ext_sub_").toIntOrNull() ?: return
             if (index >= 0 && index < externalSubtitles.size) {
-                // Reload media with selected external subtitle
                 selectedExternalSubtitleIndex = index
                 selectedSubtitleTrackId = trackId
                 reloadWithExternalSubtitle(index)
@@ -1317,24 +1314,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             }
         }
 
-        // Parse track ID for embedded subtitles
-        val parts = trackId.split("_")
-        if (parts.size < 2) return
-
-        val trackIndex = parts[1].toIntOrNull() ?: return
-
-        val textGroups = player.currentTracks.groups.filter { it.type == C.TRACK_TYPE_TEXT }
-        if (trackIndex >= 0 && trackIndex < textGroups.size) {
-            val group = textGroups[trackIndex]
-            selectedExternalSubtitleIndex = null
-            selectedSubtitleTrackId = trackId
-            selector.parameters = selector.buildUponParameters()
-                .setOverrideForType(TrackSelectionOverride(group.mediaTrackGroup, 0))
-                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                .build()
-
-            delegate?.onPropertyChange("sid", trackId)
-        }
+        val trackGroup = subtitleTrackGroupMap[trackId] ?: return
+        selectedExternalSubtitleIndex = null
+        selectedSubtitleTrackId = trackId
+        selector.parameters = selector.buildUponParameters()
+            .setOverrideForType(TrackSelectionOverride(trackGroup, 0))
+            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+            .build()
+        delegate?.onPropertyChange("sid", trackId)
     }
 
     private fun reloadWithExternalSubtitle(subtitleIndex: Int) {
@@ -1614,6 +1601,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         selectedAudioTrackId = null
         selectedSubtitleTrackId = null
         selectedExternalSubtitleIndex = null
+        audioTrackGroupMap.clear()
+        subtitleTrackGroupMap.clear()
         exoPlayer?.clearVideoSurface()
         exoPlayer?.removeListener(this)
         exoPlayer?.release()
