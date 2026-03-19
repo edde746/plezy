@@ -1203,14 +1203,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             await _resumeAfterSubtitleLoad();
           }
         } else {
-          _trackLoadingSubscription?.cancel();
-          _trackLoadingSubscription = player!.streams.tracks.listen((tracks) {
-            if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
-
-            _trackLoadingSubscription?.cancel();
-            _trackLoadingSubscription = null;
+          // Check state first — it's always up to date even if broadcast stream
+          // events were missed (happens on fast devices where ExoPlayer prepares
+          // during the await points between open() and here).
+          // Fall back to stream subscription for slower devices.
+          final currentTracks = player!.state.tracks;
+          if (currentTracks.audio.isNotEmpty || currentTracks.subtitle.isNotEmpty) {
             _applyTrackSelection();
-          });
+          } else {
+            _trackLoadingSubscription?.cancel();
+            _trackLoadingSubscription = player!.streams.tracks.listen((tracks) {
+              if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
+
+              _trackLoadingSubscription?.cancel();
+              _trackLoadingSubscription = null;
+              _applyTrackSelection();
+            });
+          }
         }
       }
     } on PlaybackException catch (e) {
