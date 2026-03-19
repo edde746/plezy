@@ -1427,6 +1427,9 @@ class DownloadManagerService {
 
       // Clean up parent directories if empty
       await _cleanupEmptyDirectories(episode, showYear);
+
+      // Safety net: verify the actual DB-recorded file is gone
+      await _ensureDbFileDeleted(serverId, episode.ratingKey);
     } catch (e, stack) {
       appLogger.e('Error deleting episode files', error: e, stackTrace: stack);
     }
@@ -1535,8 +1538,61 @@ class DownloadManagerService {
 
       // Delete chapter thumbnails (with reference counting)
       await _deleteChapterThumbnails(serverId, movie.ratingKey);
+
+      // Safety net: verify the actual DB-recorded file is gone
+      await _ensureDbFileDeleted(serverId, movie.ratingKey);
     } catch (e, stack) {
       appLogger.e('Error deleting movie files', error: e, stackTrace: stack);
+    }
+  }
+
+  /// Safety net: after metadata-based deletion, verify the actual DB-recorded
+  /// video file is gone. If not, delete it and clean up parent directories.
+  Future<void> _ensureDbFileDeleted(String serverId, String ratingKey) async {
+    try {
+      final globalKey = buildGlobalKey(serverId, ratingKey);
+      final record = await _database.getDownloadedMedia(globalKey);
+      if (record?.videoFilePath == null) return;
+
+      final videoPath = await _storageService.ensureAbsolutePath(record!.videoFilePath!);
+      final videoFile = File(videoPath);
+      if (!await videoFile.exists()) return;
+
+      appLogger.w('Safety net: video still exists after metadata deletion, deleting: $videoPath');
+      await videoFile.delete();
+
+      // Clean up .part file and subtitles directory alongside video
+      await _deleteFileIfExists(File('$videoPath.part'), 'partial download');
+      final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
+      final subsDir = Directory(subsPath);
+      if (await subsDir.exists()) await subsDir.delete(recursive: true);
+
+      // Walk up empty parent directories toward downloads root
+      await _cleanupEmptyParentDirectories(videoFile.parent);
+    } catch (e, stack) {
+      appLogger.w('Safety net deletion failed', error: e, stackTrace: stack);
+    }
+  }
+
+  /// Walk up from a directory toward the downloads root, removing empty dirs.
+  Future<void> _cleanupEmptyParentDirectories(Directory dir) async {
+    try {
+      final downloadsDir = await _storageService.getDownloadsDirectory();
+      var current = dir;
+      while (current.path != downloadsDir.path &&
+             current.path.startsWith(downloadsDir.path)) {
+        if (!await current.exists()) { current = current.parent; continue; }
+        final contents = await current.list().toList();
+        if (contents.isEmpty) {
+          await current.delete();
+          appLogger.i('Cleaned up empty directory: ${current.path}');
+          current = current.parent;
+        } else {
+          break;
+        }
+      }
+    } catch (e) {
+      appLogger.w('Error cleaning up parent directories', error: e);
     }
   }
 
@@ -1625,23 +1681,35 @@ class DownloadManagerService {
   Future<void> _deleteByFilePath(DownloadedMediaItem record) async {
     try {
       if (record.videoFilePath != null) {
-        final videoPath = await _storageService.toAbsolutePath(record.videoFilePath!);
-        final videoDeleted = await _deleteFileIfExists(File(videoPath), 'video file');
+        final videoPath = await _storageService.ensureAbsolutePath(record.videoFilePath!);
+        final videoFile = File(videoPath);
+        final videoDeleted = await _deleteFileIfExists(videoFile, 'video file');
 
-        // Delete subtitle directory if video was deleted
         if (videoDeleted) {
+          // Delete .part file from interrupted downloads
+          await _deleteFileIfExists(File('$videoPath.part'), 'partial download');
+
+          // Delete subtitle directory
           final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
           final subsDir = Directory(subsPath);
           if (await subsDir.exists()) {
             await subsDir.delete(recursive: true);
             appLogger.i('Deleted subtitles: $subsPath');
           }
+
+          // Clean up empty parent directories
+          await _cleanupEmptyParentDirectories(videoFile.parent);
         }
       }
 
+      // thumbPath is a Plex API path (e.g. /library/metadata/123/thumb/...),
+      // not a local file path — resolve it via getArtworkPathFromThumb
       if (record.thumbPath != null) {
-        final thumbPath = await _storageService.toAbsolutePath(record.thumbPath!);
-        await _deleteFileIfExists(File(thumbPath), 'thumbnail');
+        final parsed = parseGlobalKey(record.globalKey);
+        if (parsed != null) {
+          final thumbPath = await _storageService.getArtworkPathFromThumb(parsed.serverId, record.thumbPath!);
+          await _deleteFileIfExists(File(thumbPath), 'thumbnail');
+        }
       }
     } catch (e, stack) {
       appLogger.e('Error in fallback deletion', error: e, stackTrace: stack);
