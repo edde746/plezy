@@ -184,10 +184,9 @@ Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
   final data = breadcrumb.data;
   if (message == null && (data == null || data.isEmpty)) return breadcrumb;
 
-  return breadcrumb.copyWith(
-    message: message != null ? LogRedactionManager.redact(message) : null,
-    data: data?.map((k, v) => MapEntry(k, v is String ? LogRedactionManager.redact(v) : v)),
-  );
+  if (message != null) breadcrumb.message = LogRedactionManager.redact(message);
+  if (data != null) breadcrumb.data = data.map((k, v) => MapEntry(k, v is String ? LogRedactionManager.redact(v) : v));
+  return breadcrumb;
 }
 
 FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
@@ -215,29 +214,26 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
 
   // Scrub Plex tokens and server URLs from exception messages
   if (exceptions != null) {
-    exceptions = exceptions.map((e) {
+    for (final e in exceptions) {
       final value = e.value;
       if (value != null) {
-        return e.copyWith(value: LogRedactionManager.redact(value));
+        e.value = LogRedactionManager.redact(value);
       }
-      return e;
-    }).toList();
+    }
   }
 
   // Scrub breadcrumb messages and data
-  var breadcrumbs = event.breadcrumbs;
+  final breadcrumbs = event.breadcrumbs;
   if (breadcrumbs != null) {
-    breadcrumbs = breadcrumbs.map((b) {
+    for (final b in breadcrumbs) {
       final message = b.message;
       final data = b.data;
-      return b.copyWith(
-        message: message != null ? LogRedactionManager.redact(message) : null,
-        data: data?.map((k, v) => MapEntry(k, v is String ? LogRedactionManager.redact(v) : v)),
-      );
-    }).toList();
+      if (message != null) b.message = LogRedactionManager.redact(message);
+      if (data != null) b.data = data.map((k, v) => MapEntry(k, v is String ? LogRedactionManager.redact(v) : v));
+    }
   }
 
-  return event.copyWith(exceptions: exceptions, breadcrumbs: breadcrumbs);
+  return event;
 }
 
 void _registerShaderLicenses() {
