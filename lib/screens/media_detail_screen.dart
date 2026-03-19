@@ -1263,6 +1263,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         type: 'season',
         title: firstEp.parentTitle ?? 'Season ${entry.key}',
         index: entry.key,
+        leafCount: entry.value.length,
         thumb: firstEp.parentThumb,
         parentRatingKey: firstEp.grandparentRatingKey,
         serverId: widget.metadata.serverId,
