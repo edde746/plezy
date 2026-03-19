@@ -8,11 +8,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val assVersion = "flags"
-val assDir = layout.buildDirectory.dir("libass-android").get().asFile
+val assVersion = "resize"
+val assDir = layout.buildDirectory.dir("libass").get().asFile
 val assAars = listOf("lib_ass-release.aar", "lib_ass_kt-release.aar", "lib_ass_media-release.aar")
 
-val downloadLibassAndroid by tasks.registering {
+val downloadLibass by tasks.registering {
     val stamp = File(assDir, ".version")
     outputs.upToDateWhen { stamp.exists() && stamp.readText().trim() == assVersion }
     doLast {
@@ -145,10 +145,11 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative")
     dependsOn(downloadLibdovi)
 }
 
-// Download libass-android AARs before compilation
-tasks.matching { it.name.startsWith("compile") || it.name.startsWith("pre") }.configureEach {
-    dependsOn(downloadLibassAndroid)
+// Download libass AARs before compilation
+tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
+    dependsOn(downloadLibass)
 }
+
 
 dependencies {
     implementation("dev.jdtech.mpv:libmpv:0.5.1")
@@ -168,8 +169,6 @@ dependencies {
     // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
-    // libass-android for ASS/SSA subtitle rendering (forked for AssMatroskaExtractor flags constructor)
-    implementation(files("${assDir.absolutePath}/lib_ass-release.aar"))
-    implementation(files("${assDir.absolutePath}/lib_ass_kt-release.aar"))
-    implementation(files("${assDir.absolutePath}/lib_ass_media-release.aar"))
+    // libass-android for ASS/SSA subtitle rendering
+    assAars.forEach { implementation(files(File(assDir, it))) }
 }
