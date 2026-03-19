@@ -1990,27 +1990,35 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   /// Handle notification when native player switched from ExoPlayer to MPV
-  void _onBackendSwitched() {
+  Future<void> _onBackendSwitched() async {
     appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
 
     if (mounted) {
       showAppSnackBar(context, t.messages.switchingToCompatiblePlayer);
     }
 
-    // Re-add external subtitles to MPV (lost when ExoPlayer was disposed)
+    // Re-add external subtitles to MPV (lost when ExoPlayer was disposed).
+    // Must await so they're in the track list before we apply selection.
     if (_lastExternalSubtitles.isNotEmpty) {
-      _addExternalSubtitles(_lastExternalSubtitles);
+      await _addExternalSubtitles(_lastExternalSubtitles);
     }
 
-    // Re-subscribe to tracks so we reapply Plex/user preferences when MPV's track list arrives
-    _trackLoadingSubscription?.cancel();
-    _trackLoadingSubscription = player?.streams.tracks.listen((tracks) {
-      if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
+    if (player == null) return;
 
-      _trackLoadingSubscription?.cancel();
-      _trackLoadingSubscription = null;
+    // Check state first, fall back to stream subscription (same pattern as _startPlayback)
+    final currentTracks = player!.state.tracks;
+    if (currentTracks.audio.isNotEmpty || currentTracks.subtitle.isNotEmpty) {
       _applyTrackSelection();
-    });
+    } else {
+      _trackLoadingSubscription?.cancel();
+      _trackLoadingSubscription = player!.streams.tracks.listen((tracks) {
+        if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
+
+        _trackLoadingSubscription?.cancel();
+        _trackLoadingSubscription = null;
+        _applyTrackSelection();
+      });
+    }
   }
 
   // OS Media Controls Integration
