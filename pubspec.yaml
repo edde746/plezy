@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   intl: ^0.20.2
-  dio: ^5.4.0
+  dio: ^5.9.2
   json_annotation: ^4.9.0
   shared_preferences: ^2.2.2
   cached_network_image: ^3.4.1
@@ -19,14 +19,14 @@ dependencies:
   url_launcher: ^6.3.0
   uuid: ^4.4.0
   window_manager: ^0.5.1
-  logger: ^2.0.2
+  logger: ^2.7.0
   package_info_plus: ^9.0.0
   device_info_plus: ^12.3.0
   provider: ^6.1.2
-  flex_color_picker: ^3.6.0
+  flex_color_picker: ^3.8.0
   qr_flutter: ^4.1.0
-  slang: ^4.12.0
-  slang_flutter: ^4.12.0
+  slang: ^4.14.0
+  slang_flutter: ^4.14.0
   duration: ^4.0.3
   connectivity_plus: ^7.0.0
   os_media_controls:
@@ -41,16 +41,16 @@ dependencies:
   path_provider: ^2.1.0
   path: ^1.9.0
   universal_gamepad: ^1.5.0
-  drift: ^2.28.2
-  sqlite3_flutter_libs: ^0.5.41
+  drift: ^2.31.0
+  sqlite3_flutter_libs: ^0.5.42
   crypto: ^3.0.7
   file_picker: ^10.3.10
-  saf_util: ^0.11.0
-  saf_stream: ^0.12.2
-  material_symbols_icons: ^4.2892.0
+  saf_util: ^2.0.0
+  saf_stream: ^2.0.0
+  material_symbols_icons: ^4.2906.0
   web_socket_channel: ^3.0.1
   in_app_review: ^2.0.11
-  dart_discord_presence: ^1.1.0
+  dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
   mobile_scanner: ^7.2.0
   background_downloader: ^9.5.2
@@ -65,11 +65,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  build_runner: ^2.4.7
+  build_runner: ^2.13.0
   json_serializable: ^6.7.1
-  slang_build_runner: ^4.12.0
+  slang_build_runner: ^4.14.0
   dart_code_linter: ^3.2.1
-  drift_dev: ^2.14.0
+  drift_dev: ^2.28.3
 
 dependency_overrides:
   auto_updater_platform_interface:
