@@ -206,7 +206,7 @@ class _PairingScreenState extends State<PairingScreen> {
                       _handleQrCode(barcode!.rawValue!);
                     }
                   },
-                  errorBuilder: (context, error, child) {
+                  errorBuilder: (context, error) {
                     return Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
