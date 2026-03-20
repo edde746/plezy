@@ -67,6 +67,7 @@ class _PairingScreenState extends State<PairingScreen> {
       }
     } catch (e) {
       appLogger.e('Failed to join remote session', error: e);
+      if (!mounted) return;
       setState(() {
         _isConnecting = false;
         _errorMessage = _parseErrorMessage(e.toString());
@@ -129,6 +130,7 @@ class _PairingScreenState extends State<PairingScreen> {
       }
     } catch (e) {
       appLogger.e('Failed to join remote session', error: e);
+      if (!mounted) return;
       _lastScannedCode = null; // Allow re-scanning
       setState(() {
         _isConnecting = false;
