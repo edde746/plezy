@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../mpv/mpv.dart';
 
 import '../models/plex_media_info.dart';
@@ -640,10 +642,15 @@ class TrackSelectionService {
     Function(SubtitleTrack)? onSubtitleTrackChanged,
   }) async {
     // Wait for tracks to be loaded
-    int attempts = 0;
-    while (player.state.tracks.audio.isEmpty && player.state.tracks.subtitle.isEmpty && attempts < 100) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      attempts++;
+    if (player.state.tracks.audio.isEmpty && player.state.tracks.subtitle.isEmpty) {
+      try {
+        await player.streams.tracks
+            .where((t) => t.audio.isNotEmpty || t.subtitle.isNotEmpty)
+            .first
+            .timeout(const Duration(seconds: 10));
+      } catch (_) {
+        // Timeout or stream closed — proceed with whatever state we have
+      }
     }
 
     if (player.disposed) return;

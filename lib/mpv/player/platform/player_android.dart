@@ -89,7 +89,7 @@ class PlayerAndroid extends PlayerBase {
   // ============================================
 
   @override
-  Future<void> open(Media media, {bool play = true, bool isLive = false}) async {
+  Future<void> open(Media media, {bool play = true, bool isLive = false, List<SubtitleTrack>? externalSubtitles}) async {
     if (disposed) return;
     await _ensureInitialized();
     setSeekable(false);
@@ -103,6 +103,11 @@ class PlayerAndroid extends PlayerBase {
       'startPositionMs': media.start?.inMilliseconds ?? 0,
       'autoPlay': play,
       'isLive': isLive,
+      if (externalSubtitles != null && externalSubtitles.isNotEmpty)
+        'externalSubtitles': externalSubtitles
+            .where((s) => s.uri != null)
+            .map((s) => {'uri': s.uri, 'title': s.title, 'language': s.language})
+            .toList(),
     });
   }
 

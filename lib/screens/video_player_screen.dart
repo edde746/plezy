@@ -42,7 +42,7 @@ import '../services/playback_progress_tracker.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
-import '../services/track_selection_service.dart';
+import '../services/track_manager.dart';
 import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_pip_manager.dart';
@@ -57,9 +57,7 @@ import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
-import '../utils/language_codes.dart';
 import '../utils/snackbar_helper.dart';
-import '../utils/track_label_builder.dart';
 import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/overlay_sheet.dart';
@@ -150,10 +148,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<bool>? _completedSubscription;
   StreamSubscription<dynamic>? _mediaControlSubscription;
   StreamSubscription<bool>? _bufferingSubscription;
-  StreamSubscription<Tracks>? _trackLoadingSubscription;
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<void>? _playbackRestartSubscription;
   StreamSubscription<void>? _backendSwitchedSubscription;
+  TrackManager? _trackManager;
   StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<void>? _sleepTimerSubscription;
   StreamSubscription<bool>? _mediaControlsPlayingSubscription;
@@ -163,10 +161,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<Map<String, bool>>? _serverStatusSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
-  bool _waitingForExternalSubsTrackSelection = false;
-  bool _isApplyingTrackSelection = false;
   bool _isHandlingBack = false;
-  List<SubtitleTrack> _lastExternalSubtitles = const [];
   BifThumbnailService? _bifService;
 
   // Live TV channel navigation
@@ -376,29 +371,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       case AppLifecycleState.detached:
         // No action needed for this state
         break;
-    }
-  }
-
-  /// Converts a 2-letter code like "fr", "nl", "ca" to a Plex 3-letter code, or returns null if unknown
-  String? _iso6391ToPlex6392(String? code) {
-    if (code == null || code.isEmpty) return null;
-    // Takes the base "fr" from "fr-FR"
-    final lang = code.split('-').first.toLowerCase();
-
-    // Use LanguageCodes utility to get variations and find the 639-2 code
-    try {
-      final variations = LanguageCodes.getVariations(lang);
-      // The getVariations method returns all variations including 639-2 codes
-      // We need to find the 3-letter code from the variations
-      for (final variation in variations) {
-        if (variation.length == 3) {
-          return variation;
-        }
-      }
-      return null;
-    } catch (e) {
-      // If LanguageCodes is not initialized or fails, return null
-      return null;
     }
   }
 
@@ -633,10 +605,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             await _applyFrameRateMatching();
           }
         }
-        if (_waitingForExternalSubsTrackSelection) {
-          _waitingForExternalSubsTrackSelection = false;
-          _applyTrackSelection();
-        }
+        _trackManager?.onPlaybackRestart();
       });
 
       // Listen to position for completion detection (fallback for unreliable MPV events)
@@ -711,29 +680,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       appLogger.d('Frame rate matching: Cleared, restored default display mode');
     } catch (e) {
       appLogger.d('Failed to clear frame rate matching', error: e);
-    }
-  }
-
-  /// Add external subtitle tracks to the player
-  Future<void> _addExternalSubtitles(List<SubtitleTrack> externalSubtitles) async {
-    if (player == null || externalSubtitles.isEmpty) return;
-
-    appLogger.d('Adding ${externalSubtitles.length} external subtitle(s) to player');
-
-    for (final subtitleTrack in externalSubtitles) {
-      if (subtitleTrack.uri == null) continue;
-
-      try {
-        await player!.addSubtitleTrack(
-          uri: subtitleTrack.uri!,
-          title: subtitleTrack.title,
-          language: subtitleTrack.language,
-          select: false, // Don't auto-select
-        );
-        appLogger.d('Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}');
-      } catch (e) {
-        appLogger.w('Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}', error: e);
-      }
     }
   }
 
@@ -1015,7 +961,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _livePlaybackStartTime = DateTime.now();
         await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
 
-        _lastExternalSubtitles = const [];
+        _trackManager?.cacheExternalSubtitles(const []);
 
         if (mounted) {
           setState(() {
@@ -1023,6 +969,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             _currentMediaInfo = null;
             _isPlayerInitialized = true;
           });
+          _trackManager?.mediaInfo = null;
         }
 
         _startLiveTimelineUpdates();
@@ -1091,13 +1038,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600');
         }
 
-        // If we have external subtitles, open paused to add them before playback starts.
-        // This prevents a race condition on Android where adding subtitle tracks
-        // during active playback can freeze the video decoder (issue #226).
         final hasExternalSubs = result.externalSubtitles.isNotEmpty;
+        final isAndroid = Platform.isAndroid;
+
+        // On Android, attach external subs at open time so ExoPlayer discovers
+        // them in a single prepare() — no media reload needed for selection.
+        // On other platforms (MPV), external subs are added after open via sub-add.
         await player!.open(
           Media(result.videoUrl!, start: resumePosition, headers: plexHeaders),
-          play: !hasExternalSubs,
+          play: isAndroid || !hasExternalSubs,
+          externalSubtitles: isAndroid && hasExternalSubs ? result.externalSubtitles : null,
         );
 
         // Apply subtitle styling to ExoPlayer native layer (CaptionStyleCompat + libass font scale)
@@ -1189,37 +1139,41 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           }
         }
 
-        // Store external subtitles for re-use after backend fallback
-        _lastExternalSubtitles = result.externalSubtitles;
+        // Track manager: owns track selection, external subtitle loading, and server sync
+        _trackManager = TrackManager(
+          player: player!,
+          isActive: () => mounted && player != null,
+          getClient: () => _getClientForMetadata(context),
+          getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
+          waitForProfileSettings: _waitForProfileSettingsIfNeeded,
+          metadata: widget.metadata,
+          mediaInfo: _currentMediaInfo,
+          preferredAudioTrack: widget.preferredAudioTrack,
+          preferredSubtitleTrack: widget.preferredSubtitleTrack,
+          preferredSecondarySubtitleTrack: widget.preferredSecondarySubtitleTrack,
+          showMessage: (message, {duration}) {
+            if (mounted) showAppSnackBar(context, message, duration: duration);
+          },
+        );
 
-        // Add external subtitles while paused, then start playback
-        if (result.externalSubtitles.isNotEmpty) {
+        // Store external subtitles for re-use after backend fallback
+        _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
+
+        // Non-Android with external subs: add after open via sub-add (MPV),
+        // opened paused to avoid race condition (issue #226)
+        if (!Platform.isAndroid && result.externalSubtitles.isNotEmpty) {
           _hasFirstFrame.value = false;
-          _waitingForExternalSubsTrackSelection = true;
+          _trackManager!.waitingForExternalSubsTrackSelection = true;
 
           try {
-            await _addExternalSubtitles(result.externalSubtitles);
+            await _trackManager!.addExternalSubtitles(result.externalSubtitles);
           } finally {
-            await _resumeAfterSubtitleLoad();
+            await _trackManager!.resumeAfterSubtitleLoad();
           }
         } else {
-          // Check state first — it's always up to date even if broadcast stream
-          // events were missed (happens on fast devices where ExoPlayer prepares
-          // during the await points between open() and here).
-          // Fall back to stream subscription for slower devices.
-          final currentTracks = player!.state.tracks;
-          if (currentTracks.audio.isNotEmpty || currentTracks.subtitle.isNotEmpty) {
-            _applyTrackSelection();
-          } else {
-            _trackLoadingSubscription?.cancel();
-            _trackLoadingSubscription = player!.streams.tracks.listen((tracks) {
-              if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
-
-              _trackLoadingSubscription?.cancel();
-              _trackLoadingSubscription = null;
-              _applyTrackSelection();
-            });
-          }
+          // Android (subs attached at open time) or no external subs:
+          // apply once tracks are available
+          _trackManager!.applyTrackSelectionWhenReady();
         }
       }
     } on PlaybackException catch (e) {
@@ -1233,27 +1187,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
-  }
-
-  /// Resume playback after external subtitles have been loaded (or failed to load).
-  Future<void> _resumeAfterSubtitleLoad() async {
-    if (player == null || !mounted) return;
-
-    await player!.play();
-    final pos = player!.state.position;
-    try {
-      await player!.seek(pos.inMilliseconds > 0 ? pos : Duration.zero);
-    } catch (e) {
-      appLogger.w('Non-critical seek after subtitle load failed', error: e);
-    }
-
-    // Fallback if playbackRestart doesn't fire
-    Future.delayed(const Duration(seconds: 3), () {
-      if (_waitingForExternalSubsTrackSelection && mounted) {
-        _waitingForExternalSubsTrackSelection = false;
-        _applyTrackSelection();
-      }
-    });
   }
 
   /// Start playback for offline/downloaded content
@@ -1658,45 +1591,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _companionRemoteProvider = null;
   }
 
-  void _cycleSubtitleTrack() {
-    if (player == null) return;
-    final tracks = player!.state.tracks.subtitle.where((t) => t.id != 'auto').toList();
-    if (tracks.isEmpty) return;
+  void _cycleSubtitleTrack() => _trackManager?.cycleSubtitleTrack();
 
-    final current = player!.state.track.subtitle;
-    // tracks includes 'no' (off). Find current index and advance.
-    final currentIndex = tracks.indexWhere((t) => t.id == current?.id);
-    final nextIndex = (currentIndex + 1) % tracks.length;
-    final next = tracks[nextIndex];
-    player!.selectSubtitleTrack(next);
-    _onSubtitleTrackChanged(next);
-
-    if (mounted) {
-      final label = next.id == 'no'
-          ? 'Subtitles: Off'
-          : 'Subtitles: ${TrackLabelBuilder.buildSubtitleLabel(title: next.title, language: next.language, codec: next.codec, index: nextIndex)}';
-      showAppSnackBar(context, label, duration: const Duration(seconds: 1));
-    }
-  }
-
-  void _cycleAudioTrack() {
-    if (player == null) return;
-    final tracks = player!.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
-    if (tracks.length <= 1) return;
-
-    final current = player!.state.track.audio;
-    final currentIndex = tracks.indexWhere((t) => t.id == current?.id);
-    final nextIndex = (currentIndex + 1) % tracks.length;
-    final next = tracks[nextIndex];
-    player!.selectAudioTrack(next);
-    _onAudioTrackChanged(next);
-
-    if (mounted) {
-      final label =
-          'Audio: ${TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
-      showAppSnackBar(context, label, duration: const Duration(seconds: 1));
-    }
-  }
+  void _cycleAudioTrack() => _trackManager?.cycleAudioTrack();
 
   Future<void> _toggleFullscreen() async {
     if (PlatformDetector.isMobile(context)) return;
@@ -1812,7 +1709,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _errorSubscription?.cancel();
     _mediaControlSubscription?.cancel();
     _bufferingSubscription?.cancel();
-    _trackLoadingSubscription?.cancel();
+    _trackManager?.dispose();
     _positionSubscription?.cancel();
     _playbackRestartSubscription?.cancel();
     _backendSwitchedSubscription?.cancel();
@@ -1991,34 +1888,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Handle notification when native player switched from ExoPlayer to MPV
   Future<void> _onBackendSwitched() async {
-    appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
-
     if (mounted) {
       showAppSnackBar(context, t.messages.switchingToCompatiblePlayer);
     }
 
-    // Re-add external subtitles to MPV (lost when ExoPlayer was disposed).
-    // Must await so they're in the track list before we apply selection.
-    if (_lastExternalSubtitles.isNotEmpty) {
-      await _addExternalSubtitles(_lastExternalSubtitles);
-    }
-
-    if (player == null) return;
-
-    // Check state first, fall back to stream subscription (same pattern as _startPlayback)
-    final currentTracks = player!.state.tracks;
-    if (currentTracks.audio.isNotEmpty || currentTracks.subtitle.isNotEmpty) {
-      _applyTrackSelection();
-    } else {
-      _trackLoadingSubscription?.cancel();
-      _trackLoadingSubscription = player!.streams.tracks.listen((tracks) {
-        if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
-
-        _trackLoadingSubscription?.cancel();
-        _trackLoadingSubscription = null;
-        _applyTrackSelection();
-      });
-    }
+    await _trackManager?.onBackendSwitched();
   }
 
   // OS Media Controls Integration
@@ -2385,203 +2259,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  /// Apply track selection using the TrackSelectionService
-  Future<void> _applyTrackSelection() async {
-    if (!mounted || player == null || _isApplyingTrackSelection) return;
+  Future<void> _onAudioTrackChanged(AudioTrack track) async => _trackManager?.onAudioTrackChanged(track);
 
-    _isApplyingTrackSelection = true;
-    try {
-      await _waitForProfileSettingsIfNeeded();
-      if (!mounted || player == null) return;
+  Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async => _trackManager?.onSubtitleTrackChanged(track);
 
-      final profileSettings = context.read<UserProfileProvider>().profileSettings;
-      final settingsService = await SettingsService.getInstance();
-      if (!mounted || player == null) return;
-
-      final trackService = TrackSelectionService(
-        player: player!,
-        profileSettings: profileSettings,
-        metadata: widget.metadata,
-        plexMediaInfo: _currentMediaInfo,
-      );
-
-      await trackService.selectAndApplyTracks(
-        preferredAudioTrack: widget.preferredAudioTrack,
-        preferredSubtitleTrack: widget.preferredSubtitleTrack,
-        preferredSecondarySubtitleTrack: widget.preferredSecondarySubtitleTrack,
-        defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
-        onAudioTrackChanged: _onAudioTrackChanged,
-        onSubtitleTrackChanged: _onSubtitleTrackChanged,
-      );
-    } catch (e) {
-      appLogger.w('Failed to apply track selection', error: e);
-    } finally {
-      _isApplyingTrackSelection = false;
-    }
-  }
-
-  /// Rating key used for series/movie level language preferences.
-  String get _preferenceRatingKey {
-    return widget.metadata.isEpisode
-        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
-        : widget.metadata.ratingKey;
-  }
-
-  /// Common guard checks for track change handlers.
-  /// Returns the part ID if all checks pass, or null if the change should be skipped.
-  Future<int?> _guardTrackChange() async {
-    final settings = await SettingsService.getInstance();
-    if (!settings.getRememberTrackSelections()) return null;
-
-    if (_currentMediaInfo == null) {
-      appLogger.w('No media info available, cannot save stream selection');
-      return null;
-    }
-
-    final partId = _currentMediaInfo!.getPartId();
-    if (partId == null) {
-      appLogger.w('No part ID available, cannot save stream selection');
-    }
-    return partId;
-  }
-
-  /// Save language preference and stream selection to the server.
-  Future<void> _saveTrackPreferences({
-    required int partId,
-    required String trackType,
-    String? languageCode,
-    int? streamID,
-  }) async {
-    try {
-      if (!mounted) return;
-      final client = _getClientForMetadata(context);
-      final ratingKey = _preferenceRatingKey;
-
-      final futures = <Future>[];
-
-      if (languageCode != null && (trackType == 'subtitle' || languageCode.isNotEmpty)) {
-        futures.add(
-          trackType == 'audio'
-              ? client.setMetadataPreferences(ratingKey, audioLanguage: languageCode)
-              : client.setMetadataPreferences(ratingKey, subtitleLanguage: languageCode),
-        );
-      }
-      if (streamID != null) {
-        futures.add(
-          trackType == 'audio'
-              ? client.selectStreams(partId, audioStreamID: streamID, allParts: true)
-              : client.selectStreams(partId, subtitleStreamID: streamID, allParts: true),
-        );
-      }
-
-      await Future.wait(futures);
-      appLogger.d('Successfully saved $trackType preferences (language + stream)');
-    } catch (e) {
-      appLogger.e('Failed to save $trackType preferences', error: e);
-    }
-  }
-
-  /// Match an mpv track against Plex tracks by language and title.
-  int? _matchTrackByAttributes<T>({
-    required String? mpvLanguage,
-    required String? mpvTitle,
-    required List<T> plexTracks,
-    required String? Function(T) getLanguageCode,
-    required String? Function(T) getDisplayTitle,
-    required String? Function(T) getTitle,
-    required int Function(T) getId,
-  }) {
-    final normalizedLang = _iso6391ToPlex6392(mpvLanguage);
-
-    for (final plexTrack in plexTracks) {
-      final matchLang = getLanguageCode(plexTrack) == normalizedLang;
-      final matchTitle = (mpvTitle == null || mpvTitle.isEmpty)
-          ? true
-          : (getDisplayTitle(plexTrack) == mpvTitle || getTitle(plexTrack) == mpvTitle);
-
-      if (matchLang && matchTitle) {
-        return getId(plexTrack);
-      }
-    }
-    return null;
-  }
-
-  /// Handle audio track changes from the user - save both stream selection and language preference
-  Future<void> _onAudioTrackChanged(AudioTrack track) async {
-    final partId = await _guardTrackChange();
-    if (partId == null) return;
-
-    int? streamID = _matchTrackByAttributes(
-      mpvLanguage: track.language,
-      mpvTitle: track.title,
-      plexTracks: _currentMediaInfo!.audioTracks,
-      getLanguageCode: (t) => t.languageCode,
-      getDisplayTitle: (t) => t.displayTitle,
-      getTitle: (t) => t.title,
-      getId: (t) => t.id,
-    );
-
-    if (streamID != null) {
-      appLogger.d('Matched audio by lang/title: streamID $streamID');
-    } else {
-      final matchedPlex = findPlexTrackForMpvAudio(track, _currentMediaInfo!.audioTracks);
-      streamID = matchedPlex?.id;
-      if (streamID != null) {
-        appLogger.d('Matched audio by properties: streamID $streamID');
-      } else {
-        appLogger.e('Could not match audio track to any Plex track');
-      }
-    }
-
-    await _saveTrackPreferences(partId: partId, trackType: 'audio', languageCode: track.language, streamID: streamID);
-  }
-
-  /// Handle subtitle track changes from the user - save both stream selection and language preference
-  Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async {
-    final partId = await _guardTrackChange();
-    if (partId == null) return;
-
-    String? languageCode;
-    int? streamID;
-
-    if (track.id == 'no') {
-      languageCode = 'none';
-      streamID = 0;
-      appLogger.i('User turned subtitles off, saving preference');
-    } else {
-      languageCode = track.language;
-
-      streamID = _matchTrackByAttributes(
-        mpvLanguage: track.language,
-        mpvTitle: track.title,
-        plexTracks: _currentMediaInfo!.subtitleTracks,
-        getLanguageCode: (t) => t.languageCode,
-        getDisplayTitle: (t) => t.displayTitle,
-        getTitle: (t) => t.title,
-        getId: (t) => t.id,
-      );
-
-      if (streamID != null) {
-        appLogger.d('Matched subtitle by lang/title: streamID $streamID');
-      } else {
-        final matchedPlex = findPlexTrackForMpvSubtitle(track, _currentMediaInfo!.subtitleTracks);
-        streamID = matchedPlex?.id;
-        if (streamID != null) {
-          appLogger.d('Matched subtitle by properties: streamID $streamID');
-        } else {
-          appLogger.e('Could not match subtitle track to any Plex track');
-        }
-      }
-    }
-
-    await _saveTrackPreferences(partId: partId, trackType: 'subtitle', languageCode: languageCode, streamID: streamID);
-  }
-
-  /// Handle secondary subtitle track changes - no server save needed, just preserve for episode navigation
-  void _onSecondarySubtitleTrackChanged(SubtitleTrack track) {
-    // Secondary subtitle preference is carried via player.state.track.secondarySubtitle
-    // which is automatically read during episode navigation. No additional state needed.
-  }
+  void _onSecondarySubtitleTrackChanged(SubtitleTrack track) => _trackManager?.onSecondarySubtitleTrackChanged(track);
 
   /// Set flag to skip orientation restoration when replacing with another video
   void setReplacingWithVideo() {

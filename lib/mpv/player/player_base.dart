@@ -414,6 +414,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
             title: track['title'] as String?,
             language: track['lang'] as String?,
             codec: track['codec'] as String?,
+            isDefault: track['default'] as bool? ?? false,
+            isForced: track['forced'] as bool? ?? false,
             isExternal: track['external'] as bool? ?? false,
             uri: track['external-filename'] as String?,
           ),

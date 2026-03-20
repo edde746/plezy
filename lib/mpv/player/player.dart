@@ -61,7 +61,7 @@ abstract class Player {
   ///
   /// [media] - The media source to open.
   /// [play] - Whether to start playback immediately (default: true).
-  Future<void> open(Media media, {bool play = true, bool isLive = false});
+  Future<void> open(Media media, {bool play = true, bool isLive = false, List<SubtitleTrack>? externalSubtitles});
 
   /// Start or resume playback.
   Future<void> play();

@@ -214,12 +214,14 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         } ?: result.success(null)
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun handleOpen(call: MethodCall, result: MethodChannel.Result) {
         val uri = call.argument<String>("uri")
         val headers = call.argument<Map<String, String>>("headers")
         val startPositionMs = call.argument<Number>("startPositionMs")?.toLong() ?: 0L
         val autoPlay = call.argument<Boolean>("autoPlay") ?: true
         val isLive = call.argument<Boolean>("isLive") ?: false
+        val externalSubtitles = call.argument<List<Map<String, String?>>>("externalSubtitles")
 
         if (uri == null) {
             result.error("INVALID_ARGS", "Missing 'uri'", null)
@@ -249,7 +251,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
                 }
             } else {
-                playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive)
+                playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive, externalSubtitles)
             }
             result.success(null)
         } ?: result.error("NO_ACTIVITY", "Activity not available", null)

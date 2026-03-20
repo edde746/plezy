@@ -91,7 +91,7 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> open(Media media, {bool play = true, bool isLive = false}) async {
+  Future<void> open(Media media, {bool play = true, bool isLive = false, List<SubtitleTrack>? externalSubtitles}) async {
     if (disposed) return;
     await _ensureInitialized();
     setSeekable(false);
