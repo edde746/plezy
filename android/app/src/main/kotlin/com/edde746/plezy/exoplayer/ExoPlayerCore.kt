@@ -1584,6 +1584,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         trackSelector = null
         httpDataSourceFactory = null
         dataSourceFactory = null
+        assHandler?.release()
         assHandler = null
 
         // Capture locals for deferred cleanup

@@ -8,7 +8,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val assVersion = "resize"
+val assVersion = "safety"
 val assDir = layout.buildDirectory.dir("libass").get().asFile
 val assAars = listOf("lib_ass-release.aar", "lib_ass_kt-release.aar", "lib_ass_media-release.aar")
 
