@@ -735,9 +735,7 @@ class PlexClient {
     }
     try {
       final response = await networkCall();
-      if (cacheResponse && response.data != null) {
-        await _cache.put(serverId, cacheKey, response.data);
-      }
+      if (cacheResponse) await _cacheResponseData(cacheKey, response.data);
       return parseResponse(response);
     } catch (e) {
       // On forceRefresh, still try cache as last resort on network error
@@ -763,10 +761,16 @@ class PlexClient {
     if (cached != null) return parseCache(cached);
     if (_offlineMode) return null;
     final response = await networkCall();
-    if (cacheResponse && response.data != null) {
-      await _cache.put(serverId, cacheKey, response.data);
-    }
+    if (cacheResponse) await _cacheResponseData(cacheKey, response.data);
     return parseResponse(response);
+  }
+
+  Future<void> _cacheResponseData(String cacheKey, dynamic data) async {
+    if (data is Map<String, dynamic>) {
+      await _cache.put(serverId, cacheKey, data);
+    } else if (data != null) {
+      appLogger.w('Unexpected response type for $cacheKey: ${data.runtimeType}');
+    }
   }
 
   /// Get first metadata JSON from response data
