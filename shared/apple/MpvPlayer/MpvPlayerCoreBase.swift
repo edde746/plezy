@@ -80,8 +80,12 @@ class MpvPlayerCoreBase: NSObject {
     var isInitialized = false
     var isDisposing = false
     var isPipActive = false
+    var isBackgrounded = false
     var hdrEnabled = true
     var lastSigPeak = 0.0
+
+    /// Properties that must still flow to Dart while backgrounded (state-critical).
+    private static let criticalProperties: Set<String> = ["pause", "eof-reached", "paused-for-cache"]
 
     let queue = DispatchQueue(label: "mpv", qos: .userInitiated)
     private let queueKey = DispatchSpecificKey<Void>()
@@ -418,6 +422,7 @@ class MpvPlayerCoreBase: NSObject {
             }
 
         case MPV_EVENT_LOG_MESSAGE:
+            if isBackgrounded { break }
             if let messagePointer = event.data?.assumingMemoryBound(to: mpv_event_log_message.self) {
                 let message = messagePointer.pointee
                 let prefix = message.prefix.map { safeString($0) } ?? ""
@@ -438,6 +443,8 @@ class MpvPlayerCoreBase: NSObject {
     }
 
     private func handlePropertyChange(name: String, property: mpv_event_property) {
+        if isBackgrounded && !Self.criticalProperties.contains(name) { return }
+
         var value: Any?
 
         switch property.format {

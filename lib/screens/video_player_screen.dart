@@ -200,6 +200,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
+  bool _hiddenForBackground = false;
   bool _autoPipEnabled = false;
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
@@ -340,10 +341,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Don't pause - user may still be watching
         break;
       case AppLifecycleState.hidden:
-        // App is being hidden (user is switching away)
-        // Pause video since we don't support background playback (mobile only)
+        if (_shouldSkipForPip) break;
+        // Pause video on mobile (we don't support background playback)
         if (PlatformDetector.isMobile(context)) {
-          if (_shouldSkipForPip) break;
           if (player != null && _isPlayerInitialized) {
             _wasPlayingBeforeInactive = player!.state.playing;
             if (_wasPlayingBeforeInactive) {
@@ -351,6 +351,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               appLogger.d('Video paused due to app being hidden (mobile)');
             }
           }
+        }
+        // Hide render layer to stop Vulkan present loop and gate native events
+        if (player != null && _isPlayerInitialized) {
+          player!.setVisible(false);
+          _hiddenForBackground = true;
+          _liveTimelineTimer?.cancel();
+          appLogger.d('Render layer hidden due to app being hidden');
         }
         break;
       case AppLifecycleState.paused:
@@ -363,6 +370,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         appLogger.d('Media controls cleared and wakelock disabled due to app being paused/backgrounded');
         break;
       case AppLifecycleState.resumed:
+        // Restore render layer if it was hidden for background
+        if (_hiddenForBackground && player != null && _isPlayerInitialized) {
+          player!.setVisible(true);
+          _hiddenForBackground = false;
+          if (_liveSessionIdentifier != null) {
+            _startLiveTimelineUpdates();
+          }
+          appLogger.d('Render layer restored after app resumed');
+        }
         // Restore media controls and wakelock when app is resumed
         if (_isPlayerInitialized && mounted) {
           unawaited(_restoreMediaControlsAfterResume());

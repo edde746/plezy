@@ -114,11 +114,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     private var isVisible = false
+    private var pausedState = true
 
     func setVisible(_ visible: Bool) {
         guard let metalLayer, !isPipActive else { return }
 
         isVisible = visible
+        isBackgrounded = !visible
 
         if visible {
             metalLayer.removeFromSuperlayer()
@@ -135,6 +137,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     func setPaused(_ paused: Bool) {
+        pausedState = paused
         if paused {
             endPlaybackActivity()
         } else if isVisible {
@@ -220,15 +223,21 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     @objc private func windowOcclusionDidChange(_ notification: Notification) {
         guard let metalLayer, mpv != nil, !isPipActive else { return }
 
-        let isVisible = window?.occlusionState.contains(.visible) ?? true
-        if !isVisible && !layerHiddenForOcclusion {
+        let windowVisible = window?.occlusionState.contains(.visible) ?? true
+        if !windowVisible && !layerHiddenForOcclusion {
             print("[MpvPlayerCore] Window occluded - hiding Metal layer")
             metalLayer.isHidden = true
             layerHiddenForOcclusion = true
-        } else if isVisible && layerHiddenForOcclusion {
+            isBackgrounded = true
+            endPlaybackActivity()
+        } else if windowVisible && layerHiddenForOcclusion {
             print("[MpvPlayerCore] Window visible - showing Metal layer")
             layerHiddenForOcclusion = false
             metalLayer.isHidden = false
+            isBackgrounded = false
+            if !pausedState {
+                beginPlaybackActivity()
+            }
         }
     }
 
