@@ -139,28 +139,31 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
 
     private func handlePipCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        switch call.method {
-        case "isSupported":
-            result(MpvPipController.isSupported)
-        case "enter":
-            enterPip(manual: true, result: result)
-        case "setAutoPipReady":
-            if let args = call.arguments as? [String: Any], let ready = args["ready"] as? Bool {
-                autoPipEnabled = ready
-                if ready {
-                    let pip = ensurePipController()
-                    pip.setAutoStart(true)
-                    // Warm the layer so the system considers PiP possible
-                    if let pc = playerCore {
-                        pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { result(nil); return }
+            switch call.method {
+            case "isSupported":
+                result(MpvPipController.isSupported)
+            case "enter":
+                self.enterPip(manual: true, result: result)
+            case "setAutoPipReady":
+                if let args = call.arguments as? [String: Any], let ready = args["ready"] as? Bool {
+                    self.autoPipEnabled = ready
+                    if ready {
+                        let pip = self.ensurePipController()
+                        pip.setAutoStart(true)
+                        // Warm the layer so the system considers PiP possible
+                        if let pc = self.playerCore {
+                            pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
+                        }
+                    } else {
+                        self.pipController?.setAutoStart(false)
                     }
-                } else {
-                    pipController?.setAutoStart(false)
                 }
+                result(nil)
+            default:
+                result(FlutterMethodNotImplemented)
             }
-            result(nil)
-        default:
-            result(FlutterMethodNotImplemented)
         }
     }
 

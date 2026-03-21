@@ -57,7 +57,6 @@ class MpvPipController: NSObject {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
             let view = UIView(frame: window.bounds)
-            view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             view.clipsToBounds = true
             view.isUserInteractionEnabled = false
             sampleBufferLayer.frame = view.bounds

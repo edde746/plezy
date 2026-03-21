@@ -16,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UpdateService {
   static final Logger _logger = Logger();
   static const String _githubRepo = 'edde746/plezy';
-  static const String _feedUrl = 'https://github.com/edde746/plezy/releases/latest/download/appcast.xml';
+  static const String _feedUrl = 'https://cdn.jsdelivr.net/gh/edde746/plezy@appcast/appcast.xml';
 
   // SharedPreferences keys
   static const String _keySkippedVersion = 'update_skipped_version';
