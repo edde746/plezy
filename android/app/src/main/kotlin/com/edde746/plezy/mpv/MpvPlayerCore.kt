@@ -405,9 +405,6 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         audioFocusManager?.release()
         audioFocusManager = null
 
-        // Detach surface before cancelling scope (needs scope.launch for property sets)
-        detachSurfaceInternal()
-
         // Cancel all coroutines
         scope.cancel()
 

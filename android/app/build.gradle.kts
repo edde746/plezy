@@ -8,7 +8,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val mpvVersion = "v1.0.1"
+val mpvVersion = "v1.0.5"
 val mpvDir = layout.buildDirectory.dir("libmpv").get().asFile
 val mpvAar = "libmpv-release.aar"
 
@@ -23,7 +23,7 @@ val downloadLibmpv by tasks.registering {
     }
 }
 
-val assVersion = "safety"
+val assVersion = "safety-2"
 val assDir = layout.buildDirectory.dir("libass").get().asFile
 val assAars = listOf("lib_ass-release.aar", "lib_ass_kt-release.aar", "lib_ass_media-release.aar")
 

@@ -26,6 +26,7 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private var activity: Activity? = null
     private var activityBinding: ActivityPluginBinding? = null
     private val nameToId = mutableMapOf<String, Int>()
+    private var sessionGeneration = 0
 
     // FlutterPlugin
 
@@ -54,6 +55,7 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     }
 
     override fun onDetachedFromActivity() {
+        ++sessionGeneration
         playerCore?.dispose()
         playerCore = null
         activity = null
@@ -122,17 +124,28 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
         currentActivity.runOnUiThread {
             try {
-                playerCore = MpvPlayerCore(currentActivity).apply {
+                // Dispose stale core idempotently
+                playerCore?.dispose()
+                playerCore = null
+
+                val gen = ++sessionGeneration
+                val core = MpvPlayerCore(currentActivity).apply {
                     delegate = this@MpvPlayerPlugin
                 }
+                playerCore = core
 
-                playerCore?.initialize { success ->
+                core.initialize { success ->
+                    if (gen != sessionGeneration || playerCore !== core) {
+                        Log.d(TAG, "Stale init callback (gen=$gen, current=$sessionGeneration)")
+                        result.success(false)
+                        return@initialize
+                    }
                     // Start hidden - now safe because setVisible operates on the container,
                     // not the SurfaceView directly (matching ExoPlayer's approach)
-                    playerCore?.setVisible(false)
+                    core.setVisible(false)
                     Log.d(TAG, "Initialized: $success")
                     result.success(success)
-                } ?: result.success(false)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to initialize: ${e.message}", e)
                 result.error("INIT_FAILED", e.message, null)
@@ -142,14 +155,14 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
     private fun handleDispose(result: MethodChannel.Result) {
         activity?.runOnUiThread {
-            playerCore?.dispose {
-                playerCore = null
+            val core = playerCore
+            ++sessionGeneration
+            playerCore = null
+
+            core?.dispose {
                 Log.d(TAG, "Disposed")
                 result.success(null)
-            } ?: run {
-                playerCore = null
-                result.success(null)
-            }
+            } ?: result.success(null)
         } ?: result.success(null)
     }
 
