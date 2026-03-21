@@ -39,7 +39,10 @@ class PlayerAndroid extends PlayerBase {
   void handlePlayerEvent(String name, Map? data) {
     // Handle Android-specific events
     if (name == 'backend-switched') {
-      // Native player switched from ExoPlayer to MPV due to unsupported format
+      // Native player switched from ExoPlayer to MPV due to unsupported format.
+      // Clear stale ExoPlayer tracks so applyTrackSelectionWhenReady waits for
+      // mpv's track-list instead of immediately applying with ExoPlayer IDs.
+      clearTracks();
       backendSwitchedController.add(null);
       return;
     }

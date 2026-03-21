@@ -162,8 +162,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        playerCore?.setPropertyAsync(name, value, result)
-            ?: result.success(null)
+        playerCore?.setProperty(name, value)
+        result.success(null)
     }
 
     private fun handleGetProperty(call: MethodCall, result: MethodChannel.Result) {
@@ -174,8 +174,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        playerCore?.getPropertyAsync(name, result)
-            ?: result.success(null)
+        val value = playerCore?.getProperty(name)
+        result.success(value)
     }
 
     private fun handleObserveProperty(call: MethodCall, result: MethodChannel.Result) {
@@ -189,8 +189,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         nameToId[name] = id
-        playerCore?.observePropertyAsync(name, format, result)
-            ?: result.success(null)
+        playerCore?.observeProperty(name, format)
+        result.success(null)
     }
 
     private fun handleCommand(call: MethodCall, result: MethodChannel.Result) {
@@ -201,10 +201,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        // Use async command to prevent ANR - command executes off UI thread
-        // and result is called back when complete
-        playerCore?.commandAsync(args.toTypedArray(), result)
-            ?: result.success(null)
+        playerCore?.command(args.toTypedArray())
+        result.success(null)
     }
 
     private fun handleSetVisible(call: MethodCall, result: MethodChannel.Result) {
@@ -260,7 +258,7 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         // Open file descriptor off UI thread to prevent ANR on slow storage
-        playerCore?.runOnExecutor {
+        Thread {
             try {
                 val uri = Uri.parse(uriString)
                 val pfd = contentResolver.openFileDescriptor(uri, "r")
@@ -268,7 +266,7 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     activity?.runOnUiThread {
                         result.error("OPEN_FAILED", "Failed to open file descriptor for $uriString", null)
                     }
-                    return@runOnExecutor
+                    return@Thread
                 }
 
                 val fd = pfd.detachFd()
@@ -278,7 +276,7 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 Log.e(TAG, "Failed to open content FD: ${e.message}", e)
                 activity?.runOnUiThread { result.error("OPEN_FAILED", e.message, null) }
             }
-        } ?: result.error("NO_PLAYER", "Player not initialized", null)
+        }.start()
     }
 
     // PlayerDelegate

@@ -8,6 +8,21 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val mpvVersion = "v1.0.1"
+val mpvDir = layout.buildDirectory.dir("libmpv").get().asFile
+val mpvAar = "libmpv-release.aar"
+
+val downloadLibmpv by tasks.registering {
+    val stamp = File(mpvDir, ".version")
+    outputs.upToDateWhen { stamp.exists() && stamp.readText().trim() == mpvVersion }
+    doLast {
+        mpvDir.mkdirs()
+        val url = "https://github.com/edde746/libmpv-android/releases/download/$mpvVersion/$mpvAar"
+        exec { commandLine("curl", "-sfL", url, "-o", File(mpvDir, mpvAar).absolutePath) }
+        stamp.writeText(mpvVersion)
+    }
+}
+
 val assVersion = "safety"
 val assDir = layout.buildDirectory.dir("libass").get().asFile
 val assAars = listOf("lib_ass-release.aar", "lib_ass_kt-release.aar", "lib_ass_media-release.aar")
@@ -145,14 +160,16 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative")
     dependsOn(downloadLibdovi)
 }
 
-// Download libass AARs before compilation
+// Download libmpv and libass AARs before compilation
 tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
+    dependsOn(downloadLibmpv)
     dependsOn(downloadLibass)
 }
 
 
 dependencies {
-    implementation("dev.jdtech.mpv:libmpv:0.5.1")
+    implementation(files(File(mpvDir, mpvAar)))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
     // Android TV Watch Next integration
     implementation("androidx.tvprovider:tvprovider:1.0.0")

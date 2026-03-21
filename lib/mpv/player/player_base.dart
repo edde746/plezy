@@ -225,9 +225,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           }
         }
         if (trackList != null) {
-          final tracks = parseTrackList(trackList);
-          _state = _state.copyWith(tracks: tracks);
-          tracksController.add(tracks);
+          final result = parseTrackList(trackList);
+          _state = _state.copyWith(tracks: result.tracks);
+          tracksController.add(result.tracks);
+          // Derive selection from mpv's "selected" field in the track data.
+          // This is the source of truth and handles cases where aid/sid
+          // values don't match track IDs (e.g. "auto", "0", "no").
+          if (result.selectedAudioId != null) {
+            updateSelectedAudioTrack(result.selectedAudioId);
+          }
+          if (result.selectedSubtitleId != null) {
+            updateSelectedSubtitleTrack(result.selectedSubtitleId);
+          }
         }
         break;
 
@@ -384,18 +393,22 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     };
   }
 
-  /// Parse a track list from the platform into [Tracks].
-  Tracks parseTrackList(List trackList) {
+  /// Parse a track list from the platform into [Tracks] and selected track IDs.
+  ({Tracks tracks, String? selectedAudioId, String? selectedSubtitleId}) parseTrackList(List trackList) {
     final audioTracks = <AudioTrack>[];
     final subtitleTracks = <SubtitleTrack>[];
+    String? selectedAudioId;
+    String? selectedSubtitleId;
 
     for (final track in trackList) {
       if (track is! Map) continue;
 
       final type = track['type'] as String?;
       final id = track['id']?.toString() ?? '';
+      final selected = track['selected'] as bool? ?? false;
 
       if (type == 'audio') {
+        if (selected) selectedAudioId = id;
         audioTracks.add(
           AudioTrack(
             id: id,
@@ -408,6 +421,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           ),
         );
       } else if (type == 'sub') {
+        if (selected) selectedSubtitleId = id;
         subtitleTracks.add(
           SubtitleTrack(
             id: id,
@@ -423,7 +437,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       }
     }
 
-    return Tracks(audio: audioTracks, subtitle: subtitleTracks);
+    return (tracks: Tracks(audio: audioTracks, subtitle: subtitleTracks), selectedAudioId: selectedAudioId, selectedSubtitleId: selectedSubtitleId);
   }
 
   /// Update the selected audio track.
@@ -470,6 +484,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// Update the internal state.
   void updateState(PlayerState Function(PlayerState) update) {
     _state = update(_state);
+  }
+
+  @protected
+  void clearTracks() {
+    const empty = Tracks();
+    _state = _state.copyWith(tracks: empty, track: const TrackSelection());
+    tracksController.add(empty);
   }
 
   @protected
