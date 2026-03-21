@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:isolate';
+import '../utils/isolate_helper.dart';
 
 import 'package:drift/drift.dart';
 
@@ -42,7 +42,7 @@ class PlexApiCache {
     final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
 
     if (result != null) {
-      return await Isolate.run(() => jsonDecode(result.data) as Map<String, dynamic>);
+      return await tryIsolateRun(() => jsonDecode(result.data) as Map<String, dynamic>);
     }
     return null;
   }
@@ -50,7 +50,7 @@ class PlexApiCache {
   /// Cache a response for an endpoint
   Future<void> put(String serverId, String endpoint, Map<String, dynamic> data) async {
     final key = _buildKey(serverId, endpoint);
-    final encoded = await Isolate.run(() => jsonEncode(data));
+    final encoded = await tryIsolateRun(() => jsonEncode(data));
     await _db
         .into(_db.apiCache)
         .insertOnConflictUpdate(ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded), cachedAt: Value(DateTime.now())));
@@ -145,7 +145,7 @@ class PlexApiCache {
 
     if (entries.isEmpty) return {};
 
-    return await Isolate.run(() {
+    return await tryIsolateRun(() {
       final result = <String, PlexMetadata>{};
       for (final (serverId, ratingKey, rawData) in entries) {
         try {

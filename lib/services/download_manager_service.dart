@@ -1085,6 +1085,7 @@ class DownloadManagerService {
     String? errorMessage,
     String? currentFile,
   }) {
+    if (_disposed) return;
     _progressController.add(
       DownloadProgress(
         globalKey: globalKey,
@@ -1118,6 +1119,7 @@ class DownloadManagerService {
 
   /// Emit progress update with artwork paths so DownloadProvider can sync
   void _emitProgressWithArtwork(String globalKey, {String? thumbPath}) {
+    if (_disposed) return;
     // Emit a progress update containing artwork path
     // The status is preserved as downloading since artwork is just one step
     _progressController.add(
@@ -1263,6 +1265,7 @@ class DownloadManagerService {
 
   /// Emit deletion progress update
   void _emitDeletionProgress(DeletionProgress progress) {
+    if (_disposed) return;
     _deletionProgressController.add(progress);
   }
 

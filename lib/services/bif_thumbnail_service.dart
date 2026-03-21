@@ -1,4 +1,4 @@
-import 'dart:isolate';
+import '../utils/isolate_helper.dart';
 import 'dart:typed_data';
 
 import 'plex_client.dart';
@@ -76,7 +76,7 @@ class BifThumbnailService {
         appLogger.w('BIF file too large (${bytes.length} bytes), skipping');
         return;
       }
-      _entries = await Isolate.run(() => _parseBifBytes(bytes));
+      _entries = await tryIsolateRun(() => _parseBifBytes(bytes));
     } catch (e) {
       appLogger.w('BIF download/parse failed', error: e);
     }

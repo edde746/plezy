@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:isolate';
+import '../utils/isolate_helper.dart';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 
@@ -112,7 +112,7 @@ class ConnectionTestResult {
   ConnectionTestResult({required this.success, required this.latencyMs, this.error});
 }
 
-// Top-level function required by compute()
+// Top-level function required by tryIsolateRun()
 String _decodeUtf8(List<int> bytes) {
   return utf8.decode(bytes, allowMalformed: true);
 }
@@ -158,7 +158,7 @@ class PlexClient {
     ResponseBody responseBody,
   ) {
     if (responseBytes.length > 50 * 1024) {
-      return compute(_decodeUtf8, responseBytes);
+      return tryIsolateRun(() => _decodeUtf8(responseBytes));
     }
     return utf8.decode(responseBytes, allowMalformed: true);
   }
@@ -993,7 +993,7 @@ class PlexClient {
     final response = await _dio.get('/library/onDeck');
     final sid = serverId;
     final sname = serverName;
-    return await Isolate.run(() => _processOnDeckResponse(response.data as Map<String, dynamic>, sid, sname));
+    return await tryIsolateRun(() => _processOnDeckResponse(response.data as Map<String, dynamic>, sid, sname));
   }
 
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)
@@ -1481,7 +1481,7 @@ class PlexClient {
       );
       final sid = serverId;
       final sname = serverName;
-      return await Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
+      return await tryIsolateRun(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get library hubs: $e');
     }
@@ -1496,7 +1496,7 @@ class PlexClient {
       final response = await _dio.get('/hubs', queryParameters: {'count': limit, 'includeGuids': 1});
       final sid = serverId;
       final sname = serverName;
-      return await Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
+      return await tryIsolateRun(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get global hubs: $e');
     }
