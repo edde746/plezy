@@ -326,13 +326,13 @@ class HubSectionState extends State<HubSection> {
       children: [
         // Hub header (NOT focusable - titles should not be focusable)
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
+          padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
           child: ExcludeFocus(
             child: InkWell(
               onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,
               borderRadius: BorderRadius.circular(tokens(context).radiusSm),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -440,7 +440,7 @@ class HubSectionState extends State<HubSection> {
                       controller: scrollController,
                       scrollDirection: Axis.horizontal,
                       clipBehavior: Clip.none,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       itemCount: isKeyboardMode ? _totalItemCount : widget.hub.items.length,
                       itemBuilder: (context, index) {
                         final isItemFocused = hasFocus && index == _focusedIndex;
