@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../models/plex_sort.dart';
+import '../../utils/scroll_utils.dart';
 import '../../widgets/bottom_sheet_header.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -33,6 +34,8 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
   late PlexSort? _currentSort;
   late bool _currentDescending;
   late final FocusNode _initialFocusNode;
+  final _firstItemKey = GlobalKey();
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -40,6 +43,15 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
     _currentSort = widget.selectedSort;
     _currentDescending = widget.isSortDescending;
     _initialFocusNode = FocusNode(debugLabel: 'SortBottomSheetInitialFocus');
+
+    // Scroll to selected item, then handle focus
+    final selectedIndex = widget.selectedSort != null
+        ? widget.sortOptions.indexWhere((s) => s.key == widget.selectedSort!.key)
+        : -1;
+    if (selectedIndex > 0) {
+      scrollToCurrentItem(_scrollController, _firstItemKey, selectedIndex);
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!InputModeTracker.isKeyboardMode(context)) return;
@@ -57,6 +69,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _initialFocusNode.dispose();
     super.dispose();
   }
@@ -102,6 +115,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
               if (value != null) _handleSortSelect(value);
             },
             child: ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: widget.sortOptions.length,
               itemBuilder: (context, index) {
@@ -109,6 +123,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                 final isSelected = _currentSort?.key == sort.key;
 
                 return Focus(
+                  key: index == 0 ? _firstItemKey : null,
                   canRequestFocus: false,
                   skipTraversal: true,
                   onKeyEvent: (node, event) {

@@ -12,6 +12,22 @@ void scrollContextToCenter(BuildContext? context) {
   });
 }
 
+/// Jump a vertical [ListView] so that [currentIndex] is visible.
+///
+/// Measures the first item (via [firstItemKey]) to get the real item height,
+/// then scrolls to `currentIndex * itemHeight`, clamped to max extent.
+/// Call once after the first build; the callback is a no-op if the key or
+/// controller aren't ready yet.
+void scrollToCurrentItem(ScrollController controller, GlobalKey firstItemKey, int currentIndex) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!controller.hasClients) return;
+    final itemHeight = (firstItemKey.currentContext?.findRenderObject() as RenderBox?)?.size.height;
+    if (itemHeight == null) return;
+    final target = (currentIndex * itemHeight).clamp(0.0, controller.position.maxScrollExtent);
+    controller.jumpTo(target);
+  });
+}
+
 /// Scroll a horizontal list to center the item at the given index.
 ///
 /// Assumes items are laid out with [leadingPadding] before the first item,

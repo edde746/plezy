@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../utils/scroll_utils.dart';
 import '../../../utils/track_label_builder.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
@@ -125,7 +126,7 @@ class TrackSheet extends StatelessWidget {
   }
 }
 
-class _AudioColumn extends StatelessWidget {
+class _AudioColumn extends StatefulWidget {
   final List<AudioTrack> tracks;
   final TrackSelection selection;
   final Player player;
@@ -141,17 +142,41 @@ class _AudioColumn extends StatelessWidget {
   });
 
   @override
+  State<_AudioColumn> createState() => _AudioColumnState();
+}
+
+class _AudioColumnState extends State<_AudioColumn> {
+  final _firstItemKey = GlobalKey();
+  final _scrollController = ScrollController();
+  bool _didInitialScroll = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final selectedId = selection.audio?.id ?? '';
+    final selectedId = widget.selection.audio?.id ?? '';
+
+    if (!_didInitialScroll) {
+      final selectedIndex = widget.tracks.indexWhere((t) => t.id == selectedId);
+      if (selectedIndex > 0) {
+        _didInitialScroll = true;
+        scrollToCurrentItem(_scrollController, _firstItemKey, selectedIndex);
+      }
+    }
 
     return Column(
       children: [
-        if (showHeader) _ColumnHeader(label: t.videoControls.audioLabel),
+        if (widget.showHeader) _ColumnHeader(label: t.videoControls.audioLabel),
         Expanded(
           child: ListView.builder(
-            itemCount: tracks.length,
+            controller: _scrollController,
+            itemCount: widget.tracks.length,
             itemBuilder: (context, index) {
-              final track = tracks[index];
+              final track = widget.tracks[index];
               final label = TrackLabelBuilder.buildAudioLabel(
                 title: track.title,
                 language: track.language,
@@ -161,11 +186,12 @@ class _AudioColumn extends StatelessWidget {
               );
               return TrackSelectionHelper.buildTrackTile<AudioTrack>(
                 context: context,
+                key: index == 0 ? _firstItemKey : null,
                 label: label,
                 isSelected: track.id == selectedId,
                 onTap: () {
-                  player.selectAudioTrack(track);
-                  onTrackChanged?.call(track);
+                  widget.player.selectAudioTrack(track);
+                  widget.onTrackChanged?.call(track);
                   OverlaySheetController.of(context).close();
                 },
               );
@@ -177,7 +203,7 @@ class _AudioColumn extends StatelessWidget {
   }
 }
 
-class _SubtitleColumn extends StatelessWidget {
+class _SubtitleColumn extends StatefulWidget {
   final List<SubtitleTrack> tracks;
   final TrackSelection selection;
   final Player player;
@@ -197,53 +223,79 @@ class _SubtitleColumn extends StatelessWidget {
   });
 
   @override
+  State<_SubtitleColumn> createState() => _SubtitleColumnState();
+}
+
+class _SubtitleColumnState extends State<_SubtitleColumn> {
+  final _firstItemKey = GlobalKey();
+  final _scrollController = ScrollController();
+  bool _didInitialScroll = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final selectedSub = selection.subtitle;
-    final secondarySub = selection.secondarySubtitle;
+    final selectedSub = widget.selection.subtitle;
+    final secondarySub = widget.selection.secondarySubtitle;
     final isOffSelected = selectedSub == null || selectedSub.id == 'no';
-    final hasSecondary = supportsSecondary && secondarySub != null;
+    final hasSecondary = widget.supportsSecondary && secondarySub != null;
 
     // +1 for "Off" row
-    final itemCount = tracks.length + 1;
+    final itemCount = widget.tracks.length + 1;
+
+    if (!_didInitialScroll && !isOffSelected) {
+      // +1 because index 0 is the "Off" row
+      final selectedIndex = widget.tracks.indexWhere((t) => t.id == selectedSub.id) + 1;
+      if (selectedIndex > 0) {
+        _didInitialScroll = true;
+        scrollToCurrentItem(_scrollController, _firstItemKey, selectedIndex);
+      }
+    }
 
     return Column(
       children: [
-        if (showHeader) _ColumnHeader(label: t.videoControls.subtitlesLabel),
+        if (widget.showHeader) _ColumnHeader(label: t.videoControls.subtitlesLabel),
         Expanded(
           child: ListView.builder(
+            controller: _scrollController,
             itemCount: itemCount,
             itemBuilder: (context, index) {
               // "Off" row
               if (index == 0) {
                 return TrackSelectionHelper.buildOffTile<SubtitleTrack>(
                   context: context,
+                  key: _firstItemKey,
                   isSelected: isOffSelected,
                   onTap: () {
                     // Turning off primary also clears secondary
                     if (hasSecondary) {
-                      player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                      onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                      widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
+                      widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
                     }
-                    player.selectSubtitleTrack(SubtitleTrack.off);
-                    onTrackChanged?.call(SubtitleTrack.off);
+                    widget.player.selectSubtitleTrack(SubtitleTrack.off);
+                    widget.onTrackChanged?.call(SubtitleTrack.off);
                     OverlaySheetController.of(context).close();
                   },
-                  onLongPress: supportsSecondary && hasSecondary
+                  onLongPress: widget.supportsSecondary && hasSecondary
                       ? () {
-                          player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                          onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                          widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
+                          widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
                         }
                       : null,
-                  onSecondaryTap: supportsSecondary && hasSecondary
+                  onSecondaryTap: widget.supportsSecondary && hasSecondary
                       ? () {
-                          player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                          onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                          widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
+                          widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
                         }
                       : null,
                 );
               }
 
-              final track = tracks[index - 1];
+              final track = widget.tracks[index - 1];
               final isPrimary = !isOffSelected && track.id == selectedSub.id;
               final isSecondary = hasSecondary && track.id == secondarySub.id;
               final label = TrackLabelBuilder.buildSubtitleLabel(
@@ -255,7 +307,7 @@ class _SubtitleColumn extends StatelessWidget {
 
               // Determine badge
               Widget? badge;
-              if (supportsSecondary && hasSecondary) {
+              if (widget.supportsSecondary && hasSecondary) {
                 if (isPrimary) {
                   badge = TrackSelectionHelper.buildTrackBadge(context, 1);
                 } else if (isSecondary) {
@@ -271,34 +323,34 @@ class _SubtitleColumn extends StatelessWidget {
                 onTap: () {
                   // If tapping a track that is currently the secondary, clear secondary first
                   if (isSecondary) {
-                    player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                    onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                    widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
+                    widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
                   }
-                  player.selectSubtitleTrack(track);
-                  onTrackChanged?.call(track);
+                  widget.player.selectSubtitleTrack(track);
+                  widget.onTrackChanged?.call(track);
                   OverlaySheetController.of(context).close();
                 },
-                onLongPress: supportsSecondary
+                onLongPress: widget.supportsSecondary
                     ? () {
                         if (isSecondary) {
                           // Already secondary — clear it
-                          player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                          onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                          widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
+                          widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
                         } else if (!isPrimary) {
                           // Set as secondary (don't close sheet so user sees badge update)
-                          player.selectSecondarySubtitleTrack(track);
-                          onSecondaryTrackChanged?.call(track);
+                          widget.player.selectSecondarySubtitleTrack(track);
+                          widget.onSecondaryTrackChanged?.call(track);
                         }
                       }
                     : null,
-                onSecondaryTap: supportsSecondary
+                onSecondaryTap: widget.supportsSecondary
                     ? () {
                         if (isSecondary) {
-                          player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                          onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                          widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
+                          widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
                         } else if (!isPrimary) {
-                          player.selectSecondarySubtitleTrack(track);
-                          onSecondaryTrackChanged?.call(track);
+                          widget.player.selectSecondarySubtitleTrack(track);
+                          widget.onSecondaryTrackChanged?.call(track);
                         }
                       }
                     : null,

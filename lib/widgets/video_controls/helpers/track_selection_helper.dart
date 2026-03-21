@@ -43,6 +43,7 @@ class TrackSelectionHelper {
     required BuildContext context,
     required bool isSelected,
     required VoidCallback onTap,
+    Key? key,
     FocusNode? focusNode,
     VoidCallback? onLongPress,
     VoidCallback? onSecondaryTap,
@@ -50,6 +51,7 @@ class TrackSelectionHelper {
   }) {
     return _buildSelectableTile(
       context: context,
+      key: key,
       label: 'Off',
       isSelected: isSelected,
       onTap: onTap,
@@ -66,6 +68,7 @@ class TrackSelectionHelper {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    Key? key,
     FocusNode? focusNode,
     VoidCallback? onLongPress,
     VoidCallback? onSecondaryTap,
@@ -73,6 +76,7 @@ class TrackSelectionHelper {
   }) {
     return _buildSelectableTile(
       context: context,
+      key: key,
       label: label,
       isSelected: isSelected,
       onTap: onTap,
@@ -103,6 +107,7 @@ class TrackSelectionHelper {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    Key? key,
     FocusNode? focusNode,
     VoidCallback? onLongPress,
     VoidCallback? onSecondaryTap,
@@ -117,6 +122,7 @@ class TrackSelectionHelper {
     }
 
     Widget tile = FocusableListTile(
+      key: key,
       focusNode: focusNode,
       title: Text(label, style: TextStyle(color: isSelected ? primaryColor : null)),
       trailing: trailing,

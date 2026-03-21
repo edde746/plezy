@@ -47,6 +47,6 @@ class BaseVideoControlSheet extends StatelessWidget {
       );
     }
 
-    return SizedBox(height: MediaQuery.of(context).size.height * 0.75, child: content);
+    return content;
   }
 }

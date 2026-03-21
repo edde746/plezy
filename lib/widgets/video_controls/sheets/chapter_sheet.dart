@@ -13,6 +13,7 @@ import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/player_utils.dart';
 import '../../../utils/provider_extensions.dart';
+import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
@@ -40,6 +41,16 @@ class ChapterSheet extends StatefulWidget {
 }
 
 class _ChapterSheetState extends State<ChapterSheet> {
+  final _firstItemKey = GlobalKey();
+  final _scrollController = ScrollController();
+  bool _didInitialScroll = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleChapterTap(Duration position) async {
     final clamped = clampSeekPosition(widget.player, position);
     await widget.player.seek(clamped);
@@ -86,7 +97,13 @@ class _ChapterSheetState extends State<ChapterSheet> {
             child: Text(t.videoControls.noChaptersAvailable, style: TextStyle(color: tokens(context).textMuted)),
           );
         } else {
+          if (!_didInitialScroll && currentChapterIndex != null && currentChapterIndex > 0) {
+            _didInitialScroll = true;
+            scrollToCurrentItem(_scrollController, _firstItemKey, currentChapterIndex);
+          }
+
           content = ListView.builder(
+            controller: _scrollController,
             itemCount: widget.chapters.length,
             itemBuilder: (context, index) {
               final chapter = widget.chapters[index];
@@ -98,6 +115,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                   : null;
 
               return FocusableListTile(
+                key: index == 0 ? _firstItemKey : null,
                 leading: chapter.thumb != null
                     ? SizedBox(
                         width: 60,

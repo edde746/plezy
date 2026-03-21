@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../models/plex_filter.dart';
+import '../../utils/scroll_utils.dart';
 import '../../widgets/app_bar_back_button.dart';
 import '../../widgets/bottom_sheet_header.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -38,6 +39,8 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   static const int _maxCachedDisplayNames = 1000;
   late List<PlexFilter> _sortedFilters;
   late final FocusNode _initialFocusNode;
+  final _valuesFirstItemKey = GlobalKey();
+  final _valuesScrollController = ScrollController();
 
   String _cacheKey(String filter, String value) => '${widget.serverId}:${widget.libraryKey}:$filter:$value';
 
@@ -51,6 +54,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
 
   @override
   void dispose() {
+    _valuesScrollController.dispose();
     _initialFocusNode.dispose();
     super.dispose();
   }
@@ -83,6 +87,15 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
         _filterValues = values;
         _isLoadingValues = false;
       });
+      // Scroll to selected value if any
+      final selectedValue = _tempSelectedFilters[filter.filter];
+      if (selectedValue != null) {
+        // +1 because index 0 is the "All" row
+        final idx = values.indexWhere((v) => _extractFilterValue(v.key, filter.filter) == selectedValue) + 1;
+        if (idx > 0) {
+          scrollToCurrentItem(_valuesScrollController, _valuesFirstItemKey, idx);
+        }
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -134,12 +147,14 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
           else
             Expanded(
               child: ListView.builder(
+                controller: _valuesScrollController,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: _filterValues.length + 1,
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     final isSelected = !_tempSelectedFilters.containsKey(_currentFilter!.filter);
                     return FocusableListTile(
+                      key: _valuesFirstItemKey,
                       focusNode: _initialFocusNode,
                       title: Text(t.libraries.all),
                       selected: isSelected,

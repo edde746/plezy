@@ -582,17 +582,17 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         canRequestFocus: false,
         skipTraversal: true,
         onKeyEvent: _handleKeyEvent,
-        child: AnimatedBuilder(
-          animation: _slideCurve,
-          builder: (context, child) {
-            final slideOffset = Offset.lerp(slideBegin, Offset.zero, _slideCurve.value)!;
-            return FractionalTranslation(
-              translation: slideOffset,
-              child: child,
-            );
-          },
-          child: Align(
-            alignment: _alignment,
+        child: Align(
+          alignment: _alignment,
+          child: AnimatedBuilder(
+            animation: _slideCurve,
+            builder: (context, child) {
+              final slideOffset = Offset.lerp(slideBegin, Offset.zero, _slideCurve.value)!;
+              return FractionalTranslation(
+                translation: slideOffset,
+                child: child,
+              );
+            },
             child: Transform.translate(
               offset: Offset(0, _dragOffset.clamp(0, double.infinity)),
               child: SafeArea(

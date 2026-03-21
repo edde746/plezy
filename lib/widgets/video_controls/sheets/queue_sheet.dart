@@ -8,20 +8,35 @@ import '../../../models/plex_metadata.dart';
 import '../../../providers/playback_state_provider.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/provider_extensions.dart';
+import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
 import '../../plex_optimized_image.dart';
 
-const _kEstimatedItemHeight = 72.0;
 const _kThumbWidth = 60.0;
 const _kThumbHeight = 34.0;
 
 /// Bottom sheet for viewing and navigating the play queue
-class QueueSheet extends StatelessWidget {
+class QueueSheet extends StatefulWidget {
   final Function(PlexMetadata) onItemSelected;
 
   const QueueSheet({super.key, required this.onItemSelected});
+
+  @override
+  State<QueueSheet> createState() => _QueueSheetState();
+}
+
+class _QueueSheetState extends State<QueueSheet> {
+  final _firstItemKey = GlobalKey();
+  final _scrollController = ScrollController();
+  bool _didInitialScroll = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +51,14 @@ class QueueSheet extends StatelessWidget {
             child: Text(t.videoControls.noQueueItems, style: TextStyle(color: tokens(context).textMuted)),
           );
         } else {
-          // Find current index for initial scroll
           final currentIndex = items.indexWhere((item) => item.playQueueItemID == currentItemID);
+          if (!_didInitialScroll && currentIndex > 0) {
+            _didInitialScroll = true;
+            scrollToCurrentItem(_scrollController, _firstItemKey, currentIndex);
+          }
 
           content = ListView.builder(
-            controller: currentIndex > 0
-                ? ScrollController(initialScrollOffset: currentIndex * _kEstimatedItemHeight)
-                : null,
+            controller: _scrollController,
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
@@ -50,6 +66,7 @@ class QueueSheet extends StatelessWidget {
 
               final primaryColor = Theme.of(context).colorScheme.primary;
               return FocusableListTile(
+                key: index == 0 ? _firstItemKey : null,
                 leading: _buildThumbnail(context, item, isCurrent),
                 title: Text(
                   item.title!,
@@ -71,7 +88,7 @@ class QueueSheet extends StatelessWidget {
                 ),
                 trailing: isCurrent ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: primaryColor) : null,
                 onTap: () {
-                  onItemSelected(item);
+                  widget.onItemSelected(item);
                   OverlaySheetController.of(context).close();
                 },
               );
@@ -88,7 +105,7 @@ class QueueSheet extends StatelessWidget {
     if (item.thumb == null) return null;
 
     // Try to get client for thumbnails, may fail in offline mode
-    final client = _tryGetClient(context, item);
+    final client = context.tryGetClientForServer(item.serverId);
 
     return SizedBox(
       width: _kThumbWidth,
@@ -132,9 +149,5 @@ class QueueSheet extends StatelessWidget {
       return item.editionTitle != null ? '${item.year} · ${item.editionTitle}' : '${item.year}';
     }
     return item.mediaType.name;
-  }
-
-  static dynamic _tryGetClient(BuildContext context, PlexMetadata item) {
-    return context.tryGetClientForServer(item.serverId);
   }
 }
