@@ -202,6 +202,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _wasPlayingBeforeInactive = false;
   bool _hiddenForBackground = false;
   bool _autoPipEnabled = false;
+  int _rewindOnResume = 0;
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// iOS auto-PiP is system-initiated during the background transition, so
@@ -396,6 +397,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final settingsService = await SettingsService.getInstance();
       _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
       _autoPipEnabled = settingsService.getAutoPip();
+      _rewindOnResume = settingsService.getRewindOnResume();
       final bufferSizeMB = settingsService.getBufferSize();
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
@@ -630,6 +632,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // offline Android playback flows). Prevents a permanent loading spinner.
         if (!_hasFirstFrame.value && position.inMilliseconds > 0) {
           _hasFirstFrame.value = true;
+
+          // Apply frame rate matching here too, since this fallback may fire
+          // before playbackRestart (race condition with resume positions > 0)
+          if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
+            _applyFrameRateMatching();
+          }
         }
 
         final duration = player!.state.duration;
@@ -661,6 +669,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Apply frame rate matching on Android by setting the display refresh rate
   /// to match the video content's frame rate.
+  int _frameRateRetries = 0;
   Future<void> _applyFrameRateMatching() async {
     if (player == null || !Platform.isAndroid) return;
 
@@ -668,10 +677,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final fpsStr = await player!.getProperty('container-fps');
       final fps = double.tryParse(fpsStr ?? '');
       if (fps == null || fps <= 0) {
+        // ExoPlayer detects FPS from frame timestamps after ~8 rendered frames.
+        // STATE_READY fires before frames render, so retry until detection completes.
+        if (player is PlayerAndroid && _frameRateRetries < 10) {
+          _frameRateRetries++;
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted && player != null) _applyFrameRateMatching();
+          });
+          return;
+        }
         appLogger.d('Frame rate matching: No valid fps available ($fpsStr)');
         return;
       }
 
+      _frameRateRetries = 0;
       final durationMs = player!.state.duration.inMilliseconds;
       await player!.setVideoFrameRate(fps, durationMs);
 
@@ -740,7 +759,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (event is PlayEvent) {
         appLogger.d('Media control: Play event received');
-        currentPlayer!.play();
+        _seekBackForRewind(currentPlayer!);
+        currentPlayer.play();
         _wasPlayingBeforeInactive = false;
         _updateMediaControlsPlaybackState();
       } else if (event is PauseEvent) {
@@ -752,6 +772,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (currentPlayer!.state.playing) {
           currentPlayer.pause();
         } else {
+          _seekBackForRewind(currentPlayer);
           currentPlayer.play();
           _wasPlayingBeforeInactive = false;
         }
@@ -1025,8 +1046,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Open video through Player
       if (result.videoUrl != null) {
-        // Reset first frame flag for new video
+        // Reset first frame flag and frame rate retry counter for new video
         _hasFirstFrame.value = false;
+        _frameRateRetries = 0;
 
         // Request audio focus before starting playback (Android)
         // This causes other media apps (Spotify, podcasts, etc.) to pause
@@ -1055,15 +1077,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
 
         final hasExternalSubs = result.externalSubtitles.isNotEmpty;
-        final isAndroid = Platform.isAndroid;
+        final isExoPlayer = player is PlayerAndroid;
 
-        // On Android, attach external subs at open time so ExoPlayer discovers
+        // ExoPlayer: attach external subs at open time so it discovers
         // them in a single prepare() — no media reload needed for selection.
-        // On other platforms (MPV), external subs are added after open via sub-add.
+        // MPV (all platforms including Android): external subs added after open via sub-add.
         await player!.open(
           Media(result.videoUrl!, start: resumePosition, headers: plexHeaders),
-          play: isAndroid || !hasExternalSubs,
-          externalSubtitles: isAndroid && hasExternalSubs ? result.externalSubtitles : null,
+          play: isExoPlayer || !hasExternalSubs,
+          externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
         );
 
         // Apply subtitle styling to ExoPlayer native layer (CaptionStyleCompat + libass font scale)
@@ -1175,9 +1197,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Store external subtitles for re-use after backend fallback
         _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
 
-        // Non-Android with external subs: add after open via sub-add (MPV),
+        // MPV with external subs: add after open via sub-add,
         // opened paused to avoid race condition (issue #226)
-        if (!Platform.isAndroid && result.externalSubtitles.isNotEmpty) {
+        if (player is! PlayerAndroid && result.externalSubtitles.isNotEmpty) {
           _hasFirstFrame.value = false;
           _trackManager!.waitingForExternalSubsTrackSelection = true;
 
@@ -1931,6 +1953,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
   }
 
+  Future<void> _seekBackForRewind(Player p) async {
+    if (_rewindOnResume <= 0) return;
+    final target = p.state.position - Duration(seconds: _rewindOnResume);
+    await p.seek(clampSeekPosition(p, target));
+  }
+
   Future<void> _restoreMediaControlsAfterResume() async {
     if (!_isPlayerInitialized || !mounted) return;
 
@@ -1952,6 +1980,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     if (_wasPlayingBeforeInactive) {
       try {
+        await _seekBackForRewind(currentPlayer);
         await currentPlayer.play();
         appLogger.d('Video resumed after returning from inactive state');
       } catch (e) {

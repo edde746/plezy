@@ -19,6 +19,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.embedding.android.FlutterTextureView
 import io.flutter.embedding.android.RenderMode
 import io.flutter.embedding.android.TransparencyMode
@@ -31,6 +32,10 @@ import com.edde746.plezy.watchnext.WatchNextPlugin
 import java.io.File
 
 class MainActivity : FlutterActivity() {
+
+    companion object {
+        var usingSkia = false
+    }
 
     private val PIP_CHANNEL = "com.plezy/pip"
     private val EXTERNAL_PLAYER_CHANNEL = "com.plezy/external_player"
@@ -113,6 +118,25 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun getFlutterShellArgs(): FlutterShellArgs {
+        val args = super.getFlutterShellArgs()
+        usingSkia = shouldDisableImpeller()
+        if (usingSkia) args.add("--enable-impeller=false")
+        return args
+    }
+
+    private fun shouldDisableImpeller(): Boolean {
+        // Android TV devices — weaker GPUs, less Impeller testing
+        if (packageManager.hasSystemFeature("android.software.leanback")) return true
+        // Google Tensor SoC (Mali GPU) — Pixel 6+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (Build.SOC_MODEL.startsWith("Tensor", ignoreCase = true)) return true
+        }
+        // NVIDIA Tegra (Shield TV)
+        if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true
+        return false
+    }
+
     override fun getRenderMode(): RenderMode {
         // Use TextureView so Flutter doesn't occupy a SurfaceView layer.
         // This allows the libass subtitle SurfaceView to sit between video and Flutter UI.
@@ -140,9 +164,11 @@ class MainActivity : FlutterActivity() {
                 lastWidth = w; lastHeight = h
                 pendingResize?.let { handler.removeCallbacks(it) }
                 pendingResize = Runnable {
-                    original.onSurfaceTextureSizeChanged(surface, w, h)
+                    if (flutterTextureView.isAvailable) {
+                        original.onSurfaceTextureSizeChanged(surface, w, h)
+                    }
                 }
-                handler.post(pendingResize!!)
+                handler.postDelayed(pendingResize!!, 100)
             }
             override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
                 original.onSurfaceTextureUpdated(surface)
@@ -214,6 +240,7 @@ class MainActivity : FlutterActivity() {
         // Splash screen theme: persist user's chosen theme for next launch (API 31+)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
+                "getRenderer" -> result.success(if (usingSkia) "Skia" else "Impeller")
                 "setSplashTheme" -> {
                     val mode = call.argument<String>("mode")
 

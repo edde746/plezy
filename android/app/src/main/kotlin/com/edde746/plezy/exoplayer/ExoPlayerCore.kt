@@ -83,6 +83,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         private const val WATCHDOG_CHECK_INTERVAL_MS = 1000L
         private const val WATCHDOG_TIMEOUT_MS = 8000L
         private const val DECODER_HANG_TIMEOUT_MS = 5000L
+        private const val FPS_SAMPLE_COUNT = 8
 
         // Codec capability caches — codec support doesn't change at runtime
         private val hwAudioDecoderCache = HashMap<String, Boolean>()
@@ -139,6 +140,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     // Frame rate matching
     private var frameRateManager: FrameRateManager? = null
     private val handler = Handler(Looper.getMainLooper())
+
+    // FPS detection from frame timestamps (fallback when Format.frameRate is NO_VALUE)
+    @Volatile private var detectedFrameRate: Float = -1f
+    private val fpsTimestamps = LongArray(FPS_SAMPLE_COUNT)
+    @Volatile private var fpsTimestampCount = 0
 
     // Audio focus
     private var audioFocusManager: AudioFocusManager? = null
@@ -255,8 +261,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 activity = activity,
                 handler = handler,
                 onDisplayChanged = {
-                    if (exoPlayer?.isPlaying == false && audioFocusManager?.wasPlayingBeforeFocusLoss == true) {
-                        Log.d(TAG, "Display changed, resuming playback")
+                    if (exoPlayer?.isPlaying == false) {
+                        Log.d(TAG, "Display changed after frame rate switch, resuming playback")
                         exoPlayer?.play()
                     }
                 },
@@ -477,6 +483,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
             exoPlayer!!.addListener(this)
             exoPlayer!!.addAnalyticsListener(decoderHangListener)
+            exoPlayer!!.setVideoFrameMetadataListener { presentationTimeUs, _, _, _ ->
+                val count = fpsTimestampCount
+                if (count < FPS_SAMPLE_COUNT) {
+                    fpsTimestamps[count] = presentationTimeUs
+                    fpsTimestampCount = count + 1
+                    if (count + 1 == FPS_SAMPLE_COUNT) {
+                        detectedFrameRate = computeFrameRate(fpsTimestamps)
+                        Log.d(TAG, "Detected frame rate: $detectedFrameRate fps")
+                    }
+                }
+            }
             surfaceView?.let { exoPlayer!!.setVideoSurfaceView(it) }
 
             Log.d(TAG, "SubtitleView childCount after ASS setup: ${subtitleView?.childCount}")
@@ -1168,6 +1185,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         stopFrameWatchdog()
         cancelDecoderHangCheck()
 
+        // Reset FPS detection for new content
+        detectedFrameRate = -1f
+        fpsTimestampCount = 0
+
         // Reset DV7 retry flag when opening a different file
         if (uri != currentMediaUri) {
             dv7RetryAttempted = false
@@ -1455,6 +1476,20 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         frameRateManager?.clearVideoFrameRate()
     }
 
+    private fun computeFrameRate(timestamps: LongArray): Float {
+        val deltas = (1 until FPS_SAMPLE_COUNT).map { timestamps[it] - timestamps[it - 1] }.filter { it > 0 }
+        if (deltas.isEmpty()) return -1f
+        val medianDelta = deltas.sorted()[deltas.size / 2]
+        val rawFps = 1_000_000.0 / medianDelta
+        return normalizeFrameRate(rawFps)
+    }
+
+    private fun normalizeFrameRate(fps: Double): Float {
+        val knownRates = doubleArrayOf(23.976, 24.0, 25.0, 29.97, 30.0, 48.0, 50.0, 59.94, 60.0)
+        val nearest = knownRates.minByOrNull { kotlin.math.abs(it - fps) } ?: fps
+        return if (kotlin.math.abs(nearest - fps) < 0.5) nearest.toFloat() else fps.toFloat()
+    }
+
     // Stats
 
     fun getStats(): Map<String, Any?> {
@@ -1471,7 +1506,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             "videoMimeType" to videoFormat?.sampleMimeType,
             "videoWidth" to videoFormat?.width,
             "videoHeight" to videoFormat?.height,
-            "videoFps" to videoFormat?.frameRate,
+            "videoFps" to (videoFormat?.frameRate?.takeIf { it > 0 } ?: detectedFrameRate.takeIf { it > 0 }),
             "videoBitrate" to videoFormat?.bitrate,
             "videoDecoderName" to (decoderInitName ?: videoDecoderInfo),
             "videoDroppedFrames" to player.videoDecoderCounters?.droppedBufferCount,

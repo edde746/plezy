@@ -253,6 +253,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Настроить внешний вид субтитров';
 	@override String get smallSkipDuration => 'Малая перемотка';
 	@override String get largeSkipDuration => 'Большая перемотка';
+	@override String get rewindOnResume => 'Перемотка при возобновлении';
+	@override String get rewindOnResumeDescription => 'Перемотать на это количество секунд при возобновлении воспроизведения';
 	@override String secondsUnit({required Object seconds}) => '${seconds} секунд';
 	@override String get defaultSleepTimer => 'Таймер сна по умолчанию';
 	@override String minutesUnit({required Object minutes}) => '${minutes} минут';
@@ -491,6 +493,10 @@ class _TranslationsVideoControlsRu implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Выйти из полноэкранного режима';
 	@override String get alwaysOnTopButton => 'Всегда поверх';
 	@override String get rotationLockButton => 'Блокировка поворота';
+	@override String get lockScreen => 'Заблокировать экран';
+	@override String get unlockScreen => 'Разблокировать экран';
+	@override String get screenLockButton => 'Блокировка экрана';
+	@override String get longPressToUnlock => 'Удерживайте для разблокировки';
 	@override String get timelineSlider => 'Временная шкала';
 	@override String get volumeSlider => 'Уровень громкости';
 	@override String endsAt({required Object time}) => 'Закончится в ${time}';
@@ -1404,6 +1410,8 @@ extension on TranslationsRu {
 			'settings.subtitleStylingDescription' => 'Настроить внешний вид субтитров',
 			'settings.smallSkipDuration' => 'Малая перемотка',
 			'settings.largeSkipDuration' => 'Большая перемотка',
+			'settings.rewindOnResume' => 'Перемотка при возобновлении',
+			'settings.rewindOnResumeDescription' => 'Перемотать на это количество секунд при возобновлении воспроизведения',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} секунд',
 			'settings.defaultSleepTimer' => 'Таймер сна по умолчанию',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} минут',
@@ -1597,6 +1605,10 @@ extension on TranslationsRu {
 			'videoControls.exitFullscreenButton' => 'Выйти из полноэкранного режима',
 			'videoControls.alwaysOnTopButton' => 'Всегда поверх',
 			'videoControls.rotationLockButton' => 'Блокировка поворота',
+			'videoControls.lockScreen' => 'Заблокировать экран',
+			'videoControls.unlockScreen' => 'Разблокировать экран',
+			'videoControls.screenLockButton' => 'Блокировка экрана',
+			'videoControls.longPressToUnlock' => 'Удерживайте для разблокировки',
 			'videoControls.timelineSlider' => 'Временная шкала',
 			'videoControls.volumeSlider' => 'Уровень громкости',
 			'videoControls.endsAt' => ({required Object time}) => 'Закончится в ${time}',
@@ -1785,14 +1797,14 @@ extension on TranslationsRu {
 			'liveTv.lateNight' => 'Поздний вечер',
 			'liveTv.whatsOn' => 'Что идёт',
 			'liveTv.watchChannel' => 'Смотреть канал',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Избранное',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
 			'collections.empty' => 'Коллекция пуста',
 			'collections.unknownLibrarySection' => 'Невозможно удалить: неизвестный раздел библиотеки',
 			'collections.deleteCollection' => 'Удалить коллекцию',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Вы уверены, что хотите удалить "${title}"? Это действие нельзя отменить.',
 			'collections.deleted' => 'Коллекция удалена',
 			'collections.deleteFailed' => 'Не удалось удалить коллекцию',

@@ -91,6 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kMpvConfig = 'mpv_config';
   static const _kSmallSkipDuration = 'small_skip_duration';
   static const _kLargeSkipDuration = 'large_skip_duration';
+  static const _kRewindOnResume = 'rewind_on_resume';
   static const _kDefaultSleepTimer = 'default_sleep_timer';
   static const _kMaxVolume = 'max_volume';
   static const _kDiscordRichPresence = 'discord_rich_presence';
@@ -122,6 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   int _bufferSize = 0;
   int _seekTimeSmall = 10;
   int _seekTimeLarge = 30;
+  int _rewindOnResume = 0;
   int _sleepTimerDuration = 30;
   bool _rememberTrackSelections = true;
   bool _clickVideoTogglesPlayback = false;
@@ -207,6 +209,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _bufferSize = _settingsService.getBufferSize();
       _seekTimeSmall = _settingsService.getSeekTimeSmall();
       _seekTimeLarge = _settingsService.getSeekTimeLarge();
+      _rewindOnResume = _settingsService.getRewindOnResume();
       _sleepTimerDuration = _settingsService.getSleepTimerDuration();
       _rememberTrackSelections = _settingsService.getRememberTrackSelections();
       _clickVideoTogglesPlayback = _settingsService.getClickVideoTogglesPlayback();
@@ -680,7 +683,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               await _settingsService.setEnableHardwareDecoding(value);
             },
           ),
-          if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)
+          if ((Platform.isAndroid && !PlatformDetector.isTV()) || Platform.isIOS || Platform.isMacOS)
             SwitchListTile(
               focusNode: _focusTracker.get(_kAutoPip),
               secondary: const AppIcon(Symbols.picture_in_picture_alt_rounded, fill: 1),
@@ -799,6 +802,14 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             subtitle: Text(t.settings.secondsUnit(seconds: _seekTimeLarge.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showSeekTimeLargeDialog(),
+          ),
+          ListTile(
+            focusNode: _focusTracker.get(_kRewindOnResume),
+            leading: const AppIcon(Symbols.replay_rounded, fill: 1),
+            title: Text(t.settings.rewindOnResume),
+            subtitle: Text(t.settings.secondsUnit(seconds: _rewindOnResume.toString())),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            onTap: () => _showRewindOnResumeDialog(),
           ),
           ListTile(
             focusNode: _focusTracker.get(_kDefaultSleepTimer),
@@ -1629,6 +1640,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           _settingsService.setSeekTimeLarge(value);
         });
         await _keyboardService?.refreshFromStorage();
+      },
+    );
+  }
+
+  void _showRewindOnResumeDialog() {
+    _showNumericInputDialog(
+      title: t.settings.rewindOnResume,
+      labelText: t.settings.secondsLabel,
+      suffixText: t.settings.secondsShort,
+      min: 0,
+      max: 10,
+      currentValue: _rewindOnResume,
+      onSave: (value) async {
+        setState(() {
+          _rewindOnResume = value;
+          _settingsService.setRewindOnResume(value);
+        });
       },
     );
   }

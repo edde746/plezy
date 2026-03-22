@@ -37,16 +37,19 @@ class FrameRateManager(
             return
         }
 
-        if (surface == null) {
-            Log.d(TAG, "setVideoFrameRate: Surface not available")
-            return
-        }
-
         log("fps=$fps, duration=${videoDurationMs}ms, API=${Build.VERSION.SDK_INT}")
 
         when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> setFrameRateS(fps, surface, videoDurationMs)
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> setFrameRateR(fps, surface)
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                if (surface == null) {
+                    Log.d(TAG, "setVideoFrameRate: Surface not available")
+                    return
+                }
+                setFrameRateS(fps, surface, videoDurationMs)
+            }
+            // API R's Surface.setFrameRate() only supports seamless switching (no
+            // CHANGE_FRAME_RATE_ALWAYS), so 60→24Hz won't switch. Fall through to
+            // preferredDisplayModeId which directly sets the display mode.
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> setFrameRateM(fps)
         }
     }
@@ -57,6 +60,13 @@ class FrameRateManager(
         displayListener?.let {
             getDisplayManager().unregisterDisplayListener(it)
             displayListener = null
+        }
+        // Restore default display mode on API M (preferredDisplayModeId persists)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            activity.window?.attributes?.let { attrs ->
+                attrs.preferredDisplayModeId = 0
+                activity.window?.attributes = attrs
+            }
         }
     }
 
@@ -77,13 +87,6 @@ class FrameRateManager(
             }
         }
         getDisplayManager().registerDisplayListener(displayListener, handler)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun setFrameRateR(fps: Float, surface: Surface) {
-        Log.d(TAG, "setFrameRateR: Setting frame rate to $fps")
-        surface.setFrameRate(fps, Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE)
-        registerDisplayListener()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -162,7 +165,7 @@ class FrameRateManager(
                     BigDecimal(mode.refreshRate.toString()).setScale(1, RoundingMode.FLOOR)) {
                     modeToUse = mode
                     break
-                } else if (mode.refreshRate % fps == 0f) {
+                } else if ((mode.refreshRate % fps).let { it < 0.1f || (fps - it) < 0.1f }) {
                     modeToUse = mode
                     break
                 }

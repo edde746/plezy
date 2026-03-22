@@ -253,6 +253,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Personnaliser l\'apparence des sous-titres';
 	@override String get smallSkipDuration => 'Durée du petit saut';
 	@override String get largeSkipDuration => 'Durée du grand saut';
+	@override String get rewindOnResume => 'Rembobiner à la reprise';
+	@override String get rewindOnResumeDescription => 'Rembobiner de cette durée lors de la reprise de la lecture';
 	@override String secondsUnit({required Object seconds}) => '${seconds} secondes';
 	@override String get defaultSleepTimer => 'Minuterie de mise en veille par défaut';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutes';
@@ -491,6 +493,10 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Quitter le mode plein écran';
 	@override String get alwaysOnTopButton => 'Toujours au premier plan';
 	@override String get rotationLockButton => 'Verrouillage de rotation';
+	@override String get lockScreen => 'Verrouiller l\'écran';
+	@override String get unlockScreen => 'Déverrouiller l\'écran';
+	@override String get screenLockButton => 'Verrouillage de l\'écran';
+	@override String get longPressToUnlock => 'Appui long pour déverrouiller';
 	@override String get timelineSlider => 'Timeline vidéo';
 	@override String get volumeSlider => 'Niveau sonore';
 	@override String endsAt({required Object time}) => 'Fin à ${time}';
@@ -1404,6 +1410,8 @@ extension on TranslationsFr {
 			'settings.subtitleStylingDescription' => 'Personnaliser l\'apparence des sous-titres',
 			'settings.smallSkipDuration' => 'Durée du petit saut',
 			'settings.largeSkipDuration' => 'Durée du grand saut',
+			'settings.rewindOnResume' => 'Rembobiner à la reprise',
+			'settings.rewindOnResumeDescription' => 'Rembobiner de cette durée lors de la reprise de la lecture',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} secondes',
 			'settings.defaultSleepTimer' => 'Minuterie de mise en veille par défaut',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
@@ -1597,6 +1605,10 @@ extension on TranslationsFr {
 			'videoControls.exitFullscreenButton' => 'Quitter le mode plein écran',
 			'videoControls.alwaysOnTopButton' => 'Toujours au premier plan',
 			'videoControls.rotationLockButton' => 'Verrouillage de rotation',
+			'videoControls.lockScreen' => 'Verrouiller l\'écran',
+			'videoControls.unlockScreen' => 'Déverrouiller l\'écran',
+			'videoControls.screenLockButton' => 'Verrouillage de l\'écran',
+			'videoControls.longPressToUnlock' => 'Appui long pour déverrouiller',
 			'videoControls.timelineSlider' => 'Timeline vidéo',
 			'videoControls.volumeSlider' => 'Niveau sonore',
 			'videoControls.endsAt' => ({required Object time}) => 'Fin à ${time}',
@@ -1785,14 +1797,14 @@ extension on TranslationsFr {
 			'liveTv.lateNight' => 'Nuit tardive',
 			'liveTv.whatsOn' => 'En ce moment',
 			'liveTv.watchChannel' => 'Regarder la chaîne',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favoris',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'La collection est vide',
 			'collections.unknownLibrarySection' => 'Impossible de supprimer : section de bibliothèque inconnue',
 			'collections.deleteCollection' => 'Supprimer la collection',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cette action ne peut pas être annulée.',
 			'collections.deleted' => 'Collection supprimée',
 			'collections.deleteFailed' => 'Échec de la suppression de la collection',

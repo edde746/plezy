@@ -253,6 +253,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Pas ondertitel uiterlijk aan';
 	@override String get smallSkipDuration => 'Korte skip duur';
 	@override String get largeSkipDuration => 'Lange skip duur';
+	@override String get rewindOnResume => 'Terugspoelen bij hervatten';
+	@override String get rewindOnResumeDescription => 'Spoel dit aantal seconden terug bij het hervatten van afspelen';
 	@override String secondsUnit({required Object seconds}) => '${seconds} seconden';
 	@override String get defaultSleepTimer => 'Standaard slaap timer';
 	@override String minutesUnit({required Object minutes}) => 'bij ${minutes} minuten';
@@ -491,6 +493,10 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Volledig scherm verlaten';
 	@override String get alwaysOnTopButton => 'Altijd bovenop';
 	@override String get rotationLockButton => 'Rotatievergrendeling';
+	@override String get lockScreen => 'Vergrendel scherm';
+	@override String get unlockScreen => 'Ontgrendel scherm';
+	@override String get screenLockButton => 'Schermvergrendeling';
+	@override String get longPressToUnlock => 'Lang indrukken om te ontgrendelen';
 	@override String get timelineSlider => 'Videotijdlijn';
 	@override String get volumeSlider => 'Volumeniveau';
 	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
@@ -1404,6 +1410,8 @@ extension on TranslationsNl {
 			'settings.subtitleStylingDescription' => 'Pas ondertitel uiterlijk aan',
 			'settings.smallSkipDuration' => 'Korte skip duur',
 			'settings.largeSkipDuration' => 'Lange skip duur',
+			'settings.rewindOnResume' => 'Terugspoelen bij hervatten',
+			'settings.rewindOnResumeDescription' => 'Spoel dit aantal seconden terug bij het hervatten van afspelen',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconden',
 			'settings.defaultSleepTimer' => 'Standaard slaap timer',
 			'settings.minutesUnit' => ({required Object minutes}) => 'bij ${minutes} minuten',
@@ -1597,6 +1605,10 @@ extension on TranslationsNl {
 			'videoControls.exitFullscreenButton' => 'Volledig scherm verlaten',
 			'videoControls.alwaysOnTopButton' => 'Altijd bovenop',
 			'videoControls.rotationLockButton' => 'Rotatievergrendeling',
+			'videoControls.lockScreen' => 'Vergrendel scherm',
+			'videoControls.unlockScreen' => 'Ontgrendel scherm',
+			'videoControls.screenLockButton' => 'Schermvergrendeling',
+			'videoControls.longPressToUnlock' => 'Lang indrukken om te ontgrendelen',
 			'videoControls.timelineSlider' => 'Videotijdlijn',
 			'videoControls.volumeSlider' => 'Volumeniveau',
 			'videoControls.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
@@ -1785,14 +1797,14 @@ extension on TranslationsNl {
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
 			'liveTv.watchChannel' => 'Kanaal bekijken',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favorieten',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
 			'downloads.movies' => 'Films',
 			'downloads.noDownloads' => 'Nog geen downloads',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
 			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Download verwijderen',

@@ -253,6 +253,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Tilpas underteksters udseende';
 	@override String get smallSkipDuration => 'Kort spring-varighed';
 	@override String get largeSkipDuration => 'Lang spring-varighed';
+	@override String get rewindOnResume => 'Spol tilbage ved genoptagelse';
+	@override String get rewindOnResumeDescription => 'Spol tilbage med denne mængde ved genoptagelse af afspilning';
 	@override String secondsUnit({required Object seconds}) => '${seconds} sekunder';
 	@override String get defaultSleepTimer => 'Standard sove-timer';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutter';
@@ -491,6 +493,10 @@ class _TranslationsVideoControlsDa implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Forlad fuldskærm';
 	@override String get alwaysOnTopButton => 'Altid øverst';
 	@override String get rotationLockButton => 'Rotationslås';
+	@override String get lockScreen => 'Lås skærm';
+	@override String get unlockScreen => 'Lås skærm op';
+	@override String get screenLockButton => 'Skærmlås';
+	@override String get longPressToUnlock => 'Langt tryk for at låse op';
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Lydstyrkeniveau';
 	@override String endsAt({required Object time}) => 'Slutter kl. ${time}';
@@ -1404,6 +1410,8 @@ extension on TranslationsDa {
 			'settings.subtitleStylingDescription' => 'Tilpas underteksters udseende',
 			'settings.smallSkipDuration' => 'Kort spring-varighed',
 			'settings.largeSkipDuration' => 'Lang spring-varighed',
+			'settings.rewindOnResume' => 'Spol tilbage ved genoptagelse',
+			'settings.rewindOnResumeDescription' => 'Spol tilbage med denne mængde ved genoptagelse af afspilning',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} sekunder',
 			'settings.defaultSleepTimer' => 'Standard sove-timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutter',
@@ -1597,6 +1605,10 @@ extension on TranslationsDa {
 			'videoControls.exitFullscreenButton' => 'Forlad fuldskærm',
 			'videoControls.alwaysOnTopButton' => 'Altid øverst',
 			'videoControls.rotationLockButton' => 'Rotationslås',
+			'videoControls.lockScreen' => 'Lås skærm',
+			'videoControls.unlockScreen' => 'Lås skærm op',
+			'videoControls.screenLockButton' => 'Skærmlås',
+			'videoControls.longPressToUnlock' => 'Langt tryk for at låse op',
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Lydstyrkeniveau',
 			'videoControls.endsAt' => ({required Object time}) => 'Slutter kl. ${time}',
@@ -1785,14 +1797,14 @@ extension on TranslationsDa {
 			'liveTv.lateNight' => 'Sen aften',
 			'liveTv.whatsOn' => 'Hvad der kører',
 			'liveTv.watchChannel' => 'Se kanal',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favoritter',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',
 			'collections.unknownLibrarySection' => 'Kan ikke slette: Ukendt bibliotekssektion',
 			'collections.deleteCollection' => 'Slet samling',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Er du sikker på, at du vil slette "${title}"? Denne handling kan ikke fortrydes.',
 			'collections.deleted' => 'Samling slettet',
 			'collections.deleteFailed' => 'Kunne ikke slette samling',

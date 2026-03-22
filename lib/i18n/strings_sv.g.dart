@@ -253,6 +253,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Anpassa undertextutseende';
 	@override String get smallSkipDuration => 'Kort hoppvaraktighet';
 	@override String get largeSkipDuration => 'Lång hoppvaraktighet';
+	@override String get rewindOnResume => 'Spola tillbaka vid återupptagning';
+	@override String get rewindOnResumeDescription => 'Spola tillbaka med denna tid vid återupptagning av uppspelning';
 	@override String secondsUnit({required Object seconds}) => '${seconds} sekunder';
 	@override String get defaultSleepTimer => 'Standard sovtimer';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuter';
@@ -491,6 +493,10 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Avsluta helskärm';
 	@override String get alwaysOnTopButton => 'Alltid överst';
 	@override String get rotationLockButton => 'Rotationslås';
+	@override String get lockScreen => 'Lås skärm';
+	@override String get unlockScreen => 'Lås upp skärm';
+	@override String get screenLockButton => 'Skärmlås';
+	@override String get longPressToUnlock => 'Tryck länge för att låsa upp';
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Volymnivå';
 	@override String endsAt({required Object time}) => 'Slutar ${time}';
@@ -1404,6 +1410,8 @@ extension on TranslationsSv {
 			'settings.subtitleStylingDescription' => 'Anpassa undertextutseende',
 			'settings.smallSkipDuration' => 'Kort hoppvaraktighet',
 			'settings.largeSkipDuration' => 'Lång hoppvaraktighet',
+			'settings.rewindOnResume' => 'Spola tillbaka vid återupptagning',
+			'settings.rewindOnResumeDescription' => 'Spola tillbaka med denna tid vid återupptagning av uppspelning',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} sekunder',
 			'settings.defaultSleepTimer' => 'Standard sovtimer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuter',
@@ -1597,6 +1605,10 @@ extension on TranslationsSv {
 			'videoControls.exitFullscreenButton' => 'Avsluta helskärm',
 			'videoControls.alwaysOnTopButton' => 'Alltid överst',
 			'videoControls.rotationLockButton' => 'Rotationslås',
+			'videoControls.lockScreen' => 'Lås skärm',
+			'videoControls.unlockScreen' => 'Lås upp skärm',
+			'videoControls.screenLockButton' => 'Skärmlås',
+			'videoControls.longPressToUnlock' => 'Tryck länge för att låsa upp',
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Volymnivå',
 			'videoControls.endsAt' => ({required Object time}) => 'Slutar ${time}',
@@ -1785,14 +1797,14 @@ extension on TranslationsSv {
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
 			'liveTv.watchChannel' => 'Titta på kanal',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favoriter',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Filmer',
 			'downloads.noDownloads' => 'Inga nedladdningar ännu',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
 			'downloads.downloadNow' => 'Ladda ner',
 			'downloads.deleteDownload' => 'Ta bort nedladdning',

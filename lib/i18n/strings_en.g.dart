@@ -507,6 +507,12 @@ class TranslationsSettingsEn {
 	/// en: 'Large Skip Duration'
 	String get largeSkipDuration => 'Large Skip Duration';
 
+	/// en: 'Rewind on Resume'
+	String get rewindOnResume => 'Rewind on Resume';
+
+	/// en: 'Rewind by this amount when resuming playback'
+	String get rewindOnResumeDescription => 'Rewind by this amount when resuming playback';
+
 	/// en: '${seconds} seconds'
 	String secondsUnit({required Object seconds}) => '${seconds} seconds';
 
@@ -1093,6 +1099,18 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Rotation lock'
 	String get rotationLockButton => 'Rotation lock';
+
+	/// en: 'Lock screen'
+	String get lockScreen => 'Lock screen';
+
+	/// en: 'Unlock screen'
+	String get unlockScreen => 'Unlock screen';
+
+	/// en: 'Screen lock'
+	String get screenLockButton => 'Screen lock';
+
+	/// en: 'Long press to unlock'
+	String get longPressToUnlock => 'Long press to unlock';
 
 	/// en: 'Video timeline'
 	String get timelineSlider => 'Video timeline';
@@ -2995,6 +3013,8 @@ extension on Translations {
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
 			'settings.largeSkipDuration' => 'Large Skip Duration',
+			'settings.rewindOnResume' => 'Rewind on Resume',
+			'settings.rewindOnResumeDescription' => 'Rewind by this amount when resuming playback',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconds',
 			'settings.defaultSleepTimer' => 'Default Sleep Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
@@ -3188,6 +3208,10 @@ extension on Translations {
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Always on top',
 			'videoControls.rotationLockButton' => 'Rotation lock',
+			'videoControls.lockScreen' => 'Lock screen',
+			'videoControls.unlockScreen' => 'Unlock screen',
+			'videoControls.screenLockButton' => 'Screen lock',
+			'videoControls.longPressToUnlock' => 'Long press to unlock',
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
@@ -3376,14 +3400,14 @@ extension on Translations {
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favorites',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
 			'collections.unknownLibrarySection' => 'Cannot delete: Unknown library section',
 			'collections.deleteCollection' => 'Delete Collection',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.',
 			'collections.deleted' => 'Collection deleted',
 			'collections.deleteFailed' => 'Failed to delete collection',

@@ -253,6 +253,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => '자막의 외형을 사용자 설정';
 	@override String get smallSkipDuration => '짧은 건너뛰기 시간';
 	@override String get largeSkipDuration => '긴 건너뛰기 시간';
+	@override String get rewindOnResume => '재개 시 되감기';
+	@override String get rewindOnResumeDescription => '재생 재개 시 이 시간만큼 되감기';
 	@override String secondsUnit({required Object seconds}) => '${seconds}초';
 	@override String get defaultSleepTimer => '기본 취침 타이머';
 	@override String minutesUnit({required Object minutes}) => '${minutes}분';
@@ -491,6 +493,10 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => '전체화면 종료';
 	@override String get alwaysOnTopButton => '창 최상위 고정';
 	@override String get rotationLockButton => '회전 잠금';
+	@override String get lockScreen => '화면 잠금';
+	@override String get unlockScreen => '화면 잠금 해제';
+	@override String get screenLockButton => '화면 잠금';
+	@override String get longPressToUnlock => '길게 눌러 잠금 해제';
 	@override String get timelineSlider => '타임라인';
 	@override String get volumeSlider => '볼륨 조절';
 	@override String endsAt({required Object time}) => '${time}에 종료';
@@ -1404,6 +1410,8 @@ extension on TranslationsKo {
 			'settings.subtitleStylingDescription' => '자막의 외형을 사용자 설정',
 			'settings.smallSkipDuration' => '짧은 건너뛰기 시간',
 			'settings.largeSkipDuration' => '긴 건너뛰기 시간',
+			'settings.rewindOnResume' => '재개 시 되감기',
+			'settings.rewindOnResumeDescription' => '재생 재개 시 이 시간만큼 되감기',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds}초',
 			'settings.defaultSleepTimer' => '기본 취침 타이머',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}분',
@@ -1597,6 +1605,10 @@ extension on TranslationsKo {
 			'videoControls.exitFullscreenButton' => '전체화면 종료',
 			'videoControls.alwaysOnTopButton' => '창 최상위 고정',
 			'videoControls.rotationLockButton' => '회전 잠금',
+			'videoControls.lockScreen' => '화면 잠금',
+			'videoControls.unlockScreen' => '화면 잠금 해제',
+			'videoControls.screenLockButton' => '화면 잠금',
+			'videoControls.longPressToUnlock' => '길게 눌러 잠금 해제',
 			'videoControls.timelineSlider' => '타임라인',
 			'videoControls.volumeSlider' => '볼륨 조절',
 			'videoControls.endsAt' => ({required Object time}) => '${time}에 종료',
@@ -1785,14 +1797,14 @@ extension on TranslationsKo {
 			'liveTv.lateNight' => '심야 방송',
 			'liveTv.whatsOn' => '지금 방송 중',
 			'liveTv.watchChannel' => '채널 시청',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => '즐겨찾기',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',
 			'collections.unknownLibrarySection' => '삭제할 수 없습니다: 알 수 없는 미디어 라이브러리 섹션입니다',
 			'collections.deleteCollection' => '컬렉션 삭제',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => '"${title}"을(를) 삭제 하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
 			'collections.deleted' => '컬렉션 삭제됨',
 			'collections.deleteFailed' => '컬렉션 삭제 실패',

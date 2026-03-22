@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../models/plex_home_user.dart';
@@ -37,6 +38,11 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
 
     return PopScope(
       canPop: !widget.requireSelection || _allowPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && widget.requireSelection) {
+          SystemNavigator.pop();
+        }
+      },
       child: Consumer<UserProfileProvider>(
         builder: (context, userProvider, child) {
           final users = userProvider.home?.users ?? [];
@@ -44,6 +50,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
           return FocusedScrollScaffold(
             title: Text(t.screens.switchProfile),
             automaticallyImplyLeading: !widget.requireSelection,
+            onBackPressed: widget.requireSelection ? () => SystemNavigator.pop() : null,
             slivers: [
               if (userProvider.isLoading)
                 const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))

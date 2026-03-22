@@ -253,6 +253,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Personalizza l\'aspetto dei sottotitoli';
 	@override String get smallSkipDuration => 'Durata skip breve';
 	@override String get largeSkipDuration => 'Durata skip lungo';
+	@override String get rewindOnResume => 'Riavvolgi alla ripresa';
+	@override String get rewindOnResumeDescription => 'Riavvolgi di questa quantità alla ripresa della riproduzione';
 	@override String secondsUnit({required Object seconds}) => '${seconds} secondi';
 	@override String get defaultSleepTimer => 'Timer spegnimento predefinito';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuti';
@@ -491,6 +493,10 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Esci da schermo intero';
 	@override String get alwaysOnTopButton => 'Sempre in primo piano';
 	@override String get rotationLockButton => 'Blocco rotazione';
+	@override String get lockScreen => 'Blocca schermo';
+	@override String get unlockScreen => 'Sblocca schermo';
+	@override String get screenLockButton => 'Blocco schermo';
+	@override String get longPressToUnlock => 'Premi a lungo per sbloccare';
 	@override String get timelineSlider => 'Timeline video';
 	@override String get volumeSlider => 'Livello volume';
 	@override String endsAt({required Object time}) => 'Finisce alle ${time}';
@@ -1404,6 +1410,8 @@ extension on TranslationsIt {
 			'settings.subtitleStylingDescription' => 'Personalizza l\'aspetto dei sottotitoli',
 			'settings.smallSkipDuration' => 'Durata skip breve',
 			'settings.largeSkipDuration' => 'Durata skip lungo',
+			'settings.rewindOnResume' => 'Riavvolgi alla ripresa',
+			'settings.rewindOnResumeDescription' => 'Riavvolgi di questa quantità alla ripresa della riproduzione',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} secondi',
 			'settings.defaultSleepTimer' => 'Timer spegnimento predefinito',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuti',
@@ -1597,6 +1605,10 @@ extension on TranslationsIt {
 			'videoControls.exitFullscreenButton' => 'Esci da schermo intero',
 			'videoControls.alwaysOnTopButton' => 'Sempre in primo piano',
 			'videoControls.rotationLockButton' => 'Blocco rotazione',
+			'videoControls.lockScreen' => 'Blocca schermo',
+			'videoControls.unlockScreen' => 'Sblocca schermo',
+			'videoControls.screenLockButton' => 'Blocco schermo',
+			'videoControls.longPressToUnlock' => 'Premi a lungo per sbloccare',
 			'videoControls.timelineSlider' => 'Timeline video',
 			'videoControls.volumeSlider' => 'Livello volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Finisce alle ${time}',
@@ -1785,14 +1797,14 @@ extension on TranslationsIt {
 			'liveTv.lateNight' => 'Notte tarda',
 			'liveTv.whatsOn' => 'In onda ora',
 			'liveTv.watchChannel' => 'Guarda canale',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Preferiti',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',
 			'downloads.movies' => 'Film',
 			'downloads.noDownloads' => 'Nessun download',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noDownloadsDescription' => 'I contenuti scaricati appariranno qui per la visualizzazione offline',
 			'downloads.downloadNow' => 'Scarica',
 			'downloads.deleteDownload' => 'Elimina download',

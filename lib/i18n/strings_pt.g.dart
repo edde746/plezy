@@ -253,6 +253,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Personalizar aparência das legendas';
 	@override String get smallSkipDuration => 'Duração do Avanço Curto';
 	@override String get largeSkipDuration => 'Duração do Avanço Longo';
+	@override String get rewindOnResume => 'Rebobinar ao retomar';
+	@override String get rewindOnResumeDescription => 'Rebobinar esta quantidade ao retomar a reprodução';
 	@override String secondsUnit({required Object seconds}) => '${seconds} segundos';
 	@override String get defaultSleepTimer => 'Timer de Sono Padrão';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutos';
@@ -491,6 +493,10 @@ class _TranslationsVideoControlsPt implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Sair da tela cheia';
 	@override String get alwaysOnTopButton => 'Sempre no topo';
 	@override String get rotationLockButton => 'Travar rotação';
+	@override String get lockScreen => 'Travar tela';
+	@override String get unlockScreen => 'Destravar tela';
+	@override String get screenLockButton => 'Travar tela';
+	@override String get longPressToUnlock => 'Pressione e segure para destravar';
 	@override String get timelineSlider => 'Linha do tempo do vídeo';
 	@override String get volumeSlider => 'Nível de volume';
 	@override String endsAt({required Object time}) => 'Termina às ${time}';
@@ -1404,6 +1410,8 @@ extension on TranslationsPt {
 			'settings.subtitleStylingDescription' => 'Personalizar aparência das legendas',
 			'settings.smallSkipDuration' => 'Duração do Avanço Curto',
 			'settings.largeSkipDuration' => 'Duração do Avanço Longo',
+			'settings.rewindOnResume' => 'Rebobinar ao retomar',
+			'settings.rewindOnResumeDescription' => 'Rebobinar esta quantidade ao retomar a reprodução',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} segundos',
 			'settings.defaultSleepTimer' => 'Timer de Sono Padrão',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutos',
@@ -1597,6 +1605,10 @@ extension on TranslationsPt {
 			'videoControls.exitFullscreenButton' => 'Sair da tela cheia',
 			'videoControls.alwaysOnTopButton' => 'Sempre no topo',
 			'videoControls.rotationLockButton' => 'Travar rotação',
+			'videoControls.lockScreen' => 'Travar tela',
+			'videoControls.unlockScreen' => 'Destravar tela',
+			'videoControls.screenLockButton' => 'Travar tela',
+			'videoControls.longPressToUnlock' => 'Pressione e segure para destravar',
 			'videoControls.timelineSlider' => 'Linha do tempo do vídeo',
 			'videoControls.volumeSlider' => 'Nível de volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Termina às ${time}',
@@ -1785,14 +1797,14 @@ extension on TranslationsPt {
 			'liveTv.lateNight' => 'Madrugada',
 			'liveTv.whatsOn' => 'O que Está Passando',
 			'liveTv.watchChannel' => 'Assistir Canal',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favoritos',
 			'collections.title' => 'Coleções',
 			'collections.collection' => 'Coleção',
 			'collections.empty' => 'A coleção está vazia',
 			'collections.unknownLibrarySection' => 'Não é possível excluir: Seção de biblioteca desconhecida',
 			'collections.deleteCollection' => 'Excluir Coleção',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Tem certeza que deseja excluir "${title}"? Esta ação não pode ser desfeita.',
 			'collections.deleted' => 'Coleção excluída',
 			'collections.deleteFailed' => 'Falha ao excluir coleção',

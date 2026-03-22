@@ -13,11 +13,13 @@ class TrackControlsState {
   final int audioSyncOffset;
   final int subtitleSyncOffset;
   final bool isRotationLocked;
+  final bool isScreenLocked;
   final bool isFullscreen;
   final bool isAlwaysOnTop;
   final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
   final VoidCallback? onToggleRotationLock;
+  final VoidCallback? onToggleScreenLock;
   final VoidCallback? onToggleFullscreen;
   final VoidCallback? onToggleAlwaysOnTop;
   final Function(int)? onSwitchVersion;
@@ -46,11 +48,13 @@ class TrackControlsState {
     this.audioSyncOffset = 0,
     this.subtitleSyncOffset = 0,
     this.isRotationLocked = false,
+    this.isScreenLocked = false,
     this.isFullscreen = false,
     this.isAlwaysOnTop = false,
     this.onTogglePIPMode,
     this.onCycleBoxFitMode,
     this.onToggleRotationLock,
+    this.onToggleScreenLock,
     this.onToggleFullscreen,
     this.onToggleAlwaysOnTop,
     this.onSwitchVersion,

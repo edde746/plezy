@@ -253,6 +253,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Tilpass utseendet på undertekster';
 	@override String get smallSkipDuration => 'Kort hoppvarighet';
 	@override String get largeSkipDuration => 'Lang hoppvarighet';
+	@override String get rewindOnResume => 'Spol tilbake ved gjenopptakelse';
+	@override String get rewindOnResumeDescription => 'Spol tilbake med denne mengden ved gjenopptakelse av avspilling';
 	@override String secondsUnit({required Object seconds}) => '${seconds} sekunder';
 	@override String get defaultSleepTimer => 'Standard søvntimer';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutter';
@@ -491,6 +493,10 @@ class _TranslationsVideoControlsNb implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Avslutt fullskjerm';
 	@override String get alwaysOnTopButton => 'Alltid øverst';
 	@override String get rotationLockButton => 'Rotasjonslås';
+	@override String get lockScreen => 'Lås skjerm';
+	@override String get unlockScreen => 'Lås opp skjerm';
+	@override String get screenLockButton => 'Skjermlås';
+	@override String get longPressToUnlock => 'Langt trykk for å låse opp';
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Volumnivå';
 	@override String endsAt({required Object time}) => 'Slutter kl. ${time}';
@@ -1404,6 +1410,8 @@ extension on TranslationsNb {
 			'settings.subtitleStylingDescription' => 'Tilpass utseendet på undertekster',
 			'settings.smallSkipDuration' => 'Kort hoppvarighet',
 			'settings.largeSkipDuration' => 'Lang hoppvarighet',
+			'settings.rewindOnResume' => 'Spol tilbake ved gjenopptakelse',
+			'settings.rewindOnResumeDescription' => 'Spol tilbake med denne mengden ved gjenopptakelse av avspilling',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} sekunder',
 			'settings.defaultSleepTimer' => 'Standard søvntimer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutter',
@@ -1597,6 +1605,10 @@ extension on TranslationsNb {
 			'videoControls.exitFullscreenButton' => 'Avslutt fullskjerm',
 			'videoControls.alwaysOnTopButton' => 'Alltid øverst',
 			'videoControls.rotationLockButton' => 'Rotasjonslås',
+			'videoControls.lockScreen' => 'Lås skjerm',
+			'videoControls.unlockScreen' => 'Lås opp skjerm',
+			'videoControls.screenLockButton' => 'Skjermlås',
+			'videoControls.longPressToUnlock' => 'Langt trykk for å låse opp',
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Volumnivå',
 			'videoControls.endsAt' => ({required Object time}) => 'Slutter kl. ${time}',
@@ -1785,14 +1797,14 @@ extension on TranslationsNb {
 			'liveTv.lateNight' => 'Sen kveld',
 			'liveTv.whatsOn' => 'Hva går nå',
 			'liveTv.watchChannel' => 'Se kanal',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favoritter',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',
 			'collections.unknownLibrarySection' => 'Kan ikke slette: Ukjent bibliotekseksjon',
 			'collections.deleteCollection' => 'Slett samling',
-			_ => null,
-		} ?? switch (path) {
 			'collections.deleteConfirm' => ({required Object title}) => 'Er du sikker på at du vil slette "${title}"? Denne handlingen kan ikke angres.',
 			'collections.deleted' => 'Samling slettet',
 			'collections.deleteFailed' => 'Kunne ikke slette samling',

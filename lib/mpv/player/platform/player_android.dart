@@ -251,6 +251,11 @@ class PlayerAndroid extends PlayerBase {
         return (state.duration.inMilliseconds / 1000.0).toString();
       case 'seekable':
         return state.seekable ? 'yes' : 'no';
+      // Video frame rate - query from ExoPlayer stats
+      case 'container-fps':
+        final fpsStats = await getStats();
+        final fps = fpsStats['videoFps'];
+        return fps?.toString();
       // Video dimensions - query from ExoPlayer stats
       case 'width':
       case 'dwidth':
