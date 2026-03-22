@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "字幕の外観をカスタマイズ",
     "smallSkipDuration": "短いスキップ時間",
     "largeSkipDuration": "長いスキップ時間",
+    "rewindOnResume": "再開時に巻き戻し",
+    "rewindOnResumeDescription": "再生再開時にこの秒数分巻き戻す",
     "secondsUnit": "${seconds}秒",
     "defaultSleepTimer": "デフォルトスリープタイマー",
     "minutesUnit": "${minutes}分",

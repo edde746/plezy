@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Personalizar la apariencia de los subtítulos",
     "smallSkipDuration": "Salto pequeño",
     "largeSkipDuration": "Salto grande",
+    "rewindOnResume": "Rebobinar al reanudar",
+    "rewindOnResumeDescription": "Rebobinar esta cantidad al reanudar la reproducción",
     "secondsUnit": "${seconds} segundos",
     "defaultSleepTimer": "Temporizador de apagado",
     "minutesUnit": "${minutes} minutos",

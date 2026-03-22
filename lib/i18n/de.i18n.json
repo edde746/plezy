@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Aussehen von Untertiteln anpassen",
     "smallSkipDuration": "Kleine Sprungdauer",
     "largeSkipDuration": "Große Sprungdauer",
+    "rewindOnResume": "Zurückspulen bei Fortsetzung",
+    "rewindOnResumeDescription": "Um diesen Betrag zurückspulen, wenn die Wiedergabe fortgesetzt wird",
     "secondsUnit": "${seconds} Sekunden",
     "defaultSleepTimer": "Standard-Sleep-Timer",
     "minutesUnit": "${minutes} Minuten",

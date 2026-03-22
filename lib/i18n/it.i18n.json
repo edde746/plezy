@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Personalizza l'aspetto dei sottotitoli",
     "smallSkipDuration": "Durata skip breve",
     "largeSkipDuration": "Durata skip lungo",
+    "rewindOnResume": "Riavvolgi alla ripresa",
+    "rewindOnResumeDescription": "Riavvolgi di questa quantità alla ripresa della riproduzione",
     "secondsUnit": "${seconds} secondi",
     "defaultSleepTimer": "Timer spegnimento predefinito",
     "minutesUnit": "${minutes} minuti",

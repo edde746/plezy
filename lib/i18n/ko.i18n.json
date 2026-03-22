@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "자막의 외형을 사용자 설정",
     "smallSkipDuration": "짧은 건너뛰기 시간",
     "largeSkipDuration": "긴 건너뛰기 시간",
+    "rewindOnResume": "재개 시 되감기",
+    "rewindOnResumeDescription": "재생 재개 시 이 시간만큼 되감기",
     "secondsUnit": "${seconds}초",
     "defaultSleepTimer": "기본 취침 타이머",
     "minutesUnit": "${minutes}분",

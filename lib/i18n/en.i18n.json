@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Customize subtitle appearance",
     "smallSkipDuration": "Small Skip Duration",
     "largeSkipDuration": "Large Skip Duration",
+    "rewindOnResume": "Rewind on Resume",
+    "rewindOnResumeDescription": "Rewind by this amount when resuming playback",
     "secondsUnit": "${seconds} seconds",
     "defaultSleepTimer": "Default Sleep Timer",
     "minutesUnit": "${minutes} minutes",

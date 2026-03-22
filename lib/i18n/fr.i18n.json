@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Personnaliser l'apparence des sous-titres",
     "smallSkipDuration": "Durée du petit saut",
     "largeSkipDuration": "Durée du grand saut",
+    "rewindOnResume": "Rembobiner à la reprise",
+    "rewindOnResumeDescription": "Rembobiner de cette durée lors de la reprise de la lecture",
     "secondsUnit": "${seconds} secondes",
     "defaultSleepTimer": "Minuterie de mise en veille par défaut",
     "minutesUnit": "${minutes} minutes",

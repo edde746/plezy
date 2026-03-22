@@ -253,6 +253,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Tilpass utseendet på undertekster';
 	@override String get smallSkipDuration => 'Kort hoppvarighet';
 	@override String get largeSkipDuration => 'Lang hoppvarighet';
+	@override String get rewindOnResume => 'Spol tilbake ved gjenopptakelse';
+	@override String get rewindOnResumeDescription => 'Spol tilbake med denne mengden ved gjenopptakelse av avspilling';
 	@override String secondsUnit({required Object seconds}) => '${seconds} sekunder';
 	@override String get defaultSleepTimer => 'Standard søvntimer';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutter';
@@ -1404,6 +1406,8 @@ extension on TranslationsNb {
 			'settings.subtitleStylingDescription' => 'Tilpass utseendet på undertekster',
 			'settings.smallSkipDuration' => 'Kort hoppvarighet',
 			'settings.largeSkipDuration' => 'Lang hoppvarighet',
+			'settings.rewindOnResume' => 'Spol tilbake ved gjenopptakelse',
+			'settings.rewindOnResumeDescription' => 'Spol tilbake med denne mengden ved gjenopptakelse av avspilling',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} sekunder',
 			'settings.defaultSleepTimer' => 'Standard søvntimer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutter',
@@ -1789,10 +1793,10 @@ extension on TranslationsNb {
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',
-			'collections.unknownLibrarySection' => 'Kan ikke slette: Ukjent bibliotekseksjon',
-			'collections.deleteCollection' => 'Slett samling',
 			_ => null,
 		} ?? switch (path) {
+			'collections.unknownLibrarySection' => 'Kan ikke slette: Ukjent bibliotekseksjon',
+			'collections.deleteCollection' => 'Slett samling',
 			'collections.deleteConfirm' => ({required Object title}) => 'Er du sikker på at du vil slette "${title}"? Denne handlingen kan ikke angres.',
 			'collections.deleted' => 'Samling slettet',
 			'collections.deleteFailed' => 'Kunne ikke slette samling',

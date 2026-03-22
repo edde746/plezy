@@ -253,6 +253,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => '调整字幕外观';
 	@override String get smallSkipDuration => '短跳过时长';
 	@override String get largeSkipDuration => '长跳过时长';
+	@override String get rewindOnResume => '恢复时回退';
+	@override String get rewindOnResumeDescription => '恢复播放时回退此时长';
 	@override String secondsUnit({required Object seconds}) => '${seconds} 秒';
 	@override String get defaultSleepTimer => '默认睡眠定时器';
 	@override String minutesUnit({required Object minutes}) => '${minutes} 分钟';
@@ -1404,6 +1406,8 @@ extension on TranslationsZh {
 			'settings.subtitleStylingDescription' => '调整字幕外观',
 			'settings.smallSkipDuration' => '短跳过时长',
 			'settings.largeSkipDuration' => '长跳过时长',
+			'settings.rewindOnResume' => '恢复时回退',
+			'settings.rewindOnResumeDescription' => '恢复播放时回退此时长',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} 秒',
 			'settings.defaultSleepTimer' => '默认睡眠定时器',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} 分钟',
@@ -1789,10 +1793,10 @@ extension on TranslationsZh {
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
-			'downloads.movies' => '电影',
-			'downloads.noDownloads' => '暂无下载',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => '电影',
+			'downloads.noDownloads' => '暂无下载',
 			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',
 			'downloads.downloadNow' => '下载',
 			'downloads.deleteDownload' => '删除下载',

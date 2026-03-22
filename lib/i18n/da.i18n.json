@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Tilpas underteksters udseende",
     "smallSkipDuration": "Kort spring-varighed",
     "largeSkipDuration": "Lang spring-varighed",
+    "rewindOnResume": "Spol tilbage ved genoptagelse",
+    "rewindOnResumeDescription": "Spol tilbage med denne mængde ved genoptagelse af afspilning",
     "secondsUnit": "${seconds} sekunder",
     "defaultSleepTimer": "Standard sove-timer",
     "minutesUnit": "${minutes} minutter",

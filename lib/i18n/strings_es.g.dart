@@ -253,6 +253,8 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Personalizar la apariencia de los subtítulos';
 	@override String get smallSkipDuration => 'Salto pequeño';
 	@override String get largeSkipDuration => 'Salto grande';
+	@override String get rewindOnResume => 'Rebobinar al reanudar';
+	@override String get rewindOnResumeDescription => 'Rebobinar esta cantidad al reanudar la reproducción';
 	@override String secondsUnit({required Object seconds}) => '${seconds} segundos';
 	@override String get defaultSleepTimer => 'Temporizador de apagado';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutos';
@@ -1404,6 +1406,8 @@ extension on TranslationsEs {
 			'settings.subtitleStylingDescription' => 'Personalizar la apariencia de los subtítulos',
 			'settings.smallSkipDuration' => 'Salto pequeño',
 			'settings.largeSkipDuration' => 'Salto grande',
+			'settings.rewindOnResume' => 'Rebobinar al reanudar',
+			'settings.rewindOnResumeDescription' => 'Rebobinar esta cantidad al reanudar la reproducción',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} segundos',
 			'settings.defaultSleepTimer' => 'Temporizador de apagado',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutos',
@@ -1789,10 +1793,10 @@ extension on TranslationsEs {
 			'collections.title' => 'Colecciones',
 			'collections.collection' => 'Colección',
 			'collections.empty' => 'La colección está vacía',
-			'collections.unknownLibrarySection' => 'No se puede eliminar: Sección de biblioteca desconocida',
-			'collections.deleteCollection' => 'Eliminar Colección',
 			_ => null,
 		} ?? switch (path) {
+			'collections.unknownLibrarySection' => 'No se puede eliminar: Sección de biblioteca desconocida',
+			'collections.deleteCollection' => 'Eliminar Colección',
 			'collections.deleteConfirm' => ({required Object title}) => '¿Estás seguro de que quieres eliminar "${title}"? Esta acción no se puede deshacer.',
 			'collections.deleted' => 'Colección eliminada',
 			'collections.deleteFailed' => 'Error al eliminar la colección',

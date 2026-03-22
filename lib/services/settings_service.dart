@@ -37,6 +37,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyEpisodePosterMode = 'episode_poster_mode';
   static const String _keySeekTimeSmall = 'seek_time_small';
   static const String _keySeekTimeLarge = 'seek_time_large';
+  static const String _keyRewindOnResume = 'rewind_on_resume';
   static const String _keyMediaVersionPreferences = 'media_version_preferences';
   static const String _keyShowHeroSection = 'show_hero_section';
   static const String _keyUseGlobalHubs = 'use_global_hubs';
@@ -284,6 +285,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   int getSeekTimeLarge() {
     return prefs.getInt(_keySeekTimeLarge) ?? 30; // Default: 30 seconds
+  }
+
+  // Rewind on Resume (in seconds, 0 = disabled)
+  Future<void> setRewindOnResume(int seconds) async {
+    await prefs.setInt(_keyRewindOnResume, seconds);
+  }
+
+  int getRewindOnResume() {
+    return prefs.getInt(_keyRewindOnResume) ?? 0; // Default: 0 (disabled)
   }
 
   // Sleep Timer Duration (in minutes)

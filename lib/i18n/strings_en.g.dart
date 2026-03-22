@@ -507,6 +507,12 @@ class TranslationsSettingsEn {
 	/// en: 'Large Skip Duration'
 	String get largeSkipDuration => 'Large Skip Duration';
 
+	/// en: 'Rewind on Resume'
+	String get rewindOnResume => 'Rewind on Resume';
+
+	/// en: 'Rewind by this amount when resuming playback'
+	String get rewindOnResumeDescription => 'Rewind by this amount when resuming playback';
+
 	/// en: '${seconds} seconds'
 	String secondsUnit({required Object seconds}) => '${seconds} seconds';
 
@@ -2995,6 +3001,8 @@ extension on Translations {
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
 			'settings.largeSkipDuration' => 'Large Skip Duration',
+			'settings.rewindOnResume' => 'Rewind on Resume',
+			'settings.rewindOnResumeDescription' => 'Rewind by this amount when resuming playback',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconds',
 			'settings.defaultSleepTimer' => 'Default Sleep Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
@@ -3380,10 +3388,10 @@ extension on Translations {
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
-			'collections.unknownLibrarySection' => 'Cannot delete: Unknown library section',
-			'collections.deleteCollection' => 'Delete Collection',
 			_ => null,
 		} ?? switch (path) {
+			'collections.unknownLibrarySection' => 'Cannot delete: Unknown library section',
+			'collections.deleteCollection' => 'Delete Collection',
 			'collections.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.',
 			'collections.deleted' => 'Collection deleted',
 			'collections.deleteFailed' => 'Failed to delete collection',

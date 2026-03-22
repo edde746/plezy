@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Anpassa undertextutseende",
     "smallSkipDuration": "Kort hoppvaraktighet",
     "largeSkipDuration": "Lång hoppvaraktighet",
+    "rewindOnResume": "Spola tillbaka vid återupptagning",
+    "rewindOnResumeDescription": "Spola tillbaka med denna tid vid återupptagning av uppspelning",
     "secondsUnit": "${seconds} sekunder",
     "defaultSleepTimer": "Standard sovtimer",
     "minutesUnit": "${minutes} minuter",

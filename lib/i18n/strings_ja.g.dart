@@ -253,6 +253,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => '字幕の外観をカスタマイズ';
 	@override String get smallSkipDuration => '短いスキップ時間';
 	@override String get largeSkipDuration => '長いスキップ時間';
+	@override String get rewindOnResume => '再開時に巻き戻し';
+	@override String get rewindOnResumeDescription => '再生再開時にこの秒数分巻き戻す';
 	@override String secondsUnit({required Object seconds}) => '${seconds}秒';
 	@override String get defaultSleepTimer => 'デフォルトスリープタイマー';
 	@override String minutesUnit({required Object minutes}) => '${minutes}分';
@@ -1404,6 +1406,8 @@ extension on TranslationsJa {
 			'settings.subtitleStylingDescription' => '字幕の外観をカスタマイズ',
 			'settings.smallSkipDuration' => '短いスキップ時間',
 			'settings.largeSkipDuration' => '長いスキップ時間',
+			'settings.rewindOnResume' => '再開時に巻き戻し',
+			'settings.rewindOnResumeDescription' => '再生再開時にこの秒数分巻き戻す',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds}秒',
 			'settings.defaultSleepTimer' => 'デフォルトスリープタイマー',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}分',
@@ -1789,10 +1793,10 @@ extension on TranslationsJa {
 			'collections.title' => 'コレクション',
 			'collections.collection' => 'コレクション',
 			'collections.empty' => 'コレクションは空です',
-			'collections.unknownLibrarySection' => '削除できません：不明なライブラリセクション',
-			'collections.deleteCollection' => 'コレクションを削除',
 			_ => null,
 		} ?? switch (path) {
+			'collections.unknownLibrarySection' => '削除できません：不明なライブラリセクション',
+			'collections.deleteCollection' => 'コレクションを削除',
 			'collections.deleteConfirm' => ({required Object title}) => '"${title}"を削除してもよろしいですか？この操作は元に戻せません。',
 			'collections.deleted' => 'コレクションを削除しました',
 			'collections.deleteFailed' => 'コレクションの削除に失敗しました',

@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Pas ondertitel uiterlijk aan",
     "smallSkipDuration": "Korte skip duur",
     "largeSkipDuration": "Lange skip duur",
+    "rewindOnResume": "Terugspoelen bij hervatten",
+    "rewindOnResumeDescription": "Spoel dit aantal seconden terug bij het hervatten van afspelen",
     "secondsUnit": "${seconds} seconden",
     "defaultSleepTimer": "Standaard slaap timer",
     "minutesUnit": "bij ${minutes} minuten",

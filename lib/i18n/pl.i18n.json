@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Dostosuj wygląd napisów",
     "smallSkipDuration": "Krótki skok",
     "largeSkipDuration": "Długi skok",
+    "rewindOnResume": "Przewiń przy wznowieniu",
+    "rewindOnResumeDescription": "Przewiń o tę wartość przy wznawianiu odtwarzania",
     "secondsUnit": "${seconds} sekund",
     "defaultSleepTimer": "Domyślny wyłącznik czasowy",
     "minutesUnit": "${minutes} minut",

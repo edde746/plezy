@@ -221,6 +221,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
   int _seekTimeSmall = 10; // Default, loaded from settings
+  int _rewindOnResume = 0; // Default, loaded from settings
   int _audioSyncOffset = 0; // Default, loaded from settings
   int _subtitleSyncOffset = 0; // Default, loaded from settings
   bool _isRotationLocked = true; // Default locked (landscape only)
@@ -553,6 +554,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (mounted) {
       setState(() {
         _seekTimeSmall = settingsService.getSeekTimeSmall();
+        _rewindOnResume = settingsService.getRewindOnResume();
         _audioSyncOffset = settingsService.getAudioSyncOffset();
         _subtitleSyncOffset = settingsService.getSubtitleSyncOffset();
         _isRotationLocked = settingsService.getRotationLocked();
@@ -1167,6 +1169,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
+  Future<void> _playOrPause() async {
+    if (!widget.player.state.playing && _rewindOnResume > 0) {
+      final target = widget.player.state.position - Duration(seconds: _rewindOnResume);
+      final clamped = clampSeekPosition(widget.player, target);
+      await widget.player.seek(clamped);
+    }
+    await widget.player.playOrPause();
+  }
+
   /// Throttled seek for timeline slider - executes immediately then throttles to 200ms
   void _throttledSeek(Duration position) => _seekThrottle([position]);
 
@@ -1179,7 +1190,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Handle tap in skip zone for desktop mode
   void _handleTapInSkipZoneDesktop() {
     if (widget.canControl && _clickVideoTogglesPlayback) {
-      widget.player.playOrPause();
+      _playOrPause();
     }
 
     _toggleControls();
@@ -1307,7 +1318,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
       // Always perform the single-click behavior immediately
       if (widget.canControl && _clickVideoTogglesPlayback) {
-        widget.player.playOrPause();
+        _playOrPause();
       } else {
         _toggleControls();
       }
@@ -1582,7 +1593,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     // Handle play/pause globally - works regardless of focus
     if (_isPlayPauseActivation(event)) {
-      widget.player.playOrPause();
+      _playOrPause();
       _showControlsWithFocus(requestFocus: false);
       return true; // Event handled, stop propagation
     }
@@ -1773,7 +1784,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             if (isPlayPauseKey) {
               if (_videoPlayerNavigationEnabled || isMobile) {
                 if (_isPlayPauseActivation(event)) {
-                  widget.player.playOrPause();
+                  _playOrPause();
                   _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
                 }
               }
@@ -1805,7 +1816,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             // Handle Select/Enter when controls are hidden: pause and show controls
             // Only intercept if this Focus node itself has primary focus (not a descendant)
             if (_isSelectKey(key) && !_showControls && _focusNode.hasPrimaryFocus) {
-              widget.player.playOrPause();
+              _playOrPause();
               _showControlsWithFocus();
               return KeyEventResult.handled;
             }

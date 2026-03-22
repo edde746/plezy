@@ -202,6 +202,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _wasPlayingBeforeInactive = false;
   bool _hiddenForBackground = false;
   bool _autoPipEnabled = false;
+  int _rewindOnResume = 0;
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// iOS auto-PiP is system-initiated during the background transition, so
@@ -396,6 +397,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final settingsService = await SettingsService.getInstance();
       _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
       _autoPipEnabled = settingsService.getAutoPip();
+      _rewindOnResume = settingsService.getRewindOnResume();
       final bufferSizeMB = settingsService.getBufferSize();
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
@@ -757,7 +759,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (event is PlayEvent) {
         appLogger.d('Media control: Play event received');
-        currentPlayer!.play();
+        _seekBackForRewind(currentPlayer!);
+        currentPlayer.play();
         _wasPlayingBeforeInactive = false;
         _updateMediaControlsPlaybackState();
       } else if (event is PauseEvent) {
@@ -769,6 +772,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (currentPlayer!.state.playing) {
           currentPlayer.pause();
         } else {
+          _seekBackForRewind(currentPlayer);
           currentPlayer.play();
           _wasPlayingBeforeInactive = false;
         }
@@ -1949,6 +1953,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
   }
 
+  Future<void> _seekBackForRewind(Player p) async {
+    if (_rewindOnResume <= 0) return;
+    final target = p.state.position - Duration(seconds: _rewindOnResume);
+    await p.seek(clampSeekPosition(p, target));
+  }
+
   Future<void> _restoreMediaControlsAfterResume() async {
     if (!_isPlayerInitialized || !mounted) return;
 
@@ -1970,6 +1980,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     if (_wasPlayingBeforeInactive) {
       try {
+        await _seekBackForRewind(currentPlayer);
         await currentPlayer.play();
         appLogger.d('Video resumed after returning from inactive state');
       } catch (e) {

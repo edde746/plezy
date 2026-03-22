@@ -253,6 +253,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Dostosuj wygląd napisów';
 	@override String get smallSkipDuration => 'Krótki skok';
 	@override String get largeSkipDuration => 'Długi skok';
+	@override String get rewindOnResume => 'Przewiń przy wznowieniu';
+	@override String get rewindOnResumeDescription => 'Przewiń o tę wartość przy wznawianiu odtwarzania';
 	@override String secondsUnit({required Object seconds}) => '${seconds} sekund';
 	@override String get defaultSleepTimer => 'Domyślny wyłącznik czasowy';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minut';
@@ -1404,6 +1406,8 @@ extension on TranslationsPl {
 			'settings.subtitleStylingDescription' => 'Dostosuj wygląd napisów',
 			'settings.smallSkipDuration' => 'Krótki skok',
 			'settings.largeSkipDuration' => 'Długi skok',
+			'settings.rewindOnResume' => 'Przewiń przy wznowieniu',
+			'settings.rewindOnResumeDescription' => 'Przewiń o tę wartość przy wznawianiu odtwarzania',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} sekund',
 			'settings.defaultSleepTimer' => 'Domyślny wyłącznik czasowy',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minut',
@@ -1789,10 +1793,10 @@ extension on TranslationsPl {
 			'collections.title' => 'Kolekcje',
 			'collections.collection' => 'Kolekcja',
 			'collections.empty' => 'Kolekcja jest pusta',
-			'collections.unknownLibrarySection' => 'Nie można usunąć: Nieznana sekcja biblioteki',
-			'collections.deleteCollection' => 'Usuń kolekcję',
 			_ => null,
 		} ?? switch (path) {
+			'collections.unknownLibrarySection' => 'Nie można usunąć: Nieznana sekcja biblioteki',
+			'collections.deleteCollection' => 'Usuń kolekcję',
 			'collections.deleteConfirm' => ({required Object title}) => 'Czy na pewno chcesz usunąć "${title}"? Tej operacji nie można cofnąć.',
 			'collections.deleted' => 'Kolekcja usunięta',
 			'collections.deleteFailed' => 'Nie udało się usunąć kolekcji',

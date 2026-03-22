@@ -253,6 +253,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Anpassa undertextutseende';
 	@override String get smallSkipDuration => 'Kort hoppvaraktighet';
 	@override String get largeSkipDuration => 'Lång hoppvaraktighet';
+	@override String get rewindOnResume => 'Spola tillbaka vid återupptagning';
+	@override String get rewindOnResumeDescription => 'Spola tillbaka med denna tid vid återupptagning av uppspelning';
 	@override String secondsUnit({required Object seconds}) => '${seconds} sekunder';
 	@override String get defaultSleepTimer => 'Standard sovtimer';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuter';
@@ -1404,6 +1406,8 @@ extension on TranslationsSv {
 			'settings.subtitleStylingDescription' => 'Anpassa undertextutseende',
 			'settings.smallSkipDuration' => 'Kort hoppvaraktighet',
 			'settings.largeSkipDuration' => 'Lång hoppvaraktighet',
+			'settings.rewindOnResume' => 'Spola tillbaka vid återupptagning',
+			'settings.rewindOnResumeDescription' => 'Spola tillbaka med denna tid vid återupptagning av uppspelning',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} sekunder',
 			'settings.defaultSleepTimer' => 'Standard sovtimer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuter',
@@ -1789,10 +1793,10 @@ extension on TranslationsSv {
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
-			'downloads.movies' => 'Filmer',
-			'downloads.noDownloads' => 'Inga nedladdningar ännu',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Filmer',
+			'downloads.noDownloads' => 'Inga nedladdningar ännu',
 			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
 			'downloads.downloadNow' => 'Ladda ner',
 			'downloads.deleteDownload' => 'Ta bort nedladdning',

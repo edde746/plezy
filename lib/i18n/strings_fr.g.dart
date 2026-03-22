@@ -253,6 +253,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Personnaliser l\'apparence des sous-titres';
 	@override String get smallSkipDuration => 'Durée du petit saut';
 	@override String get largeSkipDuration => 'Durée du grand saut';
+	@override String get rewindOnResume => 'Rembobiner à la reprise';
+	@override String get rewindOnResumeDescription => 'Rembobiner de cette durée lors de la reprise de la lecture';
 	@override String secondsUnit({required Object seconds}) => '${seconds} secondes';
 	@override String get defaultSleepTimer => 'Minuterie de mise en veille par défaut';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutes';
@@ -1404,6 +1406,8 @@ extension on TranslationsFr {
 			'settings.subtitleStylingDescription' => 'Personnaliser l\'apparence des sous-titres',
 			'settings.smallSkipDuration' => 'Durée du petit saut',
 			'settings.largeSkipDuration' => 'Durée du grand saut',
+			'settings.rewindOnResume' => 'Rembobiner à la reprise',
+			'settings.rewindOnResumeDescription' => 'Rembobiner de cette durée lors de la reprise de la lecture',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} secondes',
 			'settings.defaultSleepTimer' => 'Minuterie de mise en veille par défaut',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
@@ -1789,10 +1793,10 @@ extension on TranslationsFr {
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'La collection est vide',
-			'collections.unknownLibrarySection' => 'Impossible de supprimer : section de bibliothèque inconnue',
-			'collections.deleteCollection' => 'Supprimer la collection',
 			_ => null,
 		} ?? switch (path) {
+			'collections.unknownLibrarySection' => 'Impossible de supprimer : section de bibliothèque inconnue',
+			'collections.deleteCollection' => 'Supprimer la collection',
 			'collections.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cette action ne peut pas être annulée.',
 			'collections.deleted' => 'Collection supprimée',
 			'collections.deleteFailed' => 'Échec de la suppression de la collection',

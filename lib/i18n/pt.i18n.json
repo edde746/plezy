@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "Personalizar aparência das legendas",
     "smallSkipDuration": "Duração do Avanço Curto",
     "largeSkipDuration": "Duração do Avanço Longo",
+    "rewindOnResume": "Rebobinar ao retomar",
+    "rewindOnResumeDescription": "Rebobinar esta quantidade ao retomar a reprodução",
     "secondsUnit": "${seconds} segundos",
     "defaultSleepTimer": "Timer de Sono Padrão",
     "minutesUnit": "${minutes} minutos",

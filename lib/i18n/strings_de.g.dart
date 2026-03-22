@@ -253,6 +253,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get subtitleStylingDescription => 'Aussehen von Untertiteln anpassen';
 	@override String get smallSkipDuration => 'Kleine Sprungdauer';
 	@override String get largeSkipDuration => 'Große Sprungdauer';
+	@override String get rewindOnResume => 'Zurückspulen bei Fortsetzung';
+	@override String get rewindOnResumeDescription => 'Um diesen Betrag zurückspulen, wenn die Wiedergabe fortgesetzt wird';
 	@override String secondsUnit({required Object seconds}) => '${seconds} Sekunden';
 	@override String get defaultSleepTimer => 'Standard-Sleep-Timer';
 	@override String minutesUnit({required Object minutes}) => '${minutes} Minuten';
@@ -1404,6 +1406,8 @@ extension on TranslationsDe {
 			'settings.subtitleStylingDescription' => 'Aussehen von Untertiteln anpassen',
 			'settings.smallSkipDuration' => 'Kleine Sprungdauer',
 			'settings.largeSkipDuration' => 'Große Sprungdauer',
+			'settings.rewindOnResume' => 'Zurückspulen bei Fortsetzung',
+			'settings.rewindOnResumeDescription' => 'Um diesen Betrag zurückspulen, wenn die Wiedergabe fortgesetzt wird',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} Sekunden',
 			'settings.defaultSleepTimer' => 'Standard-Sleep-Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} Minuten',
@@ -1789,10 +1793,10 @@ extension on TranslationsDe {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
-			'downloads.movies' => 'Filme',
-			'downloads.noDownloads' => 'Noch keine Downloads',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.movies' => 'Filme',
+			'downloads.noDownloads' => 'Noch keine Downloads',
 			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
 			'downloads.downloadNow' => 'Herunterladen',
 			'downloads.deleteDownload' => 'Download löschen',

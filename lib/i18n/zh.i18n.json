@@ -135,6 +135,8 @@
     "subtitleStylingDescription": "调整字幕外观",
     "smallSkipDuration": "短跳过时长",
     "largeSkipDuration": "长跳过时长",
+    "rewindOnResume": "恢复时回退",
+    "rewindOnResumeDescription": "恢复播放时回退此时长",
     "secondsUnit": "${seconds} 秒",
     "defaultSleepTimer": "默认睡眠定时器",
     "minutesUnit": "${minutes} 分钟",
