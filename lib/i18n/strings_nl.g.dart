@@ -493,6 +493,10 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Volledig scherm verlaten';
 	@override String get alwaysOnTopButton => 'Altijd bovenop';
 	@override String get rotationLockButton => 'Rotatievergrendeling';
+	@override String get lockScreen => 'Vergrendel scherm';
+	@override String get unlockScreen => 'Ontgrendel scherm';
+	@override String get screenLockButton => 'Schermvergrendeling';
+	@override String get longPressToUnlock => 'Lang indrukken om te ontgrendelen';
 	@override String get timelineSlider => 'Videotijdlijn';
 	@override String get volumeSlider => 'Volumeniveau';
 	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
@@ -1601,6 +1605,10 @@ extension on TranslationsNl {
 			'videoControls.exitFullscreenButton' => 'Volledig scherm verlaten',
 			'videoControls.alwaysOnTopButton' => 'Altijd bovenop',
 			'videoControls.rotationLockButton' => 'Rotatievergrendeling',
+			'videoControls.lockScreen' => 'Vergrendel scherm',
+			'videoControls.unlockScreen' => 'Ontgrendel scherm',
+			'videoControls.screenLockButton' => 'Schermvergrendeling',
+			'videoControls.longPressToUnlock' => 'Lang indrukken om te ontgrendelen',
 			'videoControls.timelineSlider' => 'Videotijdlijn',
 			'videoControls.volumeSlider' => 'Volumeniveau',
 			'videoControls.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
@@ -1789,12 +1797,12 @@ extension on TranslationsNl {
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
 			'liveTv.watchChannel' => 'Kanaal bekijken',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favorieten',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => 'Films',
 			'downloads.noDownloads' => 'Nog geen downloads',
 			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',

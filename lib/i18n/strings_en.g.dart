@@ -1100,6 +1100,18 @@ class TranslationsVideoControlsEn {
 	/// en: 'Rotation lock'
 	String get rotationLockButton => 'Rotation lock';
 
+	/// en: 'Lock screen'
+	String get lockScreen => 'Lock screen';
+
+	/// en: 'Unlock screen'
+	String get unlockScreen => 'Unlock screen';
+
+	/// en: 'Screen lock'
+	String get screenLockButton => 'Screen lock';
+
+	/// en: 'Long press to unlock'
+	String get longPressToUnlock => 'Long press to unlock';
+
 	/// en: 'Video timeline'
 	String get timelineSlider => 'Video timeline';
 
@@ -3196,6 +3208,10 @@ extension on Translations {
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Always on top',
 			'videoControls.rotationLockButton' => 'Rotation lock',
+			'videoControls.lockScreen' => 'Lock screen',
+			'videoControls.unlockScreen' => 'Unlock screen',
+			'videoControls.screenLockButton' => 'Screen lock',
+			'videoControls.longPressToUnlock' => 'Long press to unlock',
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
@@ -3384,12 +3400,12 @@ extension on Translations {
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favorites',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
-			_ => null,
-		} ?? switch (path) {
 			'collections.unknownLibrarySection' => 'Cannot delete: Unknown library section',
 			'collections.deleteCollection' => 'Delete Collection',
 			'collections.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.',

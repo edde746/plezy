@@ -493,6 +493,10 @@ class _TranslationsVideoControlsPt implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Sair da tela cheia';
 	@override String get alwaysOnTopButton => 'Sempre no topo';
 	@override String get rotationLockButton => 'Travar rotação';
+	@override String get lockScreen => 'Travar tela';
+	@override String get unlockScreen => 'Destravar tela';
+	@override String get screenLockButton => 'Travar tela';
+	@override String get longPressToUnlock => 'Pressione e segure para destravar';
 	@override String get timelineSlider => 'Linha do tempo do vídeo';
 	@override String get volumeSlider => 'Nível de volume';
 	@override String endsAt({required Object time}) => 'Termina às ${time}';
@@ -1601,6 +1605,10 @@ extension on TranslationsPt {
 			'videoControls.exitFullscreenButton' => 'Sair da tela cheia',
 			'videoControls.alwaysOnTopButton' => 'Sempre no topo',
 			'videoControls.rotationLockButton' => 'Travar rotação',
+			'videoControls.lockScreen' => 'Travar tela',
+			'videoControls.unlockScreen' => 'Destravar tela',
+			'videoControls.screenLockButton' => 'Travar tela',
+			'videoControls.longPressToUnlock' => 'Pressione e segure para destravar',
 			'videoControls.timelineSlider' => 'Linha do tempo do vídeo',
 			'videoControls.volumeSlider' => 'Nível de volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Termina às ${time}',
@@ -1789,12 +1797,12 @@ extension on TranslationsPt {
 			'liveTv.lateNight' => 'Madrugada',
 			'liveTv.whatsOn' => 'O que Está Passando',
 			'liveTv.watchChannel' => 'Assistir Canal',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favoritos',
 			'collections.title' => 'Coleções',
 			'collections.collection' => 'Coleção',
 			'collections.empty' => 'A coleção está vazia',
-			_ => null,
-		} ?? switch (path) {
 			'collections.unknownLibrarySection' => 'Não é possível excluir: Seção de biblioteca desconhecida',
 			'collections.deleteCollection' => 'Excluir Coleção',
 			'collections.deleteConfirm' => ({required Object title}) => 'Tem certeza que deseja excluir "${title}"? Esta ação não pode ser desfeita.',

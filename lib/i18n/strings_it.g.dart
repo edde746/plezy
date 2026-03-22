@@ -493,6 +493,10 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Esci da schermo intero';
 	@override String get alwaysOnTopButton => 'Sempre in primo piano';
 	@override String get rotationLockButton => 'Blocco rotazione';
+	@override String get lockScreen => 'Blocca schermo';
+	@override String get unlockScreen => 'Sblocca schermo';
+	@override String get screenLockButton => 'Blocco schermo';
+	@override String get longPressToUnlock => 'Premi a lungo per sbloccare';
 	@override String get timelineSlider => 'Timeline video';
 	@override String get volumeSlider => 'Livello volume';
 	@override String endsAt({required Object time}) => 'Finisce alle ${time}';
@@ -1601,6 +1605,10 @@ extension on TranslationsIt {
 			'videoControls.exitFullscreenButton' => 'Esci da schermo intero',
 			'videoControls.alwaysOnTopButton' => 'Sempre in primo piano',
 			'videoControls.rotationLockButton' => 'Blocco rotazione',
+			'videoControls.lockScreen' => 'Blocca schermo',
+			'videoControls.unlockScreen' => 'Sblocca schermo',
+			'videoControls.screenLockButton' => 'Blocco schermo',
+			'videoControls.longPressToUnlock' => 'Premi a lungo per sbloccare',
 			'videoControls.timelineSlider' => 'Timeline video',
 			'videoControls.volumeSlider' => 'Livello volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Finisce alle ${time}',
@@ -1789,12 +1797,12 @@ extension on TranslationsIt {
 			'liveTv.lateNight' => 'Notte tarda',
 			'liveTv.whatsOn' => 'In onda ora',
 			'liveTv.watchChannel' => 'Guarda canale',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Preferiti',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => 'Film',
 			'downloads.noDownloads' => 'Nessun download',
 			'downloads.noDownloadsDescription' => 'I contenuti scaricati appariranno qui per la visualizzazione offline',

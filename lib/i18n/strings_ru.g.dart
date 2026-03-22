@@ -493,6 +493,10 @@ class _TranslationsVideoControlsRu implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Выйти из полноэкранного режима';
 	@override String get alwaysOnTopButton => 'Всегда поверх';
 	@override String get rotationLockButton => 'Блокировка поворота';
+	@override String get lockScreen => 'Заблокировать экран';
+	@override String get unlockScreen => 'Разблокировать экран';
+	@override String get screenLockButton => 'Блокировка экрана';
+	@override String get longPressToUnlock => 'Удерживайте для разблокировки';
 	@override String get timelineSlider => 'Временная шкала';
 	@override String get volumeSlider => 'Уровень громкости';
 	@override String endsAt({required Object time}) => 'Закончится в ${time}';
@@ -1601,6 +1605,10 @@ extension on TranslationsRu {
 			'videoControls.exitFullscreenButton' => 'Выйти из полноэкранного режима',
 			'videoControls.alwaysOnTopButton' => 'Всегда поверх',
 			'videoControls.rotationLockButton' => 'Блокировка поворота',
+			'videoControls.lockScreen' => 'Заблокировать экран',
+			'videoControls.unlockScreen' => 'Разблокировать экран',
+			'videoControls.screenLockButton' => 'Блокировка экрана',
+			'videoControls.longPressToUnlock' => 'Удерживайте для разблокировки',
 			'videoControls.timelineSlider' => 'Временная шкала',
 			'videoControls.volumeSlider' => 'Уровень громкости',
 			'videoControls.endsAt' => ({required Object time}) => 'Закончится в ${time}',
@@ -1789,12 +1797,12 @@ extension on TranslationsRu {
 			'liveTv.lateNight' => 'Поздний вечер',
 			'liveTv.whatsOn' => 'Что идёт',
 			'liveTv.watchChannel' => 'Смотреть канал',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Избранное',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
 			'collections.empty' => 'Коллекция пуста',
-			_ => null,
-		} ?? switch (path) {
 			'collections.unknownLibrarySection' => 'Невозможно удалить: неизвестный раздел библиотеки',
 			'collections.deleteCollection' => 'Удалить коллекцию',
 			'collections.deleteConfirm' => ({required Object title}) => 'Вы уверены, что хотите удалить "${title}"? Это действие нельзя отменить.',

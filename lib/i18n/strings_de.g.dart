@@ -493,6 +493,10 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Vollbild verlassen';
 	@override String get alwaysOnTopButton => 'Immer im Vordergrund';
 	@override String get rotationLockButton => 'Dreh­sperre';
+	@override String get lockScreen => 'Bildschirm sperren';
+	@override String get unlockScreen => 'Bildschirm entsperren';
+	@override String get screenLockButton => 'Bildschirmsperre';
+	@override String get longPressToUnlock => 'Lange drücken zum Entsperren';
 	@override String get timelineSlider => 'Video-Zeitleiste';
 	@override String get volumeSlider => 'Lautstärkepegel';
 	@override String endsAt({required Object time}) => 'Endet um ${time}';
@@ -1601,6 +1605,10 @@ extension on TranslationsDe {
 			'videoControls.exitFullscreenButton' => 'Vollbild verlassen',
 			'videoControls.alwaysOnTopButton' => 'Immer im Vordergrund',
 			'videoControls.rotationLockButton' => 'Dreh­sperre',
+			'videoControls.lockScreen' => 'Bildschirm sperren',
+			'videoControls.unlockScreen' => 'Bildschirm entsperren',
+			'videoControls.screenLockButton' => 'Bildschirmsperre',
+			'videoControls.longPressToUnlock' => 'Lange drücken zum Entsperren',
 			'videoControls.timelineSlider' => 'Video-Zeitleiste',
 			'videoControls.volumeSlider' => 'Lautstärkepegel',
 			'videoControls.endsAt' => ({required Object time}) => 'Endet um ${time}',
@@ -1789,12 +1797,12 @@ extension on TranslationsDe {
 			'liveTv.lateNight' => 'Spätnacht',
 			'liveTv.whatsOn' => 'Jetzt im TV',
 			'liveTv.watchChannel' => 'Kanal ansehen',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favoriten',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => 'Filme',
 			'downloads.noDownloads' => 'Noch keine Downloads',
 			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',

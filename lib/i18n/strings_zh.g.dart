@@ -493,6 +493,10 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => '退出全屏';
 	@override String get alwaysOnTopButton => '置顶窗口';
 	@override String get rotationLockButton => '旋转锁定';
+	@override String get lockScreen => '锁定屏幕';
+	@override String get unlockScreen => '解锁屏幕';
+	@override String get screenLockButton => '屏幕锁定';
+	@override String get longPressToUnlock => '长按解锁';
 	@override String get timelineSlider => '视频时间轴';
 	@override String get volumeSlider => '音量调节';
 	@override String endsAt({required Object time}) => '${time} 结束';
@@ -1601,6 +1605,10 @@ extension on TranslationsZh {
 			'videoControls.exitFullscreenButton' => '退出全屏',
 			'videoControls.alwaysOnTopButton' => '置顶窗口',
 			'videoControls.rotationLockButton' => '旋转锁定',
+			'videoControls.lockScreen' => '锁定屏幕',
+			'videoControls.unlockScreen' => '解锁屏幕',
+			'videoControls.screenLockButton' => '屏幕锁定',
+			'videoControls.longPressToUnlock' => '长按解锁',
 			'videoControls.timelineSlider' => '视频时间轴',
 			'videoControls.volumeSlider' => '音量调节',
 			'videoControls.endsAt' => ({required Object time}) => '${time} 结束',
@@ -1789,12 +1797,12 @@ extension on TranslationsZh {
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '正在播出',
 			'liveTv.watchChannel' => '观看频道',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => '收藏',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => '电影',
 			'downloads.noDownloads' => '暂无下载',
 			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',

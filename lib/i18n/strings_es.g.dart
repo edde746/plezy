@@ -493,6 +493,10 @@ class _TranslationsVideoControlsEs implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Salir de pantalla completa';
 	@override String get alwaysOnTopButton => 'Siempre visible';
 	@override String get rotationLockButton => 'Bloqueo de rotación';
+	@override String get lockScreen => 'Bloquear pantalla';
+	@override String get unlockScreen => 'Desbloquear pantalla';
+	@override String get screenLockButton => 'Bloqueo de pantalla';
+	@override String get longPressToUnlock => 'Mantén pulsado para desbloquear';
 	@override String get timelineSlider => 'Línea de tiempo del video';
 	@override String get volumeSlider => 'Nivel de volumen';
 	@override String endsAt({required Object time}) => 'Termina a las ${time}';
@@ -1601,6 +1605,10 @@ extension on TranslationsEs {
 			'videoControls.exitFullscreenButton' => 'Salir de pantalla completa',
 			'videoControls.alwaysOnTopButton' => 'Siempre visible',
 			'videoControls.rotationLockButton' => 'Bloqueo de rotación',
+			'videoControls.lockScreen' => 'Bloquear pantalla',
+			'videoControls.unlockScreen' => 'Desbloquear pantalla',
+			'videoControls.screenLockButton' => 'Bloqueo de pantalla',
+			'videoControls.longPressToUnlock' => 'Mantén pulsado para desbloquear',
 			'videoControls.timelineSlider' => 'Línea de tiempo del video',
 			'videoControls.volumeSlider' => 'Nivel de volumen',
 			'videoControls.endsAt' => ({required Object time}) => 'Termina a las ${time}',
@@ -1789,12 +1797,12 @@ extension on TranslationsEs {
 			'liveTv.lateNight' => 'Trasnoche',
 			'liveTv.whatsOn' => 'En emisión',
 			'liveTv.watchChannel' => 'Ver canal',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favoritos',
 			'collections.title' => 'Colecciones',
 			'collections.collection' => 'Colección',
 			'collections.empty' => 'La colección está vacía',
-			_ => null,
-		} ?? switch (path) {
 			'collections.unknownLibrarySection' => 'No se puede eliminar: Sección de biblioteca desconocida',
 			'collections.deleteCollection' => 'Eliminar Colección',
 			'collections.deleteConfirm' => ({required Object title}) => '¿Estás seguro de que quieres eliminar "${title}"? Esta acción no se puede deshacer.',

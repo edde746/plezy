@@ -70,11 +70,13 @@ class TrackChapterControls extends StatelessWidget {
   int get audioSyncOffset => trackControlsState.audioSyncOffset;
   int get subtitleSyncOffset => trackControlsState.subtitleSyncOffset;
   bool get isRotationLocked => trackControlsState.isRotationLocked;
+  bool get isScreenLocked => trackControlsState.isScreenLocked;
   bool get isFullscreen => trackControlsState.isFullscreen;
   bool get isAlwaysOnTop => trackControlsState.isAlwaysOnTop;
   VoidCallback? get onTogglePIPMode => trackControlsState.onTogglePIPMode;
   VoidCallback? get onCycleBoxFitMode => trackControlsState.onCycleBoxFitMode;
   VoidCallback? get onToggleRotationLock => trackControlsState.onToggleRotationLock;
+  VoidCallback? get onToggleScreenLock => trackControlsState.onToggleScreenLock;
   VoidCallback? get onToggleFullscreen => trackControlsState.onToggleFullscreen;
   VoidCallback? get onToggleAlwaysOnTop => trackControlsState.onToggleAlwaysOnTop;
   Function(int)? get onSwitchVersion => trackControlsState.onSwitchVersion;
@@ -399,6 +401,24 @@ class TrackChapterControls extends StatelessWidget {
               isMobile: isMobile,
               isDesktop: isDesktop,
               onPressed: onToggleRotationLock,
+            ),
+          );
+          buttonIndex++;
+        }
+
+        // Screen lock button (mobile only, not on TV)
+        if (isMobile && !PlatformDetector.isTV()) {
+          final currentIndex = buttonIndex;
+          buttons.add(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
+              icon: Symbols.lock_rounded,
+              tooltip: t.videoControls.lockScreen,
+              semanticLabel: t.videoControls.screenLockButton,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
+              onPressed: onToggleScreenLock,
             ),
           );
           buttonIndex++;

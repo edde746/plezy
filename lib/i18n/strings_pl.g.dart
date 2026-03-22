@@ -493,6 +493,10 @@ class _TranslationsVideoControlsPl implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'Wyjdź z pełnego ekranu';
 	@override String get alwaysOnTopButton => 'Zawsze na wierzchu';
 	@override String get rotationLockButton => 'Blokada obrotu';
+	@override String get lockScreen => 'Zablokuj ekran';
+	@override String get unlockScreen => 'Odblokuj ekran';
+	@override String get screenLockButton => 'Blokada ekranu';
+	@override String get longPressToUnlock => 'Przytrzymaj, aby odblokować';
 	@override String get timelineSlider => 'Oś czasu wideo';
 	@override String get volumeSlider => 'Poziom głośności';
 	@override String endsAt({required Object time}) => 'Kończy się o ${time}';
@@ -1601,6 +1605,10 @@ extension on TranslationsPl {
 			'videoControls.exitFullscreenButton' => 'Wyjdź z pełnego ekranu',
 			'videoControls.alwaysOnTopButton' => 'Zawsze na wierzchu',
 			'videoControls.rotationLockButton' => 'Blokada obrotu',
+			'videoControls.lockScreen' => 'Zablokuj ekran',
+			'videoControls.unlockScreen' => 'Odblokuj ekran',
+			'videoControls.screenLockButton' => 'Blokada ekranu',
+			'videoControls.longPressToUnlock' => 'Przytrzymaj, aby odblokować',
 			'videoControls.timelineSlider' => 'Oś czasu wideo',
 			'videoControls.volumeSlider' => 'Poziom głośności',
 			'videoControls.endsAt' => ({required Object time}) => 'Kończy się o ${time}',
@@ -1789,12 +1797,12 @@ extension on TranslationsPl {
 			'liveTv.lateNight' => 'Późna noc',
 			'liveTv.whatsOn' => 'Co leci',
 			'liveTv.watchChannel' => 'Oglądaj kanał',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Ulubione',
 			'collections.title' => 'Kolekcje',
 			'collections.collection' => 'Kolekcja',
 			'collections.empty' => 'Kolekcja jest pusta',
-			_ => null,
-		} ?? switch (path) {
 			'collections.unknownLibrarySection' => 'Nie można usunąć: Nieznana sekcja biblioteki',
 			'collections.deleteCollection' => 'Usuń kolekcję',
 			'collections.deleteConfirm' => ({required Object title}) => 'Czy na pewno chcesz usunąć "${title}"? Tej operacji nie można cofnąć.',

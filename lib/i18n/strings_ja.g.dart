@@ -493,6 +493,10 @@ class _TranslationsVideoControlsJa implements TranslationsVideoControlsEn {
 	@override String get exitFullscreenButton => 'フルスクリーンを終了';
 	@override String get alwaysOnTopButton => '常に前面に表示';
 	@override String get rotationLockButton => '回転ロック';
+	@override String get lockScreen => '画面をロック';
+	@override String get unlockScreen => '画面のロックを解除';
+	@override String get screenLockButton => '画面ロック';
+	@override String get longPressToUnlock => '長押しでロック解除';
 	@override String get timelineSlider => '動画タイムライン';
 	@override String get volumeSlider => '音量レベル';
 	@override String endsAt({required Object time}) => '${time}に終了';
@@ -1601,6 +1605,10 @@ extension on TranslationsJa {
 			'videoControls.exitFullscreenButton' => 'フルスクリーンを終了',
 			'videoControls.alwaysOnTopButton' => '常に前面に表示',
 			'videoControls.rotationLockButton' => '回転ロック',
+			'videoControls.lockScreen' => '画面をロック',
+			'videoControls.unlockScreen' => '画面のロックを解除',
+			'videoControls.screenLockButton' => '画面ロック',
+			'videoControls.longPressToUnlock' => '長押しでロック解除',
 			'videoControls.timelineSlider' => '動画タイムライン',
 			'videoControls.volumeSlider' => '音量レベル',
 			'videoControls.endsAt' => ({required Object time}) => '${time}に終了',
@@ -1789,12 +1797,12 @@ extension on TranslationsJa {
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '放送中',
 			'liveTv.watchChannel' => 'チャンネルを視聴',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'お気に入り',
 			'collections.title' => 'コレクション',
 			'collections.collection' => 'コレクション',
 			'collections.empty' => 'コレクションは空です',
-			_ => null,
-		} ?? switch (path) {
 			'collections.unknownLibrarySection' => '削除できません：不明なライブラリセクション',
 			'collections.deleteCollection' => 'コレクションを削除',
 			'collections.deleteConfirm' => ({required Object title}) => '"${title}"を削除してもよろしいですか？この操作は元に戻せません。',

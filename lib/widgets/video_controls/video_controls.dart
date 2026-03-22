@@ -225,6 +225,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   int _audioSyncOffset = 0; // Default, loaded from settings
   int _subtitleSyncOffset = 0; // Default, loaded from settings
   bool _isRotationLocked = true; // Default locked (landscape only)
+  bool _isScreenLocked = false; // Touch lock during playback
+  bool _showLockIcon = false; // Whether to show the lock overlay icon
+  Timer? _lockIconTimer;
   bool _clickVideoTogglesPlayback = false; // Default, loaded from settings
   bool _isContentStripVisible = false; // Whether the swipe-up content strip is showing
 
@@ -663,6 +666,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
+    _lockIconTimer?.cancel();
     _autoSkipTimer?.cancel();
     _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
@@ -900,6 +904,38 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
+  void _toggleScreenLock() {
+    final locking = !_isScreenLocked;
+    setState(() {
+      _isScreenLocked = locking;
+      if (locking) {
+        _showLockIcon = true;
+      }
+    });
+    if (locking) {
+      _hideControls();
+      _startLockIconHideTimer();
+    }
+  }
+
+  void _startLockIconHideTimer() {
+    _lockIconTimer?.cancel();
+    _lockIconTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _showLockIcon = false);
+    });
+  }
+
+  void _unlockScreen() {
+    setState(() {
+      _isScreenLocked = false;
+      _showLockIcon = false;
+      _showControls = true;
+    });
+    _lockIconTimer?.cancel();
+    widget.controlsVisible?.value = true;
+    _startHideTimer();
+  }
+
   void _updateTrafficLightVisibility() async {
     // When maximized or fullscreen, always keep traffic lights visible so the
     // user can reach them without the controls-hide-on-mouse-leave race.
@@ -1050,6 +1086,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
+      isScreenLocked: _isScreenLocked,
       isFullscreen: _isFullscreen,
       isAlwaysOnTop: _isAlwaysOnTop,
       onTogglePIPMode: (_isPipSupported && !PlatformDetector.isTV())
@@ -1057,6 +1094,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           : null,
       onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
       onToggleRotationLock: _toggleRotationLock,
+      onToggleScreenLock: _toggleScreenLock,
       onToggleFullscreen: _toggleFullscreen,
       onToggleAlwaysOnTop: onToggleAlwaysOnTop,
       onSwitchVersion: _switchMediaVersion,
@@ -2109,6 +2147,42 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                       top: _showControls && isMobile ? 80.0 : 16.0,
                       left: 16,
                       child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
+                    ),
+                  // Screen lock overlay - absorbs all touches when active
+                  if (_isScreenLocked)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          setState(() => _showLockIcon = true);
+                          _startLockIconHideTimer();
+                        },
+                        onLongPress: _unlockScreen,
+                        child: AnimatedOpacity(
+                          opacity: _showLockIcon ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.6),
+                                borderRadius: const BorderRadius.all(Radius.circular(28)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const AppIcon(Symbols.lock_rounded, fill: 1, color: Colors.white, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    t.videoControls.longPressToUnlock,
+                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                 ],
               ),
