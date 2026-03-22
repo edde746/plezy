@@ -1098,6 +1098,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getAutoPip() {
     if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) return false;
+    if (PlatformDetector.isTV()) return false;
     // Default enabled on mobile, disabled on macOS
     return prefs.getBool(_keyAutoPip) ?? !Platform.isMacOS;
   }
