@@ -2210,14 +2210,9 @@ class PlexClient {
     return dvrs.isNotEmpty;
   }
 
-  /// Get EPG channels for a specific lineup
+  /// Get EPG channels using provider lineup endpoints (matches official Plex web client)
   Future<List<LiveTvChannel>> getEpgChannels({String? lineup}) async {
-    final queryParams = <String, dynamic>{};
-    if (lineup != null) queryParams['lineup'] = lineup;
-
-    return _wrapListApiCall<LiveTvChannel>(() => _dio.get('/livetv/epg/channels', queryParameters: queryParams), (
-      response,
-    ) {
+    List<LiveTvChannel> parseChannels(Response response) {
       final container = _getMediaContainer(response);
       if (container != null && container['Channel'] is List && (container['Channel'] as List).isNotEmpty) {
         appLogger.d('EPG channel sample: ${(container['Channel'] as List).first}');
@@ -2232,7 +2227,6 @@ class PlexClient {
             .where((ch) => ch.key.isNotEmpty)
             .toList();
       }
-      // Also check for Metadata key (some endpoints return channels there)
       if (container != null && container['Metadata'] != null) {
         return (container['Metadata'] as List)
             .map(
@@ -2245,7 +2239,18 @@ class PlexClient {
       }
       appLogger.d('EPG channels: container keys=${container?.keys.toList()}, size=${container?['size']}');
       return [];
-    }, 'Failed to get EPG channels');
+    }
+
+    final allChannels = <LiveTvChannel>[];
+    for (final provider in _providerEpg) {
+      try {
+        final response = await _dio.get('/${provider.identifier}/lineups/dvr/channels');
+        allChannels.addAll(parseChannels(response));
+      } catch (e) {
+        appLogger.e('Failed to get EPG channels from ${provider.identifier}', error: e);
+      }
+    }
+    return allChannels;
   }
 
   /// Return EPG providers (already parsed from /media/providers during initialization)
