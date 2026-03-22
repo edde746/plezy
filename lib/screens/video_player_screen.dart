@@ -1077,15 +1077,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
 
         final hasExternalSubs = result.externalSubtitles.isNotEmpty;
-        final isAndroid = Platform.isAndroid;
+        final isExoPlayer = player is PlayerAndroid;
 
-        // On Android, attach external subs at open time so ExoPlayer discovers
+        // ExoPlayer: attach external subs at open time so it discovers
         // them in a single prepare() — no media reload needed for selection.
-        // On other platforms (MPV), external subs are added after open via sub-add.
+        // MPV (all platforms including Android): external subs added after open via sub-add.
         await player!.open(
           Media(result.videoUrl!, start: resumePosition, headers: plexHeaders),
-          play: isAndroid || !hasExternalSubs,
-          externalSubtitles: isAndroid && hasExternalSubs ? result.externalSubtitles : null,
+          play: isExoPlayer || !hasExternalSubs,
+          externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
         );
 
         // Apply subtitle styling to ExoPlayer native layer (CaptionStyleCompat + libass font scale)
@@ -1197,9 +1197,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Store external subtitles for re-use after backend fallback
         _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
 
-        // Non-Android with external subs: add after open via sub-add (MPV),
+        // MPV with external subs: add after open via sub-add,
         // opened paused to avoid race condition (issue #226)
-        if (!Platform.isAndroid && result.externalSubtitles.isNotEmpty) {
+        if (player is! PlayerAndroid && result.externalSubtitles.isNotEmpty) {
           _hasFirstFrame.value = false;
           _trackManager!.waitingForExternalSubsTrackSelection = true;
 
