@@ -630,6 +630,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // offline Android playback flows). Prevents a permanent loading spinner.
         if (!_hasFirstFrame.value && position.inMilliseconds > 0) {
           _hasFirstFrame.value = true;
+
+          // Apply frame rate matching here too, since this fallback may fire
+          // before playbackRestart (race condition with resume positions > 0)
+          if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
+            _applyFrameRateMatching();
+          }
         }
 
         final duration = player!.state.duration;
@@ -661,6 +667,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Apply frame rate matching on Android by setting the display refresh rate
   /// to match the video content's frame rate.
+  int _frameRateRetries = 0;
   Future<void> _applyFrameRateMatching() async {
     if (player == null || !Platform.isAndroid) return;
 
@@ -668,10 +675,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final fpsStr = await player!.getProperty('container-fps');
       final fps = double.tryParse(fpsStr ?? '');
       if (fps == null || fps <= 0) {
+        // ExoPlayer detects FPS from frame timestamps after ~8 rendered frames.
+        // STATE_READY fires before frames render, so retry until detection completes.
+        if (player is PlayerAndroid && _frameRateRetries < 10) {
+          _frameRateRetries++;
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted && player != null) _applyFrameRateMatching();
+          });
+          return;
+        }
         appLogger.d('Frame rate matching: No valid fps available ($fpsStr)');
         return;
       }
 
+      _frameRateRetries = 0;
       final durationMs = player!.state.duration.inMilliseconds;
       await player!.setVideoFrameRate(fps, durationMs);
 
@@ -1025,8 +1042,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Open video through Player
       if (result.videoUrl != null) {
-        // Reset first frame flag for new video
+        // Reset first frame flag and frame rate retry counter for new video
         _hasFirstFrame.value = false;
+        _frameRateRetries = 0;
 
         // Request audio focus before starting playback (Android)
         // This causes other media apps (Spotify, podcasts, etc.) to pause
