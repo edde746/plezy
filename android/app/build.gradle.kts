@@ -8,7 +8,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val mpvVersion = "v1.0.5"
+val mpvVersion = "v1.0.6"
 val mpvDir = layout.buildDirectory.dir("libmpv").get().asFile
 val mpvAar = "libmpv-release.aar"
 
