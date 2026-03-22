@@ -33,6 +33,11 @@ class FocusedScrollScaffold extends StatefulWidget {
   /// Defaults to true.
   final bool automaticallyImplyLeading;
 
+  /// Optional override for the back key handler.
+  /// When set, this callback is invoked instead of the default
+  /// [handleBackKeyNavigation] (which pops the current route).
+  final VoidCallback? onBackPressed;
+
   const FocusedScrollScaffold({
     super.key,
     required this.title,
@@ -40,6 +45,7 @@ class FocusedScrollScaffold extends StatefulWidget {
     this.actions,
     this.pinned = true,
     this.automaticallyImplyLeading = true,
+    this.onBackPressed,
   });
 
   @override
@@ -75,7 +81,12 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
 
     return Focus(
       canRequestFocus: false,
-      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+      onKeyEvent: (_, event) {
+        if (widget.onBackPressed != null) {
+          return handleBackKeyAction(event, widget.onBackPressed!);
+        }
+        return handleBackKeyNavigation(context, event);
+      },
       child: FocusScope(
         node: _scopeNode,
         child: Scaffold(
