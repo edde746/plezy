@@ -606,8 +606,9 @@ class SettingsService extends BaseSharedPreferencesService {
           .cast<HotKeyModifier>()
           .toList();
 
-      // Try direct USB HID lookup first (new format), fall back to string parsing (backwards compat)
-      final key = _usbHidKeyMap[keyString] ?? _findKeyByString(keyString);
+      // Try parsing as USB HID code first (new format), fall back to string parsing (backwards compat)
+      final usbHidCode = int.tryParse(keyString, radix: 16);
+      final key = usbHidCode != null ? PhysicalKeyboardKey(usbHidCode) : _findKeyByString(keyString);
       if (key != null) {
         return HotKey(key: key, modifiers: modifiers.isNotEmpty ? modifiers : null);
       }
@@ -616,82 +617,6 @@ class SettingsService extends BaseSharedPreferencesService {
     }
     return null;
   }
-
-  // Unified map for USB HID codes to PhysicalKeyboardKey
-  static const _usbHidKeyMap = <String, PhysicalKeyboardKey>{
-    // Special keys
-    '0007002c': PhysicalKeyboardKey.space,
-    '0007002a': PhysicalKeyboardKey.backspace,
-    '0007004c': PhysicalKeyboardKey.delete,
-    '00070028': PhysicalKeyboardKey.enter,
-    '00070029': PhysicalKeyboardKey.escape,
-    '0007002b': PhysicalKeyboardKey.tab,
-    '00070039': PhysicalKeyboardKey.capsLock,
-    // Arrow keys
-    '00070050': PhysicalKeyboardKey.arrowLeft,
-    '00070052': PhysicalKeyboardKey.arrowUp,
-    '0007004f': PhysicalKeyboardKey.arrowRight,
-    '00070051': PhysicalKeyboardKey.arrowDown,
-    // Navigation keys
-    '0007004a': PhysicalKeyboardKey.home,
-    '0007004d': PhysicalKeyboardKey.end,
-    '0007004b': PhysicalKeyboardKey.pageUp,
-    '0007004e': PhysicalKeyboardKey.pageDown,
-    // Symbol keys
-    '0007002d': PhysicalKeyboardKey.equal,
-    '0007002e': PhysicalKeyboardKey.minus,
-    // Function keys
-    '0007003a': PhysicalKeyboardKey.f1,
-    '0007003b': PhysicalKeyboardKey.f2,
-    '0007003c': PhysicalKeyboardKey.f3,
-    '0007003d': PhysicalKeyboardKey.f4,
-    '0007003e': PhysicalKeyboardKey.f5,
-    '0007003f': PhysicalKeyboardKey.f6,
-    '00070040': PhysicalKeyboardKey.f7,
-    '00070041': PhysicalKeyboardKey.f8,
-    '00070042': PhysicalKeyboardKey.f9,
-    '00070043': PhysicalKeyboardKey.f10,
-    '00070044': PhysicalKeyboardKey.f11,
-    '00070045': PhysicalKeyboardKey.f12,
-    // Number keys
-    '00070027': PhysicalKeyboardKey.digit0,
-    '0007001e': PhysicalKeyboardKey.digit1,
-    '0007001f': PhysicalKeyboardKey.digit2,
-    '00070020': PhysicalKeyboardKey.digit3,
-    '00070021': PhysicalKeyboardKey.digit4,
-    '00070022': PhysicalKeyboardKey.digit5,
-    '00070023': PhysicalKeyboardKey.digit6,
-    '00070024': PhysicalKeyboardKey.digit7,
-    '00070025': PhysicalKeyboardKey.digit8,
-    '00070026': PhysicalKeyboardKey.digit9,
-    // Letter keys
-    '00070004': PhysicalKeyboardKey.keyA,
-    '00070005': PhysicalKeyboardKey.keyB,
-    '00070006': PhysicalKeyboardKey.keyC,
-    '00070007': PhysicalKeyboardKey.keyD,
-    '00070008': PhysicalKeyboardKey.keyE,
-    '00070009': PhysicalKeyboardKey.keyF,
-    '0007000a': PhysicalKeyboardKey.keyG,
-    '0007000b': PhysicalKeyboardKey.keyH,
-    '0007000c': PhysicalKeyboardKey.keyI,
-    '0007000d': PhysicalKeyboardKey.keyJ,
-    '0007000e': PhysicalKeyboardKey.keyK,
-    '0007000f': PhysicalKeyboardKey.keyL,
-    '00070010': PhysicalKeyboardKey.keyM,
-    '00070011': PhysicalKeyboardKey.keyN,
-    '00070012': PhysicalKeyboardKey.keyO,
-    '00070013': PhysicalKeyboardKey.keyP,
-    '00070014': PhysicalKeyboardKey.keyQ,
-    '00070015': PhysicalKeyboardKey.keyR,
-    '00070016': PhysicalKeyboardKey.keyS,
-    '00070017': PhysicalKeyboardKey.keyT,
-    '00070018': PhysicalKeyboardKey.keyU,
-    '00070019': PhysicalKeyboardKey.keyV,
-    '0007001a': PhysicalKeyboardKey.keyW,
-    '0007001b': PhysicalKeyboardKey.keyX,
-    '0007001c': PhysicalKeyboardKey.keyY,
-    '0007001d': PhysicalKeyboardKey.keyZ,
-  };
 
   // Map for pattern-based key name matching (lowercase keys for case-insensitive matching)
   static const _keyNameMap = <String, PhysicalKeyboardKey>{
@@ -782,9 +707,8 @@ class SettingsService extends BaseSharedPreferencesService {
     // Format: PhysicalKeyboardKey#ec9ed(usbHidUsage: "0x0007002c", debugName: "Space")
     final usbHidMatch = RegExp(r'usbhidusage: "0x([0-9a-f]+)"').firstMatch(normalized);
     if (usbHidMatch != null) {
-      final usbHidCode = usbHidMatch.group(1)!;
-      final key = _usbHidKeyMap[usbHidCode];
-      if (key != null) return key;
+      final code = int.tryParse(usbHidMatch.group(1)!, radix: 16);
+      if (code != null) return PhysicalKeyboardKey(code);
     }
 
     // Try direct name matches
