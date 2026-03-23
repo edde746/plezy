@@ -51,6 +51,7 @@ class TrackManager {
   bool _isApplyingTrackSelection = false;
   List<SubtitleTrack> _lastExternalSubtitles = const [];
   StreamSubscription<Tracks>? _trackLoadingSubscription;
+  Timer? _subtitleFallbackTimer;
 
   /// Cached external subtitles for re-use after backend fallback.
   List<SubtitleTrack> get lastExternalSubtitles => _lastExternalSubtitles;
@@ -121,7 +122,8 @@ class TrackManager {
     }
 
     // Fallback if playbackRestart doesn't fire
-    Future.delayed(const Duration(seconds: 3), () {
+    _subtitleFallbackTimer?.cancel();
+    _subtitleFallbackTimer = Timer(const Duration(seconds: 3), () {
       if (waitingForExternalSubsTrackSelection && isActive()) {
         waitingForExternalSubsTrackSelection = false;
         applyTrackSelection();
@@ -255,13 +257,14 @@ class TrackManager {
 
   /// Handle audio track changes — save stream selection and language preference.
   Future<void> onAudioTrackChanged(AudioTrack track) async {
-    final partId = await _guardTrackChange();
-    if (partId == null) return;
+    final info = mediaInfo;
+    final partId = await _guardTrackChange(info);
+    if (partId == null || info == null) return;
 
     int? streamID = _matchTrackByAttributes(
       mpvLanguage: track.language,
       mpvTitle: track.title,
-      plexTracks: mediaInfo!.audioTracks,
+      plexTracks: info.audioTracks,
       getLanguageCode: (t) => t.languageCode,
       getDisplayTitle: (t) => t.displayTitle,
       getTitle: (t) => t.title,
@@ -271,7 +274,7 @@ class TrackManager {
     if (streamID != null) {
       appLogger.d('Matched audio by lang/title: streamID $streamID');
     } else {
-      final matchedPlex = findPlexTrackForMpvAudio(track, mediaInfo!.audioTracks);
+      final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks);
       streamID = matchedPlex?.id;
       if (streamID != null) {
         appLogger.d('Matched audio by properties: streamID $streamID');
@@ -285,7 +288,8 @@ class TrackManager {
 
   /// Handle subtitle track changes — save stream selection and language preference.
   Future<void> onSubtitleTrackChanged(SubtitleTrack track) async {
-    final partId = await _guardTrackChange();
+    final info = mediaInfo;
+    final partId = await _guardTrackChange(info);
     if (partId == null) return;
 
     String? languageCode;
@@ -295,13 +299,13 @@ class TrackManager {
       languageCode = 'none';
       streamID = 0;
       appLogger.i('User turned subtitles off, saving preference');
-    } else {
+    } else if (info != null) {
       languageCode = track.language;
 
       streamID = _matchTrackByAttributes(
         mpvLanguage: track.language,
         mpvTitle: track.title,
-        plexTracks: mediaInfo!.subtitleTracks,
+        plexTracks: info.subtitleTracks,
         getLanguageCode: (t) => t.languageCode,
         getDisplayTitle: (t) => t.displayTitle,
         getTitle: (t) => t.title,
@@ -311,7 +315,7 @@ class TrackManager {
       if (streamID != null) {
         appLogger.d('Matched subtitle by lang/title: streamID $streamID');
       } else {
-        final matchedPlex = findPlexTrackForMpvSubtitle(track, mediaInfo!.subtitleTracks);
+        final matchedPlex = findPlexTrackForMpvSubtitle(track, info.subtitleTracks);
         streamID = matchedPlex?.id;
         if (streamID != null) {
           appLogger.d('Matched subtitle by properties: streamID $streamID');
@@ -340,16 +344,16 @@ class TrackManager {
   }
 
   /// Common guard checks for track change handlers.
-  Future<int?> _guardTrackChange() async {
+  Future<int?> _guardTrackChange(PlexMediaInfo? info) async {
     final settings = await SettingsService.getInstance();
     if (!settings.getRememberTrackSelections()) return null;
 
-    if (mediaInfo == null) {
+    if (info == null) {
       appLogger.w('No media info available, cannot save stream selection');
       return null;
     }
 
-    final partId = mediaInfo!.getPartId();
+    final partId = info.getPartId();
     if (partId == null) {
       appLogger.w('No part ID available, cannot save stream selection');
     }
@@ -439,5 +443,7 @@ class TrackManager {
   void dispose() {
     _trackLoadingSubscription?.cancel();
     _trackLoadingSubscription = null;
+    _subtitleFallbackTimer?.cancel();
+    _subtitleFallbackTimer = null;
   }
 }

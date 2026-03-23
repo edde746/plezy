@@ -1582,6 +1582,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         return "Off"
     }
 
+    fun triggerFallback() {
+        val uri = currentMediaUri ?: return
+        val pos = exoPlayer?.currentPosition ?: 0L
+        delegate?.onFormatUnsupported(uri, currentHeaders, pos, "debug: manual fallback trigger")
+    }
+
     // Cleanup
 
     fun dispose() {

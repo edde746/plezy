@@ -147,6 +147,10 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 playerCore?.debugLoggingEnabled = debugLoggingEnabled
                 result.success(null)
             }
+            "triggerFallback" -> {
+                playerCore?.triggerFallback()
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }

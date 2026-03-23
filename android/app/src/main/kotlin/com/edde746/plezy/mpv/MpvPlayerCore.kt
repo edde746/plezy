@@ -43,6 +43,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
     // Audio focus
     private var audioFocusManager: AudioFocusManager? = null
+    @Volatile private var cachedPaused: Boolean = true
 
     private var flutterOverlayApplied = false
 
@@ -71,6 +72,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
         try {
             disposing = false
+            cachedPaused = true
             pendingSurface = null
 
             // Initialize audio focus handling
@@ -89,10 +91,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
                         catch (e: Exception) { Log.w(TAG, "Failed to resume after focus gain", e) }
                     }
                 },
-                isPaused = {
-                    try { runBlocking { player?.getFlag("pause") == true } }
-                    catch (e: Exception) { true }
-                }
+                isPaused = { cachedPaused }
             )
             frameRateManager = FrameRateManager(
                 activity = activity,
@@ -231,6 +230,9 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
                     is PropertyChange.Str -> change.value
                     is PropertyChange.None -> null
                 }
+                if (change.name == "pause" && change is PropertyChange.Flag) {
+                    cachedPaused = change.value
+                }
                 delegate?.onPropertyChange(change.name, value)
             }
         }
@@ -327,7 +329,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
     // Public API
 
     fun setProperty(name: String, value: String) {
-        if (!isInitialized) return
+        if (!isInitialized || disposing) return
         scope.launch {
             try { player?.setProperty(name, value) }
             catch (e: Exception) { Log.w(TAG, "setProperty($name) failed", e) }
@@ -335,9 +337,9 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
     }
 
     fun getProperty(name: String): String? {
-        if (!isInitialized) return null
+        if (!isInitialized || disposing) return null
         return try {
-            runBlocking { player?.getString(name) }
+            runBlocking(Dispatchers.IO) { player?.getString(name) }
         } catch (e: Exception) {
             null
         }
@@ -356,7 +358,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
     }
 
     fun command(args: Array<String>) {
-        if (!isInitialized || args.isEmpty()) return
+        if (!isInitialized || disposing || args.isEmpty()) return
         scope.launch {
             try { player?.command(*args) }
             catch (e: Exception) { Log.w(TAG, "command failed", e) }
@@ -435,7 +437,6 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
         // Close player on background thread
         val p = player
-        player = null
         if (p != null) {
             Thread {
                 try {
@@ -443,6 +444,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
                 } catch (e: Exception) {
                     Log.w(TAG, "MPV close failed", e)
                 }
+                player = null
                 Log.d(TAG, "Disposed (native)")
                 Handler(Looper.getMainLooper()).post { onComplete?.invoke() }
             }.start()

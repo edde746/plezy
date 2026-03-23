@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' as path;
@@ -509,6 +511,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
           onTap: _togglePerformanceOverlay,
         ),
+
+        // Debug: Trigger MPV Fallback (Android ExoPlayer only)
+        if (kDebugMode && Platform.isAndroid && widget.player.playerType == 'exoplayer')
+          FocusableListTile(
+            leading: AppIcon(Symbols.swap_horiz_rounded, fill: 1, color: tokens(context).textMuted),
+            title: const Text('Trigger MPV Fallback'),
+            onTap: () {
+              const MethodChannel('com.plezy/exo_player').invokeMethod('triggerFallback');
+              OverlaySheetController.of(context).close();
+            },
+          ),
       ],
     );
   }
