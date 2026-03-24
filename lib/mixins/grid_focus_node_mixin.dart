@@ -40,6 +40,28 @@ mixin GridFocusNodeMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
+  /// Evict focus nodes far from [centerIndex], keeping at most [keepCount] around it.
+  void evictDistantFocusNodes(int centerIndex, {int keepCount = 200}) {
+    if (gridItemFocusNodes.length <= keepCount) return;
+
+    final halfKeep = keepCount ~/ 2;
+    final keepStart = centerIndex - halfKeep;
+    final keepEnd = centerIndex + halfKeep;
+
+    final keysToRemove = <int>[];
+    for (final key in gridItemFocusNodes.keys) {
+      if (key < keepStart || key > keepEnd) {
+        keysToRemove.add(key);
+      }
+    }
+    for (final key in keysToRemove) {
+      final node = gridItemFocusNodes.remove(key);
+      if (node != null && !node.hasFocus) {
+        node.dispose();
+      }
+    }
+  }
+
   /// Dispose all grid-item focus nodes.
   void disposeGridFocusNodes() {
     for (final node in gridItemFocusNodes.values) {

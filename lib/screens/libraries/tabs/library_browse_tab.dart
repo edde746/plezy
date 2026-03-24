@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import '../../../focus/dpad_navigator.dart';
 import '../../../focus/input_mode_tracker.dart';
@@ -12,9 +13,11 @@ import '../../../models/plex_filter.dart';
 import '../../../models/plex_first_character.dart';
 import '../../../models/plex_sort.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../services/image_cache_service.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/grid_size_calculator.dart';
 import '../../../utils/layout_constants.dart';
+import '../../../utils/plex_image_helper.dart';
 import '../alpha_jump_bar.dart';
 import '../alpha_jump_helper.dart';
 import '../alpha_scroll_handle.dart';
@@ -184,6 +187,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   bool _isScrollActive = false;
   Timer? _scrollActivityTimer;
 
+  // Eager prefetch throttle
+  DateTime? _lastEagerPrefetch;
+  // Alpha bar update: throttle (leading edge) + trailing timer (ensures final position)
+  DateTime? _lastAlphaUpdate;
+  Timer? _alphaUpdateTimer;
+
   // Pagination state
   int _totalSize = 0;
   final Map<int, PlexMetadata> _loadedItems = {};
@@ -213,6 +222,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _cancelToken?.cancel();
     _scrollActivityTimer?.cancel();
     _scrollIdleTimer?.cancel();
+    _alphaUpdateTimer?.cancel();
     _scrollController.removeListener(_onScrollChanged);
     _scrollController.dispose();
     _groupingChipFocusNode.dispose();
@@ -458,7 +468,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       final result = await client.getLibraryContent(
         widget.library.key,
         start: 0,
-        size: _fetchSize,
+        size: _calculateInitialFetchSize(),
         filters: filterParams,
         cancelToken: _cancelToken,
       );
@@ -526,6 +536,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           _totalSize = result.totalSize;
         }
       });
+
+      // Prefetch images for items about to enter the viewport
+      _prefetchImages(start, result.items);
 
       // Re-check for remaining gaps in the visible range after this fetch
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -872,8 +885,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     // Debounced scroll-idle handler: load visible range when scrolling settles
     _scrollIdleTimer?.cancel();
     _scrollIdleTimer = Timer(const Duration(milliseconds: 200), () {
-      if (mounted) _loadVisibleRange();
+      if (!mounted) return;
+      _loadVisibleRange();
+      _evictDistantItems();
+      final firstVisible = _itemIndexFromScrollOffset(_scrollController.offset);
+      evictDistantFocusNodes(firstVisible);
     });
+
+    // Eager prefetch: fetch data before scroll stops
+    _checkEagerPrefetch();
 
     if (!_shouldShowAlphaJumpBar || _currentColumnCount < 1) return;
 
@@ -887,7 +907,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       _hasJumpPin = false;
     }
 
-    _updateVisibleIndex();
+    // Throttle alpha bar updates to ~50fps, with a trailing-edge timer
+    // so the final scroll position always gets an update
+    final now = DateTime.now();
+    if (_lastAlphaUpdate == null || now.difference(_lastAlphaUpdate!) >= const Duration(milliseconds: 20)) {
+      _lastAlphaUpdate = now;
+      _updateVisibleIndex();
+    }
+    _alphaUpdateTimer?.cancel();
+    _alphaUpdateTimer = Timer(const Duration(milliseconds: 20), () {
+      if (mounted) _updateVisibleIndex();
+    });
   }
 
   /// Recompute the first-visible-index from the current scroll offset.
@@ -1095,6 +1125,143 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _fetchRange(fetchStart, fetchSize);
   }
 
+  /// Eagerly prefetch data when approaching unloaded boundaries during scroll.
+  /// Throttled to at most once per 100ms to avoid spamming.
+  void _checkEagerPrefetch() {
+    if (_totalSize == 0 || _currentColumnCount < 1 || !_scrollController.hasClients) return;
+    if (_lastCrossAxisExtent <= 0) return;
+
+    final now = DateTime.now();
+    if (_lastEagerPrefetch != null && now.difference(_lastEagerPrefetch!) < const Duration(milliseconds: 100)) return;
+
+    final offset = _scrollController.offset;
+    final viewportHeight = _scrollController.position.viewportDimension;
+    final firstIndex = _itemIndexFromScrollOffset(offset);
+
+    final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
+    final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
+    final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
+    if (rowHeight <= 0) return;
+
+    final visibleRows = (viewportHeight / rowHeight).ceil() + 1;
+    final visibleCount = visibleRows * _currentColumnCount;
+
+    // Look 1 viewport ahead for unloaded items
+    final lookAheadStart = (firstIndex + visibleCount).clamp(0, _totalSize);
+    final lookAheadEnd = (lookAheadStart + visibleCount).clamp(0, _totalSize);
+
+    for (var i = lookAheadStart; i < lookAheadEnd; i++) {
+      if (!_loadedItems.containsKey(i) && !_loadingRanges.contains(i)) {
+        _lastEagerPrefetch = now;
+        _fetchRange(i, _fetchSize);
+        return;
+      }
+    }
+
+    // Check backward if nothing needed forward
+    final lookBehindStart = (firstIndex - visibleCount).clamp(0, _totalSize);
+    for (var i = firstIndex - 1; i >= lookBehindStart; i--) {
+      if (!_loadedItems.containsKey(i) && !_loadingRanges.contains(i)) {
+        _lastEagerPrefetch = now;
+        _fetchRange(i, _fetchSize);
+        return;
+      }
+    }
+  }
+
+  /// Compute initial fetch size based on viewport dimensions.
+  int _calculateInitialFetchSize() {
+    try {
+      final screenSize = MediaQuery.of(context).size;
+      final settingsProvider = context.read<SettingsProvider>();
+      final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+      final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
+      final columnCount =
+          ((screenSize.width + crossAxisSpacing) / (maxExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+      final itemWidth = screenSize.width / columnCount;
+      final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
+      final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
+      if (rowHeight <= 0) return _fetchSize;
+      final visibleRows = (screenSize.height / rowHeight).ceil() + 1;
+      final visibleCount = visibleRows * columnCount;
+      return (visibleCount * 3).clamp(100, 500);
+    } catch (_) {
+      return _fetchSize;
+    }
+  }
+
+  /// Evict loaded items far from the current viewport to bound memory usage.
+  static const int _maxLoadedItems = 500;
+  static const int _evictionThreshold = 600;
+
+  void _evictDistantItems() {
+    if (_loadedItems.length <= _evictionThreshold) return;
+
+    final centerIndex = _itemIndexFromScrollOffset(_scrollController.offset);
+    final halfKeep = _maxLoadedItems ~/ 2;
+    final keepStart = centerIndex - halfKeep;
+    final keepEnd = centerIndex + halfKeep;
+
+    _loadedItems.removeWhere((index, _) => index < keepStart || index > keepEnd);
+  }
+
+  /// Prefetch images for items near the viewport to reduce pop-in.
+  void _prefetchImages(int startIndex, List<PlexMetadata> items) {
+    if (!_scrollController.hasClients || _lastCrossAxisExtent <= 0 || _currentColumnCount < 1) return;
+
+    final offset = _scrollController.offset;
+    final viewportHeight = _scrollController.position.viewportDimension;
+    final firstVisible = _itemIndexFromScrollOffset(offset);
+    final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
+    final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
+    final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
+    if (rowHeight <= 0) return;
+
+    final visibleRows = (viewportHeight / rowHeight).ceil() + 1;
+    final visibleEnd = firstVisible + visibleRows * _currentColumnCount;
+    // Prefetch 2 rows beyond visible area
+    final prefetchEnd = visibleEnd + 2 * _currentColumnCount;
+
+    final client = getClientForLibrary();
+    final devicePixelRatio = PlexImageHelper.effectiveDevicePixelRatio(context);
+
+    for (var i = 0; i < items.length; i++) {
+      final index = startIndex + i;
+      if (index < firstVisible || index > prefetchEnd) continue;
+
+      final thumb = items[i].thumb;
+      if (thumb == null || thumb.isEmpty) continue;
+
+      final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+        client: client,
+        thumbPath: thumb,
+        maxWidth: itemWidth,
+        maxHeight: itemHeight,
+        devicePixelRatio: devicePixelRatio,
+        enableTranscoding: PlexImageHelper.shouldTranscode(thumb),
+        imageType: ImageType.poster,
+      );
+      if (imageUrl.isEmpty) continue;
+
+      final scaledWidth = itemWidth * devicePixelRatio;
+      final scaledHeight = itemHeight * devicePixelRatio;
+      final (_, memHeight) = PlexImageHelper.getMemCacheDimensions(
+        displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
+        displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
+      );
+
+      precacheImage(
+        CachedNetworkImageProvider(
+          imageUrl,
+          cacheManager: PlexImageCacheManager.instance,
+          headers: const {'User-Agent': 'Plezy'},
+          maxHeight: memHeight,
+        ),
+        context,
+      );
+    }
+  }
+
   /// Whether the filters chip is visible
   bool get _isFiltersChipVisible => _filters.isNotEmpty && _selectedGrouping != 'folders';
 
@@ -1277,7 +1444,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     // Show skeleton placeholder for unloaded items
     if (item == null) {
-      return const _SkeletonCard();
+      return _SkeletonCard(animate: !_isScrollActive);
     }
 
     // Use firstItemFocusNode for index 0 to maintain compatibility with base class
@@ -1303,7 +1470,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 /// Skeleton placeholder card that matches the poster + title layout of a real media card.
 /// Not focusable — dpad focus skips over these.
 class _SkeletonCard extends StatelessWidget {
-  const _SkeletonCard();
+  final bool animate;
+
+  const _SkeletonCard({this.animate = true});
 
   @override
   Widget build(BuildContext context) {
@@ -1316,12 +1485,13 @@ class _SkeletonCard extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: const BorderRadius.all(Radius.circular(8)),
-              child: const SkeletonLoader(child: SizedBox.expand()),
+              child: SkeletonLoader(animate: animate, child: const SizedBox.expand()),
             ),
           ),
           const SizedBox(height: 4),
           // Title bar
           SkeletonLoader(
+            animate: animate,
             borderRadius: const BorderRadius.all(Radius.circular(4)),
             child: const SizedBox(height: 13, width: double.infinity),
           ),
@@ -1331,6 +1501,7 @@ class _SkeletonCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             widthFactor: 0.6,
             child: SkeletonLoader(
+              animate: animate,
               borderRadius: const BorderRadius.all(Radius.circular(4)),
               child: const SizedBox(height: 11),
             ),

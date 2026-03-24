@@ -7,7 +7,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../services/image_cache_service.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
-import 'media_card.dart';
 
 /// Set to `true` to blur all artwork (for store screenshots).
 const kBlurArtwork = false;
@@ -350,21 +349,25 @@ class PlexOptimizedImage extends StatelessWidget {
       alignment: alignment,
       errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context, error),
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded || frame != null) return child;
-        return _buildPlaceholder(context);
+        if (wasSynchronouslyLoaded) return child;
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: frame != null
+              ? child
+              : _buildPlaceholder(context),
+        );
       },
     );
   }
 
-  Widget _buildPlaceholder(BuildContext _) {
-    return SizedBox(
+  Widget _buildPlaceholder(BuildContext context) {
+    return Container(
       width: width,
       height: height,
-      child: SkeletonLoader(
-        child: fallbackIcon != null
-            ? Center(child: AppIcon(fallbackIcon!, fill: 1, size: 40, color: Colors.white54))
-            : null,
-      ),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: fallbackIcon != null
+          ? Center(child: AppIcon(fallbackIcon!, fill: 1, size: 40, color: Colors.white54))
+          : null,
     );
   }
 

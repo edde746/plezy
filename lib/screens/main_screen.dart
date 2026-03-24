@@ -528,6 +528,21 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     _isShowingProfileSelection = false;
   }
 
+  /// IndexedStack that disables tickers for offscreen children to prevent
+  /// animation controllers on non-visible tabs from scheduling frames.
+  Widget _buildTickerAwareStack() {
+    return IndexedStack(
+      index: _currentIndex,
+      children: [
+        for (var i = 0; i < _screens.length; i++)
+          TickerMode(
+            enabled: i == _currentIndex,
+            child: _screens[i],
+          ),
+      ],
+    );
+  }
+
   List<Widget> _buildScreens(bool offline) {
     return [
       for (final tab in _getVisibleTabs(offline))
@@ -945,7 +960,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                               node: _contentFocusScope,
                               // No autofocus - we control focus programmatically to prevent
                               // autofocus from stealing focus back after setState() rebuilds
-                              child: IndexedStack(index: _currentIndex, children: _screens),
+                              child: _buildTickerAwareStack(),
                             ),
                           ),
                         ),
@@ -990,7 +1005,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     return OverlaySheetHost(
       child: Scaffold(
-        body: IndexedStack(index: _currentIndex, children: _screens),
+        body: _buildTickerAwareStack(),
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

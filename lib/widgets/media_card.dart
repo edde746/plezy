@@ -1066,12 +1066,14 @@ class _ClickableTextState extends State<_ClickableText> {
   }
 }
 
-/// Skeleton loader widget with subtle opacity pulse animation
+/// Skeleton loader widget with subtle opacity pulse animation.
+/// Set [animate] to false during active scroll to avoid compositor cost.
 class SkeletonLoader extends StatefulWidget {
   final Widget? child;
   final BorderRadius? borderRadius;
+  final bool animate;
 
-  const SkeletonLoader({super.key, this.child, this.borderRadius});
+  const SkeletonLoader({super.key, this.child, this.borderRadius, this.animate = true});
 
   @override
   State<SkeletonLoader> createState() => _SkeletonLoaderState();
@@ -1089,7 +1091,22 @@ class _SkeletonLoaderState extends State<SkeletonLoader> with SingleTickerProvid
       begin: 0.3,
       end: 0.7,
     ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
-    _animationController.repeat(reverse: true);
+    if (widget.animate) {
+      _animationController.repeat(reverse: true);
+    } else {
+      _animationController.value = 0.5;
+    }
+  }
+
+  @override
+  void didUpdateWidget(SkeletonLoader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animate && !oldWidget.animate) {
+      _animationController.repeat(reverse: true);
+    } else if (!widget.animate && oldWidget.animate) {
+      _animationController.stop();
+      _animationController.value = 0.5;
+    }
   }
 
   @override

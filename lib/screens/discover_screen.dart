@@ -83,6 +83,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Timer? _indicatorTimer;
   final ValueNotifier<double> _indicatorProgress = ValueNotifier(0.0);
   bool _isAutoScrollPaused = false;
+  bool _isTabVisible = true;
   HiddenLibrariesProvider? _hiddenLibrariesProvider;
   Set<String> _lastSeenHiddenKeys = {};
 
@@ -309,8 +310,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Restart auto-scroll when app becomes active again
-      if (!_isAutoScrollPaused) _startAutoScroll();
+      // Restart auto-scroll only if discover tab is visible
+      if (_isTabVisible && !_isAutoScrollPaused) _startAutoScroll();
       // Refresh continue watching on mobile only
       // (on desktop, "resumed" fires on every window focus gain)
       if (Platform.isIOS || Platform.isAndroid) {
@@ -390,12 +391,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void onTabHidden() {
+    _isTabVisible = false;
     _autoScrollTimer?.cancel();
     _stopIndicatorProgress();
   }
 
   @override
   void onTabShown() {
+    _isTabVisible = true;
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
