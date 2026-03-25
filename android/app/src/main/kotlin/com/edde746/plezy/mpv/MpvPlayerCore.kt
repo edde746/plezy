@@ -410,6 +410,17 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         // Cancel all coroutines
         scope.cancel()
 
+        // Detach surface from MPV BEFORE removing views to prevent GPU mutex contention
+        val p = player
+        if (p != null) {
+            try {
+                runBlocking(Dispatchers.IO) { p.setProperty("vo", "null") }
+                p.detachSurface()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to detach surface during dispose", e)
+            }
+        }
+
         // Capture locals for deferred cleanup
         val sv = surfaceView
         val container = surfaceContainer
@@ -427,16 +438,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         pendingSurface = null
         isInitialized = false
 
-        // Deferred view removal
-        Handler(Looper.getMainLooper()).postAtFrontOfQueue {
-            sv?.holder?.removeCallback(this)
-            if (container?.parent != null) {
-                contentView.removeView(container)
-            }
-        }
-
-        // Close player on background thread
-        val p = player
+        // Close player on background thread, then remove views
         if (p != null) {
             Thread {
                 try {
@@ -446,9 +448,22 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
                 }
                 player = null
                 Log.d(TAG, "Disposed (native)")
-                Handler(Looper.getMainLooper()).post { onComplete?.invoke() }
+                Handler(Looper.getMainLooper()).post {
+                    sv?.holder?.removeCallback(this)
+                    if (container?.parent != null) {
+                        contentView.removeView(container)
+                    }
+                    onComplete?.invoke()
+                }
             }.start()
         } else {
+            // No player — safe to remove views immediately
+            Handler(Looper.getMainLooper()).postAtFrontOfQueue {
+                sv?.holder?.removeCallback(this)
+                if (container?.parent != null) {
+                    contentView.removeView(container)
+                }
+            }
             onComplete?.invoke()
         }
 
