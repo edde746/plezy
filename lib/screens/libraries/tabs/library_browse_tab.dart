@@ -175,7 +175,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   // Alpha jump bar state
   List<PlexFirstCharacter> _firstCharacters = [];
   AlphaJumpHelper _alphaHelper = AlphaJumpHelper(const []);
-  int _currentFirstVisibleIndex = 0;
+  final ValueNotifier<int> _currentFirstVisibleIndex = ValueNotifier<int>(0);
   int _currentColumnCount = 1;
   double _lastCrossAxisExtent = 0;
   double _effectiveTopPadding = _gridTopPadding;
@@ -189,8 +189,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   // Incremented on each jump so that overlapping animations don't clobber each other.
   int _jumpScrollGeneration = 0;
 
-  // Scroll activity tracking (for phone scroll handle)
-  bool _isScrollActive = false;
+  // Scroll activity tracking (for phone scroll handle and range-load gating)
+  final ValueNotifier<bool> _isScrollActive = ValueNotifier<bool>(false);
   Timer? _scrollActivityTimer;
 
   // Eager prefetch throttle
@@ -240,6 +240,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _filtersChipFocusNode.dispose();
     _sortChipFocusNode.dispose();
     _alphaJumpBarFocusNode.dispose();
+    _currentFirstVisibleIndex.dispose();
+    _isScrollActive.dispose();
     disposeGridFocusNodes();
     super.dispose();
   }
@@ -330,11 +332,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   void _resetForFullReload() {
     _scrollActivityTimer?.cancel();
     _scrollIdleTimer?.cancel();
-    _isScrollActive = false;
+    _isScrollActive.value = false;
     _hasJumpPin = false;
     _isJumpScrolling = false;
     _jumpScrollGeneration++;
-    _currentFirstVisibleIndex = 0;
+    _currentFirstVisibleIndex.value = 0;
 
     // The browse tab state is kept alive across libraries, so ensure each
     // library starts from top instead of inheriting the previous offset.
@@ -379,8 +381,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       _selectedGrouping = _getDefaultGrouping();
       _firstCharacters = [];
       _alphaHelper = AlphaJumpHelper(const []);
-      _currentFirstVisibleIndex = 0;
     });
+    _currentFirstVisibleIndex.value = 0;
 
     try {
       final storage = await StorageService.getInstance();
@@ -790,7 +792,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   void _navigateToGridNearScroll() {
     if (_totalSize == 0 || _currentColumnCount < 1) return;
 
-    final row = _currentFirstVisibleIndex ~/ _currentColumnCount;
+    final row = _currentFirstVisibleIndex.value ~/ _currentColumnCount;
     var targetIndex = ((row + 1) * _currentColumnCount - 1).clamp(0, _totalSize - 1);
 
     // Find nearest loaded item — skeleton cards have no FocusNode
@@ -844,9 +846,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// The letter currently visible at the top of the grid, determined by
   /// how many items we've scrolled past relative to the API's cumulative
   /// firstCharacter counts.
-  String get _currentAlphaLetter {
-    return _alphaHelper.currentLetter(_currentFirstVisibleIndex);
-  }
+  String _alphaLetterFor(int index) => _alphaHelper.currentLetter(index);
 
   /// Whether the alpha jump bar should be shown.
   /// Only shown when sorting by title (titleSort) and not in folders mode.
@@ -944,8 +944,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     // updates as soon as items with a new letter appear in that row.
     final maxIndex = _totalSize > 0 ? _totalSize - 1 : 0;
     final lastInRow = (firstInRow + _currentColumnCount - 1).clamp(0, maxIndex);
-    if (lastInRow != _currentFirstVisibleIndex) {
-      setState(() => _currentFirstVisibleIndex = lastInRow);
+    if (lastInRow != _currentFirstVisibleIndex.value) {
+      _currentFirstVisibleIndex.value = lastInRow;
     }
   }
 
@@ -978,7 +978,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     _hasJumpPin = true;
     final clamped = targetIndex.clamp(0, _totalSize > 0 ? _totalSize - 1 : 0);
-    setState(() => _currentFirstVisibleIndex = clamped);
+    _currentFirstVisibleIndex.value = clamped;
 
     _scrollToItemIndex(clamped);
   }
@@ -1055,19 +1055,28 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             right: 0,
             bottom: 0,
             child: _isPhone(context)
-                ? AlphaScrollHandle(
-                    firstCharacters: _firstCharacters,
-                    onJump: _jumpToIndex,
-                    currentLetter: _currentAlphaLetter,
-                    isScrolling: _isScrollActive,
+                ? ValueListenableBuilder<int>(
+                    valueListenable: _currentFirstVisibleIndex,
+                    builder: (context, visibleIndex, _) => ValueListenableBuilder<bool>(
+                      valueListenable: _isScrollActive,
+                      builder: (context, scrolling, _) => AlphaScrollHandle(
+                        firstCharacters: _firstCharacters,
+                        onJump: _jumpToIndex,
+                        currentLetter: _alphaLetterFor(visibleIndex),
+                        isScrolling: scrolling,
+                      ),
+                    ),
                   )
-                : AlphaJumpBar(
-                    firstCharacters: _firstCharacters,
-                    onJump: _jumpToIndex,
-                    currentLetter: _currentAlphaLetter,
-                    focusNode: _alphaJumpBarFocusNode,
-                    onNavigateLeft: _navigateToGridNearScroll,
-                    onBack: _navigateToGridNearScroll,
+                : ValueListenableBuilder<int>(
+                    valueListenable: _currentFirstVisibleIndex,
+                    builder: (context, visibleIndex, _) => AlphaJumpBar(
+                      firstCharacters: _firstCharacters,
+                      onJump: _jumpToIndex,
+                      currentLetter: _alphaLetterFor(visibleIndex),
+                      focusNode: _alphaJumpBarFocusNode,
+                      onNavigateLeft: _navigateToGridNearScroll,
+                      onBack: _navigateToGridNearScroll,
+                    ),
                   ),
           ),
       ],
@@ -1078,14 +1087,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   Widget _buildScrollableContent() {
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        // Track scroll activity for phone scroll handle
+        // Track scroll activity for phone scroll handle and range-load gating
         if (notification is ScrollStartNotification) {
-          if (!_isScrollActive) setState(() => _isScrollActive = true);
+          _isScrollActive.value = true;
           _scrollActivityTimer?.cancel();
         } else if (notification is ScrollEndNotification) {
           _scrollActivityTimer?.cancel();
           _scrollActivityTimer = Timer(const Duration(milliseconds: 100), () {
-            if (mounted) setState(() => _isScrollActive = false);
+            if (mounted) _isScrollActive.value = false;
           });
         }
         return false;
@@ -1102,7 +1111,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// Self-healing: when a skeleton is rendered after scrolling stops,
   /// ensure the visible range gets loaded even if the scroll-idle path missed it.
   void _scheduleRangeLoad() {
-    if (_rangeLoadScheduled || _isScrollActive) return;
+    if (_rangeLoadScheduled || _isScrollActive.value) return;
     _rangeLoadScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _rangeLoadScheduled = false;
@@ -1479,7 +1488,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     // Show skeleton placeholder for unloaded items
     if (item == null) {
       _scheduleRangeLoad();
-      return _SkeletonCard(animate: !_isScrollActive);
+      return const _SkeletonCard();
     }
 
     // Use firstItemFocusNode for index 0 to maintain compatibility with base class
@@ -1505,40 +1514,36 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 /// Skeleton placeholder card that matches the poster + title layout of a real media card.
 /// Not focusable — dpad focus skips over these.
 class _SkeletonCard extends StatelessWidget {
-  final bool animate;
-
-  const _SkeletonCard({this.animate = true});
+  const _SkeletonCard();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
+    return const Padding(
+      padding: EdgeInsets.all(8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Poster area — matches the Expanded poster in _buildGridCard
           Expanded(
             child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              child: SkeletonLoader(animate: animate, child: const SizedBox.expand()),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+              child: SkeletonLoader(child: SizedBox.expand()),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           // Title bar
           SkeletonLoader(
-            animate: animate,
-            borderRadius: const BorderRadius.all(Radius.circular(4)),
-            child: const SizedBox(height: 13, width: double.infinity),
+            borderRadius: BorderRadius.all(Radius.circular(4)),
+            child: SizedBox(height: 13, width: double.infinity),
           ),
-          const SizedBox(height: 3),
+          SizedBox(height: 3),
           // Subtitle bar
           FractionallySizedBox(
             alignment: Alignment.centerLeft,
             widthFactor: 0.6,
             child: SkeletonLoader(
-              animate: animate,
-              borderRadius: const BorderRadius.all(Radius.circular(4)),
-              child: const SizedBox(height: 11),
+              borderRadius: BorderRadius.all(Radius.circular(4)),
+              child: SizedBox(height: 11),
             ),
           ),
         ],
