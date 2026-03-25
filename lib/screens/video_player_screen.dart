@@ -1009,7 +1009,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _trackManager?.mediaInfo = null;
         }
 
-        _startLiveTimelineUpdates();
       } catch (e) {
         appLogger.e('Failed to start live TV playback', error: e);
         _sendLiveTimeline('stopped');
@@ -2049,8 +2048,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final state = player?.state.playing == true ? 'playing' : 'paused';
       _sendLiveTimeline(state);
     });
-    // Send initial heartbeat immediately
-    _sendLiveTimeline('playing');
+    // Delay initial heartbeat to let the transcode session stabilize.
+    // Sending time=0 immediately after player.open() causes the server
+    // to spawn a duplicate transcode job with offset=-1 that 404s.
+    Future.delayed(const Duration(seconds: 3), () {
+      if (_liveTimelineTimer != null) {
+        final state = player?.state.playing == true ? 'playing' : 'paused';
+        _sendLiveTimeline(state);
+      }
+    });
   }
 
   void _stopLiveTimelineUpdates() {
