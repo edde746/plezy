@@ -2117,7 +2117,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final p = player!;
     // FFmpeg HTTP protocol reconnection
     await p.setProperty('stream-lavf-o',
-        'reconnect=1,reconnect_at_eof=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=30');
+        'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=30');
     // Demuxer: retry up to 1000 times on stream reload failures
     await p.setProperty('demuxer-lavf-o', 'max_reload=1000');
     await p.setProperty('force-seekable', 'no');
