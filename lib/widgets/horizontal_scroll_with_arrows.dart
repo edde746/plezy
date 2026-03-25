@@ -63,10 +63,14 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     }
 
     final position = _scrollController.position;
-    setState(() {
-      _canScrollLeft = position.pixels > 0;
-      _canScrollRight = position.pixels < position.maxScrollExtent;
-    });
+    final newLeft = position.pixels > 0;
+    final newRight = position.pixels < position.maxScrollExtent;
+    if (newLeft != _canScrollLeft || newRight != _canScrollRight) {
+      setState(() {
+        _canScrollLeft = newLeft;
+        _canScrollRight = newRight;
+      });
+    }
   }
 
   void _animateScroll(double direction) {

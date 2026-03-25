@@ -84,7 +84,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
-  double _scrollOffset = 0;
+  final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0);
 
   // Inline season tabs
   int _selectedSeasonIndex = 0;
@@ -348,14 +348,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _onScroll() {
-    setState(() {
-      _scrollOffset = _scrollController.offset;
-    });
+    _scrollOffset.value = _scrollController.offset;
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _scrollOffset.dispose();
     _extrasScrollController.dispose();
     _extrasFocusNode.dispose();
     _playButtonFocusNode.dispose();
@@ -2532,24 +2531,28 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 top: 0,
                 left: 0,
                 right: 0,
-                child: IgnorePointer(
-                  ignoring: _scrollOffset < 50,
-                  child: AnimatedOpacity(
-                    opacity: (_scrollOffset / 100).clamp(0.0, 1.0),
-                    duration: const Duration(milliseconds: 150),
-                    child: Container(
-                      height: MediaQuery.of(context).padding.top + 58,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
-                            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
-                            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0),
-                          ],
-                          stops: const [0.0, 0.3, 1.0],
-                        ),
+                child: ValueListenableBuilder<double>(
+                  valueListenable: _scrollOffset,
+                  builder: (context, offset, child) => IgnorePointer(
+                    ignoring: offset < 50,
+                    child: AnimatedOpacity(
+                      opacity: (offset / 100).clamp(0.0, 1.0),
+                      duration: const Duration(milliseconds: 150),
+                      child: child!,
+                    ),
+                  ),
+                  child: Container(
+                    height: MediaQuery.of(context).padding.top + 58,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
+                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
+                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0),
+                        ],
+                        stops: const [0.0, 0.3, 1.0],
                       ),
                     ),
                   ),
