@@ -121,6 +121,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         return;
       }
     }
+
+    // If neither the item nor its parents are loaded (evicted), the event
+    // was already filtered by DeletionAware's upstream check against
+    // deletionGlobalKeys/deletionRatingKeys, so this point is unreachable.
+    // The grid self-corrects when _fetchRange updates _totalSize from the
+    // server response on the next scroll.
   }
 
   /// Remove an item at [index] and shift all higher indices down by 1

@@ -129,8 +129,11 @@ class MainActivity : FlutterActivity() {
         // Android TV devices — weaker GPUs, less Impeller testing
         if (packageManager.hasSystemFeature("android.software.leanback")) return true
         // Google Tensor SoC (Mali GPU) — Pixel 6+
+        // SOC_MODEL may return marketing name ("Tensor G2") or internal ID ("GS201")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (Build.SOC_MODEL.startsWith("Tensor", ignoreCase = true)) return true
+            val soc = Build.SOC_MODEL
+            if (soc.startsWith("Tensor", ignoreCase = true) ||
+                soc.startsWith("GS", ignoreCase = true)) return true
         }
         // NVIDIA Tegra (Shield TV)
         if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true
