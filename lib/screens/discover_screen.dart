@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
+import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
@@ -994,6 +995,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           ],
                         ),
                       ),
+                      // Server Tasks
+                      if (PlatformDetector.isDesktop(context))
+                        const FocusableAction(child: ServerActivitiesButton()),
                       // User menu
                       FocusableAction(
                         onPressed: () => _showUserMenu(context, userProvider),
