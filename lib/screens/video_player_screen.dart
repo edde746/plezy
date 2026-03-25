@@ -1872,6 +1872,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   void _onVideoCompleted(bool completed) async {
+    // Live TV streams are continuous — ignore spurious EOF events caused by
+    // inter-segment gaps in the chunked MKV transcode stream.
+    if (widget.isLive) return;
+
     if (completed &&
         _nextEpisode != null &&
         !_showPlayNextDialog &&
