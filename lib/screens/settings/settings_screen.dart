@@ -1050,6 +1050,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         selectedPath = await safService.pickDirectory();
         if (selectedPath != null) {
           pathType = 'saf';
+        } else if (PlatformDetector.isTV()) {
+          if (mounted) {
+            showErrorSnackBar(context, t.settings.downloadLocationSelectError);
+          }
+          return;
         }
       } else {
         // Use file_picker on desktop

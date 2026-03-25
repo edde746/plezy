@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:saf_util/saf_util.dart';
+import '../utils/platform_detector.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
 import 'package:saf_stream/saf_stream.dart';
 
@@ -22,6 +23,8 @@ class SafStorageService {
   /// Returns the content:// URI or null if cancelled
   Future<String?> pickDirectory() async {
     if (!isAvailable) return null;
+    // SAF document picker is not available on Android TV
+    if (TvDetectionService.isTVSync()) return null;
     try {
       // Pick directory with persistent write permission
       final doc = await _safUtil.pickDirectory(writePermission: true, persistablePermission: true);
