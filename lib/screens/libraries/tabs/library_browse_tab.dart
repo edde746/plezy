@@ -208,6 +208,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   int _firstCharactersRequestId = 0;
   static const int _fetchSize = 200;
   Timer? _scrollIdleTimer;
+  Timer? _retryTimer;
+  int _retryCount = 0;
+  bool _rangeLoadScheduled = false;
+  bool _visibleRangeLoading = false;
 
   // Focus nodes for filter chips
   final FocusNode _groupingChipFocusNode = FocusNode(debugLabel: 'grouping_chip');
@@ -226,6 +230,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   @override
   void dispose() {
     _cancelToken?.cancel();
+    _retryTimer?.cancel();
     _scrollActivityTimer?.cancel();
     _scrollIdleTimer?.cancel();
     _alphaUpdateTimer?.cancel();
@@ -347,6 +352,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   Future<void> _loadContent() async {
     // Cancel any pending request
     _cancelToken?.cancel();
+    _retryTimer?.cancel();
     _cancelToken = CancelToken();
     // Use a generation counter for the filter/sort loading phase
     final generation = ++_requestId;
@@ -451,6 +457,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   Future<void> _loadItems() async {
     final currentRequestId = ++_requestId;
     _cancelToken?.cancel();
+    _retryTimer?.cancel();
     _cancelToken = CancelToken();
 
     setState(() {
@@ -506,15 +513,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   /// Fetch a range of items from the API and store them in the sparse map.
   /// After a successful fetch, re-checks for remaining gaps in the visible range.
-  Future<void> _fetchRange(int start, int size) async {
+  Future<bool> _fetchRange(int start, int size) async {
     // Clamp to totalSize
-    if (start >= _totalSize) return;
+    if (start >= _totalSize) return false;
     final clampedSize = size.clamp(0, _totalSize - start);
-    if (clampedSize == 0) return;
+    if (clampedSize == 0) return false;
 
     // Deduplicate: track every index in-flight to prevent overlapping fetches
     final indices = List.generate(clampedSize, (i) => start + i);
-    if (indices.every((i) => _loadingRanges.contains(i) || _loadedItems.containsKey(i))) return;
+    if (indices.every((i) => _loadingRanges.contains(i) || _loadedItems.containsKey(i))) return true;
     _loadingRanges.addAll(indices);
 
     final currentRequestId = _requestId;
@@ -531,31 +538,31 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         cancelToken: _cancelToken,
       );
 
-      if (currentRequestId != _requestId || !mounted) return;
+      if (currentRequestId != _requestId || !mounted) return false;
 
       setState(() {
         for (var i = 0; i < result.items.length; i++) {
           _loadedItems[start + i] = result.items[i];
         }
-        // Update totalSize in case it changed (e.g., items added/removed on server)
         if (result.totalSize != _totalSize) {
           _totalSize = result.totalSize;
         }
       });
 
-      // Prefetch images for items about to enter the viewport
+      _retryCount = 0;
       _prefetchImages(start, result.items);
-
-      // Re-check for remaining gaps in the visible range after this fetch
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      return true;
+    } catch (e) {
+      if (e is DioException && e.type == DioExceptionType.cancel) return false;
+      _retryCount++;
+      final delay = Duration(milliseconds: 500 * (1 << _retryCount.clamp(0, 4)));
+      _retryTimer?.cancel();
+      _retryTimer = Timer(delay, () {
         if (mounted && currentRequestId == _requestId) {
           _loadVisibleRange();
         }
       });
-    } catch (e) {
-      // Silently ignore fetch errors for background range loads
-      // (the initial load handles errors with UI feedback)
-      if (e is DioException && e.type == DioExceptionType.cancel) return;
+      return false;
     } finally {
       _loadingRanges.removeAll(indices);
     }
@@ -892,6 +899,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _scrollIdleTimer?.cancel();
     _scrollIdleTimer = Timer(const Duration(milliseconds: 200), () {
       if (!mounted) return;
+      // Discard stale in-flight tracking from eager prefetch during scroll
+      // so _loadVisibleRange sees the full gap at the settled position.
+      _loadingRanges.clear();
       _loadVisibleRange();
       _evictDistantItems();
       final firstVisible = _itemIndexFromScrollOffset(_scrollController.offset);
@@ -1089,10 +1099,23 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     );
   }
 
+  /// Self-healing: when a skeleton is rendered after scrolling stops,
+  /// ensure the visible range gets loaded even if the scroll-idle path missed it.
+  void _scheduleRangeLoad() {
+    if (_rangeLoadScheduled || _isScrollActive) return;
+    _rangeLoadScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _rangeLoadScheduled = false;
+      if (mounted) _loadVisibleRange();
+    });
+  }
+
   /// Determine the visible range and fetch any unloaded items within it.
-  /// Covers the full visible area plus a buffer of _fetchSize/2 on each side,
-  /// then finds the first unloaded contiguous block and fetches it.
-  void _loadVisibleRange() {
+  /// Serialized: only one visible-range fetch runs at a time to prevent
+  /// concurrent calls from seeing each other's _loadingRanges and producing
+  /// tiny fetch sizes.
+  Future<void> _loadVisibleRange() async {
+    if (_visibleRangeLoading) return;
     if (_totalSize == 0 || _currentColumnCount < 1 || !_scrollController.hasClients) return;
     if (_lastCrossAxisExtent <= 0) return;
 
@@ -1100,7 +1123,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     final viewportHeight = _scrollController.position.viewportDimension;
     final firstIndex = _itemIndexFromScrollOffset(offset);
 
-    // Calculate how many items fit in the viewport
     final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
     final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
     final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
@@ -1109,12 +1131,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     final visibleRows = (viewportHeight / rowHeight).ceil() + 1;
     final visibleCount = visibleRows * _currentColumnCount;
 
-    // Expand the visible range by a buffer on each side
     final buffer = _fetchSize ~/ 2;
     final rangeStart = (firstIndex - buffer).clamp(0, _totalSize);
     final rangeEnd = (firstIndex + visibleCount + buffer).clamp(0, _totalSize);
 
-    // Find the first and last unloaded indices in the range
     int? fetchStart;
     int? fetchEnd;
     for (var i = rangeStart; i < rangeEnd; i++) {
@@ -1125,10 +1145,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     }
     if (fetchStart == null || fetchEnd == null) return;
 
-    final fetchSize = fetchEnd - fetchStart;
-    if (fetchSize <= 0) return;
-
-    _fetchRange(fetchStart, fetchSize);
+    _retryTimer?.cancel();
+    _visibleRangeLoading = true;
+    try {
+      final success = await _fetchRange(fetchStart, fetchEnd - fetchStart);
+      if (success && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _loadVisibleRange();
+        });
+      }
+    } finally {
+      _visibleRangeLoading = false;
+    }
   }
 
   /// Eagerly prefetch data when approaching unloaded boundaries during scroll.
@@ -1450,6 +1478,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     // Show skeleton placeholder for unloaded items
     if (item == null) {
+      _scheduleRangeLoad();
       return _SkeletonCard(animate: !_isScrollActive);
     }
 
