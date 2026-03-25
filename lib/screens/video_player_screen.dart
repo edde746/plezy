@@ -2906,43 +2906,54 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                   );
                 },
               ),
-              // Watch Together: reconnecting to host overlay
-              Consumer<WatchTogetherProvider>(
-                builder: (context, provider, child) {
-                  if (!provider.isWaitingForHostReconnect) return const SizedBox.shrink();
-                  return Positioned(
-                    bottom: 120,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              // Watch Together overlays (isolated from video surface repaints)
+              RepaintBoundary(
+                child: Stack(
+                  children: [
+                    // Watch Together: reconnecting to host overlay
+                    Selector<WatchTogetherProvider, bool>(
+                      selector: (_, provider) => provider.isWaitingForHostReconnect,
+                      builder: (context, isWaiting, child) {
+                        if (!isWaiting) return const SizedBox.shrink();
+                        return Positioned(
+                          bottom: 120,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.all(Radius.circular(20)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (PlatformDetector.isTV())
+                                    const Icon(Symbols.sync_rounded, size: 14, color: Colors.white)
+                                  else
+                                    const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    t.watchTogether.reconnectingToHost,
+                                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              t.watchTogether.reconnectingToHost,
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                    // Watch Together: participant join/leave notifications
+                    const ParticipantNotificationOverlay(),
+                  ],
+                ),
               ),
-              // Watch Together: participant join/leave notifications
-              const ParticipantNotificationOverlay(),
               // Black overlay during exit (no spinner - just covers transparency)
               ValueListenableBuilder<bool>(
                 valueListenable: _isExiting,

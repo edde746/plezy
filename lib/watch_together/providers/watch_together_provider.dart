@@ -30,6 +30,21 @@ class WatchTogetherProvider with ChangeNotifier {
   String _displayName = 'User';
   String? _lastHandledCurrentPlaybackKey;
 
+  // Coalesce rapid-fire notifyListeners() calls into a single rebuild per frame.
+  // During Watch Together join, 4-5 notifications fire within milliseconds;
+  // this batches them into one rebuild to avoid overwhelming low-end devices.
+  bool _notifyScheduled = false;
+
+  @override
+  void notifyListeners() {
+    if (_notifyScheduled) return;
+    _notifyScheduled = true;
+    scheduleMicrotask(() {
+      _notifyScheduled = false;
+      super.notifyListeners();
+    });
+  }
+
   // Host reconnect grace period
   Timer? _hostReconnectTimer;
   bool _isWaitingForHostReconnect = false;

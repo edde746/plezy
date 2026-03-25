@@ -316,10 +316,11 @@ class WatchTogetherSyncManager {
     _clockOffset = 0;
     _pendingPingTimestamp = null;
 
-    // Initial burst of 3 pings for fast convergence
+    // Initial burst of 2 pings for convergence, with wider spacing to reduce
+    // main-thread pressure during the join event storm
     int burstCount = 0;
-    Timer.periodic(const Duration(milliseconds: 200), (timer) {
-      if (burstCount >= 3 || _player == null) {
+    Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      if (burstCount >= 2 || _player == null) {
         timer.cancel();
         return;
       }

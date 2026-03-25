@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
@@ -85,10 +86,12 @@ class _SessionIndicator extends StatelessWidget {
             children: [
               // Sync indicator or group icon
               if (isSyncing)
-                const SizedBox(
+                SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: PlatformDetector.isTV()
+                      ? const Icon(Symbols.sync_rounded, size: 16, color: Colors.white)
+                      : const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
               else
                 Icon(Symbols.group, size: 18, color: isHost ? theme.colorScheme.primary : Colors.white),
@@ -230,7 +233,13 @@ class _SessionMenuSheet extends StatelessWidget {
                 title: Text(p.displayName),
                 subtitle: p.isHost ? Text(t.watchTogether.host) : null,
                 trailing: p.isBuffering
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: PlatformDetector.isTV()
+                            ? const Icon(Symbols.hourglass_empty_rounded, size: 16)
+                            : const CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : null,
                 dense: true,
                 contentPadding: EdgeInsets.zero,
@@ -388,10 +397,12 @@ class SyncingIndicator extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: PlatformDetector.isTV()
+                        ? const Icon(Symbols.sync_rounded, size: 14, color: Colors.white)
+                        : const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   ),
                   const SizedBox(width: 8),
                   Text(t.watchTogether.syncing, style: const TextStyle(color: Colors.white, fontSize: 12)),
