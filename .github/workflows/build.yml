@@ -360,7 +360,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: "master"
+          channel: "stable"
           cache: true
 
       - name: Cache Pub dependencies
@@ -587,7 +587,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: "master"
+          channel: "stable"
           cache: true
 
       - name: Cache Pub dependencies
