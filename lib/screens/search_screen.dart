@@ -226,6 +226,7 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
+          primary: false,
           slivers: [
             DesktopSliverAppBar(title: Text(t.common.search), floating: true),
             SliverToBoxAdapter(

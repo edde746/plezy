@@ -136,6 +136,7 @@ class DownloadsScreenState extends State<DownloadsScreen> with TickerProviderSta
   Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
+        primary: false,
         slivers: [
           DesktopSliverAppBar(
             title: _buildAppBarTitle(),

@@ -238,6 +238,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       body: Focus(
         onKeyEvent: _handleKeyEvent,
         child: CustomScrollView(
+          primary: false,
           slivers: [
             ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
             SliverPadding(
