@@ -934,15 +934,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (episodes.isEmpty) return;
 
-      // Sort by season then episode number, with Season 0 (Specials) at the end
+      // Sort by aired date, falling back to season/episode number
       final sorted = List<PlexMetadata>.from(episodes)
         ..sort((a, b) {
-          final aIsSpecial = (a.parentIndex ?? 0) == 0;
-          final bIsSpecial = (b.parentIndex ?? 0) == 0;
-          if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
-          final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-          if (seasonCmp != 0) return seasonCmp;
-          return (a.index ?? 0).compareTo(b.index ?? 0);
+          final aDate = a.originallyAvailableAt ?? '';
+          final bDate = b.originallyAvailableAt ?? '';
+          if (aDate.isEmpty && bDate.isEmpty) {
+            final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
+            if (seasonCmp != 0) return seasonCmp;
+            return (a.index ?? 0).compareTo(b.index ?? 0);
+          }
+          if (aDate.isEmpty) return 1;
+          if (bDate.isEmpty) return -1;
+          return aDate.compareTo(bDate);
         });
 
       // Find current episode in the sorted list
