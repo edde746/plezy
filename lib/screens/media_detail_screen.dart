@@ -1204,7 +1204,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final isAlways = flattenSeasons == flattenSeasonsAlways;
       final isSingleSeason = flattenSeasons == flattenSeasonsSingleSeason;
       final shouldShowEpisodesDirectly =
-          isAlways || seasonsWithServerId.length <= 1 || (isSingleSeason && seasonsWithServerId.length == 1);
+          isAlways || seasonsWithServerId.isEmpty || (isSingleSeason && seasonsWithServerId.length == 1);
 
       // Create focus nodes for season tabs
       _updateSeasonTabFocusNodes(seasonsWithServerId.length);
