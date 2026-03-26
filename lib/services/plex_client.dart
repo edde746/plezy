@@ -154,8 +154,8 @@ class PlexClient {
   /// Large responses are decoded in a background isolate to avoid ANR.
   static FutureOr<String> _lenientUtf8Decoder(
     List<int> responseBytes,
-    RequestOptions requestOptions,
-    ResponseBody responseBody,
+    RequestOptions _,
+    ResponseBody _,
   ) {
     if (responseBytes.length > 50 * 1024) {
       return tryIsolateRun(() => _decodeUtf8(responseBytes));
@@ -217,6 +217,30 @@ class PlexClient {
     // Add interceptor for logging (optional, can be disabled in production)
     _dio.interceptors.add(
       LogInterceptor(requestBody: false, responseBody: false, error: true, requestHeader: false, responseHeader: false),
+    );
+
+    // Add Security Interceptor to validate token transmission
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = options.headers['X-Plex-Token'];
+          if (token != null) {
+            // Reconstruct full URL to check destination
+            final fullUrl = options.uri.toString();
+            if (!PlexUrlHelper.isSecureDestination(fullUrl, config.baseUrl)) {
+              appLogger.w('Security Warning: Attempted to send X-Plex-Token to insecure destination: $fullUrl');
+              // Remove the token
+              options.headers.remove('X-Plex-Token');
+
+              // Also check query parameters
+              if (options.queryParameters.containsKey('X-Plex-Token')) {
+                options.queryParameters.remove('X-Plex-Token');
+              }
+            }
+          }
+          return handler.next(options);
+        },
+      ),
     );
 
     if (_endpointManager != null) {
@@ -1981,27 +2005,21 @@ class PlexClient {
     String? startingEpisodeKey,
   }) async {
     try {
+      // Get machine identifier for building the URI
       final machineId = config.machineIdentifier ?? await getMachineIdentifier();
       if (machineId == null) {
         throw Exception('Could not get server machine identifier');
       }
 
-      // When starting from a specific episode, use continuous mode
-      // This lets the server determine playback order (respects episodeSort)
-      if (startingEpisodeKey != null && shuffle == 0) {
-        final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$startingEpisodeKey';
-        return await createPlayQueue(
-          uri: uri,
-          type: 'video',
-          continuous: 1,
-        );
-      }
+      // Build the URI for the show itself, allowing deferred loading of episodes
+      final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$showRatingKey';
 
-      final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$showRatingKey/children';
+      // Create the play queue with optional starting episode
       return await createPlayQueue(
         uri: uri,
         type: 'video',
         shuffle: shuffle,
+        key: startingEpisodeKey != null ? '/library/metadata/$startingEpisodeKey' : null,
       );
     } catch (e) {
       appLogger.e('Failed to create show play queue', error: e);
@@ -2217,7 +2235,7 @@ class PlexClient {
   }
 
   /// Get EPG channels using provider lineup endpoints (matches official Plex web client)
-  Future<List<LiveTvChannel>> getEpgChannels({String? lineup}) async {
+  Future<List<LiveTvChannel>> getEpgChannels() async {
     List<LiveTvChannel> parseChannels(Response response) {
       final container = _getMediaContainer(response);
       if (container != null && container['Channel'] is List && (container['Channel'] as List).isNotEmpty) {

@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex client for Flutter"
 publish_to: "none"
-version: 1.30.0+62
+version: 1.28.0+60
 
 environment:
   sdk: ^3.8.1
@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   intl: ^0.20.2
+  flutter_secure_storage: ^9.0.0
   dio: ^5.9.2
   json_annotation: ^4.9.0
   shared_preferences: ^2.2.2
@@ -87,10 +88,6 @@ dependency_overrides:
       url: https://github.com/edde746/auto_updater
       ref: 9e150f7
       path: packages/auto_updater_windows
-  material_symbols_icons:
-    git:
-      url: https://github.com/edde746/material_symbols_icons
-      ref: 1d8cd83
 
 flutter:
   uses-material-design: true
