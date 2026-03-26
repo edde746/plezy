@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Base class for services that use SharedPreferences singleton pattern.
@@ -32,6 +33,12 @@ abstract class BaseSharedPreferencesService {
       await instance.onInit();
     }
     return _instances[T] as T;
+  }
+
+  /// Reset a singleton instance (useful for testing)
+  @visibleForTesting
+  static void resetInstanceForTesting<T extends BaseSharedPreferencesService>() {
+    _instances.remove(T);
   }
 
   /// Decode a JSON string to a Map with error handling.

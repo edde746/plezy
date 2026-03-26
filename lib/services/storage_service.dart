@@ -63,6 +63,12 @@ class StorageService extends BaseSharedPreferencesService {
   @visibleForTesting
   static set testSecureStorage(FlutterSecureStorage storage) => _testSecureStorage = storage;
 
+  @visibleForTesting
+  static void resetForTesting() {
+    // ignore: invalid_use_of_visible_for_testing_member, Required to reset singleton between tests
+    BaseSharedPreferencesService.resetInstanceForTesting<StorageService>();
+  }
+
   @override
   Future<void> onInit() async {
     _secureStorage = _testSecureStorage ?? const FlutterSecureStorage();
@@ -136,6 +142,25 @@ class StorageService extends BaseSharedPreferencesService {
 
   Future<void> clearServerEndpoint(String serverId) async {
     await prefs.remove('$_prefixServerEndpoint$serverId');
+  }
+
+  // Server URL
+  Future<void> saveServerUrl(String url) async {
+    await prefs.setString(_keyServerUrl, url);
+    LogRedactionManager.registerServerUrl(url);
+  }
+
+  String? getServerUrl() {
+    return prefs.getString(_keyServerUrl);
+  }
+
+  // Server Data (stored as JSON string)
+  Future<void> saveServerData(Map<String, dynamic> data) async {
+    await _setJsonMap(_keyServerData, data);
+  }
+
+  Map<String, dynamic>? getServerData() {
+    return _readJsonMap(_keyServerData);
   }
 
   // Server Access Token
