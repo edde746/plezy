@@ -668,10 +668,11 @@ packages:
   material_symbols_icons:
     dependency: "direct main"
     description:
-      name: material_symbols_icons
-      sha256: c62b15f2b3de98d72cbff0148812f5ef5159f05e61fc9f9a089ec2bb234df082
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "1d8cd83"
+      resolved-ref: "1d8cd8325db29691a01738a25f220dd3515bd1e2"
+      url: "https://github.com/edde746/material_symbols_icons"
+    source: git
     version: "4.2906.0"
   meta:
     dependency: transitive

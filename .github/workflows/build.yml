@@ -361,7 +361,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: "master"
-          flutter-version: "3.41.5"
           cache: true
 
       - name: Cache Pub dependencies
@@ -589,7 +588,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: "master"
-          flutter-version: "3.41.5"
           cache: true
 
       - name: Cache Pub dependencies

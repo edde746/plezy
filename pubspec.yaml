@@ -87,6 +87,10 @@ dependency_overrides:
       url: https://github.com/edde746/auto_updater
       ref: 9e150f7
       path: packages/auto_updater_windows
+  material_symbols_icons:
+    git:
+      url: https://github.com/edde746/material_symbols_icons
+      ref: 1d8cd83
 
 flutter:
   uses-material-design: true
