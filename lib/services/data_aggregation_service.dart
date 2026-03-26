@@ -32,7 +32,7 @@ class DataAggregationService {
     final allOnDeck = await _perServer<PlexMetadata>(
       operationName: 'fetching on deck',
       operation: (serverId, client, server) async {
-        return await client.getOnDeck();
+        return await client.getContinueWatching();
       },
     );
 

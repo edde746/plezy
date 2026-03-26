@@ -79,23 +79,6 @@ List<PlexHub> _processHubResponse(Map<String, dynamic> decoded, String serverId,
   return hubs;
 }
 
-/// Process on-deck response in an isolate.
-/// Top-level function so it can be passed to [Isolate.run].
-List<PlexMetadata> _processOnDeckResponse(Map<String, dynamic> decoded, String serverId, String? serverName) {
-  final container = decoded['MediaContainer'] as Map<String, dynamic>?;
-  if (container == null || container['Metadata'] == null) return [];
-
-  final allItems = (container['Metadata'] as List)
-      .map(
-        (json) => PlexMetadata.fromJsonWithImages(
-          json as Map<String, dynamic>,
-        ).copyWith(serverId: serverId, serverName: serverName),
-      )
-      .toList();
-
-  return allItems.where((item) => !item.isMusicContent).toList();
-}
-
 /// Constants for Plex stream types
 class PlexStreamType {
   static const int video = 1;
@@ -988,12 +971,42 @@ class PlexClient {
     return allItems.where((item) => !item.isMusicContent).toList();
   }
 
-  /// Get on deck items (continue watching, filtered to video content only)
-  Future<List<PlexMetadata>> getOnDeck() async {
-    final response = await _dio.get('/library/onDeck');
+  /// Get continue watching items via the hubs system.
+  /// Uses /hubs?identifier=home.continue,home.ondeck which respects the
+  /// server's OnDeckWindow preference (unlike /library/onDeck).
+  Future<List<PlexMetadata>> getContinueWatching({int count = 20}) async {
+    final response = await _dio.get('/hubs', queryParameters: {
+      'identifier': 'home.continue,home.ondeck',
+      'count': count,
+      'includeGuids': 1,
+    });
     final sid = serverId;
     final sname = serverName;
-    return await tryIsolateRun(() => _processOnDeckResponse(response.data as Map<String, dynamic>, sid, sname));
+    final hubs = await tryIsolateRun(
+      () => _processHubResponse(response.data as Map<String, dynamic>, sid, sname),
+    );
+    // Deduplicate across home.continue and home.ondeck hubs.
+    // Like plex-web, episodes from the same show (same grandparentRatingKey)
+    // are deduplicated, preferring the in-progress item (has viewOffset).
+    final items = hubs.expand((hub) => hub.items).toList();
+    final result = <PlexMetadata>[];
+    for (final item in items) {
+      final isEpisode = item.type?.toLowerCase() == 'episode';
+      final gpKey = item.grandparentRatingKey;
+      if (isEpisode && gpKey != null) {
+        final idx = result.indexWhere((e) =>
+            e.type?.toLowerCase() == 'episode' &&
+            e.grandparentRatingKey == gpKey);
+        if (idx != -1) {
+          if (result[idx].viewOffset == null && item.viewOffset != null) {
+            result[idx] = item;
+          }
+          continue;
+        }
+      }
+      result.add(item);
+    }
+    return result;
   }
 
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)

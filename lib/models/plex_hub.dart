@@ -47,7 +47,7 @@ class PlexHub {
             final String type = (item.containsKey('leafCount') || item.containsKey('childCount')) ? 'show' : 'folder';
             item['type'] = type;
           }
-          metadataList.add(PlexMetadata.fromJson(item as Map<String, dynamic>));
+          metadataList.add(PlexMetadata.fromJsonWithImages(item as Map<String, dynamic>));
         } catch (e) {
           // Skip items that fail to parse
         }
