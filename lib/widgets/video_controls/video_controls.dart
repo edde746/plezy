@@ -59,74 +59,13 @@ import '../../providers/shader_provider.dart';
 import '../../services/shader_service.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
-Widget plexVideoControlsBuilder(
-  Player player,
-  PlexMetadata metadata, {
-  VoidCallback? onNext,
-  VoidCallback? onPrevious,
-  List<PlexMediaVersion>? availableVersions,
-  int? selectedMediaIndex,
-  VoidCallback? onTogglePIPMode,
-  int boxFitMode = 0,
-  VoidCallback? onCycleBoxFitMode,
-  VoidCallback? onCycleAudioTrack,
-  VoidCallback? onCycleSubtitleTrack,
-  Function(AudioTrack)? onAudioTrackChanged,
-  Function(SubtitleTrack)? onSubtitleTrackChanged,
-  Function(SubtitleTrack)? onSecondarySubtitleTrackChanged,
-  Function(Duration position)? onSeekCompleted,
-  VoidCallback? onBack,
-  bool canControl = true,
-  ValueNotifier<bool>? hasFirstFrame,
-  FocusNode? playNextFocusNode,
-  ValueNotifier<bool>? controlsVisible,
-  ShaderService? shaderService,
-  VoidCallback? onShaderChanged,
-  Uint8List? Function(Duration time)? thumbnailDataBuilder,
-  bool isLive = false,
-  String? liveChannelName,
-  bool isAmbientLightingEnabled = false,
-  VoidCallback? onToggleAmbientLighting,
-}) {
-  return PlexVideoControls(
-    player: player,
-    metadata: metadata,
-    onNext: onNext,
-    onPrevious: onPrevious,
-    availableVersions: availableVersions ?? [],
-    selectedMediaIndex: selectedMediaIndex ?? 0,
-    boxFitMode: boxFitMode,
-    onTogglePIPMode: onTogglePIPMode,
-    onCycleBoxFitMode: onCycleBoxFitMode,
-    onCycleAudioTrack: onCycleAudioTrack,
-    onCycleSubtitleTrack: onCycleSubtitleTrack,
-    onAudioTrackChanged: onAudioTrackChanged,
-    onSubtitleTrackChanged: onSubtitleTrackChanged,
-    onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
-    onSeekCompleted: onSeekCompleted,
-    onBack: onBack,
-    canControl: canControl,
-    hasFirstFrame: hasFirstFrame,
-    playNextFocusNode: playNextFocusNode,
-    controlsVisible: controlsVisible,
-    shaderService: shaderService,
-    onShaderChanged: onShaderChanged,
-    thumbnailDataBuilder: thumbnailDataBuilder,
-    isLive: isLive,
-    liveChannelName: liveChannelName,
-    isAmbientLightingEnabled: isAmbientLightingEnabled,
-    onToggleAmbientLighting: onToggleAmbientLighting,
-  );
-}
-
-class PlexVideoControls extends StatefulWidget {
-  final Player player;
-  final PlexMetadata metadata;
-  final VoidCallback? onNext;
-  final VoidCallback? onPrevious;
+/// Configuration for Plex video controls to avoid long parameter lists
+class PlexVideoControlsConfiguration {
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
   final int boxFitMode;
+  final VoidCallback? onNext;
+  final VoidCallback? onPrevious;
   final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
   final VoidCallback? onCycleAudioTrack;
@@ -134,55 +73,26 @@ class PlexVideoControls extends StatefulWidget {
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
-
-  /// Called when a seek operation completes (for Watch Together sync)
   final Function(Duration position)? onSeekCompleted;
-
-  /// Called when back button is pressed (for Watch Together session leave confirmation)
   final VoidCallback? onBack;
-
-  /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
-
-  /// Notifier for whether first video frame has rendered (shows loading state when false).
   final ValueNotifier<bool>? hasFirstFrame;
-
-  /// Optional focus node for Play Next dialog button (for TV navigation from timeline)
   final FocusNode? playNextFocusNode;
-
-  /// Notifier to report controls visibility to parent (for popup positioning)
   final ValueNotifier<bool>? controlsVisible;
-
-  /// Optional shader service for MPV shader control
   final ShaderService? shaderService;
-
-  /// Called when shader preset changes
   final VoidCallback? onShaderChanged;
-
-  /// Optional callback that returns thumbnail image bytes for a given timestamp.
   final Uint8List? Function(Duration time)? thumbnailDataBuilder;
-
-  /// Whether this is a live TV stream (disables seek, progress, etc.)
   final bool isLive;
-
-  /// Channel name for live TV display
   final String? liveChannelName;
-
-  /// Whether ambient lighting is enabled (passed to settings sheet)
   final bool isAmbientLightingEnabled;
-
-  /// Called to toggle ambient lighting (passed to settings sheet)
   final VoidCallback? onToggleAmbientLighting;
 
-  const PlexVideoControls({
-    super.key,
-    required this.player,
-    required this.metadata,
-    this.onNext,
-    this.onPrevious,
+  const PlexVideoControlsConfiguration({
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
     this.boxFitMode = 0,
+    this.onNext,
+    this.onPrevious,
     this.onTogglePIPMode,
     this.onCycleBoxFitMode,
     this.onCycleAudioTrack,
@@ -203,6 +113,55 @@ class PlexVideoControls extends StatefulWidget {
     this.liveChannelName,
     this.isAmbientLightingEnabled = false,
     this.onToggleAmbientLighting,
+  });
+}
+
+/// Custom video controls builder for Plex with chapter, audio, and subtitle support
+Widget plexVideoControlsBuilder(
+  Player player,
+  PlexMetadata metadata, {
+  PlexVideoControlsConfiguration config = const PlexVideoControlsConfiguration(),
+}) {
+  return PlexVideoControls(player: player, metadata: metadata, config: config);
+}
+
+class PlexVideoControls extends StatefulWidget {
+  final Player player;
+  final PlexMetadata metadata;
+  final PlexVideoControlsConfiguration config;
+
+  // Parameter getters to maintain compatibility with _PlexVideoControlsState and avoid massive refactor
+  List<PlexMediaVersion> get availableVersions => config.availableVersions;
+  int get selectedMediaIndex => config.selectedMediaIndex;
+  int get boxFitMode => config.boxFitMode;
+  VoidCallback? get onNext => config.onNext;
+  VoidCallback? get onPrevious => config.onPrevious;
+  VoidCallback? get onTogglePIPMode => config.onTogglePIPMode;
+  VoidCallback? get onCycleBoxFitMode => config.onCycleBoxFitMode;
+  VoidCallback? get onCycleAudioTrack => config.onCycleAudioTrack;
+  VoidCallback? get onCycleSubtitleTrack => config.onCycleSubtitleTrack;
+  Function(AudioTrack)? get onAudioTrackChanged => config.onAudioTrackChanged;
+  Function(SubtitleTrack)? get onSubtitleTrackChanged => config.onSubtitleTrackChanged;
+  Function(SubtitleTrack)? get onSecondarySubtitleTrackChanged => config.onSecondarySubtitleTrackChanged;
+  Function(Duration position)? get onSeekCompleted => config.onSeekCompleted;
+  VoidCallback? get onBack => config.onBack;
+  bool get canControl => config.canControl;
+  ValueNotifier<bool>? get hasFirstFrame => config.hasFirstFrame;
+  FocusNode? get playNextFocusNode => config.playNextFocusNode;
+  ValueNotifier<bool>? get controlsVisible => config.controlsVisible;
+  ShaderService? get shaderService => config.shaderService;
+  VoidCallback? get onShaderChanged => config.onShaderChanged;
+  Uint8List? Function(Duration time)? get thumbnailDataBuilder => config.thumbnailDataBuilder;
+  bool get isLive => config.isLive;
+  String? get liveChannelName => config.liveChannelName;
+  bool get isAmbientLightingEnabled => config.isAmbientLightingEnabled;
+  VoidCallback? get onToggleAmbientLighting => config.onToggleAmbientLighting;
+
+  const PlexVideoControls({
+    super.key,
+    required this.player,
+    required this.metadata,
+    this.config = const PlexVideoControlsConfiguration(),
   });
 
   @override
@@ -2047,60 +2006,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                       child: child,
                                     );
                                   },
-                                  child: isMobile
-                                      ? Listener(
-                                          behavior: HitTestBehavior.translucent,
-                                          onPointerDown: (_) {
-                                            if (!_isContentStripVisible) _restartHideTimerIfPlaying();
-                                          },
-                                          child: Builder(
-                                            builder: (context) {
-                                              final playbackState = context.watch<PlaybackStateProvider>();
-                                              final hasStripContent =
-                                                  _chapters.isNotEmpty || playbackState.isQueueActive;
-                                              return MobileVideoControls(
-                                                player: widget.player,
-                                                metadata: widget.metadata,
-                                                chapters: _chapters,
-                                                chaptersLoaded: _chaptersLoaded,
-                                                seekTimeSmall: _seekTimeSmall,
-                                                trackChapterControls: _buildTrackChapterControlsWidget(
-                                                  hideChaptersAndQueue: hasStripContent,
-                                                ),
-                                                onSeek: _throttledSeek,
-                                                onSeekEnd: _finalizeSeek,
-                                                onSeekCompleted: widget.onSeekCompleted,
-                                                // ignore: no-empty-block - play/pause handled by parent VideoControlsState
-                                                onPlayPause: () {},
-                                                onCancelAutoHide: () => _hideTimer?.cancel(),
-                                                onStartAutoHide: _startHideTimer,
-                                                onBack: widget.onBack,
-                                                onNext: widget.onNext,
-                                                onPrevious: widget.onPrevious,
-                                                canControl: widget.canControl,
-                                                hasFirstFrame: widget.hasFirstFrame,
-                                                thumbnailDataBuilder: widget.thumbnailDataBuilder,
-                                                isLive: widget.isLive,
-                                                liveChannelName: widget.liveChannelName,
-                                                serverId: widget.metadata.serverId,
-                                                showQueueTab: playbackState.isQueueActive,
-                                                onQueueItemSelected: playbackState.isQueueActive
-                                                    ? _onQueueItemSelected
-                                                    : null,
-                                                controlsVisible: widget.controlsVisible,
-                                                onStripVisibilityChanged: (visible) {
-                                                  setState(() => _isContentStripVisible = visible);
-                                                  if (visible) {
-                                                    _hideTimer?.cancel();
-                                                  } else {
-                                                    _restartHideTimerIfPlaying();
-                                                  }
-                                                },
-                                              );
-                                            },
-                                          ),
-                                        )
-                                      : _buildDesktopControlsListener(),
+                                  child: isMobile ? _buildMobileControlsListener() : _buildDesktopControlsListener(),
                                 ),
                               );
                             },
@@ -2219,6 +2125,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         onSeekForward: () => unawaited(_seekByTime(forward: true)),
         onSeek: _throttledSeek,
         onSeekEnd: _finalizeSeek,
+        onSeekCompleted: widget.onSeekCompleted,
         getReplayIcon: getReplayIcon,
         getForwardIcon: getForwardIcon,
         onFocusActivity: _restartHideTimerIfPlaying,
@@ -2234,8 +2141,57 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
         onCancelAutoHide: () => _hideTimer?.cancel(),
         onStartAutoHide: _startHideTimer,
-        onSeekCompleted: widget.onSeekCompleted,
         onContentStripVisibilityChanged: (visible) {
+          setState(() => _isContentStripVisible = visible);
+          if (visible) {
+            _hideTimer?.cancel();
+          } else {
+            _restartHideTimerIfPlaying();
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildMobileControlsListener() {
+    final playbackState = context.watch<PlaybackStateProvider>();
+    final hasStripContent = _chapters.isNotEmpty || playbackState.isQueueActive;
+    final onQueueItemSelected = playbackState.isQueueActive ? _onQueueItemSelected : null;
+
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) {
+        if (!_isContentStripVisible) _restartHideTimerIfPlaying();
+      },
+      child: MobileVideoControls(
+        player: widget.player,
+        metadata: widget.metadata,
+        chapters: _chapters,
+        chaptersLoaded: _chaptersLoaded,
+        seekTimeSmall: _seekTimeSmall,
+        trackChapterControls: _buildTrackChapterControlsWidget(
+          hideChaptersAndQueue: hasStripContent,
+        ),
+        onSeek: _throttledSeek,
+        onSeekEnd: _finalizeSeek,
+        onSeekCompleted: widget.onSeekCompleted,
+        // ignore: no-empty-block - play/pause handled by parent VideoControlsState
+        onPlayPause: () {},
+        onCancelAutoHide: () => _hideTimer?.cancel(),
+        onStartAutoHide: _startHideTimer,
+        onBack: widget.onBack,
+        onNext: widget.onNext,
+        onPrevious: widget.onPrevious,
+        canControl: widget.canControl,
+        hasFirstFrame: widget.hasFirstFrame,
+        thumbnailDataBuilder: widget.thumbnailDataBuilder,
+        isLive: widget.isLive,
+        liveChannelName: widget.liveChannelName,
+        serverId: widget.metadata.serverId,
+        showQueueTab: playbackState.isQueueActive,
+        onQueueItemSelected: onQueueItemSelected,
+        controlsVisible: widget.controlsVisible,
+        onStripVisibilityChanged: (visible) {
           setState(() => _isContentStripVisible = visible);
           if (visible) {
             _hideTimer?.cancel();

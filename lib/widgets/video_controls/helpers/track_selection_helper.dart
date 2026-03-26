@@ -93,7 +93,7 @@ class TrackSelectionHelper {
     return Container(
       width: 18,
       height: 18,
-      decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: colorScheme.primary, borderRadius: const BorderRadius.all(Radius.circular(4))),
       alignment: Alignment.center,
       child: Text(
         number.toString(),

@@ -389,9 +389,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
         break;
       }
     }
-    rightTarget ??= PlatformDetector.isTV()
-        ? (_trackControlFocusNodes.isNotEmpty ? _trackControlFocusNodes.first : null)
-        : _volumeFocusNode;
+    if (rightTarget == null) {
+      if (PlatformDetector.isTV()) {
+        rightTarget = _trackControlFocusNodes.isNotEmpty ? _trackControlFocusNodes.first : null;
+      } else {
+        rightTarget = _volumeFocusNode;
+      }
+    }
 
     return _handleDirectionalNavigation(event, leftTarget: leftTarget, rightTarget: rightTarget);
   }

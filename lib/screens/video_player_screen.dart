@@ -596,7 +596,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // immediately instead of waiting for ffmpeg's exponential backoff
       if (!widget.isOffline && !widget.isLive) {
         final serverId = widget.metadata.serverId;
-        if (serverId != null) {
+        if (serverId != null && mounted) {
           final serverManager = context.read<MultiServerProvider>().serverManager;
           bool wasOffline = false;
           _serverStatusSubscription = serverManager.statusStream.listen((statusMap) {
@@ -934,19 +934,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (episodes.isEmpty) return;
 
-      // Sort by aired date, falling back to season/episode number
+      // Sort by season then episode number, with Season 0 (Specials) at the end
       final sorted = List<PlexMetadata>.from(episodes)
         ..sort((a, b) {
-          final aDate = a.originallyAvailableAt ?? '';
-          final bDate = b.originallyAvailableAt ?? '';
-          if (aDate.isEmpty && bDate.isEmpty) {
-            final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-            if (seasonCmp != 0) return seasonCmp;
-            return (a.index ?? 0).compareTo(b.index ?? 0);
-          }
-          if (aDate.isEmpty) return 1;
-          if (bDate.isEmpty) return -1;
-          return aDate.compareTo(bDate);
+          final aIsSpecial = (a.parentIndex ?? 0) == 0;
+          final bIsSpecial = (b.parentIndex ?? 0) == 0;
+          if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
+          final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
+          if (seasonCmp != 0) return seasonCmp;
+          return (a.index ?? 0).compareTo(b.index ?? 0);
         });
 
       // Find current episode in the sorted list
@@ -1013,6 +1009,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _trackManager?.mediaInfo = null;
         }
 
+        _startLiveTimelineUpdates();
       } catch (e) {
         appLogger.e('Failed to start live TV playback', error: e);
         _sendLiveTimeline('stopped');
@@ -1876,10 +1873,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   void _onVideoCompleted(bool completed) async {
-    // Live TV streams are continuous — ignore spurious EOF events caused by
-    // inter-segment gaps in the chunked MKV transcode stream.
-    if (widget.isLive) return;
-
     if (completed &&
         _nextEpisode != null &&
         !_showPlayNextDialog &&
@@ -2056,15 +2049,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final state = player?.state.playing == true ? 'playing' : 'paused';
       _sendLiveTimeline(state);
     });
-    // Delay initial heartbeat to let the transcode session stabilize.
-    // Sending time=0 immediately after player.open() causes the server
-    // to spawn a duplicate transcode job with offset=-1 that 404s.
-    Future.delayed(const Duration(seconds: 3), () {
-      if (_liveTimelineTimer != null) {
-        final state = player?.state.playing == true ? 'playing' : 'paused';
-        _sendLiveTimeline(state);
-      }
-    });
+    // Send initial heartbeat immediately
+    _sendLiveTimeline('playing');
   }
 
   void _stopLiveTimelineUpdates() {
@@ -2125,7 +2111,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final p = player!;
     // FFmpeg HTTP protocol reconnection
     await p.setProperty('stream-lavf-o',
-        'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=30');
+        'reconnect=1,reconnect_at_eof=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=30');
     // Demuxer: retry up to 1000 times on stream reload failures
     await p.setProperty('demuxer-lavf-o', 'max_reload=1000');
     await p.setProperty('force-seekable', 'no');
@@ -2595,47 +2581,49 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                     return Video(
                       player: player!,
                       controls: (context) => plexVideoControlsBuilder(
-                        player!,
-                        widget.metadata,
-                        onNext: onNext,
-                        onPrevious: onPrevious,
-                        availableVersions: _availableVersions,
-                        selectedMediaIndex: widget.selectedMediaIndex,
-                        onTogglePIPMode: _togglePIPMode,
-                        boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
-                        onCycleBoxFitMode: _cycleBoxFitMode,
-                        onCycleAudioTrack: _cycleAudioTrack,
-                        onCycleSubtitleTrack: _cycleSubtitleTrack,
-                        onAudioTrackChanged: _onAudioTrackChanged,
-                        onSubtitleTrackChanged: _onSubtitleTrackChanged,
-                        onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
-                        onSeekCompleted: (position) {
-                          // Notify Watch Together of seek for sync
-                          // Note: canControl() check is done in sync manager, not here
-                          // This matches play/pause behavior and avoids timing issues
-                          try {
-                            final watchTogether = this.context.read<WatchTogetherProvider>();
-                            if (watchTogether.isInSession) {
-                              watchTogether.onLocalSeek(position);
-                            }
-                          } catch (e) {
-                            // Watch Together not available, ignore
-                          }
-                        },
-                        onBack: _handleBackButton,
-                        canControl: canControl,
-                        hasFirstFrame: _hasFirstFrame,
-                        playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
-                        controlsVisible: _controlsVisible,
-                        shaderService: _shaderService,
-                        // ignore: no-empty-block - setState triggers rebuild to reflect shader change
-                        onShaderChanged: () => setState(() {}),
-                        thumbnailDataBuilder: _bifService?.isAvailable == true ? _getThumbnailData : null,
-                        isLive: widget.isLive,
-                        liveChannelName: _liveChannelName,
-                        isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
-                        onToggleAmbientLighting: _toggleAmbientLighting,
-                      ),
+                          player!,
+                          widget.metadata,
+                          config: PlexVideoControlsConfiguration(
+                            onNext: onNext,
+                            onPrevious: onPrevious,
+                            availableVersions: _availableVersions,
+                            selectedMediaIndex: widget.selectedMediaIndex,
+                            onTogglePIPMode: _togglePIPMode,
+                            boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
+                            onCycleBoxFitMode: _cycleBoxFitMode,
+                            onCycleAudioTrack: _cycleAudioTrack,
+                            onCycleSubtitleTrack: _cycleSubtitleTrack,
+                            onAudioTrackChanged: _onAudioTrackChanged,
+                            onSubtitleTrackChanged: _onSubtitleTrackChanged,
+                            onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
+                            onSeekCompleted: (position) {
+                              // Notify Watch Together of seek for sync
+                              // Note: canControl() check is done in sync manager, not here
+                              // This matches play/pause behavior and avoids timing issues
+                              try {
+                                final watchTogether = this.context.read<WatchTogetherProvider>();
+                                if (watchTogether.isInSession) {
+                                  watchTogether.onLocalSeek(position);
+                                }
+                              } catch (e) {
+                                // Watch Together not available, ignore
+                              }
+                            },
+                            onBack: _handleBackButton,
+                            canControl: canControl,
+                            hasFirstFrame: _hasFirstFrame,
+                            playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
+                            controlsVisible: _controlsVisible,
+                            shaderService: _shaderService,
+                            // ignore: no-empty-block - setState triggers rebuild to reflect shader change
+                            onShaderChanged: () => setState(() {}),
+                            thumbnailDataBuilder: _bifService?.isAvailable == true ? _getThumbnailData : null,
+                            isLive: widget.isLive,
+                            liveChannelName: _liveChannelName,
+                            isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
+                            onToggleAmbientLighting: _toggleAmbientLighting,
+                          ),
+                        ),
                     );
                   },
                 ),
@@ -2920,54 +2908,43 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                   );
                 },
               ),
-              // Watch Together overlays (isolated from video surface repaints)
-              RepaintBoundary(
-                child: Stack(
-                  children: [
-                    // Watch Together: reconnecting to host overlay
-                    Selector<WatchTogetherProvider, bool>(
-                      selector: (_, provider) => provider.isWaitingForHostReconnect,
-                      builder: (context, isWaiting, child) {
-                        if (!isWaiting) return const SizedBox.shrink();
-                        return Positioned(
-                          bottom: 120,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.all(Radius.circular(20)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (PlatformDetector.isTV())
-                                    const Icon(Symbols.sync_rounded, size: 14, color: Colors.white)
-                                  else
-                                    const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                    ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    t.watchTogether.reconnectingToHost,
-                                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                                  ),
-                                ],
-                              ),
+              // Watch Together: reconnecting to host overlay
+              Consumer<WatchTogetherProvider>(
+                builder: (context, provider, child) {
+                  if (!provider.isWaitingForHostReconnect) return const SizedBox.shrink();
+                  return Positioned(
+                    bottom: 120,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.all(Radius.circular(20)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             ),
-                          ),
-                        );
-                      },
+                            const SizedBox(width: 8),
+                            Text(
+                              t.watchTogether.reconnectingToHost,
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    // Watch Together: participant join/leave notifications
-                    const ParticipantNotificationOverlay(),
-                  ],
-                ),
+                  );
+                },
               ),
+              // Watch Together: participant join/leave notifications
+              const ParticipantNotificationOverlay(),
               // Black overlay during exit (no spinner - just covers transparency)
               ValueListenableBuilder<bool>(
                 valueListenable: _isExiting,

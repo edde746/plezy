@@ -167,7 +167,7 @@ class ContentStripState extends State<ContentStrip> {
     });
   }
 
-  KeyEventResult _handleFocusItemKeyEvent(FocusNode node, KeyEvent event, int index, int totalItems, _StripTab page) {
+  KeyEventResult _handleFocusItemKeyEvent(FocusNode _, KeyEvent event, int index, int totalItems, _StripTab page) {
     if (!event.isActionable) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
@@ -372,7 +372,6 @@ class ContentStripState extends State<ContentStrip> {
             void onTap() => unawaited(_handleChapterTap(chapter.startTime));
 
             final item = _buildStripItem(
-              context: context,
               isCurrent: isCurrent,
               isTablet: isTablet,
               thumbnail: chapter.thumb != null
@@ -460,7 +459,6 @@ class ContentStripState extends State<ContentStrip> {
             void onTap() => widget.onQueueItemSelected?.call(item);
 
             final stripItem = _buildStripItem(
-              context: context,
               isCurrent: isCurrent,
               isTablet: isTablet,
               thumbnail: item.thumb != null
@@ -515,7 +513,6 @@ class ContentStripState extends State<ContentStrip> {
   }
 
   Widget _buildStripItem({
-    required BuildContext context,
     required bool isCurrent,
     required Widget? thumbnail,
     required String title,
