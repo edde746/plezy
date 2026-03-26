@@ -409,10 +409,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       _startSkipButtonDismissTimer();
     }
 
-    // Auto-focus skip button on TV when marker appears (only in keyboard/TV mode, if controls hidden)
+    // Auto-focus skip button on TV when marker appears (only in keyboard/TV mode)
     if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_showControls) {
+        if (mounted) {
           _skipMarkerFocusNode.requestFocus();
         }
       });
