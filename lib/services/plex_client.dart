@@ -2235,7 +2235,7 @@ class PlexClient {
   }
 
   /// Get EPG channels using provider lineup endpoints (matches official Plex web client)
-  Future<List<LiveTvChannel>> getEpgChannels() async {
+  Future<List<LiveTvChannel>> getEpgChannels({String? lineup}) async {
     List<LiveTvChannel> parseChannels(Response response) {
       final container = _getMediaContainer(response);
       if (container != null && container['Channel'] is List && (container['Channel'] as List).isNotEmpty) {
