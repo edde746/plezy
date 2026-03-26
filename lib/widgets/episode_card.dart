@@ -129,7 +129,7 @@ class _EpisodeCardState extends State<EpisodeCard> {
           onTap: widget.onTap,
           child: InkWell(
             key: Key(widget.episode.ratingKey),
-            borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
+            borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
             onTap: widget.onTap,
             onTapDown: _storeTapPosition,
             onLongPress: _showContextMenu,
@@ -139,7 +139,7 @@ class _EpisodeCardState extends State<EpisodeCard> {
             child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
+                borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(

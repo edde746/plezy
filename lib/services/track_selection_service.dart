@@ -588,7 +588,7 @@ class TrackSelectionService {
   TrackSelectionResult<SubtitleTrack> selectSubtitleTrack(
     List<SubtitleTrack> availableTracks,
     SubtitleTrack? preferredSubtitleTrack,
-    AudioTrack? selectedAudioTrack,
+    AudioTrack? _,
   ) {
     // Priority 1: Try preferred track from navigation
     if (preferredSubtitleTrack != null) {

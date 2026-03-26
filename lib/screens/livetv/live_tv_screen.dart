@@ -148,7 +148,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           final client = multiServer.getClientForServer(serverInfo.serverId);
           if (client == null) continue;
 
-          final channels = await client.getEpgChannels(lineup: serverInfo.lineup);
+          final channels = await client.getEpgChannels();
           final enabledKeys = enabledKeysByServer[serverInfo.serverId];
           appLogger.d(
             'Channels from DVR ${serverInfo.dvrKey}: ${channels.length} channels (${enabledKeys?.length ?? 'all'} enabled)',

@@ -326,7 +326,7 @@ class HubSectionState extends State<HubSection> {
       children: [
         // Hub header (NOT focusable - titles should not be focusable)
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           child: ExcludeFocus(
             child: InkWell(
               onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,

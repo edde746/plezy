@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'dart:io' show Platform, ProcessInfo;
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
@@ -57,26 +56,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
 const String gitCommit = String.fromEnvironment('GIT_COMMIT');
 
-// Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
-// at (0,0) as barrier taps, causing modals to dismiss immediately.
-// Remove when Flutter PR #179643 is merged.
-bool _zeroOffsetPointerGuardInstalled = false;
-
-void _installZeroOffsetPointerGuard() {
-  if (_zeroOffsetPointerGuardInstalled) return;
-  GestureBinding.instance.pointerRouter.addGlobalRoute(_absorbZeroOffsetPointerEvent);
-  _zeroOffsetPointerGuardInstalled = true;
-}
-
-void _absorbZeroOffsetPointerEvent(PointerEvent event) {
-  if (event.position == Offset.zero) {
-    GestureBinding.instance.cancelPointer(event.pointer);
-  }
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
 
   if (_enableSentry) {
     final packageInfo = await PackageInfo.fromPlatform();

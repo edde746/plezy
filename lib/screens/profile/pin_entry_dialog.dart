@@ -469,6 +469,14 @@ class _DigitBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final focusColor = FocusTheme.getFocusBorderColor(context);
+    String displayText;
+    if (digit == null) {
+      displayText = '–';
+    } else if (isActive) {
+      displayText = digit.toString();
+    } else {
+      displayText = '•';
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -497,7 +505,7 @@ class _DigitBox extends StatelessWidget {
             color: isActive ? focusColor.withValues(alpha: 0.08) : Colors.transparent,
           ),
           child: Text(
-            digit != null ? (isActive ? digit.toString() : '•') : '–',
+            displayText,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: digit != null

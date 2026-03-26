@@ -172,13 +172,14 @@ class MediaCardState extends State<MediaCard> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
     final ViewMode viewMode;
     if (widget.forceListMode) {
       viewMode = ViewMode.list;
     } else if (widget.forceGridMode) {
       viewMode = ViewMode.grid;
     } else {
-      viewMode = context.select<SettingsProvider, ViewMode>((s) => s.viewMode);
+      viewMode = settingsProvider.viewMode;
     }
 
     final semanticLabel = _buildSemanticLabel();
@@ -194,7 +195,7 @@ class MediaCardState extends State<MediaCard> {
             onLongPress: _showContextMenu,
             onSecondaryTapDown: _storeTapPosition,
             onSecondaryTap: _showContextMenu,
-            density: context.select<SettingsProvider, LibraryDensity>((s) => s.libraryDensity),
+            density: settingsProvider.libraryDensity,
             isOffline: widget.isOffline,
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
@@ -217,7 +218,7 @@ class MediaCardState extends State<MediaCard> {
 
   /// Grid layout — inlined from former _MediaCardGrid, _PosterOverlay, and
   /// flattened Column. Semantics removed (InkWell provides button semantics).
-  Widget _buildGridCard(BuildContext context, String semanticLabel, String? localPosterPath) {
+  Widget _buildGridCard(BuildContext context, String _, String? localPosterPath) {
     final item = widget.item;
     // Compute actual poster dimensions from card dimensions
     final posterWidth = widget.width != null ? widget.width! - 6 : null; // 3px padding each side
@@ -351,7 +352,7 @@ class _MediaCardList extends StatelessWidget {
     final base = _basePosterWidth();
     // For episodes with thumbnail mode, use wider width to maintain reasonable thumbnail size
     if (item is PlexMetadata) {
-      final mode = context.select<SettingsProvider, EpisodePosterMode>((s) => s.episodePosterMode);
+      final mode = context.watch<SettingsProvider>().episodePosterMode;
       if ((item as PlexMetadata).usesWideAspectRatio(mode)) {
         return base * 1.6; // Wider for 16:9 thumbnails
       }
@@ -363,7 +364,7 @@ class _MediaCardList extends StatelessWidget {
     final base = _basePosterWidth();
     // For episodes with thumbnail mode, use 16:9 aspect ratio
     if (item is PlexMetadata) {
-      final mode = context.select<SettingsProvider, EpisodePosterMode>((s) => s.episodePosterMode);
+      final mode = context.watch<SettingsProvider>().episodePosterMode;
       if ((item as PlexMetadata).usesWideAspectRatio(mode)) {
         // 16:9: height = width * 9/16 = base * 1.6 * 9/16 = base * 0.9
         return base * 0.9;
@@ -626,7 +627,7 @@ class _MediaCardList extends StatelessWidget {
                   ],
                   // Summary (hidden when spoiler protection is active)
                   if (!(item is PlexMetadata &&
-                          context.select<SettingsProvider, bool>((s) => s.hideSpoilers) &&
+                          context.watch<SettingsProvider>().hideSpoilers &&
                           (item as PlexMetadata).shouldHideSpoiler) &&
                       item.summary != null) ...[
                     Text(
@@ -701,10 +702,10 @@ Widget _buildPosterImage(
       localFilePath: localPosterPath,
     );
   } else if (item is PlexMetadata) {
-    final episodePosterMode = context.select<SettingsProvider, EpisodePosterMode>((s) => s.episodePosterMode);
-    final hideSpoilers = context.select<SettingsProvider, bool>((s) => s.hideSpoilers);
+    final settingsProvider = context.watch<SettingsProvider>();
+    final episodePosterMode = settingsProvider.episodePosterMode;
     final shouldBlur =
-        hideSpoilers &&
+        settingsProvider.hideSpoilers &&
         item.shouldHideSpoiler &&
         episodePosterMode == EpisodePosterMode.episodeThumbnail;
     posterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
@@ -841,7 +842,7 @@ class _MediaCardHelpers {
 
   /// Builds watch progress overlay (checkmark for watched, progress bar for in-progress)
   static Widget buildWatchProgress(BuildContext context, PlexMetadata metadata) {
-    final showUnwatchedCount = context.select<SettingsProvider, bool>((s) => s.showUnwatchedCount);
+    final showUnwatchedCount = context.watch<SettingsProvider>().showUnwatchedCount;
 
     final hasActiveProgress =
         metadata.viewOffset != null &&
@@ -1065,21 +1066,55 @@ class _ClickableTextState extends State<_ClickableText> {
   }
 }
 
-/// Static skeleton placeholder with a fixed semi-transparent fill.
-class SkeletonLoader extends StatelessWidget {
+/// Skeleton loader widget with subtle opacity pulse animation
+class SkeletonLoader extends StatefulWidget {
   final Widget? child;
   final BorderRadius? borderRadius;
 
   const SkeletonLoader({super.key, this.child, this.borderRadius});
 
   @override
+  State<SkeletonLoader> createState() => _SkeletonLoaderState();
+}
+
+class _SkeletonLoaderState extends State<SkeletonLoader> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this);
+    _animation = Tween<double>(
+      begin: 0.3,
+      end: 0.7,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+    _animationController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.075),
-        borderRadius: borderRadius ?? BorderRadius.circular(tokens(context).radiusSm),
-      ),
-      child: child,
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Semantics(
+          label: "skeleton-loader",
+          identifier: "skeleton-loader",
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: _animation.value * 0.15),
+              borderRadius: widget.borderRadius ?? BorderRadius.circular(tokens(context).radiusSm),
+            ),
+            child: widget.child,
+          ),
+        );
+      },
     );
   }
 }

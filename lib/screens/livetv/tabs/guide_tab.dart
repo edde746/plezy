@@ -1025,23 +1025,9 @@ class GuideTabState extends State<GuideTab> {
       materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.05);
     }
 
-    Color titleColor;
-    if (isFocused) {
-      titleColor = theme.colorScheme.primary;
-    } else if (isCurrentlyAiring) {
-      titleColor = theme.colorScheme.onSurface;
-    } else {
-      titleColor = theme.colorScheme.onSurface;
-    }
+    final Color titleColor = isFocused ? theme.colorScheme.primary : theme.colorScheme.onSurface;
 
-    Color subtitleColor;
-    if (isFocused) {
-      subtitleColor = theme.colorScheme.primary.withValues(alpha: 0.7);
-    } else if (isCurrentlyAiring) {
-      subtitleColor = theme.colorScheme.onSurfaceVariant;
-    } else {
-      subtitleColor = theme.colorScheme.onSurfaceVariant;
-    }
+    final Color subtitleColor = isFocused ? theme.colorScheme.primary.withValues(alpha: 0.7) : theme.colorScheme.onSurfaceVariant;
 
     return Opacity(
       opacity: isPast ? 0.5 : 1.0,

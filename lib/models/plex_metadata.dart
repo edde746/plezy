@@ -9,7 +9,7 @@ import '../utils/global_key_utils.dart';
 
 part 'plex_metadata.g.dart';
 
-Object? _readRatingKey(Map json, String key) =>
+Object? _readRatingKey(Map json, String _) =>
     json['ratingKey'] ?? json['key'] ?? '';
 
 int? _flexibleInt(Object? v) => switch (v) {

@@ -51,7 +51,6 @@ class TrackManager {
   bool _isApplyingTrackSelection = false;
   List<SubtitleTrack> _lastExternalSubtitles = const [];
   StreamSubscription<Tracks>? _trackLoadingSubscription;
-  Timer? _subtitleFallbackTimer;
 
   /// Cached external subtitles for re-use after backend fallback.
   List<SubtitleTrack> get lastExternalSubtitles => _lastExternalSubtitles;
@@ -122,8 +121,7 @@ class TrackManager {
     }
 
     // Fallback if playbackRestart doesn't fire
-    _subtitleFallbackTimer?.cancel();
-    _subtitleFallbackTimer = Timer(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (waitingForExternalSubsTrackSelection && isActive()) {
         waitingForExternalSubsTrackSelection = false;
         applyTrackSelection();
@@ -257,14 +255,13 @@ class TrackManager {
 
   /// Handle audio track changes — save stream selection and language preference.
   Future<void> onAudioTrackChanged(AudioTrack track) async {
-    final info = mediaInfo;
-    final partId = await _guardTrackChange(info);
-    if (partId == null || info == null) return;
+    final partId = await _guardTrackChange();
+    if (partId == null) return;
 
     int? streamID = _matchTrackByAttributes(
       mpvLanguage: track.language,
       mpvTitle: track.title,
-      plexTracks: info.audioTracks,
+      plexTracks: mediaInfo!.audioTracks,
       getLanguageCode: (t) => t.languageCode,
       getDisplayTitle: (t) => t.displayTitle,
       getTitle: (t) => t.title,
@@ -274,7 +271,7 @@ class TrackManager {
     if (streamID != null) {
       appLogger.d('Matched audio by lang/title: streamID $streamID');
     } else {
-      final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks);
+      final matchedPlex = findPlexTrackForMpvAudio(track, mediaInfo!.audioTracks);
       streamID = matchedPlex?.id;
       if (streamID != null) {
         appLogger.d('Matched audio by properties: streamID $streamID');
@@ -288,8 +285,7 @@ class TrackManager {
 
   /// Handle subtitle track changes — save stream selection and language preference.
   Future<void> onSubtitleTrackChanged(SubtitleTrack track) async {
-    final info = mediaInfo;
-    final partId = await _guardTrackChange(info);
+    final partId = await _guardTrackChange();
     if (partId == null) return;
 
     String? languageCode;
@@ -299,13 +295,13 @@ class TrackManager {
       languageCode = 'none';
       streamID = 0;
       appLogger.i('User turned subtitles off, saving preference');
-    } else if (info != null) {
+    } else {
       languageCode = track.language;
 
       streamID = _matchTrackByAttributes(
         mpvLanguage: track.language,
         mpvTitle: track.title,
-        plexTracks: info.subtitleTracks,
+        plexTracks: mediaInfo!.subtitleTracks,
         getLanguageCode: (t) => t.languageCode,
         getDisplayTitle: (t) => t.displayTitle,
         getTitle: (t) => t.title,
@@ -315,7 +311,7 @@ class TrackManager {
       if (streamID != null) {
         appLogger.d('Matched subtitle by lang/title: streamID $streamID');
       } else {
-        final matchedPlex = findPlexTrackForMpvSubtitle(track, info.subtitleTracks);
+        final matchedPlex = findPlexTrackForMpvSubtitle(track, mediaInfo!.subtitleTracks);
         streamID = matchedPlex?.id;
         if (streamID != null) {
           appLogger.d('Matched subtitle by properties: streamID $streamID');
@@ -329,7 +325,7 @@ class TrackManager {
   }
 
   /// Handle secondary subtitle track changes — no server save needed.
-  void onSecondarySubtitleTrackChanged(SubtitleTrack track) {
+  void onSecondarySubtitleTrackChanged(SubtitleTrack _) {
     // Secondary subtitle preference is carried via player.state.track.secondarySubtitle
     // which is automatically read during episode navigation. No additional state needed.
   }
@@ -344,16 +340,16 @@ class TrackManager {
   }
 
   /// Common guard checks for track change handlers.
-  Future<int?> _guardTrackChange(PlexMediaInfo? info) async {
+  Future<int?> _guardTrackChange() async {
     final settings = await SettingsService.getInstance();
     if (!settings.getRememberTrackSelections()) return null;
 
-    if (info == null) {
+    if (mediaInfo == null) {
       appLogger.w('No media info available, cannot save stream selection');
       return null;
     }
 
-    final partId = info.getPartId();
+    final partId = mediaInfo!.getPartId();
     if (partId == null) {
       appLogger.w('No part ID available, cannot save stream selection');
     }
@@ -443,7 +439,5 @@ class TrackManager {
   void dispose() {
     _trackLoadingSubscription?.cancel();
     _trackLoadingSubscription = null;
-    _subtitleFallbackTimer?.cancel();
-    _subtitleFallbackTimer = null;
   }
 }

@@ -145,6 +145,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _confirmExitOnBack = true;
   String _selectedExternalPlayerName = '';
 
+  // Download path display
+  String _downloadPathDisplay = '...';
+
   // Update checking state
   bool _isCheckingForUpdate = false;
   Map<String, dynamic>? _updateInfo;
@@ -195,8 +198,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _keyboardService = await KeyboardShortcutsService.getInstance();
     }
 
+    final downloadPath = await DownloadStorageService.instance.getCurrentDownloadPathDisplay();
+
     if (!mounted) return;
     setState(() {
+      _downloadPathDisplay = downloadPath;
       _crashReporting = _settingsService.getCrashReporting();
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _enableHardwareDecoding = _settingsService.getEnableHardwareDecoding();
@@ -238,7 +244,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       body: Focus(
         onKeyEvent: _handleKeyEvent,
         child: CustomScrollView(
-          primary: false,
           slivers: [
             ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
             SliverPadding(
@@ -641,7 +646,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                     ],
                     currentValue: _useExoPlayer,
                   );
-                  if (value != null) {
+                  if (value != null && mounted) {
                     setState(() => _useExoPlayer = value);
                     await _settingsService.setUseExoPlayer(value);
                   }
@@ -742,7 +747,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                       .toList(),
                   currentValue: _bufferSize,
                 );
-                if (value != null) {
+                if (value != null && mounted) {
                   setState(() {
                     _bufferSize = value;
                     _settingsService.setBufferSize(value);
@@ -961,20 +966,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           ),
           // Download location picker - not available on iOS
           if (!Platform.isIOS)
-            FutureBuilder<String>(
-              future: storageService.getCurrentDownloadPathDisplay(),
-              builder: (context, snapshot) {
-                final currentPath = snapshot.data ?? '...';
-
-                return ListTile(
-                  focusNode: _focusTracker.get(_kDownloadLocation),
-                  leading: const AppIcon(Symbols.folder_rounded, fill: 1),
-                  title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
-                  subtitle: Text(currentPath, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                  onTap: () => _showDownloadLocationDialog(),
-                );
-              },
+            ListTile(
+              focusNode: _focusTracker.get(_kDownloadLocation),
+              leading: const AppIcon(Symbols.folder_rounded, fill: 1),
+              title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
+              subtitle: Text(_downloadPathDisplay, maxLines: 2, overflow: TextOverflow.ellipsis),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => _showDownloadLocationDialog(),
             ),
           SwitchListTile(
             focusNode: _focusTracker.get(_kDownloadOnWifiOnly),
@@ -1006,14 +1004,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           children: [
             Text(t.settings.downloadLocationDescription),
             const SizedBox(height: 16),
-            FutureBuilder<String>(
-              future: storageService.getCurrentDownloadPathDisplay(),
-              builder: (context, snapshot) {
-                return Text(
-                  t.settings.currentPath(path: snapshot.data ?? '...'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                );
-              },
+            Text(
+              t.settings.currentPath(path: _downloadPathDisplay),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
@@ -1050,11 +1043,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         selectedPath = await safService.pickDirectory();
         if (selectedPath != null) {
           pathType = 'saf';
-        } else if (PlatformDetector.isTV()) {
-          if (mounted) {
-            showErrorSnackBar(context, t.settings.downloadLocationSelectError);
-          }
-          return;
         }
       } else {
         // Use file_picker on desktop
@@ -1078,10 +1066,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         // Save the setting
         await _settingsService.setCustomDownloadPath(selectedPath, type: pathType);
         await DownloadStorageService.instance.refreshCustomPath();
+        final displayPath = await DownloadStorageService.instance.getCurrentDownloadPathDisplay();
 
         if (mounted) {
-          // ignore: no-empty-block - setState triggers rebuild to reflect new download path
-          setState(() {});
+          setState(() {
+            _downloadPathDisplay = displayPath;
+          });
           showSuccessSnackBar(context, t.settings.downloadLocationChanged);
         }
       }
@@ -1095,10 +1085,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   Future<void> _resetDownloadLocation() async {
     await _settingsService.setCustomDownloadPath(null);
     await DownloadStorageService.instance.refreshCustomPath();
+    final displayPath = await DownloadStorageService.instance.getCurrentDownloadPathDisplay();
 
     if (mounted) {
-      // ignore: no-empty-block - setState triggers rebuild to reflect reset path
-      setState(() {});
+      setState(() {
+        _downloadPathDisplay = displayPath;
+      });
       showAppSnackBar(context, t.settings.downloadLocationReset);
     }
   }
@@ -2114,7 +2106,7 @@ class _SettingsMenuPopupState<T> extends State<_SettingsMenuPopup<T>> {
                   Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                   Theme.of(context).colorScheme.surface,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
                 clipBehavior: Clip.antiAlias,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth, maxHeight: maxHeight),

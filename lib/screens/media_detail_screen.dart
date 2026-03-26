@@ -84,7 +84,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
-  final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0);
+  double _scrollOffset = 0;
 
   // Inline season tabs
   int _selectedSeasonIndex = 0;
@@ -348,13 +348,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _onScroll() {
-    _scrollOffset.value = _scrollController.offset;
+    setState(() {
+      _scrollOffset = _scrollController.offset;
+    });
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _scrollOffset.dispose();
     _extrasScrollController.dispose();
     _extrasFocusNode.dispose();
     _playButtonFocusNode.dispose();
@@ -946,6 +947,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     final bgColor = showFocus ? colorScheme.inverseSurface : colorScheme.secondaryContainer.withValues(alpha: 0.8);
     final fgColor = showFocus ? colorScheme.onInverseSurface : colorScheme.onSecondaryContainer;
+    final Color starColor;
+    if (showFocus) {
+      starColor = fgColor;
+    } else {
+      starColor = hasRating ? Colors.amber : fgColor;
+    }
 
     return FocusableWrapper(
       focusNode: _ratingChipFocusNode,
@@ -982,7 +989,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               AppIcon(
                 Symbols.star_rounded,
                 fill: hasRating ? 1 : 0,
-                color: showFocus ? fgColor : (hasRating ? Colors.amber : fgColor),
+                color: starColor,
                 size: 16,
               ),
               const SizedBox(width: 4),
@@ -1189,7 +1196,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           : Future.value(<String, dynamic>{});
 
       final results = await Future.wait([seasonsFuture, prefsFuture]);
-      final seasons = results[0] as List<PlexMetadata>;
+      final seasons = results.first as List<PlexMetadata>;
       final prefs = results[1] as Map<String, dynamic>;
 
       // Preserve serverId for each season
@@ -1204,7 +1211,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final isAlways = flattenSeasons == flattenSeasonsAlways;
       final isSingleSeason = flattenSeasons == flattenSeasonsSingleSeason;
       final shouldShowEpisodesDirectly =
-          isAlways || seasonsWithServerId.isEmpty || (isSingleSeason && seasonsWithServerId.length == 1);
+          isAlways || seasonsWithServerId.length <= 1 || (isSingleSeason && seasonsWithServerId.length == 1);
 
       // Create focus nodes for season tabs
       _updateSeasonTabFocusNodes(seasonsWithServerId.length);
@@ -1796,16 +1803,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           final artworkRef = context.read<DownloadProvider>().getArtworkPaths(episode.globalKey);
           localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, episode.serverId!);
         }
+        final FocusNode? episodeFocusNode;
+        if (index == 0) {
+          episodeFocusNode = _firstEpisodeFocusNode;
+        } else if (index == _episodes.length - 1 && _episodes.length > 1) {
+          episodeFocusNode = _lastEpisodeFocusNode;
+        } else {
+          episodeFocusNode = null;
+        }
+
         return EpisodeCard(
           episode: episode,
           client: client,
           isOffline: widget.isOffline,
           autofocus: false,
-          focusNode: index == 0
-              ? _firstEpisodeFocusNode
-              : index == _episodes.length - 1 && _episodes.length > 1
-                  ? _lastEpisodeFocusNode
-                  : null,
+          focusNode: episodeFocusNode,
           onNavigateUp: index == 0
               ? () {
                   if (!_showEpisodesDirectly) {
@@ -2531,28 +2543,24 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 top: 0,
                 left: 0,
                 right: 0,
-                child: ValueListenableBuilder<double>(
-                  valueListenable: _scrollOffset,
-                  builder: (context, offset, child) => IgnorePointer(
-                    ignoring: offset < 50,
-                    child: AnimatedOpacity(
-                      opacity: (offset / 100).clamp(0.0, 1.0),
-                      duration: const Duration(milliseconds: 150),
-                      child: child!,
-                    ),
-                  ),
-                  child: Container(
-                    height: MediaQuery.of(context).padding.top + 58,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0),
-                        ],
-                        stops: const [0.0, 0.3, 1.0],
+                child: IgnorePointer(
+                  ignoring: _scrollOffset < 50,
+                  child: AnimatedOpacity(
+                    opacity: (_scrollOffset / 100).clamp(0.0, 1.0),
+                    duration: const Duration(milliseconds: 150),
+                    child: Container(
+                      height: MediaQuery.of(context).padding.top + 58,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
+                            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
+                            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0),
+                          ],
+                          stops: const [0.0, 0.3, 1.0],
+                        ),
                       ),
                     ),
                   ),
