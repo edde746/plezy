@@ -28,6 +28,9 @@ class PlexApiCache {
     _instance = PlexApiCache._(db);
   }
 
+  /// Create an isolated instance for testing (does not affect the singleton).
+  factory PlexApiCache.forTesting(AppDatabase db) => PlexApiCache._(db);
+
   /// Get the database instance (for services that need direct database access)
   AppDatabase get database => _db;
 

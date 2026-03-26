@@ -16,6 +16,8 @@ part 'app_database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  AppDatabase.forTesting(super.connection);
+
   @override
   int get schemaVersion => 8; // Added bgTaskId column to DownloadedMedia
 
