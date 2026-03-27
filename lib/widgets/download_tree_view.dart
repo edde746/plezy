@@ -38,10 +38,6 @@ class DownloadTreeNode {
     return children.where((child) => child.status == DownloadStatus.completed).length;
   }
 
-  /// Get the number of downloading children
-  int get downloadingChildrenCount {
-    return children.where((child) => child.status == DownloadStatus.downloading).length;
-  }
 }
 
 /// Type of node in the download tree

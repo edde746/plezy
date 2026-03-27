@@ -761,15 +761,6 @@ class SettingsService extends BaseSharedPreferencesService {
     return preferences[seriesRatingKey];
   }
 
-  /// Clear media version preference for a series
-  Future<void> clearMediaVersionPreference(String seriesRatingKey) async {
-    final preferences = _getMediaVersionPreferences();
-    preferences.remove(seriesRatingKey);
-
-    final jsonString = json.encode(preferences);
-    await prefs.setString(_keyMediaVersionPreferences, jsonString);
-  }
-
   /// Get all media version preferences
   Map<String, int> _getMediaVersionPreferences() {
     final jsonString = prefs.getString(_keyMediaVersionPreferences);

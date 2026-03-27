@@ -315,15 +315,6 @@ class PlexClient {
     }
   }
 
-  /// Update the token used by this client
-  void updateToken(String newToken) {
-    // Update both the Dio headers and the config to ensure consistency
-    _dio.options.headers['X-Plex-Token'] = newToken;
-    config = config.copyWith(token: newToken);
-    LogRedactionManager.registerToken(newToken);
-    appLogger.d('PlexClient token updated (headers and config)');
-  }
-
   /// Update endpoint priority list and optionally hop to the new best endpoint.
   Future<void> updateEndpointPreferences(List<String> prioritizedEndpoints, {bool switchToFirst = false}) async {
     if (_endpointManager == null || prioritizedEndpoints.isEmpty) {
@@ -1058,36 +1049,6 @@ class PlexClient {
         [];
   }
 
-  /// Get all unwatched episodes for a TV show across all seasons
-  Future<List<PlexMetadata>> getAllUnwatchedEpisodes(String showRatingKey) async {
-    final allEpisodes = <PlexMetadata>[];
-
-    // Get all seasons for the show
-    final seasons = await getChildren(showRatingKey);
-
-    // Get episodes from each season
-    for (final season in seasons) {
-      if (season.isSeason) {
-        final episodes = await getChildren(season.ratingKey);
-
-        // Filter for unwatched episodes
-        final unwatchedEpisodes = episodes.where((ep) => ep.isEpisode && (ep.viewCount ?? 0) == 0).toList();
-
-        allEpisodes.addAll(unwatchedEpisodes);
-      }
-    }
-
-    return allEpisodes;
-  }
-
-  /// Get all unwatched episodes in a specific season
-  Future<List<PlexMetadata>> getUnwatchedEpisodesInSeason(String seasonRatingKey) async {
-    final episodes = await getChildren(seasonRatingKey);
-
-    // Filter for unwatched episodes
-    return episodes.where((ep) => ep.isEpisode && (ep.viewCount ?? 0) == 0).toList();
-  }
-
   /// Get thumbnail URL
   String getThumbnailUrl(String? thumbPath) {
     if (thumbPath == null || thumbPath.isEmpty) return '';
@@ -1384,12 +1345,6 @@ class PlexClient {
     return _wrapBoolApiCall(() => _dio.delete('/library/metadata/$ratingKey'), 'Failed to delete media item');
   }
 
-  /// Get server preferences
-  Future<Map<String, dynamic>> getServerPreferences() async {
-    final response = await _dio.get('/:/prefs');
-    return response.data;
-  }
-
   /// Get preferences for a library section.
   ///
   /// Returns a map of setting id --> value for all settings in the library.
@@ -1401,16 +1356,6 @@ class PlexClient {
     if (settings == null) return {};
     final list = settings is List ? settings : [settings];
     return {for (final s in list) s['id'] as String: s['value']};
-  }
-
-  /// Get sessions (currently playing)
-  Future<List<dynamic>> getSessions() async {
-    final response = await _dio.get('/status/sessions');
-    final container = _getMediaContainer(response);
-    if (container != null && container['Metadata'] != null) {
-      return container['Metadata'] as List;
-    }
-    return [];
   }
 
   /// Get available filters for a library section

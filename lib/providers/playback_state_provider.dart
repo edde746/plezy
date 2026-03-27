@@ -3,13 +3,6 @@ import '../models/plex_metadata.dart';
 import '../models/play_queue_response.dart';
 import '../services/plex_client.dart';
 
-/// Playback mode types
-///
-/// All playback now uses Plex play queues.
-enum PlaybackMode {
-  playQueue, // Play queue-based playback (sequential, shuffle, playlists, collections)
-}
-
 /// Result of trying to locate the current queue index.
 class _IndexLookupResult {
   final int? index;
@@ -32,24 +25,20 @@ class PlaybackStateProvider with ChangeNotifier {
   List<PlexMetadata> _loadedItems = [];
   final int _windowSize = 50; // Number of items to keep in memory
 
-  // Legacy state for backward compatibility
   String? _contextKey; // The show/season/playlist ratingKey for this session
-  PlaybackMode? _playbackMode;
+  bool _isQueueMode = false;
 
   // Client reference for loading more items
   PlexClient? _client;
-
-  /// Current playback mode (null if no queue active)
-  PlaybackMode? get playbackMode => _playbackMode;
 
   /// Whether shuffle mode is currently active
   bool get isShuffleActive => _playQueueShuffled;
 
   /// Whether playlist/collection mode is currently active
-  bool get isPlaylistActive => _playbackMode == PlaybackMode.playQueue;
+  bool get isPlaylistActive => _isQueueMode;
 
   /// Whether any queue-based playback is active
-  bool get isQueueActive => _playQueueId != null && _playbackMode == PlaybackMode.playQueue;
+  bool get isQueueActive => _playQueueId != null && _isQueueMode;
 
   /// The context key (show/season/playlist ratingKey) for the current session
   String? get shuffleContextKey => _contextKey;
@@ -63,9 +52,6 @@ class PlaybackStateProvider with ChangeNotifier {
   /// The current play queue item ID
   int? get currentPlayQueueItemID => _currentPlayQueueItemID;
 
-  /// Total number of items in the play queue
-  int get queueLength => _playQueueTotalCount;
-
   /// Set the client reference for loading more items
   void setClient(PlexClient client) {
     _client = client;
@@ -73,7 +59,7 @@ class PlaybackStateProvider with ChangeNotifier {
 
   /// Update the current play queue item when playing a new item
   void setCurrentItem(PlexMetadata metadata) {
-    if (_playbackMode == PlaybackMode.playQueue && metadata.playQueueItemID != null) {
+    if (_isQueueMode && metadata.playQueueItemID != null) {
       _currentPlayQueueItemID = metadata.playQueueItemID;
       notifyListeners();
     }
@@ -92,7 +78,7 @@ class PlaybackStateProvider with ChangeNotifier {
     _loadedItems = playQueue.items ?? [];
 
     _contextKey = contextKey;
-    _playbackMode = PlaybackMode.playQueue;
+    _isQueueMode = true;
     notifyListeners();
   }
 
@@ -132,7 +118,7 @@ class PlaybackStateProvider with ChangeNotifier {
   }
 
   Future<_IndexLookupResult> _getCurrentIndex({bool loadIfMissing = false}) async {
-    if (_playbackMode != PlaybackMode.playQueue || _loadedItems.isEmpty || _currentPlayQueueItemID == null) {
+    if (!_isQueueMode || _loadedItems.isEmpty || _currentPlayQueueItemID == null) {
       return const _IndexLookupResult();
     }
 
@@ -164,7 +150,7 @@ class PlaybackStateProvider with ChangeNotifier {
   /// Returns null if queue is exhausted or current item is not in queue.
   /// [loopQueue] - If true, restart from beginning when queue is exhausted
   Future<PlexMetadata?> getNextEpisode(String currentItemKey, {bool loopQueue = false}) async {
-    if (_playbackMode != PlaybackMode.playQueue) {
+    if (!_isQueueMode) {
       // For sequential mode, let the video player handle next episode
       return null;
     }
@@ -221,7 +207,7 @@ class PlaybackStateProvider with ChangeNotifier {
   /// Gets the previous item in the playback queue.
   /// Returns null if at the beginning of the queue or current item is not in queue.
   Future<PlexMetadata?> getPreviousEpisode(String currentItemKey) async {
-    if (_playbackMode != PlaybackMode.playQueue) {
+    if (!_isQueueMode) {
       // For sequential mode, let the video player handle previous episode
       return null;
     }
@@ -262,7 +248,7 @@ class PlaybackStateProvider with ChangeNotifier {
     _currentPlayQueueItemID = null;
     _loadedItems = [];
     _contextKey = null;
-    _playbackMode = null;
+    _isQueueMode = false;
     notifyListeners();
   }
 }

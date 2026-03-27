@@ -28,7 +28,4 @@ class PlexVideoPlaybackData {
 
   /// Returns true if media info is available
   bool get hasMediaInfo => mediaInfo != null;
-
-  /// Returns true if there are multiple media versions available
-  bool get hasMultipleVersions => availableVersions.length > 1;
 }
