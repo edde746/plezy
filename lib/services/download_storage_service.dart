@@ -40,6 +40,9 @@ class DownloadStorageService {
     // Reset cached directories to force recalculation
     _baseDownloadsDir = null;
     _artworkDirectoryPath = null;
+
+    // Eagerly initialize artwork directory for sync access
+    await getArtworkDirectory();
   }
 
   /// Refresh custom path from settings (call when settings change)

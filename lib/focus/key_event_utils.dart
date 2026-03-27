@@ -78,6 +78,10 @@ KeyEventResult handleBackKeyAction(KeyEvent event, VoidCallback onBack) {
 }
 
 KeyEventResult handleBackKeyNavigation<T>(BuildContext context, KeyEvent event, {T? result}) {
+  // Let system handle back if there's nothing to pop (e.g. root screen)
+  if (!Navigator.canPop(context)) {
+    return KeyEventResult.ignored;
+  }
   // Handle on KeyUpEvent to prevent double-pop when returning from child screens
   // (KeyDownEvent can be received by both the popping screen and the returned-to screen)
   return handleBackKeyAction(event, () => Navigator.pop(context, result));
