@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "Dette inkluderer alle episoder og deres filer.",
     "mediaDeletedSuccessfully": "Medieelement slettet",
     "mediaFailedToDelete": "Kunne ikke slette medieelement",
-    "rate": "Vurder"
+    "rate": "Vurder",
+    "playFromBeginning": "Spill fra begynnelsen"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

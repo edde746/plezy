@@ -415,6 +415,7 @@ class _TranslationsMediaMenuRu implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Медиаэлемент успешно удалён';
 	@override String get mediaFailedToDelete => 'Не удалось удалить медиаэлемент';
 	@override String get rate => 'Оценить';
+	@override String get playFromBeginning => 'Воспроизвести сначала';
 }
 
 // Path: accessibility
@@ -1567,6 +1568,7 @@ extension on TranslationsRu {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Медиаэлемент успешно удалён',
 			'mediaMenu.mediaFailedToDelete' => 'Не удалось удалить медиаэлемент',
 			'mediaMenu.rate' => 'Оценить',
+			'mediaMenu.playFromBeginning' => 'Воспроизвести сначала',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, фильм',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, сериал',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1810,9 +1812,9 @@ extension on TranslationsRu {
 			'liveTv.daytime' => 'День',
 			'liveTv.evening' => 'Вечер',
 			'liveTv.lateNight' => 'Поздний вечер',
-			'liveTv.whatsOn' => 'Что идёт',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.whatsOn' => 'Что идёт',
 			'liveTv.watchChannel' => 'Смотреть канал',
 			'liveTv.favorites' => 'Избранное',
 			'collections.title' => 'Коллекции',

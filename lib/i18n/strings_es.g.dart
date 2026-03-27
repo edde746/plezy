@@ -415,6 +415,7 @@ class _TranslationsMediaMenuEs implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Elemento multimedia eliminado con éxito';
 	@override String get mediaFailedToDelete => 'Error al eliminar el elemento multimedia';
 	@override String get rate => 'Calificar';
+	@override String get playFromBeginning => 'Reproducir desde el inicio';
 }
 
 // Path: accessibility
@@ -1567,6 +1568,7 @@ extension on TranslationsEs {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Elemento multimedia eliminado con éxito',
 			'mediaMenu.mediaFailedToDelete' => 'Error al eliminar el elemento multimedia',
 			'mediaMenu.rate' => 'Calificar',
+			'mediaMenu.playFromBeginning' => 'Reproducir desde el inicio',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, película',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, serie de TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1810,9 +1812,9 @@ extension on TranslationsEs {
 			'liveTv.daytime' => 'Día',
 			'liveTv.evening' => 'Noche',
 			'liveTv.lateNight' => 'Trasnoche',
-			'liveTv.whatsOn' => 'En emisión',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.whatsOn' => 'En emisión',
 			'liveTv.watchChannel' => 'Ver canal',
 			'liveTv.favorites' => 'Favoritos',
 			'collections.title' => 'Colecciones',

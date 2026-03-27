@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "すべてのエピソードとそのファイルが含まれます。",
     "mediaDeletedSuccessfully": "メディアアイテムを正常に削除しました",
     "mediaFailedToDelete": "メディアアイテムの削除に失敗しました",
-    "rate": "評価"
+    "rate": "評価",
+    "playFromBeginning": "最初から再生"
   },
   "accessibility": {
     "mediaCardMovie": "${title}、映画",

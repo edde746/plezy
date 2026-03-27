@@ -415,6 +415,7 @@ class _TranslationsMediaMenuKo implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => '미디어 항목이 성공적으로 삭제되었습니다';
 	@override String get mediaFailedToDelete => '미디어 항목 삭제 실패';
 	@override String get rate => '평가';
+	@override String get playFromBeginning => '처음부터 재생';
 }
 
 // Path: accessibility
@@ -1567,6 +1568,7 @@ extension on TranslationsKo {
 			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
 			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
 			'mediaMenu.rate' => '평가',
+			'mediaMenu.playFromBeginning' => '처음부터 재생',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 영화',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV 프로그램',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1810,9 +1812,9 @@ extension on TranslationsKo {
 			'liveTv.daytime' => '낮',
 			'liveTv.evening' => '저녁',
 			'liveTv.lateNight' => '심야 방송',
-			'liveTv.whatsOn' => '지금 방송 중',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.whatsOn' => '지금 방송 중',
 			'liveTv.watchChannel' => '채널 시청',
 			'liveTv.favorites' => '즐겨찾기',
 			'collections.title' => '컬렉션',

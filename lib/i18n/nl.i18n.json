@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "Dit omvat alle afleveringen en hun bestanden.",
     "mediaDeletedSuccessfully": "Media-item succesvol verwijderd",
     "mediaFailedToDelete": "Verwijderen van media-item mislukt",
-    "rate": "Beoordelen"
+    "rate": "Beoordelen",
+    "playFromBeginning": "Afspelen vanaf het begin"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

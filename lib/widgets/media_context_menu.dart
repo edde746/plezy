@@ -25,6 +25,7 @@ import '../focus/dpad_navigator.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/metadata_edit_screen.dart';
 import '../utils/smart_deletion_handler.dart';
+import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
 import '../widgets/file_info_bottom_sheet.dart';
@@ -160,6 +161,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Skip other menu items for collections and playlists
     } else {
       // Regular menu items for other types
+
+      // Play from Beginning (for movies and episodes with active progress)
+      if (hasActiveProgress) {
+        menuActions.add(
+          _MenuAction(value: 'play_from_beginning', icon: Symbols.replay_rounded, label: t.mediaMenu.playFromBeginning),
+        );
+      }
 
       // Mark as Watched
       if (!metadata!.isWatched || isPartiallyWatched || hasActiveProgress) {
@@ -357,6 +365,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (!context.mounted) return;
 
       switch (selected) {
+        case 'play_from_beginning':
+          didNavigate = true;
+          if (context.mounted) {
+            await navigateToVideoPlayer(context, metadata: metadata!.copyWith(viewOffset: 0));
+          }
+          break;
+
         case 'watch':
           final isOffline = context.read<OfflineModeProvider>().isOffline;
           if (isOffline && metadata?.serverId != null) {

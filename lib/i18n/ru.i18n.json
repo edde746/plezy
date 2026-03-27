@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "Это включает все эпизоды и их файлы.",
     "mediaDeletedSuccessfully": "Медиаэлемент успешно удалён",
     "mediaFailedToDelete": "Не удалось удалить медиаэлемент",
-    "rate": "Оценить"
+    "rate": "Оценить",
+    "playFromBeginning": "Воспроизвести сначала"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, фильм",

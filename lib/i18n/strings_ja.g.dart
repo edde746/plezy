@@ -415,6 +415,7 @@ class _TranslationsMediaMenuJa implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'メディアアイテムを正常に削除しました';
 	@override String get mediaFailedToDelete => 'メディアアイテムの削除に失敗しました';
 	@override String get rate => '評価';
+	@override String get playFromBeginning => '最初から再生';
 }
 
 // Path: accessibility
@@ -1567,6 +1568,7 @@ extension on TranslationsJa {
 			'mediaMenu.mediaDeletedSuccessfully' => 'メディアアイテムを正常に削除しました',
 			'mediaMenu.mediaFailedToDelete' => 'メディアアイテムの削除に失敗しました',
 			'mediaMenu.rate' => '評価',
+			'mediaMenu.playFromBeginning' => '最初から再生',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}、映画',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}、テレビ番組',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}、${episodeInfo}',
@@ -1810,9 +1812,9 @@ extension on TranslationsJa {
 			'liveTv.daytime' => '昼',
 			'liveTv.evening' => '夕方',
 			'liveTv.lateNight' => '深夜',
-			'liveTv.whatsOn' => '放送中',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.whatsOn' => '放送中',
 			'liveTv.watchChannel' => 'チャンネルを視聴',
 			'liveTv.favorites' => 'お気に入り',
 			'collections.title' => 'コレクション',

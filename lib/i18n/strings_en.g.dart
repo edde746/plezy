@@ -917,6 +917,9 @@ class TranslationsMediaMenuEn {
 
 	/// en: 'Rate'
 	String get rate => 'Rate';
+
+	/// en: 'Play from Beginning'
+	String get playFromBeginning => 'Play from Beginning';
 }
 
 // Path: accessibility
@@ -3178,6 +3181,7 @@ extension on Translations {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
+			'mediaMenu.playFromBeginning' => 'Play from Beginning',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -3421,9 +3425,9 @@ extension on Translations {
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
-			'liveTv.whatsOn' => 'What\'s On',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',
 			'collections.title' => 'Collections',

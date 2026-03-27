@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "Esto incluye todos los episodios y sus archivos.",
     "mediaDeletedSuccessfully": "Elemento multimedia eliminado con éxito",
     "mediaFailedToDelete": "Error al eliminar el elemento multimedia",
-    "rate": "Calificar"
+    "rate": "Calificar",
+    "playFromBeginning": "Reproducir desde el inicio"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, película",

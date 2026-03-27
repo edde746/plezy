@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "Obejmuje to wszystkie odcinki i ich pliki.",
     "mediaDeletedSuccessfully": "Element multimedialny usunięty pomyślnie",
     "mediaFailedToDelete": "Nie udało się usunąć elementu multimedialnego",
-    "rate": "Oceń"
+    "rate": "Oceń",
+    "playFromBeginning": "Odtwórz od początku"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

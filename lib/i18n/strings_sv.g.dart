@@ -415,6 +415,7 @@ class _TranslationsMediaMenuSv implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Mediaobjekt borttaget';
 	@override String get mediaFailedToDelete => 'Kunde inte ta bort mediaobjekt';
 	@override String get rate => 'Betygsätt';
+	@override String get playFromBeginning => 'Spela från början';
 }
 
 // Path: accessibility
@@ -1567,6 +1568,7 @@ extension on TranslationsSv {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Mediaobjekt borttaget',
 			'mediaMenu.mediaFailedToDelete' => 'Kunde inte ta bort mediaobjekt',
 			'mediaMenu.rate' => 'Betygsätt',
+			'mediaMenu.playFromBeginning' => 'Spela från början',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1810,9 +1812,9 @@ extension on TranslationsSv {
 			'liveTv.daytime' => 'Dagtid',
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
-			'liveTv.whatsOn' => 'På TV nu',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.whatsOn' => 'På TV nu',
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'liveTv.favorites' => 'Favoriter',
 			'downloads.title' => 'Nedladdningar',

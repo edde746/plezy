@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "这包括所有剧集及其文件。",
     "mediaDeletedSuccessfully": "媒体项已成功删除",
     "mediaFailedToDelete": "删除媒体项失败",
-    "rate": "评分"
+    "rate": "评分",
+    "playFromBeginning": "从头播放"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, 电影",

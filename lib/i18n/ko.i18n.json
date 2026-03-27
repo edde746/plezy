@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "모든 에피소드와 파일이 포함됩니다.",
     "mediaDeletedSuccessfully": "미디어 항목이 성공적으로 삭제되었습니다",
     "mediaFailedToDelete": "미디어 항목 삭제 실패",
-    "rate": "평가"
+    "rate": "평가",
+    "playFromBeginning": "처음부터 재생"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, 영화",

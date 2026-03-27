@@ -415,6 +415,7 @@ class _TranslationsMediaMenuDa implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Medieelement slettet';
 	@override String get mediaFailedToDelete => 'Kunne ikke slette medieelement';
 	@override String get rate => 'Bedøm';
+	@override String get playFromBeginning => 'Afspil fra begyndelsen';
 }
 
 // Path: accessibility
@@ -1567,6 +1568,7 @@ extension on TranslationsDa {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medieelement slettet',
 			'mediaMenu.mediaFailedToDelete' => 'Kunne ikke slette medieelement',
 			'mediaMenu.rate' => 'Bedøm',
+			'mediaMenu.playFromBeginning' => 'Afspil fra begyndelsen',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1810,9 +1812,9 @@ extension on TranslationsDa {
 			'liveTv.daytime' => 'Dagtid',
 			'liveTv.evening' => 'Aften',
 			'liveTv.lateNight' => 'Sen aften',
-			'liveTv.whatsOn' => 'Hvad der kører',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.whatsOn' => 'Hvad der kører',
 			'liveTv.watchChannel' => 'Se kanal',
 			'liveTv.favorites' => 'Favoritter',
 			'collections.title' => 'Samlinger',

@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "Detta inkluderar alla avsnitt och deras filer.",
     "mediaDeletedSuccessfully": "Mediaobjekt borttaget",
     "mediaFailedToDelete": "Kunde inte ta bort mediaobjekt",
-    "rate": "Betygsätt"
+    "rate": "Betygsätt",
+    "playFromBeginning": "Spela från början"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

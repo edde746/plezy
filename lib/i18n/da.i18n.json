@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "Dette inkluderer alle episoder og deres filer.",
     "mediaDeletedSuccessfully": "Medieelement slettet",
     "mediaFailedToDelete": "Kunne ikke slette medieelement",
-    "rate": "Bedøm"
+    "rate": "Bedøm",
+    "playFromBeginning": "Afspil fra begyndelsen"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

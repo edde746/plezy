@@ -415,6 +415,7 @@ class _TranslationsMediaMenuNl implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Media-item succesvol verwijderd';
 	@override String get mediaFailedToDelete => 'Verwijderen van media-item mislukt';
 	@override String get rate => 'Beoordelen';
+	@override String get playFromBeginning => 'Afspelen vanaf het begin';
 }
 
 // Path: accessibility
@@ -1567,6 +1568,7 @@ extension on TranslationsNl {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media-item succesvol verwijderd',
 			'mediaMenu.mediaFailedToDelete' => 'Verwijderen van media-item mislukt',
 			'mediaMenu.rate' => 'Beoordelen',
+			'mediaMenu.playFromBeginning' => 'Afspelen vanaf het begin',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1810,9 +1812,9 @@ extension on TranslationsNl {
 			'liveTv.daytime' => 'Overdag',
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
-			'liveTv.whatsOn' => 'Nu op TV',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.whatsOn' => 'Nu op TV',
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'liveTv.favorites' => 'Favorieten',
 			'downloads.title' => 'Downloads',

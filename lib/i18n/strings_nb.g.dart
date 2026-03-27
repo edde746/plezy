@@ -415,6 +415,7 @@ class _TranslationsMediaMenuNb implements TranslationsMediaMenuEn {
 	@override String get mediaDeletedSuccessfully => 'Medieelement slettet';
 	@override String get mediaFailedToDelete => 'Kunne ikke slette medieelement';
 	@override String get rate => 'Vurder';
+	@override String get playFromBeginning => 'Spill fra begynnelsen';
 }
 
 // Path: accessibility
@@ -1567,6 +1568,7 @@ extension on TranslationsNb {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medieelement slettet',
 			'mediaMenu.mediaFailedToDelete' => 'Kunne ikke slette medieelement',
 			'mediaMenu.rate' => 'Vurder',
+			'mediaMenu.playFromBeginning' => 'Spill fra begynnelsen',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1810,9 +1812,9 @@ extension on TranslationsNb {
 			'liveTv.daytime' => 'Dagtid',
 			'liveTv.evening' => 'Kveld',
 			'liveTv.lateNight' => 'Sen kveld',
-			'liveTv.whatsOn' => 'Hva går nå',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.whatsOn' => 'Hva går nå',
 			'liveTv.watchChannel' => 'Se kanal',
 			'liveTv.favorites' => 'Favoritter',
 			'collections.title' => 'Samlinger',

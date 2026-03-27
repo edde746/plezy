@@ -287,7 +287,8 @@
     "deleteMultipleWarning": "This includes all episodes and their files.",
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
-    "rate": "Rate"
+    "rate": "Rate",
+    "playFromBeginning": "Play from Beginning"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, movie",
