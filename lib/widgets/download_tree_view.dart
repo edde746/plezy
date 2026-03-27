@@ -884,6 +884,17 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     required VoidCallback onPressed,
     required int buttonIndex,
   }) {
+    // Guard against race condition where action count changed between didUpdateWidget and build
+    if (buttonIndex >= _buttonFocusNodes.length) {
+      return Tooltip(
+        message: tooltip,
+        child: GestureDetector(
+          onTap: onPressed,
+          child: Padding(padding: const EdgeInsets.all(8.0), child: AppIcon(icon, fill: 1, size: 20)),
+        ),
+      );
+    }
+
     final isFirst = buttonIndex == 0;
     final isLast = buttonIndex == _buttonFocusNodes.length - 1;
 
