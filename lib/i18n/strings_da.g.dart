@@ -74,6 +74,7 @@ class TranslationsDa with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsDa videoSettings = _TranslationsVideoSettingsDa._(_root);
 	@override late final _TranslationsExternalPlayerDa externalPlayer = _TranslationsExternalPlayerDa._(_root);
 	@override late final _TranslationsMetadataEditDa metadataEdit = _TranslationsMetadataEditDa._(_root);
+	@override late final _TranslationsServerTasksDa serverTasks = _TranslationsServerTasksDa._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonDa implements TranslationsCommonEn {
 	@override String get loadingServers => 'Indlæser servere...';
 	@override String get connectingToServers => 'Forbinder til servere...';
 	@override String get startingOfflineMode => 'Starter offlinetilstand...';
+	@override String get loading => 'Indlæser...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditDa implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => 'Altid aktiveret';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksDa implements TranslationsServerTasksEn {
+	_TranslationsServerTasksDa._(this._root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Serveropgaver';
+	@override String get failedToLoad => 'Kunne ikke indlæse opgaver';
+	@override String get noTasks => 'Ingen opgaver kører';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsDa implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsDa._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsDa {
 			'common.loadingServers' => 'Indlæser servere...',
 			'common.connectingToServers' => 'Forbinder til servere...',
 			'common.startingOfflineMode' => 'Starter offlinetilstand...',
+			'common.loading' => 'Indlæser...',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Skift profil',
 			'screens.subtitleStyling' => 'Undertekststil',
@@ -1796,9 +1811,9 @@ extension on TranslationsDa {
 			'liveTv.evening' => 'Aften',
 			'liveTv.lateNight' => 'Sen aften',
 			'liveTv.whatsOn' => 'Hvad der kører',
-			'liveTv.watchChannel' => 'Se kanal',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'Se kanal',
 			'liveTv.favorites' => 'Favoritter',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
@@ -2085,6 +2100,9 @@ extension on TranslationsDa {
 			'metadataEdit.manuallySelected' => 'Manuelt valgt',
 			'metadataEdit.shownWithForeignAudio' => 'Vist med fremmedsproget lyd',
 			'metadataEdit.alwaysEnabled' => 'Altid aktiveret',
+			'serverTasks.title' => 'Serveropgaver',
+			'serverTasks.failedToLoad' => 'Kunne ikke indlæse opgaver',
+			'serverTasks.noTasks' => 'Ingen opgaver kører',
 			_ => null,
 		};
 	}

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../focus/key_event_utils.dart';
+import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import '../models/plex_activity.dart';
@@ -46,6 +48,12 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
   Timer? _pollTimer;
 
   @override
+  void deactivate() {
+    _removeOverlay();
+    super.deactivate();
+  }
+
+  @override
   void dispose() {
     _removeOverlay();
     _panelNotifier.dispose();
@@ -79,63 +87,53 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       builder: (ctx) => _buildOverlay(ctx, right: right, top: top),
     );
     Overlay.of(context).insert(_overlayEntry!);
-    _fetchActivities().then((_) {
-      if (mounted && _overlayEntry != null) {
-        _pollTimer = Timer.periodic(const Duration(seconds: 1), (_) => _silentRefresh());
-      }
-    });
+    _fetchActivities();
   }
 
-  Future<void> _fetchActivities() async {
+  Future<List<_ServerResult>> _loadFromServers() async {
     final multiServer = Provider.of<MultiServerProvider>(context, listen: false);
     final serverIds = multiServer.onlineServerIds;
 
-    try {
-      final futures = serverIds.map((serverId) async {
-        final client = multiServer.getClientForServer(serverId);
-        if (client == null) return null;
-        final activities = await client.getActivities();
-        return _ServerResult(
-          serverId: serverId,
-          serverName: client.serverName ?? serverId,
-          activities: activities,
-        );
-      });
-
-      final rawResults = await Future.wait(futures);
-
-      if (!mounted) return;
-      _panelNotifier.value = _PanelData(
-        fetchState: _FetchState.loaded,
-        results: rawResults.whereType<_ServerResult>().toList(),
+    final futures = serverIds.map((serverId) async {
+      final client = multiServer.getClientForServer(serverId);
+      if (client == null) return null;
+      final activities = await client.getActivities();
+      return _ServerResult(
+        serverId: serverId,
+        serverName: client.serverName ?? serverId,
+        activities: activities,
       );
+    });
+
+    final rawResults = await Future.wait(futures);
+    return rawResults.whereType<_ServerResult>().toList();
+  }
+
+  Future<void> _fetchActivities() async {
+    try {
+      final results = await _loadFromServers();
+      if (!mounted) return;
+      _panelNotifier.value = _PanelData(fetchState: _FetchState.loaded, results: results);
+      _startPolling();
     } catch (_) {
       if (!mounted) return;
       _panelNotifier.value = const _PanelData(fetchState: _FetchState.error, results: []);
     }
   }
 
+  void _startPolling() {
+    _pollTimer?.cancel();
+    if (mounted && _overlayEntry != null) {
+      _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _silentRefresh());
+    }
+  }
+
   Future<void> _silentRefresh() async {
     if (!mounted) return;
-    final multiServer = Provider.of<MultiServerProvider>(context, listen: false);
-    final serverIds = multiServer.onlineServerIds;
     try {
-      final futures = serverIds.map((serverId) async {
-        final client = multiServer.getClientForServer(serverId);
-        if (client == null) return null;
-        final activities = await client.getActivities();
-        return _ServerResult(
-          serverId: serverId,
-          serverName: client.serverName ?? serverId,
-          activities: activities,
-        );
-      });
-      final rawResults = await Future.wait(futures);
+      final results = await _loadFromServers();
       if (!mounted) return;
-      _panelNotifier.value = _PanelData(
-        fetchState: _FetchState.loaded,
-        results: rawResults.whereType<_ServerResult>().toList(),
-      );
+      _panelNotifier.value = _PanelData(fetchState: _FetchState.loaded, results: results);
     } catch (_) {
       // silently ignore poll errors
     }
@@ -145,15 +143,15 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     final multiServer = Provider.of<MultiServerProvider>(context, listen: false);
     final client = multiServer.getClientForServer(serverId);
     if (client == null) return;
-    await client.cancelActivity(uuid);
+    try {
+      await client.cancelActivity(uuid);
+    } catch (_) {
+      return;
+    }
     _pollTimer?.cancel();
     _pollTimer = null;
     _panelNotifier.value = _PanelData.loading;
-    _fetchActivities().then((_) {
-      if (mounted && _overlayEntry != null) {
-        _pollTimer = Timer.periodic(const Duration(seconds: 1), (_) => _silentRefresh());
-      }
-    });
+    _fetchActivities();
   }
 
   Widget _buildOverlay(BuildContext overlayContext, {required double right, required double top}) {
@@ -168,9 +166,13 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
         Positioned(
           right: right,
           top: top,
-          child: ValueListenableBuilder<_PanelData>(
-            valueListenable: _panelNotifier,
-            builder: (context, data, _) => _buildPanel(context, data),
+          child: Focus(
+            autofocus: true,
+            onKeyEvent: (_, event) => handleBackKeyAction(event, _removeOverlay),
+            child: ValueListenableBuilder<_PanelData>(
+              valueListenable: _panelNotifier,
+              builder: (context, data, _) => _buildPanel(context, data),
+            ),
           ),
         ),
       ],
@@ -210,10 +212,10 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Row(
         children: [
-          AppIcon(Symbols.pending_actions_rounded, size: 18, color: theme.colorScheme.onSurface),
+          AppIcon(Symbols.monitor_heart_rounded, size: 18, color: theme.colorScheme.onSurface),
           const SizedBox(width: 8),
           Text(
-            'Server Tasks',
+            t.serverTasks.title,
             style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
@@ -229,7 +231,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
         padding: const EdgeInsets.all(24),
         child: Center(
           child: Text(
-            'Loading...',
+            t.common.loading,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
             ),
@@ -246,7 +248,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
           children: [
             Icon(Icons.error_outline, color: theme.colorScheme.error),
             const SizedBox(height: 8),
-            Text('Failed to load tasks', style: theme.textTheme.bodyMedium),
+            Text(t.serverTasks.failedToLoad, style: theme.textTheme.bodyMedium),
           ],
         ),
       );
@@ -258,7 +260,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
         padding: const EdgeInsets.all(24),
         child: Center(
           child: Text(
-            'No tasks running',
+            t.serverTasks.noTasks,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
             ),
@@ -352,7 +354,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
               icon: AppIcon(Symbols.close_rounded, size: 16, color: theme.colorScheme.onSurface),
               onPressed: () => _cancelActivity(serverId, activity.uuid),
               visualDensity: VisualDensity.compact,
-              tooltip: 'Cancel',
+              tooltip: t.common.cancel,
             ),
         ],
       ),
@@ -363,9 +365,9 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
   Widget build(BuildContext context) {
     return IconButton(
       key: _buttonKey,
-      icon: const AppIcon(Symbols.pending_actions_rounded, color: Colors.white),
+      icon: const AppIcon(Symbols.monitor_heart_rounded, color: Colors.white),
       onPressed: _togglePanel,
-      tooltip: 'Server Tasks',
+      tooltip: t.serverTasks.title,
     );
   }
 }

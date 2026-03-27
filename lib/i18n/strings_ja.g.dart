@@ -74,6 +74,7 @@ class TranslationsJa with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsJa videoSettings = _TranslationsVideoSettingsJa._(_root);
 	@override late final _TranslationsExternalPlayerJa externalPlayer = _TranslationsExternalPlayerJa._(_root);
 	@override late final _TranslationsMetadataEditJa metadataEdit = _TranslationsMetadataEditJa._(_root);
+	@override late final _TranslationsServerTasksJa serverTasks = _TranslationsServerTasksJa._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonJa implements TranslationsCommonEn {
 	@override String get loadingServers => 'サーバーを読み込み中...';
 	@override String get connectingToServers => 'サーバーに接続中...';
 	@override String get startingOfflineMode => 'オフラインモードを開始中...';
+	@override String get loading => '読み込み中...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditJa implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => '常に有効';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksJa implements TranslationsServerTasksEn {
+	_TranslationsServerTasksJa._(this._root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'サーバータスク';
+	@override String get failedToLoad => 'タスクの読み込みに失敗しました';
+	@override String get noTasks => '実行中のタスクはありません';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsJa implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsJa._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsJa {
 			'common.loadingServers' => 'サーバーを読み込み中...',
 			'common.connectingToServers' => 'サーバーに接続中...',
 			'common.startingOfflineMode' => 'オフラインモードを開始中...',
+			'common.loading' => '読み込み中...',
 			'screens.licenses' => 'ライセンス',
 			'screens.switchProfile' => 'プロフィール切替',
 			'screens.subtitleStyling' => '字幕スタイル',
@@ -1796,9 +1811,9 @@ extension on TranslationsJa {
 			'liveTv.evening' => '夕方',
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '放送中',
-			'liveTv.watchChannel' => 'チャンネルを視聴',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'チャンネルを視聴',
 			'liveTv.favorites' => 'お気に入り',
 			'collections.title' => 'コレクション',
 			'collections.collection' => 'コレクション',
@@ -2085,6 +2100,9 @@ extension on TranslationsJa {
 			'metadataEdit.manuallySelected' => '手動選択',
 			'metadataEdit.shownWithForeignAudio' => '外国語音声時に表示',
 			'metadataEdit.alwaysEnabled' => '常に有効',
+			'serverTasks.title' => 'サーバータスク',
+			'serverTasks.failedToLoad' => 'タスクの読み込みに失敗しました',
+			'serverTasks.noTasks' => '実行中のタスクはありません',
 			_ => null,
 		};
 	}

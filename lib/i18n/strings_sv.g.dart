@@ -74,6 +74,7 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsSv videoSettings = _TranslationsVideoSettingsSv._(_root);
 	@override late final _TranslationsExternalPlayerSv externalPlayer = _TranslationsExternalPlayerSv._(_root);
 	@override late final _TranslationsMetadataEditSv metadataEdit = _TranslationsMetadataEditSv._(_root);
+	@override late final _TranslationsServerTasksSv serverTasks = _TranslationsServerTasksSv._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get loadingServers => 'Laddar servrar...';
 	@override String get connectingToServers => 'Ansluter till servrar...';
 	@override String get startingOfflineMode => 'Startar offlineläge...';
+	@override String get loading => 'Laddar...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditSv implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => 'Alltid aktiverad';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksSv implements TranslationsServerTasksEn {
+	_TranslationsServerTasksSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Serveruppgifter';
+	@override String get failedToLoad => 'Kunde inte ladda uppgifter';
+	@override String get noTasks => 'Inga pågående uppgifter';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsSv implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsSv._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsSv {
 			'common.loadingServers' => 'Laddar servrar...',
 			'common.connectingToServers' => 'Ansluter till servrar...',
 			'common.startingOfflineMode' => 'Startar offlineläge...',
+			'common.loading' => 'Laddar...',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -1796,9 +1811,9 @@ extension on TranslationsSv {
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
-			'liveTv.watchChannel' => 'Titta på kanal',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'Titta på kanal',
 			'liveTv.favorites' => 'Favoriter',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
@@ -2085,6 +2100,9 @@ extension on TranslationsSv {
 			'metadataEdit.manuallySelected' => 'Manuellt vald',
 			'metadataEdit.shownWithForeignAudio' => 'Visas vid främmande ljud',
 			'metadataEdit.alwaysEnabled' => 'Alltid aktiverad',
+			'serverTasks.title' => 'Serveruppgifter',
+			'serverTasks.failedToLoad' => 'Kunde inte ladda uppgifter',
+			'serverTasks.noTasks' => 'Inga pågående uppgifter',
 			_ => null,
 		};
 	}

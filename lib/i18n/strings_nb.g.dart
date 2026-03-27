@@ -74,6 +74,7 @@ class TranslationsNb with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsNb videoSettings = _TranslationsVideoSettingsNb._(_root);
 	@override late final _TranslationsExternalPlayerNb externalPlayer = _TranslationsExternalPlayerNb._(_root);
 	@override late final _TranslationsMetadataEditNb metadataEdit = _TranslationsMetadataEditNb._(_root);
+	@override late final _TranslationsServerTasksNb serverTasks = _TranslationsServerTasksNb._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonNb implements TranslationsCommonEn {
 	@override String get loadingServers => 'Laster servere...';
 	@override String get connectingToServers => 'Kobler til servere...';
 	@override String get startingOfflineMode => 'Starter frakoblet modus...';
+	@override String get loading => 'Laster...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditNb implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => 'Alltid aktivert';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksNb implements TranslationsServerTasksEn {
+	_TranslationsServerTasksNb._(this._root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Serveroppgaver';
+	@override String get failedToLoad => 'Kunne ikke laste oppgaver';
+	@override String get noTasks => 'Ingen oppgaver kjører';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsNb implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsNb._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsNb {
 			'common.loadingServers' => 'Laster servere...',
 			'common.connectingToServers' => 'Kobler til servere...',
 			'common.startingOfflineMode' => 'Starter frakoblet modus...',
+			'common.loading' => 'Laster...',
 			'screens.licenses' => 'Lisenser',
 			'screens.switchProfile' => 'Bytt profil',
 			'screens.subtitleStyling' => 'Undertekststil',
@@ -1796,9 +1811,9 @@ extension on TranslationsNb {
 			'liveTv.evening' => 'Kveld',
 			'liveTv.lateNight' => 'Sen kveld',
 			'liveTv.whatsOn' => 'Hva går nå',
-			'liveTv.watchChannel' => 'Se kanal',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'Se kanal',
 			'liveTv.favorites' => 'Favoritter',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
@@ -2085,6 +2100,9 @@ extension on TranslationsNb {
 			'metadataEdit.manuallySelected' => 'Manuelt valgt',
 			'metadataEdit.shownWithForeignAudio' => 'Vist med fremmedspråklig lyd',
 			'metadataEdit.alwaysEnabled' => 'Alltid aktivert',
+			'serverTasks.title' => 'Serveroppgaver',
+			'serverTasks.failedToLoad' => 'Kunne ikke laste oppgaver',
+			'serverTasks.noTasks' => 'Ingen oppgaver kjører',
 			_ => null,
 		};
 	}

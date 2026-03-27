@@ -74,6 +74,7 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsKo videoSettings = _TranslationsVideoSettingsKo._(_root);
 	@override late final _TranslationsExternalPlayerKo externalPlayer = _TranslationsExternalPlayerKo._(_root);
 	@override late final _TranslationsMetadataEditKo metadataEdit = _TranslationsMetadataEditKo._(_root);
+	@override late final _TranslationsServerTasksKo serverTasks = _TranslationsServerTasksKo._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get loadingServers => '서버 로딩 중...';
 	@override String get connectingToServers => '서버 연결 중...';
 	@override String get startingOfflineMode => '오프라인 모드 시작 중...';
+	@override String get loading => '로딩 중...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditKo implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => '항상 활성화';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksKo implements TranslationsServerTasksEn {
+	_TranslationsServerTasksKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '서버 작업';
+	@override String get failedToLoad => '작업을 불러올 수 없습니다';
+	@override String get noTasks => '실행 중인 작업 없음';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsKo._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsKo {
 			'common.loadingServers' => '서버 로딩 중...',
 			'common.connectingToServers' => '서버 연결 중...',
 			'common.startingOfflineMode' => '오프라인 모드 시작 중...',
+			'common.loading' => '로딩 중...',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -1796,9 +1811,9 @@ extension on TranslationsKo {
 			'liveTv.evening' => '저녁',
 			'liveTv.lateNight' => '심야 방송',
 			'liveTv.whatsOn' => '지금 방송 중',
-			'liveTv.watchChannel' => '채널 시청',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => '채널 시청',
 			'liveTv.favorites' => '즐겨찾기',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
@@ -2085,6 +2100,9 @@ extension on TranslationsKo {
 			'metadataEdit.manuallySelected' => '수동 선택',
 			'metadataEdit.shownWithForeignAudio' => '외국어 오디오 시 표시',
 			'metadataEdit.alwaysEnabled' => '항상 활성화',
+			'serverTasks.title' => '서버 작업',
+			'serverTasks.failedToLoad' => '작업을 불러올 수 없습니다',
+			'serverTasks.noTasks' => '실행 중인 작업 없음',
 			_ => null,
 		};
 	}

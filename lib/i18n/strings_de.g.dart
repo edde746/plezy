@@ -74,6 +74,7 @@ class TranslationsDe with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsDe videoSettings = _TranslationsVideoSettingsDe._(_root);
 	@override late final _TranslationsExternalPlayerDe externalPlayer = _TranslationsExternalPlayerDe._(_root);
 	@override late final _TranslationsMetadataEditDe metadataEdit = _TranslationsMetadataEditDe._(_root);
+	@override late final _TranslationsServerTasksDe serverTasks = _TranslationsServerTasksDe._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get loadingServers => 'Server werden geladen...';
 	@override String get connectingToServers => 'Verbindung zu Servern...';
 	@override String get startingOfflineMode => 'Offlinemodus wird gestartet...';
+	@override String get loading => 'Laden...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditDe implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => 'Immer aktiviert';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksDe implements TranslationsServerTasksEn {
+	_TranslationsServerTasksDe._(this._root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Serveraufgaben';
+	@override String get failedToLoad => 'Aufgaben konnten nicht geladen werden';
+	@override String get noTasks => 'Keine laufenden Aufgaben';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsDe implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsDe._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsDe {
 			'common.loadingServers' => 'Server werden geladen...',
 			'common.connectingToServers' => 'Verbindung zu Servern...',
 			'common.startingOfflineMode' => 'Offlinemodus wird gestartet...',
+			'common.loading' => 'Laden...',
 			'screens.licenses' => 'Lizenzen',
 			'screens.switchProfile' => 'Profil wechseln',
 			'screens.subtitleStyling' => 'Untertitel-Stil',
@@ -1796,9 +1811,9 @@ extension on TranslationsDe {
 			'liveTv.evening' => 'Abend',
 			'liveTv.lateNight' => 'Spätnacht',
 			'liveTv.whatsOn' => 'Jetzt im TV',
-			'liveTv.watchChannel' => 'Kanal ansehen',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'Kanal ansehen',
 			'liveTv.favorites' => 'Favoriten',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
@@ -2085,6 +2100,9 @@ extension on TranslationsDe {
 			'metadataEdit.manuallySelected' => 'Manuell ausgewählt',
 			'metadataEdit.shownWithForeignAudio' => 'Bei fremdsprachigem Audio anzeigen',
 			'metadataEdit.alwaysEnabled' => 'Immer aktiviert',
+			'serverTasks.title' => 'Serveraufgaben',
+			'serverTasks.failedToLoad' => 'Aufgaben konnten nicht geladen werden',
+			'serverTasks.noTasks' => 'Keine laufenden Aufgaben',
 			_ => null,
 		};
 	}

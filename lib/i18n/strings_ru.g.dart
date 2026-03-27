@@ -74,6 +74,7 @@ class TranslationsRu with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsRu videoSettings = _TranslationsVideoSettingsRu._(_root);
 	@override late final _TranslationsExternalPlayerRu externalPlayer = _TranslationsExternalPlayerRu._(_root);
 	@override late final _TranslationsMetadataEditRu metadataEdit = _TranslationsMetadataEditRu._(_root);
+	@override late final _TranslationsServerTasksRu serverTasks = _TranslationsServerTasksRu._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonRu implements TranslationsCommonEn {
 	@override String get loadingServers => 'Загрузка серверов...';
 	@override String get connectingToServers => 'Подключение к серверам...';
 	@override String get startingOfflineMode => 'Запуск автономного режима...';
+	@override String get loading => 'Загрузка...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditRu implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => 'Всегда включены';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksRu implements TranslationsServerTasksEn {
+	_TranslationsServerTasksRu._(this._root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Задачи сервера';
+	@override String get failedToLoad => 'Не удалось загрузить задачи';
+	@override String get noTasks => 'Нет выполняемых задач';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsRu implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsRu._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsRu {
 			'common.loadingServers' => 'Загрузка серверов...',
 			'common.connectingToServers' => 'Подключение к серверам...',
 			'common.startingOfflineMode' => 'Запуск автономного режима...',
+			'common.loading' => 'Загрузка...',
 			'screens.licenses' => 'Лицензии',
 			'screens.switchProfile' => 'Сменить профиль',
 			'screens.subtitleStyling' => 'Стиль субтитров',
@@ -1796,9 +1811,9 @@ extension on TranslationsRu {
 			'liveTv.evening' => 'Вечер',
 			'liveTv.lateNight' => 'Поздний вечер',
 			'liveTv.whatsOn' => 'Что идёт',
-			'liveTv.watchChannel' => 'Смотреть канал',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'Смотреть канал',
 			'liveTv.favorites' => 'Избранное',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
@@ -2085,6 +2100,9 @@ extension on TranslationsRu {
 			'metadataEdit.manuallySelected' => 'Выбор вручную',
 			'metadataEdit.shownWithForeignAudio' => 'Показывать при иноязычном аудио',
 			'metadataEdit.alwaysEnabled' => 'Всегда включены',
+			'serverTasks.title' => 'Задачи сервера',
+			'serverTasks.failedToLoad' => 'Не удалось загрузить задачи',
+			'serverTasks.noTasks' => 'Нет выполняемых задач',
 			_ => null,
 		};
 	}

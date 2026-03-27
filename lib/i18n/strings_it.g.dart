@@ -74,6 +74,7 @@ class TranslationsIt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsIt videoSettings = _TranslationsVideoSettingsIt._(_root);
 	@override late final _TranslationsExternalPlayerIt externalPlayer = _TranslationsExternalPlayerIt._(_root);
 	@override late final _TranslationsMetadataEditIt metadataEdit = _TranslationsMetadataEditIt._(_root);
+	@override late final _TranslationsServerTasksIt serverTasks = _TranslationsServerTasksIt._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get loadingServers => 'Caricamento server...';
 	@override String get connectingToServers => 'Connessione ai server...';
 	@override String get startingOfflineMode => 'Avvio modalità offline...';
+	@override String get loading => 'Caricamento...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditIt implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => 'Sempre attivo';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksIt implements TranslationsServerTasksEn {
+	_TranslationsServerTasksIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Attività del server';
+	@override String get failedToLoad => 'Impossibile caricare le attività';
+	@override String get noTasks => 'Nessuna attività in corso';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsIt implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsIt._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsIt {
 			'common.loadingServers' => 'Caricamento server...',
 			'common.connectingToServers' => 'Connessione ai server...',
 			'common.startingOfflineMode' => 'Avvio modalità offline...',
+			'common.loading' => 'Caricamento...',
 			'screens.licenses' => 'Licenze',
 			'screens.switchProfile' => 'Cambia profilo',
 			'screens.subtitleStyling' => 'Stile sottotitoli',
@@ -1796,9 +1811,9 @@ extension on TranslationsIt {
 			'liveTv.evening' => 'Sera',
 			'liveTv.lateNight' => 'Notte tarda',
 			'liveTv.whatsOn' => 'In onda ora',
-			'liveTv.watchChannel' => 'Guarda canale',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'Guarda canale',
 			'liveTv.favorites' => 'Preferiti',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
@@ -2085,6 +2100,9 @@ extension on TranslationsIt {
 			'metadataEdit.manuallySelected' => 'Selezionato manualmente',
 			'metadataEdit.shownWithForeignAudio' => 'Mostrati con audio straniero',
 			'metadataEdit.alwaysEnabled' => 'Sempre attivo',
+			'serverTasks.title' => 'Attività del server',
+			'serverTasks.failedToLoad' => 'Impossibile caricare le attività',
+			'serverTasks.noTasks' => 'Nessuna attività in corso',
 			_ => null,
 		};
 	}

@@ -77,6 +77,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn._(_root);
 	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn._(_root);
 	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn._(_root);
+	late final TranslationsServerTasksEn serverTasks = TranslationsServerTasksEn._(_root);
 }
 
 // Path: app
@@ -254,6 +255,9 @@ class TranslationsCommonEn {
 
 	/// en: 'Starting offline mode...'
 	String get startingOfflineMode => 'Starting offline mode...';
+
+	/// en: 'Loading...'
+	String get loading => 'Loading...';
 }
 
 // Path: screens
@@ -2499,6 +2503,24 @@ class TranslationsMetadataEditEn {
 	String get alwaysEnabled => 'Always enabled';
 }
 
+// Path: serverTasks
+class TranslationsServerTasksEn {
+	TranslationsServerTasksEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Server Tasks'
+	String get title => 'Server Tasks';
+
+	/// en: 'Failed to load tasks'
+	String get failedToLoad => 'Failed to load tasks';
+
+	/// en: 'No tasks running'
+	String get noTasks => 'No tasks running';
+}
+
 // Path: hotkeys.actions
 class TranslationsHotkeysActionsEn {
 	TranslationsHotkeysActionsEn._(this._root);
@@ -2938,6 +2960,7 @@ extension on Translations {
 			'common.loadingServers' => 'Loading servers...',
 			'common.connectingToServers' => 'Connecting to servers...',
 			'common.startingOfflineMode' => 'Starting offline mode...',
+			'common.loading' => 'Loading...',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -3399,9 +3422,9 @@ extension on Translations {
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
-			'liveTv.watchChannel' => 'Watch Channel',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
@@ -3688,6 +3711,9 @@ extension on Translations {
 			'metadataEdit.manuallySelected' => 'Manually selected',
 			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',
 			'metadataEdit.alwaysEnabled' => 'Always enabled',
+			'serverTasks.title' => 'Server Tasks',
+			'serverTasks.failedToLoad' => 'Failed to load tasks',
+			'serverTasks.noTasks' => 'No tasks running',
 			_ => null,
 		};
 	}
