@@ -74,6 +74,7 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsNl videoSettings = _TranslationsVideoSettingsNl._(_root);
 	@override late final _TranslationsExternalPlayerNl externalPlayer = _TranslationsExternalPlayerNl._(_root);
 	@override late final _TranslationsMetadataEditNl metadataEdit = _TranslationsMetadataEditNl._(_root);
+	@override late final _TranslationsServerTasksNl serverTasks = _TranslationsServerTasksNl._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get loadingServers => 'Servers laden...';
 	@override String get connectingToServers => 'Verbinden met servers...';
 	@override String get startingOfflineMode => 'Offlinemodus starten...';
+	@override String get loading => 'Laden...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditNl implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => 'Altijd ingeschakeld';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksNl implements TranslationsServerTasksEn {
+	_TranslationsServerTasksNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Servertaken';
+	@override String get failedToLoad => 'Taken konden niet worden geladen';
+	@override String get noTasks => 'Geen actieve taken';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsNl._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsNl {
 			'common.loadingServers' => 'Servers laden...',
 			'common.connectingToServers' => 'Verbinden met servers...',
 			'common.startingOfflineMode' => 'Offlinemodus starten...',
+			'common.loading' => 'Laden...',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
@@ -1796,9 +1811,9 @@ extension on TranslationsNl {
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
-			'liveTv.watchChannel' => 'Kanaal bekijken',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'liveTv.favorites' => 'Favorieten',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
@@ -2085,6 +2100,9 @@ extension on TranslationsNl {
 			'metadataEdit.manuallySelected' => 'Handmatig geselecteerd',
 			'metadataEdit.shownWithForeignAudio' => 'Weergeven bij anderstalig geluid',
 			'metadataEdit.alwaysEnabled' => 'Altijd ingeschakeld',
+			'serverTasks.title' => 'Servertaken',
+			'serverTasks.failedToLoad' => 'Taken konden niet worden geladen',
+			'serverTasks.noTasks' => 'Geen actieve taken',
 			_ => null,
 		};
 	}

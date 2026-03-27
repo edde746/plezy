@@ -53,7 +53,8 @@
     "refreshingServers": "サーバーを更新中...",
     "loadingServers": "サーバーを読み込み中...",
     "connectingToServers": "サーバーに接続中...",
-    "startingOfflineMode": "オフラインモードを開始中..."
+    "startingOfflineMode": "オフラインモードを開始中...",
+    "loading": "読み込み中..."
   },
   "screens": {
     "licenses": "ライセンス",
@@ -884,5 +885,10 @@
     "manuallySelected": "手動選択",
     "shownWithForeignAudio": "外国語音声時に表示",
     "alwaysEnabled": "常に有効"
+  },
+  "serverTasks": {
+    "title": "サーバータスク",
+    "failedToLoad": "タスクの読み込みに失敗しました",
+    "noTasks": "実行中のタスクはありません"
   }
 }

@@ -53,7 +53,8 @@
     "refreshingServers": "Actualizando servidores...",
     "loadingServers": "Cargando servidores...",
     "connectingToServers": "Conectando a servidores...",
-    "startingOfflineMode": "Iniciando modo sin conexión..."
+    "startingOfflineMode": "Iniciando modo sin conexión...",
+    "loading": "Cargando..."
   },
   "screens": {
     "licenses": "Licencias",
@@ -884,5 +885,10 @@
     "manuallySelected": "Seleccionado manualmente",
     "shownWithForeignAudio": "Mostrar con audio extranjero",
     "alwaysEnabled": "Siempre activado"
+  },
+  "serverTasks": {
+    "title": "Tareas del servidor",
+    "failedToLoad": "Error al cargar tareas",
+    "noTasks": "No hay tareas en ejecución"
   }
 }

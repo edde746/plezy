@@ -53,7 +53,8 @@
     "refreshingServers": "Servers vernieuwen...",
     "loadingServers": "Servers laden...",
     "connectingToServers": "Verbinden met servers...",
-    "startingOfflineMode": "Offlinemodus starten..."
+    "startingOfflineMode": "Offlinemodus starten...",
+    "loading": "Laden..."
   },
   "screens": {
     "licenses": "Licenties",
@@ -884,5 +885,10 @@
     "manuallySelected": "Handmatig geselecteerd",
     "shownWithForeignAudio": "Weergeven bij anderstalig geluid",
     "alwaysEnabled": "Altijd ingeschakeld"
+  },
+  "serverTasks": {
+    "title": "Servertaken",
+    "failedToLoad": "Taken konden niet worden geladen",
+    "noTasks": "Geen actieve taken"
   }
 }

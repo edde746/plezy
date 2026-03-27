@@ -53,7 +53,8 @@
     "refreshingServers": "Uppdaterar servrar...",
     "loadingServers": "Laddar servrar...",
     "connectingToServers": "Ansluter till servrar...",
-    "startingOfflineMode": "Startar offlineläge..."
+    "startingOfflineMode": "Startar offlineläge...",
+    "loading": "Laddar..."
   },
   "screens": {
     "licenses": "Licenser",
@@ -884,5 +885,10 @@
     "manuallySelected": "Manuellt vald",
     "shownWithForeignAudio": "Visas vid främmande ljud",
     "alwaysEnabled": "Alltid aktiverad"
+  },
+  "serverTasks": {
+    "title": "Serveruppgifter",
+    "failedToLoad": "Kunde inte ladda uppgifter",
+    "noTasks": "Inga pågående uppgifter"
   }
 }

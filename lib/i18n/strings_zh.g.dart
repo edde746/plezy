@@ -74,6 +74,7 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsZh videoSettings = _TranslationsVideoSettingsZh._(_root);
 	@override late final _TranslationsExternalPlayerZh externalPlayer = _TranslationsExternalPlayerZh._(_root);
 	@override late final _TranslationsMetadataEditZh metadataEdit = _TranslationsMetadataEditZh._(_root);
+	@override late final _TranslationsServerTasksZh serverTasks = _TranslationsServerTasksZh._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get loadingServers => '正在加载服务器...';
 	@override String get connectingToServers => '正在连接服务器...';
 	@override String get startingOfflineMode => '正在启动离线模式...';
+	@override String get loading => '加载中...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditZh implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => '始终启用';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksZh implements TranslationsServerTasksEn {
+	_TranslationsServerTasksZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '服务器任务';
+	@override String get failedToLoad => '加载任务失败';
+	@override String get noTasks => '没有正在运行的任务';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsZh._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsZh {
 			'common.loadingServers' => '正在加载服务器...',
 			'common.connectingToServers' => '正在连接服务器...',
 			'common.startingOfflineMode' => '正在启动离线模式...',
+			'common.loading' => '加载中...',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -1796,9 +1811,9 @@ extension on TranslationsZh {
 			'liveTv.evening' => '晚上',
 			'liveTv.lateNight' => '深夜',
 			'liveTv.whatsOn' => '正在播出',
-			'liveTv.watchChannel' => '观看频道',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => '观看频道',
 			'liveTv.favorites' => '收藏',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
@@ -2085,6 +2100,9 @@ extension on TranslationsZh {
 			'metadataEdit.manuallySelected' => '手动选择',
 			'metadataEdit.shownWithForeignAudio' => '外语音频时显示',
 			'metadataEdit.alwaysEnabled' => '始终启用',
+			'serverTasks.title' => '服务器任务',
+			'serverTasks.failedToLoad' => '加载任务失败',
+			'serverTasks.noTasks' => '没有正在运行的任务',
 			_ => null,
 		};
 	}

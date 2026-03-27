@@ -10,6 +10,7 @@ import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
 import '../models/livetv_hub_result.dart';
 import '../models/livetv_program.dart';
+import '../models/plex_activity.dart';
 import '../models/plex_config.dart';
 import '../models/play_queue_response.dart';
 import '../models/plex_file_info.dart';
@@ -521,6 +522,26 @@ class PlexClient {
     } catch (e) {
       return false;
     }
+  }
+
+  /// Get running background tasks (thumbnail generation, credit detection, etc.)
+  Future<List<PlexActivity>> getActivities() async {
+    try {
+      final response = await _dio.get('/activities');
+      final container = _getMediaContainer(response);
+      if (container == null) return [];
+      final activityList = container['Activity'] as List?;
+      if (activityList == null) return [];
+      return activityList.map((json) => PlexActivity.fromJson(json as Map<String, dynamic>)).toList();
+    } catch (e) {
+      appLogger.e('Failed to get activities', error: e);
+      return [];
+    }
+  }
+
+  /// Cancel a running background task by its UUID.
+  Future<void> cancelActivity(String uuid) async {
+    await _dio.delete('/activities/$uuid');
   }
 
   /// Get library sections

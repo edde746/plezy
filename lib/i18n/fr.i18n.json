@@ -53,7 +53,8 @@
     "refreshingServers": "Actualisation des serveurs...",
     "loadingServers": "Chargement des serveurs...",
     "connectingToServers": "Connexion aux serveurs...",
-    "startingOfflineMode": "Démarrage en mode hors-ligne..."
+    "startingOfflineMode": "Démarrage en mode hors-ligne...",
+    "loading": "Chargement..."
   },
   "screens": {
     "licenses": "Licenses",
@@ -884,5 +885,10 @@
     "manuallySelected": "Sélectionné manuellement",
     "shownWithForeignAudio": "Affichés avec audio étranger",
     "alwaysEnabled": "Toujours activé"
+  },
+  "serverTasks": {
+    "title": "Tâches du serveur",
+    "failedToLoad": "Échec du chargement des tâches",
+    "noTasks": "Aucune tâche en cours"
   }
 }

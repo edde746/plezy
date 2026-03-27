@@ -53,7 +53,8 @@
     "refreshingServers": "Odświeżanie serwerów...",
     "loadingServers": "Ładowanie serwerów...",
     "connectingToServers": "Łączenie z serwerami...",
-    "startingOfflineMode": "Uruchamianie trybu offline..."
+    "startingOfflineMode": "Uruchamianie trybu offline...",
+    "loading": "Ładowanie..."
   },
   "screens": {
     "licenses": "Licencje",
@@ -884,5 +885,10 @@
     "manuallySelected": "Wybrany ręcznie",
     "shownWithForeignAudio": "Wyświetlane przy obcojęzycznym audio",
     "alwaysEnabled": "Zawsze włączone"
+  },
+  "serverTasks": {
+    "title": "Zadania serwera",
+    "failedToLoad": "Nie udało się załadować zadań",
+    "noTasks": "Brak uruchomionych zadań"
   }
 }

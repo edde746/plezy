@@ -53,7 +53,8 @@
     "refreshingServers": "서버 새로고침 중...",
     "loadingServers": "서버 로딩 중...",
     "connectingToServers": "서버 연결 중...",
-    "startingOfflineMode": "오프라인 모드 시작 중..."
+    "startingOfflineMode": "오프라인 모드 시작 중...",
+    "loading": "로딩 중..."
   },
   "screens": {
     "licenses": "라이선스",
@@ -884,5 +885,10 @@
     "manuallySelected": "수동 선택",
     "shownWithForeignAudio": "외국어 오디오 시 표시",
     "alwaysEnabled": "항상 활성화"
+  },
+  "serverTasks": {
+    "title": "서버 작업",
+    "failedToLoad": "작업을 불러올 수 없습니다",
+    "noTasks": "실행 중인 작업 없음"
   }
 }

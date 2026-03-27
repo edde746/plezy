@@ -53,7 +53,8 @@
     "refreshingServers": "Aggiornamento server...",
     "loadingServers": "Caricamento server...",
     "connectingToServers": "Connessione ai server...",
-    "startingOfflineMode": "Avvio modalità offline..."
+    "startingOfflineMode": "Avvio modalità offline...",
+    "loading": "Caricamento..."
   },
   "screens": {
     "licenses": "Licenze",
@@ -884,5 +885,10 @@
     "manuallySelected": "Selezionato manualmente",
     "shownWithForeignAudio": "Mostrati con audio straniero",
     "alwaysEnabled": "Sempre attivo"
+  },
+  "serverTasks": {
+    "title": "Attività del server",
+    "failedToLoad": "Impossibile caricare le attività",
+    "noTasks": "Nessuna attività in corso"
   }
 }

@@ -53,7 +53,8 @@
     "refreshingServers": "Opdaterer servere...",
     "loadingServers": "Indlæser servere...",
     "connectingToServers": "Forbinder til servere...",
-    "startingOfflineMode": "Starter offlinetilstand..."
+    "startingOfflineMode": "Starter offlinetilstand...",
+    "loading": "Indlæser..."
   },
   "screens": {
     "licenses": "Licenser",
@@ -884,5 +885,10 @@
     "manuallySelected": "Manuelt valgt",
     "shownWithForeignAudio": "Vist med fremmedsproget lyd",
     "alwaysEnabled": "Altid aktiveret"
+  },
+  "serverTasks": {
+    "title": "Serveropgaver",
+    "failedToLoad": "Kunne ikke indlæse opgaver",
+    "noTasks": "Ingen opgaver kører"
   }
 }

@@ -53,7 +53,8 @@
     "refreshingServers": "Обновление серверов...",
     "loadingServers": "Загрузка серверов...",
     "connectingToServers": "Подключение к серверам...",
-    "startingOfflineMode": "Запуск автономного режима..."
+    "startingOfflineMode": "Запуск автономного режима...",
+    "loading": "Загрузка..."
   },
   "screens": {
     "licenses": "Лицензии",
@@ -884,5 +885,10 @@
     "manuallySelected": "Выбор вручную",
     "shownWithForeignAudio": "Показывать при иноязычном аудио",
     "alwaysEnabled": "Всегда включены"
+  },
+  "serverTasks": {
+    "title": "Задачи сервера",
+    "failedToLoad": "Не удалось загрузить задачи",
+    "noTasks": "Нет выполняемых задач"
   }
 }

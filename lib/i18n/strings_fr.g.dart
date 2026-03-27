@@ -74,6 +74,7 @@ class TranslationsFr with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsFr videoSettings = _TranslationsVideoSettingsFr._(_root);
 	@override late final _TranslationsExternalPlayerFr externalPlayer = _TranslationsExternalPlayerFr._(_root);
 	@override late final _TranslationsMetadataEditFr metadataEdit = _TranslationsMetadataEditFr._(_root);
+	@override late final _TranslationsServerTasksFr serverTasks = _TranslationsServerTasksFr._(_root);
 }
 
 // Path: app
@@ -151,6 +152,7 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get loadingServers => 'Chargement des serveurs...';
 	@override String get connectingToServers => 'Connexion aux serveurs...';
 	@override String get startingOfflineMode => 'Démarrage en mode hors-ligne...';
+	@override String get loading => 'Chargement...';
 }
 
 // Path: screens
@@ -1108,6 +1110,18 @@ class _TranslationsMetadataEditFr implements TranslationsMetadataEditEn {
 	@override String get alwaysEnabled => 'Toujours activé';
 }
 
+// Path: serverTasks
+class _TranslationsServerTasksFr implements TranslationsServerTasksEn {
+	_TranslationsServerTasksFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Tâches du serveur';
+	@override String get failedToLoad => 'Échec du chargement des tâches';
+	@override String get noTasks => 'Aucune tâche en cours';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsFr implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsFr._(this._root);
@@ -1335,6 +1349,7 @@ extension on TranslationsFr {
 			'common.loadingServers' => 'Chargement des serveurs...',
 			'common.connectingToServers' => 'Connexion aux serveurs...',
 			'common.startingOfflineMode' => 'Démarrage en mode hors-ligne...',
+			'common.loading' => 'Chargement...',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
@@ -1796,9 +1811,9 @@ extension on TranslationsFr {
 			'liveTv.evening' => 'Soirée',
 			'liveTv.lateNight' => 'Nuit tardive',
 			'liveTv.whatsOn' => 'En ce moment',
-			'liveTv.watchChannel' => 'Regarder la chaîne',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.watchChannel' => 'Regarder la chaîne',
 			'liveTv.favorites' => 'Favoris',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
@@ -2085,6 +2100,9 @@ extension on TranslationsFr {
 			'metadataEdit.manuallySelected' => 'Sélectionné manuellement',
 			'metadataEdit.shownWithForeignAudio' => 'Affichés avec audio étranger',
 			'metadataEdit.alwaysEnabled' => 'Toujours activé',
+			'serverTasks.title' => 'Tâches du serveur',
+			'serverTasks.failedToLoad' => 'Échec du chargement des tâches',
+			'serverTasks.noTasks' => 'Aucune tâche en cours',
 			_ => null,
 		};
 	}

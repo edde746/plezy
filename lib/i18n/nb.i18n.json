@@ -53,7 +53,8 @@
     "refreshingServers": "Oppdaterer servere...",
     "loadingServers": "Laster servere...",
     "connectingToServers": "Kobler til servere...",
-    "startingOfflineMode": "Starter frakoblet modus..."
+    "startingOfflineMode": "Starter frakoblet modus...",
+    "loading": "Laster..."
   },
   "screens": {
     "licenses": "Lisenser",
@@ -884,5 +885,10 @@
     "manuallySelected": "Manuelt valgt",
     "shownWithForeignAudio": "Vist med fremmedspråklig lyd",
     "alwaysEnabled": "Alltid aktivert"
+  },
+  "serverTasks": {
+    "title": "Serveroppgaver",
+    "failedToLoad": "Kunne ikke laste oppgaver",
+    "noTasks": "Ingen oppgaver kjører"
   }
 }
