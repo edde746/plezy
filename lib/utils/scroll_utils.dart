@@ -23,7 +23,9 @@ void scrollToCurrentItem(ScrollController controller, GlobalKey firstItemKey, in
     if (!controller.hasClients) return;
     final itemHeight = (firstItemKey.currentContext?.findRenderObject() as RenderBox?)?.size.height;
     if (itemHeight == null) return;
-    final target = (currentIndex * itemHeight).clamp(0.0, controller.position.maxScrollExtent);
+    final maxExtent = controller.position.maxScrollExtent;
+    if (!maxExtent.isFinite) return;
+    final target = (currentIndex * itemHeight).clamp(0.0, maxExtent);
     controller.jumpTo(target);
   });
 }
@@ -42,8 +44,10 @@ void scrollListToIndex(
   if (controller.positions.length != 1 || itemExtent <= 0) return;
 
   final viewport = controller.position.viewportDimension;
+  final maxExtent = controller.position.maxScrollExtent;
+  if (!viewport.isFinite || !maxExtent.isFinite) return;
   final targetCenter = leadingPadding + (index * itemExtent) + (itemExtent / 2);
-  final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, controller.position.maxScrollExtent);
+  final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, maxExtent);
 
   if (animate) {
     controller.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);

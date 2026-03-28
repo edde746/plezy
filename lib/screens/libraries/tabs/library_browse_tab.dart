@@ -998,7 +998,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     final offset = _effectiveTopPadding + targetRow * rowHeight - _chipsBarHeight;
 
     final gen = _jumpScrollGeneration;
-    final clampedOffset = offset.clamp(0.0, _scrollController.position.maxScrollExtent);
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    if (!maxExtent.isFinite) {
+      _isJumpScrolling = false;
+      return;
+    }
+    final clampedOffset = offset.clamp(0.0, maxExtent);
 
     // If a newer jump already superseded this one, skip the animation
     // entirely — the next call will handle the final position.
@@ -1130,6 +1135,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     final offset = _scrollController.offset;
     final viewportHeight = _scrollController.position.viewportDimension;
+    if (!viewportHeight.isFinite) return;
     final firstIndex = _itemIndexFromScrollOffset(offset);
 
     final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
@@ -1179,6 +1185,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     final offset = _scrollController.offset;
     final viewportHeight = _scrollController.position.viewportDimension;
+    if (!viewportHeight.isFinite) return;
     final firstIndex = _itemIndexFromScrollOffset(offset);
 
     final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
@@ -1254,6 +1261,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     final offset = _scrollController.offset;
     final viewportHeight = _scrollController.position.viewportDimension;
+    if (!viewportHeight.isFinite) return;
     final firstVisible = _itemIndexFromScrollOffset(offset);
     final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
     final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
