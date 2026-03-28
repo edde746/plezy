@@ -184,7 +184,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     func dispose() {
         endPlaybackActivity()
         NotificationCenter.default.removeObserver(self)
-        disposeSharedState(destroySynchronously: true)
+        disposeSharedState(destroySynchronously: false)
 
         metalLayer?.removeFromSuperlayer()
         metalLayer = nil
