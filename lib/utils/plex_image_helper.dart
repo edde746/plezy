@@ -198,16 +198,29 @@ class PlexImageHelper {
     }
   }
 
-  /// Generates cache-friendly dimensions for memory caching
+  /// Generates cache-friendly dimensions for memory caching.
+  ///
+  /// Max bounds are type-aware so large originals (e.g. failed server
+  /// transcodes or external EPG images) are capped at a resolution
+  /// appropriate for the display context.
   static (int memWidth, int memHeight) getMemCacheDimensions({
     required int displayWidth,
     required int displayHeight,
     double scaleFactor = 1.0,
+    ImageType imageType = ImageType.poster,
   }) {
     final scaledWidth = (displayWidth * scaleFactor).round();
     final scaledHeight = (displayHeight * scaleFactor).round();
 
-    return (scaledWidth.clamp(120, 1200), scaledHeight.clamp(180, 1800));
+    final (int maxW, int maxH) = switch (imageType) {
+      ImageType.poster => (720, 1080),
+      ImageType.thumb => (960, 540),
+      ImageType.art => (1920, 1080),
+      ImageType.logo => (600, 300),
+      ImageType.avatar => (300, 300),
+    };
+
+    return (scaledWidth.clamp(120, maxW), scaledHeight.clamp(180, maxH));
   }
 
   /// Determines if an image path is suitable for transcoding

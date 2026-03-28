@@ -329,6 +329,7 @@ class PlexOptimizedImage extends StatelessWidget {
     final (memWidth, memHeight) = PlexImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
+      imageType: imageType,
     );
 
     // Generate cache key if not provided
