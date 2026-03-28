@@ -20,9 +20,24 @@ export '../../services/base_peer_service.dart' show PeerError, PeerErrorType;
 /// - Sending/receiving sync messages through the relay server
 /// - Reconnection on WebSocket drops
 class WatchTogetherPeerService with KeepaliveMixin {
-  static const String _baseUrl = 'https://ice.plezy.app';
-  static String get healthUrl => '$_baseUrl/health';
-  static const String _relayUrl = 'wss://ice.plezy.app/relay';
+  static const String defaultBaseUrl = 'https://ice.plezy.app';
+
+  final String _baseUrl;
+
+  static String get healthUrl => '$defaultBaseUrl/health';
+
+  static String healthUrlFor(String? customBaseUrl) {
+    final base = (customBaseUrl != null && customBaseUrl.trim().isNotEmpty) ? customBaseUrl.trim() : defaultBaseUrl;
+    return '$base/health';
+  }
+
+  String get _relayUrl {
+    final wsBase = _baseUrl.replaceFirst(RegExp(r'^https://'), 'wss://').replaceFirst(RegExp(r'^http://'), 'ws://');
+    return '$wsBase/relay';
+  }
+
+  WatchTogetherPeerService({String? customBaseUrl})
+      : _baseUrl = (customBaseUrl != null && customBaseUrl.trim().isNotEmpty) ? customBaseUrl.trim() : defaultBaseUrl;
 
   WebSocketChannel? _channel;
   StreamSubscription? _channelSubscription;

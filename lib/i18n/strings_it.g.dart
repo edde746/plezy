@@ -269,6 +269,10 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Personalizza le scorciatoie da tastiera';
 	@override String get videoPlayerNavigation => 'Navigazione del lettore video';
 	@override String get videoPlayerNavigationDescription => 'Usa i tasti freccia per navigare nei controlli del lettore video';
+	@override String get watchTogetherRelay => 'Relay Guarda Insieme';
+	@override String get watchTogetherRelayDefault => 'Predefinito';
+	@override String get watchTogetherRelayDescription => 'Imposta un server relay personalizzato per Guarda Insieme. Tutti i partecipanti devono utilizzare lo stesso server.';
+	@override String get watchTogetherRelayHint => 'https://mio-relay.esempio.it';
 	@override String get crashReporting => 'Segnalazione errori';
 	@override String get crashReportingDescription => 'Invia segnalazioni di errori per migliorare l\'app';
 	@override String get debugLogging => 'Log di debug';
@@ -1440,6 +1444,10 @@ extension on TranslationsIt {
 			'settings.keyboardShortcutsDescription' => 'Personalizza le scorciatoie da tastiera',
 			'settings.videoPlayerNavigation' => 'Navigazione del lettore video',
 			'settings.videoPlayerNavigationDescription' => 'Usa i tasti freccia per navigare nei controlli del lettore video',
+			'settings.watchTogetherRelay' => 'Relay Guarda Insieme',
+			'settings.watchTogetherRelayDefault' => 'Predefinito',
+			'settings.watchTogetherRelayDescription' => 'Imposta un server relay personalizzato per Guarda Insieme. Tutti i partecipanti devono utilizzare lo stesso server.',
+			'settings.watchTogetherRelayHint' => 'https://mio-relay.esempio.it',
 			'settings.crashReporting' => 'Segnalazione errori',
 			'settings.crashReportingDescription' => 'Invia segnalazioni di errori per migliorare l\'app',
 			'settings.debugLogging' => 'Log di debug',
@@ -1808,12 +1816,12 @@ extension on TranslationsIt {
 			'liveTv.today' => 'Oggi',
 			'liveTv.midnight' => 'Mezzanotte',
 			'liveTv.overnight' => 'Notte',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => 'Mattina',
 			'liveTv.daytime' => 'Giorno',
 			'liveTv.evening' => 'Sera',
 			'liveTv.lateNight' => 'Notte tarda',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => 'In onda ora',
 			'liveTv.watchChannel' => 'Guarda canale',
 			'liveTv.favorites' => 'Preferiti',

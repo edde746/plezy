@@ -269,6 +269,10 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Anpassa tangentbordsgenvägar';
 	@override String get videoPlayerNavigation => 'Navigering i videospelaren';
 	@override String get videoPlayerNavigationDescription => 'Använd piltangenter för att navigera videospelarens kontroller';
+	@override String get watchTogetherRelay => 'Titta Tillsammans-relay';
+	@override String get watchTogetherRelayDefault => 'Standard';
+	@override String get watchTogetherRelayDescription => 'Ange en anpassad relay-server för Titta Tillsammans. Alla deltagare måste använda samma server.';
+	@override String get watchTogetherRelayHint => 'https://min-relay.exempel.se';
 	@override String get crashReporting => 'Kraschrapportering';
 	@override String get crashReportingDescription => 'Skicka kraschrapporter för att förbättra appen';
 	@override String get debugLogging => 'Felsökningsloggning';
@@ -1440,6 +1444,10 @@ extension on TranslationsSv {
 			'settings.keyboardShortcutsDescription' => 'Anpassa tangentbordsgenvägar',
 			'settings.videoPlayerNavigation' => 'Navigering i videospelaren',
 			'settings.videoPlayerNavigationDescription' => 'Använd piltangenter för att navigera videospelarens kontroller',
+			'settings.watchTogetherRelay' => 'Titta Tillsammans-relay',
+			'settings.watchTogetherRelayDefault' => 'Standard',
+			'settings.watchTogetherRelayDescription' => 'Ange en anpassad relay-server för Titta Tillsammans. Alla deltagare måste använda samma server.',
+			'settings.watchTogetherRelayHint' => 'https://min-relay.exempel.se',
 			'settings.crashReporting' => 'Kraschrapportering',
 			'settings.crashReportingDescription' => 'Skicka kraschrapporter för att förbättra appen',
 			'settings.debugLogging' => 'Felsökningsloggning',
@@ -1808,12 +1816,12 @@ extension on TranslationsSv {
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
 			'liveTv.overnight' => 'Natt',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => 'Morgon',
 			'liveTv.daytime' => 'Dagtid',
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => 'På TV nu',
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'liveTv.favorites' => 'Favoriter',

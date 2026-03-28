@@ -269,6 +269,10 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Настроить горячие клавиши';
 	@override String get videoPlayerNavigation => 'Навигация видеоплеера';
 	@override String get videoPlayerNavigationDescription => 'Использовать клавиши стрелок для навигации по элементам управления плеером';
+	@override String get watchTogetherRelay => 'Relay совместного просмотра';
+	@override String get watchTogetherRelayDefault => 'По умолчанию';
+	@override String get watchTogetherRelayDescription => 'Указать пользовательский relay-сервер для совместного просмотра. Все участники должны использовать один и тот же сервер.';
+	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get crashReporting => 'Отчёты об ошибках';
 	@override String get crashReportingDescription => 'Отправлять отчёты об ошибках для улучшения приложения';
 	@override String get debugLogging => 'Журнал отладки';
@@ -1440,6 +1444,10 @@ extension on TranslationsRu {
 			'settings.keyboardShortcutsDescription' => 'Настроить горячие клавиши',
 			'settings.videoPlayerNavigation' => 'Навигация видеоплеера',
 			'settings.videoPlayerNavigationDescription' => 'Использовать клавиши стрелок для навигации по элементам управления плеером',
+			'settings.watchTogetherRelay' => 'Relay совместного просмотра',
+			'settings.watchTogetherRelayDefault' => 'По умолчанию',
+			'settings.watchTogetherRelayDescription' => 'Указать пользовательский relay-сервер для совместного просмотра. Все участники должны использовать один и тот же сервер.',
+			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.crashReporting' => 'Отчёты об ошибках',
 			'settings.crashReportingDescription' => 'Отправлять отчёты об ошибках для улучшения приложения',
 			'settings.debugLogging' => 'Журнал отладки',
@@ -1808,12 +1816,12 @@ extension on TranslationsRu {
 			'liveTv.today' => 'Сегодня',
 			'liveTv.midnight' => 'Полночь',
 			'liveTv.overnight' => 'Ночь',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => 'Утро',
 			'liveTv.daytime' => 'День',
 			'liveTv.evening' => 'Вечер',
 			'liveTv.lateNight' => 'Поздний вечер',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => 'Что идёт',
 			'liveTv.watchChannel' => 'Смотреть канал',
 			'liveTv.favorites' => 'Избранное',

@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../../mpv/mpv.dart';
+import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../models/sync_message.dart';
 import '../models/watch_session.dart';
@@ -189,7 +190,8 @@ class WatchTogetherProvider with ChangeNotifier {
 
     appLogger.d('WatchTogether: Creating session with control mode: $controlMode');
 
-    _peerService = WatchTogetherPeerService();
+    final customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
+    _peerService = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
     _setupPeerServiceListeners();
 
     try {
@@ -236,7 +238,8 @@ class WatchTogetherProvider with ChangeNotifier {
 
     appLogger.d('WatchTogether: Joining session: $sessionId');
 
-    _peerService = WatchTogetherPeerService();
+    final customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
+    _peerService = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
     _setupPeerServiceListeners();
 
     _session = WatchSession.joinAsGuest(sessionId: sessionId);

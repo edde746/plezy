@@ -113,6 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kResetSettings = 'reset_settings';
   static const _kCheckForUpdates = 'check_for_updates';
   static const _kAbout = 'about';
+  static const _kWatchTogetherRelay = 'watch_together_relay';
   KeyboardShortcutsService? _keyboardService;
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
   bool _isLoading = true;
@@ -144,6 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _useExternalPlayer = false;
   bool _confirmExitOnBack = true;
   String _selectedExternalPlayerName = '';
+  String? _customRelayUrl;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -224,6 +226,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _useExternalPlayer = _settingsService.getUseExternalPlayer();
       _selectedExternalPlayerName = _settingsService.getSelectedExternalPlayer().name;
       _confirmExitOnBack = _settingsService.getConfirmExitOnBack();
+      _customRelayUrl = _settingsService.getCustomRelayUrl();
       _isLoading = false;
     });
   }
@@ -1200,6 +1203,14 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
+          ListTile(
+            focusNode: _focusTracker.get(_kWatchTogetherRelay),
+            leading: const AppIcon(Symbols.dns_rounded, fill: 1),
+            title: Text(t.settings.watchTogetherRelay),
+            subtitle: Text(t.settings.watchTogetherRelayDescription),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            onTap: () => _showRelayUrlDialog(),
+          ),
           SwitchListTile(
             focusNode: _focusTracker.get(_kCrashReporting),
             secondary: const AppIcon(Symbols.monitoring_rounded, fill: 1),
@@ -1687,6 +1698,52 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         await _settingsService.setAutoSkipDelay(value);
       },
     );
+  }
+
+  void _showRelayUrlDialog() {
+    final controller = TextEditingController(text: _customRelayUrl ?? '');
+    final saveFocusNode = FocusNode();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(t.settings.watchTogetherRelay),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: 'URL',
+              hintText: t.settings.watchTogetherRelayHint,
+            ),
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            onEditingComplete: () => saveFocusNode.requestFocus(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                controller.clear();
+                await _settingsService.setCustomRelayUrl(null);
+                if (mounted) setState(() => _customRelayUrl = null);
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+              },
+              child: Text(t.settings.resetToDefault),
+            ),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
+            TextButton(
+              focusNode: saveFocusNode,
+              onPressed: () async {
+                final url = controller.text.trim().isEmpty ? null : controller.text.trim();
+                await _settingsService.setCustomRelayUrl(url);
+                if (mounted) setState(() => _customRelayUrl = url);
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+              },
+              child: Text(t.common.save),
+            ),
+          ],
+        );
+      },
+    ).then((_) => saveFocusNode.dispose());
   }
 
   void _showTextInputDialog({

@@ -269,6 +269,10 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Personnaliser les raccourcis clavier';
 	@override String get videoPlayerNavigation => 'Navigation dans le lecteur vidéo';
 	@override String get videoPlayerNavigationDescription => 'Utilisez les touches fléchées pour naviguer dans les commandes du lecteur vidéo.';
+	@override String get watchTogetherRelay => 'Relais Regarder Ensemble';
+	@override String get watchTogetherRelayDefault => 'Par défaut';
+	@override String get watchTogetherRelayDescription => 'Définir un serveur relais personnalisé pour Regarder Ensemble. Tous les participants doivent utiliser le même serveur.';
+	@override String get watchTogetherRelayHint => 'https://mon-relais.exemple.fr';
 	@override String get crashReporting => 'Rapports de plantage';
 	@override String get crashReportingDescription => 'Envoyer des rapports de plantage pour améliorer l\'application';
 	@override String get debugLogging => 'Journalisation de débogage';
@@ -1440,6 +1444,10 @@ extension on TranslationsFr {
 			'settings.keyboardShortcutsDescription' => 'Personnaliser les raccourcis clavier',
 			'settings.videoPlayerNavigation' => 'Navigation dans le lecteur vidéo',
 			'settings.videoPlayerNavigationDescription' => 'Utilisez les touches fléchées pour naviguer dans les commandes du lecteur vidéo.',
+			'settings.watchTogetherRelay' => 'Relais Regarder Ensemble',
+			'settings.watchTogetherRelayDefault' => 'Par défaut',
+			'settings.watchTogetherRelayDescription' => 'Définir un serveur relais personnalisé pour Regarder Ensemble. Tous les participants doivent utiliser le même serveur.',
+			'settings.watchTogetherRelayHint' => 'https://mon-relais.exemple.fr',
 			'settings.crashReporting' => 'Rapports de plantage',
 			'settings.crashReportingDescription' => 'Envoyer des rapports de plantage pour améliorer l\'application',
 			'settings.debugLogging' => 'Journalisation de débogage',
@@ -1808,12 +1816,12 @@ extension on TranslationsFr {
 			'liveTv.today' => 'Aujourd\'hui',
 			'liveTv.midnight' => 'Minuit',
 			'liveTv.overnight' => 'Nuit',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => 'Matin',
 			'liveTv.daytime' => 'Journée',
 			'liveTv.evening' => 'Soirée',
 			'liveTv.lateNight' => 'Nuit tardive',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => 'En ce moment',
 			'liveTv.watchChannel' => 'Regarder la chaîne',
 			'liveTv.favorites' => 'Favoris',

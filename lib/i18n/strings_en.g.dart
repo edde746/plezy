@@ -553,6 +553,18 @@ class TranslationsSettingsEn {
 	/// en: 'Use arrow keys to navigate video player controls'
 	String get videoPlayerNavigationDescription => 'Use arrow keys to navigate video player controls';
 
+	/// en: 'Watch Together Relay'
+	String get watchTogetherRelay => 'Watch Together Relay';
+
+	/// en: 'Default'
+	String get watchTogetherRelayDefault => 'Default';
+
+	/// en: 'Set a custom relay server for Watch Together. All participants must use the same server.'
+	String get watchTogetherRelayDescription => 'Set a custom relay server for Watch Together. All participants must use the same server.';
+
+	/// en: 'https://my-relay.example.com'
+	String get watchTogetherRelayHint => 'https://my-relay.example.com';
+
 	/// en: 'Crash Reporting'
 	String get crashReporting => 'Crash Reporting';
 
@@ -3053,6 +3065,10 @@ extension on Translations {
 			'settings.keyboardShortcutsDescription' => 'Customize keyboard shortcuts',
 			'settings.videoPlayerNavigation' => 'Video Player Navigation',
 			'settings.videoPlayerNavigationDescription' => 'Use arrow keys to navigate video player controls',
+			'settings.watchTogetherRelay' => 'Watch Together Relay',
+			'settings.watchTogetherRelayDefault' => 'Default',
+			'settings.watchTogetherRelayDescription' => 'Set a custom relay server for Watch Together. All participants must use the same server.',
+			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.crashReporting' => 'Crash Reporting',
 			'settings.crashReportingDescription' => 'Send crash reports to help improve the app',
 			'settings.debugLogging' => 'Debug Logging',
@@ -3421,12 +3437,12 @@ extension on Translations {
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',

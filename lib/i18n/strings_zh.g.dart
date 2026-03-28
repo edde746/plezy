@@ -269,6 +269,10 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => '自定义键盘快捷键';
 	@override String get videoPlayerNavigation => '视频播放器导航';
 	@override String get videoPlayerNavigationDescription => '使用方向键导航视频播放器控件';
+	@override String get watchTogetherRelay => '一起看中继服务器';
+	@override String get watchTogetherRelayDefault => '默认';
+	@override String get watchTogetherRelayDescription => '设置一起看的自定义中继服务器。所有参与者必须使用相同的服务器。';
+	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get crashReporting => '崩溃报告';
 	@override String get crashReportingDescription => '发送崩溃报告以帮助改进应用';
 	@override String get debugLogging => '调试日志';
@@ -1440,6 +1444,10 @@ extension on TranslationsZh {
 			'settings.keyboardShortcutsDescription' => '自定义键盘快捷键',
 			'settings.videoPlayerNavigation' => '视频播放器导航',
 			'settings.videoPlayerNavigationDescription' => '使用方向键导航视频播放器控件',
+			'settings.watchTogetherRelay' => '一起看中继服务器',
+			'settings.watchTogetherRelayDefault' => '默认',
+			'settings.watchTogetherRelayDescription' => '设置一起看的自定义中继服务器。所有参与者必须使用相同的服务器。',
+			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.crashReporting' => '崩溃报告',
 			'settings.crashReportingDescription' => '发送崩溃报告以帮助改进应用',
 			'settings.debugLogging' => '调试日志',
@@ -1808,12 +1816,12 @@ extension on TranslationsZh {
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
 			'liveTv.overnight' => '凌晨',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => '上午',
 			'liveTv.daytime' => '白天',
 			'liveTv.evening' => '晚上',
 			'liveTv.lateNight' => '深夜',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => '正在播出',
 			'liveTv.watchChannel' => '观看频道',
 			'liveTv.favorites' => '收藏',

@@ -269,6 +269,10 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Pas toetsenbord sneltoetsen aan';
 	@override String get videoPlayerNavigation => 'Videospeler navigatie';
 	@override String get videoPlayerNavigationDescription => 'Gebruik pijltjestoetsen om door de videospeler bediening te navigeren';
+	@override String get watchTogetherRelay => 'Samen Kijken Relay';
+	@override String get watchTogetherRelayDefault => 'Standaard';
+	@override String get watchTogetherRelayDescription => 'Stel een aangepaste relay-server in voor Samen Kijken. Alle deelnemers moeten dezelfde server gebruiken.';
+	@override String get watchTogetherRelayHint => 'https://mijn-relay.voorbeeld.nl';
 	@override String get crashReporting => 'Crashrapportage';
 	@override String get crashReportingDescription => 'Crashrapporten verzenden om de app te verbeteren';
 	@override String get debugLogging => 'Debug logging';
@@ -1440,6 +1444,10 @@ extension on TranslationsNl {
 			'settings.keyboardShortcutsDescription' => 'Pas toetsenbord sneltoetsen aan',
 			'settings.videoPlayerNavigation' => 'Videospeler navigatie',
 			'settings.videoPlayerNavigationDescription' => 'Gebruik pijltjestoetsen om door de videospeler bediening te navigeren',
+			'settings.watchTogetherRelay' => 'Samen Kijken Relay',
+			'settings.watchTogetherRelayDefault' => 'Standaard',
+			'settings.watchTogetherRelayDescription' => 'Stel een aangepaste relay-server in voor Samen Kijken. Alle deelnemers moeten dezelfde server gebruiken.',
+			'settings.watchTogetherRelayHint' => 'https://mijn-relay.voorbeeld.nl',
 			'settings.crashReporting' => 'Crashrapportage',
 			'settings.crashReportingDescription' => 'Crashrapporten verzenden om de app te verbeteren',
 			'settings.debugLogging' => 'Debug logging',
@@ -1808,12 +1816,12 @@ extension on TranslationsNl {
 			'liveTv.today' => 'Vandaag',
 			'liveTv.midnight' => 'Middernacht',
 			'liveTv.overnight' => 'Nacht',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => 'Ochtend',
 			'liveTv.daytime' => 'Overdag',
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => 'Nu op TV',
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'liveTv.favorites' => 'Favorieten',

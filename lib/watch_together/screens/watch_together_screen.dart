@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
+import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
@@ -80,10 +81,12 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
   bool _isCreating = false;
   bool _isJoining = false;
   bool? _healthOk;
+  String? _customRelayUrl;
 
   @override
   void initState() {
     super.initState();
+    _customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
     _checkHealth();
   }
 
@@ -91,7 +94,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     try {
       final client = HttpClient();
       client.connectionTimeout = const Duration(seconds: 5);
-      final request = await client.getUrl(Uri.parse(WatchTogetherPeerService.healthUrl));
+      final request = await client.getUrl(Uri.parse(WatchTogetherPeerService.healthUrlFor(_customRelayUrl)));
       final response = await request.close().namedTimeout(const Duration(seconds: 5), operation: 'WatchTogether health check');
       final body = await response.transform(const SystemEncoding().decoder).join();
       client.close();

@@ -269,6 +269,10 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => '사용자 정의 키보드 단축키';
 	@override String get videoPlayerNavigation => '비디오 플레이어 탐색';
 	@override String get videoPlayerNavigationDescription => '방향 키를 사용하여 비디오 플레이어 컨트롤 탐색';
+	@override String get watchTogetherRelay => '함께 보기 릴레이';
+	@override String get watchTogetherRelayDefault => '기본값';
+	@override String get watchTogetherRelayDescription => '함께 보기에 사용할 사용자 지정 릴레이 서버를 설정합니다. 모든 참가자가 동일한 서버를 사용해야 합니다.';
+	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get crashReporting => '충돌 보고';
 	@override String get crashReportingDescription => '앱 개선을 위해 충돌 보고서 전송';
 	@override String get debugLogging => '디버그 로깅';
@@ -1440,6 +1444,10 @@ extension on TranslationsKo {
 			'settings.keyboardShortcutsDescription' => '사용자 정의 키보드 단축키',
 			'settings.videoPlayerNavigation' => '비디오 플레이어 탐색',
 			'settings.videoPlayerNavigationDescription' => '방향 키를 사용하여 비디오 플레이어 컨트롤 탐색',
+			'settings.watchTogetherRelay' => '함께 보기 릴레이',
+			'settings.watchTogetherRelayDefault' => '기본값',
+			'settings.watchTogetherRelayDescription' => '함께 보기에 사용할 사용자 지정 릴레이 서버를 설정합니다. 모든 참가자가 동일한 서버를 사용해야 합니다.',
+			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.crashReporting' => '충돌 보고',
 			'settings.crashReportingDescription' => '앱 개선을 위해 충돌 보고서 전송',
 			'settings.debugLogging' => '디버그 로깅',
@@ -1808,12 +1816,12 @@ extension on TranslationsKo {
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
 			'liveTv.overnight' => '심야',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => '아침',
 			'liveTv.daytime' => '낮',
 			'liveTv.evening' => '저녁',
 			'liveTv.lateNight' => '심야 방송',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => '지금 방송 중',
 			'liveTv.watchChannel' => '채널 시청',
 			'liveTv.favorites' => '즐겨찾기',

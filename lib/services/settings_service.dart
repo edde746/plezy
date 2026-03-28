@@ -99,6 +99,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyAudioNormalization = 'audio_normalization';
   static const String _keyCustomShaderPresets = 'custom_shader_presets';
   static const String _keyLiveTvDefaultFavorites = 'live_tv_default_favorites';
+  static const String _keyCustomRelayUrl = 'custom_relay_url';
 
   SettingsService._();
 
@@ -870,6 +871,19 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.containsKey(_keyCustomDownloadPath);
   }
 
+  // Custom Relay URL
+  Future<void> setCustomRelayUrl(String? url) async {
+    if (url == null || url.trim().isEmpty) {
+      await prefs.remove(_keyCustomRelayUrl);
+    } else {
+      await prefs.setString(_keyCustomRelayUrl, url.trim());
+    }
+  }
+
+  String? getCustomRelayUrl() {
+    return prefs.getString(_keyCustomRelayUrl);
+  }
+
   // Download on WiFi Only
   Future<void> setDownloadOnWifiOnly(bool value) async {
     await prefs.setBool(_keyDownloadOnWifiOnly, value);
@@ -1309,6 +1323,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyAudioPassthrough),
       prefs.remove(_keyAudioNormalization),
       prefs.remove(_keyBufferSizeMigratedToAuto),
+      prefs.remove(_keyCustomRelayUrl),
     ]);
   }
 

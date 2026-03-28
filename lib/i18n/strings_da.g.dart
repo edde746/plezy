@@ -269,6 +269,10 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'Tilpas tastaturgenveje';
 	@override String get videoPlayerNavigation => 'Videoafspillernavigation';
 	@override String get videoPlayerNavigationDescription => 'Brug piletaster til at navigere videoafspillerkontroller';
+	@override String get watchTogetherRelay => 'Watch Together-relay';
+	@override String get watchTogetherRelayDefault => 'Standard';
+	@override String get watchTogetherRelayDescription => 'Angiv en brugerdefineret relay-server til Watch Together. Alle deltagere skal bruge den samme server.';
+	@override String get watchTogetherRelayHint => 'https://min-relay.eksempel.dk';
 	@override String get crashReporting => 'Fejlrapportering';
 	@override String get crashReportingDescription => 'Send fejlrapporter for at hjælpe med at forbedre appen';
 	@override String get debugLogging => 'Fejlfindingslogning';
@@ -1440,6 +1444,10 @@ extension on TranslationsDa {
 			'settings.keyboardShortcutsDescription' => 'Tilpas tastaturgenveje',
 			'settings.videoPlayerNavigation' => 'Videoafspillernavigation',
 			'settings.videoPlayerNavigationDescription' => 'Brug piletaster til at navigere videoafspillerkontroller',
+			'settings.watchTogetherRelay' => 'Watch Together-relay',
+			'settings.watchTogetherRelayDefault' => 'Standard',
+			'settings.watchTogetherRelayDescription' => 'Angiv en brugerdefineret relay-server til Watch Together. Alle deltagere skal bruge den samme server.',
+			'settings.watchTogetherRelayHint' => 'https://min-relay.eksempel.dk',
 			'settings.crashReporting' => 'Fejlrapportering',
 			'settings.crashReportingDescription' => 'Send fejlrapporter for at hjælpe med at forbedre appen',
 			'settings.debugLogging' => 'Fejlfindingslogning',
@@ -1808,12 +1816,12 @@ extension on TranslationsDa {
 			'liveTv.today' => 'I dag',
 			'liveTv.midnight' => 'Midnat',
 			'liveTv.overnight' => 'Nat',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => 'Morgen',
 			'liveTv.daytime' => 'Dagtid',
 			'liveTv.evening' => 'Aften',
 			'liveTv.lateNight' => 'Sen aften',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => 'Hvad der kører',
 			'liveTv.watchChannel' => 'Se kanal',
 			'liveTv.favorites' => 'Favoritter',

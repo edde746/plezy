@@ -269,6 +269,10 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => 'キーボードショートカットをカスタマイズ';
 	@override String get videoPlayerNavigation => '動画プレーヤーナビゲーション';
 	@override String get videoPlayerNavigationDescription => '矢印キーで動画プレーヤーコントロールを操作';
+	@override String get watchTogetherRelay => '一緒に視聴リレーサーバー';
+	@override String get watchTogetherRelayDefault => 'デフォルト';
+	@override String get watchTogetherRelayDescription => '一緒に視聴用のカスタムリレーサーバーを設定します。すべての参加者が同じサーバーを使用する必要があります。';
+	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get crashReporting => 'クラッシュレポート';
 	@override String get crashReportingDescription => 'アプリの改善に役立つクラッシュレポートを送信';
 	@override String get debugLogging => 'デバッグログ';
@@ -1440,6 +1444,10 @@ extension on TranslationsJa {
 			'settings.keyboardShortcutsDescription' => 'キーボードショートカットをカスタマイズ',
 			'settings.videoPlayerNavigation' => '動画プレーヤーナビゲーション',
 			'settings.videoPlayerNavigationDescription' => '矢印キーで動画プレーヤーコントロールを操作',
+			'settings.watchTogetherRelay' => '一緒に視聴リレーサーバー',
+			'settings.watchTogetherRelayDefault' => 'デフォルト',
+			'settings.watchTogetherRelayDescription' => '一緒に視聴用のカスタムリレーサーバーを設定します。すべての参加者が同じサーバーを使用する必要があります。',
+			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.crashReporting' => 'クラッシュレポート',
 			'settings.crashReportingDescription' => 'アプリの改善に役立つクラッシュレポートを送信',
 			'settings.debugLogging' => 'デバッグログ',
@@ -1808,12 +1816,12 @@ extension on TranslationsJa {
 			'liveTv.today' => '今日',
 			'liveTv.midnight' => '深夜',
 			'liveTv.overnight' => '深夜',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => '朝',
 			'liveTv.daytime' => '昼',
 			'liveTv.evening' => '夕方',
 			'liveTv.lateNight' => '深夜',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.whatsOn' => '放送中',
 			'liveTv.watchChannel' => 'チャンネルを視聴',
 			'liveTv.favorites' => 'お気に入り',
