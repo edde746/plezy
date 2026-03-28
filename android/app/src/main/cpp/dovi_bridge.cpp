@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include <cstring>
+#include <new>
 
 #define TAG "DoviBridge"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -23,15 +24,29 @@ Java_com_edde746_plezy_exoplayer_DoviBridge_nativeConvertDv7RpuToDv81(
     jsize len = env->GetArrayLength(payload);
     if (len <= 0) return nullptr;
 
-    jbyte *buf = env->GetByteArrayElements(payload, nullptr);
+    // Valid RPU NALs are typically <2 KiB; reject unreasonable sizes
+    if (len > 8192) {
+        LOGW("RPU payload too large (%d bytes), skipping", len);
+        return nullptr;
+    }
+
+    // Copy to native heap so libdovi never touches JVM heap memory.
+    // GetByteArrayElements on ART may return a direct heap pointer; any
+    // out-of-bounds access by libdovi would corrupt adjacent JVM objects.
+    auto *buf = new (std::nothrow) uint8_t[static_cast<size_t>(len)];
     if (buf == nullptr) return nullptr;
 
+    env->GetByteArrayRegion(payload, 0, len, reinterpret_cast<jbyte *>(buf));
+    if (env->ExceptionCheck()) {
+        delete[] buf;
+        return nullptr;
+    }
+
     // Try dovi_parse_unspec62_nalu first (handles escaped NALs), fallback to dovi_parse_rpu
-    DoviRpuOpaque *rpu = dovi_parse_unspec62_nalu(
-        reinterpret_cast<const uint8_t *>(buf), static_cast<size_t>(len));
+    DoviRpuOpaque *rpu = dovi_parse_unspec62_nalu(buf, static_cast<size_t>(len));
 
     if (rpu == nullptr) {
-        env->ReleaseByteArrayElements(payload, buf, JNI_ABORT);
+        delete[] buf;
         return nullptr;
     }
 
@@ -39,22 +54,21 @@ Java_com_edde746_plezy_exoplayer_DoviBridge_nativeConvertDv7RpuToDv81(
     if (err != nullptr) {
         // Fallback: try dovi_parse_rpu (raw RPU without NAL framing)
         dovi_rpu_free(rpu);
-        rpu = dovi_parse_rpu(
-            reinterpret_cast<const uint8_t *>(buf), static_cast<size_t>(len));
+        rpu = dovi_parse_rpu(buf, static_cast<size_t>(len));
         if (rpu == nullptr) {
-            env->ReleaseByteArrayElements(payload, buf, JNI_ABORT);
+            delete[] buf;
             return nullptr;
         }
         err = dovi_rpu_get_error(rpu);
         if (err != nullptr) {
             LOGW("RPU parse failed: %s", err);
             dovi_rpu_free(rpu);
-            env->ReleaseByteArrayElements(payload, buf, JNI_ABORT);
+            delete[] buf;
             return nullptr;
         }
     }
 
-    env->ReleaseByteArrayElements(payload, buf, JNI_ABORT);
+    delete[] buf;
 
     // Convert to target profile (mode 2 = P8.1 with no-op curves)
     int32_t ret = dovi_convert_rpu_with_mode(rpu, static_cast<uint8_t>(mode));
@@ -71,6 +85,13 @@ Java_com_edde746_plezy_exoplayer_DoviBridge_nativeConvertDv7RpuToDv81(
         err = dovi_rpu_get_error(rpu);
         LOGW("RPU write failed: %s", err ? err : "unknown");
         if (out != nullptr) dovi_data_free(out);
+        dovi_rpu_free(rpu);
+        return nullptr;
+    }
+
+    if (out->len > 16384) {
+        LOGW("RPU output unexpectedly large (%zu bytes), discarding", out->len);
+        dovi_data_free(out);
         dovi_rpu_free(rpu);
         return nullptr;
     }

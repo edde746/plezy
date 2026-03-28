@@ -6,7 +6,6 @@ import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.ParsableByteArray
 import androidx.media3.extractor.TrackOutput
-import java.io.ByteArrayOutputStream
 
 /**
  * TrackOutput wrapper that processes DV Profile 7 HEVC samples based on conversion mode:
@@ -24,6 +23,8 @@ import java.io.ByteArrayOutputStream
  * - Type 63 (UNSPEC63): DV Enhancement Layer → strip
  * - nuh_layer_id > 0: Enhancement layer NAL → strip
  * - All retained NALs: normalize nuh_layer_id to 0
+ *
+ * All buffers are reused across samples to minimize GC pressure on the hot path.
  */
 class DoviConvertingTrackOutput(
     private val delegate: TrackOutput,
@@ -35,6 +36,8 @@ class DoviConvertingTrackOutput(
         private const val NAL_TYPE_UNSPEC62 = 62
         private const val NAL_TYPE_UNSPEC63 = 63
         private const val LIBDOVI_MODE_TO_81 = 2
+        private const val INITIAL_BUFFER_SIZE = 256 * 1024
+        private const val READ_CHUNK = 64 * 1024
         private val ANNEX_B_START_CODE = byteArrayOf(0, 0, 0, 1)
     }
 
@@ -45,9 +48,17 @@ class DoviConvertingTrackOutput(
     var convertedRpuCount = 0L
         private set
 
-    // Sample buffering between sampleData() and sampleMetadata()
-    private val sampleBuffer = ByteArrayOutputStream(256 * 1024)
+    // Reusable buffers — grown as needed, never shrunk
+    private var sampleBuf = ByteArray(INITIAL_BUFFER_SIZE)
+    private var sampleLen = 0
+    private var outputBuf = ByteArray(INITIAL_BUFFER_SIZE)
+    private var outputLen = 0
+    private var readBuf = ByteArray(READ_CHUNK)
+    private val outputParsable = ParsableByteArray()
     private var buffering = false
+
+    // Sample counter for periodic logging
+    private var sampleCount = 0L
 
     override fun format(format: Format) {
         if (!conversionActive) {
@@ -110,12 +121,13 @@ class DoviConvertingTrackOutput(
             return delegate.sampleData(input, length, allowEndOfInput, sampleDataPart)
         }
 
-        // Buffer sample data for processing at sampleMetadata() time
         buffering = true
-        val buf = ByteArray(length)
-        val bytesRead = input.read(buf, 0, length)
+        if (readBuf.size < length) readBuf = ByteArray(length)
+        val bytesRead = input.read(readBuf, 0, length)
         if (bytesRead > 0) {
-            sampleBuffer.write(buf, 0, bytesRead)
+            ensureSampleCapacity(sampleLen + bytesRead)
+            System.arraycopy(readBuf, 0, sampleBuf, sampleLen, bytesRead)
+            sampleLen += bytesRead
         }
         return bytesRead
     }
@@ -126,11 +138,10 @@ class DoviConvertingTrackOutput(
             return
         }
 
-        // Buffer sample data for processing at sampleMetadata() time
         buffering = true
-        val bytes = ByteArray(length)
-        data.readBytes(bytes, 0, length)
-        sampleBuffer.write(bytes, 0, length)
+        ensureSampleCapacity(sampleLen + length)
+        data.readBytes(sampleBuf, sampleLen, length)
+        sampleLen += length
     }
 
     override fun sampleMetadata(
@@ -142,172 +153,212 @@ class DoviConvertingTrackOutput(
         }
 
         buffering = false
-        val rawSample = sampleBuffer.toByteArray()
-        sampleBuffer.reset()
+        val srcLen = sampleLen
+        sampleLen = 0
 
-        val processed = try {
-            processNalUnits(rawSample)
+        val outLen: Int
+        val outBuf: ByteArray
+        val success = try {
+            processNalUnits(srcLen)
+            true
         } catch (e: Exception) {
             Log.e(TAG, "NAL processing failed, passing raw sample", e)
-            rawSample
+            false
+        }
+        if (success) {
+            outLen = outputLen
+            outBuf = outputBuf
+        } else {
+            outLen = srcLen
+            outBuf = sampleBuf
         }
 
         // Skip empty samples (all NALs were DV layers) — don't confuse the decoder
-        if (processed.isEmpty()) return
+        if (outLen == 0) return
 
-        // Write processed data to delegate. Offset must be 0 since we write exactly
-        // the processed amount (no trailing data from next sample in the buffer).
-        val parsable = ParsableByteArray(processed, processed.size)
-        delegate.sampleData(parsable, processed.size, TrackOutput.SAMPLE_DATA_PART_MAIN)
-        delegate.sampleMetadata(timeUs, flags, processed.size, 0, cryptoData)
-    }
-
-    // Sample counter for periodic logging
-    private var sampleCount = 0L
-
-    /**
-     * Process a single NAL: convert RPU (DV81), strip DV layers, or keep.
-     * Returns processed NAL data to write, or null if stripped.
-     */
-    private fun processNal(nalData: ByteArray): ByteArray? {
-        if (nalData.size < 2) return nalData
-        val nalType = (nalData[0].toInt() ushr 1) and 0x3F
-        val nuhLayerId = ((nalData[0].toInt() and 1) shl 5) or
-            ((nalData[1].toInt() ushr 3) and 0x1F)
-        return when {
-            nalType == NAL_TYPE_UNSPEC62 && dvMode == DvConversionMode.DV81 -> {
-                val converted = DoviBridge.convertRpuNalu(nalData, LIBDOVI_MODE_TO_81)
-                if (converted != null) {
-                    normalizeLayerId(converted)
-                    convertedRpuCount++
-                    converted
-                } else {
-                    strippedNalCount++
-                    null
-                }
-            }
-            nalType == NAL_TYPE_UNSPEC62 || nalType == NAL_TYPE_UNSPEC63 || nuhLayerId > 0 -> {
-                strippedNalCount++
-                null
-            }
-            else -> {
-                normalizeLayerId(nalData)
-                nalData
-            }
-        }
+        outputParsable.reset(outBuf, outLen)
+        delegate.sampleData(outputParsable, outLen, TrackOutput.SAMPLE_DATA_PART_MAIN)
+        delegate.sampleMetadata(timeUs, flags, outLen, 0, cryptoData)
     }
 
     /**
-     * Process NAL units in the sample data. Auto-detects format:
+     * Process NAL units in sampleBuf[0..dataLen). Auto-detects format:
      * - Annex B (00 00 00 01 / 00 00 01 start codes) — used by MatroskaExtractor
      * - Length-prefixed (4-byte big-endian length) — used by Mp4Extractor
+     *
+     * Result is written to outputBuf[0..outputLen).
      */
-    private fun processNalUnits(data: ByteArray): ByteArray {
-        if (data.size < 4) return data
+    private fun processNalUnits(dataLen: Int) {
+        outputLen = 0
+        if (dataLen < 4) {
+            ensureOutputCapacity(dataLen)
+            System.arraycopy(sampleBuf, 0, outputBuf, 0, dataLen)
+            outputLen = dataLen
+            return
+        }
 
         // Auto-detect: Annex B starts with 00 00 00 01 or 00 00 01
-        val isAnnexB = (data.size >= 4 && data[0] == 0.toByte() && data[1] == 0.toByte() &&
-            data[2] == 0.toByte() && data[3] == 1.toByte()) ||
-            (data.size >= 3 && data[0] == 0.toByte() && data[1] == 0.toByte() &&
-                data[2] == 1.toByte())
+        val isAnnexB = (dataLen >= 4 && sampleBuf[0] == 0.toByte() && sampleBuf[1] == 0.toByte() &&
+            sampleBuf[2] == 0.toByte() && sampleBuf[3] == 1.toByte()) ||
+            (dataLen >= 3 && sampleBuf[0] == 0.toByte() && sampleBuf[1] == 0.toByte() &&
+                sampleBuf[2] == 1.toByte())
 
         if (sampleCount == 0L) {
             Log.d(TAG, "NAL format detected: ${if (isAnnexB) "Annex B" else "length-prefixed"}, " +
-                "first bytes: ${data.take(8).joinToString(" ") { "%02X".format(it) }}")
+                "first bytes: ${sampleBuf.take(8).joinToString(" ") { "%02X".format(it) }}")
         }
 
-        return if (isAnnexB) processAnnexBNals(data) else processLengthPrefixedNals(data)
+        if (isAnnexB) processAnnexBNals(dataLen) else processLengthPrefixedNals(dataLen)
     }
 
-    /**
-     * Find all Annex B start code positions (00 00 01 or 00 00 00 01) in the data.
-     * Returns list of pairs: (startCodeEnd, startCodeLen) where startCodeEnd is the
-     * byte index right after the start code, and startCodeLen is 3 or 4.
-     */
-    private fun findAnnexBStartCodes(data: ByteArray): List<Pair<Int, Int>> {
-        val positions = mutableListOf<Pair<Int, Int>>()
+    /** Process Annex B formatted NAL units (MKV path). Scans inline, no list allocation. */
+    private fun processAnnexBNals(dataLen: Int) {
+        ensureOutputCapacity(dataLen)
+        var kept = 0
+        var stripped = 0
+
+        // Find first start code
+        var scEnd = -1
         var i = 0
-        while (i < data.size - 2) {
-            if (data[i] == 0.toByte() && data[i + 1] == 0.toByte()) {
-                if (i + 3 < data.size && data[i + 2] == 0.toByte() && data[i + 3] == 1.toByte()) {
-                    positions.add(Pair(i + 4, 4))
-                    i += 4
-                    continue
-                } else if (data[i + 2] == 1.toByte()) {
-                    positions.add(Pair(i + 3, 3))
-                    i += 3
-                    continue
+        while (i < dataLen - 2) {
+            if (sampleBuf[i] == 0.toByte() && sampleBuf[i + 1] == 0.toByte()) {
+                if (i + 3 < dataLen && sampleBuf[i + 2] == 0.toByte() && sampleBuf[i + 3] == 1.toByte()) {
+                    scEnd = i + 4
+                    break
+                } else if (sampleBuf[i + 2] == 1.toByte()) {
+                    scEnd = i + 3
+                    break
                 }
             }
             i++
         }
-        return positions
-    }
 
-    /** Process Annex B formatted NAL units (MKV path). */
-    private fun processAnnexBNals(data: ByteArray): ByteArray {
-        val output = ByteArrayOutputStream(data.size)
-        var kept = 0
-        var stripped = 0
-
-        val startCodes = findAnnexBStartCodes(data)
-        if (startCodes.isEmpty()) {
+        if (scEnd < 0) {
+            // No start codes found — pass through
+            System.arraycopy(sampleBuf, 0, outputBuf, 0, dataLen)
+            outputLen = dataLen
             sampleCount++
-            return data
+            return
         }
 
-        for (idx in startCodes.indices) {
-            val nalStart = startCodes[idx].first
-            val nalEnd = if (idx + 1 < startCodes.size) {
-                startCodes[idx + 1].first - startCodes[idx + 1].second
-            } else {
-                data.size
-            }
-            if (nalEnd <= nalStart) continue
+        var nalStart = scEnd
 
-            val result = processNal(data.copyOfRange(nalStart, nalEnd))
-            if (result != null) {
-                output.write(ANNEX_B_START_CODE)
-                output.write(result)
-                kept++
+        while (nalStart < dataLen) {
+            // Find next start code to determine end of current NAL
+            var nalEnd = dataLen
+            i = nalStart
+            while (i < dataLen - 2) {
+                if (sampleBuf[i] == 0.toByte() && sampleBuf[i + 1] == 0.toByte()) {
+                    if (i + 3 < dataLen && sampleBuf[i + 2] == 0.toByte() && sampleBuf[i + 3] == 1.toByte()) {
+                        nalEnd = i
+                        break
+                    } else if (sampleBuf[i + 2] == 1.toByte()) {
+                        nalEnd = i
+                        break
+                    }
+                }
+                i++
+            }
+
+            val nalLen = nalEnd - nalStart
+            if (nalLen > 0) {
+                val action = processNalInline(nalStart, nalLen)
+                if (action == NalAction.KEEP) {
+                    ensureOutputCapacity(outputLen + 4 + nalLen)
+                    System.arraycopy(ANNEX_B_START_CODE, 0, outputBuf, outputLen, 4)
+                    outputLen += 4
+                    System.arraycopy(sampleBuf, nalStart, outputBuf, outputLen, nalLen)
+                    normalizeLayerId(outputBuf, outputLen)
+                    outputLen += nalLen
+                    kept++
+                } else if (action == NalAction.CONVERT) {
+                    val converted = DoviBridge.convertRpuNalu(
+                        sampleBuf.copyOfRange(nalStart, nalStart + nalLen), LIBDOVI_MODE_TO_81
+                    )
+                    if (converted != null) {
+                        normalizeLayerId(converted, 0)
+                        ensureOutputCapacity(outputLen + 4 + converted.size)
+                        System.arraycopy(ANNEX_B_START_CODE, 0, outputBuf, outputLen, 4)
+                        outputLen += 4
+                        System.arraycopy(converted, 0, outputBuf, outputLen, converted.size)
+                        outputLen += converted.size
+                        convertedRpuCount++
+                        kept++
+                    } else {
+                        strippedNalCount++
+                        stripped++
+                    }
+                } else {
+                    strippedNalCount++
+                    stripped++
+                }
+            }
+
+            // Advance past the next start code
+            if (nalEnd >= dataLen) break
+            nalStart = if (nalEnd + 3 < dataLen && sampleBuf[nalEnd + 2] == 0.toByte() && sampleBuf[nalEnd + 3] == 1.toByte()) {
+                nalEnd + 4
             } else {
-                stripped++
+                nalEnd + 3
             }
         }
 
         sampleCount++
         if (sampleCount <= 3 || (sampleCount % 500 == 0L)) {
-            Log.d(TAG, "Sample #$sampleCount (AnnexB): ${data.size}B -> ${output.size()}B, " +
+            Log.d(TAG, "Sample #$sampleCount (AnnexB): ${dataLen}B -> ${outputLen}B, " +
                 "kept=$kept stripped=$stripped NALs")
         }
-        return output.toByteArray()
     }
 
     /** Process length-prefixed NAL units (MP4 path). */
-    private fun processLengthPrefixedNals(data: ByteArray): ByteArray {
-        val output = ByteArrayOutputStream(data.size)
+    private fun processLengthPrefixedNals(dataLen: Int) {
+        ensureOutputCapacity(dataLen)
         var pos = 0
         var kept = 0
         var stripped = 0
 
-        while (pos + 4 <= data.size) {
-            val nalLen = ((data[pos].toInt() and 0xFF) shl 24) or
-                ((data[pos + 1].toInt() and 0xFF) shl 16) or
-                ((data[pos + 2].toInt() and 0xFF) shl 8) or
-                (data[pos + 3].toInt() and 0xFF)
+        while (pos + 4 <= dataLen) {
+            val nalLen = ((sampleBuf[pos].toInt() and 0xFF) shl 24) or
+                ((sampleBuf[pos + 1].toInt() and 0xFF) shl 16) or
+                ((sampleBuf[pos + 2].toInt() and 0xFF) shl 8) or
+                (sampleBuf[pos + 3].toInt() and 0xFF)
 
-            if (nalLen <= 0 || pos + 4 + nalLen > data.size) {
+            if (nalLen <= 0 || pos + 4 + nalLen > dataLen) {
                 if (sampleCount < 5) {
-                    Log.w(TAG, "Bad NAL length $nalLen at pos $pos (data.size=${data.size})")
+                    Log.w(TAG, "Bad NAL length $nalLen at pos $pos (data.size=$dataLen)")
                 }
                 break
             }
 
-            val result = processNal(data.copyOfRange(pos + 4, pos + 4 + nalLen))
-            if (result != null) {
-                writeLengthPrefixedNal(output, result)
+            val nalStart = pos + 4
+            val action = processNalInline(nalStart, nalLen)
+            if (action == NalAction.KEEP) {
+                ensureOutputCapacity(outputLen + 4 + nalLen)
+                writeInt32BE(outputBuf, outputLen, nalLen)
+                outputLen += 4
+                System.arraycopy(sampleBuf, nalStart, outputBuf, outputLen, nalLen)
+                normalizeLayerId(outputBuf, outputLen)
+                outputLen += nalLen
                 kept++
+            } else if (action == NalAction.CONVERT) {
+                val converted = DoviBridge.convertRpuNalu(
+                    sampleBuf.copyOfRange(nalStart, nalStart + nalLen), LIBDOVI_MODE_TO_81
+                )
+                if (converted != null) {
+                    normalizeLayerId(converted, 0)
+                    ensureOutputCapacity(outputLen + 4 + converted.size)
+                    writeInt32BE(outputBuf, outputLen, converted.size)
+                    outputLen += 4
+                    System.arraycopy(converted, 0, outputBuf, outputLen, converted.size)
+                    outputLen += converted.size
+                    convertedRpuCount++
+                    kept++
+                } else {
+                    strippedNalCount++
+                    stripped++
+                }
             } else {
+                strippedNalCount++
                 stripped++
             }
 
@@ -316,26 +367,50 @@ class DoviConvertingTrackOutput(
 
         sampleCount++
         if (sampleCount <= 3 || (sampleCount % 500 == 0L)) {
-            Log.d(TAG, "Sample #$sampleCount (LenPrefix): ${data.size}B -> ${output.size()}B, " +
+            Log.d(TAG, "Sample #$sampleCount (LenPrefix): ${dataLen}B -> ${outputLen}B, " +
                 "kept=$kept stripped=$stripped NALs")
         }
-        return output.toByteArray()
     }
 
-    private fun normalizeLayerId(nalData: ByteArray) {
-        if (nalData.size >= 2) {
-            nalData[0] = (nalData[0].toInt() and 0xFE).toByte() // Clear bit 0 of byte 0
-            nalData[1] = (nalData[1].toInt() and 0x07).toByte() // Clear bits 7-3 of byte 1
+    private enum class NalAction { KEEP, STRIP, CONVERT }
+
+    /** Classify a NAL at sampleBuf[offset..offset+len) without copying. */
+    private fun processNalInline(offset: Int, len: Int): NalAction {
+        if (len < 2) return NalAction.KEEP
+        val nalType = (sampleBuf[offset].toInt() ushr 1) and 0x3F
+        val nuhLayerId = ((sampleBuf[offset].toInt() and 1) shl 5) or
+            ((sampleBuf[offset + 1].toInt() ushr 3) and 0x1F)
+        return when {
+            nalType == NAL_TYPE_UNSPEC62 && dvMode == DvConversionMode.DV81 -> NalAction.CONVERT
+            nalType == NAL_TYPE_UNSPEC62 || nalType == NAL_TYPE_UNSPEC63 || nuhLayerId > 0 -> NalAction.STRIP
+            else -> NalAction.KEEP
         }
     }
 
-    private fun writeLengthPrefixedNal(output: ByteArrayOutputStream, nalData: ByteArray) {
-        val len = nalData.size
-        output.write((len ushr 24) and 0xFF)
-        output.write((len ushr 16) and 0xFF)
-        output.write((len ushr 8) and 0xFF)
-        output.write(len and 0xFF)
-        output.write(nalData)
+    private fun normalizeLayerId(data: ByteArray, offset: Int) {
+        if (data.size - offset >= 2) {
+            data[offset] = (data[offset].toInt() and 0xFE).toByte()
+            data[offset + 1] = (data[offset + 1].toInt() and 0x07).toByte()
+        }
+    }
+
+    private fun writeInt32BE(buf: ByteArray, offset: Int, value: Int) {
+        buf[offset] = ((value ushr 24) and 0xFF).toByte()
+        buf[offset + 1] = ((value ushr 16) and 0xFF).toByte()
+        buf[offset + 2] = ((value ushr 8) and 0xFF).toByte()
+        buf[offset + 3] = (value and 0xFF).toByte()
+    }
+
+    private fun ensureSampleCapacity(needed: Int) {
+        if (sampleBuf.size < needed) {
+            sampleBuf = sampleBuf.copyOf(maxOf(needed, sampleBuf.size * 2))
+        }
+    }
+
+    private fun ensureOutputCapacity(needed: Int) {
+        if (outputBuf.size < needed) {
+            outputBuf = outputBuf.copyOf(maxOf(needed, outputBuf.size * 2))
+        }
     }
 
     /**
