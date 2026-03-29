@@ -124,6 +124,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "selectSubtitleTrack" -> handleSelectSubtitleTrack(call, result)
             "addSubtitleTrack" -> handleAddSubtitleTrack(call, result)
             "setVisible" -> handleSetVisible(call, result)
+            "updateFrame" -> handleUpdateFrame(result)
             "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
             "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
             "requestAudioFocus" -> handleRequestAudioFocus(result)
@@ -416,6 +417,15 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             mpvCore?.setVisible(visible)
         } else {
             playerCore?.setVisible(visible)
+        }
+        result.success(null)
+    }
+
+    private fun handleUpdateFrame(result: MethodChannel.Result) {
+        if (usingMpvFallback) {
+            mpvCore?.updateFrame()
+        } else {
+            playerCore?.updateFrame()
         }
         result.success(null)
     }

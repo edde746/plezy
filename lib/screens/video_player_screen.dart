@@ -203,6 +203,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _hiddenForBackground = false;
   bool _autoPipEnabled = false;
   int _rewindOnResume = 0;
+  Future<void> _lifecycleTransition = Future<void>.value();
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// iOS auto-PiP is system-initiated during the background transition, so
@@ -342,24 +343,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Don't pause - user may still be watching
         break;
       case AppLifecycleState.hidden:
-        if (_shouldSkipForPip) break;
-        // Pause video on mobile (we don't support background playback)
-        if (PlatformDetector.isMobile(context)) {
-          if (player != null && _isPlayerInitialized) {
-            _wasPlayingBeforeInactive = player!.state.playing;
-            if (_wasPlayingBeforeInactive) {
-              player!.pause();
-              appLogger.d('Video paused due to app being hidden (mobile)');
-            }
-          }
-        }
-        // Hide render layer to stop Vulkan present loop and gate native events
-        if (player != null && _isPlayerInitialized) {
-          player!.setVisible(false);
-          _hiddenForBackground = true;
-          _liveTimelineTimer?.cancel();
-          appLogger.d('Render layer hidden due to app being hidden');
-        }
+        _enqueueLifecycleTransition('hidden', _handleAppHidden);
         break;
       case AppLifecycleState.paused:
         if (_shouldSkipForPip) break;
@@ -371,23 +355,78 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         appLogger.d('Media controls cleared and wakelock disabled due to app being paused/backgrounded');
         break;
       case AppLifecycleState.resumed:
-        // Restore render layer if it was hidden for background
-        if (_hiddenForBackground && player != null && _isPlayerInitialized) {
-          player!.setVisible(true);
-          _hiddenForBackground = false;
-          if (_liveSessionIdentifier != null) {
-            _startLiveTimelineUpdates();
-          }
-          appLogger.d('Render layer restored after app resumed');
-        }
-        // Restore media controls and wakelock when app is resumed
-        if (_isPlayerInitialized && mounted) {
-          unawaited(_restoreMediaControlsAfterResume());
-        }
+        _enqueueLifecycleTransition('resumed', _handleAppResumed);
         break;
       case AppLifecycleState.detached:
         // No action needed for this state
         break;
+    }
+  }
+
+  void _enqueueLifecycleTransition(String label, Future<void> Function() transition) {
+    _lifecycleTransition = _lifecycleTransition
+        .catchError((Object error, StackTrace stackTrace) {
+          appLogger.w('Previous lifecycle transition failed', error: error, stackTrace: stackTrace);
+        })
+        .then((_) async {
+          if (!mounted) return;
+          try {
+            await transition();
+          } catch (e, stackTrace) {
+            appLogger.w('Lifecycle transition failed during $label', error: e, stackTrace: stackTrace);
+          }
+        });
+  }
+
+  Future<void> _handleAppHidden() async {
+    if (_shouldSkipForPip) return;
+
+    final currentPlayer = player;
+    if (currentPlayer == null || !_isPlayerInitialized) return;
+
+    // Pause first so Android MPV does not keep decoding against a transient
+    // background surface while the app is locking or hiding.
+    if (PlatformDetector.isMobile(context)) {
+      _wasPlayingBeforeInactive = currentPlayer.state.playing;
+      if (_wasPlayingBeforeInactive) {
+        try {
+          await currentPlayer.pause();
+          appLogger.d('Video paused due to app being hidden (mobile)');
+        } catch (e) {
+          appLogger.w('Failed to pause video before hiding render layer', error: e);
+        }
+      }
+    }
+
+    if (!mounted || currentPlayer != player) return;
+
+    _hiddenForBackground = true;
+    _liveTimelineTimer?.cancel();
+    await currentPlayer.setVisible(false);
+    appLogger.d('Render layer hidden due to app being hidden');
+  }
+
+  Future<void> _handleAppResumed() async {
+    final currentPlayer = player;
+
+    // Restore render layer if it was hidden for background, then force a
+    // video-output refresh before any auto-resume logic runs.
+    if (_hiddenForBackground && currentPlayer != null && _isPlayerInitialized) {
+      await currentPlayer.setVisible(true);
+      await currentPlayer.updateFrame();
+
+      if (!mounted || currentPlayer != player) return;
+
+      _hiddenForBackground = false;
+      if (_liveSessionIdentifier != null) {
+        _startLiveTimelineUpdates();
+      }
+      appLogger.d('Render layer restored after app resumed');
+    }
+
+    // Restore media controls and wakelock when app is resumed.
+    if (_isPlayerInitialized && mounted) {
+      await _restoreMediaControlsAfterResume();
     }
   }
 
@@ -597,6 +636,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (!widget.isOffline && !widget.isLive) {
         final serverId = widget.metadata.serverId;
         if (serverId != null) {
+          if (!mounted) return;
           final serverManager = context.read<MultiServerProvider>().serverManager;
           bool wasOffline = false;
           _serverStatusSubscription = serverManager.statusStream.listen((statusMap) {
@@ -1012,7 +1052,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           });
           _trackManager?.mediaInfo = null;
         }
-
       } catch (e) {
         appLogger.e('Failed to start live TV playback', error: e);
         _sendLiveTimeline('stopped');
@@ -1075,8 +1114,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
         // Enable FFmpeg auto-reconnect for VOD streams (covers network drops up to 10 min)
         if (!widget.isOffline && !widget.isLive) {
-          await player!.setProperty('stream-lavf-o',
-              'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600');
+          await player!.setProperty(
+            'stream-lavf-o',
+            'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600',
+          );
         }
 
         final hasExternalSubs = result.externalSubtitles.isNotEmpty;
@@ -1290,11 +1331,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               ? mediaInfo?.subtitleTracks.where((t) => t.id == trackId).firstOrNull
               : null;
 
-          offlineSubtitles.add(SubtitleTrack.uri(
-            'file://${entity.path}',
-            title: plexTrack?.displayTitle ?? plexTrack?.language ?? 'Subtitle $fileName',
-            language: plexTrack?.languageCode,
-          ));
+          offlineSubtitles.add(
+            SubtitleTrack.uri(
+              'file://${entity.path}',
+              title: plexTrack?.displayTitle ?? plexTrack?.language ?? 'Subtitle $fileName',
+              language: plexTrack?.languageCode,
+            ),
+          );
         }
       }
     }
@@ -1562,13 +1605,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     receiver.onSeekForward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final target = clampSeekPosition(player!, player!.state.position + Duration(seconds: settings.getSeekTimeSmall()));
+      final target = clampSeekPosition(
+        player!,
+        player!.state.position + Duration(seconds: settings.getSeekTimeSmall()),
+      );
       await player!.seek(target);
     };
     receiver.onSeekBackward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final target = clampSeekPosition(player!, player!.state.position - Duration(seconds: settings.getSeekTimeSmall()));
+      final target = clampSeekPosition(
+        player!,
+        player!.state.position - Duration(seconds: settings.getSeekTimeSmall()),
+      );
       await player!.seek(target);
     };
     receiver.onVolumeUp = () async {
@@ -2124,8 +2173,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _setLiveStreamOptions() async {
     final p = player!;
     // FFmpeg HTTP protocol reconnection
-    await p.setProperty('stream-lavf-o',
-        'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=30');
+    await p.setProperty(
+      'stream-lavf-o',
+      'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=30',
+    );
     // Demuxer: retry up to 1000 times on stream reload failures
     await p.setProperty('demuxer-lavf-o', 'max_reload=1000');
     await p.setProperty('force-seekable', 'no');

@@ -387,6 +387,12 @@ class PlayerAndroid extends PlayerBase {
     await invoke('clearVideoFrameRate');
   }
 
+  @override
+  Future<void> updateFrame() async {
+    if (disposed || !initialized) return;
+    await invoke('updateFrame');
+  }
+
   // ============================================
   // Audio Focus
   // ============================================

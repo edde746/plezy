@@ -266,7 +266,7 @@ class PlayerNative extends PlayerBase {
   @override
   Future<void> updateFrame() async {
     if (disposed || !initialized) return;
-    if (Platform.isIOS || Platform.isMacOS || Platform.isLinux) {
+    if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux) {
       await invoke('updateFrame');
     }
   }

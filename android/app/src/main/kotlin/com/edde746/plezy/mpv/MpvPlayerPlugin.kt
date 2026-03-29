@@ -98,6 +98,7 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "observeProperty" -> handleObserveProperty(call, result)
             "command" -> handleCommand(call, result)
             "setVisible" -> handleSetVisible(call, result)
+            "updateFrame" -> handleUpdateFrame(result)
             "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
             "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
             "requestAudioFocus" -> handleRequestAudioFocus(result)
@@ -227,6 +228,11 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         playerCore?.setVisible(visible)
+        result.success(null)
+    }
+
+    private fun handleUpdateFrame(result: MethodChannel.Result) {
+        playerCore?.updateFrame()
         result.success(null)
     }
 

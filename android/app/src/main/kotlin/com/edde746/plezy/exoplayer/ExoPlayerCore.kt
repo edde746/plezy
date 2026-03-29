@@ -1460,6 +1460,19 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
     }
 
+    fun updateFrame() {
+        if (disposing) return
+        activity.runOnUiThread {
+            if (disposing) return@runOnUiThread
+            ensureFlutterOverlayOnTop()
+            lastVideoSize?.let { videoSize ->
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    updateSurfaceViewSize(videoSize.width, videoSize.height, videoSize.pixelWidthHeightRatio)
+                }
+            }
+        }
+    }
+
     // Audio Focus
 
     fun requestAudioFocus(): Boolean = audioFocusManager?.requestAudioFocus() ?: false
