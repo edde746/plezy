@@ -292,7 +292,8 @@
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate",
-    "playFromBeginning": "Play from Beginning"
+    "playFromBeginning": "Play from Beginning",
+    "playVersion": "Play Version..."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, movie",

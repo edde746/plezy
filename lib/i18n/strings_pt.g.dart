@@ -420,6 +420,7 @@ class _TranslationsMediaMenuPt implements TranslationsMediaMenuEn {
 	@override String get mediaFailedToDelete => 'Falha ao excluir item de mídia';
 	@override String get rate => 'Avaliar';
 	@override String get playFromBeginning => 'Reproduzir do início';
+	@override String get playVersion => 'Reproduzir versão...';
 }
 
 // Path: accessibility
@@ -1577,6 +1578,7 @@ extension on TranslationsPt {
 			'mediaMenu.mediaFailedToDelete' => 'Falha ao excluir item de mídia',
 			'mediaMenu.rate' => 'Avaliar',
 			'mediaMenu.playFromBeginning' => 'Reproduzir do início',
+			'mediaMenu.playVersion' => 'Reproduzir versão...',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, filme',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, série de TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1815,9 +1817,9 @@ extension on TranslationsPt {
 			'liveTv.now' => 'Agora',
 			'liveTv.today' => 'Hoje',
 			'liveTv.midnight' => 'Meia-noite',
-			'liveTv.overnight' => 'Madrugada',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.overnight' => 'Madrugada',
 			'liveTv.morning' => 'Manhã',
 			'liveTv.daytime' => 'Dia',
 			'liveTv.evening' => 'Noite',

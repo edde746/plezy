@@ -292,7 +292,8 @@
     "mediaDeletedSuccessfully": "Mediaobjekt borttaget",
     "mediaFailedToDelete": "Kunde inte ta bort mediaobjekt",
     "rate": "Betygsätt",
-    "playFromBeginning": "Spela från början"
+    "playFromBeginning": "Spela från början",
+    "playVersion": "Spela version..."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

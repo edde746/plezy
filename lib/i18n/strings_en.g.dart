@@ -932,6 +932,9 @@ class TranslationsMediaMenuEn {
 
 	/// en: 'Play from Beginning'
 	String get playFromBeginning => 'Play from Beginning';
+
+	/// en: 'Play Version...'
+	String get playVersion => 'Play Version...';
 }
 
 // Path: accessibility
@@ -3198,6 +3201,7 @@ extension on Translations {
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
 			'mediaMenu.playFromBeginning' => 'Play from Beginning',
+			'mediaMenu.playVersion' => 'Play Version...',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -3436,9 +3440,9 @@ extension on Translations {
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
-			'liveTv.overnight' => 'Overnight',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.overnight' => 'Overnight',
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',

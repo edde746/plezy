@@ -420,6 +420,7 @@ class _TranslationsMediaMenuZh implements TranslationsMediaMenuEn {
 	@override String get mediaFailedToDelete => '删除媒体项失败';
 	@override String get rate => '评分';
 	@override String get playFromBeginning => '从头播放';
+	@override String get playVersion => '播放版本...';
 }
 
 // Path: accessibility
@@ -1577,6 +1578,7 @@ extension on TranslationsZh {
 			'mediaMenu.mediaFailedToDelete' => '删除媒体项失败',
 			'mediaMenu.rate' => '评分',
 			'mediaMenu.playFromBeginning' => '从头播放',
+			'mediaMenu.playVersion' => '播放版本...',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1815,9 +1817,9 @@ extension on TranslationsZh {
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
-			'liveTv.overnight' => '凌晨',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.overnight' => '凌晨',
 			'liveTv.morning' => '上午',
 			'liveTv.daytime' => '白天',
 			'liveTv.evening' => '晚上',

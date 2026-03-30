@@ -4,6 +4,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import '../services/settings_service.dart' show EpisodePosterMode;
 import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
 import 'mixins/multi_server_fields.dart';
+import 'plex_media_version.dart';
 import 'plex_role.dart';
 import '../utils/global_key_utils.dart';
 
@@ -99,6 +100,8 @@ class PlexMetadata with MultiServerFields {
   final int? childCount; // Number of items in a collection or playlist
   @JsonKey(name: 'Role')
   final List<PlexRole>? role; // Cast members
+  @JsonKey(name: 'Media', includeToJson: false)
+  final List<PlexMediaVersion>? mediaVersions; // Available media versions/editions
   final String? audioLanguage; // Per-media preferred audio language
   final String? subtitleLanguage; // Per-media preferred subtitle language
   @JsonKey(fromJson: _flexibleInt)
@@ -201,6 +204,7 @@ class PlexMetadata with MultiServerFields {
     this.viewedLeafCount,
     this.childCount,
     this.role,
+    this.mediaVersions,
     this.audioLanguage,
     this.subtitleLanguage,
     this.subtitleMode,
@@ -260,6 +264,7 @@ class PlexMetadata with MultiServerFields {
     int? viewedLeafCount,
     int? childCount,
     List<PlexRole>? role,
+    List<PlexMediaVersion>? mediaVersions,
     String? audioLanguage,
     String? subtitleLanguage,
     int? subtitleMode,
@@ -317,6 +322,7 @@ class PlexMetadata with MultiServerFields {
       viewedLeafCount: viewedLeafCount ?? this.viewedLeafCount,
       childCount: childCount ?? this.childCount,
       role: role ?? this.role,
+      mediaVersions: mediaVersions ?? this.mediaVersions,
       audioLanguage: audioLanguage ?? this.audioLanguage,
       subtitleLanguage: subtitleLanguage ?? this.subtitleLanguage,
       subtitleMode: subtitleMode ?? this.subtitleMode,

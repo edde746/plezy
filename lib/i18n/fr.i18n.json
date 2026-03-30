@@ -292,7 +292,8 @@
     "mediaDeletedSuccessfully": "Élément média supprimé avec succès",
     "mediaFailedToDelete": "Échec de la suppression de l'élément média",
     "rate": "Noter",
-    "playFromBeginning": "Lire depuis le début"
+    "playFromBeginning": "Lire depuis le début",
+    "playVersion": "Lire la version..."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

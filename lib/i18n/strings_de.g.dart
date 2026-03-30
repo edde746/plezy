@@ -420,6 +420,7 @@ class _TranslationsMediaMenuDe implements TranslationsMediaMenuEn {
 	@override String get mediaFailedToDelete => 'Löschen des Medienelements fehlgeschlagen';
 	@override String get rate => 'Bewerten';
 	@override String get playFromBeginning => 'Von Anfang an abspielen';
+	@override String get playVersion => 'Version abspielen...';
 }
 
 // Path: accessibility
@@ -1577,6 +1578,7 @@ extension on TranslationsDe {
 			'mediaMenu.mediaFailedToDelete' => 'Löschen des Medienelements fehlgeschlagen',
 			'mediaMenu.rate' => 'Bewerten',
 			'mediaMenu.playFromBeginning' => 'Von Anfang an abspielen',
+			'mediaMenu.playVersion' => 'Version abspielen...',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, Film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, Serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1815,9 +1817,9 @@ extension on TranslationsDe {
 			'liveTv.now' => 'Jetzt',
 			'liveTv.today' => 'Heute',
 			'liveTv.midnight' => 'Mitternacht',
-			'liveTv.overnight' => 'Nacht',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.overnight' => 'Nacht',
 			'liveTv.morning' => 'Morgen',
 			'liveTv.daytime' => 'Tagsüber',
 			'liveTv.evening' => 'Abend',

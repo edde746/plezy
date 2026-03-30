@@ -261,6 +261,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
+      // Play Version (for episodes and movies with multiple versions)
+      if ((mediaType == PlexMediaType.episode || mediaType == PlexMediaType.movie) &&
+          metadata.mediaVersions != null &&
+          metadata.mediaVersions!.length > 1) {
+        menuActions.add(
+          _MenuAction(value: 'play_version', icon: Symbols.video_file_rounded, label: t.mediaMenu.playVersion),
+        );
+      }
+
       // File Info (for episodes and movies)
       if (mediaType == PlexMediaType.episode || mediaType == PlexMediaType.movie) {
         menuActions.add(_MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo));
@@ -490,6 +499,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           );
           break;
 
+        case 'play_version':
+          didNavigate = await _handlePlayVersion(context);
+          break;
+
         case 'fileinfo':
           await _showFileInfo(context);
           break;
@@ -627,6 +640,40 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: e.toString()));
       }
     }
+  }
+
+  /// Handle play version selection
+  Future<bool> _handlePlayVersion(BuildContext context) async {
+    final metadata = widget.item as PlexMetadata;
+    final versions = metadata.mediaVersions!;
+
+    final selectedIndex = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(t.mediaMenu.playVersion),
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+        children: List.generate(versions.length, (index) {
+          final version = versions[index];
+          return SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext, index),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Row(
+              children: [
+                AppIcon(Symbols.video_file_rounded, fill: 1, size: 24),
+                const SizedBox(width: 16),
+                Text(version.displayLabel, style: Theme.of(dialogContext).textTheme.bodyLarge),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+
+    if (selectedIndex != null && context.mounted) {
+      await navigateToVideoPlayer(context, metadata: metadata, selectedMediaIndex: selectedIndex);
+      return true;
+    }
+    return false;
   }
 
   /// Handle shuffle play using play queues

@@ -292,7 +292,8 @@
     "mediaDeletedSuccessfully": "Item de mídia excluído com sucesso",
     "mediaFailedToDelete": "Falha ao excluir item de mídia",
     "rate": "Avaliar",
-    "playFromBeginning": "Reproduzir do início"
+    "playFromBeginning": "Reproduzir do início",
+    "playVersion": "Reproduzir versão..."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, filme",

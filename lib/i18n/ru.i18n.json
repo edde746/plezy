@@ -292,7 +292,8 @@
     "mediaDeletedSuccessfully": "Медиаэлемент успешно удалён",
     "mediaFailedToDelete": "Не удалось удалить медиаэлемент",
     "rate": "Оценить",
-    "playFromBeginning": "Воспроизвести сначала"
+    "playFromBeginning": "Воспроизвести сначала",
+    "playVersion": "Воспроизвести версию..."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, фильм",

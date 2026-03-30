@@ -292,7 +292,8 @@
     "mediaDeletedSuccessfully": "Elemento multimedia eliminado con éxito",
     "mediaFailedToDelete": "Error al eliminar el elemento multimedia",
     "rate": "Calificar",
-    "playFromBeginning": "Reproducir desde el inicio"
+    "playFromBeginning": "Reproducir desde el inicio",
+    "playVersion": "Reproducir versión..."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, película",

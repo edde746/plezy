@@ -292,7 +292,8 @@
     "mediaDeletedSuccessfully": "Medieelement slettet",
     "mediaFailedToDelete": "Kunne ikke slette medieelement",
     "rate": "Bedøm",
-    "playFromBeginning": "Afspil fra begyndelsen"
+    "playFromBeginning": "Afspil fra begyndelsen",
+    "playVersion": "Afspil version..."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

@@ -292,7 +292,8 @@
     "mediaDeletedSuccessfully": "Media-item succesvol verwijderd",
     "mediaFailedToDelete": "Verwijderen van media-item mislukt",
     "rate": "Beoordelen",
-    "playFromBeginning": "Afspelen vanaf het begin"
+    "playFromBeginning": "Afspelen vanaf het begin",
+    "playVersion": "Versie afspelen..."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

@@ -292,7 +292,8 @@
     "mediaDeletedSuccessfully": "Medienelement erfolgreich gelöscht",
     "mediaFailedToDelete": "Löschen des Medienelements fehlgeschlagen",
     "rate": "Bewerten",
-    "playFromBeginning": "Von Anfang an abspielen"
+    "playFromBeginning": "Von Anfang an abspielen",
+    "playVersion": "Version abspielen..."
   },
   "accessibility": {
     "mediaCardMovie": "${title}, Film",

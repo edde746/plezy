@@ -45,6 +45,9 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   role: (json['Role'] as List<dynamic>?)
       ?.map((e) => PlexRole.fromJson(e as Map<String, dynamic>))
       .toList(),
+  mediaVersions: (json['Media'] as List<dynamic>?)
+      ?.map((e) => PlexMediaVersion.fromJson(e as Map<String, dynamic>))
+      .toList(),
   audioLanguage: json['audioLanguage'] as String?,
   subtitleLanguage: json['subtitleLanguage'] as String?,
   subtitleMode: _flexibleInt(json['subtitleMode']),
