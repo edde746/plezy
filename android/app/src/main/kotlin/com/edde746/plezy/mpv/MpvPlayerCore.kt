@@ -741,25 +741,16 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         pendingVideoOutputRefreshJob?.cancel()
         pendingVideoOutputRefreshJob = null
 
-        // Detach surface from MPV BEFORE removing views to prevent GPU mutex contention
+        // Clear surface state flags (no native calls on main thread to avoid ANR)
         val p = player
         if (p != null) {
-            try {
-                runBlocking(Dispatchers.IO) {
-                    p.setProperty("force-window", "no")
-                    p.setProperty("vo", "null")
-                }
-                p.detachSurface()
-                hasAttachedSurface = false
-                attachedSurface = null
-                pausedForSurfaceLoss = false
-                attachedToPlaceholder = false
-                videoOutputRestoring = false
-                lastAppliedSurfaceSize = null
-                videoOutputEpoch += 1L
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to detach surface during dispose", e)
-            }
+            hasAttachedSurface = false
+            attachedSurface = null
+            pausedForSurfaceLoss = false
+            attachedToPlaceholder = false
+            videoOutputRestoring = false
+            lastAppliedSurfaceSize = null
+            videoOutputEpoch += 1L
         }
 
         // Capture locals for deferred cleanup
@@ -790,10 +781,20 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         pendingVideoOutputDisableJob = null
         isInitialized = false
 
-        // Close player on background thread, then remove views
+        // Detach surface and close player on background thread, then remove views
         if (p != null) {
             Thread {
                 try {
+                    // Detach surface BEFORE close to prevent GPU mutex contention with view removal
+                    try {
+                        runBlocking {
+                            p.setProperty("force-window", "no")
+                            p.setProperty("vo", "null")
+                        }
+                        p.detachSurface()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to detach surface during dispose", e)
+                    }
                     p.close()
                 } catch (e: Exception) {
                     Log.w(TAG, "MPV close failed", e)
