@@ -13,6 +13,7 @@ import '../widgets/artwork_picker_dialog.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/focused_scroll_scaffold.dart';
 import '../widgets/plex_optimized_image.dart';
+import '../widgets/tag_edit_dialog.dart';
 
 class MetadataEditScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -49,8 +50,18 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
   String? _origTagline;
   String? _origSummary;
 
+  // Tag field values
+  final Map<String, List<String>> _tags = {};
+  final Map<String, List<String>> _origTags = {};
+
   // Advanced prefs (loaded from metadata JSON)
   final Map<String, String> _currentPrefs = {};
+
+  static bool _tagsEqual(List<String> a, List<String> b) =>
+      a.length == b.length && a.every((e) => b.contains(e));
+
+  bool get _hasTagChanges => _tags.keys.any(
+      (k) => !_tagsEqual(_tags[k] ?? [], _origTags[k] ?? []));
 
   bool get _hasChanges =>
       _title != _origTitle ||
@@ -60,7 +71,8 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
       _contentRating != _origContentRating ||
       _studio != _origStudio ||
       _tagline != _origTagline ||
-      _summary != _origSummary;
+      _summary != _origSummary ||
+      _hasTagChanges;
 
   PlexMediaType get _mediaType => widget.metadata.mediaType;
 
@@ -117,6 +129,21 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     _origStudio = _studio;
     _origTagline = _tagline;
     _origSummary = _summary;
+
+    void initTag(String key, List<String>? values) {
+      _tags[key] = List.of(values ?? []);
+      _origTags[key] = List.of(values ?? []);
+    }
+
+    initTag('genre', meta.genre);
+    initTag('director', meta.director);
+    initTag('writer', meta.writer);
+    initTag('producer', meta.producer);
+    initTag('country', meta.country);
+    initTag('collection', meta.collection);
+    initTag('label', meta.label);
+    initTag('style', meta.style);
+    initTag('mood', meta.mood);
   }
 
   Future<void> _save() async {
@@ -130,6 +157,16 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
 
     setState(() => _isSaving = true);
 
+    Map<String, ({List<String> current, List<String> original})>? tagChanges;
+    for (final key in _tags.keys) {
+      final current = _tags[key] ?? [];
+      final original = _origTags[key] ?? [];
+      if (!_tagsEqual(current, original)) {
+        tagChanges ??= {};
+        tagChanges[key] = (current: current, original: original);
+      }
+    }
+
     final success = await _client.updateMetadata(
       sectionId: sectionId,
       ratingKey: widget.metadata.ratingKey,
@@ -142,6 +179,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
       studio: _studio != _origStudio ? _studio : null,
       tagline: _tagline != _origTagline ? _tagline : null,
       summary: _summary != _origSummary ? _summary : null,
+      tagChanges: tagChanges,
     );
 
     if (!mounted) return;
@@ -331,6 +369,57 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
       _mediaType == PlexMediaType.movie || _mediaType == PlexMediaType.show || _mediaType == PlexMediaType.episode;
   bool get _showAdvanced => _mediaType != PlexMediaType.episode;
 
+  List<({String key, String label})> get _tagFields {
+    switch (_mediaType) {
+      case PlexMediaType.movie:
+      case PlexMediaType.show:
+        return [
+          (key: 'genre', label: t.metadataEdit.genre),
+          (key: 'director', label: t.metadataEdit.director),
+          (key: 'writer', label: t.metadataEdit.writer),
+          (key: 'producer', label: t.metadataEdit.producer),
+          (key: 'country', label: t.metadataEdit.country),
+          (key: 'collection', label: t.metadataEdit.collection),
+          (key: 'label', label: t.metadataEdit.label),
+        ];
+      case PlexMediaType.episode:
+        return [
+          (key: 'director', label: t.metadataEdit.director),
+          (key: 'writer', label: t.metadataEdit.writer),
+        ];
+      case PlexMediaType.artist:
+        return [
+          (key: 'genre', label: t.metadataEdit.genre),
+          (key: 'style', label: t.metadataEdit.style),
+          (key: 'mood', label: t.metadataEdit.mood),
+          (key: 'country', label: t.metadataEdit.country),
+          (key: 'collection', label: t.metadataEdit.collection),
+        ];
+      case PlexMediaType.album:
+        return [
+          (key: 'genre', label: t.metadataEdit.genre),
+          (key: 'style', label: t.metadataEdit.style),
+          (key: 'mood', label: t.metadataEdit.mood),
+          (key: 'collection', label: t.metadataEdit.collection),
+        ];
+      default:
+        return [];
+    }
+  }
+
+  Future<void> _editTag(String key, String label) async {
+    final result = await showDialog<List<String>>(
+      context: context,
+      builder: (context) => TagEditDialog(
+        title: label,
+        initialTags: _tags[key] ?? [],
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() => _tags[key] = result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -360,6 +449,10 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               _buildBasicInfoCard(),
+              if (_tagFields.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildTagsCard(),
+              ],
               const SizedBox(height: 16),
               _buildArtworkCard(),
               if (_showAdvanced) ...[
@@ -486,6 +579,30 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
       ),
       trailing: const AppIcon(Symbols.chevron_right_rounded),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildTagsCard() {
+    final fields = _tagFields;
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              t.metadataEdit.tags,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          for (final field in fields)
+            _buildFieldTile(
+              label: field.label,
+              value: (_tags[field.key] ?? []).isEmpty ? null : (_tags[field.key]!).join(', '),
+              onTap: () => _editTag(field.key, field.label),
+            ),
+        ],
+      ),
     );
   }
 

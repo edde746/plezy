@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditNb implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => 'Manuelt valgt';
 	@override String get shownWithForeignAudio => 'Vist med fremmedspråklig lyd';
 	@override String get alwaysEnabled => 'Alltid aktivert';
+	@override String get tags => 'Tagger';
+	@override String get addTag => 'Legg til tagg';
+	@override String get genre => 'Sjanger';
+	@override String get director => 'Regissør';
+	@override String get writer => 'Forfatter';
+	@override String get producer => 'Produsent';
+	@override String get country => 'Land';
+	@override String get collection => 'Samling';
+	@override String get label => 'Etikett';
+	@override String get style => 'Stil';
+	@override String get mood => 'Stemning';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsNb {
 			'metadataEdit.manuallySelected' => 'Manuelt valgt',
 			'metadataEdit.shownWithForeignAudio' => 'Vist med fremmedspråklig lyd',
 			'metadataEdit.alwaysEnabled' => 'Alltid aktivert',
+			'metadataEdit.tags' => 'Tagger',
+			'metadataEdit.addTag' => 'Legg til tagg',
+			'metadataEdit.genre' => 'Sjanger',
+			'metadataEdit.director' => 'Regissør',
+			'metadataEdit.writer' => 'Forfatter',
+			'metadataEdit.producer' => 'Produsent',
+			'metadataEdit.country' => 'Land',
+			'metadataEdit.collection' => 'Samling',
+			'metadataEdit.label' => 'Etikett',
+			'metadataEdit.style' => 'Stil',
+			'metadataEdit.mood' => 'Stemning',
 			'serverTasks.title' => 'Serveroppgaver',
 			'serverTasks.failedToLoad' => 'Kunne ikke laste oppgaver',
 			'serverTasks.noTasks' => 'Ingen oppgaver kjører',

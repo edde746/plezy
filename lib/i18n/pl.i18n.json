@@ -891,7 +891,18 @@
     "subtitleMode": "Tryb automatycznego wyboru napisów",
     "manuallySelected": "Wybrany ręcznie",
     "shownWithForeignAudio": "Wyświetlane przy obcojęzycznym audio",
-    "alwaysEnabled": "Zawsze włączone"
+    "alwaysEnabled": "Zawsze włączone",
+    "tags": "Tagi",
+    "addTag": "Dodaj tag",
+    "genre": "Gatunek",
+    "director": "Reżyser",
+    "writer": "Scenarzysta",
+    "producer": "Producent",
+    "country": "Kraj",
+    "collection": "Kolekcja",
+    "label": "Etykieta",
+    "style": "Styl",
+    "mood": "Nastrój"
   },
   "serverTasks": {
     "title": "Zadania serwera",

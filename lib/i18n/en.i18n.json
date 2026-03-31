@@ -891,7 +891,18 @@
     "subtitleMode": "Auto-Select Subtitle Mode",
     "manuallySelected": "Manually selected",
     "shownWithForeignAudio": "Shown with foreign audio",
-    "alwaysEnabled": "Always enabled"
+    "alwaysEnabled": "Always enabled",
+    "tags": "Tags",
+    "addTag": "Add tag",
+    "genre": "Genre",
+    "director": "Director",
+    "writer": "Writer",
+    "producer": "Producer",
+    "country": "Country",
+    "collection": "Collection",
+    "label": "Label",
+    "style": "Style",
+    "mood": "Mood"
   },
   "serverTasks": {
     "title": "Server Tasks",

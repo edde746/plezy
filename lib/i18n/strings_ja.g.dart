@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditJa implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => '手動選択';
 	@override String get shownWithForeignAudio => '外国語音声時に表示';
 	@override String get alwaysEnabled => '常に有効';
+	@override String get tags => 'タグ';
+	@override String get addTag => 'タグを追加';
+	@override String get genre => 'ジャンル';
+	@override String get director => '監督';
+	@override String get writer => '脚本';
+	@override String get producer => 'プロデューサー';
+	@override String get country => '国';
+	@override String get collection => 'コレクション';
+	@override String get label => 'ラベル';
+	@override String get style => 'スタイル';
+	@override String get mood => 'ムード';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsJa {
 			'metadataEdit.manuallySelected' => '手動選択',
 			'metadataEdit.shownWithForeignAudio' => '外国語音声時に表示',
 			'metadataEdit.alwaysEnabled' => '常に有効',
+			'metadataEdit.tags' => 'タグ',
+			'metadataEdit.addTag' => 'タグを追加',
+			'metadataEdit.genre' => 'ジャンル',
+			'metadataEdit.director' => '監督',
+			'metadataEdit.writer' => '脚本',
+			'metadataEdit.producer' => 'プロデューサー',
+			'metadataEdit.country' => '国',
+			'metadataEdit.collection' => 'コレクション',
+			'metadataEdit.label' => 'ラベル',
+			'metadataEdit.style' => 'スタイル',
+			'metadataEdit.mood' => 'ムード',
 			'serverTasks.title' => 'サーバータスク',
 			'serverTasks.failedToLoad' => 'タスクの読み込みに失敗しました',
 			'serverTasks.noTasks' => '実行中のタスクはありません',

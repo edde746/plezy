@@ -891,7 +891,18 @@
     "subtitleMode": "Modo de Seleção Automática de Legendas",
     "manuallySelected": "Seleção manual",
     "shownWithForeignAudio": "Exibir com áudio estrangeiro",
-    "alwaysEnabled": "Sempre ativado"
+    "alwaysEnabled": "Sempre ativado",
+    "tags": "Tags",
+    "addTag": "Adicionar tag",
+    "genre": "Gênero",
+    "director": "Diretor",
+    "writer": "Roteirista",
+    "producer": "Produtor",
+    "country": "País",
+    "collection": "Coleção",
+    "label": "Rótulo",
+    "style": "Estilo",
+    "mood": "Humor"
   },
   "serverTasks": {
     "title": "Tarefas do servidor",

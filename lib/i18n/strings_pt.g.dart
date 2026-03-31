@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditPt implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => 'Seleção manual';
 	@override String get shownWithForeignAudio => 'Exibir com áudio estrangeiro';
 	@override String get alwaysEnabled => 'Sempre ativado';
+	@override String get tags => 'Tags';
+	@override String get addTag => 'Adicionar tag';
+	@override String get genre => 'Gênero';
+	@override String get director => 'Diretor';
+	@override String get writer => 'Roteirista';
+	@override String get producer => 'Produtor';
+	@override String get country => 'País';
+	@override String get collection => 'Coleção';
+	@override String get label => 'Rótulo';
+	@override String get style => 'Estilo';
+	@override String get mood => 'Humor';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsPt {
 			'metadataEdit.manuallySelected' => 'Seleção manual',
 			'metadataEdit.shownWithForeignAudio' => 'Exibir com áudio estrangeiro',
 			'metadataEdit.alwaysEnabled' => 'Sempre ativado',
+			'metadataEdit.tags' => 'Tags',
+			'metadataEdit.addTag' => 'Adicionar tag',
+			'metadataEdit.genre' => 'Gênero',
+			'metadataEdit.director' => 'Diretor',
+			'metadataEdit.writer' => 'Roteirista',
+			'metadataEdit.producer' => 'Produtor',
+			'metadataEdit.country' => 'País',
+			'metadataEdit.collection' => 'Coleção',
+			'metadataEdit.label' => 'Rótulo',
+			'metadataEdit.style' => 'Estilo',
+			'metadataEdit.mood' => 'Humor',
 			'serverTasks.title' => 'Tarefas do servidor',
 			'serverTasks.failedToLoad' => 'Falha ao carregar tarefas',
 			'serverTasks.noTasks' => 'Nenhuma tarefa em execução',

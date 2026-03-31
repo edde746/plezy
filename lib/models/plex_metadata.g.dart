@@ -48,6 +48,15 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   mediaVersions: (json['Media'] as List<dynamic>?)
       ?.map((e) => PlexMediaVersion.fromJson(e as Map<String, dynamic>))
       .toList(),
+  genre: _tagsFromJson(json['Genre'] as List?),
+  director: _tagsFromJson(json['Director'] as List?),
+  writer: _tagsFromJson(json['Writer'] as List?),
+  producer: _tagsFromJson(json['Producer'] as List?),
+  country: _tagsFromJson(json['Country'] as List?),
+  collection: _tagsFromJson(json['Collection'] as List?),
+  label: _tagsFromJson(json['Label'] as List?),
+  style: _tagsFromJson(json['Style'] as List?),
+  mood: _tagsFromJson(json['Mood'] as List?),
   audioLanguage: json['audioLanguage'] as String?,
   subtitleLanguage: json['subtitleLanguage'] as String?,
   subtitleMode: _flexibleInt(json['subtitleMode']),

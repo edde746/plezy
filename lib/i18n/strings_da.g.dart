@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditDa implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => 'Manuelt valgt';
 	@override String get shownWithForeignAudio => 'Vist med fremmedsproget lyd';
 	@override String get alwaysEnabled => 'Altid aktiveret';
+	@override String get tags => 'Tags';
+	@override String get addTag => 'Tilføj tag';
+	@override String get genre => 'Genre';
+	@override String get director => 'Instruktør';
+	@override String get writer => 'Forfatter';
+	@override String get producer => 'Producer';
+	@override String get country => 'Land';
+	@override String get collection => 'Samling';
+	@override String get label => 'Etiket';
+	@override String get style => 'Stil';
+	@override String get mood => 'Stemning';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsDa {
 			'metadataEdit.manuallySelected' => 'Manuelt valgt',
 			'metadataEdit.shownWithForeignAudio' => 'Vist med fremmedsproget lyd',
 			'metadataEdit.alwaysEnabled' => 'Altid aktiveret',
+			'metadataEdit.tags' => 'Tags',
+			'metadataEdit.addTag' => 'Tilføj tag',
+			'metadataEdit.genre' => 'Genre',
+			'metadataEdit.director' => 'Instruktør',
+			'metadataEdit.writer' => 'Forfatter',
+			'metadataEdit.producer' => 'Producer',
+			'metadataEdit.country' => 'Land',
+			'metadataEdit.collection' => 'Samling',
+			'metadataEdit.label' => 'Etiket',
+			'metadataEdit.style' => 'Stil',
+			'metadataEdit.mood' => 'Stemning',
 			'serverTasks.title' => 'Serveropgaver',
 			'serverTasks.failedToLoad' => 'Kunne ikke indlæse opgaver',
 			'serverTasks.noTasks' => 'Ingen opgaver kører',

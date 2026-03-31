@@ -891,7 +891,18 @@
     "subtitleMode": "자막 자동 선택 모드",
     "manuallySelected": "수동 선택",
     "shownWithForeignAudio": "외국어 오디오 시 표시",
-    "alwaysEnabled": "항상 활성화"
+    "alwaysEnabled": "항상 활성화",
+    "tags": "태그",
+    "addTag": "태그 추가",
+    "genre": "장르",
+    "director": "감독",
+    "writer": "작가",
+    "producer": "프로듀서",
+    "country": "국가",
+    "collection": "컬렉션",
+    "label": "라벨",
+    "style": "스타일",
+    "mood": "분위기"
   },
   "serverTasks": {
     "title": "서버 작업",

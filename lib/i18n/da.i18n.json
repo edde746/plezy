@@ -891,7 +891,18 @@
     "subtitleMode": "Auto-vælg underteksttilstand",
     "manuallySelected": "Manuelt valgt",
     "shownWithForeignAudio": "Vist med fremmedsproget lyd",
-    "alwaysEnabled": "Altid aktiveret"
+    "alwaysEnabled": "Altid aktiveret",
+    "tags": "Tags",
+    "addTag": "Tilføj tag",
+    "genre": "Genre",
+    "director": "Instruktør",
+    "writer": "Forfatter",
+    "producer": "Producer",
+    "country": "Land",
+    "collection": "Samling",
+    "label": "Etiket",
+    "style": "Stil",
+    "mood": "Stemning"
   },
   "serverTasks": {
     "title": "Serveropgaver",

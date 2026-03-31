@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditSv implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => 'Manuellt vald';
 	@override String get shownWithForeignAudio => 'Visas vid främmande ljud';
 	@override String get alwaysEnabled => 'Alltid aktiverad';
+	@override String get tags => 'Taggar';
+	@override String get addTag => 'Lägg till tagg';
+	@override String get genre => 'Genre';
+	@override String get director => 'Regissör';
+	@override String get writer => 'Författare';
+	@override String get producer => 'Producent';
+	@override String get country => 'Land';
+	@override String get collection => 'Samling';
+	@override String get label => 'Etikett';
+	@override String get style => 'Stil';
+	@override String get mood => 'Stämning';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsSv {
 			'metadataEdit.manuallySelected' => 'Manuellt vald',
 			'metadataEdit.shownWithForeignAudio' => 'Visas vid främmande ljud',
 			'metadataEdit.alwaysEnabled' => 'Alltid aktiverad',
+			'metadataEdit.tags' => 'Taggar',
+			'metadataEdit.addTag' => 'Lägg till tagg',
+			'metadataEdit.genre' => 'Genre',
+			'metadataEdit.director' => 'Regissör',
+			'metadataEdit.writer' => 'Författare',
+			'metadataEdit.producer' => 'Producent',
+			'metadataEdit.country' => 'Land',
+			'metadataEdit.collection' => 'Samling',
+			'metadataEdit.label' => 'Etikett',
+			'metadataEdit.style' => 'Stil',
+			'metadataEdit.mood' => 'Stämning',
 			'serverTasks.title' => 'Serveruppgifter',
 			'serverTasks.failedToLoad' => 'Kunde inte ladda uppgifter',
 			'serverTasks.noTasks' => 'Inga pågående uppgifter',

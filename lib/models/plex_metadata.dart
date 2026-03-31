@@ -13,6 +13,9 @@ part 'plex_metadata.g.dart';
 Object? _readRatingKey(Map json, String key) =>
     json['ratingKey'] ?? json['key'] ?? '';
 
+List<String>? _tagsFromJson(List? json) =>
+    json?.cast<Map<String, dynamic>>().map((e) => e['tag'] as String).toList();
+
 int? _flexibleInt(Object? v) => switch (v) {
       num n => n.toInt(),
       String s => int.tryParse(s),
@@ -102,6 +105,24 @@ class PlexMetadata with MultiServerFields {
   final List<PlexRole>? role; // Cast members
   @JsonKey(name: 'Media', includeToJson: false)
   final List<PlexMediaVersion>? mediaVersions; // Available media versions/editions
+  @JsonKey(name: 'Genre', fromJson: _tagsFromJson, includeToJson: false)
+  final List<String>? genre;
+  @JsonKey(name: 'Director', fromJson: _tagsFromJson, includeToJson: false)
+  final List<String>? director;
+  @JsonKey(name: 'Writer', fromJson: _tagsFromJson, includeToJson: false)
+  final List<String>? writer;
+  @JsonKey(name: 'Producer', fromJson: _tagsFromJson, includeToJson: false)
+  final List<String>? producer;
+  @JsonKey(name: 'Country', fromJson: _tagsFromJson, includeToJson: false)
+  final List<String>? country;
+  @JsonKey(name: 'Collection', fromJson: _tagsFromJson, includeToJson: false)
+  final List<String>? collection;
+  @JsonKey(name: 'Label', fromJson: _tagsFromJson, includeToJson: false)
+  final List<String>? label;
+  @JsonKey(name: 'Style', fromJson: _tagsFromJson, includeToJson: false)
+  final List<String>? style;
+  @JsonKey(name: 'Mood', fromJson: _tagsFromJson, includeToJson: false)
+  final List<String>? mood;
   final String? audioLanguage; // Per-media preferred audio language
   final String? subtitleLanguage; // Per-media preferred subtitle language
   @JsonKey(fromJson: _flexibleInt)
@@ -205,6 +226,15 @@ class PlexMetadata with MultiServerFields {
     this.childCount,
     this.role,
     this.mediaVersions,
+    this.genre,
+    this.director,
+    this.writer,
+    this.producer,
+    this.country,
+    this.collection,
+    this.label,
+    this.style,
+    this.mood,
     this.audioLanguage,
     this.subtitleLanguage,
     this.subtitleMode,
@@ -265,6 +295,15 @@ class PlexMetadata with MultiServerFields {
     int? childCount,
     List<PlexRole>? role,
     List<PlexMediaVersion>? mediaVersions,
+    List<String>? genre,
+    List<String>? director,
+    List<String>? writer,
+    List<String>? producer,
+    List<String>? country,
+    List<String>? collection,
+    List<String>? label,
+    List<String>? style,
+    List<String>? mood,
     String? audioLanguage,
     String? subtitleLanguage,
     int? subtitleMode,
@@ -323,6 +362,15 @@ class PlexMetadata with MultiServerFields {
       childCount: childCount ?? this.childCount,
       role: role ?? this.role,
       mediaVersions: mediaVersions ?? this.mediaVersions,
+      genre: genre ?? this.genre,
+      director: director ?? this.director,
+      writer: writer ?? this.writer,
+      producer: producer ?? this.producer,
+      country: country ?? this.country,
+      collection: collection ?? this.collection,
+      label: label ?? this.label,
+      style: style ?? this.style,
+      mood: mood ?? this.mood,
       audioLanguage: audioLanguage ?? this.audioLanguage,
       subtitleLanguage: subtitleLanguage ?? this.subtitleLanguage,
       subtitleMode: subtitleMode ?? this.subtitleMode,

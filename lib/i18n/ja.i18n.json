@@ -891,7 +891,18 @@
     "subtitleMode": "字幕自動選択モード",
     "manuallySelected": "手動選択",
     "shownWithForeignAudio": "外国語音声時に表示",
-    "alwaysEnabled": "常に有効"
+    "alwaysEnabled": "常に有効",
+    "tags": "タグ",
+    "addTag": "タグを追加",
+    "genre": "ジャンル",
+    "director": "監督",
+    "writer": "脚本",
+    "producer": "プロデューサー",
+    "country": "国",
+    "collection": "コレクション",
+    "label": "ラベル",
+    "style": "スタイル",
+    "mood": "ムード"
   },
   "serverTasks": {
     "title": "サーバータスク",

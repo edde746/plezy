@@ -891,7 +891,18 @@
     "subtitleMode": "Automatiskt val av undertexter",
     "manuallySelected": "Manuellt vald",
     "shownWithForeignAudio": "Visas vid främmande ljud",
-    "alwaysEnabled": "Alltid aktiverad"
+    "alwaysEnabled": "Alltid aktiverad",
+    "tags": "Taggar",
+    "addTag": "Lägg till tagg",
+    "genre": "Genre",
+    "director": "Regissör",
+    "writer": "Författare",
+    "producer": "Producent",
+    "country": "Land",
+    "collection": "Samling",
+    "label": "Etikett",
+    "style": "Stil",
+    "mood": "Stämning"
   },
   "serverTasks": {
     "title": "Serveruppgifter",

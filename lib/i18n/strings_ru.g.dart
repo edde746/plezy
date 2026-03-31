@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditRu implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => 'Выбор вручную';
 	@override String get shownWithForeignAudio => 'Показывать при иноязычном аудио';
 	@override String get alwaysEnabled => 'Всегда включены';
+	@override String get tags => 'Теги';
+	@override String get addTag => 'Добавить тег';
+	@override String get genre => 'Жанр';
+	@override String get director => 'Режиссёр';
+	@override String get writer => 'Сценарист';
+	@override String get producer => 'Продюсер';
+	@override String get country => 'Страна';
+	@override String get collection => 'Коллекция';
+	@override String get label => 'Метка';
+	@override String get style => 'Стиль';
+	@override String get mood => 'Настроение';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsRu {
 			'metadataEdit.manuallySelected' => 'Выбор вручную',
 			'metadataEdit.shownWithForeignAudio' => 'Показывать при иноязычном аудио',
 			'metadataEdit.alwaysEnabled' => 'Всегда включены',
+			'metadataEdit.tags' => 'Теги',
+			'metadataEdit.addTag' => 'Добавить тег',
+			'metadataEdit.genre' => 'Жанр',
+			'metadataEdit.director' => 'Режиссёр',
+			'metadataEdit.writer' => 'Сценарист',
+			'metadataEdit.producer' => 'Продюсер',
+			'metadataEdit.country' => 'Страна',
+			'metadataEdit.collection' => 'Коллекция',
+			'metadataEdit.label' => 'Метка',
+			'metadataEdit.style' => 'Стиль',
+			'metadataEdit.mood' => 'Настроение',
 			'serverTasks.title' => 'Задачи сервера',
 			'serverTasks.failedToLoad' => 'Не удалось загрузить задачи',
 			'serverTasks.noTasks' => 'Нет выполняемых задач',

@@ -891,7 +891,18 @@
     "subtitleMode": "自动选择字幕模式",
     "manuallySelected": "手动选择",
     "shownWithForeignAudio": "外语音频时显示",
-    "alwaysEnabled": "始终启用"
+    "alwaysEnabled": "始终启用",
+    "tags": "标签",
+    "addTag": "添加标签",
+    "genre": "类型",
+    "director": "导演",
+    "writer": "编剧",
+    "producer": "制片人",
+    "country": "国家",
+    "collection": "合集",
+    "label": "标记",
+    "style": "风格",
+    "mood": "氛围"
   },
   "serverTasks": {
     "title": "服务器任务",

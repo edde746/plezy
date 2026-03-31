@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditZh implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => '手动选择';
 	@override String get shownWithForeignAudio => '外语音频时显示';
 	@override String get alwaysEnabled => '始终启用';
+	@override String get tags => '标签';
+	@override String get addTag => '添加标签';
+	@override String get genre => '类型';
+	@override String get director => '导演';
+	@override String get writer => '编剧';
+	@override String get producer => '制片人';
+	@override String get country => '国家';
+	@override String get collection => '合集';
+	@override String get label => '标记';
+	@override String get style => '风格';
+	@override String get mood => '氛围';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsZh {
 			'metadataEdit.manuallySelected' => '手动选择',
 			'metadataEdit.shownWithForeignAudio' => '外语音频时显示',
 			'metadataEdit.alwaysEnabled' => '始终启用',
+			'metadataEdit.tags' => '标签',
+			'metadataEdit.addTag' => '添加标签',
+			'metadataEdit.genre' => '类型',
+			'metadataEdit.director' => '导演',
+			'metadataEdit.writer' => '编剧',
+			'metadataEdit.producer' => '制片人',
+			'metadataEdit.country' => '国家',
+			'metadataEdit.collection' => '合集',
+			'metadataEdit.label' => '标记',
+			'metadataEdit.style' => '风格',
+			'metadataEdit.mood' => '氛围',
 			'serverTasks.title' => '服务器任务',
 			'serverTasks.failedToLoad' => '加载任务失败',
 			'serverTasks.noTasks' => '没有正在运行的任务',

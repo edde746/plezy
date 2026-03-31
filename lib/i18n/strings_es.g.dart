@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditEs implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => 'Seleccionado manualmente';
 	@override String get shownWithForeignAudio => 'Mostrar con audio extranjero';
 	@override String get alwaysEnabled => 'Siempre activado';
+	@override String get tags => 'Etiquetas';
+	@override String get addTag => 'Añadir etiqueta';
+	@override String get genre => 'Género';
+	@override String get director => 'Director';
+	@override String get writer => 'Guionista';
+	@override String get producer => 'Productor';
+	@override String get country => 'País';
+	@override String get collection => 'Colección';
+	@override String get label => 'Etiqueta';
+	@override String get style => 'Estilo';
+	@override String get mood => 'Estado de ánimo';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsEs {
 			'metadataEdit.manuallySelected' => 'Seleccionado manualmente',
 			'metadataEdit.shownWithForeignAudio' => 'Mostrar con audio extranjero',
 			'metadataEdit.alwaysEnabled' => 'Siempre activado',
+			'metadataEdit.tags' => 'Etiquetas',
+			'metadataEdit.addTag' => 'Añadir etiqueta',
+			'metadataEdit.genre' => 'Género',
+			'metadataEdit.director' => 'Director',
+			'metadataEdit.writer' => 'Guionista',
+			'metadataEdit.producer' => 'Productor',
+			'metadataEdit.country' => 'País',
+			'metadataEdit.collection' => 'Colección',
+			'metadataEdit.label' => 'Etiqueta',
+			'metadataEdit.style' => 'Estilo',
+			'metadataEdit.mood' => 'Estado de ánimo',
 			'serverTasks.title' => 'Tareas del servidor',
 			'serverTasks.failedToLoad' => 'Error al cargar tareas',
 			'serverTasks.noTasks' => 'No hay tareas en ejecución',

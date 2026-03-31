@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditDe implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => 'Manuell ausgewählt';
 	@override String get shownWithForeignAudio => 'Bei fremdsprachigem Audio anzeigen';
 	@override String get alwaysEnabled => 'Immer aktiviert';
+	@override String get tags => 'Tags';
+	@override String get addTag => 'Tag hinzufügen';
+	@override String get genre => 'Genre';
+	@override String get director => 'Regisseur';
+	@override String get writer => 'Autor';
+	@override String get producer => 'Produzent';
+	@override String get country => 'Land';
+	@override String get collection => 'Sammlung';
+	@override String get label => 'Label';
+	@override String get style => 'Stil';
+	@override String get mood => 'Stimmung';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsDe {
 			'metadataEdit.manuallySelected' => 'Manuell ausgewählt',
 			'metadataEdit.shownWithForeignAudio' => 'Bei fremdsprachigem Audio anzeigen',
 			'metadataEdit.alwaysEnabled' => 'Immer aktiviert',
+			'metadataEdit.tags' => 'Tags',
+			'metadataEdit.addTag' => 'Tag hinzufügen',
+			'metadataEdit.genre' => 'Genre',
+			'metadataEdit.director' => 'Regisseur',
+			'metadataEdit.writer' => 'Autor',
+			'metadataEdit.producer' => 'Produzent',
+			'metadataEdit.country' => 'Land',
+			'metadataEdit.collection' => 'Sammlung',
+			'metadataEdit.label' => 'Label',
+			'metadataEdit.style' => 'Stil',
+			'metadataEdit.mood' => 'Stimmung',
 			'serverTasks.title' => 'Serveraufgaben',
 			'serverTasks.failedToLoad' => 'Aufgaben konnten nicht geladen werden',
 			'serverTasks.noTasks' => 'Keine laufenden Aufgaben',

@@ -891,7 +891,18 @@
     "subtitleMode": "Automatisk valg av undertekstmodus",
     "manuallySelected": "Manuelt valgt",
     "shownWithForeignAudio": "Vist med fremmedspråklig lyd",
-    "alwaysEnabled": "Alltid aktivert"
+    "alwaysEnabled": "Alltid aktivert",
+    "tags": "Tagger",
+    "addTag": "Legg til tagg",
+    "genre": "Sjanger",
+    "director": "Regissør",
+    "writer": "Forfatter",
+    "producer": "Produsent",
+    "country": "Land",
+    "collection": "Samling",
+    "label": "Etikett",
+    "style": "Stil",
+    "mood": "Stemning"
   },
   "serverTasks": {
     "title": "Serveroppgaver",

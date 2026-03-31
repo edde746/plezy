@@ -891,7 +891,18 @@
     "subtitleMode": "Sélection automatique des sous-titres",
     "manuallySelected": "Sélectionné manuellement",
     "shownWithForeignAudio": "Affichés avec audio étranger",
-    "alwaysEnabled": "Toujours activé"
+    "alwaysEnabled": "Toujours activé",
+    "tags": "Tags",
+    "addTag": "Ajouter un tag",
+    "genre": "Genre",
+    "director": "Réalisateur",
+    "writer": "Scénariste",
+    "producer": "Producteur",
+    "country": "Pays",
+    "collection": "Collection",
+    "label": "Label",
+    "style": "Style",
+    "mood": "Ambiance"
   },
   "serverTasks": {
     "title": "Tâches du serveur",

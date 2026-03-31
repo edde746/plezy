@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditKo implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => '수동 선택';
 	@override String get shownWithForeignAudio => '외국어 오디오 시 표시';
 	@override String get alwaysEnabled => '항상 활성화';
+	@override String get tags => '태그';
+	@override String get addTag => '태그 추가';
+	@override String get genre => '장르';
+	@override String get director => '감독';
+	@override String get writer => '작가';
+	@override String get producer => '프로듀서';
+	@override String get country => '국가';
+	@override String get collection => '컬렉션';
+	@override String get label => '라벨';
+	@override String get style => '스타일';
+	@override String get mood => '분위기';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsKo {
 			'metadataEdit.manuallySelected' => '수동 선택',
 			'metadataEdit.shownWithForeignAudio' => '외국어 오디오 시 표시',
 			'metadataEdit.alwaysEnabled' => '항상 활성화',
+			'metadataEdit.tags' => '태그',
+			'metadataEdit.addTag' => '태그 추가',
+			'metadataEdit.genre' => '장르',
+			'metadataEdit.director' => '감독',
+			'metadataEdit.writer' => '작가',
+			'metadataEdit.producer' => '프로듀서',
+			'metadataEdit.country' => '국가',
+			'metadataEdit.collection' => '컬렉션',
+			'metadataEdit.label' => '라벨',
+			'metadataEdit.style' => '스타일',
+			'metadataEdit.mood' => '분위기',
 			'serverTasks.title' => '서버 작업',
 			'serverTasks.failedToLoad' => '작업을 불러올 수 없습니다',
 			'serverTasks.noTasks' => '실행 중인 작업 없음',

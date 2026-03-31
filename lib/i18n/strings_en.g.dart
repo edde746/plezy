@@ -2522,6 +2522,39 @@ class TranslationsMetadataEditEn {
 
 	/// en: 'Always enabled'
 	String get alwaysEnabled => 'Always enabled';
+
+	/// en: 'Tags'
+	String get tags => 'Tags';
+
+	/// en: 'Add tag'
+	String get addTag => 'Add tag';
+
+	/// en: 'Genre'
+	String get genre => 'Genre';
+
+	/// en: 'Director'
+	String get director => 'Director';
+
+	/// en: 'Writer'
+	String get writer => 'Writer';
+
+	/// en: 'Producer'
+	String get producer => 'Producer';
+
+	/// en: 'Country'
+	String get country => 'Country';
+
+	/// en: 'Collection'
+	String get collection => 'Collection';
+
+	/// en: 'Label'
+	String get label => 'Label';
+
+	/// en: 'Style'
+	String get style => 'Style';
+
+	/// en: 'Mood'
+	String get mood => 'Mood';
 }
 
 // Path: serverTasks
@@ -3739,6 +3772,17 @@ extension on Translations {
 			'metadataEdit.manuallySelected' => 'Manually selected',
 			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',
 			'metadataEdit.alwaysEnabled' => 'Always enabled',
+			'metadataEdit.tags' => 'Tags',
+			'metadataEdit.addTag' => 'Add tag',
+			'metadataEdit.genre' => 'Genre',
+			'metadataEdit.director' => 'Director',
+			'metadataEdit.writer' => 'Writer',
+			'metadataEdit.producer' => 'Producer',
+			'metadataEdit.country' => 'Country',
+			'metadataEdit.collection' => 'Collection',
+			'metadataEdit.label' => 'Label',
+			'metadataEdit.style' => 'Style',
+			'metadataEdit.mood' => 'Mood',
 			'serverTasks.title' => 'Server Tasks',
 			'serverTasks.failedToLoad' => 'Failed to load tasks',
 			'serverTasks.noTasks' => 'No tasks running',

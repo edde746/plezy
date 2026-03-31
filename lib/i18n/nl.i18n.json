@@ -891,7 +891,18 @@
     "subtitleMode": "Automatische ondertitelselectie",
     "manuallySelected": "Handmatig geselecteerd",
     "shownWithForeignAudio": "Weergeven bij anderstalig geluid",
-    "alwaysEnabled": "Altijd ingeschakeld"
+    "alwaysEnabled": "Altijd ingeschakeld",
+    "tags": "Tags",
+    "addTag": "Tag toevoegen",
+    "genre": "Genre",
+    "director": "Regisseur",
+    "writer": "Schrijver",
+    "producer": "Producent",
+    "country": "Land",
+    "collection": "Collectie",
+    "label": "Label",
+    "style": "Stijl",
+    "mood": "Stemming"
   },
   "serverTasks": {
     "title": "Servertaken",

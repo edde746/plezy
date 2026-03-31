@@ -1677,6 +1677,7 @@ class PlexClient {
     String? studio,
     String? tagline,
     String? summary,
+    Map<String, ({List<String> current, List<String> original})>? tagChanges,
   }) {
     final queryParams = <String, dynamic>{'type': typeNumber, 'id': ratingKey};
 
@@ -1695,6 +1696,23 @@ class PlexClient {
     addField('studio', studio);
     addField('tagline', tagline);
     addField('summary', summary);
+
+    if (tagChanges != null) {
+      for (final entry in tagChanges.entries) {
+        final field = entry.key;
+        final current = entry.value.current;
+        final original = entry.value.original;
+        for (var i = 0; i < current.length; i++) {
+          queryParams['$field[$i].tag.tag'] = current[i];
+        }
+        final removed = original.where((t) => !current.contains(t)).toList();
+        if (removed.isNotEmpty) {
+          queryParams['$field[].tag.tag-'] =
+              removed.map(Uri.encodeComponent).join(',');
+        }
+        queryParams['$field.locked'] = '1';
+      }
+    }
 
     return _wrapBoolApiCall(
       () => _dio.put('/library/sections/$sectionId/all', queryParameters: queryParams),

@@ -891,7 +891,18 @@
     "subtitleMode": "Автовыбор субтитров",
     "manuallySelected": "Выбор вручную",
     "shownWithForeignAudio": "Показывать при иноязычном аудио",
-    "alwaysEnabled": "Всегда включены"
+    "alwaysEnabled": "Всегда включены",
+    "tags": "Теги",
+    "addTag": "Добавить тег",
+    "genre": "Жанр",
+    "director": "Режиссёр",
+    "writer": "Сценарист",
+    "producer": "Продюсер",
+    "country": "Страна",
+    "collection": "Коллекция",
+    "label": "Метка",
+    "style": "Стиль",
+    "mood": "Настроение"
   },
   "serverTasks": {
     "title": "Задачи сервера",

@@ -1115,6 +1115,17 @@ class _TranslationsMetadataEditNl implements TranslationsMetadataEditEn {
 	@override String get manuallySelected => 'Handmatig geselecteerd';
 	@override String get shownWithForeignAudio => 'Weergeven bij anderstalig geluid';
 	@override String get alwaysEnabled => 'Altijd ingeschakeld';
+	@override String get tags => 'Tags';
+	@override String get addTag => 'Tag toevoegen';
+	@override String get genre => 'Genre';
+	@override String get director => 'Regisseur';
+	@override String get writer => 'Schrijver';
+	@override String get producer => 'Producent';
+	@override String get country => 'Land';
+	@override String get collection => 'Collectie';
+	@override String get label => 'Label';
+	@override String get style => 'Stijl';
+	@override String get mood => 'Stemming';
 }
 
 // Path: serverTasks
@@ -2114,6 +2125,17 @@ extension on TranslationsNl {
 			'metadataEdit.manuallySelected' => 'Handmatig geselecteerd',
 			'metadataEdit.shownWithForeignAudio' => 'Weergeven bij anderstalig geluid',
 			'metadataEdit.alwaysEnabled' => 'Altijd ingeschakeld',
+			'metadataEdit.tags' => 'Tags',
+			'metadataEdit.addTag' => 'Tag toevoegen',
+			'metadataEdit.genre' => 'Genre',
+			'metadataEdit.director' => 'Regisseur',
+			'metadataEdit.writer' => 'Schrijver',
+			'metadataEdit.producer' => 'Producent',
+			'metadataEdit.country' => 'Land',
+			'metadataEdit.collection' => 'Collectie',
+			'metadataEdit.label' => 'Label',
+			'metadataEdit.style' => 'Stijl',
+			'metadataEdit.mood' => 'Stemming',
 			'serverTasks.title' => 'Servertaken',
 			'serverTasks.failedToLoad' => 'Taken konden niet worden geladen',
 			'serverTasks.noTasks' => 'Geen actieve taken',
