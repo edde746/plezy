@@ -137,6 +137,9 @@ class MainActivity : FlutterActivity() {
         }
         // NVIDIA Tegra (Shield TV)
         if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true
+        // Huawei/HONOR Kirin SoCs use Mali GPUs
+        if (Build.MANUFACTURER.equals("Huawei", ignoreCase = true) ||
+            Build.MANUFACTURER.equals("HONOR", ignoreCase = true)) return true
         return false
     }
 
