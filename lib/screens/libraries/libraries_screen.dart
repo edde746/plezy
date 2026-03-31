@@ -587,7 +587,41 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     ];
   }
 
-  void _handleLibraryMenuAction(String action, PlexLibrary library) {
+  Future<void> _handleLibraryMenuAction(String action, PlexLibrary library) async {
+    // Find the menu item for confirmation details
+    final menuItems = _getLibraryMenuItems(library);
+    final item = menuItems.where((i) => i.value == action).firstOrNull;
+    if (item == null) return;
+
+    if (item.requiresConfirmation) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(item.confirmationTitle ?? t.dialog.confirmAction),
+          content: Text(item.confirmationMessage ?? t.libraries.confirmActionMessage),
+          actions: [
+            FocusableButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(context, false),
+              child: TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(t.common.cancel),
+              ),
+            ),
+            FocusableButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: item.isDestructive ? TextButton.styleFrom(foregroundColor: Colors.red) : null,
+                child: Text(t.common.confirm),
+              ),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     switch (action) {
       case 'scan':
         _scanLibrary(library);
@@ -1183,9 +1217,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     widget.onReorder(_tempLibraries);
   }
 
-  Future<void> _showLibraryMenuBottomSheet(BuildContext outerContext, PlexLibrary library) async {
+  void _showLibraryMenuBottomSheet(BuildContext outerContext, PlexLibrary library) {
     final menuItems = widget.getLibraryMenuItems(library);
-    final selected = await OverlaySheetController.pushAdaptive<String>(
+    OverlaySheetController.pushAdaptive<String>(
       outerContext,
       builder: (context) => SafeArea(
         child: Column(
@@ -1199,52 +1233,18 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
               (entry) => ListTile(
                 leading: AppIcon(entry.$2.icon, fill: 1),
                 title: Text(entry.$2.label),
-                onTap: () => OverlaySheetController.popAdaptive(context, entry.$2.value),
+                onTap: () {
+                  // Close the entire overlay sheet, then let the parent handle
+                  // confirmation and execution (parent state is always mounted)
+                  OverlaySheetController.closeAdaptive(context);
+                  widget.onLibraryMenuAction(entry.$2.value, library);
+                },
               ),
             ),
           ],
         ),
       ),
     );
-
-    if (selected != null && mounted) {
-      // Find the selected item to check if confirmation is needed
-      final selectedItem = menuItems.where((item) => item.value == selected).firstOrNull;
-      if (selectedItem == null) return;
-
-      if (selectedItem.requiresConfirmation) {
-        if (!mounted || !context.mounted) return;
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(selectedItem.confirmationTitle ?? t.dialog.confirmAction),
-            content: Text(selectedItem.confirmationMessage ?? t.libraries.confirmActionMessage),
-            actions: [
-              FocusableButton(
-                autofocus: true,
-                onPressed: () => Navigator.pop(context, false),
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(t.common.cancel),
-                ),
-              ),
-              FocusableButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  style: selectedItem.isDestructive ? TextButton.styleFrom(foregroundColor: Colors.red) : null,
-                  child: Text(t.common.confirm),
-                ),
-              ),
-            ],
-          ),
-        );
-
-        if (confirmed != true) return;
-      }
-
-      widget.onLibraryMenuAction(selected, library);
-    }
   }
 
   /// Get set of library names that appear more than once (not globally unique)
