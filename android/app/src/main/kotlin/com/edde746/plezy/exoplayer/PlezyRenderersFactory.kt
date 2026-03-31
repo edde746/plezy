@@ -2,6 +2,7 @@ package com.edde746.plezy.exoplayer
 
 import android.content.Context
 import android.media.AudioDeviceInfo
+import android.os.Build
 import androidx.annotation.OptIn
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.util.Clock
@@ -30,8 +31,8 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
 
         val bufferSizeProvider = DefaultAudioTrackBufferSizeProvider.Builder()
             .setMinPcmBufferDurationUs(500_000)
-            .setMaxPcmBufferDurationUs(1_500_000)
-            .setPcmBufferMultiplicationFactor(8)
+            .setMaxPcmBufferDurationUs(1_000_000)
+            .setPcmBufferMultiplicationFactor(4)
             .build()
 
         val realProvider = AudioTrackAudioOutputProvider.Builder(context)
@@ -178,12 +179,20 @@ private class PositionFixAudioSink(
 }
 
 // --- AudioOutput wrapping: shares raw position with PositionFixAudioSink ---
+// Also implements AudioTrack reuse across seeks to avoid expensive teardown/recreation.
+// DefaultAudioSink releases the AudioOutput on every flush (seek), which destroys the
+// AudioTrack and creates a new one. On Android TV with tunneled playback, this causes
+// 7-10s audio dropout while the hardware pipeline reinitializes (Sony Bravia, etc).
+// By flushing instead of releasing and caching the output, we skip the teardown cycle.
 
 @OptIn(UnstableApi::class)
 private class RawPositionOutputProvider(
     private val delegate: AudioOutputProvider,
     private val rawPositionUs: AtomicLong
 ) : AudioOutputProvider {
+
+    private var cachedOutput: RawPositionAudioOutput? = null
+    private var cachedConfig: AudioOutputProvider.OutputConfig? = null
 
     override fun getFormatSupport(config: AudioOutputProvider.FormatConfig) =
         delegate.getFormatSupport(config)
@@ -192,8 +201,25 @@ private class RawPositionOutputProvider(
         delegate.getOutputConfig(config)
 
     override fun getAudioOutput(config: AudioOutputProvider.OutputConfig): AudioOutput {
+        val cached = cachedOutput
+        if (cached != null && cachedConfig == config) {
+            cachedOutput = null
+            return cached
+        }
+        cached?.forceRelease()
+        cachedOutput = null
+
         val realOutput = delegate.getAudioOutput(config)
-        return RawPositionAudioOutput(realOutput, rawPositionUs)
+        cachedConfig = config
+        return RawPositionAudioOutput(realOutput, rawPositionUs, this)
+    }
+
+    fun returnToCache(output: RawPositionAudioOutput) {
+        val existing = cachedOutput
+        if (existing != null && existing !== output) {
+            existing.forceRelease()
+        }
+        cachedOutput = output
     }
 
     override fun addListener(listener: AudioOutputProvider.Listener) =
@@ -204,13 +230,19 @@ private class RawPositionOutputProvider(
 
     override fun setClock(clock: Clock) = delegate.setClock(clock)
 
-    override fun release() = delegate.release()
+    override fun release() {
+        cachedOutput?.forceRelease()
+        cachedOutput = null
+        cachedConfig = null
+        delegate.release()
+    }
 }
 
 @OptIn(UnstableApi::class)
 private class RawPositionAudioOutput(
     private val delegate: AudioOutput,
-    private val rawPositionUs: AtomicLong
+    private val rawPositionUs: AtomicLong,
+    private val provider: RawPositionOutputProvider
 ) : AudioOutput {
 
     override fun getPositionUs(): Long {
@@ -234,6 +266,17 @@ private class RawPositionAudioOutput(
     override fun stop() = delegate.stop()
 
     override fun release() {
+        rawPositionUs.set(Long.MIN_VALUE)
+        if (Build.VERSION.SDK_INT >= 25) {
+            delegate.stop()
+            delegate.flush()
+            provider.returnToCache(this)
+        } else {
+            delegate.release()
+        }
+    }
+
+    fun forceRelease() {
         rawPositionUs.set(Long.MIN_VALUE)
         delegate.release()
     }
