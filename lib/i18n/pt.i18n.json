@@ -703,7 +703,8 @@
     "noDownloadsTree": "Nenhum download",
     "pauseAll": "Pausar todos",
     "resumeAll": "Retomar todos",
-    "deleteAll": "Excluir todos"
+    "deleteAll": "Excluir todos",
+    "selectVersion": "Selecionar versão"
   },
   "shaders": {
     "title": "Shaders",

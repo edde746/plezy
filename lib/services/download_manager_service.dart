@@ -329,6 +329,7 @@ class DownloadManagerService {
     int priority = 0,
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
+    int mediaIndex = 0,
   }) async {
     final globalKey = metadata.globalKey;
 
@@ -349,6 +350,7 @@ class DownloadManagerService {
       parentRatingKey: metadata.parentRatingKey,
       grandparentRatingKey: metadata.grandparentRatingKey,
       status: DownloadStatus.queued.index,
+      mediaIndex: mediaIndex,
     );
 
     // Ensure metadata is in cache before pinning.
@@ -430,14 +432,15 @@ class DownloadManagerService {
         }
       }
 
-      var playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+      final selectedMediaIndex = existing.mediaIndex;
+      var playbackData = await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
       if (playbackData.videoUrl == null) {
         // Cache may contain a synthetic entry (from _cacheMetadataForOffline) without
         // Media/Part data. Force a fresh network fetch to populate the cache properly.
         appLogger.w('No video URL from cache for $globalKey, retrying via network');
         final fetched = await client.getMetadataWithImages(ratingKey);
         if (fetched != null) metadata = fetched.copyWith(serverId: serverId);
-        playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+        playbackData = await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
         if (playbackData.videoUrl == null) throw Exception('Could not get video URL for $globalKey');
       }
 

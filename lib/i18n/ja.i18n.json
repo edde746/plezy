@@ -703,7 +703,8 @@
     "noDownloadsTree": "ダウンロードなし",
     "pauseAll": "すべて一時停止",
     "resumeAll": "すべて再開",
-    "deleteAll": "すべて削除"
+    "deleteAll": "すべて削除",
+    "selectVersion": "バージョンを選択"
   },
   "shaders": {
     "title": "シェーダー",

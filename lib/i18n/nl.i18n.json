@@ -601,7 +601,8 @@
     "noDownloadsTree": "Geen downloads",
     "pauseAll": "Alles pauzeren",
     "resumeAll": "Alles hervatten",
-    "deleteAll": "Alles verwijderen"
+    "deleteAll": "Alles verwijderen",
+    "selectVersion": "Versie selecteren"
   },
   "playlists": {
     "title": "Afspeellijsten",

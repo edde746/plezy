@@ -703,7 +703,8 @@
     "noDownloadsTree": "Ingen downloads",
     "pauseAll": "Pause alle",
     "resumeAll": "Genoptag alle",
-    "deleteAll": "Slet alle"
+    "deleteAll": "Slet alle",
+    "selectVersion": "Vælg version"
   },
   "shaders": {
     "title": "Shadere",

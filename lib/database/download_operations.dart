@@ -14,6 +14,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     String? parentRatingKey,
     String? grandparentRatingKey,
     required int status,
+    int mediaIndex = 0,
   }) async {
     await into(downloadedMedia).insert(
       DownloadedMediaCompanion.insert(
@@ -24,6 +25,7 @@ extension DownloadDatabaseOperations on AppDatabase {
         parentRatingKey: Value(parentRatingKey),
         grandparentRatingKey: Value(grandparentRatingKey),
         status: status,
+        mediaIndex: Value(mediaIndex),
       ),
       mode: InsertMode.insertOrReplace,
     );

@@ -964,6 +964,7 @@ class _TranslationsDownloadsNb implements TranslationsDownloadsEn {
 	@override String get pauseAll => 'Pause alle';
 	@override String get resumeAll => 'Gjenoppta alle';
 	@override String get deleteAll => 'Slett alle';
+	@override String get selectVersion => 'Velg versjon';
 }
 
 // Path: shaders
@@ -1941,6 +1942,7 @@ extension on TranslationsNb {
 			'downloads.pauseAll' => 'Pause alle',
 			'downloads.resumeAll' => 'Gjenoppta alle',
 			'downloads.deleteAll' => 'Slett alle',
+			'downloads.selectVersion' => 'Velg versjon',
 			'shaders.title' => 'Shadere',
 			'shaders.noShaderDescription' => 'Ingen videoforbedring',
 			'shaders.nvscalerDescription' => 'NVIDIA bildeskalering for skarpere video',

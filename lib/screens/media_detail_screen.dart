@@ -29,6 +29,7 @@ import '../utils/content_utils.dart';
 import '../utils/rating_utils.dart';
 import '../models/download_models.dart';
 import '../services/download_storage_service.dart';
+import '../utils/download_version_utils.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
@@ -640,10 +641,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       final client = _getClientForMetadata(context);
                       if (client == null) return;
 
-                      // Delete failed download and retry
+                      final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+                      if (versionConfig == null || !context.mounted) return;
+
                       await downloadProvider.deleteDownload(globalKey);
                       try {
-                        await downloadProvider.queueDownload(metadata, client);
+                        await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
 
                         if (context.mounted) {
                           showSuccessSnackBar(context, t.downloads.downloadQueued);
@@ -682,9 +685,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       } else if (retry && context.mounted) {
                         final client = _getClientForMetadata(context);
                         if (client == null) return;
+
+                        final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+                        if (versionConfig == null || !context.mounted) return;
+
                         await downloadProvider.deleteDownload(globalKey);
                         try {
-                          await downloadProvider.queueDownload(metadata, client);
+                          await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
                           if (context.mounted) {
                             showSuccessSnackBar(context, t.downloads.downloadQueued);
                           }
@@ -714,8 +721,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       final client = _getClientForMetadata(context);
                       if (client == null) return;
 
-                      // Queue only the missing episodes
-                      final count = await downloadProvider.queueMissingEpisodes(metadata, client);
+                      final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+                      if (versionConfig == null || !context.mounted) return;
+
+                      final count = await downloadProvider.queueMissingEpisodes(
+                        metadata,
+                        client,
+                        versionConfig: versionConfig,
+                      );
 
                       if (context.mounted) {
                         final message = count > 0
@@ -761,8 +774,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   onPressed: () async {
                     final client = _getClientForMetadata(context);
                     if (client == null) return;
+
+                    final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+                    if (versionConfig == null || !context.mounted) return;
+
                     try {
-                      final count = await downloadProvider.queueDownload(metadata, client);
+                      final count = await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
                       if (context.mounted) {
                         final message = count > 1
                             ? t.downloads.episodesQueued(count: count)
@@ -1056,6 +1073,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Returns null in offline mode or if serverId is null
   PlexClient? _getClientForMetadata(BuildContext context) {
     return getServerBoundClient(context);
+  }
+
+  /// Resolve version selection for download using shared utility.
+  Future<DownloadVersionConfig?> _resolveDownloadVersion(
+    BuildContext context,
+    PlexMetadata metadata,
+    PlexClient client,
+  ) {
+    return resolveDownloadVersion(
+      context,
+      metadata,
+      client,
+      fallbackVersions: _fullMetadata?.mediaVersions,
+    );
   }
 
   Future<void> _loadFullMetadata() async {

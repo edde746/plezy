@@ -601,7 +601,8 @@
     "noDownloadsTree": "Nessun download",
     "pauseAll": "Metti tutto in pausa",
     "resumeAll": "Riprendi tutto",
-    "deleteAll": "Elimina tutto"
+    "deleteAll": "Elimina tutto",
+    "selectVersion": "Seleziona versione"
   },
   "playlists": {
     "title": "Playlist",

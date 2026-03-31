@@ -703,7 +703,8 @@
     "noDownloadsTree": "다운로드 없음",
     "pauseAll": "모두 일시정지",
     "resumeAll": "모두 재개",
-    "deleteAll": "모두 삭제"
+    "deleteAll": "모두 삭제",
+    "selectVersion": "버전 선택"
   },
   "shaders": {
     "title": "셰이더",

@@ -841,6 +841,7 @@ class _TranslationsDownloadsDe implements TranslationsDownloadsEn {
 	@override String get pauseAll => 'Alle pausieren';
 	@override String get resumeAll => 'Alle fortsetzen';
 	@override String get deleteAll => 'Alle löschen';
+	@override String get selectVersion => 'Version auswählen';
 }
 
 // Path: playlists
@@ -1845,6 +1846,7 @@ extension on TranslationsDe {
 			'downloads.pauseAll' => 'Alle pausieren',
 			'downloads.resumeAll' => 'Alle fortsetzen',
 			'downloads.deleteAll' => 'Alle löschen',
+			'downloads.selectVersion' => 'Version auswählen',
 			'playlists.title' => 'Wiedergabelisten',
 			'playlists.noPlaylists' => 'Keine Wiedergabelisten gefunden',
 			'playlists.create' => 'Wiedergabeliste erstellen',

@@ -4,7 +4,9 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:plezy/utils/content_utils.dart';
 import '../models/download_models.dart';
+import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
+import '../utils/download_version_utils.dart';
 import '../services/download_manager_service.dart';
 import '../services/download_storage_service.dart';
 import '../services/storage_service.dart';
@@ -593,8 +595,13 @@ class DownloadProvider extends ChangeNotifier {
   /// For movies and episodes, queues directly.
   /// For shows and seasons, fetches all child episodes and queues them.
   /// Returns the number of items queued.
-  Future<int> queueDownload(PlexMetadata metadata, PlexClient client) async {
+  Future<int> queueDownload(
+    PlexMetadata metadata,
+    PlexClient client, {
+    DownloadVersionConfig? versionConfig,
+  }) async {
     final globalKey = metadata.globalKey;
+    final config = versionConfig ?? DownloadVersionConfig();
 
     // Check if downloads are blocked on cellular
     if (await DownloadManagerService.shouldBlockDownloadOnCellular()) {
@@ -609,40 +616,38 @@ class DownloadProvider extends ChangeNotifier {
       final mt = metadata.mediaType;
 
       if (mt == PlexMediaType.movie || mt == PlexMediaType.episode) {
-        // Direct download of a single item
-        await _queueSingleDownload(metadata, client);
-        return 1;
+        final queued = await _queueSingleDownload(metadata, client, mediaIndex: config.mediaIndex);
+        return queued ? 1 : 0;
       } else if (mt == PlexMediaType.show) {
-        // Store show metadata so getProgress() can identify it as a show
         _metadata[globalKey] = metadata;
-
-        // Download all episodes from all seasons
-        return await _queueShowDownload(metadata, client);
+        return await _queueShowDownload(metadata, client, versionConfig: config);
       } else if (mt == PlexMediaType.season) {
-        // Store season metadata so getProgress() can identify it as a season
         _metadata[globalKey] = metadata;
-
-        // Download all episodes in season
-        return await _queueSeasonDownload(metadata, client);
+        return await _queueSeasonDownload(metadata, client, versionConfig: config);
       } else {
         throw Exception('Cannot download ${metadata.type}');
       }
     } finally {
-      // Always remove from queueing set, even on error
       _queueing.remove(globalKey);
       notifyListeners();
     }
   }
 
-  /// Queue a single movie or episode for download
-  Future<void> _queueSingleDownload(PlexMetadata metadata, PlexClient client) async {
+  /// Queue a single movie or episode for download.
+  /// Returns true if the item was actually queued, false if skipped.
+  Future<bool> _queueSingleDownload(
+    PlexMetadata metadata,
+    PlexClient client, {
+    int mediaIndex = 0,
+    DownloadVersionConfig? versionConfig,
+  }) async {
     final globalKey = metadata.globalKey;
 
     // Don't re-queue if already downloading or completed
     if (_downloads.containsKey(globalKey)) {
       final existing = _downloads[globalKey]!;
       if (existing.status == DownloadStatus.downloading || existing.status == DownloadStatus.completed) {
-        return;
+        return false;
       }
     }
 
@@ -660,6 +665,23 @@ class DownloadProvider extends ChangeNotifier {
       appLogger.w('Failed to fetch full metadata for ${metadata.ratingKey}, using partial', error: e);
     }
 
+    // Smart version matching for series/season downloads
+    var resolvedIndex = mediaIndex;
+    if (versionConfig != null && versionConfig.acceptedSignatures.isNotEmpty) {
+      final versions = metadataToStore.mediaVersions;
+      if (versions != null && versions.isNotEmpty) {
+        final matchedIndex = PlexMediaVersion.findMatchingIndex(versions, versionConfig.acceptedSignatures);
+        if (matchedIndex != null) {
+          resolvedIndex = matchedIndex;
+        } else if (versionConfig.onVersionMismatch != null) {
+          final pickedIndex = await versionConfig.onVersionMismatch!(metadataToStore, versions);
+          if (pickedIndex == null) return false;
+          resolvedIndex = pickedIndex;
+          versionConfig.acceptedSignatures.add(versions[pickedIndex].signature);
+        }
+      }
+    }
+
     // For episodes, also fetch and store show and season metadata for offline display
     if (metadataToStore.type == 'episode') {
       await _fetchAndStoreParentMetadata(metadataToStore, client);
@@ -673,7 +695,8 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
 
     // Actually trigger download via DownloadManagerService
-    await _downloadManager.queueDownload(metadata: metadataToStore, client: client);
+    await _downloadManager.queueDownload(metadata: metadataToStore, client: client, mediaIndex: resolvedIndex);
+    return true;
   }
 
   /// Fetch and store show and season metadata for an episode
@@ -727,7 +750,7 @@ class DownloadProvider extends ChangeNotifier {
   }
 
   /// Queue all episodes from a TV show for download
-  Future<int> _queueShowDownload(PlexMetadata show, PlexClient client) async {
+  Future<int> _queueShowDownload(PlexMetadata show, PlexClient client, {DownloadVersionConfig? versionConfig}) async {
     int count = 0;
     final seasons = await client.getChildren(show.ratingKey);
 
@@ -736,7 +759,7 @@ class DownloadProvider extends ChangeNotifier {
     for (final season in seasons) {
       if (season.type == 'season') {
         final seasonWithServer = _ensureServerId(season, show.serverId);
-        count += await _queueSeasonDownload(seasonWithServer, client);
+        count += await _queueSeasonDownload(seasonWithServer, client, versionConfig: versionConfig);
       }
     }
 
@@ -744,7 +767,8 @@ class DownloadProvider extends ChangeNotifier {
   }
 
   /// Queue all episodes from a season for download
-  Future<int> _queueSeasonDownload(PlexMetadata season, PlexClient client) async {
+  Future<int> _queueSeasonDownload(PlexMetadata season, PlexClient client,
+      {DownloadVersionConfig? versionConfig}) async {
     int count = 0;
     final episodes = await client.getChildren(season.ratingKey);
 
@@ -753,8 +777,8 @@ class DownloadProvider extends ChangeNotifier {
     for (final episode in episodes) {
       if (episode.type == 'episode') {
         final episodeWithServer = _ensureServerId(episode, season.serverId);
-        await _queueSingleDownload(episodeWithServer, client);
-        count++;
+        final queued = await _queueSingleDownload(episodeWithServer, client, versionConfig: versionConfig);
+        if (queued) count++;
       }
     }
 
@@ -764,29 +788,33 @@ class DownloadProvider extends ChangeNotifier {
   /// Queue only the missing (not downloaded) episodes for a show/season
   /// Used for resuming partial downloads
   /// Returns the number of episodes queued
-  Future<int> queueMissingEpisodes(PlexMetadata metadata, PlexClient client) async {
+  Future<int> queueMissingEpisodes(
+    PlexMetadata metadata,
+    PlexClient client, {
+    DownloadVersionConfig? versionConfig,
+  }) async {
     final mt = metadata.mediaType;
 
     if (mt == PlexMediaType.show) {
-      return await _queueMissingShowEpisodes(metadata, client);
+      return await _queueMissingShowEpisodes(metadata, client, versionConfig: versionConfig);
     } else if (mt == PlexMediaType.season) {
-      return await _queueMissingSeasonEpisodes(metadata, client);
+      return await _queueMissingSeasonEpisodes(metadata, client, versionConfig: versionConfig);
     } else {
       throw Exception('queueMissingEpisodes only supports shows/seasons');
     }
   }
 
   /// Queue missing episodes for a show
-  Future<int> _queueMissingShowEpisodes(PlexMetadata show, PlexClient client) async {
+  Future<int> _queueMissingShowEpisodes(PlexMetadata show, PlexClient client,
+      {DownloadVersionConfig? versionConfig}) async {
     int queuedCount = 0;
 
-    // Fetch all seasons
     final seasons = await client.getChildren(show.ratingKey);
 
     for (final season in seasons) {
       if (season.type == 'season') {
         final seasonWithServer = _ensureServerId(season, show.serverId);
-        queuedCount += await _queueMissingSeasonEpisodes(seasonWithServer, client);
+        queuedCount += await _queueMissingSeasonEpisodes(seasonWithServer, client, versionConfig: versionConfig);
       }
     }
 
@@ -795,10 +823,10 @@ class DownloadProvider extends ChangeNotifier {
   }
 
   /// Queue missing episodes for a season
-  Future<int> _queueMissingSeasonEpisodes(PlexMetadata season, PlexClient client) async {
+  Future<int> _queueMissingSeasonEpisodes(PlexMetadata season, PlexClient client,
+      {DownloadVersionConfig? versionConfig}) async {
     int queuedCount = 0;
 
-    // Fetch all episodes
     final episodes = await client.getChildren(season.ratingKey);
 
     for (final episode in episodes) {
@@ -813,9 +841,11 @@ class DownloadProvider extends ChangeNotifier {
             (progress.status != DownloadStatus.completed &&
                 progress.status != DownloadStatus.downloading &&
                 progress.status != DownloadStatus.queued)) {
-          await _queueSingleDownload(episodeWithServer, client);
-          queuedCount++;
-          appLogger.d('Queued missing episode: ${episode.title} ($episodeGlobalKey)');
+          final queued = await _queueSingleDownload(episodeWithServer, client, versionConfig: versionConfig);
+          if (queued) {
+            queuedCount++;
+            appLogger.d('Queued missing episode: ${episode.title} ($episodeGlobalKey)');
+          }
         }
       }
     }

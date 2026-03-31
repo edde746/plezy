@@ -841,6 +841,7 @@ class _TranslationsDownloadsIt implements TranslationsDownloadsEn {
 	@override String get pauseAll => 'Metti tutto in pausa';
 	@override String get resumeAll => 'Riprendi tutto';
 	@override String get deleteAll => 'Elimina tutto';
+	@override String get selectVersion => 'Seleziona versione';
 }
 
 // Path: playlists
@@ -1845,6 +1846,7 @@ extension on TranslationsIt {
 			'downloads.pauseAll' => 'Metti tutto in pausa',
 			'downloads.resumeAll' => 'Riprendi tutto',
 			'downloads.deleteAll' => 'Elimina tutto',
+			'downloads.selectVersion' => 'Seleziona versione',
 			'playlists.title' => 'Playlist',
 			'playlists.noPlaylists' => 'Nessuna playlist trovata',
 			'playlists.create' => 'Crea playlist',

@@ -841,6 +841,7 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String get pauseAll => '全部暂停';
 	@override String get resumeAll => '全部继续';
 	@override String get deleteAll => '全部删除';
+	@override String get selectVersion => '选择版本';
 }
 
 // Path: playlists
@@ -1845,6 +1846,7 @@ extension on TranslationsZh {
 			'downloads.pauseAll' => '全部暂停',
 			'downloads.resumeAll' => '全部继续',
 			'downloads.deleteAll' => '全部删除',
+			'downloads.selectVersion' => '选择版本',
 			'playlists.title' => '播放列表',
 			'playlists.noPlaylists' => '未找到播放列表',
 			'playlists.create' => '创建播放列表',

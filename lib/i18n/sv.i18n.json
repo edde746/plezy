@@ -601,7 +601,8 @@
     "noDownloadsTree": "Inga nedladdningar",
     "pauseAll": "Pausa alla",
     "resumeAll": "Återuppta alla",
-    "deleteAll": "Ta bort alla"
+    "deleteAll": "Ta bort alla",
+    "selectVersion": "Välj version"
   },
   "playlists": {
     "title": "Spellistor",

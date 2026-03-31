@@ -2164,6 +2164,9 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Delete all'
 	String get deleteAll => 'Delete all';
+
+	/// en: 'Select Version'
+	String get selectVersion => 'Select Version';
 }
 
 // Path: shaders
@@ -3564,6 +3567,7 @@ extension on Translations {
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
+			'downloads.selectVersion' => 'Select Version',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',

@@ -601,7 +601,8 @@
     "noDownloadsTree": "Keine Downloads",
     "pauseAll": "Alle pausieren",
     "resumeAll": "Alle fortsetzen",
-    "deleteAll": "Alle löschen"
+    "deleteAll": "Alle löschen",
+    "selectVersion": "Version auswählen"
   },
   "playlists": {
     "title": "Wiedergabelisten",

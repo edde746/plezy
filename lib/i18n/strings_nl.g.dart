@@ -841,6 +841,7 @@ class _TranslationsDownloadsNl implements TranslationsDownloadsEn {
 	@override String get pauseAll => 'Alles pauzeren';
 	@override String get resumeAll => 'Alles hervatten';
 	@override String get deleteAll => 'Alles verwijderen';
+	@override String get selectVersion => 'Versie selecteren';
 }
 
 // Path: playlists
@@ -1845,6 +1846,7 @@ extension on TranslationsNl {
 			'downloads.pauseAll' => 'Alles pauzeren',
 			'downloads.resumeAll' => 'Alles hervatten',
 			'downloads.deleteAll' => 'Alles verwijderen',
+			'downloads.selectVersion' => 'Versie selecteren',
 			'playlists.title' => 'Afspeellijsten',
 			'playlists.noPlaylists' => 'Geen afspeellijsten gevonden',
 			'playlists.create' => 'Afspeellijst maken',

@@ -703,7 +703,8 @@
     "noDownloadsTree": "Нет загрузок",
     "pauseAll": "Приостановить все",
     "resumeAll": "Возобновить все",
-    "deleteAll": "Удалить все"
+    "deleteAll": "Удалить все",
+    "selectVersion": "Выбрать версию"
   },
   "shaders": {
     "title": "Шейдеры",

@@ -964,6 +964,7 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String get pauseAll => '모두 일시정지';
 	@override String get resumeAll => '모두 재개';
 	@override String get deleteAll => '모두 삭제';
+	@override String get selectVersion => '버전 선택';
 }
 
 // Path: shaders
@@ -1941,6 +1942,7 @@ extension on TranslationsKo {
 			'downloads.pauseAll' => '모두 일시정지',
 			'downloads.resumeAll' => '모두 재개',
 			'downloads.deleteAll' => '모두 삭제',
+			'downloads.selectVersion' => '버전 선택',
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
 			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',

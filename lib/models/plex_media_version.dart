@@ -72,6 +72,49 @@ class PlexMediaVersion {
     return label;
   }
 
+  /// Version signature for matching across episodes.
+  /// Format: "resolution:codec:container" (e.g., "1080:h264:mkv")
+  String get signature {
+    final res = videoResolution ?? '';
+    final codec = videoCodec ?? '';
+    final cont = container ?? '';
+    return '$res:$codec:$cont'.toLowerCase();
+  }
+
+  String get _resolutionPart => (videoResolution ?? '').toLowerCase();
+  String get _codecPart => (videoCodec ?? '').toLowerCase();
+
+  /// Find the best matching version index from a set of accepted signatures.
+  /// Uses tiered matching: exact → resolution+codec → resolution only.
+  /// Returns null if no accepted signature matches at all.
+  static int? findMatchingIndex(List<PlexMediaVersion> versions, Set<String> acceptedSignatures) {
+    if (versions.isEmpty || acceptedSignatures.isEmpty) return null;
+
+    for (final sig in acceptedSignatures) {
+      final parts = sig.split(':');
+      if (parts.length != 3) continue;
+      final targetRes = parts[0];
+      final targetCodec = parts[1];
+
+      // Tier 1: exact match
+      for (int i = 0; i < versions.length; i++) {
+        if (versions[i].signature == sig) return i;
+      }
+
+      // Tier 2: resolution + codec
+      for (int i = 0; i < versions.length; i++) {
+        if (versions[i]._resolutionPart == targetRes && versions[i]._codecPart == targetCodec) return i;
+      }
+
+      // Tier 3: resolution only
+      for (int i = 0; i < versions.length; i++) {
+        if (versions[i]._resolutionPart == targetRes) return i;
+      }
+    }
+
+    return null;
+  }
+
   @override
   String toString() => displayLabel;
 }
