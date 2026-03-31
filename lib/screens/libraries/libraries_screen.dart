@@ -1075,7 +1075,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           _originalOrder = null;
         });
       } else {
-        Navigator.pop(context);
+        OverlaySheetController.popAdaptive(context);
       }
     });
     if (backResult != KeyEventResult.ignored) {
