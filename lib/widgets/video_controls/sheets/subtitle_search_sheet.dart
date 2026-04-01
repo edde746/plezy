@@ -13,6 +13,22 @@ import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
 
+const _kPillRadius = BorderRadius.all(Radius.circular(100));
+
+InputDecoration _pillInputDecoration(BuildContext context, {String? hintText, Widget? prefixIcon}) {
+  final fillColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
+  return InputDecoration(
+    hintText: hintText,
+    prefixIcon: prefixIcon,
+    filled: true,
+    fillColor: fillColor,
+    border: const OutlineInputBorder(borderRadius: _kPillRadius, borderSide: BorderSide.none),
+    enabledBorder: const OutlineInputBorder(borderRadius: _kPillRadius, borderSide: BorderSide.none),
+    focusedBorder: const OutlineInputBorder(borderRadius: _kPillRadius, borderSide: BorderSide.none),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  );
+}
+
 class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
@@ -42,7 +58,6 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
   String? _error;
   String? _downloadingKey;
 
-  // Internal view switching instead of push/pop
   bool _showLanguagePicker = false;
 
   @override
@@ -156,44 +171,56 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
       );
     }
 
+    final fillColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
+
     return BaseVideoControlSheet(
       title: t.videoControls.searchSubtitles,
       icon: Symbols.search_rounded,
       onBack: () => OverlaySheetController.of(context).pop(),
       child: Column(
         children: [
-          FocusableListTile(
-            leading: const AppIcon(Symbols.language_rounded),
-            title: Text(t.videoControls.language),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
               children: [
-                Text(
-                  _languageName,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                // Language chip
+                Material(
+                  color: fillColor,
+                  borderRadius: _kPillRadius,
+                  child: InkWell(
+                    borderRadius: _kPillRadius,
+                    onTap: () => setState(() => _showLanguagePicker = true),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_languageName),
+                          const SizedBox(width: 2),
+                          const AppIcon(Symbols.arrow_drop_down_rounded, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 4),
-                const AppIcon(Symbols.arrow_drop_down_rounded),
+                const SizedBox(width: 8),
+                // Title search field
+                Expanded(
+                  child: TextField(
+                    controller: _titleController,
+                    decoration: _pillInputDecoration(
+                      context,
+                      hintText: widget.mediaTitle ?? 'Title',
+                      prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                    ),
+                    onChanged: _onTitleChanged,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _search(),
+                  ),
+                ),
               ],
             ),
-            onTap: () => setState(() => _showLanguagePicker = true),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                hintText: widget.mediaTitle ?? 'Title',
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onChanged: _onTitleChanged,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _search(),
-            ),
-          ),
-          Divider(height: 1, color: Theme.of(context).dividerColor),
           Expanded(child: _buildResults()),
         ],
       ),
@@ -283,7 +310,6 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
   }
 }
 
-/// Language picker rendered as an internal view, not a pushed page.
 class _LanguagePickerView extends StatefulWidget {
   final String currentCode;
   final void Function(String code, String name) onSelected;
@@ -343,11 +369,9 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> {
             child: TextField(
               controller: _filterController,
               autofocus: true,
-              decoration: InputDecoration(
+              decoration: _pillInputDecoration(
+                context,
                 hintText: t.videoControls.searchLanguages,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 prefixIcon: const Icon(Symbols.search_rounded, size: 20),
               ),
               onChanged: _onFilterChanged,
