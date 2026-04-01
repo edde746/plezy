@@ -814,6 +814,7 @@ class _TranslationsLiveTvNb implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'Hva går nå';
 	@override String get watchChannel => 'Se kanal';
 	@override String get favorites => 'Favoritter';
+	@override String get reorderFavorites => 'Endre rekkefølge på favoritter';
 }
 
 // Path: collections
@@ -1839,6 +1840,7 @@ extension on TranslationsNb {
 			'liveTv.whatsOn' => 'Hva går nå',
 			'liveTv.watchChannel' => 'Se kanal',
 			'liveTv.favorites' => 'Favoritter',
+			'liveTv.reorderFavorites' => 'Endre rekkefølge på favoritter',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',

@@ -581,7 +581,8 @@
     "lateNight": "Nuit tardive",
     "whatsOn": "En ce moment",
     "watchChannel": "Regarder la chaîne",
-    "favorites": "Favoris"
+    "favorites": "Favoris",
+    "reorderFavorites": "Réorganiser les favoris"
   },
   "collections": {
     "title": "Collections",

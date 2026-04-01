@@ -581,7 +581,8 @@
     "lateNight": "Sen kväll",
     "whatsOn": "På TV nu",
     "watchChannel": "Titta på kanal",
-    "favorites": "Favoriter"
+    "favorites": "Favoriter",
+    "reorderFavorites": "Ordna om favoriter"
   },
   "downloads": {
     "title": "Nedladdningar",

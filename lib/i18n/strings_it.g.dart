@@ -814,6 +814,7 @@ class _TranslationsLiveTvIt implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'In onda ora';
 	@override String get watchChannel => 'Guarda canale';
 	@override String get favorites => 'Preferiti';
+	@override String get reorderFavorites => 'Riordina preferiti';
 }
 
 // Path: downloads
@@ -1839,6 +1840,7 @@ extension on TranslationsIt {
 			'liveTv.whatsOn' => 'In onda ora',
 			'liveTv.watchChannel' => 'Guarda canale',
 			'liveTv.favorites' => 'Preferiti',
+			'liveTv.reorderFavorites' => 'Riordina preferiti',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',

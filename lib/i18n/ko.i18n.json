@@ -581,7 +581,8 @@
     "lateNight": "심야 방송",
     "whatsOn": "지금 방송 중",
     "watchChannel": "채널 시청",
-    "favorites": "즐겨찾기"
+    "favorites": "즐겨찾기",
+    "reorderFavorites": "즐겨찾기 순서 변경"
   },
   "collections": {
     "title": "컬렉션",

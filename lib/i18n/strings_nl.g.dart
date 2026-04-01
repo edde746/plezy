@@ -814,6 +814,7 @@ class _TranslationsLiveTvNl implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'Nu op TV';
 	@override String get watchChannel => 'Kanaal bekijken';
 	@override String get favorites => 'Favorieten';
+	@override String get reorderFavorites => 'Favorieten herordenen';
 }
 
 // Path: downloads
@@ -1839,6 +1840,7 @@ extension on TranslationsNl {
 			'liveTv.whatsOn' => 'Nu op TV',
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'liveTv.favorites' => 'Favorieten',
+			'liveTv.reorderFavorites' => 'Favorieten herordenen',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',

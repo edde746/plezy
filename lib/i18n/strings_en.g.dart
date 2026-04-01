@@ -1786,6 +1786,9 @@ class TranslationsLiveTvEn {
 
 	/// en: 'Favorites'
 	String get favorites => 'Favorites';
+
+	/// en: 'Reorder Favorites'
+	String get reorderFavorites => 'Reorder Favorites';
 }
 
 // Path: collections
@@ -3486,6 +3489,7 @@ extension on Translations {
 			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',
+			'liveTv.reorderFavorites' => 'Reorder Favorites',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',

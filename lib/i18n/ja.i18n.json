@@ -581,7 +581,8 @@
     "lateNight": "深夜",
     "whatsOn": "放送中",
     "watchChannel": "チャンネルを視聴",
-    "favorites": "お気に入り"
+    "favorites": "お気に入り",
+    "reorderFavorites": "お気に入りを並べ替え"
   },
   "collections": {
     "title": "コレクション",

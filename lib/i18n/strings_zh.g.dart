@@ -814,6 +814,7 @@ class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
 	@override String get whatsOn => '正在播出';
 	@override String get watchChannel => '观看频道';
 	@override String get favorites => '收藏';
+	@override String get reorderFavorites => '重新排序收藏';
 }
 
 // Path: downloads
@@ -1839,6 +1840,7 @@ extension on TranslationsZh {
 			'liveTv.whatsOn' => '正在播出',
 			'liveTv.watchChannel' => '观看频道',
 			'liveTv.favorites' => '收藏',
+			'liveTv.reorderFavorites' => '重新排序收藏',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',

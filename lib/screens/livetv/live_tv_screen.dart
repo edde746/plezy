@@ -14,6 +14,8 @@ import '../../utils/app_logger.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/overlay_sheet.dart';
+import 'reorder_favorites_sheet.dart';
 import 'tabs/guide_tab.dart';
 import 'tabs/whats_on_tab.dart';
 
@@ -50,7 +52,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   List<LiveTvChannel> get _filteredChannels {
     if (!_showFavoritesOnly || _favoriteChannelIds.isEmpty) return _channels;
-    return _channels.where((c) => _favoriteChannelIds.contains(c.key)).toList();
+    final channelMap = {for (final c in _channels) c.key: c};
+    return [
+      for (final fav in _favoriteChannels)
+        if (channelMap.containsKey(fav.id)) channelMap[fav.id]!,
+    ];
   }
 
   @override
@@ -233,7 +239,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   void _toggleFavorite(LiveTvChannel channel) {
-    final multiServer = context.read<MultiServerProvider>();
     final source = _favoriteSourceByServer[channel.serverId] ?? '';
 
     setState(() {
@@ -246,7 +251,37 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       }
     });
 
-    // Persist to server (fire-and-forget, optimistic UI)
+    _persistFavorites();
+  }
+
+  void _showReorderFavorites() {
+    final channelMap = {for (final c in _channels) c.key: c};
+
+    OverlaySheetController.showAdaptive(
+      context,
+      builder: (sheetContext) => ReorderFavoritesSheet(
+        favorites: List.from(_favoriteChannels),
+        channelMap: channelMap,
+        onReorder: (reordered) {
+          setState(() {
+            _favoriteChannels = reordered;
+            _favoriteChannelIds = reordered.map((f) => f.id).toSet();
+          });
+          _persistFavorites();
+        },
+        onRemove: (removed) {
+          setState(() {
+            _favoriteChannels = _favoriteChannels.where((f) => f.id != removed.id).toList();
+            _favoriteChannelIds = Set.from(_favoriteChannelIds)..remove(removed.id);
+          });
+          _persistFavorites();
+        },
+      ),
+    );
+  }
+
+  void _persistFavorites() {
+    final multiServer = context.read<MultiServerProvider>();
     for (final serverInfo in multiServer.liveTvServers) {
       final client = multiServer.getClientForServer(serverInfo.serverId);
       if (client != null) {
@@ -322,6 +357,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                 tooltip: t.liveTv.favorites,
                 onPressed: _toggleFavoritesFilter,
               ),
+              if (_showFavoritesOnly && _favoriteChannels.length > 1)
+                FocusableAction(
+                  icon: Symbols.swap_vert_rounded,
+                  tooltip: t.liveTv.reorderFavorites,
+                  onPressed: _showReorderFavorites,
+                ),
               FocusableAction(
                 icon: Symbols.refresh_rounded,
                 tooltip: t.liveTv.reloadGuide,

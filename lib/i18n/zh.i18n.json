@@ -581,7 +581,8 @@
     "lateNight": "深夜",
     "whatsOn": "正在播出",
     "watchChannel": "观看频道",
-    "favorites": "收藏"
+    "favorites": "收藏",
+    "reorderFavorites": "重新排序收藏"
   },
   "downloads": {
     "title": "下载",

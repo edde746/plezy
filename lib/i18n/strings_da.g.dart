@@ -814,6 +814,7 @@ class _TranslationsLiveTvDa implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'Hvad der kører';
 	@override String get watchChannel => 'Se kanal';
 	@override String get favorites => 'Favoritter';
+	@override String get reorderFavorites => 'Omarranger favoritter';
 }
 
 // Path: collections
@@ -1839,6 +1840,7 @@ extension on TranslationsDa {
 			'liveTv.whatsOn' => 'Hvad der kører',
 			'liveTv.watchChannel' => 'Se kanal',
 			'liveTv.favorites' => 'Favoritter',
+			'liveTv.reorderFavorites' => 'Omarranger favoritter',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',

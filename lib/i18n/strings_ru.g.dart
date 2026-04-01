@@ -814,6 +814,7 @@ class _TranslationsLiveTvRu implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'Что идёт';
 	@override String get watchChannel => 'Смотреть канал';
 	@override String get favorites => 'Избранное';
+	@override String get reorderFavorites => 'Изменить порядок избранного';
 }
 
 // Path: collections
@@ -1839,6 +1840,7 @@ extension on TranslationsRu {
 			'liveTv.whatsOn' => 'Что идёт',
 			'liveTv.watchChannel' => 'Смотреть канал',
 			'liveTv.favorites' => 'Избранное',
+			'liveTv.reorderFavorites' => 'Изменить порядок избранного',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
 			'collections.empty' => 'Коллекция пуста',

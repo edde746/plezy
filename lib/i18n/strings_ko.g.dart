@@ -814,6 +814,7 @@ class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
 	@override String get whatsOn => '지금 방송 중';
 	@override String get watchChannel => '채널 시청';
 	@override String get favorites => '즐겨찾기';
+	@override String get reorderFavorites => '즐겨찾기 순서 변경';
 }
 
 // Path: collections
@@ -1839,6 +1840,7 @@ extension on TranslationsKo {
 			'liveTv.whatsOn' => '지금 방송 중',
 			'liveTv.watchChannel' => '채널 시청',
 			'liveTv.favorites' => '즐겨찾기',
+			'liveTv.reorderFavorites' => '즐겨찾기 순서 변경',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',

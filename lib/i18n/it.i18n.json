@@ -581,7 +581,8 @@
     "lateNight": "Notte tarda",
     "whatsOn": "In onda ora",
     "watchChannel": "Guarda canale",
-    "favorites": "Preferiti"
+    "favorites": "Preferiti",
+    "reorderFavorites": "Riordina preferiti"
   },
   "downloads": {
     "title": "Download",

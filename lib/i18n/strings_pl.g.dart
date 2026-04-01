@@ -814,6 +814,7 @@ class _TranslationsLiveTvPl implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'Co leci';
 	@override String get watchChannel => 'Oglądaj kanał';
 	@override String get favorites => 'Ulubione';
+	@override String get reorderFavorites => 'Zmień kolejność ulubionych';
 }
 
 // Path: collections
@@ -1839,6 +1840,7 @@ extension on TranslationsPl {
 			'liveTv.whatsOn' => 'Co leci',
 			'liveTv.watchChannel' => 'Oglądaj kanał',
 			'liveTv.favorites' => 'Ulubione',
+			'liveTv.reorderFavorites' => 'Zmień kolejność ulubionych',
 			'collections.title' => 'Kolekcje',
 			'collections.collection' => 'Kolekcja',
 			'collections.empty' => 'Kolekcja jest pusta',

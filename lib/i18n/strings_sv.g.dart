@@ -814,6 +814,7 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'På TV nu';
 	@override String get watchChannel => 'Titta på kanal';
 	@override String get favorites => 'Favoriter';
+	@override String get reorderFavorites => 'Ordna om favoriter';
 }
 
 // Path: downloads
@@ -1839,6 +1840,7 @@ extension on TranslationsSv {
 			'liveTv.whatsOn' => 'På TV nu',
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'liveTv.favorites' => 'Favoriter',
+			'liveTv.reorderFavorites' => 'Ordna om favoriter',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',

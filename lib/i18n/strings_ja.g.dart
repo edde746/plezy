@@ -814,6 +814,7 @@ class _TranslationsLiveTvJa implements TranslationsLiveTvEn {
 	@override String get whatsOn => '放送中';
 	@override String get watchChannel => 'チャンネルを視聴';
 	@override String get favorites => 'お気に入り';
+	@override String get reorderFavorites => 'お気に入りを並べ替え';
 }
 
 // Path: collections
@@ -1839,6 +1840,7 @@ extension on TranslationsJa {
 			'liveTv.whatsOn' => '放送中',
 			'liveTv.watchChannel' => 'チャンネルを視聴',
 			'liveTv.favorites' => 'お気に入り',
+			'liveTv.reorderFavorites' => 'お気に入りを並べ替え',
 			'collections.title' => 'コレクション',
 			'collections.collection' => 'コレクション',
 			'collections.empty' => 'コレクションは空です',

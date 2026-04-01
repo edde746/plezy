@@ -581,7 +581,8 @@
     "lateNight": "Późna noc",
     "whatsOn": "Co leci",
     "watchChannel": "Oglądaj kanał",
-    "favorites": "Ulubione"
+    "favorites": "Ulubione",
+    "reorderFavorites": "Zmień kolejność ulubionych"
   },
   "collections": {
     "title": "Kolekcje",

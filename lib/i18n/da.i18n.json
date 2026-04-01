@@ -581,7 +581,8 @@
     "lateNight": "Sen aften",
     "whatsOn": "Hvad der kører",
     "watchChannel": "Se kanal",
-    "favorites": "Favoritter"
+    "favorites": "Favoritter",
+    "reorderFavorites": "Omarranger favoritter"
   },
   "collections": {
     "title": "Samlinger",

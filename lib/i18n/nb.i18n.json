@@ -581,7 +581,8 @@
     "lateNight": "Sen kveld",
     "whatsOn": "Hva går nå",
     "watchChannel": "Se kanal",
-    "favorites": "Favoritter"
+    "favorites": "Favoritter",
+    "reorderFavorites": "Endre rekkefølge på favoritter"
   },
   "collections": {
     "title": "Samlinger",

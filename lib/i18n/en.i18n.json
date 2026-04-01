@@ -581,7 +581,8 @@
     "lateNight": "Late Night",
     "whatsOn": "What's On",
     "watchChannel": "Watch Channel",
-    "favorites": "Favorites"
+    "favorites": "Favorites",
+    "reorderFavorites": "Reorder Favorites"
   },
   "collections": {
     "title": "Collections",

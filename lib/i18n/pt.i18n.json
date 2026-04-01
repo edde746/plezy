@@ -581,7 +581,8 @@
     "lateNight": "Madrugada",
     "whatsOn": "O que Está Passando",
     "watchChannel": "Assistir Canal",
-    "favorites": "Favoritos"
+    "favorites": "Favoritos",
+    "reorderFavorites": "Reordenar favoritos"
   },
   "collections": {
     "title": "Coleções",

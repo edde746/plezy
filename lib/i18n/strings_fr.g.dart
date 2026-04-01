@@ -814,6 +814,7 @@ class _TranslationsLiveTvFr implements TranslationsLiveTvEn {
 	@override String get whatsOn => 'En ce moment';
 	@override String get watchChannel => 'Regarder la chaîne';
 	@override String get favorites => 'Favoris';
+	@override String get reorderFavorites => 'Réorganiser les favoris';
 }
 
 // Path: collections
@@ -1839,6 +1840,7 @@ extension on TranslationsFr {
 			'liveTv.whatsOn' => 'En ce moment',
 			'liveTv.watchChannel' => 'Regarder la chaîne',
 			'liveTv.favorites' => 'Favoris',
+			'liveTv.reorderFavorites' => 'Réorganiser les favoris',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'La collection est vide',

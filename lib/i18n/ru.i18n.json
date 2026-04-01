@@ -581,7 +581,8 @@
     "lateNight": "Поздний вечер",
     "whatsOn": "Что идёт",
     "watchChannel": "Смотреть канал",
-    "favorites": "Избранное"
+    "favorites": "Избранное",
+    "reorderFavorites": "Изменить порядок избранного"
   },
   "collections": {
     "title": "Коллекции",
