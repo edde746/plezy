@@ -9,6 +9,7 @@ import '../../providers/companion_remote_provider.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/app_logger.dart';
 import '../../widgets/overlay_sheet.dart';
+import '../../widgets/pill_input_decoration.dart';
 import 'pairing_screen.dart';
 
 class MobileRemoteScreen extends StatefulWidget {
@@ -644,11 +645,11 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> {
           TextField(
             controller: _controller,
             autofocus: true,
-            decoration: InputDecoration(
+            decoration: pillInputDecoration(
+              context,
               hintText: t.companionRemote.remote.searchHint,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: IconButton(icon: const Icon(Icons.send), onPressed: () => _submit(_controller.text)),
-              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(100))),
             ),
             onSubmitted: _submit,
           ),

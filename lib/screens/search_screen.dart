@@ -12,6 +12,7 @@ import '../providers/multi_server_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../widgets/pill_input_decoration.dart';
 import '../widgets/focusable_media_card.dart';
 import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
@@ -237,7 +238,8 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
                   child: TextField(
                     controller: _searchController,
                     focusNode: _searchFocusNode,
-                    decoration: InputDecoration(
+                    decoration: pillInputDecoration(
+                      context,
                       hintText: t.search.hint,
                       prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
                       suffixIcon: _searchController.text.isNotEmpty
@@ -249,21 +251,6 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
                               },
                             )
                           : null,
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(100)),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(100)),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(100)),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                   ),
                 ),

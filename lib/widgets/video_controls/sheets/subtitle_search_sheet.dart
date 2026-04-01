@@ -11,23 +11,8 @@ import '../../../utils/snackbar_helper.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
+import '../../../widgets/pill_input_decoration.dart';
 import 'base_video_control_sheet.dart';
-
-const _kPillRadius = BorderRadius.all(Radius.circular(100));
-
-InputDecoration _pillInputDecoration(BuildContext context, {String? hintText, Widget? prefixIcon}) {
-  final fillColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
-  return InputDecoration(
-    hintText: hintText,
-    prefixIcon: prefixIcon,
-    filled: true,
-    fillColor: fillColor,
-    border: const OutlineInputBorder(borderRadius: _kPillRadius, borderSide: BorderSide.none),
-    enabledBorder: const OutlineInputBorder(borderRadius: _kPillRadius, borderSide: BorderSide.none),
-    focusedBorder: const OutlineInputBorder(borderRadius: _kPillRadius, borderSide: BorderSide.none),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-  );
-}
 
 class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
@@ -186,9 +171,9 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
                 // Language chip
                 Material(
                   color: fillColor,
-                  borderRadius: _kPillRadius,
+                  borderRadius: pillInputRadius,
                   child: InkWell(
-                    borderRadius: _kPillRadius,
+                    borderRadius: pillInputRadius,
                     onTap: () => setState(() => _showLanguagePicker = true),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -208,7 +193,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
                 Expanded(
                   child: TextField(
                     controller: _titleController,
-                    decoration: _pillInputDecoration(
+                    decoration: pillInputDecoration(
                       context,
                       hintText: widget.mediaTitle ?? 'Title',
                       prefixIcon: const Icon(Symbols.search_rounded, size: 20),
@@ -369,7 +354,7 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> {
             child: TextField(
               controller: _filterController,
               autofocus: true,
-              decoration: _pillInputDecoration(
+              decoration: pillInputDecoration(
                 context,
                 hintText: t.videoControls.searchLanguages,
                 prefixIcon: const Icon(Symbols.search_rounded, size: 20),

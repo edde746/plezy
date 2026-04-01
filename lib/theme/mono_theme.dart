@@ -99,20 +99,20 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: c.surface,
+      fillColor: c.text.withValues(alpha: 0.08),
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: c.outline),
+      border: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide.none,
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: c.outline),
+      enabledBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide.none,
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: c.text.withValues(alpha: 0.5)),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide.none,
       ),
       hintStyle: TextStyle(color: c.textMuted),
     ),
