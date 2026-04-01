@@ -374,7 +374,13 @@
     "chapters": "챕터",
     "noChaptersAvailable": "사용 가능한 챕터가 없습니다",
     "queue": "재생 대기열",
-    "noQueueItems": "대기열에 항목이 없습니다"
+    "noQueueItems": "대기열에 항목이 없습니다",
+    "searchSubtitles": "자막 검색",
+    "language": "언어",
+    "noSubtitlesFound": "자막을 찾을 수 없습니다",
+    "subtitleDownloaded": "자막이 다운로드되었습니다",
+    "subtitleDownloadFailed": "자막 다운로드에 실패했습니다",
+    "searchLanguages": "언어 검색..."
   },
   "userStatus": {
     "admin": "관리자",

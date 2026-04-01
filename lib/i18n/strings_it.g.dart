@@ -515,6 +515,12 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'Nessun capitolo disponibile';
 	@override String get queue => 'Coda';
 	@override String get noQueueItems => 'Nessun elemento in coda';
+	@override String get searchSubtitles => 'Cerca sottotitoli';
+	@override String get language => 'Lingua';
+	@override String get noSubtitlesFound => 'Nessun sottotitolo trovato';
+	@override String get subtitleDownloaded => 'Sottotitolo scaricato';
+	@override String get subtitleDownloadFailed => 'Impossibile scaricare il sottotitolo';
+	@override String get searchLanguages => 'Cerca lingue...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsIt {
 			'videoControls.noChaptersAvailable' => 'Nessun capitolo disponibile',
 			'videoControls.queue' => 'Coda',
 			'videoControls.noQueueItems' => 'Nessun elemento in coda',
+			'videoControls.searchSubtitles' => 'Cerca sottotitoli',
+			'videoControls.language' => 'Lingua',
+			'videoControls.noSubtitlesFound' => 'Nessun sottotitolo trovato',
+			'videoControls.subtitleDownloaded' => 'Sottotitolo scaricato',
+			'videoControls.subtitleDownloadFailed' => 'Impossibile scaricare il sottotitolo',
+			'videoControls.searchLanguages' => 'Cerca lingue...',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Limitato',
 			'userStatus.protected' => 'Protetto',
@@ -1828,14 +1840,14 @@ extension on TranslationsIt {
 			'liveTv.guide' => 'Guida',
 			'liveTv.noChannels' => 'Nessun canale disponibile',
 			'liveTv.noDvr' => 'Nessun DVR configurato su nessun server',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
 			'liveTv.live' => 'IN DIRETTA',
 			'liveTv.reloadGuide' => 'Ricarica guida',
 			'liveTv.now' => 'Ora',
 			'liveTv.today' => 'Oggi',
 			'liveTv.midnight' => 'Mezzanotte',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Notte',
 			'liveTv.morning' => 'Mattina',
 			'liveTv.daytime' => 'Giorno',

@@ -20,6 +20,7 @@ import '../models/plex_first_character.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_library.dart';
 import '../models/plex_media_info.dart';
+import '../models/plex_subtitle_search_result.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
@@ -929,6 +930,55 @@ class PlexClient {
     // Si allParts est false, retourner true ou false explicitement (selon la logique souhaitée)
     // Ici, on retourne true par défaut si rien n'est fait
     return true;
+  }
+
+  /// Search for subtitles from external providers (e.g. OpenSubtitles) via the Plex server.
+  /// [language] is an ISO 639-1 two-letter code (e.g. "en", "es").
+  Future<List<PlexSubtitleSearchResult>> searchSubtitles(
+    String ratingKey, {
+    required String language,
+    String? title,
+    int hearingImpaired = 0,
+    int forced = 0,
+  }) async {
+    return _wrapListApiCall<PlexSubtitleSearchResult>(
+      () => _dio.get('/library/metadata/$ratingKey/subtitles', queryParameters: {
+        'language': language,
+        if (title != null && title.isNotEmpty) 'title': title,
+        'hearingImpaired': hearingImpaired,
+        'forced': forced,
+      }),
+      (response) {
+        final container = _getMediaContainer(response);
+        final streams = container?['Stream'] as List? ?? [];
+        return streams.map((s) => PlexSubtitleSearchResult.fromJson(s as Map<String, dynamic>)).toList();
+      },
+      'Failed to search subtitles',
+    );
+  }
+
+  /// Download a subtitle from an external provider and add it to the media item.
+  /// The server downloads the file asynchronously; the new stream appears after a short delay.
+  Future<bool> downloadSubtitle(
+    String ratingKey, {
+    required String key,
+    required String codec,
+    required String language,
+    required bool hearingImpaired,
+    required bool forced,
+    required String providerTitle,
+  }) async {
+    return _wrapBoolApiCall(
+      () => _dio.put('/library/metadata/$ratingKey/subtitles', queryParameters: {
+        'key': key,
+        'codec': codec,
+        'language': language,
+        'hearingImpaired': hearingImpaired ? 1 : 0,
+        'forced': forced ? 1 : 0,
+        'providerTitle': providerTitle,
+      }),
+      'Failed to download subtitle',
+    );
   }
 
   /// Search across all libraries including individually shared items.

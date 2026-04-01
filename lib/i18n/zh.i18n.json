@@ -374,7 +374,13 @@
     "chapters": "章节",
     "noChaptersAvailable": "没有可用的章节",
     "queue": "播放队列",
-    "noQueueItems": "队列中没有项目"
+    "noQueueItems": "队列中没有项目",
+    "searchSubtitles": "搜索字幕",
+    "language": "语言",
+    "noSubtitlesFound": "未找到字幕",
+    "subtitleDownloaded": "字幕已下载",
+    "subtitleDownloadFailed": "字幕下载失败",
+    "searchLanguages": "搜索语言..."
   },
   "userStatus": {
     "admin": "管理员",

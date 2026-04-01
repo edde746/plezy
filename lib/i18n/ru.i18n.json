@@ -374,7 +374,13 @@
     "chapters": "Главы",
     "noChaptersAvailable": "Главы недоступны",
     "queue": "Очередь",
-    "noQueueItems": "В очереди нет элементов"
+    "noQueueItems": "В очереди нет элементов",
+    "searchSubtitles": "Поиск субтитров",
+    "language": "Язык",
+    "noSubtitlesFound": "Субтитры не найдены",
+    "subtitleDownloaded": "Субтитры загружены",
+    "subtitleDownloadFailed": "Не удалось загрузить субтитры",
+    "searchLanguages": "Поиск языков..."
   },
   "userStatus": {
     "admin": "Администратор",

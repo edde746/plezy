@@ -515,6 +515,12 @@ class _TranslationsVideoControlsDa implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'Ingen kapitler tilgængelige';
 	@override String get queue => 'Kø';
 	@override String get noQueueItems => 'Ingen elementer i køen';
+	@override String get searchSubtitles => 'Søg undertekster';
+	@override String get language => 'Sprog';
+	@override String get noSubtitlesFound => 'Ingen undertekster fundet';
+	@override String get subtitleDownloaded => 'Undertekst downloadet';
+	@override String get subtitleDownloadFailed => 'Kunne ikke downloade undertekst';
+	@override String get searchLanguages => 'Søg sprog...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsDa {
 			'videoControls.noChaptersAvailable' => 'Ingen kapitler tilgængelige',
 			'videoControls.queue' => 'Kø',
 			'videoControls.noQueueItems' => 'Ingen elementer i køen',
+			'videoControls.searchSubtitles' => 'Søg undertekster',
+			'videoControls.language' => 'Sprog',
+			'videoControls.noSubtitlesFound' => 'Ingen undertekster fundet',
+			'videoControls.subtitleDownloaded' => 'Undertekst downloadet',
+			'videoControls.subtitleDownloadFailed' => 'Kunne ikke downloade undertekst',
+			'videoControls.searchLanguages' => 'Søg sprog...',
 			'userStatus.admin' => 'Administrator',
 			'userStatus.restricted' => 'Begrænset',
 			'userStatus.protected' => 'Beskyttet',
@@ -1828,14 +1840,14 @@ extension on TranslationsDa {
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'Ingen kanaler tilgængelige',
 			'liveTv.noDvr' => 'Ingen DVR konfigureret på nogen server',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Ingen programdata tilgængelig',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Genindlæs guide',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'I dag',
 			'liveTv.midnight' => 'Midnat',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Nat',
 			'liveTv.morning' => 'Morgen',
 			'liveTv.daytime' => 'Dagtid',

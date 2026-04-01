@@ -40,6 +40,9 @@ class TrackControlsState {
   final bool subtitlesVisible;
   final bool showQueueButton;
   final Function(PlexMetadata)? onQueueItemSelected;
+  final String ratingKey;
+  final String? mediaTitle;
+  final Future<void> Function()? onSubtitleDownloaded;
 
   const TrackControlsState({
     this.availableVersions = const [],
@@ -75,5 +78,8 @@ class TrackControlsState {
     this.subtitlesVisible = true,
     this.showQueueButton = false,
     this.onQueueItemSelected,
+    this.ratingKey = '',
+    this.mediaTitle,
+    this.onSubtitleDownloaded,
   });
 }

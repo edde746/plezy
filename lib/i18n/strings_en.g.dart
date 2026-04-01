@@ -1162,6 +1162,24 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'No items in queue'
 	String get noQueueItems => 'No items in queue';
+
+	/// en: 'Search Subtitles'
+	String get searchSubtitles => 'Search Subtitles';
+
+	/// en: 'Language'
+	String get language => 'Language';
+
+	/// en: 'No subtitles found'
+	String get noSubtitlesFound => 'No subtitles found';
+
+	/// en: 'Subtitle downloaded'
+	String get subtitleDownloaded => 'Subtitle downloaded';
+
+	/// en: 'Failed to download subtitle'
+	String get subtitleDownloadFailed => 'Failed to download subtitle';
+
+	/// en: 'Search languages...'
+	String get searchLanguages => 'Search languages...';
 }
 
 // Path: userStatus
@@ -3326,6 +3344,12 @@ extension on Translations {
 			'videoControls.noChaptersAvailable' => 'No chapters available',
 			'videoControls.queue' => 'Queue',
 			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.searchSubtitles' => 'Search Subtitles',
+			'videoControls.language' => 'Language',
+			'videoControls.noSubtitlesFound' => 'No subtitles found',
+			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
+			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
+			'videoControls.searchLanguages' => 'Search languages...',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Restricted',
 			'userStatus.protected' => 'Protected',
@@ -3485,14 +3509,14 @@ extension on Translations {
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
 			'liveTv.midnight' => 'Midnight',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Overnight',
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',

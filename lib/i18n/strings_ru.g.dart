@@ -515,6 +515,12 @@ class _TranslationsVideoControlsRu implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'Главы недоступны';
 	@override String get queue => 'Очередь';
 	@override String get noQueueItems => 'В очереди нет элементов';
+	@override String get searchSubtitles => 'Поиск субтитров';
+	@override String get language => 'Язык';
+	@override String get noSubtitlesFound => 'Субтитры не найдены';
+	@override String get subtitleDownloaded => 'Субтитры загружены';
+	@override String get subtitleDownloadFailed => 'Не удалось загрузить субтитры';
+	@override String get searchLanguages => 'Поиск языков...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsRu {
 			'videoControls.noChaptersAvailable' => 'Главы недоступны',
 			'videoControls.queue' => 'Очередь',
 			'videoControls.noQueueItems' => 'В очереди нет элементов',
+			'videoControls.searchSubtitles' => 'Поиск субтитров',
+			'videoControls.language' => 'Язык',
+			'videoControls.noSubtitlesFound' => 'Субтитры не найдены',
+			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
+			'videoControls.subtitleDownloadFailed' => 'Не удалось загрузить субтитры',
+			'videoControls.searchLanguages' => 'Поиск языков...',
 			'userStatus.admin' => 'Администратор',
 			'userStatus.restricted' => 'Ограниченный',
 			'userStatus.protected' => 'Защищённый',
@@ -1828,14 +1840,14 @@ extension on TranslationsRu {
 			'liveTv.guide' => 'Программа',
 			'liveTv.noChannels' => 'Нет доступных каналов',
 			'liveTv.noDvr' => 'DVR не настроен ни на одном сервере',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Нет данных о программах',
 			'liveTv.live' => 'ЭФИР',
 			'liveTv.reloadGuide' => 'Перезагрузить программу',
 			'liveTv.now' => 'Сейчас',
 			'liveTv.today' => 'Сегодня',
 			'liveTv.midnight' => 'Полночь',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Ночь',
 			'liveTv.morning' => 'Утро',
 			'liveTv.daytime' => 'День',

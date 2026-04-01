@@ -515,6 +515,12 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => '사용 가능한 챕터가 없습니다';
 	@override String get queue => '재생 대기열';
 	@override String get noQueueItems => '대기열에 항목이 없습니다';
+	@override String get searchSubtitles => '자막 검색';
+	@override String get language => '언어';
+	@override String get noSubtitlesFound => '자막을 찾을 수 없습니다';
+	@override String get subtitleDownloaded => '자막이 다운로드되었습니다';
+	@override String get subtitleDownloadFailed => '자막 다운로드에 실패했습니다';
+	@override String get searchLanguages => '언어 검색...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsKo {
 			'videoControls.noChaptersAvailable' => '사용 가능한 챕터가 없습니다',
 			'videoControls.queue' => '재생 대기열',
 			'videoControls.noQueueItems' => '대기열에 항목이 없습니다',
+			'videoControls.searchSubtitles' => '자막 검색',
+			'videoControls.language' => '언어',
+			'videoControls.noSubtitlesFound' => '자막을 찾을 수 없습니다',
+			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
+			'videoControls.subtitleDownloadFailed' => '자막 다운로드에 실패했습니다',
+			'videoControls.searchLanguages' => '언어 검색...',
 			'userStatus.admin' => '관리자',
 			'userStatus.restricted' => '제한됨',
 			'userStatus.protected' => '보호됨',
@@ -1828,14 +1840,14 @@ extension on TranslationsKo {
 			'liveTv.guide' => '편성표',
 			'liveTv.noChannels' => '사용 가능한 채널이 없습니다',
 			'liveTv.noDvr' => '서버에 DVR이 구성되어 있지 않습니다',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => '프로그램 데이터가 없습니다',
 			'liveTv.live' => '실시간',
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.midnight' => '자정',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => '심야',
 			'liveTv.morning' => '아침',
 			'liveTv.daytime' => '낮',

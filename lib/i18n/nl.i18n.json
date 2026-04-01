@@ -374,7 +374,13 @@
     "chapters": "Hoofdstukken",
     "noChaptersAvailable": "Geen hoofdstukken beschikbaar",
     "queue": "Wachtrij",
-    "noQueueItems": "Geen items in de wachtrij"
+    "noQueueItems": "Geen items in de wachtrij",
+    "searchSubtitles": "Ondertitels zoeken",
+    "language": "Taal",
+    "noSubtitlesFound": "Geen ondertitels gevonden",
+    "subtitleDownloaded": "Ondertitel gedownload",
+    "subtitleDownloadFailed": "Ondertitel downloaden mislukt",
+    "searchLanguages": "Talen zoeken..."
   },
   "userStatus": {
     "admin": "Beheerder",

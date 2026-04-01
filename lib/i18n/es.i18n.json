@@ -374,7 +374,13 @@
     "chapters": "Capítulos",
     "noChaptersAvailable": "No hay capítulos disponibles",
     "queue": "Cola",
-    "noQueueItems": "No hay elementos en la cola"
+    "noQueueItems": "No hay elementos en la cola",
+    "searchSubtitles": "Buscar subtítulos",
+    "language": "Idioma",
+    "noSubtitlesFound": "No se encontraron subtítulos",
+    "subtitleDownloaded": "Subtítulo descargado",
+    "subtitleDownloadFailed": "Error al descargar subtítulo",
+    "searchLanguages": "Buscar idiomas..."
   },
   "userStatus": {
     "admin": "Administrador",

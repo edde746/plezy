@@ -374,7 +374,13 @@
     "chapters": "Rozdziały",
     "noChaptersAvailable": "Brak dostępnych rozdziałów",
     "queue": "Kolejka",
-    "noQueueItems": "Brak elementów w kolejce"
+    "noQueueItems": "Brak elementów w kolejce",
+    "searchSubtitles": "Szukaj napisów",
+    "language": "Język",
+    "noSubtitlesFound": "Nie znaleziono napisów",
+    "subtitleDownloaded": "Napisy pobrane",
+    "subtitleDownloadFailed": "Nie udało się pobrać napisów",
+    "searchLanguages": "Szukaj języków..."
   },
   "userStatus": {
     "admin": "Administrator",

@@ -515,6 +515,12 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'Inga kapitel tillgängliga';
 	@override String get queue => 'Kö';
 	@override String get noQueueItems => 'Inga objekt i kön';
+	@override String get searchSubtitles => 'Sök undertexter';
+	@override String get language => 'Språk';
+	@override String get noSubtitlesFound => 'Inga undertexter hittades';
+	@override String get subtitleDownloaded => 'Undertext nedladdad';
+	@override String get subtitleDownloadFailed => 'Kunde inte ladda ner undertext';
+	@override String get searchLanguages => 'Sök språk...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsSv {
 			'videoControls.noChaptersAvailable' => 'Inga kapitel tillgängliga',
 			'videoControls.queue' => 'Kö',
 			'videoControls.noQueueItems' => 'Inga objekt i kön',
+			'videoControls.searchSubtitles' => 'Sök undertexter',
+			'videoControls.language' => 'Språk',
+			'videoControls.noSubtitlesFound' => 'Inga undertexter hittades',
+			'videoControls.subtitleDownloaded' => 'Undertext nedladdad',
+			'videoControls.subtitleDownloadFailed' => 'Kunde inte ladda ner undertext',
+			'videoControls.searchLanguages' => 'Sök språk...',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Begränsad',
 			'userStatus.protected' => 'Skyddad',
@@ -1828,14 +1840,14 @@ extension on TranslationsSv {
 			'liveTv.guide' => 'Programguide',
 			'liveTv.noChannels' => 'Inga kanaler tillgängliga',
 			'liveTv.noDvr' => 'Ingen DVR konfigurerad på någon server',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Natt',
 			'liveTv.morning' => 'Morgon',
 			'liveTv.daytime' => 'Dagtid',

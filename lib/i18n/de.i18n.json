@@ -374,7 +374,13 @@
     "chapters": "Kapitel",
     "noChaptersAvailable": "Keine Kapitel verfügbar",
     "queue": "Warteschlange",
-    "noQueueItems": "Keine Elemente in der Warteschlange"
+    "noQueueItems": "Keine Elemente in der Warteschlange",
+    "searchSubtitles": "Untertitel suchen",
+    "language": "Sprache",
+    "noSubtitlesFound": "Keine Untertitel gefunden",
+    "subtitleDownloaded": "Untertitel heruntergeladen",
+    "subtitleDownloadFailed": "Untertitel konnte nicht heruntergeladen werden",
+    "searchLanguages": "Sprachen suchen..."
   },
   "userStatus": {
     "admin": "Eigentümer",

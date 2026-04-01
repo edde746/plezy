@@ -1170,6 +1170,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitlesVisible: _subtitlesVisible,
       showQueueButton: playbackState.isQueueActive,
       onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
+      ratingKey: widget.metadata.ratingKey,
+      mediaTitle: widget.metadata.title,
+      onSubtitleDownloaded: _onSubtitleDownloaded,
     );
   }
 
@@ -1630,6 +1633,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Global key event handler for focus-independent shortcuts (desktop only)
   bool _handleGlobalKeyEvent(KeyEvent event) {
     if (!mounted) return false;
+
+    // When an overlay sheet is open (e.g. subtitle search with text fields),
+    // don't consume key events — let text input work normally.
+    if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) {
+      return false;
+    }
 
     // Back key fallback when _focusNode lost focus (TV, or desktop with nav on).
     // Focus.onKeyEvent won't fire if _focusNode lost focus, so handle ESC here.
@@ -2426,6 +2435,51 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _onQueueItemSelected(PlexMetadata item) {
     final videoPlayerState = context.findAncestorStateOfType<VideoPlayerScreenState>();
     videoPlayerState?.navigateToQueueItem(item);
+  }
+
+  Future<void> _onSubtitleDownloaded() async {
+    if (!mounted) return;
+    // Wait for the server to finish downloading the subtitle file
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+
+    try {
+      final client = _getClientForMetadata();
+      final data = await client.getVideoPlaybackData(widget.metadata.ratingKey);
+      if (!mounted || data.mediaInfo == null) return;
+
+      final token = client.config.token;
+      if (token == null) return;
+
+      // Find external subtitle tracks from the refreshed metadata
+      final existingUris = widget.player.state.tracks.subtitle
+          .where((t) => t.uri != null)
+          .map((t) => t.uri!)
+          .toSet();
+
+      for (final plexTrack in data.mediaInfo!.subtitleTracks) {
+        if (!plexTrack.isExternal) continue;
+        final url = plexTrack.getSubtitleUrl(client.config.baseUrl, token);
+        if (url == null) continue;
+        // Skip tracks already loaded in the player
+        if (existingUris.any((uri) => uri.contains(plexTrack.key!))) continue;
+
+        await widget.player.addSubtitleTrack(
+          uri: url,
+          title: plexTrack.displayTitle ?? plexTrack.language ?? 'Downloaded',
+          language: plexTrack.languageCode,
+          select: true,
+        );
+
+        // Save the selection on the server so it persists across sessions
+        final partId = data.mediaInfo!.partId;
+        if (partId != null) {
+          await client.selectStreams(partId, subtitleStreamID: plexTrack.id);
+        }
+      }
+    } catch (e) {
+      appLogger.w('Failed to refresh subtitles after download', error: e);
+    }
   }
 
   Future<void> _switchMediaVersion(int newMediaIndex) async {

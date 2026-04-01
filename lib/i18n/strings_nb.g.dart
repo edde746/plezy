@@ -515,6 +515,12 @@ class _TranslationsVideoControlsNb implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'Ingen kapitler tilgjengelig';
 	@override String get queue => 'Kø';
 	@override String get noQueueItems => 'Ingen elementer i kø';
+	@override String get searchSubtitles => 'Søk etter undertekster';
+	@override String get language => 'Språk';
+	@override String get noSubtitlesFound => 'Ingen undertekster funnet';
+	@override String get subtitleDownloaded => 'Undertekst lastet ned';
+	@override String get subtitleDownloadFailed => 'Kunne ikke laste ned undertekst';
+	@override String get searchLanguages => 'Søk etter språk...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsNb {
 			'videoControls.noChaptersAvailable' => 'Ingen kapitler tilgjengelig',
 			'videoControls.queue' => 'Kø',
 			'videoControls.noQueueItems' => 'Ingen elementer i kø',
+			'videoControls.searchSubtitles' => 'Søk etter undertekster',
+			'videoControls.language' => 'Språk',
+			'videoControls.noSubtitlesFound' => 'Ingen undertekster funnet',
+			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
+			'videoControls.subtitleDownloadFailed' => 'Kunne ikke laste ned undertekst',
+			'videoControls.searchLanguages' => 'Søk etter språk...',
 			'userStatus.admin' => 'Administrator',
 			'userStatus.restricted' => 'Begrenset',
 			'userStatus.protected' => 'Beskyttet',
@@ -1828,14 +1840,14 @@ extension on TranslationsNb {
 			'liveTv.guide' => 'Programguide',
 			'liveTv.noChannels' => 'Ingen kanaler tilgjengelig',
 			'liveTv.noDvr' => 'Ingen DVR konfigurert på noen server',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Ingen programdata tilgjengelig',
 			'liveTv.live' => 'DIREKTE',
 			'liveTv.reloadGuide' => 'Last inn programguide på nytt',
 			'liveTv.now' => 'Nå',
 			'liveTv.today' => 'I dag',
 			'liveTv.midnight' => 'Midnatt',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Natt',
 			'liveTv.morning' => 'Morgen',
 			'liveTv.daytime' => 'Dagtid',

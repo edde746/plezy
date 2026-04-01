@@ -374,7 +374,13 @@
     "chapters": "Chapters",
     "noChaptersAvailable": "No chapters available",
     "queue": "Queue",
-    "noQueueItems": "No items in queue"
+    "noQueueItems": "No items in queue",
+    "searchSubtitles": "Search Subtitles",
+    "language": "Language",
+    "noSubtitlesFound": "No subtitles found",
+    "subtitleDownloaded": "Subtitle downloaded",
+    "subtitleDownloadFailed": "Failed to download subtitle",
+    "searchLanguages": "Search languages..."
   },
   "userStatus": {
     "admin": "Admin",

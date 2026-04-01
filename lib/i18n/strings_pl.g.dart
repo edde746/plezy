@@ -515,6 +515,12 @@ class _TranslationsVideoControlsPl implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'Brak dostępnych rozdziałów';
 	@override String get queue => 'Kolejka';
 	@override String get noQueueItems => 'Brak elementów w kolejce';
+	@override String get searchSubtitles => 'Szukaj napisów';
+	@override String get language => 'Język';
+	@override String get noSubtitlesFound => 'Nie znaleziono napisów';
+	@override String get subtitleDownloaded => 'Napisy pobrane';
+	@override String get subtitleDownloadFailed => 'Nie udało się pobrać napisów';
+	@override String get searchLanguages => 'Szukaj języków...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsPl {
 			'videoControls.noChaptersAvailable' => 'Brak dostępnych rozdziałów',
 			'videoControls.queue' => 'Kolejka',
 			'videoControls.noQueueItems' => 'Brak elementów w kolejce',
+			'videoControls.searchSubtitles' => 'Szukaj napisów',
+			'videoControls.language' => 'Język',
+			'videoControls.noSubtitlesFound' => 'Nie znaleziono napisów',
+			'videoControls.subtitleDownloaded' => 'Napisy pobrane',
+			'videoControls.subtitleDownloadFailed' => 'Nie udało się pobrać napisów',
+			'videoControls.searchLanguages' => 'Szukaj języków...',
 			'userStatus.admin' => 'Administrator',
 			'userStatus.restricted' => 'Ograniczony',
 			'userStatus.protected' => 'Chroniony',
@@ -1828,14 +1840,14 @@ extension on TranslationsPl {
 			'liveTv.guide' => 'Przewodnik',
 			'liveTv.noChannels' => 'Brak dostępnych kanałów',
 			'liveTv.noDvr' => 'Brak skonfigurowanego DVR na żadnym serwerze',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Brak danych o programach',
 			'liveTv.live' => 'NA ŻYWO',
 			'liveTv.reloadGuide' => 'Odśwież przewodnik',
 			'liveTv.now' => 'Teraz',
 			'liveTv.today' => 'Dzisiaj',
 			'liveTv.midnight' => 'Północ',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Nocą',
 			'liveTv.morning' => 'Rano',
 			'liveTv.daytime' => 'W ciągu dnia',

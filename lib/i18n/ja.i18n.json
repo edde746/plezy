@@ -374,7 +374,13 @@
     "chapters": "チャプター",
     "noChaptersAvailable": "チャプターがありません",
     "queue": "キュー",
-    "noQueueItems": "キューにアイテムがありません"
+    "noQueueItems": "キューにアイテムがありません",
+    "searchSubtitles": "字幕を検索",
+    "language": "言語",
+    "noSubtitlesFound": "字幕が見つかりません",
+    "subtitleDownloaded": "字幕をダウンロードしました",
+    "subtitleDownloadFailed": "字幕のダウンロードに失敗しました",
+    "searchLanguages": "言語を検索..."
   },
   "userStatus": {
     "admin": "管理者",

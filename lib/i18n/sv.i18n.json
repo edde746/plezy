@@ -374,7 +374,13 @@
     "chapters": "Kapitel",
     "noChaptersAvailable": "Inga kapitel tillgängliga",
     "queue": "Kö",
-    "noQueueItems": "Inga objekt i kön"
+    "noQueueItems": "Inga objekt i kön",
+    "searchSubtitles": "Sök undertexter",
+    "language": "Språk",
+    "noSubtitlesFound": "Inga undertexter hittades",
+    "subtitleDownloaded": "Undertext nedladdad",
+    "subtitleDownloadFailed": "Kunde inte ladda ner undertext",
+    "searchLanguages": "Sök språk..."
   },
   "userStatus": {
     "admin": "Admin",

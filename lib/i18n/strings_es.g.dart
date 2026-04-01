@@ -515,6 +515,12 @@ class _TranslationsVideoControlsEs implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'No hay capítulos disponibles';
 	@override String get queue => 'Cola';
 	@override String get noQueueItems => 'No hay elementos en la cola';
+	@override String get searchSubtitles => 'Buscar subtítulos';
+	@override String get language => 'Idioma';
+	@override String get noSubtitlesFound => 'No se encontraron subtítulos';
+	@override String get subtitleDownloaded => 'Subtítulo descargado';
+	@override String get subtitleDownloadFailed => 'Error al descargar subtítulo';
+	@override String get searchLanguages => 'Buscar idiomas...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsEs {
 			'videoControls.noChaptersAvailable' => 'No hay capítulos disponibles',
 			'videoControls.queue' => 'Cola',
 			'videoControls.noQueueItems' => 'No hay elementos en la cola',
+			'videoControls.searchSubtitles' => 'Buscar subtítulos',
+			'videoControls.language' => 'Idioma',
+			'videoControls.noSubtitlesFound' => 'No se encontraron subtítulos',
+			'videoControls.subtitleDownloaded' => 'Subtítulo descargado',
+			'videoControls.subtitleDownloadFailed' => 'Error al descargar subtítulo',
+			'videoControls.searchLanguages' => 'Buscar idiomas...',
 			'userStatus.admin' => 'Administrador',
 			'userStatus.restricted' => 'Restringido',
 			'userStatus.protected' => 'Protegido',
@@ -1828,14 +1840,14 @@ extension on TranslationsEs {
 			'liveTv.guide' => 'Guía',
 			'liveTv.noChannels' => 'No hay canales disponibles',
 			'liveTv.noDvr' => 'No hay DVR configurado en ningún servidor',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'No hay datos de programación disponibles',
 			'liveTv.live' => 'EN VIVO',
 			'liveTv.reloadGuide' => 'Recargar guía',
 			'liveTv.now' => 'Ahora',
 			'liveTv.today' => 'Hoy',
 			'liveTv.midnight' => 'Medianoche',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Madrugada',
 			'liveTv.morning' => 'Mañana',
 			'liveTv.daytime' => 'Día',

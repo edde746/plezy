@@ -102,6 +102,25 @@ class LanguageCodes {
     'TW': 'Taiwan',
   };
 
+  /// Get all available languages as (code, name) pairs, sorted by name.
+  /// Returns ISO 639-1 two-letter codes with their English names.
+  static List<({String code, String name})> getAllLanguages() {
+    if (_codes == null) return [];
+    final languages = <({String code, String name})>[];
+    for (final entry in _codes!.entries) {
+      final code = entry.key;
+      // Skip locale variants like "en-GB" — only include base 2-letter codes
+      if (code.contains('-')) continue;
+      final map = entry.value as Map<String, dynamic>;
+      final name = map['name'] as String?;
+      if (name != null) {
+        languages.add((code: code, name: name));
+      }
+    }
+    languages.sort((a, b) => a.name.compareTo(b.name));
+    return languages;
+  }
+
   /// Get the English name of a language from its code
   static String? getLanguageName(String languageCode) {
     if (_codes == null) return null;

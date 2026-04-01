@@ -97,6 +97,9 @@ class TrackChapterControls extends StatelessWidget {
   bool get subtitlesVisible => trackControlsState.subtitlesVisible;
   bool get showQueueButton => trackControlsState.showQueueButton;
   Function(PlexMetadata)? get onQueueItemSelected => trackControlsState.onQueueItemSelected;
+  String get ratingKey => trackControlsState.ratingKey;
+  String? get mediaTitle => trackControlsState.mediaTitle;
+  Future<void> Function()? get onSubtitleDownloaded => trackControlsState.onSubtitleDownloaded;
 
   /// Handle key event for button navigation
   KeyEventResult _handleButtonKeyEvent(FocusNode _, KeyEvent event, int index, int totalButtons) {
@@ -257,6 +260,10 @@ class TrackChapterControls extends StatelessWidget {
                     .show(
                       builder: (_) => TrackSheet(
                         player: player,
+                        ratingKey: ratingKey,
+                        serverId: serverId,
+                        mediaTitle: mediaTitle,
+                        onSubtitleDownloaded: onSubtitleDownloaded,
                         onAudioTrackChanged: onAudioTrackChanged,
                         onSubtitleTrackChanged: onSubtitleTrackChanged,
                         onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,

@@ -374,7 +374,13 @@
     "chapters": "Chapitres",
     "noChaptersAvailable": "Aucun chapitre disponible",
     "queue": "File d'attente",
-    "noQueueItems": "Aucun élément dans la file d'attente"
+    "noQueueItems": "Aucun élément dans la file d'attente",
+    "searchSubtitles": "Rechercher des sous-titres",
+    "language": "Langue",
+    "noSubtitlesFound": "Aucun sous-titre trouvé",
+    "subtitleDownloaded": "Sous-titre téléchargé",
+    "subtitleDownloadFailed": "Échec du téléchargement du sous-titre",
+    "searchLanguages": "Rechercher des langues..."
   },
   "userStatus": {
     "admin": "Admin",

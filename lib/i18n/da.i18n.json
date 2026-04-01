@@ -374,7 +374,13 @@
     "chapters": "Kapitler",
     "noChaptersAvailable": "Ingen kapitler tilgængelige",
     "queue": "Kø",
-    "noQueueItems": "Ingen elementer i køen"
+    "noQueueItems": "Ingen elementer i køen",
+    "searchSubtitles": "Søg undertekster",
+    "language": "Sprog",
+    "noSubtitlesFound": "Ingen undertekster fundet",
+    "subtitleDownloaded": "Undertekst downloadet",
+    "subtitleDownloadFailed": "Kunne ikke downloade undertekst",
+    "searchLanguages": "Søg sprog..."
   },
   "userStatus": {
     "admin": "Administrator",

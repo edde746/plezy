@@ -515,6 +515,12 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => '没有可用的章节';
 	@override String get queue => '播放队列';
 	@override String get noQueueItems => '队列中没有项目';
+	@override String get searchSubtitles => '搜索字幕';
+	@override String get language => '语言';
+	@override String get noSubtitlesFound => '未找到字幕';
+	@override String get subtitleDownloaded => '字幕已下载';
+	@override String get subtitleDownloadFailed => '字幕下载失败';
+	@override String get searchLanguages => '搜索语言...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsZh {
 			'videoControls.noChaptersAvailable' => '没有可用的章节',
 			'videoControls.queue' => '播放队列',
 			'videoControls.noQueueItems' => '队列中没有项目',
+			'videoControls.searchSubtitles' => '搜索字幕',
+			'videoControls.language' => '语言',
+			'videoControls.noSubtitlesFound' => '未找到字幕',
+			'videoControls.subtitleDownloaded' => '字幕已下载',
+			'videoControls.subtitleDownloadFailed' => '字幕下载失败',
+			'videoControls.searchLanguages' => '搜索语言...',
 			'userStatus.admin' => '管理员',
 			'userStatus.restricted' => '受限',
 			'userStatus.protected' => '受保护',
@@ -1828,14 +1840,14 @@ extension on TranslationsZh {
 			'liveTv.guide' => '节目指南',
 			'liveTv.noChannels' => '没有可用的频道',
 			'liveTv.noDvr' => '没有服务器配置了DVR',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => '没有可用的节目数据',
 			'liveTv.live' => '直播',
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.midnight' => '午夜',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => '凌晨',
 			'liveTv.morning' => '上午',
 			'liveTv.daytime' => '白天',

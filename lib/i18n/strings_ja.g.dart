@@ -515,6 +515,12 @@ class _TranslationsVideoControlsJa implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'チャプターがありません';
 	@override String get queue => 'キュー';
 	@override String get noQueueItems => 'キューにアイテムがありません';
+	@override String get searchSubtitles => '字幕を検索';
+	@override String get language => '言語';
+	@override String get noSubtitlesFound => '字幕が見つかりません';
+	@override String get subtitleDownloaded => '字幕をダウンロードしました';
+	@override String get subtitleDownloadFailed => '字幕のダウンロードに失敗しました';
+	@override String get searchLanguages => '言語を検索...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsJa {
 			'videoControls.noChaptersAvailable' => 'チャプターがありません',
 			'videoControls.queue' => 'キュー',
 			'videoControls.noQueueItems' => 'キューにアイテムがありません',
+			'videoControls.searchSubtitles' => '字幕を検索',
+			'videoControls.language' => '言語',
+			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
+			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
+			'videoControls.subtitleDownloadFailed' => '字幕のダウンロードに失敗しました',
+			'videoControls.searchLanguages' => '言語を検索...',
 			'userStatus.admin' => '管理者',
 			'userStatus.restricted' => '制限付き',
 			'userStatus.protected' => '保護済み',
@@ -1828,14 +1840,14 @@ extension on TranslationsJa {
 			'liveTv.guide' => '番組表',
 			'liveTv.noChannels' => 'チャンネルがありません',
 			'liveTv.noDvr' => 'どのサーバーにもDVRが設定されていません',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => '番組データがありません',
 			'liveTv.live' => 'ライブ',
 			'liveTv.reloadGuide' => '番組表を再読込',
 			'liveTv.now' => '現在',
 			'liveTv.today' => '今日',
 			'liveTv.midnight' => '深夜',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => '深夜',
 			'liveTv.morning' => '朝',
 			'liveTv.daytime' => '昼',

@@ -374,7 +374,13 @@
     "chapters": "Capítulos",
     "noChaptersAvailable": "Nenhum capítulo disponível",
     "queue": "Fila",
-    "noQueueItems": "Nenhum item na fila"
+    "noQueueItems": "Nenhum item na fila",
+    "searchSubtitles": "Pesquisar legendas",
+    "language": "Idioma",
+    "noSubtitlesFound": "Nenhuma legenda encontrada",
+    "subtitleDownloaded": "Legenda baixada",
+    "subtitleDownloadFailed": "Falha ao baixar legenda",
+    "searchLanguages": "Pesquisar idiomas..."
   },
   "userStatus": {
     "admin": "Admin",

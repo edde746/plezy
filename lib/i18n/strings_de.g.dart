@@ -515,6 +515,12 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'Keine Kapitel verfügbar';
 	@override String get queue => 'Warteschlange';
 	@override String get noQueueItems => 'Keine Elemente in der Warteschlange';
+	@override String get searchSubtitles => 'Untertitel suchen';
+	@override String get language => 'Sprache';
+	@override String get noSubtitlesFound => 'Keine Untertitel gefunden';
+	@override String get subtitleDownloaded => 'Untertitel heruntergeladen';
+	@override String get subtitleDownloadFailed => 'Untertitel konnte nicht heruntergeladen werden';
+	@override String get searchLanguages => 'Sprachen suchen...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsDe {
 			'videoControls.noChaptersAvailable' => 'Keine Kapitel verfügbar',
 			'videoControls.queue' => 'Warteschlange',
 			'videoControls.noQueueItems' => 'Keine Elemente in der Warteschlange',
+			'videoControls.searchSubtitles' => 'Untertitel suchen',
+			'videoControls.language' => 'Sprache',
+			'videoControls.noSubtitlesFound' => 'Keine Untertitel gefunden',
+			'videoControls.subtitleDownloaded' => 'Untertitel heruntergeladen',
+			'videoControls.subtitleDownloadFailed' => 'Untertitel konnte nicht heruntergeladen werden',
+			'videoControls.searchLanguages' => 'Sprachen suchen...',
 			'userStatus.admin' => 'Eigentümer',
 			'userStatus.restricted' => 'Eingeschränkt',
 			'userStatus.protected' => 'Geschützt',
@@ -1828,14 +1840,14 @@ extension on TranslationsDe {
 			'liveTv.guide' => 'Programmführer',
 			'liveTv.noChannels' => 'Keine Kanäle verfügbar',
 			'liveTv.noDvr' => 'Kein DVR auf einem Server konfiguriert',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Keine Programmdaten verfügbar',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Programmführer neu laden',
 			'liveTv.now' => 'Jetzt',
 			'liveTv.today' => 'Heute',
 			'liveTv.midnight' => 'Mitternacht',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Nacht',
 			'liveTv.morning' => 'Morgen',
 			'liveTv.daytime' => 'Tagsüber',

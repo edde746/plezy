@@ -515,6 +515,12 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get noChaptersAvailable => 'Geen hoofdstukken beschikbaar';
 	@override String get queue => 'Wachtrij';
 	@override String get noQueueItems => 'Geen items in de wachtrij';
+	@override String get searchSubtitles => 'Ondertitels zoeken';
+	@override String get language => 'Taal';
+	@override String get noSubtitlesFound => 'Geen ondertitels gevonden';
+	@override String get subtitleDownloaded => 'Ondertitel gedownload';
+	@override String get subtitleDownloadFailed => 'Ondertitel downloaden mislukt';
+	@override String get searchLanguages => 'Talen zoeken...';
 }
 
 // Path: userStatus
@@ -1669,6 +1675,12 @@ extension on TranslationsNl {
 			'videoControls.noChaptersAvailable' => 'Geen hoofdstukken beschikbaar',
 			'videoControls.queue' => 'Wachtrij',
 			'videoControls.noQueueItems' => 'Geen items in de wachtrij',
+			'videoControls.searchSubtitles' => 'Ondertitels zoeken',
+			'videoControls.language' => 'Taal',
+			'videoControls.noSubtitlesFound' => 'Geen ondertitels gevonden',
+			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
+			'videoControls.subtitleDownloadFailed' => 'Ondertitel downloaden mislukt',
+			'videoControls.searchLanguages' => 'Talen zoeken...',
 			'userStatus.admin' => 'Beheerder',
 			'userStatus.restricted' => 'Beperkt',
 			'userStatus.protected' => 'Beschermd',
@@ -1828,14 +1840,14 @@ extension on TranslationsNl {
 			'liveTv.guide' => 'Gids',
 			'liveTv.noChannels' => 'Geen zenders beschikbaar',
 			'liveTv.noDvr' => 'Geen DVR geconfigureerd op een server',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Gids herladen',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Vandaag',
 			'liveTv.midnight' => 'Middernacht',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.overnight' => 'Nacht',
 			'liveTv.morning' => 'Ochtend',
 			'liveTv.daytime' => 'Overdag',
