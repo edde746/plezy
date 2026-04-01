@@ -220,7 +220,15 @@
     "showNavBarLabels": "Navigationsleisten-Beschriftungen anzeigen",
     "showNavBarLabelsDescription": "Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen",
     "liveTvDefaultFavorites": "Standardmäßig Favoritenkanäle",
-    "liveTvDefaultFavoritesDescription": "Beim Öffnen von Live TV nur Favoritenkanäle anzeigen"
+    "liveTvDefaultFavoritesDescription": "Beim Öffnen von Live TV nur Favoritenkanäle anzeigen",
+    "display": "Display",
+    "homeScreen": "Home Screen",
+    "navigation": "Navigation",
+    "content": "Content",
+    "player": "Player",
+    "subtitlesAndConfig": "Subtitles & Configuration",
+    "seekAndTiming": "Seek & Timing",
+    "behavior": "Behavior"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",

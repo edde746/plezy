@@ -220,7 +220,15 @@
     "showNavBarLabels": "Показывать подписи панели навигации",
     "showNavBarLabelsDescription": "Отображать текстовые подписи под иконками панели навигации",
     "liveTvDefaultFavorites": "Избранные каналы по умолчанию",
-    "liveTvDefaultFavoritesDescription": "Показывать только избранные каналы при открытии ТВ"
+    "liveTvDefaultFavoritesDescription": "Показывать только избранные каналы при открытии ТВ",
+    "display": "Display",
+    "homeScreen": "Home Screen",
+    "navigation": "Navigation",
+    "content": "Content",
+    "player": "Player",
+    "subtitlesAndConfig": "Subtitles & Configuration",
+    "seekAndTiming": "Seek & Timing",
+    "behavior": "Behavior"
   },
   "search": {
     "hint": "Поиск фильмов, сериалов, музыки...",

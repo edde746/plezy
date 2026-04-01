@@ -340,6 +340,14 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'Отображать текстовые подписи под иконками панели навигации';
 	@override String get liveTvDefaultFavorites => 'Избранные каналы по умолчанию';
 	@override String get liveTvDefaultFavoritesDescription => 'Показывать только избранные каналы при открытии ТВ';
+	@override String get display => 'Display';
+	@override String get homeScreen => 'Home Screen';
+	@override String get navigation => 'Navigation';
+	@override String get content => 'Content';
+	@override String get player => 'Player';
+	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
+	@override String get seekAndTiming => 'Seek & Timing';
+	@override String get behavior => 'Behavior';
 }
 
 // Path: search
@@ -1539,6 +1547,14 @@ extension on TranslationsRu {
 			'settings.showNavBarLabelsDescription' => 'Отображать текстовые подписи под иконками панели навигации',
 			'settings.liveTvDefaultFavorites' => 'Избранные каналы по умолчанию',
 			'settings.liveTvDefaultFavoritesDescription' => 'Показывать только избранные каналы при открытии ТВ',
+			'settings.display' => 'Display',
+			'settings.homeScreen' => 'Home Screen',
+			'settings.navigation' => 'Navigation',
+			'settings.content' => 'Content',
+			'settings.player' => 'Player',
+			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
+			'settings.seekAndTiming' => 'Seek & Timing',
+			'settings.behavior' => 'Behavior',
 			'search.hint' => 'Поиск фильмов, сериалов, музыки...',
 			'search.tryDifferentTerm' => 'Попробуйте другой запрос',
 			'search.searchYourMedia' => 'Поиск в вашей медиатеке',
@@ -1832,6 +1848,8 @@ extension on TranslationsRu {
 			'licenses.relatedPackages' => 'Связанные пакеты',
 			'licenses.license' => 'Лицензия',
 			'licenses.licenseNumber' => ({required Object number}) => 'Лицензия ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} лицензий',
 			'navigation.libraries' => 'Библиотеки',
 			'navigation.downloads' => 'Загрузки',
@@ -1840,8 +1858,6 @@ extension on TranslationsRu {
 			'liveTv.guide' => 'Программа',
 			'liveTv.noChannels' => 'Нет доступных каналов',
 			'liveTv.noDvr' => 'DVR не настроен ни на одном сервере',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Нет данных о программах',
 			'liveTv.live' => 'ЭФИР',
 			'liveTv.reloadGuide' => 'Перезагрузить программу',

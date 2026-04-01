@@ -340,6 +340,14 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'Wyświetl tekstowe etykiety pod ikonami paska nawigacji';
 	@override String get liveTvDefaultFavorites => 'Domyślnie ulubione kanały';
 	@override String get liveTvDefaultFavoritesDescription => 'Pokaż tylko ulubione kanały po otwarciu telewizji na żywo';
+	@override String get display => 'Display';
+	@override String get homeScreen => 'Home Screen';
+	@override String get navigation => 'Navigation';
+	@override String get content => 'Content';
+	@override String get player => 'Player';
+	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
+	@override String get seekAndTiming => 'Seek & Timing';
+	@override String get behavior => 'Behavior';
 }
 
 // Path: search
@@ -1539,6 +1547,14 @@ extension on TranslationsPl {
 			'settings.showNavBarLabelsDescription' => 'Wyświetl tekstowe etykiety pod ikonami paska nawigacji',
 			'settings.liveTvDefaultFavorites' => 'Domyślnie ulubione kanały',
 			'settings.liveTvDefaultFavoritesDescription' => 'Pokaż tylko ulubione kanały po otwarciu telewizji na żywo',
+			'settings.display' => 'Display',
+			'settings.homeScreen' => 'Home Screen',
+			'settings.navigation' => 'Navigation',
+			'settings.content' => 'Content',
+			'settings.player' => 'Player',
+			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
+			'settings.seekAndTiming' => 'Seek & Timing',
+			'settings.behavior' => 'Behavior',
 			'search.hint' => 'Szukaj filmów, seriali, muzyki...',
 			'search.tryDifferentTerm' => 'Spróbuj innego wyszukiwania',
 			'search.searchYourMedia' => 'Przeszukaj swoje media',
@@ -1832,6 +1848,8 @@ extension on TranslationsPl {
 			'licenses.relatedPackages' => 'Powiązane pakiety',
 			'licenses.license' => 'Licencja',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licencja ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licencji',
 			'navigation.libraries' => 'Biblioteki',
 			'navigation.downloads' => 'Pobrania',
@@ -1840,8 +1858,6 @@ extension on TranslationsPl {
 			'liveTv.guide' => 'Przewodnik',
 			'liveTv.noChannels' => 'Brak dostępnych kanałów',
 			'liveTv.noDvr' => 'Brak skonfigurowanego DVR na żadnym serwerze',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Brak danych o programach',
 			'liveTv.live' => 'NA ŻYWO',
 			'liveTv.reloadGuide' => 'Odśwież przewodnik',

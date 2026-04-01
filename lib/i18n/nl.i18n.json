@@ -220,7 +220,15 @@
     "showNavBarLabels": "Navigatiebalk labels tonen",
     "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen van de navigatiebalk weergeven",
     "liveTvDefaultFavorites": "Standaard favoriete zenders",
-    "liveTvDefaultFavoritesDescription": "Toon alleen favoriete zenders bij het openen van Live TV"
+    "liveTvDefaultFavoritesDescription": "Toon alleen favoriete zenders bij het openen van Live TV",
+    "display": "Display",
+    "homeScreen": "Home Screen",
+    "navigation": "Navigation",
+    "content": "Content",
+    "player": "Player",
+    "subtitlesAndConfig": "Subtitles & Configuration",
+    "seekAndTiming": "Seek & Timing",
+    "behavior": "Behavior"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",

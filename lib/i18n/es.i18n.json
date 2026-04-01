@@ -220,7 +220,15 @@
     "showNavBarLabels": "Mostrar etiquetas de la barra de navegación",
     "showNavBarLabelsDescription": "Mostrar etiquetas de texto bajo los iconos de la barra de navegación",
     "liveTvDefaultFavorites": "Canales favoritos por defecto",
-    "liveTvDefaultFavoritesDescription": "Mostrar solo canales favoritos al abrir TV en vivo"
+    "liveTvDefaultFavoritesDescription": "Mostrar solo canales favoritos al abrir TV en vivo",
+    "display": "Display",
+    "homeScreen": "Home Screen",
+    "navigation": "Navigation",
+    "content": "Content",
+    "player": "Player",
+    "subtitlesAndConfig": "Subtitles & Configuration",
+    "seekAndTiming": "Seek & Timing",
+    "behavior": "Behavior"
   },
   "search": {
     "hint": "Buscar películas, series, música...",

@@ -220,7 +220,15 @@
     "showNavBarLabels": "ナビゲーションバーラベルを表示",
     "showNavBarLabelsDescription": "ナビゲーションバーアイコンの下にテキストラベルを表示",
     "liveTvDefaultFavorites": "お気に入りチャンネルをデフォルトに",
-    "liveTvDefaultFavoritesDescription": "ライブTV を開いたときにお気に入りチャンネルのみ表示"
+    "liveTvDefaultFavoritesDescription": "ライブTV を開いたときにお気に入りチャンネルのみ表示",
+    "display": "Display",
+    "homeScreen": "Home Screen",
+    "navigation": "Navigation",
+    "content": "Content",
+    "player": "Player",
+    "subtitlesAndConfig": "Subtitles & Configuration",
+    "seekAndTiming": "Seek & Timing",
+    "behavior": "Behavior"
   },
   "search": {
     "hint": "映画、番組、音楽を検索...",

@@ -220,7 +220,15 @@
     "showNavBarLabels": "Mostra etichette barra di navigazione",
     "showNavBarLabelsDescription": "Mostra le etichette sotto le icone della barra di navigazione",
     "liveTvDefaultFavorites": "Canali preferiti predefiniti",
-    "liveTvDefaultFavoritesDescription": "Mostra solo i canali preferiti all'apertura della TV dal vivo"
+    "liveTvDefaultFavoritesDescription": "Mostra solo i canali preferiti all'apertura della TV dal vivo",
+    "display": "Display",
+    "homeScreen": "Home Screen",
+    "navigation": "Navigation",
+    "content": "Content",
+    "player": "Player",
+    "subtitlesAndConfig": "Subtitles & Configuration",
+    "seekAndTiming": "Seek & Timing",
+    "behavior": "Behavior"
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",

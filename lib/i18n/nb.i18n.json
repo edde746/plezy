@@ -220,7 +220,15 @@
     "showNavBarLabels": "Vis navigasjonsfeltlabeler",
     "showNavBarLabelsDescription": "Vis tekstlabeler under navigasjonsfeltikoner",
     "liveTvDefaultFavorites": "Standard til favorittkanaler",
-    "liveTvDefaultFavoritesDescription": "Vis kun favorittkanaler når du åpner Live TV"
+    "liveTvDefaultFavoritesDescription": "Vis kun favorittkanaler når du åpner Live TV",
+    "display": "Display",
+    "homeScreen": "Home Screen",
+    "navigation": "Navigation",
+    "content": "Content",
+    "player": "Player",
+    "subtitlesAndConfig": "Subtitles & Configuration",
+    "seekAndTiming": "Seek & Timing",
+    "behavior": "Behavior"
   },
   "search": {
     "hint": "Søk i filmer, serier, musikk...",

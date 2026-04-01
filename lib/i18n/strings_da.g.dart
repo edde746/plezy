@@ -340,6 +340,14 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'Vis tekstlabels under navigationsbarikoner';
 	@override String get liveTvDefaultFavorites => 'Standard til favoritkanaler';
 	@override String get liveTvDefaultFavoritesDescription => 'Vis kun favoritkanaler ved åbning af Live TV';
+	@override String get display => 'Display';
+	@override String get homeScreen => 'Home Screen';
+	@override String get navigation => 'Navigation';
+	@override String get content => 'Content';
+	@override String get player => 'Player';
+	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
+	@override String get seekAndTiming => 'Seek & Timing';
+	@override String get behavior => 'Behavior';
 }
 
 // Path: search
@@ -1539,6 +1547,14 @@ extension on TranslationsDa {
 			'settings.showNavBarLabelsDescription' => 'Vis tekstlabels under navigationsbarikoner',
 			'settings.liveTvDefaultFavorites' => 'Standard til favoritkanaler',
 			'settings.liveTvDefaultFavoritesDescription' => 'Vis kun favoritkanaler ved åbning af Live TV',
+			'settings.display' => 'Display',
+			'settings.homeScreen' => 'Home Screen',
+			'settings.navigation' => 'Navigation',
+			'settings.content' => 'Content',
+			'settings.player' => 'Player',
+			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
+			'settings.seekAndTiming' => 'Seek & Timing',
+			'settings.behavior' => 'Behavior',
 			'search.hint' => 'Søg film, serier, musik...',
 			'search.tryDifferentTerm' => 'Prøv en anden søgning',
 			'search.searchYourMedia' => 'Søg i dine medier',
@@ -1832,6 +1848,8 @@ extension on TranslationsDa {
 			'licenses.relatedPackages' => 'Relaterede pakker',
 			'licenses.license' => 'Licens',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licens ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenser',
 			'navigation.libraries' => 'Biblioteker',
 			'navigation.downloads' => 'Downloads',
@@ -1840,8 +1858,6 @@ extension on TranslationsDa {
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'Ingen kanaler tilgængelige',
 			'liveTv.noDvr' => 'Ingen DVR konfigureret på nogen server',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'Ingen programdata tilgængelig',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Genindlæs guide',

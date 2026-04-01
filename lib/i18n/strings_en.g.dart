@@ -765,6 +765,30 @@ class TranslationsSettingsEn {
 
 	/// en: 'Show only favorite channels when opening Live TV'
 	String get liveTvDefaultFavoritesDescription => 'Show only favorite channels when opening Live TV';
+
+	/// en: 'Display'
+	String get display => 'Display';
+
+	/// en: 'Home Screen'
+	String get homeScreen => 'Home Screen';
+
+	/// en: 'Navigation'
+	String get navigation => 'Navigation';
+
+	/// en: 'Content'
+	String get content => 'Content';
+
+	/// en: 'Player'
+	String get player => 'Player';
+
+	/// en: 'Subtitles & Configuration'
+	String get subtitlesAndConfig => 'Subtitles & Configuration';
+
+	/// en: 'Seek & Timing'
+	String get seekAndTiming => 'Seek & Timing';
+
+	/// en: 'Behavior'
+	String get behavior => 'Behavior';
 }
 
 // Path: search
@@ -3208,6 +3232,14 @@ extension on Translations {
 			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
 			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
 			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
+			'settings.display' => 'Display',
+			'settings.homeScreen' => 'Home Screen',
+			'settings.navigation' => 'Navigation',
+			'settings.content' => 'Content',
+			'settings.player' => 'Player',
+			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
+			'settings.seekAndTiming' => 'Seek & Timing',
+			'settings.behavior' => 'Behavior',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -3501,6 +3533,8 @@ extension on Translations {
 			'licenses.relatedPackages' => 'Related Packages',
 			'licenses.license' => 'License',
 			'licenses.licenseNumber' => ({required Object number}) => 'License ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenses',
 			'navigation.libraries' => 'Libraries',
 			'navigation.downloads' => 'Downloads',
@@ -3509,8 +3543,6 @@ extension on Translations {
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Reload Guide',

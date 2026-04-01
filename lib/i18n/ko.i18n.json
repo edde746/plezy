@@ -220,7 +220,15 @@
     "showNavBarLabels": "내비게이션 바 라벨 표시",
     "showNavBarLabelsDescription": "내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다",
     "liveTvDefaultFavorites": "즐겨찾기 채널 기본 설정",
-    "liveTvDefaultFavoritesDescription": "라이브 TV를 열 때 즐겨찾기 채널만 표시"
+    "liveTvDefaultFavoritesDescription": "라이브 TV를 열 때 즐겨찾기 채널만 표시",
+    "display": "Display",
+    "homeScreen": "Home Screen",
+    "navigation": "Navigation",
+    "content": "Content",
+    "player": "Player",
+    "subtitlesAndConfig": "Subtitles & Configuration",
+    "seekAndTiming": "Seek & Timing",
+    "behavior": "Behavior"
   },
   "search": {
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",

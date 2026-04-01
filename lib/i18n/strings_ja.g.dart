@@ -340,6 +340,14 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'ナビゲーションバーアイコンの下にテキストラベルを表示';
 	@override String get liveTvDefaultFavorites => 'お気に入りチャンネルをデフォルトに';
 	@override String get liveTvDefaultFavoritesDescription => 'ライブTV を開いたときにお気に入りチャンネルのみ表示';
+	@override String get display => 'Display';
+	@override String get homeScreen => 'Home Screen';
+	@override String get navigation => 'Navigation';
+	@override String get content => 'Content';
+	@override String get player => 'Player';
+	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
+	@override String get seekAndTiming => 'Seek & Timing';
+	@override String get behavior => 'Behavior';
 }
 
 // Path: search
@@ -1539,6 +1547,14 @@ extension on TranslationsJa {
 			'settings.showNavBarLabelsDescription' => 'ナビゲーションバーアイコンの下にテキストラベルを表示',
 			'settings.liveTvDefaultFavorites' => 'お気に入りチャンネルをデフォルトに',
 			'settings.liveTvDefaultFavoritesDescription' => 'ライブTV を開いたときにお気に入りチャンネルのみ表示',
+			'settings.display' => 'Display',
+			'settings.homeScreen' => 'Home Screen',
+			'settings.navigation' => 'Navigation',
+			'settings.content' => 'Content',
+			'settings.player' => 'Player',
+			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
+			'settings.seekAndTiming' => 'Seek & Timing',
+			'settings.behavior' => 'Behavior',
 			'search.hint' => '映画、番組、音楽を検索...',
 			'search.tryDifferentTerm' => '別の検索語をお試しください',
 			'search.searchYourMedia' => 'メディアを検索',
@@ -1832,6 +1848,8 @@ extension on TranslationsJa {
 			'licenses.relatedPackages' => '関連パッケージ',
 			'licenses.license' => 'ライセンス',
 			'licenses.licenseNumber' => ({required Object number}) => 'ライセンス ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count}件のライセンス',
 			'navigation.libraries' => 'ライブラリ',
 			'navigation.downloads' => 'ダウンロード',
@@ -1840,8 +1858,6 @@ extension on TranslationsJa {
 			'liveTv.guide' => '番組表',
 			'liveTv.noChannels' => 'チャンネルがありません',
 			'liveTv.noDvr' => 'どのサーバーにもDVRが設定されていません',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => '番組データがありません',
 			'liveTv.live' => 'ライブ',
 			'liveTv.reloadGuide' => '番組表を再読込',

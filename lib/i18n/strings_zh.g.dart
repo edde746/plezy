@@ -340,6 +340,14 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => '在导航栏图标下方显示文字标签';
 	@override String get liveTvDefaultFavorites => '默认显示收藏频道';
 	@override String get liveTvDefaultFavoritesDescription => '打开直播电视时仅显示收藏频道';
+	@override String get display => 'Display';
+	@override String get homeScreen => 'Home Screen';
+	@override String get navigation => 'Navigation';
+	@override String get content => 'Content';
+	@override String get player => 'Player';
+	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
+	@override String get seekAndTiming => 'Seek & Timing';
+	@override String get behavior => 'Behavior';
 }
 
 // Path: search
@@ -1539,6 +1547,14 @@ extension on TranslationsZh {
 			'settings.showNavBarLabelsDescription' => '在导航栏图标下方显示文字标签',
 			'settings.liveTvDefaultFavorites' => '默认显示收藏频道',
 			'settings.liveTvDefaultFavoritesDescription' => '打开直播电视时仅显示收藏频道',
+			'settings.display' => 'Display',
+			'settings.homeScreen' => 'Home Screen',
+			'settings.navigation' => 'Navigation',
+			'settings.content' => 'Content',
+			'settings.player' => 'Player',
+			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
+			'settings.seekAndTiming' => 'Seek & Timing',
+			'settings.behavior' => 'Behavior',
 			'search.hint' => '搜索电影、系列、音乐...',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -1832,6 +1848,8 @@ extension on TranslationsZh {
 			'licenses.relatedPackages' => '相关软件包',
 			'licenses.license' => '许可证',
 			'licenses.licenseNumber' => ({required Object number}) => '许可证 ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} 个许可证',
 			'navigation.libraries' => '媒体库',
 			'navigation.downloads' => '下载',
@@ -1840,8 +1858,6 @@ extension on TranslationsZh {
 			'liveTv.guide' => '节目指南',
 			'liveTv.noChannels' => '没有可用的频道',
 			'liveTv.noDvr' => '没有服务器配置了DVR',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noPrograms' => '没有可用的节目数据',
 			'liveTv.live' => '直播',
 			'liveTv.reloadGuide' => '重新加载节目指南',
