@@ -15,8 +15,10 @@ import '../../utils/platform_detector.dart';
 import '../../utils/formatters.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/focusable_wrapper.dart';
+import '../../models/livetv_capture_buffer.dart';
 import 'models/track_controls_state.dart';
 import 'widgets/content_strip.dart';
+import 'widgets/live_timeline_bar.dart';
 import 'widgets/first_frame_guard.dart';
 import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/video_controls_header.dart';
@@ -62,6 +64,15 @@ class DesktopVideoControls extends StatefulWidget {
 
   /// Channel name for live TV display
   final String? liveChannelName;
+
+  // Live TV time-shift
+  final CaptureBuffer? captureBuffer;
+  final bool isAtLiveEdge;
+  final int? programBeginsAt;
+  final int? programEndsAt;
+  final int? currentPositionEpoch;
+  final ValueChanged<int>? onLiveSeek;
+  final VoidCallback? onJumpToLive;
 
   /// Whether to use dpad navigation for content strip (TV or keyboard nav mode)
   final bool useDpadNavigation;
@@ -112,6 +123,13 @@ class DesktopVideoControls extends StatefulWidget {
     this.hasFirstFrame,
     this.thumbnailDataBuilder,
     this.liveChannelName,
+    this.captureBuffer,
+    this.isAtLiveEdge = true,
+    this.programBeginsAt,
+    this.programEndsAt,
+    this.currentPositionEpoch,
+    this.onLiveSeek,
+    this.onJumpToLive,
     this.useDpadNavigation = false,
     this.serverId,
     this.showQueueTab = false,
@@ -604,7 +622,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               onBack: widget.onBack,
             ),
           ),
-          if (_isLive) ...[
+          if (_isLive && (widget.captureBuffer == null || widget.isAtLiveEdge)) ...[
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -612,6 +630,23 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               child: Text(
                 t.liveTv.live,
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+          ] else if (_isLive && widget.captureBuffer != null && !widget.isAtLiveEdge) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: widget.onJumpToLive,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Text(
+                  t.liveTv.goToLive,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
+                ),
               ),
             ),
           ],
@@ -628,8 +663,24 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         children: [
-          // Row 1: Timeline with time indicators (hidden for live TV)
-          if (!_isLive) ...[
+          // Row 1: Timeline (LiveTimelineBar for time-shifted live, VideoTimelineBar for VOD)
+          if (_isLive && widget.captureBuffer != null && widget.currentPositionEpoch != null) ...[
+            LiveTimelineBar(
+              captureBuffer: widget.captureBuffer!,
+              programBeginsAt: widget.programBeginsAt,
+              programEndsAt: widget.programEndsAt,
+              currentPositionEpoch: widget.currentPositionEpoch!,
+              isAtLiveEdge: widget.isAtLiveEdge,
+              onSeekEnd: widget.onLiveSeek,
+              onJumpToLive: widget.onJumpToLive,
+              horizontalLayout: true,
+              focusNode: _timelineFocusNode,
+              onKeyEvent: _handleTimelineKeyEvent,
+              onFocusChange: _onFocusChange,
+              enabled: canInteract,
+            ),
+            const SizedBox(height: 4),
+          ] else if (!_isLive) ...[
             VideoTimelineBar(
               player: widget.player,
               chapters: widget.chapters,
@@ -684,6 +735,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       );
                     },
                   ),
+                ],
+                if (!_isLive || widget.captureBuffer != null) ...[
                   // Skip backward
                   Opacity(
                     opacity: _canControl ? 1.0 : 0.5,
@@ -721,7 +774,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     },
                   ),
                 ),
-                if (!_isLive) ...[
+                if (!_isLive || widget.captureBuffer != null) ...[
                   // Skip forward
                   Opacity(
                     opacity: _canControl ? 1.0 : 0.5,
@@ -733,6 +786,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       semanticLabel: t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall),
                     ),
                   ),
+                ],
+                if (!_isLive) ...[
                   // Next chapter
                   StreamBuilder<Duration>(
                     stream: widget.player.streams.position,

@@ -1,5 +1,6 @@
 import '../utils/formatters.dart';
 import '../utils/codec_utils.dart';
+import '../utils/json_utils.dart';
 
 class PlexMediaVersion {
   final int id;
@@ -22,20 +23,21 @@ class PlexMediaVersion {
     required this.partKey,
   });
 
-  /// Creates a PlexMediaVersion from Plex API Media object
+  /// Creates a PlexMediaVersion from Plex API Media object.
+  /// Values may be String or int depending on the response format (XML vs JSON).
   factory PlexMediaVersion.fromJson(Map<String, dynamic> json) {
     // Get the first Part key for playback
     final parts = json['Part'] as List<dynamic>?;
     final partKey = parts != null && parts.isNotEmpty ? parts.first['key'] as String? ?? '' : '';
 
     return PlexMediaVersion(
-      id: json['id'] as int? ?? 0,
-      videoResolution: json['videoResolution'] as String?,
-      videoCodec: json['videoCodec'] as String?,
-      bitrate: json['bitrate'] as int?,
-      width: json['width'] as int?,
-      height: json['height'] as int?,
-      container: json['container'] as String?,
+      id: flexibleInt(json['id']) ?? 0,
+      videoResolution: json['videoResolution']?.toString(),
+      videoCodec: json['videoCodec']?.toString(),
+      bitrate: flexibleInt(json['bitrate']),
+      width: flexibleInt(json['width']),
+      height: flexibleInt(json['height']),
+      container: json['container']?.toString(),
       partKey: partKey,
     );
   }

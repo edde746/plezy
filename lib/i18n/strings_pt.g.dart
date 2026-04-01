@@ -815,6 +815,10 @@ class _TranslationsLiveTvPt implements TranslationsLiveTvEn {
 	@override String get watchChannel => 'Assistir Canal';
 	@override String get favorites => 'Favoritos';
 	@override String get reorderFavorites => 'Reordenar favoritos';
+	@override String get joinSession => 'Entrar na sessão em andamento';
+	@override String watchFromStart({required Object minutes}) => 'Assistir do início (${minutes} min atrás)';
+	@override String get watchLive => 'Assistir ao vivo';
+	@override String get goToLive => 'Ir para o ao vivo';
 }
 
 // Path: collections
@@ -1841,6 +1845,10 @@ extension on TranslationsPt {
 			'liveTv.watchChannel' => 'Assistir Canal',
 			'liveTv.favorites' => 'Favoritos',
 			'liveTv.reorderFavorites' => 'Reordenar favoritos',
+			'liveTv.joinSession' => 'Entrar na sessão em andamento',
+			'liveTv.watchFromStart' => ({required Object minutes}) => 'Assistir do início (${minutes} min atrás)',
+			'liveTv.watchLive' => 'Assistir ao vivo',
+			'liveTv.goToLive' => 'Ir para o ao vivo',
 			'collections.title' => 'Coleções',
 			'collections.collection' => 'Coleção',
 			'collections.empty' => 'A coleção está vazia',

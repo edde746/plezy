@@ -582,7 +582,11 @@
     "whatsOn": "Hva går nå",
     "watchChannel": "Se kanal",
     "favorites": "Favoritter",
-    "reorderFavorites": "Endre rekkefølge på favoritter"
+    "reorderFavorites": "Endre rekkefølge på favoritter",
+    "joinSession": "Bli med i pågående økt",
+    "watchFromStart": "Se fra starten (${minutes} min siden)",
+    "watchLive": "Se direkte",
+    "goToLive": "Gå til direkte"
   },
   "collections": {
     "title": "Samlinger",

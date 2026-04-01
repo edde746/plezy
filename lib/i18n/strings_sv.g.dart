@@ -815,6 +815,10 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get watchChannel => 'Titta på kanal';
 	@override String get favorites => 'Favoriter';
 	@override String get reorderFavorites => 'Ordna om favoriter';
+	@override String get joinSession => 'Gå med i pågående session';
+	@override String watchFromStart({required Object minutes}) => 'Titta från början (${minutes} min sedan)';
+	@override String get watchLive => 'Titta live';
+	@override String get goToLive => 'Gå till live';
 }
 
 // Path: downloads
@@ -1841,6 +1845,10 @@ extension on TranslationsSv {
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'liveTv.favorites' => 'Favoriter',
 			'liveTv.reorderFavorites' => 'Ordna om favoriter',
+			'liveTv.joinSession' => 'Gå med i pågående session',
+			'liveTv.watchFromStart' => ({required Object minutes}) => 'Titta från början (${minutes} min sedan)',
+			'liveTv.watchLive' => 'Titta live',
+			'liveTv.goToLive' => 'Gå till live',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',

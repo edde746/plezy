@@ -815,6 +815,10 @@ class _TranslationsLiveTvRu implements TranslationsLiveTvEn {
 	@override String get watchChannel => 'Смотреть канал';
 	@override String get favorites => 'Избранное';
 	@override String get reorderFavorites => 'Изменить порядок избранного';
+	@override String get joinSession => 'Присоединиться к текущему сеансу';
+	@override String watchFromStart({required Object minutes}) => 'Смотреть сначала (${minutes} мин. назад)';
+	@override String get watchLive => 'Смотреть в прямом эфире';
+	@override String get goToLive => 'К прямому эфиру';
 }
 
 // Path: collections
@@ -1841,6 +1845,10 @@ extension on TranslationsRu {
 			'liveTv.watchChannel' => 'Смотреть канал',
 			'liveTv.favorites' => 'Избранное',
 			'liveTv.reorderFavorites' => 'Изменить порядок избранного',
+			'liveTv.joinSession' => 'Присоединиться к текущему сеансу',
+			'liveTv.watchFromStart' => ({required Object minutes}) => 'Смотреть сначала (${minutes} мин. назад)',
+			'liveTv.watchLive' => 'Смотреть в прямом эфире',
+			'liveTv.goToLive' => 'К прямому эфиру',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
 			'collections.empty' => 'Коллекция пуста',

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../mpv/mpv.dart';
+import '../../models/livetv_capture_buffer.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/desktop_window_padding.dart';
@@ -12,6 +13,7 @@ import 'widgets/circular_control_button.dart';
 import 'widgets/content_strip.dart';
 import 'widgets/first_frame_guard.dart';
 import 'widgets/play_pause_stream_builder.dart';
+import 'widgets/live_timeline_bar.dart';
 import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
 
@@ -56,6 +58,15 @@ class MobileVideoControls extends StatefulWidget {
   /// Channel name for live TV display
   final String? liveChannelName;
 
+  // Live TV time-shift
+  final CaptureBuffer? captureBuffer;
+  final bool isAtLiveEdge;
+  final int? programBeginsAt;
+  final int? programEndsAt;
+  final int? currentPositionEpoch;
+  final ValueChanged<int>? onLiveSeek;
+  final VoidCallback? onJumpToLive;
+
   /// Server ID for chapter thumbnails in the content strip
   final String? serverId;
 
@@ -93,6 +104,13 @@ class MobileVideoControls extends StatefulWidget {
     this.thumbnailDataBuilder,
     this.isLive = false,
     this.liveChannelName,
+    this.captureBuffer,
+    this.isAtLiveEdge = true,
+    this.programBeginsAt,
+    this.programEndsAt,
+    this.currentPositionEpoch,
+    this.onLiveSeek,
+    this.onJumpToLive,
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
@@ -365,7 +383,24 @@ class _MobileVideoControlsState extends State<MobileVideoControls>
 
   Widget _buildBottomBar(BuildContext _) {
     if (widget.isLive) {
-      // For live TV, show channel name instead of timeline
+      if (widget.captureBuffer != null && widget.currentPositionEpoch != null) {
+        // Live TV with time-shift: show seekable timeline
+        return FirstFrameGuard(
+          hasFirstFrame: widget.hasFirstFrame,
+          builder: (context) => LiveTimelineBar(
+            captureBuffer: widget.captureBuffer!,
+            programBeginsAt: widget.programBeginsAt,
+            programEndsAt: widget.programEndsAt,
+            currentPositionEpoch: widget.currentPositionEpoch!,
+            isAtLiveEdge: widget.isAtLiveEdge,
+            onSeekEnd: widget.onLiveSeek,
+            onJumpToLive: widget.onJumpToLive,
+            horizontalLayout: false,
+            enabled: widget.canControl,
+          ),
+        );
+      }
+      // Fallback: static LIVE badge (no capture buffer)
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Row(

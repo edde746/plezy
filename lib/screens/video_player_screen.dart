@@ -19,6 +19,7 @@ import '../mpv/player/platform/player_android.dart';
 
 import '../../services/bif_thumbnail_service.dart';
 import '../../services/plex_client.dart';
+import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../services/plex_api_cache.dart';
 import '../models/plex_media_version.dart';
@@ -173,6 +174,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   DateTime? _livePlaybackStartTime;
   String? _liveRatingKey;
   int? _liveDurationMs;
+
+  // Live TV time-shift
+  CaptureBuffer? _captureBuffer;
+  int? _programBeginsAt;
+  int? _programEndsAt;
+  double _streamStartEpoch = 0;
+  bool _isAtLiveEdge = true;
+  String? _transcodeSessionId;
 
   // Auto-play next episode
   Timer? _autoPlayTimer;
@@ -1028,15 +1037,53 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           final channel = channels[channelIndex];
           appLogger.d('Tune: dvrKey=${widget.liveDvrKey} channelKey=${channel.key}');
           final client = widget.liveClient!;
-          final result = await client.tuneChannel(widget.liveDvrKey!, channel.key);
-          if (result == null) throw Exception('Failed to tune channel');
+          final tuneResult = await client.tuneChannel(widget.liveDvrKey!, channel.key);
+          if (tuneResult == null) throw Exception('Failed to tune channel');
 
-          streamUrl = '${client.config.baseUrl}${result.streamPath}'.withPlexToken(client.config.token);
+          _liveSessionIdentifier = tuneResult.sessionIdentifier;
+          _liveSessionPath = tuneResult.sessionPath;
+          _liveRatingKey = tuneResult.metadata.ratingKey;
+          _liveDurationMs = tuneResult.metadata.duration;
+          _captureBuffer = tuneResult.captureBuffer;
+          _programBeginsAt = tuneResult.beginsAt;
+          _programEndsAt = tuneResult.beginsAt != null && tuneResult.metadata.duration != null
+              ? tuneResult.beginsAt! + tuneResult.metadata.duration! ~/ 1000
+              : null;
+          _transcodeSessionId = PlexClient.generateSessionIdentifier();
 
-          _liveSessionIdentifier = result.sessionIdentifier;
-          _liveSessionPath = result.sessionPath;
-          _liveRatingKey = result.metadata.ratingKey;
-          _liveDurationMs = result.metadata.duration;
+          // Show "Watch from Start" dialog when program has been on for >60s
+          int? offsetSeconds;
+          if (_captureBuffer != null && _programBeginsAt != null) {
+            final nowEpoch = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+            final effectiveStart = max(_captureBuffer!.seekableStartEpoch, _programBeginsAt!);
+            if (nowEpoch - effectiveStart > 60) {
+              final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
+              if (!mounted) return;
+              if (watchFromStart == true) {
+                offsetSeconds = max(_programBeginsAt! - _captureBuffer!.startedAt.round(), 0);
+              }
+            }
+          }
+
+          // Build the stream URL (with optional offset for time-shift)
+          final streamPath = await client.buildLiveStreamPath(
+            sessionPath: tuneResult.sessionPath,
+            sessionIdentifier: tuneResult.sessionIdentifier,
+            transcodeSessionId: _transcodeSessionId!,
+            offsetSeconds: offsetSeconds,
+          );
+          if (streamPath == null || !mounted) throw Exception('Failed to build stream path');
+
+          streamUrl = '${client.config.baseUrl}$streamPath'.withPlexToken(client.config.token);
+
+          // Track stream start epoch for position calculations
+          if (offsetSeconds != null) {
+            _streamStartEpoch = _captureBuffer!.startedAt + offsetSeconds;
+            _isAtLiveEdge = false;
+          } else {
+            _streamStartEpoch = DateTime.now().millisecondsSinceEpoch / 1000.0;
+            _isAtLiveEdge = true;
+          }
         }
 
         _livePlaybackStartTime = DateTime.now();
@@ -2143,7 +2190,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final time = playbackTime;
       final duration = _liveDurationMs ?? 0;
 
-      await client.updateLiveTimeline(
+      final updatedBuffer = await client.updateLiveTimeline(
         ratingKey: ratingKey,
         sessionPath: sessionPath,
         sessionIdentifier: sessionId,
@@ -2152,6 +2199,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         duration: duration,
         playbackTime: playbackTime,
       );
+      if (updatedBuffer != null && mounted) {
+        setState(() => _captureBuffer = updatedBuffer);
+      }
     } catch (e) {
       appLogger.d('Live timeline update failed', error: e);
     }
@@ -2180,6 +2230,70 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Demuxer: retry up to 1000 times on stream reload failures
     await p.setProperty('demuxer-lavf-o', 'max_reload=1000');
     await p.setProperty('force-seekable', 'no');
+  }
+
+  /// The current playback position as an absolute epoch second (for live TV time-shift).
+  int get _currentPositionEpoch =>
+      (_streamStartEpoch + (player?.state.position.inSeconds ?? 0)).round();
+
+  /// Show "Watch from Start" / "Watch Live" dialog.
+  /// Returns true if user chose "Watch from start", false for "Watch Live", null if dismissed.
+  Future<bool?> _showWatchFromStartDialog(int effectiveStartEpoch, int nowEpoch) {
+    final minutesAgo = ((nowEpoch - effectiveStartEpoch) / 60).round();
+    return showOptionPickerDialog<bool>(
+      context,
+      title: t.liveTv.joinSession,
+      options: [
+        (icon: Symbols.replay_rounded, label: t.liveTv.watchFromStart(minutes: minutesAgo), value: true),
+        (icon: Symbols.live_tv_rounded, label: t.liveTv.watchLive, value: false),
+      ],
+    );
+  }
+
+  /// Seek the live TV stream to an absolute epoch second.
+  /// Creates a new transcode session at the target offset.
+  Future<void> _seekLivePosition(int targetEpochSeconds) async {
+    if (_captureBuffer == null || _liveSessionPath == null || _liveSessionIdentifier == null || _transcodeSessionId == null) return;
+
+    final clamped = targetEpochSeconds.clamp(
+      _captureBuffer!.seekableStartEpoch,
+      _captureBuffer!.seekableEndEpoch,
+    );
+
+    final offsetSeconds = clamped - _captureBuffer!.startedAt.round();
+
+    final client = widget.liveClient;
+    if (client == null) return;
+
+    if (mounted) setState(() => _hasFirstFrame.value = false);
+
+    final streamPath = await client.buildLiveStreamPath(
+      sessionPath: _liveSessionPath!,
+      sessionIdentifier: _liveSessionIdentifier!,
+      transcodeSessionId: _transcodeSessionId!,
+      offsetSeconds: offsetSeconds,
+    );
+    if (streamPath == null || !mounted) return;
+
+    final streamUrl = '${client.config.baseUrl}$streamPath'.withPlexToken(client.config.token);
+
+    _streamStartEpoch = _captureBuffer!.startedAt + offsetSeconds;
+    _isAtLiveEdge = (clamped >= _captureBuffer!.seekableEndEpoch - 5);
+    _livePlaybackStartTime = DateTime.now();
+
+    await _setLiveStreamOptions();
+    await player!.open(
+      Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+      play: true,
+      isLive: true,
+    );
+    if (mounted) setState(() {});
+  }
+
+  /// Jump to the live edge of the capture buffer.
+  Future<void> _jumpToLiveEdge() async {
+    if (_captureBuffer == null) return;
+    await _seekLivePosition(_captureBuffer!.seekableEndEpoch);
   }
 
   Future<void> _switchLiveChannel(int delta) async {
@@ -2214,24 +2328,42 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final client = multiServer.getClientForServer(serverInfo.serverId);
       if (client == null) return;
 
-      final result = await client.tuneChannel(serverInfo.dvrKey, channel.key);
-      if (result == null || !mounted) return;
+      final tuneResult = await client.tuneChannel(serverInfo.dvrKey, channel.key);
+      if (tuneResult == null || !mounted) return;
 
-      final streamUrl = '${client.config.baseUrl}${result.streamPath}'.withPlexToken(client.config.token);
+      _transcodeSessionId = PlexClient.generateSessionIdentifier();
+
+      final streamPath = await client.buildLiveStreamPath(
+        sessionPath: tuneResult.sessionPath,
+        sessionIdentifier: tuneResult.sessionIdentifier,
+        transcodeSessionId: _transcodeSessionId!,
+      );
+      if (streamPath == null || !mounted) return;
+
+      final streamUrl = '${client.config.baseUrl}$streamPath'.withPlexToken(client.config.token);
 
       await _setLiveStreamOptions();
       await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
 
       _livePlaybackStartTime = DateTime.now();
-      _liveRatingKey = result.metadata.ratingKey;
-      _liveDurationMs = result.metadata.duration;
+      _liveRatingKey = tuneResult.metadata.ratingKey;
+      _liveDurationMs = tuneResult.metadata.duration;
+
+      // Reset time-shift state for new channel
+      _captureBuffer = tuneResult.captureBuffer;
+      _programBeginsAt = tuneResult.beginsAt;
+      _programEndsAt = tuneResult.beginsAt != null && tuneResult.metadata.duration != null
+          ? tuneResult.beginsAt! + tuneResult.metadata.duration! ~/ 1000
+          : null;
+      _streamStartEpoch = DateTime.now().millisecondsSinceEpoch / 1000.0;
+      _isAtLiveEdge = true;
 
       if (!mounted) return;
       setState(() {
         _liveChannelIndex = newIndex;
         _liveChannelName = channel.displayName;
-        _liveSessionIdentifier = result.sessionIdentifier;
-        _liveSessionPath = result.sessionPath;
+        _liveSessionIdentifier = tuneResult.sessionIdentifier;
+        _liveSessionPath = tuneResult.sessionPath;
       });
 
       // Restart timeline heartbeats for the new session
@@ -2684,6 +2816,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         thumbnailDataBuilder: _bifService?.isAvailable == true ? _getThumbnailData : null,
                         isLive: widget.isLive,
                         liveChannelName: _liveChannelName,
+                        captureBuffer: _captureBuffer,
+                        isAtLiveEdge: _isAtLiveEdge,
+                        programBeginsAt: _programBeginsAt,
+                        programEndsAt: _programEndsAt,
+                        currentPositionEpoch: widget.isLive ? _currentPositionEpoch : null,
+                        onLiveSeek: _captureBuffer != null ? _seekLivePosition : null,
+                        onJumpToLive: _captureBuffer != null && !_isAtLiveEdge ? _jumpToLiveEdge : null,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
                         onToggleAmbientLighting: _toggleAmbientLighting,
                       ),

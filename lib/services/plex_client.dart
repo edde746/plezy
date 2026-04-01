@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:dio/dio.dart';
 
+import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
 import '../models/livetv_hub_result.dart';
@@ -1293,7 +1294,11 @@ class PlexClient {
   }
 
   /// Send a live TV timeline heartbeat to keep the transcode session alive.
-  Future<void> updateLiveTimeline({
+  ///
+  /// Returns an updated [CaptureBuffer] if the response contains a
+  /// `TranscodeSession` with seek-range data (used to expand the seekable
+  /// window over time).
+  Future<CaptureBuffer?> updateLiveTimeline({
     required String ratingKey,
     required String sessionPath,
     required String sessionIdentifier,
@@ -1317,7 +1322,42 @@ class PlexClient {
     );
     if (response.statusCode != null && response.statusCode != 200) {
       appLogger.e('Live timeline returned ${response.statusCode}: ${response.data}');
+      return null;
     }
+
+    // Parse updated capture buffer from TranscodeSession in the response
+    try {
+      final data = response.data;
+      if (data is! Map<String, dynamic>) return null;
+      final container = data['MediaContainer'] as Map<String, dynamic>? ?? data;
+
+      // Try CaptureBuffer wrapper first, then TranscodeSession directly
+      final captureBufferWrapper = container['CaptureBuffer'];
+      if (captureBufferWrapper != null) {
+        final cbMap = captureBufferWrapper is List
+            ? captureBufferWrapper.firstOrNull as Map<String, dynamic>?
+            : captureBufferWrapper as Map<String, dynamic>?;
+        if (cbMap != null) {
+          final ts = cbMap['TranscodeSession'];
+          final tsMap = ts is List
+              ? ts.firstOrNull as Map<String, dynamic>?
+              : ts as Map<String, dynamic>?;
+          if (tsMap != null) return CaptureBuffer.fromTranscodeSession(tsMap);
+        }
+      }
+
+      final transcodeSessions = container['TranscodeSession'];
+      if (transcodeSessions is List && transcodeSessions.isNotEmpty) {
+        return CaptureBuffer.fromTranscodeSession(
+          transcodeSessions.first as Map<String, dynamic>,
+        );
+      } else if (transcodeSessions is Map<String, dynamic>) {
+        return CaptureBuffer.fromTranscodeSession(transcodeSessions);
+      }
+    } catch (e) {
+      // Parsing failure is non-fatal — just no updated seek range
+    }
+    return null;
   }
 
   /// Remove item from Continue Watching (On Deck) without affecting watch status or progress
@@ -2424,21 +2464,46 @@ class PlexClient {
   }
 
   /// Generate 24-char random alphanumeric string (matching official client format)
-  static String _generateSessionIdentifier() {
+  static String generateSessionIdentifier() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final rand = Random();
     return List.generate(24, (_) => chars[rand.nextInt(chars.length)]).join();
   }
 
-  /// Tune to a live TV channel and set up the transcode session.
+  /// Coerce String values to num for fields that json_serializable expects as num.
+  /// Plex tune responses use XML-to-JSON conversion where all values are strings.
+  static void _coerceNumericFields(Map<String, dynamic> json) {
+    const numericKeys = [
+      'duration', 'year', 'addedAt', 'updatedAt', 'lastViewedAt',
+      'parentIndex', 'index', 'viewOffset', 'viewCount', 'leafCount',
+      'viewedLeafCount', 'childCount', 'rating', 'audienceRating',
+      'userRating', 'ratingCount', 'skipCount', 'lastRatedAt',
+    ];
+    for (final key in numericKeys) {
+      final val = json[key];
+      if (val is String) {
+        json[key] = num.tryParse(val);
+      }
+    }
+  }
+
+  /// Tune to a live TV channel.
   ///
-  /// Flow: tune → decision → return /start path (MKV-over-HTTP).
-  Future<({PlexMetadata metadata, String streamPath, String sessionIdentifier, String sessionPath})?> tuneChannel(
+  /// POSTs to the tune endpoint and extracts metadata, session info, and
+  /// capture buffer data from the response. Call [buildLiveStreamPath] after
+  /// to build the actual stream URL (with optional offset for time-shift).
+  Future<({
+    PlexMetadata metadata,
+    String sessionPath,
+    String sessionIdentifier,
+    CaptureBuffer? captureBuffer,
+    int? beginsAt,
+  })?> tuneChannel(
     String dvrKey,
     String channelIdentifier,
   ) async {
     try {
-      final sessionIdentifier = _generateSessionIdentifier();
+      final sessionIdentifier = generateSessionIdentifier();
 
       final response = await _dio.post(
         '/livetv/dvrs/$dvrKey/channels/$channelIdentifier/tune',
@@ -2453,8 +2518,16 @@ class PlexClient {
       final container = _getMediaContainer(response);
       if (container == null) return null;
 
+      // Log the full container keys and types for debugging
+      appLogger.d('Tune response keys: ${container.keys.toList()}');
+      for (final key in container.keys) {
+        final val = container[key];
+        appLogger.d('  $key: ${val.runtimeType} = ${val is List ? '[${val.length} items]' : val is Map ? '{${val.keys.toList()}}' : val}');
+      }
+
       final containerStatus = container['status'];
-      if (containerStatus != null && containerStatus != 0 && containerStatus != 200) {
+      final statusInt = containerStatus is num ? containerStatus.toInt() : containerStatus is String ? int.tryParse(containerStatus) : null;
+      if (statusInt != null && statusInt != 0 && statusInt != 200) {
         final msg = container['message'] ?? 'Unknown error';
         appLogger.w('Tune channel error: $msg (status: $containerStatus)');
         throw Exception(msg);
@@ -2462,13 +2535,24 @@ class PlexClient {
 
       // Metadata is nested: MediaSubscription[0].MediaGrabOperation[0].Metadata
       Map<String, dynamic>? metadataJson;
-      final subscriptions = container['MediaSubscription'] as List?;
-      if (subscriptions != null && subscriptions.isNotEmpty) {
-        final sub = subscriptions.first as Map<String, dynamic>;
-        final ops = sub['MediaGrabOperation'] as List?;
-        if (ops != null && ops.isNotEmpty) {
-          final op = ops.first as Map<String, dynamic>;
+      int? beginsAt;
+      final subscriptions = container['MediaSubscription'];
+      appLogger.d('MediaSubscription type: ${subscriptions.runtimeType}');
+      final subList = subscriptions is List ? subscriptions : subscriptions is Map ? [subscriptions] : null;
+      if (subList != null && subList.isNotEmpty) {
+        final sub = subList.first as Map<String, dynamic>;
+        final ops = sub['MediaGrabOperation'];
+        appLogger.d('MediaGrabOperation type: ${ops.runtimeType}');
+        final opList = ops is List ? ops : ops is Map ? [ops] : null;
+        if (opList != null && opList.isNotEmpty) {
+          final op = opList.first as Map<String, dynamic>;
+          appLogger.d('GrabOperation keys: ${op.keys.toList()}');
+          final rawBeginsAt = op['beginsAt'];
+          beginsAt = rawBeginsAt is num
+              ? rawBeginsAt.toInt()
+              : rawBeginsAt is String ? int.tryParse(rawBeginsAt) : null;
           final nested = op['Metadata'];
+          appLogger.d('Metadata type: ${nested.runtimeType}');
           if (nested is Map<String, dynamic>) {
             metadataJson = nested;
           } else if (nested is List && nested.isNotEmpty) {
@@ -2476,14 +2560,36 @@ class PlexClient {
           }
         }
       }
-      metadataJson ??= (container['Metadata'] as List?)?.firstOrNull as Map<String, dynamic>?;
+      if (metadataJson == null) {
+        final fallback = container['Metadata'];
+        appLogger.d('Fallback Metadata type: ${fallback.runtimeType}');
+        if (fallback is List && fallback.isNotEmpty) {
+          metadataJson = fallback.first as Map<String, dynamic>;
+        } else if (fallback is Map<String, dynamic>) {
+          metadataJson = fallback;
+        }
+      }
 
       if (metadataJson == null) {
         appLogger.w('Tune channel failed: ${container['message'] ?? 'no metadata'} (status: ${container['status']}, keys: ${container.keys.toList()})');
         return null;
       }
 
-      final metadata = _createTaggedMetadata(metadataJson);
+      // Tune response may return XML-style string values where fromJson expects nums.
+      // Coerce known numeric fields so the generated deserializer doesn't choke.
+      _coerceNumericFields(metadataJson);
+
+      PlexMetadata metadata;
+      try {
+        metadata = _createTaggedMetadata(metadataJson);
+      } catch (e, st) {
+        appLogger.e('Tune metadata parse failed. Keys: ${metadataJson.keys.toList()}');
+        for (final entry in metadataJson.entries) {
+          appLogger.d('  ${entry.key}: ${entry.value.runtimeType} = ${entry.value}');
+        }
+        appLogger.e('Stack: $st');
+        rethrow;
+      }
 
       final sessionPath = metadataJson['key'] as String?;
       if (sessionPath == null) {
@@ -2491,8 +2597,57 @@ class PlexClient {
         return null;
       }
 
-      // All identity goes in query params; the only HTTP header is Accept-Language
-      // (matching the official Plex client behaviour).
+      // Extract capture buffer from TranscodeSession.
+      // May be at the container level OR inside the Metadata object.
+      CaptureBuffer? captureBuffer;
+      final tsSource = container['TranscodeSession'] ?? metadataJson['TranscodeSession'];
+      if (tsSource is List && tsSource.isNotEmpty) {
+        captureBuffer = CaptureBuffer.fromTranscodeSession(
+          tsSource.first as Map<String, dynamic>,
+        );
+      } else if (tsSource is Map<String, dynamic>) {
+        captureBuffer = CaptureBuffer.fromTranscodeSession(tsSource);
+      }
+
+      // beginsAt may also be on the Media items (not just the GrabOperation)
+      if (beginsAt == null) {
+        final media = metadataJson['Media'];
+        if (media is List && media.isNotEmpty) {
+          final firstMedia = media.first;
+          if (firstMedia is Map<String, dynamic>) {
+            final raw = firstMedia['beginsAt'];
+            beginsAt = raw is num ? raw.toInt() : raw is String ? int.tryParse(raw) : null;
+          }
+        }
+      }
+
+      return (
+        metadata: metadata,
+        sessionPath: sessionPath,
+        sessionIdentifier: sessionIdentifier,
+        captureBuffer: captureBuffer,
+        beginsAt: beginsAt,
+      );
+    } catch (e, st) {
+      appLogger.e('Failed to tune channel', error: e, stackTrace: st);
+      return null;
+    }
+  }
+
+  /// Build a live TV stream URL (decision + start path).
+  ///
+  /// [sessionPath] and [sessionIdentifier] come from [tuneChannel].
+  /// [transcodeSessionId] should be reused across seeks within the same
+  /// viewing session so the server reuses its capture buffer.
+  /// [offsetSeconds] positions the stream at that many seconds from the
+  /// capture buffer origin (for time-shift / watch-from-start).
+  Future<String?> buildLiveStreamPath({
+    required String sessionPath,
+    required String sessionIdentifier,
+    required String transcodeSessionId,
+    int? offsetSeconds,
+  }) async {
+    try {
       final allParams = <String, String>{
         'hasMDE': '1',
         'path': sessionPath,
@@ -2510,7 +2665,7 @@ class PlexClient {
         'directStreamAudio': '1',
         'advancedSubtitles': 'text',
         'mediaBufferSize': '157286',
-        'session': _generateSessionIdentifier(),
+        'session': transcodeSessionId,
         'subtitles': 'auto',
         'copyts': '0',
         'Accept-Language': 'en',
@@ -2522,6 +2677,7 @@ class PlexClient {
         'X-Plex-Client-Identifier': config.clientIdentifier,
         'X-Plex-Platform': config.platform,
         'X-Plex-Client-Profile-Name': 'Plex Desktop',
+        if (offsetSeconds != null) 'offset': offsetSeconds.toString(),
         if (config.token != null) 'X-Plex-Token': config.token!,
       };
 
@@ -2552,14 +2708,9 @@ class PlexClient {
           .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
           .join('&');
 
-      return (
-        metadata: metadata,
-        streamPath: '/video/:/transcode/universal/start?$startQuery',
-        sessionIdentifier: sessionIdentifier,
-        sessionPath: sessionPath,
-      );
+      return '/video/:/transcode/universal/start?$startQuery';
     } catch (e, st) {
-      appLogger.e('Failed to tune channel', error: e, stackTrace: st);
+      appLogger.e('Failed to build live stream path', error: e, stackTrace: st);
       return null;
     }
   }

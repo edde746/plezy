@@ -582,7 +582,11 @@
     "whatsOn": "En emisión",
     "watchChannel": "Ver canal",
     "favorites": "Favoritos",
-    "reorderFavorites": "Reordenar favoritos"
+    "reorderFavorites": "Reordenar favoritos",
+    "joinSession": "Unirse a sesión en curso",
+    "watchFromStart": "Ver desde el inicio (hace ${minutes} min)",
+    "watchLive": "Ver en vivo",
+    "goToLive": "Ir a en vivo"
   },
   "collections": {
     "title": "Colecciones",

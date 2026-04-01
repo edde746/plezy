@@ -582,7 +582,11 @@
     "whatsOn": "Jetzt im TV",
     "watchChannel": "Kanal ansehen",
     "favorites": "Favoriten",
-    "reorderFavorites": "Favoriten sortieren"
+    "reorderFavorites": "Favoriten sortieren",
+    "joinSession": "Laufender Sitzung beitreten",
+    "watchFromStart": "Von Anfang an ansehen (vor ${minutes} Min.)",
+    "watchLive": "Live ansehen",
+    "goToLive": "Zum Live-Bild"
   },
   "downloads": {
     "title": "Downloads",

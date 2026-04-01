@@ -582,7 +582,11 @@
     "whatsOn": "Hvad der kører",
     "watchChannel": "Se kanal",
     "favorites": "Favoritter",
-    "reorderFavorites": "Omarranger favoritter"
+    "reorderFavorites": "Omarranger favoritter",
+    "joinSession": "Deltag i igangværende session",
+    "watchFromStart": "Se fra start (${minutes} min siden)",
+    "watchLive": "Se live",
+    "goToLive": "Gå til live"
   },
   "collections": {
     "title": "Samlinger",

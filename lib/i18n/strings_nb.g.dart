@@ -815,6 +815,10 @@ class _TranslationsLiveTvNb implements TranslationsLiveTvEn {
 	@override String get watchChannel => 'Se kanal';
 	@override String get favorites => 'Favoritter';
 	@override String get reorderFavorites => 'Endre rekkefølge på favoritter';
+	@override String get joinSession => 'Bli med i pågående økt';
+	@override String watchFromStart({required Object minutes}) => 'Se fra starten (${minutes} min siden)';
+	@override String get watchLive => 'Se direkte';
+	@override String get goToLive => 'Gå til direkte';
 }
 
 // Path: collections
@@ -1841,6 +1845,10 @@ extension on TranslationsNb {
 			'liveTv.watchChannel' => 'Se kanal',
 			'liveTv.favorites' => 'Favoritter',
 			'liveTv.reorderFavorites' => 'Endre rekkefølge på favoritter',
+			'liveTv.joinSession' => 'Bli med i pågående økt',
+			'liveTv.watchFromStart' => ({required Object minutes}) => 'Se fra starten (${minutes} min siden)',
+			'liveTv.watchLive' => 'Se direkte',
+			'liveTv.goToLive' => 'Gå til direkte',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',

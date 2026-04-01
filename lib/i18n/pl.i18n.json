@@ -582,7 +582,11 @@
     "whatsOn": "Co leci",
     "watchChannel": "Oglądaj kanał",
     "favorites": "Ulubione",
-    "reorderFavorites": "Zmień kolejność ulubionych"
+    "reorderFavorites": "Zmień kolejność ulubionych",
+    "joinSession": "Dołącz do trwającej sesji",
+    "watchFromStart": "Oglądaj od początku (${minutes} min temu)",
+    "watchLive": "Oglądaj na żywo",
+    "goToLive": "Przejdź do na żywo"
   },
   "collections": {
     "title": "Kolekcje",

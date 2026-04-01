@@ -41,7 +41,7 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   viewCount: (json['viewCount'] as num?)?.toInt(),
   leafCount: (json['leafCount'] as num?)?.toInt(),
   viewedLeafCount: (json['viewedLeafCount'] as num?)?.toInt(),
-  childCount: _flexibleInt(json['childCount']),
+  childCount: flexibleInt(json['childCount']),
   role: (json['Role'] as List<dynamic>?)
       ?.map((e) => PlexRole.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -59,7 +59,7 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   mood: _tagsFromJson(json['Mood'] as List?),
   audioLanguage: json['audioLanguage'] as String?,
   subtitleLanguage: json['subtitleLanguage'] as String?,
-  subtitleMode: _flexibleInt(json['subtitleMode']),
+  subtitleMode: flexibleInt(json['subtitleMode']),
   playlistItemID: (json['playlistItemID'] as num?)?.toInt(),
   playQueueItemID: (json['playQueueItemID'] as num?)?.toInt(),
   librarySectionID: (json['librarySectionID'] as num?)?.toInt(),

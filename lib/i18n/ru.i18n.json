@@ -582,7 +582,11 @@
     "whatsOn": "Что идёт",
     "watchChannel": "Смотреть канал",
     "favorites": "Избранное",
-    "reorderFavorites": "Изменить порядок избранного"
+    "reorderFavorites": "Изменить порядок избранного",
+    "joinSession": "Присоединиться к текущему сеансу",
+    "watchFromStart": "Смотреть сначала (${minutes} мин. назад)",
+    "watchLive": "Смотреть в прямом эфире",
+    "goToLive": "К прямому эфиру"
   },
   "collections": {
     "title": "Коллекции",

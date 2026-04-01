@@ -582,7 +582,11 @@
     "whatsOn": "En ce moment",
     "watchChannel": "Regarder la chaîne",
     "favorites": "Favoris",
-    "reorderFavorites": "Réorganiser les favoris"
+    "reorderFavorites": "Réorganiser les favoris",
+    "joinSession": "Rejoindre la session en cours",
+    "watchFromStart": "Regarder depuis le début (il y a ${minutes} min)",
+    "watchLive": "Regarder en direct",
+    "goToLive": "Aller au direct"
   },
   "collections": {
     "title": "Collections",

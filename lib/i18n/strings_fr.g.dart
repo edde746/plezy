@@ -815,6 +815,10 @@ class _TranslationsLiveTvFr implements TranslationsLiveTvEn {
 	@override String get watchChannel => 'Regarder la chaîne';
 	@override String get favorites => 'Favoris';
 	@override String get reorderFavorites => 'Réorganiser les favoris';
+	@override String get joinSession => 'Rejoindre la session en cours';
+	@override String watchFromStart({required Object minutes}) => 'Regarder depuis le début (il y a ${minutes} min)';
+	@override String get watchLive => 'Regarder en direct';
+	@override String get goToLive => 'Aller au direct';
 }
 
 // Path: collections
@@ -1841,6 +1845,10 @@ extension on TranslationsFr {
 			'liveTv.watchChannel' => 'Regarder la chaîne',
 			'liveTv.favorites' => 'Favoris',
 			'liveTv.reorderFavorites' => 'Réorganiser les favoris',
+			'liveTv.joinSession' => 'Rejoindre la session en cours',
+			'liveTv.watchFromStart' => ({required Object minutes}) => 'Regarder depuis le début (il y a ${minutes} min)',
+			'liveTv.watchLive' => 'Regarder en direct',
+			'liveTv.goToLive' => 'Aller au direct',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'La collection est vide',

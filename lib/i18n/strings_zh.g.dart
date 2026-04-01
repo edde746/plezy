@@ -815,6 +815,10 @@ class _TranslationsLiveTvZh implements TranslationsLiveTvEn {
 	@override String get watchChannel => '观看频道';
 	@override String get favorites => '收藏';
 	@override String get reorderFavorites => '重新排序收藏';
+	@override String get joinSession => '加入正在进行的会话';
+	@override String watchFromStart({required Object minutes}) => '从头观看（${minutes}分钟前开始）';
+	@override String get watchLive => '观看直播';
+	@override String get goToLive => '跳至直播';
 }
 
 // Path: downloads
@@ -1841,6 +1845,10 @@ extension on TranslationsZh {
 			'liveTv.watchChannel' => '观看频道',
 			'liveTv.favorites' => '收藏',
 			'liveTv.reorderFavorites' => '重新排序收藏',
+			'liveTv.joinSession' => '加入正在进行的会话',
+			'liveTv.watchFromStart' => ({required Object minutes}) => '从头观看（${minutes}分钟前开始）',
+			'liveTv.watchLive' => '观看直播',
+			'liveTv.goToLive' => '跳至直播',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',

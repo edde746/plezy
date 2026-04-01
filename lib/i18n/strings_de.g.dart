@@ -815,6 +815,10 @@ class _TranslationsLiveTvDe implements TranslationsLiveTvEn {
 	@override String get watchChannel => 'Kanal ansehen';
 	@override String get favorites => 'Favoriten';
 	@override String get reorderFavorites => 'Favoriten sortieren';
+	@override String get joinSession => 'Laufender Sitzung beitreten';
+	@override String watchFromStart({required Object minutes}) => 'Von Anfang an ansehen (vor ${minutes} Min.)';
+	@override String get watchLive => 'Live ansehen';
+	@override String get goToLive => 'Zum Live-Bild';
 }
 
 // Path: downloads
@@ -1841,6 +1845,10 @@ extension on TranslationsDe {
 			'liveTv.watchChannel' => 'Kanal ansehen',
 			'liveTv.favorites' => 'Favoriten',
 			'liveTv.reorderFavorites' => 'Favoriten sortieren',
+			'liveTv.joinSession' => 'Laufender Sitzung beitreten',
+			'liveTv.watchFromStart' => ({required Object minutes}) => 'Von Anfang an ansehen (vor ${minutes} Min.)',
+			'liveTv.watchLive' => 'Live ansehen',
+			'liveTv.goToLive' => 'Zum Live-Bild',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',

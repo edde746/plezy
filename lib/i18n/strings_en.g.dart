@@ -1789,6 +1789,18 @@ class TranslationsLiveTvEn {
 
 	/// en: 'Reorder Favorites'
 	String get reorderFavorites => 'Reorder Favorites';
+
+	/// en: 'Join Session in Progress'
+	String get joinSession => 'Join Session in Progress';
+
+	/// en: 'Watch from start (${minutes} min ago)'
+	String watchFromStart({required Object minutes}) => 'Watch from start (${minutes} min ago)';
+
+	/// en: 'Watch Live'
+	String get watchLive => 'Watch Live';
+
+	/// en: 'Go to Live'
+	String get goToLive => 'Go to Live';
 }
 
 // Path: collections
@@ -3490,6 +3502,10 @@ extension on Translations {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',
 			'liveTv.reorderFavorites' => 'Reorder Favorites',
+			'liveTv.joinSession' => 'Join Session in Progress',
+			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
+			'liveTv.watchLive' => 'Watch Live',
+			'liveTv.goToLive' => 'Go to Live',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',

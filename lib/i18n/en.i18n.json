@@ -582,7 +582,11 @@
     "whatsOn": "What's On",
     "watchChannel": "Watch Channel",
     "favorites": "Favorites",
-    "reorderFavorites": "Reorder Favorites"
+    "reorderFavorites": "Reorder Favorites",
+    "joinSession": "Join Session in Progress",
+    "watchFromStart": "Watch from start (${minutes} min ago)",
+    "watchLive": "Watch Live",
+    "goToLive": "Go to Live"
   },
   "collections": {
     "title": "Collections",

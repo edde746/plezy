@@ -7,6 +7,7 @@ import 'mixins/multi_server_fields.dart';
 import 'plex_media_version.dart';
 import 'plex_role.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/json_utils.dart';
 
 part 'plex_metadata.g.dart';
 
@@ -15,12 +16,6 @@ Object? _readRatingKey(Map json, String key) =>
 
 List<String>? _tagsFromJson(List? json) =>
     json?.cast<Map<String, dynamic>>().map((e) => e['tag'] as String).toList();
-
-int? _flexibleInt(Object? v) => switch (v) {
-      num n => n.toInt(),
-      String s => int.tryParse(s),
-      _ => null,
-    };
 
 /// Media type enum for type-safe media type handling
 enum PlexMediaType {
@@ -99,7 +94,7 @@ class PlexMetadata with MultiServerFields {
   final int? viewCount;
   final int? leafCount; // Total number of episodes in a series/season
   final int? viewedLeafCount; // Number of watched episodes in a series/season
-  @JsonKey(fromJson: _flexibleInt)
+  @JsonKey(fromJson: flexibleInt)
   final int? childCount; // Number of items in a collection or playlist
   @JsonKey(name: 'Role')
   final List<PlexRole>? role; // Cast members
@@ -125,7 +120,7 @@ class PlexMetadata with MultiServerFields {
   final List<String>? mood;
   final String? audioLanguage; // Per-media preferred audio language
   final String? subtitleLanguage; // Per-media preferred subtitle language
-  @JsonKey(fromJson: _flexibleInt)
+  @JsonKey(fromJson: flexibleInt)
   final int? subtitleMode; // Per-media subtitle mode (0=manual, 1=foreign audio, 2=always, -1=account default)
   final int? playlistItemID; // Playlist item ID (for dumb playlists only)
   final int? playQueueItemID; // Play queue item ID (unique even for duplicates)

@@ -582,7 +582,11 @@
     "whatsOn": "Nu op TV",
     "watchChannel": "Kanaal bekijken",
     "favorites": "Favorieten",
-    "reorderFavorites": "Favorieten herordenen"
+    "reorderFavorites": "Favorieten herordenen",
+    "joinSession": "Deelnemen aan lopende sessie",
+    "watchFromStart": "Kijk vanaf het begin (${minutes} min geleden)",
+    "watchLive": "Live kijken",
+    "goToLive": "Ga naar live"
   },
   "downloads": {
     "title": "Downloads",

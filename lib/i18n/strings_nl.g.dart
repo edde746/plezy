@@ -815,6 +815,10 @@ class _TranslationsLiveTvNl implements TranslationsLiveTvEn {
 	@override String get watchChannel => 'Kanaal bekijken';
 	@override String get favorites => 'Favorieten';
 	@override String get reorderFavorites => 'Favorieten herordenen';
+	@override String get joinSession => 'Deelnemen aan lopende sessie';
+	@override String watchFromStart({required Object minutes}) => 'Kijk vanaf het begin (${minutes} min geleden)';
+	@override String get watchLive => 'Live kijken';
+	@override String get goToLive => 'Ga naar live';
 }
 
 // Path: downloads
@@ -1841,6 +1845,10 @@ extension on TranslationsNl {
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'liveTv.favorites' => 'Favorieten',
 			'liveTv.reorderFavorites' => 'Favorieten herordenen',
+			'liveTv.joinSession' => 'Deelnemen aan lopende sessie',
+			'liveTv.watchFromStart' => ({required Object minutes}) => 'Kijk vanaf het begin (${minutes} min geleden)',
+			'liveTv.watchLive' => 'Live kijken',
+			'liveTv.goToLive' => 'Ga naar live',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',

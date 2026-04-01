@@ -582,7 +582,11 @@
     "whatsOn": "지금 방송 중",
     "watchChannel": "채널 시청",
     "favorites": "즐겨찾기",
-    "reorderFavorites": "즐겨찾기 순서 변경"
+    "reorderFavorites": "즐겨찾기 순서 변경",
+    "joinSession": "진행 중인 세션 참여",
+    "watchFromStart": "처음부터 시청 (${minutes}분 전 시작)",
+    "watchLive": "실시간 시청",
+    "goToLive": "실시간으로 이동"
   },
   "collections": {
     "title": "컬렉션",

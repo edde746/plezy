@@ -582,7 +582,11 @@
     "whatsOn": "In onda ora",
     "watchChannel": "Guarda canale",
     "favorites": "Preferiti",
-    "reorderFavorites": "Riordina preferiti"
+    "reorderFavorites": "Riordina preferiti",
+    "joinSession": "Partecipa alla sessione in corso",
+    "watchFromStart": "Guarda dall'inizio (${minutes} min fa)",
+    "watchLive": "Guarda in diretta",
+    "goToLive": "Vai al live"
   },
   "downloads": {
     "title": "Download",

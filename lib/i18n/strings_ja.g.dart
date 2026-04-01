@@ -815,6 +815,10 @@ class _TranslationsLiveTvJa implements TranslationsLiveTvEn {
 	@override String get watchChannel => 'チャンネルを視聴';
 	@override String get favorites => 'お気に入り';
 	@override String get reorderFavorites => 'お気に入りを並べ替え';
+	@override String get joinSession => '進行中のセッションに参加';
+	@override String watchFromStart({required Object minutes}) => '最初から視聴（${minutes}分前に開始）';
+	@override String get watchLive => 'ライブで視聴';
+	@override String get goToLive => 'ライブに移動';
 }
 
 // Path: collections
@@ -1841,6 +1845,10 @@ extension on TranslationsJa {
 			'liveTv.watchChannel' => 'チャンネルを視聴',
 			'liveTv.favorites' => 'お気に入り',
 			'liveTv.reorderFavorites' => 'お気に入りを並べ替え',
+			'liveTv.joinSession' => '進行中のセッションに参加',
+			'liveTv.watchFromStart' => ({required Object minutes}) => '最初から視聴（${minutes}分前に開始）',
+			'liveTv.watchLive' => 'ライブで視聴',
+			'liveTv.goToLive' => 'ライブに移動',
 			'collections.title' => 'コレクション',
 			'collections.collection' => 'コレクション',
 			'collections.empty' => 'コレクションは空です',

@@ -582,7 +582,11 @@
     "whatsOn": "O que Está Passando",
     "watchChannel": "Assistir Canal",
     "favorites": "Favoritos",
-    "reorderFavorites": "Reordenar favoritos"
+    "reorderFavorites": "Reordenar favoritos",
+    "joinSession": "Entrar na sessão em andamento",
+    "watchFromStart": "Assistir do início (${minutes} min atrás)",
+    "watchLive": "Assistir ao vivo",
+    "goToLive": "Ir para o ao vivo"
   },
   "collections": {
     "title": "Coleções",

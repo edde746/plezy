@@ -582,7 +582,11 @@
     "whatsOn": "正在播出",
     "watchChannel": "观看频道",
     "favorites": "收藏",
-    "reorderFavorites": "重新排序收藏"
+    "reorderFavorites": "重新排序收藏",
+    "joinSession": "加入正在进行的会话",
+    "watchFromStart": "从头观看（${minutes}分钟前开始）",
+    "watchLive": "观看直播",
+    "goToLive": "跳至直播"
   },
   "downloads": {
     "title": "下载",

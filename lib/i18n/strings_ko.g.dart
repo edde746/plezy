@@ -815,6 +815,10 @@ class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
 	@override String get watchChannel => '채널 시청';
 	@override String get favorites => '즐겨찾기';
 	@override String get reorderFavorites => '즐겨찾기 순서 변경';
+	@override String get joinSession => '진행 중인 세션 참여';
+	@override String watchFromStart({required Object minutes}) => '처음부터 시청 (${minutes}분 전 시작)';
+	@override String get watchLive => '실시간 시청';
+	@override String get goToLive => '실시간으로 이동';
 }
 
 // Path: collections
@@ -1841,6 +1845,10 @@ extension on TranslationsKo {
 			'liveTv.watchChannel' => '채널 시청',
 			'liveTv.favorites' => '즐겨찾기',
 			'liveTv.reorderFavorites' => '즐겨찾기 순서 변경',
+			'liveTv.joinSession' => '진행 중인 세션 참여',
+			'liveTv.watchFromStart' => ({required Object minutes}) => '처음부터 시청 (${minutes}분 전 시작)',
+			'liveTv.watchLive' => '실시간 시청',
+			'liveTv.goToLive' => '실시간으로 이동',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',

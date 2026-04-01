@@ -582,7 +582,11 @@
     "whatsOn": "På TV nu",
     "watchChannel": "Titta på kanal",
     "favorites": "Favoriter",
-    "reorderFavorites": "Ordna om favoriter"
+    "reorderFavorites": "Ordna om favoriter",
+    "joinSession": "Gå med i pågående session",
+    "watchFromStart": "Titta från början (${minutes} min sedan)",
+    "watchLive": "Titta live",
+    "goToLive": "Gå till live"
   },
   "downloads": {
     "title": "Nedladdningar",

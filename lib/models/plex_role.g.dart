@@ -7,13 +7,13 @@ part of 'plex_role.dart';
 // **************************************************************************
 
 PlexRole _$PlexRoleFromJson(Map<String, dynamic> json) => PlexRole(
-  id: _flexibleInt(json['id']),
+  id: flexibleInt(json['id']),
   filter: json['filter'] as String?,
   tag: json['tag'] as String,
   tagKey: json['tagKey'] as String?,
   role: json['role'] as String?,
   thumb: json['thumb'] as String?,
-  count: _flexibleInt(json['count']),
+  count: flexibleInt(json['count']),
 );
 
 Map<String, dynamic> _$PlexRoleToJson(PlexRole instance) => <String, dynamic>{

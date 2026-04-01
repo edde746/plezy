@@ -582,7 +582,11 @@
     "whatsOn": "放送中",
     "watchChannel": "チャンネルを視聴",
     "favorites": "お気に入り",
-    "reorderFavorites": "お気に入りを並べ替え"
+    "reorderFavorites": "お気に入りを並べ替え",
+    "joinSession": "進行中のセッションに参加",
+    "watchFromStart": "最初から視聴（${minutes}分前に開始）",
+    "watchLive": "ライブで視聴",
+    "goToLive": "ライブに移動"
   },
   "collections": {
     "title": "コレクション",
