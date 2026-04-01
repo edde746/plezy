@@ -353,6 +353,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     _memoryCheckTimer?.cancel();
+    _appDatabase.close();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -390,6 +391,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
+        _appDatabase.close();
         InAppReviewService.instance.endSession();
         if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
           if (ProcessInfo.currentRss > 1024 * 1024 * 1024) { // 1GB
