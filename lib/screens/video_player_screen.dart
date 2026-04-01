@@ -1051,12 +1051,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               : null;
           _transcodeSessionId = PlexClient.generateSessionIdentifier();
 
-          // Show "Watch from Start" dialog when program has been on for >60s
+          // Show "Watch from Start" dialog when an existing capture session has >60s of history.
+          // On a fresh tune (no active recording), the buffer is empty so this won't trigger.
           int? offsetSeconds;
           if (_captureBuffer != null && _programBeginsAt != null) {
             final nowEpoch = DateTime.now().millisecondsSinceEpoch ~/ 1000;
             final effectiveStart = max(_captureBuffer!.seekableStartEpoch, _programBeginsAt!);
-            if (nowEpoch - effectiveStart > 60) {
+            final elapsed = nowEpoch - effectiveStart;
+            appLogger.d('Time-shift: buffer=${_captureBuffer!.seekableDurationSeconds}s, '
+                'beginsAt=$_programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)');
+            if (elapsed > 60) {
               final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
               if (!mounted) return;
               if (watchFromStart == true) {

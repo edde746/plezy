@@ -2518,13 +2518,6 @@ class PlexClient {
       final container = _getMediaContainer(response);
       if (container == null) return null;
 
-      // Log the full container keys and types for debugging
-      appLogger.d('Tune response keys: ${container.keys.toList()}');
-      for (final key in container.keys) {
-        final val = container[key];
-        appLogger.d('  $key: ${val.runtimeType} = ${val is List ? '[${val.length} items]' : val is Map ? '{${val.keys.toList()}}' : val}');
-      }
-
       final containerStatus = container['status'];
       final statusInt = containerStatus is num ? containerStatus.toInt() : containerStatus is String ? int.tryParse(containerStatus) : null;
       if (statusInt != null && statusInt != 0 && statusInt != 200) {
@@ -2534,25 +2527,22 @@ class PlexClient {
       }
 
       // Metadata is nested: MediaSubscription[0].MediaGrabOperation[0].Metadata
+      // Both may be a List or single Map depending on the response format.
       Map<String, dynamic>? metadataJson;
       int? beginsAt;
       final subscriptions = container['MediaSubscription'];
-      appLogger.d('MediaSubscription type: ${subscriptions.runtimeType}');
       final subList = subscriptions is List ? subscriptions : subscriptions is Map ? [subscriptions] : null;
       if (subList != null && subList.isNotEmpty) {
         final sub = subList.first as Map<String, dynamic>;
         final ops = sub['MediaGrabOperation'];
-        appLogger.d('MediaGrabOperation type: ${ops.runtimeType}');
         final opList = ops is List ? ops : ops is Map ? [ops] : null;
         if (opList != null && opList.isNotEmpty) {
           final op = opList.first as Map<String, dynamic>;
-          appLogger.d('GrabOperation keys: ${op.keys.toList()}');
           final rawBeginsAt = op['beginsAt'];
           beginsAt = rawBeginsAt is num
               ? rawBeginsAt.toInt()
               : rawBeginsAt is String ? int.tryParse(rawBeginsAt) : null;
           final nested = op['Metadata'];
-          appLogger.d('Metadata type: ${nested.runtimeType}');
           if (nested is Map<String, dynamic>) {
             metadataJson = nested;
           } else if (nested is List && nested.isNotEmpty) {
@@ -2562,7 +2552,6 @@ class PlexClient {
       }
       if (metadataJson == null) {
         final fallback = container['Metadata'];
-        appLogger.d('Fallback Metadata type: ${fallback.runtimeType}');
         if (fallback is List && fallback.isNotEmpty) {
           metadataJson = fallback.first as Map<String, dynamic>;
         } else if (fallback is Map<String, dynamic>) {
@@ -2576,20 +2565,9 @@ class PlexClient {
       }
 
       // Tune response may return XML-style string values where fromJson expects nums.
-      // Coerce known numeric fields so the generated deserializer doesn't choke.
       _coerceNumericFields(metadataJson);
 
-      PlexMetadata metadata;
-      try {
-        metadata = _createTaggedMetadata(metadataJson);
-      } catch (e, st) {
-        appLogger.e('Tune metadata parse failed. Keys: ${metadataJson.keys.toList()}');
-        for (final entry in metadataJson.entries) {
-          appLogger.d('  ${entry.key}: ${entry.value.runtimeType} = ${entry.value}');
-        }
-        appLogger.e('Stack: $st');
-        rethrow;
-      }
+      final metadata = _createTaggedMetadata(metadataJson);
 
       final sessionPath = metadataJson['key'] as String?;
       if (sessionPath == null) {
