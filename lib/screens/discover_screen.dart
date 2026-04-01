@@ -894,7 +894,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               const Spacer(),
               Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
                 builder: (context, watchTogether, companionRemote, _) {
-                  final isDesktop = PlatformDetector.isDesktop(context);
+                  final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
                   final userProvider = context.watch<UserProfileProvider>();
 
                   return FocusableActionBar(

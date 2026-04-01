@@ -1160,7 +1160,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
-              if (PlatformDetector.isDesktop(context))
+              if (PlatformDetector.shouldActAsRemoteHost(context))
                 ListTile(
                   leading: const AppIcon(Symbols.phone_android_rounded, fill: 1),
                   title: Text(t.companionRemote.hostRemoteSession),

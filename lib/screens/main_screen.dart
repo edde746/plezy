@@ -419,8 +419,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       _multiServerProvider!.addListener(_handleLiveTvChanged);
     }
 
-    // Wire up Companion Remote command routing (desktop only, once)
-    if (!_companionRemoteSetup && PlatformDetector.isDesktop(context)) {
+    // Wire up Companion Remote command routing (host devices only, once)
+    if (!_companionRemoteSetup && PlatformDetector.shouldActAsRemoteHost(context)) {
       _companionRemoteSetup = true;
       _setupCompanionRemote();
     }

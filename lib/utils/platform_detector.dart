@@ -51,6 +51,12 @@ class PlatformDetector {
     return isDesktop(context) || isTV();
   }
 
+  /// Whether this device should act as a companion remote host (receiver).
+  /// Desktop platforms and Android TV are hosts; phones/tablets are controllers.
+  static bool shouldActAsRemoteHost(BuildContext context) {
+    return isDesktop(context) || isTV();
+  }
+
   /// Detects if running on a mobile platform (iOS or Android)
   /// Uses Theme for consistent platform detection across the app
   static bool isMobile(BuildContext context) {
