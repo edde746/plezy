@@ -674,26 +674,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Show submenu for Add to... (Playlist or Collection)
   Future<void> _showAddToSubmenu(BuildContext context) async {
-    final submenuActions = [
-      _MenuAction(value: 'playlist', icon: Symbols.playlist_play_rounded, label: t.playlists.playlist),
-      _MenuAction(value: 'collection', icon: Symbols.collections_rounded, label: t.collections.collection),
-    ];
-
-    final selected = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: Text(t.common.addTo),
-        contentPadding: const EdgeInsets.symmetric(vertical: 8),
-        children: submenuActions.map((action) {
-          return SimpleDialogOption(
-            onPressed: () => Navigator.pop(dialogContext, action.value),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Row(
-              children: [AppIcon(action.icon, fill: 1, size: 24), const SizedBox(width: 16), Text(action.label, style: Theme.of(dialogContext).textTheme.bodyLarge)],
-            ),
-          );
-        }).toList(),
-      ),
+    final selected = await showOptionPickerDialog<String>(
+      context,
+      title: t.common.addTo,
+      options: [
+        (icon: Symbols.playlist_play_rounded, label: t.playlists.playlist, value: 'playlist'),
+        (icon: Symbols.collections_rounded, label: t.collections.collection, value: 'collection'),
+      ],
     );
 
     // Handle the submenu selection

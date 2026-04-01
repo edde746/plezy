@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
+import '../widgets/app_icon.dart';
+import '../widgets/focusable_list_tile.dart';
+import 'focus_utils.dart';
 
 /// Utility functions for showing common dialogs
 
@@ -267,6 +270,64 @@ class _TextInputDialogState extends State<_TextInputDialog> {
           child: TextButton(onPressed: _submit, child: Text(t.common.save)),
         ),
       ],
+    );
+  }
+}
+
+/// Shows a simple option picker dialog with focusable items for TV/keyboard navigation.
+/// Returns the selected value, or null if cancelled.
+Future<T?> showOptionPickerDialog<T>(
+  BuildContext context, {
+  required String title,
+  required List<({IconData icon, String label, T value})> options,
+}) {
+  return showDialog<T>(
+    context: context,
+    builder: (context) => _OptionPickerDialog<T>(title: title, options: options),
+  );
+}
+
+class _OptionPickerDialog<T> extends StatefulWidget {
+  final String title;
+  final List<({IconData icon, String label, T value})> options;
+
+  const _OptionPickerDialog({required this.title, required this.options});
+
+  @override
+  State<_OptionPickerDialog<T>> createState() => _OptionPickerDialogState<T>();
+}
+
+class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
+  late final FocusNode _initialFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialFocusNode = FocusNode(debugLabel: 'OptionPickerInitialFocus');
+    FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleDialog(
+      title: Text(widget.title),
+      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      children: List.generate(widget.options.length, (index) {
+        final option = widget.options[index];
+        return FocusableListTile(
+          focusNode: index == 0 ? _initialFocusNode : null,
+          leading: AppIcon(option.icon, fill: 1, size: 24),
+          title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+          onTap: () => Navigator.pop(context, option.value),
+        );
+      }),
     );
   }
 }

@@ -4,7 +4,7 @@ import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
-import '../widgets/app_icon.dart';
+import '../utils/dialogs.dart';
 import '../i18n/strings.g.dart';
 
 /// Configuration for download version selection, threaded through the queue pipeline.
@@ -81,26 +81,14 @@ Future<DownloadVersionConfig?> resolveDownloadVersion(
 /// Show a dialog for selecting a media version.
 /// Returns the selected index, or null if cancelled.
 Future<int?> showVersionPickerDialog(BuildContext context, List<PlexMediaVersion> versions, String title) {
-  return showDialog<int>(
-    context: context,
-    builder: (dialogContext) => SimpleDialog(
-      title: Text(title),
-      contentPadding: const EdgeInsets.symmetric(vertical: 8),
-      children: List.generate(versions.length, (index) {
-        final version = versions[index];
-        return SimpleDialogOption(
-          onPressed: () => Navigator.pop(dialogContext, index),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Row(
-            children: [
-              AppIcon(Symbols.video_file_rounded, fill: 1, size: 24),
-              const SizedBox(width: 16),
-              Text(version.displayLabel, style: Theme.of(dialogContext).textTheme.bodyLarge),
-            ],
-          ),
-        );
-      }),
-    ),
+  return showOptionPickerDialog<int>(
+    context,
+    title: title,
+    options: List.generate(versions.length, (index) => (
+      icon: Symbols.video_file_rounded,
+      label: versions[index].displayLabel,
+      value: index,
+    )),
   );
 }
 
