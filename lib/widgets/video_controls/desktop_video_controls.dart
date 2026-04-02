@@ -630,7 +630,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               onBack: widget.onBack,
             ),
           ),
-          if (_isLive) ...[
+          if (_isLive && (widget.captureBuffer == null || widget.isAtLiveEdge)) ...[
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

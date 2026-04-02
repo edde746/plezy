@@ -129,6 +129,8 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver {
+  static const int _liveEdgeThresholdSeconds = 5;
+
   // Track the currently active video to guard against duplicate navigation
   static String? _activeRatingKey;
   static int? _activeMediaIndex;
@@ -2282,7 +2284,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         playbackTime: playbackTime,
       );
       if (updatedBuffer != null && mounted) {
-        setState(() => _captureBuffer = updatedBuffer);
+        setState(() {
+          _captureBuffer = updatedBuffer;
+          _isAtLiveEdge = (_currentPositionEpoch >= updatedBuffer.seekableEndEpoch - _liveEdgeThresholdSeconds);
+        });
       }
     } catch (e) {
       appLogger.d('Live timeline update failed', error: e);
@@ -2358,7 +2363,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final streamUrl = '${client.config.baseUrl}$streamPath'.withPlexToken(client.config.token);
 
     _streamStartEpoch = _captureBuffer!.startedAt + offsetSeconds;
-    _isAtLiveEdge = (clamped >= _captureBuffer!.seekableEndEpoch - 5);
+    _isAtLiveEdge = (clamped >= _captureBuffer!.seekableEndEpoch - _liveEdgeThresholdSeconds);
     _livePlaybackStartTime = DateTime.now();
 
     await _setLiveStreamOptions();
