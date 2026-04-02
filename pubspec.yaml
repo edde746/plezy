@@ -95,7 +95,6 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   assets:
-    - lib/data/iso_639_codes.json
     - assets/plezy.png
     - assets/plezy_adaptive_foreground.svg
     - assets/go-noto-current-regular.ttf

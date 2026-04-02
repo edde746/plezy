@@ -45,7 +45,6 @@ import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
 import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
-import 'utils/language_codes.dart';
 import 'i18n/strings.g.dart';
 import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
@@ -139,9 +138,6 @@ Future<void> _bootstrapApp() async {
 
   // Initialize storage service
   futures.add(StorageService.getInstance());
-
-  // Initialize language codes for track selection
-  futures.add(LanguageCodes.initialize());
 
   // Wait for all parallel services to complete
   await Future.wait(futures);

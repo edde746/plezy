@@ -239,14 +239,8 @@ bool _languagesMatch(String? mpvLang, String? plexLang) {
   // Direct match
   if (mpvNormalized == plexNormalized) return true;
 
-  // Use LanguageCodes to get all variations and check for overlap
-  try {
-    final mpvVariations = LanguageCodes.getVariations(mpvNormalized);
-    return mpvVariations.contains(plexNormalized);
-  } catch (_) {
-    // LanguageCodes not initialized, fall back to direct comparison
-    return false;
-  }
+  final mpvVariations = LanguageCodes.getVariations(mpvNormalized);
+  return mpvVariations.contains(plexNormalized);
 }
 
 /// Check if two subtitle codec strings match
