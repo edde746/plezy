@@ -123,8 +123,12 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
 
     return FocusableWrapper(
       focusNode: widget.focusNode,
-      onKeyEvent: widget.onKeyEvent,
+      onKeyEvent: widget.enabled ? widget.onKeyEvent : null,
       onFocusChange: widget.onFocusChange,
+      borderRadius: 8,
+      autoScroll: false,
+      useBackgroundFocus: true,
+      disableScale: true,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
