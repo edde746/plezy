@@ -57,6 +57,12 @@ MpvPlayerPlugin::MpvPlayerPlugin(flutter::PluginRegistrarWindows* registrar)
 }
 
 MpvPlayerPlugin::~MpvPlayerPlugin() {
+  // Clear power-resume callback and kill pending timer so they cannot
+  // invoke a dangling `this`.
+  if (MpvCore::GetInstance()) {
+    MpvCore::GetInstance()->SetPowerResumeCallback(nullptr);
+    ::KillTimer(GetWindow(), MpvCore::kPowerResumeTimerId);
+  }
   // Unregister window proc delegate.
   if (proc_id_) {
     registrar_->UnregisterTopLevelWindowProcDelegate(proc_id_.value());
@@ -139,6 +145,11 @@ void MpvPlayerPlugin::HandleMethodCall(
       result->Error("INIT_FAILED", "Failed to initialize MPV player");
     }
   } else if (method == "dispose") {
+    // Clear power-resume callback and kill pending timer before disposing.
+    if (MpvCore::GetInstance()) {
+      MpvCore::GetInstance()->SetPowerResumeCallback(nullptr);
+      ::KillTimer(GetWindow(), MpvCore::kPowerResumeTimerId);
+    }
     if (player_) {
       auto hwnd = player_->GetHwnd();
       player_->Dispose();
