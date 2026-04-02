@@ -121,6 +121,16 @@ void MpvPlayerPlugin::HandleMethodCall(
       RECT rect = {0, 0, 100, 100};
       MpvCore::GetInstance()->CreateMpvView(player_->GetHwnd(), rect, 1.0);
 
+      // Reload audio output on wake from sleep to recover stale WASAPI sessions.
+      MpvCore::GetInstance()->SetPowerResumeCallback([this]() {
+        if (player_ && player_->IsInitialized()) {
+          auto device = player_->GetProperty("audio-device");
+          if (!device.empty()) {
+            player_->SetProperty("audio-device", device);
+          }
+        }
+      });
+
       // Start hidden.
       MpvCore::GetInstance()->SetVisible(false);
       result->Success(flutter::EncodableValue(true));
