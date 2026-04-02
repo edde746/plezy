@@ -873,6 +873,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     if (!_isOffline && tab == NavigationTabId.discover) {
       _onDiscoverBecameVisible();
     }
+
+    // Focus search input after rebuild so IndexedStack has made it visible
+    if (tab == NavigationTabId.search) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_searchKey.currentState case final SearchInputFocusable searchable) {
+          searchable.focusSearchInput();
+        }
+      });
+    }
   }
 
   /// Handle library selection from side navigation rail
