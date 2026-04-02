@@ -869,6 +869,7 @@ class _TranslationsCollectionsKo implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => '컬렉션에서 제거됨';
 	@override String get removeFromCollectionFailed => '컬렉션에서 제거 실패';
 	@override String removeFromCollectionError({required Object error}) => '컬렉션에서 제거 중 오류 발생: ${error}';
+	@override String get searchCollections => '컬렉션 검색...';
 }
 
 // Path: playlists
@@ -1910,6 +1911,7 @@ extension on TranslationsKo {
 			'collections.removedFromCollection' => '컬렉션에서 제거됨',
 			'collections.removeFromCollectionFailed' => '컬렉션에서 제거 실패',
 			'collections.removeFromCollectionError' => ({required Object error}) => '컬렉션에서 제거 중 오류 발생: ${error}',
+			'collections.searchCollections' => '컬렉션 검색...',
 			'playlists.title' => '플레이리스트',
 			'playlists.playlist' => '재생 목록',
 			'playlists.noPlaylists' => '재생 목록을 찾을 수 없습니다',

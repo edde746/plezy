@@ -931,6 +931,7 @@ class _TranslationsCollectionsZh implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => '已从合集移除';
 	@override String get removeFromCollectionFailed => '从合集移除失败';
 	@override String removeFromCollectionError({required Object error}) => '从合集移除时出错：${error}';
+	@override String get searchCollections => '搜索合集...';
 }
 
 // Path: watchTogether
@@ -1954,6 +1955,7 @@ extension on TranslationsZh {
 			'collections.removedFromCollection' => '已从合集移除',
 			'collections.removeFromCollectionFailed' => '从合集移除失败',
 			'collections.removeFromCollectionError' => ({required Object error}) => '从合集移除时出错：${error}',
+			'collections.searchCollections' => '搜索合集...',
 			'watchTogether.title' => '一起看',
 			'watchTogether.description' => '与朋友和家人同步观看内容',
 			'watchTogether.createSession' => '创建会话',

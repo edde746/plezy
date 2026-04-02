@@ -1933,6 +1933,9 @@ class TranslationsCollectionsEn {
 
 	/// en: 'Error removing from collection: ${error}'
 	String removeFromCollectionError({required Object error}) => 'Error removing from collection: ${error}';
+
+	/// en: 'Search collections...'
+	String get searchCollections => 'Search collections...';
 }
 
 // Path: playlists
@@ -3607,6 +3610,7 @@ extension on Translations {
 			'collections.removedFromCollection' => 'Removed from collection',
 			'collections.removeFromCollectionFailed' => 'Failed to remove from collection',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Error removing from collection: ${error}',
+			'collections.searchCollections' => 'Search collections...',
 			'playlists.title' => 'Playlists',
 			'playlists.playlist' => 'Playlist',
 			'playlists.noPlaylists' => 'No playlists found',

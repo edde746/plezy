@@ -677,7 +677,8 @@
     "removeFromCollectionConfirm": "\"${title}\" uit deze collectie verwijderen?",
     "removedFromCollection": "Uit collectie verwijderd",
     "removeFromCollectionFailed": "Verwijderen uit collectie mislukt",
-    "removeFromCollectionError": "Fout bij verwijderen uit collectie: ${error}"
+    "removeFromCollectionError": "Fout bij verwijderen uit collectie: ${error}",
+    "searchCollections": "Collecties zoeken..."
   },
   "watchTogether": {
     "title": "Samen Kijken",

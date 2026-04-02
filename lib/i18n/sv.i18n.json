@@ -677,7 +677,8 @@
     "removeFromCollectionConfirm": "Ta bort \"${title}\" från denna samling?",
     "removedFromCollection": "Borttagen från samling",
     "removeFromCollectionFailed": "Misslyckades med att ta bort från samling",
-    "removeFromCollectionError": "Fel vid borttagning från samling: ${error}"
+    "removeFromCollectionError": "Fel vid borttagning från samling: ${error}",
+    "searchCollections": "Sök samlingar..."
   },
   "watchTogether": {
     "title": "Titta Tillsammans",

@@ -629,7 +629,8 @@
     "removeFromCollectionConfirm": "Remove \"${title}\" from this collection?",
     "removedFromCollection": "Removed from collection",
     "removeFromCollectionFailed": "Failed to remove from collection",
-    "removeFromCollectionError": "Error removing from collection: ${error}"
+    "removeFromCollectionError": "Error removing from collection: ${error}",
+    "searchCollections": "Search collections..."
   },
   "playlists": {
     "title": "Playlists",

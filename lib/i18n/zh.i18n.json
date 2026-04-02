@@ -677,7 +677,8 @@
     "removeFromCollectionConfirm": "将“${title}”从此合集移除？",
     "removedFromCollection": "已从合集移除",
     "removeFromCollectionFailed": "从合集移除失败",
-    "removeFromCollectionError": "从合集移除时出错：${error}"
+    "removeFromCollectionError": "从合集移除时出错：${error}",
+    "searchCollections": "搜索合集..."
   },
   "watchTogether": {
     "title": "一起看",

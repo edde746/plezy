@@ -30,6 +30,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
 import '../widgets/file_info_bottom_sheet.dart';
+import 'pill_input_decoration.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/rating_bottom_sheet.dart';
@@ -1272,10 +1273,33 @@ class _PlaylistSelectionDialog extends StatelessWidget {
 }
 
 /// Dialog to select a collection or create a new one
-class _CollectionSelectionDialog extends StatelessWidget {
+class _CollectionSelectionDialog extends StatefulWidget {
   final List<PlexMetadata> collections;
 
   const _CollectionSelectionDialog({required this.collections});
+
+  @override
+  State<_CollectionSelectionDialog> createState() => _CollectionSelectionDialogState();
+}
+
+class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> {
+  final _filterController = TextEditingController();
+  late List<PlexMetadata> _filteredCollections = widget.collections;
+
+  @override
+  void dispose() {
+    _filterController.dispose();
+    super.dispose();
+  }
+
+  void _onFilterChanged(String query) {
+    final lower = query.toLowerCase();
+    setState(() {
+      _filteredCollections = lower.isEmpty
+          ? widget.collections
+          : widget.collections.where((c) => (c.title ?? '').toLowerCase().contains(lower)).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1283,32 +1307,50 @@ class _CollectionSelectionDialog extends StatelessWidget {
       title: Text(t.collections.selectCollection),
       content: SizedBox(
         width: double.maxFinite,
-        child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: collections.length + 1,
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              // Create new collection option (always shown first)
-              return ListTile(
-                leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                title: Text(t.common.createNew),
-                onTap: () => Navigator.pop(context, '_create_new'),
-              );
-            }
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.collections.length >= 10) ...[
+              TextField(
+                controller: _filterController,
+                autofocus: true,
+                decoration: pillInputDecoration(
+                  context,
+                  hintText: t.collections.searchCollections,
+                  prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                ),
+                onChanged: _onFilterChanged,
+              ),
+              const SizedBox(height: 8),
+            ],
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _filteredCollections.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return ListTile(
+                      leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                      title: Text(t.common.createNew),
+                      onTap: () => Navigator.pop(context, '_create_new'),
+                    );
+                  }
 
-            final collection = collections[index - 1];
-            return ListTile(
-              leading: const AppIcon(Symbols.collections_rounded, fill: 1),
-              title: Text(collection.title!),
-              subtitle: collection.childCount != null ? Text('${collection.childCount} items') : null,
-              onTap: () => Navigator.pop(context, collection.ratingKey),
-            );
-          },
+                  final collection = _filteredCollections[index - 1];
+                  return ListTile(
+                    leading: const AppIcon(Symbols.collections_rounded, fill: 1),
+                    title: Text(collection.title!),
+                    subtitle: collection.childCount != null ? Text('${collection.childCount} items') : null,
+                    onTap: () => Navigator.pop(context, collection.ratingKey),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
       actions: [
         FocusableButton(
-          autofocus: true,
           onPressed: () => Navigator.pop(context),
           child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
         ),

@@ -629,7 +629,8 @@
     "removeFromCollectionConfirm": "Удалить \"${title}\" из этой коллекции?",
     "removedFromCollection": "Удалено из коллекции",
     "removeFromCollectionFailed": "Не удалось удалить из коллекции",
-    "removeFromCollectionError": "Ошибка удаления из коллекции: ${error}"
+    "removeFromCollectionError": "Ошибка удаления из коллекции: ${error}",
+    "searchCollections": "Поиск коллекций..."
   },
   "playlists": {
     "title": "Плейлисты",

@@ -869,6 +869,7 @@ class _TranslationsCollectionsNb implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => 'Fjernet fra samling';
 	@override String get removeFromCollectionFailed => 'Kunne ikke fjerne fra samling';
 	@override String removeFromCollectionError({required Object error}) => 'Feil ved fjerning fra samling: ${error}';
+	@override String get searchCollections => 'Søk i samlinger...';
 }
 
 // Path: playlists
@@ -1910,6 +1911,7 @@ extension on TranslationsNb {
 			'collections.removedFromCollection' => 'Fjernet fra samling',
 			'collections.removeFromCollectionFailed' => 'Kunne ikke fjerne fra samling',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Feil ved fjerning fra samling: ${error}',
+			'collections.searchCollections' => 'Søk i samlinger...',
 			'playlists.title' => 'Spillelister',
 			'playlists.playlist' => 'Spilleliste',
 			'playlists.noPlaylists' => 'Ingen spillelister funnet',

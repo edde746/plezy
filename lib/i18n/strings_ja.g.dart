@@ -869,6 +869,7 @@ class _TranslationsCollectionsJa implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => 'コレクションから削除しました';
 	@override String get removeFromCollectionFailed => 'コレクションからの削除に失敗しました';
 	@override String removeFromCollectionError({required Object error}) => 'コレクションからの削除エラー: ${error}';
+	@override String get searchCollections => 'コレクションを検索...';
 }
 
 // Path: playlists
@@ -1910,6 +1911,7 @@ extension on TranslationsJa {
 			'collections.removedFromCollection' => 'コレクションから削除しました',
 			'collections.removeFromCollectionFailed' => 'コレクションからの削除に失敗しました',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'コレクションからの削除エラー: ${error}',
+			'collections.searchCollections' => 'コレクションを検索...',
 			'playlists.title' => 'プレイリスト',
 			'playlists.playlist' => 'プレイリスト',
 			'playlists.noPlaylists' => 'プレイリストが見つかりません',

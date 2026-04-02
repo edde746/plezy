@@ -629,7 +629,8 @@
     "removeFromCollectionConfirm": "¿Eliminar \"${title}\" de esta colección?",
     "removedFromCollection": "Eliminado de la colección",
     "removeFromCollectionFailed": "Error al eliminar de la colección",
-    "removeFromCollectionError": "Error al eliminar de la colección: ${error}"
+    "removeFromCollectionError": "Error al eliminar de la colección: ${error}",
+    "searchCollections": "Buscar colecciones..."
   },
   "playlists": {
     "title": "Listas de reproducción",

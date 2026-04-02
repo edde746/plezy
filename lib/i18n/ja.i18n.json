@@ -629,7 +629,8 @@
     "removeFromCollectionConfirm": "\"${title}\"をこのコレクションから削除しますか？",
     "removedFromCollection": "コレクションから削除しました",
     "removeFromCollectionFailed": "コレクションからの削除に失敗しました",
-    "removeFromCollectionError": "コレクションからの削除エラー: ${error}"
+    "removeFromCollectionError": "コレクションからの削除エラー: ${error}",
+    "searchCollections": "コレクションを検索..."
   },
   "playlists": {
     "title": "プレイリスト",

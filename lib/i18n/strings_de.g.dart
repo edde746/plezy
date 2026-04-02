@@ -931,6 +931,7 @@ class _TranslationsCollectionsDe implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => 'Aus Sammlung entfernt';
 	@override String get removeFromCollectionFailed => 'Entfernen aus Sammlung fehlgeschlagen';
 	@override String removeFromCollectionError({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}';
+	@override String get searchCollections => 'Sammlungen durchsuchen...';
 }
 
 // Path: watchTogether
@@ -1954,6 +1955,7 @@ extension on TranslationsDe {
 			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
 			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
+			'collections.searchCollections' => 'Sammlungen durchsuchen...',
 			'watchTogether.title' => 'Gemeinsam Schauen',
 			'watchTogether.description' => 'Inhalte synchron mit Freunden und Familie schauen',
 			'watchTogether.createSession' => 'Sitzung Erstellen',

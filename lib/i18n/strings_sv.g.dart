@@ -931,6 +931,7 @@ class _TranslationsCollectionsSv implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => 'Borttagen från samling';
 	@override String get removeFromCollectionFailed => 'Misslyckades med att ta bort från samling';
 	@override String removeFromCollectionError({required Object error}) => 'Fel vid borttagning från samling: ${error}';
+	@override String get searchCollections => 'Sök samlingar...';
 }
 
 // Path: watchTogether
@@ -1954,6 +1955,7 @@ extension on TranslationsSv {
 			'collections.removedFromCollection' => 'Borttagen från samling',
 			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
+			'collections.searchCollections' => 'Sök samlingar...',
 			'watchTogether.title' => 'Titta Tillsammans',
 			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',
 			'watchTogether.createSession' => 'Skapa Session',

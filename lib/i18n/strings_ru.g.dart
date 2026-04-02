@@ -869,6 +869,7 @@ class _TranslationsCollectionsRu implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => 'Удалено из коллекции';
 	@override String get removeFromCollectionFailed => 'Не удалось удалить из коллекции';
 	@override String removeFromCollectionError({required Object error}) => 'Ошибка удаления из коллекции: ${error}';
+	@override String get searchCollections => 'Поиск коллекций...';
 }
 
 // Path: playlists
@@ -1910,6 +1911,7 @@ extension on TranslationsRu {
 			'collections.removedFromCollection' => 'Удалено из коллекции',
 			'collections.removeFromCollectionFailed' => 'Не удалось удалить из коллекции',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Ошибка удаления из коллекции: ${error}',
+			'collections.searchCollections' => 'Поиск коллекций...',
 			'playlists.title' => 'Плейлисты',
 			'playlists.playlist' => 'Плейлист',
 			'playlists.noPlaylists' => 'Плейлисты не найдены',

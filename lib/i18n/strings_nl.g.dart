@@ -931,6 +931,7 @@ class _TranslationsCollectionsNl implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => 'Uit collectie verwijderd';
 	@override String get removeFromCollectionFailed => 'Verwijderen uit collectie mislukt';
 	@override String removeFromCollectionError({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}';
+	@override String get searchCollections => 'Collecties zoeken...';
 }
 
 // Path: watchTogether
@@ -1954,6 +1955,7 @@ extension on TranslationsNl {
 			'collections.removedFromCollection' => 'Uit collectie verwijderd',
 			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
+			'collections.searchCollections' => 'Collecties zoeken...',
 			'watchTogether.title' => 'Samen Kijken',
 			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',
 			'watchTogether.createSession' => 'Sessie Maken',

@@ -931,6 +931,7 @@ class _TranslationsCollectionsIt implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => 'Rimosso dalla raccolta';
 	@override String get removeFromCollectionFailed => 'Impossibile rimuovere dalla raccolta';
 	@override String removeFromCollectionError({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}';
+	@override String get searchCollections => 'Cerca raccolte...';
 }
 
 // Path: watchTogether
@@ -1954,6 +1955,7 @@ extension on TranslationsIt {
 			'collections.removedFromCollection' => 'Rimosso dalla raccolta',
 			'collections.removeFromCollectionFailed' => 'Impossibile rimuovere dalla raccolta',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}',
+			'collections.searchCollections' => 'Cerca raccolte...',
 			'watchTogether.title' => 'Guarda Insieme',
 			'watchTogether.description' => 'Guarda contenuti in sincronia con amici e familiari',
 			'watchTogether.createSession' => 'Crea Sessione',

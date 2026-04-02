@@ -629,7 +629,8 @@
     "removeFromCollectionConfirm": "${title}을/를 이 컬렉션에서 제거 하시겠습니까?",
     "removedFromCollection": "컬렉션에서 제거됨",
     "removeFromCollectionFailed": "컬렉션에서 제거 실패",
-    "removeFromCollectionError": "컬렉션에서 제거 중 오류 발생: ${error}"
+    "removeFromCollectionError": "컬렉션에서 제거 중 오류 발생: ${error}",
+    "searchCollections": "컬렉션 검색..."
   },
   "playlists": {
     "title": "플레이리스트",

@@ -677,7 +677,8 @@
     "removeFromCollectionConfirm": "\"${title}\" aus dieser Sammlung entfernen?",
     "removedFromCollection": "Aus Sammlung entfernt",
     "removeFromCollectionFailed": "Entfernen aus Sammlung fehlgeschlagen",
-    "removeFromCollectionError": "Fehler beim Entfernen aus der Sammlung: ${error}"
+    "removeFromCollectionError": "Fehler beim Entfernen aus der Sammlung: ${error}",
+    "searchCollections": "Sammlungen durchsuchen..."
   },
   "watchTogether": {
     "title": "Gemeinsam Schauen",

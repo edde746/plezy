@@ -869,6 +869,7 @@ class _TranslationsCollectionsEs implements TranslationsCollectionsEn {
 	@override String get removedFromCollection => 'Eliminado de la colección';
 	@override String get removeFromCollectionFailed => 'Error al eliminar de la colección';
 	@override String removeFromCollectionError({required Object error}) => 'Error al eliminar de la colección: ${error}';
+	@override String get searchCollections => 'Buscar colecciones...';
 }
 
 // Path: playlists
@@ -1910,6 +1911,7 @@ extension on TranslationsEs {
 			'collections.removedFromCollection' => 'Eliminado de la colección',
 			'collections.removeFromCollectionFailed' => 'Error al eliminar de la colección',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Error al eliminar de la colección: ${error}',
+			'collections.searchCollections' => 'Buscar colecciones...',
 			'playlists.title' => 'Listas de reproducción',
 			'playlists.playlist' => 'Lista de reproducción',
 			'playlists.noPlaylists' => 'No se encontraron listas de reproducción',

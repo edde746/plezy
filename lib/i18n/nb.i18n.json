@@ -629,7 +629,8 @@
     "removeFromCollectionConfirm": "Fjerne \"${title}\" fra denne samlingen?",
     "removedFromCollection": "Fjernet fra samling",
     "removeFromCollectionFailed": "Kunne ikke fjerne fra samling",
-    "removeFromCollectionError": "Feil ved fjerning fra samling: ${error}"
+    "removeFromCollectionError": "Feil ved fjerning fra samling: ${error}",
+    "searchCollections": "Søk i samlinger..."
   },
   "playlists": {
     "title": "Spillelister",

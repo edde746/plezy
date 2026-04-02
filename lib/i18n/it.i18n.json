@@ -677,7 +677,8 @@
     "removeFromCollectionConfirm": "Rimuovere \"${title}\" da questa raccolta?",
     "removedFromCollection": "Rimosso dalla raccolta",
     "removeFromCollectionFailed": "Impossibile rimuovere dalla raccolta",
-    "removeFromCollectionError": "Errore durante la rimozione dalla raccolta: ${error}"
+    "removeFromCollectionError": "Errore durante la rimozione dalla raccolta: ${error}",
+    "searchCollections": "Cerca raccolte..."
   },
   "watchTogether": {
     "title": "Guarda Insieme",
