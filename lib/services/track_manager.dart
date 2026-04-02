@@ -274,7 +274,7 @@ class TrackManager {
     if (streamID != null) {
       appLogger.d('Matched audio by lang/title: streamID $streamID');
     } else {
-      final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks);
+      final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
       streamID = matchedPlex?.id;
       if (streamID != null) {
         appLogger.d('Matched audio by properties: streamID $streamID');
@@ -315,7 +315,7 @@ class TrackManager {
       if (streamID != null) {
         appLogger.d('Matched subtitle by lang/title: streamID $streamID');
       } else {
-        final matchedPlex = findPlexTrackForMpvSubtitle(track, info.subtitleTracks);
+        final matchedPlex = findPlexTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle);
         streamID = matchedPlex?.id;
         if (streamID != null) {
           appLogger.d('Matched subtitle by properties: streamID $streamID');

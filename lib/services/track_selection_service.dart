@@ -16,7 +16,7 @@ import '../utils/language_codes.dart';
 // differently.
 
 /// Find the MPV subtitle track that matches a Plex subtitle track
-SubtitleTrack? findMpvTrackForPlexSubtitle(PlexSubtitleTrack plexTrack, List<SubtitleTrack> mpvTracks) {
+SubtitleTrack? findMpvTrackForPlexSubtitle(PlexSubtitleTrack plexTrack, List<SubtitleTrack> mpvTracks, {List<PlexSubtitleTrack>? allPlexTracks}) {
   if (mpvTracks.isEmpty) return null;
 
   // For external subtitles, match by URI containing the Plex key
@@ -34,6 +34,10 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(PlexSubtitleTrack plexTrack, List<Sub
   // For internal subtitles, use scoring based on properties
   SubtitleTrack? bestMatch;
   int bestScore = 0;
+
+  // Ordinal tiebreaker: precompute position of plexTrack among internal tracks
+  final internalMpvTracks = allPlexTracks != null ? mpvTracks.where((t) => !t.isExternal).toList() : null;
+  final plexOrdinal = allPlexTracks != null ? allPlexTracks.where((t) => !t.isExternal).toList().indexOf(plexTrack) : -1;
 
   for (final mpvTrack in mpvTracks) {
     // Skip external tracks when matching internal Plex tracks
@@ -64,6 +68,15 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(PlexSubtitleTrack plexTrack, List<Sub
       score += 2;
     }
 
+    // Ordinal position tiebreaker (+1): when all properties match identically,
+    // prefer the track at the same position in both lists.
+    if (internalMpvTracks != null && plexOrdinal >= 0) {
+      final mpvOrdinal = internalMpvTracks.indexOf(mpvTrack);
+      if (mpvOrdinal >= 0 && plexOrdinal == mpvOrdinal) {
+        score += 1;
+      }
+    }
+
     if (score > bestScore) {
       bestScore = score;
       bestMatch = mpvTrack;
@@ -75,7 +88,7 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(PlexSubtitleTrack plexTrack, List<Sub
 }
 
 /// Find the Plex subtitle track that matches an MPV subtitle track
-PlexSubtitleTrack? findPlexTrackForMpvSubtitle(SubtitleTrack mpvTrack, List<PlexSubtitleTrack> plexTracks) {
+PlexSubtitleTrack? findPlexTrackForMpvSubtitle(SubtitleTrack mpvTrack, List<PlexSubtitleTrack> plexTracks, {List<SubtitleTrack>? allMpvTracks}) {
   if (plexTracks.isEmpty) return null;
 
   // For external subtitles, match by URI containing the Plex key
@@ -92,6 +105,10 @@ PlexSubtitleTrack? findPlexTrackForMpvSubtitle(SubtitleTrack mpvTrack, List<Plex
   // For internal subtitles, use scoring based on properties
   PlexSubtitleTrack? bestMatch;
   int bestScore = 0;
+
+  // Ordinal tiebreaker: precompute position of mpvTrack among internal tracks
+  final internalPlexTracks = allMpvTracks != null ? plexTracks.where((t) => !t.isExternal).toList() : null;
+  final mpvOrdinal = allMpvTracks != null ? allMpvTracks.where((t) => !t.isExternal).toList().indexOf(mpvTrack) : -1;
 
   for (final plexTrack in plexTracks) {
     // Skip external Plex tracks when matching internal MPV tracks
@@ -122,6 +139,14 @@ PlexSubtitleTrack? findPlexTrackForMpvSubtitle(SubtitleTrack mpvTrack, List<Plex
       score += 2;
     }
 
+    // Ordinal position tiebreaker (+1)
+    if (internalPlexTracks != null && mpvOrdinal >= 0) {
+      final plexOrdinal = internalPlexTracks.indexOf(plexTrack);
+      if (plexOrdinal >= 0 && mpvOrdinal == plexOrdinal) {
+        score += 1;
+      }
+    }
+
     if (score > bestScore) {
       bestScore = score;
       bestMatch = plexTrack;
@@ -133,11 +158,12 @@ PlexSubtitleTrack? findPlexTrackForMpvSubtitle(SubtitleTrack mpvTrack, List<Plex
 }
 
 /// Find the MPV audio track that matches a Plex audio track
-AudioTrack? findMpvTrackForPlexAudio(PlexAudioTrack plexTrack, List<AudioTrack> mpvTracks) {
+AudioTrack? findMpvTrackForPlexAudio(PlexAudioTrack plexTrack, List<AudioTrack> mpvTracks, {List<PlexAudioTrack>? allPlexTracks}) {
   if (mpvTracks.isEmpty) return null;
 
   AudioTrack? bestMatch;
   int bestScore = 0;
+  final plexOrdinal = allPlexTracks?.indexOf(plexTrack) ?? -1;
 
   for (final mpvTrack in mpvTracks) {
     int score = 0;
@@ -167,6 +193,14 @@ AudioTrack? findMpvTrackForPlexAudio(PlexAudioTrack plexTrack, List<AudioTrack> 
       score += 2;
     }
 
+    // Ordinal position tiebreaker (+1)
+    if (plexOrdinal >= 0) {
+      final mpvOrdinal = mpvTracks.indexOf(mpvTrack);
+      if (mpvOrdinal >= 0 && plexOrdinal == mpvOrdinal) {
+        score += 1;
+      }
+    }
+
     if (score > bestScore) {
       bestScore = score;
       bestMatch = mpvTrack;
@@ -178,11 +212,12 @@ AudioTrack? findMpvTrackForPlexAudio(PlexAudioTrack plexTrack, List<AudioTrack> 
 }
 
 /// Find the Plex audio track that matches an MPV audio track
-PlexAudioTrack? findPlexTrackForMpvAudio(AudioTrack mpvTrack, List<PlexAudioTrack> plexTracks) {
+PlexAudioTrack? findPlexTrackForMpvAudio(AudioTrack mpvTrack, List<PlexAudioTrack> plexTracks, {List<AudioTrack>? allMpvTracks}) {
   if (plexTracks.isEmpty) return null;
 
   PlexAudioTrack? bestMatch;
   int bestScore = 0;
+  final mpvOrdinal = allMpvTracks?.indexOf(mpvTrack) ?? -1;
 
   for (final plexTrack in plexTracks) {
     int score = 0;
@@ -210,6 +245,14 @@ PlexAudioTrack? findPlexTrackForMpvAudio(AudioTrack mpvTrack, List<PlexAudioTrac
     // Title match (+2)
     if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
       score += 2;
+    }
+
+    // Ordinal position tiebreaker (+1)
+    if (mpvOrdinal >= 0) {
+      final plexOrdinal = plexTracks.indexOf(plexTrack);
+      if (plexOrdinal >= 0 && mpvOrdinal == plexOrdinal) {
+        score += 1;
+      }
     }
 
     if (score > bestScore) {
@@ -541,7 +584,7 @@ class TrackSelectionService {
       final plexSelectedTrack = plexMediaInfo!.audioTracks.where((t) => t.selected).firstOrNull;
 
       if (plexSelectedTrack != null) {
-        final matchedMpvTrack = findMpvTrackForPlexAudio(plexSelectedTrack, availableTracks);
+        final matchedMpvTrack = findMpvTrackForPlexAudio(plexSelectedTrack, availableTracks, allPlexTracks: plexMediaInfo!.audioTracks);
 
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.plexSelected);
@@ -603,7 +646,7 @@ class TrackSelectionService {
       final plexSelectedTrack = plexMediaInfo!.subtitleTracks.where((t) => t.selected).firstOrNull;
 
       if (plexSelectedTrack != null) {
-        final matchedMpvTrack = findMpvTrackForPlexSubtitle(plexSelectedTrack, availableTracks);
+        final matchedMpvTrack = findMpvTrackForPlexSubtitle(plexSelectedTrack, availableTracks, allPlexTracks: plexMediaInfo!.subtitleTracks);
 
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.plexSelected);
