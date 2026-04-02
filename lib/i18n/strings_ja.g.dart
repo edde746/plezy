@@ -330,6 +330,12 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get autoPipDescription => '再生中にアプリを離れると自動的にピクチャーインピクチャーに移行';
 	@override String get matchContentFrameRate => 'コンテンツのフレームレートに合わせる';
 	@override String get matchContentFrameRateDescription => '動画コンテンツに合わせてディスプレイのリフレッシュレートを調整し、ジャダーを低減しバッテリーを節約';
+	@override String get matchRefreshRate => 'リフレッシュレートを合わせる';
+	@override String get matchRefreshRateDescription => 'フルスクリーン時にディスプレイのリフレッシュレートを動画コンテンツに合わせて切り替える';
+	@override String get matchDynamicRange => 'ダイナミックレンジを合わせる';
+	@override String get matchDynamicRangeDescription => 'HDRコンテンツに対して自動的にHDRを有効にし、プレーヤーを閉じるとSDRに戻す';
+	@override String get displaySwitchDelay => 'ディスプレイ切り替え遅延';
+	@override String get displaySwitchDelayDescription => 'ディスプレイモード変更後、再生を開始するまでの待機秒数';
 	@override String get tunneledPlayback => 'トンネル再生';
 	@override String get tunneledPlaybackDescription => 'ハードウェアアクセラレーションされたビデオトンネリングを使用。HDRコンテンツで音声のみで画面が黒くなる場合は無効にしてください';
 	@override String get requireProfileSelectionOnOpen => 'アプリ起動時にプロフィールを確認';
@@ -1537,6 +1543,12 @@ extension on TranslationsJa {
 			'settings.autoPipDescription' => '再生中にアプリを離れると自動的にピクチャーインピクチャーに移行',
 			'settings.matchContentFrameRate' => 'コンテンツのフレームレートに合わせる',
 			'settings.matchContentFrameRateDescription' => '動画コンテンツに合わせてディスプレイのリフレッシュレートを調整し、ジャダーを低減しバッテリーを節約',
+			'settings.matchRefreshRate' => 'リフレッシュレートを合わせる',
+			'settings.matchRefreshRateDescription' => 'フルスクリーン時にディスプレイのリフレッシュレートを動画コンテンツに合わせて切り替える',
+			'settings.matchDynamicRange' => 'ダイナミックレンジを合わせる',
+			'settings.matchDynamicRangeDescription' => 'HDRコンテンツに対して自動的にHDRを有効にし、プレーヤーを閉じるとSDRに戻す',
+			'settings.displaySwitchDelay' => 'ディスプレイ切り替え遅延',
+			'settings.displaySwitchDelayDescription' => 'ディスプレイモード変更後、再生を開始するまでの待機秒数',
 			'settings.tunneledPlayback' => 'トンネル再生',
 			'settings.tunneledPlaybackDescription' => 'ハードウェアアクセラレーションされたビデオトンネリングを使用。HDRコンテンツで音声のみで画面が黒くなる場合は無効にしてください',
 			'settings.requireProfileSelectionOnOpen' => 'アプリ起動時にプロフィールを確認',
@@ -1842,14 +1854,14 @@ extension on TranslationsJa {
 			'hubDetail.dateAdded' => '追加日',
 			'hubDetail.rating' => '評価',
 			'hubDetail.noItemsFound' => 'アイテムが見つかりません',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'ログをクリア',
 			'logs.copyLogs' => 'ログをコピー',
 			'logs.uploadLogs' => 'ログをアップロード',
 			'licenses.relatedPackages' => '関連パッケージ',
 			'licenses.license' => 'ライセンス',
 			'licenses.licenseNumber' => ({required Object number}) => 'ライセンス ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count}件のライセンス',
 			'navigation.libraries' => 'ライブラリ',
 			'navigation.downloads' => 'ダウンロード',

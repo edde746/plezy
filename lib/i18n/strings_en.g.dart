@@ -736,6 +736,24 @@ class TranslationsSettingsEn {
 	/// en: 'Adjust display refresh rate to match video content, reducing judder and saving battery'
 	String get matchContentFrameRateDescription => 'Adjust display refresh rate to match video content, reducing judder and saving battery';
 
+	/// en: 'Match Refresh Rate'
+	String get matchRefreshRate => 'Match Refresh Rate';
+
+	/// en: 'Switch display refresh rate to match video content when in fullscreen'
+	String get matchRefreshRateDescription => 'Switch display refresh rate to match video content when in fullscreen';
+
+	/// en: 'Match Dynamic Range'
+	String get matchDynamicRange => 'Match Dynamic Range';
+
+	/// en: 'Auto-enable HDR for HDR content and revert to SDR when leaving the player'
+	String get matchDynamicRangeDescription => 'Auto-enable HDR for HDR content and revert to SDR when leaving the player';
+
+	/// en: 'Display Switch Delay'
+	String get displaySwitchDelay => 'Display Switch Delay';
+
+	/// en: 'Seconds to wait after a display mode change before starting playback'
+	String get displaySwitchDelayDescription => 'Seconds to wait after a display mode change before starting playback';
+
 	/// en: 'Tunneled Playback'
 	String get tunneledPlayback => 'Tunneled Playback';
 
@@ -3222,6 +3240,12 @@ extension on Translations {
 			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when leaving the app during playback',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
 			'settings.matchContentFrameRateDescription' => 'Adjust display refresh rate to match video content, reducing judder and saving battery',
+			'settings.matchRefreshRate' => 'Match Refresh Rate',
+			'settings.matchRefreshRateDescription' => 'Switch display refresh rate to match video content when in fullscreen',
+			'settings.matchDynamicRange' => 'Match Dynamic Range',
+			'settings.matchDynamicRangeDescription' => 'Auto-enable HDR for HDR content and revert to SDR when leaving the player',
+			'settings.displaySwitchDelay' => 'Display Switch Delay',
+			'settings.displaySwitchDelayDescription' => 'Seconds to wait after a display mode change before starting playback',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
 			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
@@ -3527,14 +3551,14 @@ extension on Translations {
 			'hubDetail.dateAdded' => 'Date Added',
 			'hubDetail.rating' => 'Rating',
 			'hubDetail.noItemsFound' => 'No items found',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
 			'logs.uploadLogs' => 'Upload Logs',
 			'licenses.relatedPackages' => 'Related Packages',
 			'licenses.license' => 'License',
 			'licenses.licenseNumber' => ({required Object number}) => 'License ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenses',
 			'navigation.libraries' => 'Libraries',
 			'navigation.downloads' => 'Downloads',

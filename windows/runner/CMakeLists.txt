@@ -14,6 +14,7 @@ add_executable(${BINARY_NAME} WIN32
   "mpv/utils.cpp"
   "mpv/mpv_container.cpp"
   "mpv/mpv_core.cpp"
+  "mpv/display_mode_manager.cpp"
   "mpv/mpv_player.cpp"
   "mpv/mpv_plugin.cpp"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"

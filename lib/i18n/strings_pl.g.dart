@@ -330,6 +330,12 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Automatycznie przejdź do trybu obraz w obrazie przy wyjściu z aplikacji podczas odtwarzania';
 	@override String get matchContentFrameRate => 'Dopasuj częstotliwość klatek do treści';
 	@override String get matchContentFrameRateDescription => 'Dostosuj częstotliwość odświeżania ekranu do treści wideo, zmniejszając drgania i oszczędzając baterię';
+	@override String get matchRefreshRate => 'Dopasuj częstotliwość odświeżania';
+	@override String get matchRefreshRateDescription => 'Przełącz częstotliwość odświeżania ekranu, aby dopasować ją do treści wideo na pełnym ekranie';
+	@override String get matchDynamicRange => 'Dopasuj zakres dynamiki';
+	@override String get matchDynamicRangeDescription => 'Automatycznie włącz HDR dla treści HDR i przywróć SDR po wyjściu z odtwarzacza';
+	@override String get displaySwitchDelay => 'Opóźnienie przełączania ekranu';
+	@override String get displaySwitchDelayDescription => 'Sekundy oczekiwania po zmianie trybu ekranu przed rozpoczęciem odtwarzania';
 	@override String get tunneledPlayback => 'Tunelowane odtwarzanie';
 	@override String get tunneledPlaybackDescription => 'Użyj sprzętowo przyspieszonego tunelowania wideo. Wyłącz, jeśli widzisz czarny ekran z dźwiękiem przy treściach HDR';
 	@override String get requireProfileSelectionOnOpen => 'Pytaj o profil przy otwarciu aplikacji';
@@ -1537,6 +1543,12 @@ extension on TranslationsPl {
 			'settings.autoPipDescription' => 'Automatycznie przejdź do trybu obraz w obrazie przy wyjściu z aplikacji podczas odtwarzania',
 			'settings.matchContentFrameRate' => 'Dopasuj częstotliwość klatek do treści',
 			'settings.matchContentFrameRateDescription' => 'Dostosuj częstotliwość odświeżania ekranu do treści wideo, zmniejszając drgania i oszczędzając baterię',
+			'settings.matchRefreshRate' => 'Dopasuj częstotliwość odświeżania',
+			'settings.matchRefreshRateDescription' => 'Przełącz częstotliwość odświeżania ekranu, aby dopasować ją do treści wideo na pełnym ekranie',
+			'settings.matchDynamicRange' => 'Dopasuj zakres dynamiki',
+			'settings.matchDynamicRangeDescription' => 'Automatycznie włącz HDR dla treści HDR i przywróć SDR po wyjściu z odtwarzacza',
+			'settings.displaySwitchDelay' => 'Opóźnienie przełączania ekranu',
+			'settings.displaySwitchDelayDescription' => 'Sekundy oczekiwania po zmianie trybu ekranu przed rozpoczęciem odtwarzania',
 			'settings.tunneledPlayback' => 'Tunelowane odtwarzanie',
 			'settings.tunneledPlaybackDescription' => 'Użyj sprzętowo przyspieszonego tunelowania wideo. Wyłącz, jeśli widzisz czarny ekran z dźwiękiem przy treściach HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Pytaj o profil przy otwarciu aplikacji',
@@ -1842,14 +1854,14 @@ extension on TranslationsPl {
 			'hubDetail.dateAdded' => 'Data dodania',
 			'hubDetail.rating' => 'Ocena',
 			'hubDetail.noItemsFound' => 'Nie znaleziono elementów',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Wyczyść logi',
 			'logs.copyLogs' => 'Kopiuj logi',
 			'logs.uploadLogs' => 'Prześlij logi',
 			'licenses.relatedPackages' => 'Powiązane pakiety',
 			'licenses.license' => 'Licencja',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licencja ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licencji',
 			'navigation.libraries' => 'Biblioteki',
 			'navigation.downloads' => 'Pobrania',

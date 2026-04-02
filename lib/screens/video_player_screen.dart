@@ -41,6 +41,7 @@ import '../services/media_controls_manager.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/offline_watch_sync_service.dart';
+import '../services/display_mode_service.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/track_manager.dart';
@@ -450,6 +451,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
       final useExoPlayer = settingsService.getUseExoPlayer();
 
+      // Initialize Windows display mode service.
+      if (Platform.isWindows) {
+        _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
+        FullscreenStateManager().addListener(_onFullscreenChanged);
+      }
+
       // Create player (on Android, uses ExoPlayer by default, MPV as fallback)
       player = Player(useExoPlayer: useExoPlayer);
 
@@ -670,6 +677,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
             await _applyFrameRateMatching();
           }
+
+          // Apply Windows display mode matching (refresh rate, HDR)
+          if (Platform.isWindows && _displayModeService != null) {
+            await _applyWindowsDisplayMatching();
+          }
         }
         _trackManager?.onPlaybackRestart();
       });
@@ -714,6 +726,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     }
   }
+
+  /// Windows display mode matching service.
+  DisplayModeService? _displayModeService;
 
   /// Apply frame rate matching on Android by setting the display refresh rate
   /// to match the video content's frame rate.
@@ -763,6 +778,56 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       appLogger.d('Frame rate matching: Cleared, restored default display mode');
     } catch (e) {
       appLogger.d('Failed to clear frame rate matching', error: e);
+    }
+  }
+
+  /// Apply Windows display mode matching (refresh rate, HDR).
+  Future<void> _applyWindowsDisplayMatching() async {
+    if (player == null || _displayModeService == null) return;
+
+    try {
+      final fpsStr = await player!.getProperty('container-fps');
+      final fps = double.tryParse(fpsStr ?? '');
+
+      final sigPeakStr = await player!.getProperty('video-params/sig-peak');
+      final sigPeak = double.tryParse(sigPeakStr ?? '');
+
+      final delay = await _displayModeService!.applyDisplayMatching(
+        fps: fps,
+        sigPeak: sigPeak,
+      );
+
+      if (delay > Duration.zero) {
+        await Future.delayed(delay);
+      }
+    } catch (e) {
+      appLogger.w('Failed to apply display mode matching', error: e);
+    }
+  }
+
+  /// Called when fullscreen state changes — restore display mode if exiting fullscreen.
+  void _onFullscreenChanged() {
+    if (!FullscreenStateManager().isFullscreen &&
+        _displayModeService != null &&
+        _displayModeService!.anyChangeApplied) {
+      _restoreWindowsDisplayMode();
+    }
+  }
+
+  /// Restore Windows display mode to original state.
+  Future<void> _restoreWindowsDisplayMode() async {
+    if (_displayModeService == null || !_displayModeService!.anyChangeApplied) return;
+
+    try {
+      // If HDR was toggled, release mpv's HDR swapchain first.
+      if (_displayModeService!.hdrStateChanged && player != null) {
+        await player!.setProperty('target-colorspace-hint', 'no');
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
+
+      await _displayModeService!.restoreAll();
+    } catch (e) {
+      appLogger.w('Failed to restore display mode', error: e);
     }
   }
 
@@ -1889,6 +1954,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Clear Discord Rich Presence
     DiscordRPCService.instance.stopPlayback();
 
+    // Clean up Windows display mode service
+    if (Platform.isWindows && _displayModeService != null) {
+      FullscreenStateManager().removeListener(_onFullscreenChanged);
+    }
+    if (Platform.isWindows && _displayModeService != null && _displayModeService!.anyChangeApplied) {
+      if (_displayModeService!.hdrStateChanged && player != null) {
+        player!.setProperty('target-colorspace-hint', 'no');
+      }
+      _displayModeService!.restoreAll();
+    }
+
     // Clear frame rate matching and abandon audio focus before disposing player (Android only)
     if (Platform.isAndroid && player != null) {
       player!.clearVideoFrameRate();
@@ -2587,6 +2663,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _progressTracker?.stopTracking();
       // Clear frame rate matching before disposing (Android only)
       await _clearFrameRateMatching();
+      // Restore Windows display mode before disposing
+      await _restoreWindowsDisplayMode();
       await player?.dispose();
     } catch (e) {
       appLogger.d('Error disposing player before navigation', error: e);

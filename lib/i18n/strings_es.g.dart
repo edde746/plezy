@@ -330,6 +330,12 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Activar automáticamente imagen en imagen al salir de la app durante la reproducción';
 	@override String get matchContentFrameRate => 'Ajustar frecuencia de actualización';
 	@override String get matchContentFrameRateDescription => 'Ajustar la frecuencia de actualización de la pantalla para que coincida con el video, reduciendo tirones y ahorrando batería';
+	@override String get matchRefreshRate => 'Ajustar frecuencia de refresco';
+	@override String get matchRefreshRateDescription => 'Cambiar la frecuencia de refresco de la pantalla para coincidir con el contenido de video en pantalla completa';
+	@override String get matchDynamicRange => 'Ajustar rango dinámico';
+	@override String get matchDynamicRangeDescription => 'Activar HDR automáticamente para contenido HDR y volver a SDR al salir del reproductor';
+	@override String get displaySwitchDelay => 'Retraso de cambio de pantalla';
+	@override String get displaySwitchDelayDescription => 'Segundos de espera después de un cambio de pantalla antes de iniciar la reproducción';
 	@override String get tunneledPlayback => 'Reproducción tunelizada';
 	@override String get tunneledPlaybackDescription => 'Usar tunelización de video acelerada por hardware. Desactivar si ves una pantalla negra con audio en contenido HDR';
 	@override String get requireProfileSelectionOnOpen => 'Pedir perfil al abrir la app';
@@ -1537,6 +1543,12 @@ extension on TranslationsEs {
 			'settings.autoPipDescription' => 'Activar automáticamente imagen en imagen al salir de la app durante la reproducción',
 			'settings.matchContentFrameRate' => 'Ajustar frecuencia de actualización',
 			'settings.matchContentFrameRateDescription' => 'Ajustar la frecuencia de actualización de la pantalla para que coincida con el video, reduciendo tirones y ahorrando batería',
+			'settings.matchRefreshRate' => 'Ajustar frecuencia de refresco',
+			'settings.matchRefreshRateDescription' => 'Cambiar la frecuencia de refresco de la pantalla para coincidir con el contenido de video en pantalla completa',
+			'settings.matchDynamicRange' => 'Ajustar rango dinámico',
+			'settings.matchDynamicRangeDescription' => 'Activar HDR automáticamente para contenido HDR y volver a SDR al salir del reproductor',
+			'settings.displaySwitchDelay' => 'Retraso de cambio de pantalla',
+			'settings.displaySwitchDelayDescription' => 'Segundos de espera después de un cambio de pantalla antes de iniciar la reproducción',
 			'settings.tunneledPlayback' => 'Reproducción tunelizada',
 			'settings.tunneledPlaybackDescription' => 'Usar tunelización de video acelerada por hardware. Desactivar si ves una pantalla negra con audio en contenido HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Pedir perfil al abrir la app',
@@ -1842,14 +1854,14 @@ extension on TranslationsEs {
 			'hubDetail.dateAdded' => 'Añadido el',
 			'hubDetail.rating' => 'Calificación',
 			'hubDetail.noItemsFound' => 'No se encontraron elementos',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Borrar Logs',
 			'logs.copyLogs' => 'Copiar Logs',
 			'logs.uploadLogs' => 'Subir registros',
 			'licenses.relatedPackages' => 'Paquetes relacionados',
 			'licenses.license' => 'Licencia',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licencia ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licencias',
 			'navigation.libraries' => 'Medios',
 			'navigation.downloads' => 'Descargas',

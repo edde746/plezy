@@ -330,6 +330,12 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Entrar automaticamente em picture-in-picture ao sair do app durante a reprodução';
 	@override String get matchContentFrameRate => 'Corresponder Taxa de Quadros do Conteúdo';
 	@override String get matchContentFrameRateDescription => 'Ajustar a taxa de atualização da tela para corresponder ao conteúdo de vídeo, reduzindo tremulação e economizando bateria';
+	@override String get matchRefreshRate => 'Corresponder Taxa de Atualização';
+	@override String get matchRefreshRateDescription => 'Alterar a taxa de atualização da tela para corresponder ao conteúdo de vídeo em tela cheia';
+	@override String get matchDynamicRange => 'Corresponder Faixa Dinâmica';
+	@override String get matchDynamicRangeDescription => 'Ativar automaticamente o HDR para conteúdo HDR e voltar ao SDR ao sair do reprodutor';
+	@override String get displaySwitchDelay => 'Atraso na Troca de Tela';
+	@override String get displaySwitchDelayDescription => 'Segundos de espera após uma troca de tela antes de iniciar a reprodução';
 	@override String get tunneledPlayback => 'Reprodução Tunelizada';
 	@override String get tunneledPlaybackDescription => 'Usar tunelamento de vídeo acelerado por hardware. Desative se você vir uma tela preta com áudio em conteúdo HDR';
 	@override String get requireProfileSelectionOnOpen => 'Pedir perfil ao abrir o app';
@@ -1537,6 +1543,12 @@ extension on TranslationsPt {
 			'settings.autoPipDescription' => 'Entrar automaticamente em picture-in-picture ao sair do app durante a reprodução',
 			'settings.matchContentFrameRate' => 'Corresponder Taxa de Quadros do Conteúdo',
 			'settings.matchContentFrameRateDescription' => 'Ajustar a taxa de atualização da tela para corresponder ao conteúdo de vídeo, reduzindo tremulação e economizando bateria',
+			'settings.matchRefreshRate' => 'Corresponder Taxa de Atualização',
+			'settings.matchRefreshRateDescription' => 'Alterar a taxa de atualização da tela para corresponder ao conteúdo de vídeo em tela cheia',
+			'settings.matchDynamicRange' => 'Corresponder Faixa Dinâmica',
+			'settings.matchDynamicRangeDescription' => 'Ativar automaticamente o HDR para conteúdo HDR e voltar ao SDR ao sair do reprodutor',
+			'settings.displaySwitchDelay' => 'Atraso na Troca de Tela',
+			'settings.displaySwitchDelayDescription' => 'Segundos de espera após uma troca de tela antes de iniciar a reprodução',
 			'settings.tunneledPlayback' => 'Reprodução Tunelizada',
 			'settings.tunneledPlaybackDescription' => 'Usar tunelamento de vídeo acelerado por hardware. Desative se você vir uma tela preta com áudio em conteúdo HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Pedir perfil ao abrir o app',
@@ -1842,14 +1854,14 @@ extension on TranslationsPt {
 			'hubDetail.dateAdded' => 'Data de Adição',
 			'hubDetail.rating' => 'Avaliação',
 			'hubDetail.noItemsFound' => 'Nenhum item encontrado',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Limpar Logs',
 			'logs.copyLogs' => 'Copiar Logs',
 			'logs.uploadLogs' => 'Enviar Logs',
 			'licenses.relatedPackages' => 'Pacotes Relacionados',
 			'licenses.license' => 'Licença',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licença ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenças',
 			'navigation.libraries' => 'Bibliotecas',
 			'navigation.downloads' => 'Downloads',

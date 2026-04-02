@@ -330,6 +330,12 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
 	@override String get matchContentFrameRateDescription => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij';
+	@override String get matchRefreshRate => 'Verversingssnelheid afstemmen';
+	@override String get matchRefreshRateDescription => 'Schermverversingssnelheid aanpassen aan de video-inhoud op volledig scherm';
+	@override String get matchDynamicRange => 'Dynamisch bereik afstemmen';
+	@override String get matchDynamicRangeDescription => 'HDR automatisch inschakelen voor HDR-inhoud en terugkeren naar SDR bij het verlaten van de speler';
+	@override String get displaySwitchDelay => 'Vertraging bij schermwisseling';
+	@override String get displaySwitchDelayDescription => 'Seconden wachten na een schermwisseling voordat het afspelen begint';
 	@override String get tunneledPlayback => 'Getunnelde weergave';
 	@override String get tunneledPlaybackDescription => 'Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
@@ -1537,6 +1543,12 @@ extension on TranslationsNl {
 			'settings.autoPipDescription' => 'Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
 			'settings.matchContentFrameRateDescription' => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij',
+			'settings.matchRefreshRate' => 'Verversingssnelheid afstemmen',
+			'settings.matchRefreshRateDescription' => 'Schermverversingssnelheid aanpassen aan de video-inhoud op volledig scherm',
+			'settings.matchDynamicRange' => 'Dynamisch bereik afstemmen',
+			'settings.matchDynamicRangeDescription' => 'HDR automatisch inschakelen voor HDR-inhoud en terugkeren naar SDR bij het verlaten van de speler',
+			'settings.displaySwitchDelay' => 'Vertraging bij schermwisseling',
+			'settings.displaySwitchDelayDescription' => 'Seconden wachten na een schermwisseling voordat het afspelen begint',
 			'settings.tunneledPlayback' => 'Getunnelde weergave',
 			'settings.tunneledPlaybackDescription' => 'Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
@@ -1842,14 +1854,14 @@ extension on TranslationsNl {
 			'hubDetail.dateAdded' => 'Datum toegevoegd',
 			'hubDetail.rating' => 'Beoordeling',
 			'hubDetail.noItemsFound' => 'Geen items gevonden',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Wis logs',
 			'logs.copyLogs' => 'Kopieer logs',
 			'logs.uploadLogs' => 'Logs uploaden',
 			'licenses.relatedPackages' => 'Gerelateerde pakketten',
 			'licenses.license' => 'Licentie',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licentie ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenties',
 			'navigation.libraries' => 'Media',
 			'navigation.downloads' => 'Downloads',

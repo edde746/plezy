@@ -369,6 +369,75 @@ void MpvPlayerPlugin::HandleMethodCall(
   } else if (method == "isInitialized") {
     bool initialized = player_ && player_->IsInitialized();
     result->Success(flutter::EncodableValue(initialized));
+
+  // --- Display mode matching ---
+  } else if (method == "getDisplayModes") {
+    HWND hwnd = GetWindow();
+    auto modes = display_mode_manager_.EnumerateDisplayModes(hwnd);
+    flutter::EncodableList list;
+    for (const auto& mode : modes) {
+      flutter::EncodableMap m;
+      m[flutter::EncodableValue("width")] = flutter::EncodableValue(static_cast<int32_t>(mode.width));
+      m[flutter::EncodableValue("height")] = flutter::EncodableValue(static_cast<int32_t>(mode.height));
+      m[flutter::EncodableValue("refreshRate")] = flutter::EncodableValue(static_cast<int32_t>(mode.refresh_rate));
+      list.push_back(flutter::EncodableValue(m));
+    }
+    result->Success(flutter::EncodableValue(list));
+  } else if (method == "getCurrentDisplayMode") {
+    HWND hwnd = GetWindow();
+    auto mode = display_mode_manager_.GetCurrentMode(hwnd);
+    flutter::EncodableMap m;
+    m[flutter::EncodableValue("width")] = flutter::EncodableValue(static_cast<int32_t>(mode.width));
+    m[flutter::EncodableValue("height")] = flutter::EncodableValue(static_cast<int32_t>(mode.height));
+    m[flutter::EncodableValue("refreshRate")] = flutter::EncodableValue(static_cast<int32_t>(mode.refresh_rate));
+    result->Success(flutter::EncodableValue(m));
+  } else if (method == "setDisplayMode") {
+    const auto* args = method_call.arguments();
+    if (!args || !std::holds_alternative<flutter::EncodableMap>(*args)) {
+      result->Error("INVALID_ARGS", "Expected map argument");
+      return;
+    }
+    const auto& map = std::get<flutter::EncodableMap>(*args);
+    auto get_int = [&map](const char* key) -> int {
+      auto it = map.find(flutter::EncodableValue(key));
+      if (it != map.end() && std::holds_alternative<int32_t>(it->second))
+        return std::get<int32_t>(it->second);
+      return 0;
+    };
+    HWND hwnd = GetWindow();
+    bool success = display_mode_manager_.SetDisplayMode(
+        hwnd, get_int("width"), get_int("height"), get_int("refreshRate"));
+    result->Success(flutter::EncodableValue(success));
+  } else if (method == "restoreDisplayMode") {
+    HWND hwnd = GetWindow();
+    bool success = display_mode_manager_.RestoreOriginalMode(hwnd);
+    result->Success(flutter::EncodableValue(success));
+  } else if (method == "isHDRSupported") {
+    HWND hwnd = GetWindow();
+    result->Success(flutter::EncodableValue(display_mode_manager_.IsHDRSupported(hwnd)));
+  } else if (method == "isHDREnabled") {
+    HWND hwnd = GetWindow();
+    result->Success(flutter::EncodableValue(display_mode_manager_.IsHDREnabled(hwnd)));
+  } else if (method == "setSystemHDR") {
+    const auto* args = method_call.arguments();
+    if (!args || !std::holds_alternative<flutter::EncodableMap>(*args)) {
+      result->Error("INVALID_ARGS", "Expected map argument");
+      return;
+    }
+    const auto& map = std::get<flutter::EncodableMap>(*args);
+    auto it = map.find(flutter::EncodableValue("enabled"));
+    if (it == map.end() || !std::holds_alternative<bool>(it->second)) {
+      result->Error("INVALID_ARGS", "Missing 'enabled'");
+      return;
+    }
+    bool enabled = std::get<bool>(it->second);
+    HWND hwnd = GetWindow();
+    bool success = display_mode_manager_.SetHDREnabled(hwnd, enabled);
+    result->Success(flutter::EncodableValue(success));
+  } else if (method == "restoreSystemHDR") {
+    HWND hwnd = GetWindow();
+    bool success = display_mode_manager_.RestoreOriginalHDRState(hwnd);
+    result->Success(flutter::EncodableValue(success));
   } else {
     result->NotImplemented();
   }

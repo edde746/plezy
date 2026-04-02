@@ -47,6 +47,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   bool _enableDiscordRPC = false;
   bool _autoPip = true;
   bool _matchContentFrameRate = false;
+  bool _matchRefreshRate = false;
+  bool _matchDynamicRange = false;
+  int _displaySwitchDelay = 0;
   bool _tunneledPlayback = true;
   bool _useExoPlayer = true;
   bool _useExternalPlayer = false;
@@ -83,6 +86,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
       _autoPip = _settingsService.getAutoPip();
       _matchContentFrameRate = _settingsService.getMatchContentFrameRate();
+      _matchRefreshRate = _settingsService.getMatchRefreshRate();
+      _matchDynamicRange = _settingsService.getMatchDynamicRange();
+      _displaySwitchDelay = _settingsService.getDisplaySwitchDelay();
       _tunneledPlayback = _settingsService.getTunneledPlayback();
       _useExoPlayer = _settingsService.getUseExoPlayer();
       _useExternalPlayer = _settingsService.getUseExternalPlayer();
@@ -114,6 +120,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             _buildHardwareDecoding(),
             if ((Platform.isAndroid && !PlatformDetector.isTV()) || Platform.isIOS || Platform.isMacOS) _buildAutoPip(),
             if (Platform.isAndroid) _buildMatchContentFrameRate(),
+            if (Platform.isWindows) _buildMatchRefreshRate(),
+            if (Platform.isWindows) _buildMatchDynamicRange(),
+            if (Platform.isWindows && (_matchRefreshRate || _matchDynamicRange)) _buildDisplaySwitchDelay(),
             if (Platform.isAndroid && _useExoPlayer) _buildTunneledPlayback(),
             _buildBufferSizeSelector(),
 
@@ -222,6 +231,54 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         setState(() => _matchContentFrameRate = value);
         await _settingsService.setMatchContentFrameRate(value);
       },
+    );
+  }
+
+  Widget _buildMatchRefreshRate() {
+    return SwitchListTile(
+      secondary: const AppIcon(Symbols.display_settings_rounded, fill: 1),
+      title: Text(t.settings.matchRefreshRate),
+      subtitle: Text(t.settings.matchRefreshRateDescription),
+      value: _matchRefreshRate,
+      onChanged: (value) async {
+        setState(() => _matchRefreshRate = value);
+        await _settingsService.setMatchRefreshRate(value);
+      },
+    );
+  }
+
+  Widget _buildMatchDynamicRange() {
+    return SwitchListTile(
+      secondary: const AppIcon(Symbols.hdr_on_rounded, fill: 1),
+      title: Text(t.settings.matchDynamicRange),
+      subtitle: Text(t.settings.matchDynamicRangeDescription),
+      value: _matchDynamicRange,
+      onChanged: (value) async {
+        setState(() => _matchDynamicRange = value);
+        await _settingsService.setMatchDynamicRange(value);
+      },
+    );
+  }
+
+  Widget _buildDisplaySwitchDelay() {
+    return ListTile(
+      leading: const AppIcon(Symbols.timer_rounded, fill: 1),
+      title: Text(t.settings.displaySwitchDelay),
+      subtitle: Text(t.settings.secondsUnit(seconds: _displaySwitchDelay.toString())),
+      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+      onTap: () => showNumericInputDialog(
+        context: context,
+        title: t.settings.displaySwitchDelay,
+        labelText: t.settings.secondsLabel,
+        suffixText: t.settings.secondsShort,
+        min: 0,
+        max: 10,
+        currentValue: _displaySwitchDelay,
+        onSave: (value) async {
+          setState(() => _displaySwitchDelay = value);
+          await _settingsService.setDisplaySwitchDelay(value);
+        },
+      ),
     );
   }
 

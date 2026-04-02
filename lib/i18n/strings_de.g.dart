@@ -330,6 +330,12 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Automatisch Bild-in-Bild aktivieren, wenn die App während der Wiedergabe verlassen wird';
 	@override String get matchContentFrameRate => 'Inhalts-Bildrate anpassen';
 	@override String get matchContentFrameRateDescription => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku';
+	@override String get matchRefreshRate => 'Bildwiederholrate anpassen';
+	@override String get matchRefreshRateDescription => 'Bildwiederholrate des Displays an den Videoinhalt im Vollbildmodus anpassen';
+	@override String get matchDynamicRange => 'Dynamikumfang anpassen';
+	@override String get matchDynamicRangeDescription => 'HDR für HDR-Inhalte automatisch aktivieren und beim Verlassen des Players auf SDR zurücksetzen';
+	@override String get displaySwitchDelay => 'Verzögerung beim Displaywechsel';
+	@override String get displaySwitchDelayDescription => 'Sekunden Wartezeit nach einem Displaywechsel vor Wiedergabebeginn';
 	@override String get tunneledPlayback => 'Tunnelwiedergabe';
 	@override String get tunneledPlaybackDescription => 'Hardware-beschleunigte Video-Tunnelierung verwenden. Deaktivieren, wenn bei HDR-Inhalten ein schwarzer Bildschirm mit Ton erscheint';
 	@override String get requireProfileSelectionOnOpen => 'Profil beim Öffnen abfragen';
@@ -1537,6 +1543,12 @@ extension on TranslationsDe {
 			'settings.autoPipDescription' => 'Automatisch Bild-in-Bild aktivieren, wenn die App während der Wiedergabe verlassen wird',
 			'settings.matchContentFrameRate' => 'Inhalts-Bildrate anpassen',
 			'settings.matchContentFrameRateDescription' => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku',
+			'settings.matchRefreshRate' => 'Bildwiederholrate anpassen',
+			'settings.matchRefreshRateDescription' => 'Bildwiederholrate des Displays an den Videoinhalt im Vollbildmodus anpassen',
+			'settings.matchDynamicRange' => 'Dynamikumfang anpassen',
+			'settings.matchDynamicRangeDescription' => 'HDR für HDR-Inhalte automatisch aktivieren und beim Verlassen des Players auf SDR zurücksetzen',
+			'settings.displaySwitchDelay' => 'Verzögerung beim Displaywechsel',
+			'settings.displaySwitchDelayDescription' => 'Sekunden Wartezeit nach einem Displaywechsel vor Wiedergabebeginn',
 			'settings.tunneledPlayback' => 'Tunnelwiedergabe',
 			'settings.tunneledPlaybackDescription' => 'Hardware-beschleunigte Video-Tunnelierung verwenden. Deaktivieren, wenn bei HDR-Inhalten ein schwarzer Bildschirm mit Ton erscheint',
 			'settings.requireProfileSelectionOnOpen' => 'Profil beim Öffnen abfragen',
@@ -1842,14 +1854,14 @@ extension on TranslationsDe {
 			'hubDetail.dateAdded' => 'Hinzugefügt am',
 			'hubDetail.rating' => 'Bewertung',
 			'hubDetail.noItemsFound' => 'Keine Elemente gefunden',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Protokolle löschen',
 			'logs.copyLogs' => 'Protokolle kopieren',
 			'logs.uploadLogs' => 'Protokolle hochladen',
 			'licenses.relatedPackages' => 'Verwandte Pakete',
 			'licenses.license' => 'Lizenz',
 			'licenses.licenseNumber' => ({required Object number}) => 'Lizenz ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} Lizenzen',
 			'navigation.libraries' => 'Medien',
 			'navigation.downloads' => 'Downloads',

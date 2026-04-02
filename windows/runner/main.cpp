@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include "flutter_window.h"
+#include "mpv/display_mode_manager.h"
 #include "utils.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
@@ -44,6 +45,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
+
+  // Recover display mode if a prior crash left it changed.
+  mpv::DisplayModeManager::RecoverIfNeeded(
+      ::GetAncestor(window.GetHandle(), GA_ROOT));
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {

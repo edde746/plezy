@@ -330,6 +330,12 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get autoPipDescription => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
 	@override String get matchContentFrameRateDescription => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
+	@override String get matchRefreshRate => '주사율 맞춤';
+	@override String get matchRefreshRateDescription => '전체 화면에서 비디오 콘텐츠에 맞게 디스플레이 주사율을 전환합니다';
+	@override String get matchDynamicRange => '다이나믹 레인지 맞춤';
+	@override String get matchDynamicRangeDescription => 'HDR 콘텐츠에 대해 자동으로 HDR을 활성화하고 플레이어를 나갈 때 SDR로 복원합니다';
+	@override String get displaySwitchDelay => '디스플레이 전환 지연';
+	@override String get displaySwitchDelayDescription => '디스플레이 모드 변경 후 재생을 시작하기까지 대기하는 시간(초)';
 	@override String get tunneledPlayback => '터널 재생';
 	@override String get tunneledPlaybackDescription => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
@@ -1537,6 +1543,12 @@ extension on TranslationsKo {
 			'settings.autoPipDescription' => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
 			'settings.matchContentFrameRateDescription' => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다',
+			'settings.matchRefreshRate' => '주사율 맞춤',
+			'settings.matchRefreshRateDescription' => '전체 화면에서 비디오 콘텐츠에 맞게 디스플레이 주사율을 전환합니다',
+			'settings.matchDynamicRange' => '다이나믹 레인지 맞춤',
+			'settings.matchDynamicRangeDescription' => 'HDR 콘텐츠에 대해 자동으로 HDR을 활성화하고 플레이어를 나갈 때 SDR로 복원합니다',
+			'settings.displaySwitchDelay' => '디스플레이 전환 지연',
+			'settings.displaySwitchDelayDescription' => '디스플레이 모드 변경 후 재생을 시작하기까지 대기하는 시간(초)',
 			'settings.tunneledPlayback' => '터널 재생',
 			'settings.tunneledPlaybackDescription' => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
@@ -1842,14 +1854,14 @@ extension on TranslationsKo {
 			'hubDetail.dateAdded' => '추가 날짜',
 			'hubDetail.rating' => '평점',
 			'hubDetail.noItemsFound' => '항목이 없습니다',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => '로그 지우기',
 			'logs.copyLogs' => '로그 복사',
 			'logs.uploadLogs' => '로그 업로드',
 			'licenses.relatedPackages' => '관련 소프트웨어 패키지',
 			'licenses.license' => '라이선스',
 			'licenses.licenseNumber' => ({required Object number}) => '라이선스 ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} 개의 라이선스',
 			'navigation.libraries' => '미디어 라이브러리',
 			'navigation.downloads' => '다운로드',

@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 
+#include "display_mode_manager.h"
 #include "mpv_core.h"
 #include "mpv_player.h"
 
@@ -45,6 +46,7 @@ class MpvPlayerPlugin : public flutter::Plugin {
   std::unique_ptr<flutter::EventSink<flutter::EncodableValue>> event_sink_;
 
   std::unique_ptr<MpvPlayer> player_;
+  DisplayModeManager display_mode_manager_;
   std::optional<int32_t> proc_id_;
 };
 

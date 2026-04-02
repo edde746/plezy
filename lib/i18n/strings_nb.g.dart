@@ -330,6 +330,12 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Gå automatisk til bilde-i-bilde når du forlater appen under avspilling';
 	@override String get matchContentFrameRate => 'Tilpass innholdets bildefrekvens';
 	@override String get matchContentFrameRateDescription => 'Juster skjermens oppdateringsfrekvens for å matche videoinnhold, reduserer hakking og sparer batteri';
+	@override String get matchRefreshRate => 'Tilpass oppdateringsfrekvens';
+	@override String get matchRefreshRateDescription => 'Bytt skjermens oppdateringsfrekvens for å matche videoinnhold i fullskjerm';
+	@override String get matchDynamicRange => 'Tilpass dynamisk område';
+	@override String get matchDynamicRangeDescription => 'Aktiver HDR automatisk for HDR-innhold og gå tilbake til SDR når spilleren lukkes';
+	@override String get displaySwitchDelay => 'Forsinkelse ved skjermbytte';
+	@override String get displaySwitchDelayDescription => 'Sekunder å vente etter en skjermendring før avspilling starter';
 	@override String get tunneledPlayback => 'Tunnelert avspilling';
 	@override String get tunneledPlaybackDescription => 'Bruk maskinvareakselerert videotunnelering. Deaktiver hvis du ser svart skjerm med lyd på HDR-innhold';
 	@override String get requireProfileSelectionOnOpen => 'Spør om profil ved appåpning';
@@ -1537,6 +1543,12 @@ extension on TranslationsNb {
 			'settings.autoPipDescription' => 'Gå automatisk til bilde-i-bilde når du forlater appen under avspilling',
 			'settings.matchContentFrameRate' => 'Tilpass innholdets bildefrekvens',
 			'settings.matchContentFrameRateDescription' => 'Juster skjermens oppdateringsfrekvens for å matche videoinnhold, reduserer hakking og sparer batteri',
+			'settings.matchRefreshRate' => 'Tilpass oppdateringsfrekvens',
+			'settings.matchRefreshRateDescription' => 'Bytt skjermens oppdateringsfrekvens for å matche videoinnhold i fullskjerm',
+			'settings.matchDynamicRange' => 'Tilpass dynamisk område',
+			'settings.matchDynamicRangeDescription' => 'Aktiver HDR automatisk for HDR-innhold og gå tilbake til SDR når spilleren lukkes',
+			'settings.displaySwitchDelay' => 'Forsinkelse ved skjermbytte',
+			'settings.displaySwitchDelayDescription' => 'Sekunder å vente etter en skjermendring før avspilling starter',
 			'settings.tunneledPlayback' => 'Tunnelert avspilling',
 			'settings.tunneledPlaybackDescription' => 'Bruk maskinvareakselerert videotunnelering. Deaktiver hvis du ser svart skjerm med lyd på HDR-innhold',
 			'settings.requireProfileSelectionOnOpen' => 'Spør om profil ved appåpning',
@@ -1842,14 +1854,14 @@ extension on TranslationsNb {
 			'hubDetail.dateAdded' => 'Dato lagt til',
 			'hubDetail.rating' => 'Vurdering',
 			'hubDetail.noItemsFound' => 'Ingen elementer funnet',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Tøm logger',
 			'logs.copyLogs' => 'Kopier logger',
 			'logs.uploadLogs' => 'Last opp logger',
 			'licenses.relatedPackages' => 'Relaterte pakker',
 			'licenses.license' => 'Lisens',
 			'licenses.licenseNumber' => ({required Object number}) => 'Lisens ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} lisenser',
 			'navigation.libraries' => 'Biblioteker',
 			'navigation.downloads' => 'Nedlastinger',

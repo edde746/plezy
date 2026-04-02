@@ -100,6 +100,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyCustomShaderPresets = 'custom_shader_presets';
   static const String _keyLiveTvDefaultFavorites = 'live_tv_default_favorites';
   static const String _keyCustomRelayUrl = 'custom_relay_url';
+  static const String _keyMatchRefreshRate = 'match_refresh_rate';
+  static const String _keyMatchDynamicRange = 'match_dynamic_range';
+  static const String _keyDisplaySwitchDelay = 'display_switch_delay';
 
   SettingsService._();
 
@@ -1039,6 +1042,33 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getMatchContentFrameRate() {
     return prefs.getBool(_keyMatchContentFrameRate) ?? false; // Default disabled
+  }
+
+  // Match Refresh Rate (Windows)
+  Future<void> setMatchRefreshRate(bool enabled) async {
+    await prefs.setBool(_keyMatchRefreshRate, enabled);
+  }
+
+  bool getMatchRefreshRate() {
+    return prefs.getBool(_keyMatchRefreshRate) ?? false;
+  }
+
+  // Match Dynamic Range (Windows)
+  Future<void> setMatchDynamicRange(bool enabled) async {
+    await prefs.setBool(_keyMatchDynamicRange, enabled);
+  }
+
+  bool getMatchDynamicRange() {
+    return prefs.getBool(_keyMatchDynamicRange) ?? false;
+  }
+
+  // Display Switch Delay (Windows, seconds)
+  Future<void> setDisplaySwitchDelay(int seconds) async {
+    await prefs.setInt(_keyDisplaySwitchDelay, seconds.clamp(0, 10));
+  }
+
+  int getDisplaySwitchDelay() {
+    return prefs.getInt(_keyDisplaySwitchDelay) ?? 0;
   }
 
   // Tunneled Playback (Android ExoPlayer only)

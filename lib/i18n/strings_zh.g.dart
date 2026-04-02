@@ -330,6 +330,12 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get autoPipDescription => '在播放期间离开应用时自动进入画中画模式';
 	@override String get matchContentFrameRate => '匹配内容帧率';
 	@override String get matchContentFrameRateDescription => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量';
+	@override String get matchRefreshRate => '匹配刷新率';
+	@override String get matchRefreshRateDescription => '全屏时切换显示刷新率以匹配视频内容';
+	@override String get matchDynamicRange => '匹配动态范围';
+	@override String get matchDynamicRangeDescription => '自动为HDR内容启用HDR，退出播放器时恢复为SDR';
+	@override String get displaySwitchDelay => '显示切换延迟';
+	@override String get displaySwitchDelayDescription => '显示模式更改后等待多少秒再开始播放';
 	@override String get tunneledPlayback => '通道化播放';
 	@override String get tunneledPlaybackDescription => '使用硬件加速视频通道。如果在 HDR 内容上看到黑屏但有声音，请禁用此选项';
 	@override String get requireProfileSelectionOnOpen => '打开应用时询问配置文件';
@@ -1537,6 +1543,12 @@ extension on TranslationsZh {
 			'settings.autoPipDescription' => '在播放期间离开应用时自动进入画中画模式',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
 			'settings.matchContentFrameRateDescription' => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量',
+			'settings.matchRefreshRate' => '匹配刷新率',
+			'settings.matchRefreshRateDescription' => '全屏时切换显示刷新率以匹配视频内容',
+			'settings.matchDynamicRange' => '匹配动态范围',
+			'settings.matchDynamicRangeDescription' => '自动为HDR内容启用HDR，退出播放器时恢复为SDR',
+			'settings.displaySwitchDelay' => '显示切换延迟',
+			'settings.displaySwitchDelayDescription' => '显示模式更改后等待多少秒再开始播放',
 			'settings.tunneledPlayback' => '通道化播放',
 			'settings.tunneledPlaybackDescription' => '使用硬件加速视频通道。如果在 HDR 内容上看到黑屏但有声音，请禁用此选项',
 			'settings.requireProfileSelectionOnOpen' => '打开应用时询问配置文件',
@@ -1842,14 +1854,14 @@ extension on TranslationsZh {
 			'hubDetail.dateAdded' => '添加日期',
 			'hubDetail.rating' => '评分',
 			'hubDetail.noItemsFound' => '未找到项目',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => '清除日志',
 			'logs.copyLogs' => '复制日志',
 			'logs.uploadLogs' => '上传日志',
 			'licenses.relatedPackages' => '相关软件包',
 			'licenses.license' => '许可证',
 			'licenses.licenseNumber' => ({required Object number}) => '许可证 ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} 个许可证',
 			'navigation.libraries' => '媒体库',
 			'navigation.downloads' => '下载',

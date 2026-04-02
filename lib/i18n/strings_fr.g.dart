@@ -330,6 +330,12 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Activer automatiquement l\'image dans l\'image en quittant l\'application pendant la lecture';
 	@override String get matchContentFrameRate => 'Fréquence d\'images du contenu correspondant';
 	@override String get matchContentFrameRateDescription => 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie';
+	@override String get matchRefreshRate => 'Adapter la fréquence de rafraîchissement';
+	@override String get matchRefreshRateDescription => 'Changer la fréquence de rafraîchissement de l\'écran pour correspondre au contenu vidéo en plein écran';
+	@override String get matchDynamicRange => 'Adapter la plage dynamique';
+	@override String get matchDynamicRangeDescription => 'Activer automatiquement le HDR pour le contenu HDR et revenir en SDR en quittant le lecteur';
+	@override String get displaySwitchDelay => 'Délai de changement d\'affichage';
+	@override String get displaySwitchDelayDescription => 'Secondes d\'attente après un changement d\'affichage avant de démarrer la lecture';
 	@override String get tunneledPlayback => 'Lecture tunnelée';
 	@override String get tunneledPlaybackDescription => 'Utiliser le tunnelage vidéo accéléré par matériel. Désactiver si vous voyez un écran noir avec du son sur du contenu HDR';
 	@override String get requireProfileSelectionOnOpen => 'Demander le profil à l\'ouverture';
@@ -1537,6 +1543,12 @@ extension on TranslationsFr {
 			'settings.autoPipDescription' => 'Activer automatiquement l\'image dans l\'image en quittant l\'application pendant la lecture',
 			'settings.matchContentFrameRate' => 'Fréquence d\'images du contenu correspondant',
 			'settings.matchContentFrameRateDescription' => 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie',
+			'settings.matchRefreshRate' => 'Adapter la fréquence de rafraîchissement',
+			'settings.matchRefreshRateDescription' => 'Changer la fréquence de rafraîchissement de l\'écran pour correspondre au contenu vidéo en plein écran',
+			'settings.matchDynamicRange' => 'Adapter la plage dynamique',
+			'settings.matchDynamicRangeDescription' => 'Activer automatiquement le HDR pour le contenu HDR et revenir en SDR en quittant le lecteur',
+			'settings.displaySwitchDelay' => 'Délai de changement d\'affichage',
+			'settings.displaySwitchDelayDescription' => 'Secondes d\'attente après un changement d\'affichage avant de démarrer la lecture',
 			'settings.tunneledPlayback' => 'Lecture tunnelée',
 			'settings.tunneledPlaybackDescription' => 'Utiliser le tunnelage vidéo accéléré par matériel. Désactiver si vous voyez un écran noir avec du son sur du contenu HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Demander le profil à l\'ouverture',
@@ -1842,14 +1854,14 @@ extension on TranslationsFr {
 			'hubDetail.dateAdded' => 'Date d\'ajout',
 			'hubDetail.rating' => 'Évaluation',
 			'hubDetail.noItemsFound' => 'Aucun élément trouvé',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Effacer les logs',
 			'logs.copyLogs' => 'Copier les logs',
 			'logs.uploadLogs' => 'Envoyer les logs',
 			'licenses.relatedPackages' => 'Package associés',
 			'licenses.license' => 'Licence',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licence ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licences',
 			'navigation.libraries' => 'Medias',
 			'navigation.downloads' => 'Téléch.',

@@ -330,6 +330,12 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Attiva automaticamente il picture-in-picture quando si esce dall\'app durante la riproduzione';
 	@override String get matchContentFrameRate => 'Adatta frequenza fotogrammi';
 	@override String get matchContentFrameRateDescription => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria';
+	@override String get matchRefreshRate => 'Adatta frequenza di aggiornamento';
+	@override String get matchRefreshRateDescription => 'Cambia la frequenza di aggiornamento del display per adattarla al contenuto video a schermo intero';
+	@override String get matchDynamicRange => 'Adatta gamma dinamica';
+	@override String get matchDynamicRangeDescription => 'Attiva automaticamente l\'HDR per i contenuti HDR e torna in SDR all\'uscita dal lettore';
+	@override String get displaySwitchDelay => 'Ritardo cambio display';
+	@override String get displaySwitchDelayDescription => 'Secondi di attesa dopo un cambio di display prima di avviare la riproduzione';
 	@override String get tunneledPlayback => 'Riproduzione tunnelizzata';
 	@override String get tunneledPlaybackDescription => 'Usa il tunneling video accelerato dall\'hardware. Disattiva se vedi uno schermo nero con audio su contenuti HDR';
 	@override String get requireProfileSelectionOnOpen => 'Chiedi profilo all\'apertura';
@@ -1537,6 +1543,12 @@ extension on TranslationsIt {
 			'settings.autoPipDescription' => 'Attiva automaticamente il picture-in-picture quando si esce dall\'app durante la riproduzione',
 			'settings.matchContentFrameRate' => 'Adatta frequenza fotogrammi',
 			'settings.matchContentFrameRateDescription' => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria',
+			'settings.matchRefreshRate' => 'Adatta frequenza di aggiornamento',
+			'settings.matchRefreshRateDescription' => 'Cambia la frequenza di aggiornamento del display per adattarla al contenuto video a schermo intero',
+			'settings.matchDynamicRange' => 'Adatta gamma dinamica',
+			'settings.matchDynamicRangeDescription' => 'Attiva automaticamente l\'HDR per i contenuti HDR e torna in SDR all\'uscita dal lettore',
+			'settings.displaySwitchDelay' => 'Ritardo cambio display',
+			'settings.displaySwitchDelayDescription' => 'Secondi di attesa dopo un cambio di display prima di avviare la riproduzione',
 			'settings.tunneledPlayback' => 'Riproduzione tunnelizzata',
 			'settings.tunneledPlaybackDescription' => 'Usa il tunneling video accelerato dall\'hardware. Disattiva se vedi uno schermo nero con audio su contenuti HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Chiedi profilo all\'apertura',
@@ -1842,14 +1854,14 @@ extension on TranslationsIt {
 			'hubDetail.dateAdded' => 'Data aggiunta',
 			'hubDetail.rating' => 'Valutazione',
 			'hubDetail.noItemsFound' => 'Nessun elemento trovato',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Cancella log',
 			'logs.copyLogs' => 'Copia log',
 			'logs.uploadLogs' => 'Carica log',
 			'licenses.relatedPackages' => 'Pacchetti correlati',
 			'licenses.license' => 'Licenza',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licenza ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenze',
 			'navigation.libraries' => 'Librerie',
 			'navigation.downloads' => 'Download',

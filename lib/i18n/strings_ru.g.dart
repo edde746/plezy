@@ -330,6 +330,12 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Автоматически переходить в режим «картинка в картинке» при выходе из приложения во время воспроизведения';
 	@override String get matchContentFrameRate => 'Соответствие частоты кадров контента';
 	@override String get matchContentFrameRateDescription => 'Настроить частоту обновления дисплея под видеоконтент, уменьшая дрожание и экономя батарею';
+	@override String get matchRefreshRate => 'Соответствие частоты обновления';
+	@override String get matchRefreshRateDescription => 'Переключать частоту обновления дисплея под видеоконтент в полноэкранном режиме';
+	@override String get matchDynamicRange => 'Соответствие динамического диапазона';
+	@override String get matchDynamicRangeDescription => 'Автоматически включать HDR для HDR-контента и возвращать SDR при выходе из плеера';
+	@override String get displaySwitchDelay => 'Задержка переключения дисплея';
+	@override String get displaySwitchDelayDescription => 'Секунды ожидания после смены режима дисплея перед началом воспроизведения';
 	@override String get tunneledPlayback => 'Туннельное воспроизведение';
 	@override String get tunneledPlaybackDescription => 'Использовать аппаратный видеотуннелинг. Отключите, если видите чёрный экран со звуком при HDR-контенте';
 	@override String get requireProfileSelectionOnOpen => 'Запрашивать профиль при запуске';
@@ -1537,6 +1543,12 @@ extension on TranslationsRu {
 			'settings.autoPipDescription' => 'Автоматически переходить в режим «картинка в картинке» при выходе из приложения во время воспроизведения',
 			'settings.matchContentFrameRate' => 'Соответствие частоты кадров контента',
 			'settings.matchContentFrameRateDescription' => 'Настроить частоту обновления дисплея под видеоконтент, уменьшая дрожание и экономя батарею',
+			'settings.matchRefreshRate' => 'Соответствие частоты обновления',
+			'settings.matchRefreshRateDescription' => 'Переключать частоту обновления дисплея под видеоконтент в полноэкранном режиме',
+			'settings.matchDynamicRange' => 'Соответствие динамического диапазона',
+			'settings.matchDynamicRangeDescription' => 'Автоматически включать HDR для HDR-контента и возвращать SDR при выходе из плеера',
+			'settings.displaySwitchDelay' => 'Задержка переключения дисплея',
+			'settings.displaySwitchDelayDescription' => 'Секунды ожидания после смены режима дисплея перед началом воспроизведения',
 			'settings.tunneledPlayback' => 'Туннельное воспроизведение',
 			'settings.tunneledPlaybackDescription' => 'Использовать аппаратный видеотуннелинг. Отключите, если видите чёрный экран со звуком при HDR-контенте',
 			'settings.requireProfileSelectionOnOpen' => 'Запрашивать профиль при запуске',
@@ -1842,14 +1854,14 @@ extension on TranslationsRu {
 			'hubDetail.dateAdded' => 'Дата добавления',
 			'hubDetail.rating' => 'Рейтинг',
 			'hubDetail.noItemsFound' => 'Элементы не найдены',
+			_ => null,
+		} ?? switch (path) {
 			'logs.clearLogs' => 'Очистить логи',
 			'logs.copyLogs' => 'Скопировать логи',
 			'logs.uploadLogs' => 'Загрузить логи',
 			'licenses.relatedPackages' => 'Связанные пакеты',
 			'licenses.license' => 'Лицензия',
 			'licenses.licenseNumber' => ({required Object number}) => 'Лицензия ${number}',
-			_ => null,
-		} ?? switch (path) {
 			'licenses.licensesCount' => ({required Object count}) => '${count} лицензий',
 			'navigation.libraries' => 'Библиотеки',
 			'navigation.downloads' => 'Загрузки',
