@@ -88,8 +88,7 @@ Widget plexVideoControlsBuilder(
   String? liveChannelName,
   CaptureBuffer? captureBuffer,
   bool isAtLiveEdge = true,
-  int? programBeginsAt,
-  int? programEndsAt,
+  double streamStartEpoch = 0,
   int? currentPositionEpoch,
   ValueChanged<int>? onLiveSeek,
   VoidCallback? onJumpToLive,
@@ -124,8 +123,7 @@ Widget plexVideoControlsBuilder(
     liveChannelName: liveChannelName,
     captureBuffer: captureBuffer,
     isAtLiveEdge: isAtLiveEdge,
-    programBeginsAt: programBeginsAt,
-    programEndsAt: programEndsAt,
+    streamStartEpoch: streamStartEpoch,
     currentPositionEpoch: currentPositionEpoch,
     onLiveSeek: onLiveSeek,
     onJumpToLive: onJumpToLive,
@@ -189,11 +187,8 @@ class PlexVideoControls extends StatefulWidget {
   /// Whether playback is at the live edge
   final bool isAtLiveEdge;
 
-  /// Program start epoch seconds (from EPG)
-  final int? programBeginsAt;
-
-  /// Program end epoch seconds (from EPG)
-  final int? programEndsAt;
+  /// Epoch seconds corresponding to player position 0 (for live TV)
+  final double streamStartEpoch;
 
   /// Current playback position as absolute epoch seconds (for live TV)
   final int? currentPositionEpoch;
@@ -239,8 +234,7 @@ class PlexVideoControls extends StatefulWidget {
     this.liveChannelName,
     this.captureBuffer,
     this.isAtLiveEdge = true,
-    this.programBeginsAt,
-    this.programEndsAt,
+    this.streamStartEpoch = 0,
     this.currentPositionEpoch,
     this.onLiveSeek,
     this.onJumpToLive,
@@ -2141,11 +2135,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                                 liveChannelName: widget.liveChannelName,
                                                 captureBuffer: widget.captureBuffer,
                                                 isAtLiveEdge: widget.isAtLiveEdge,
-                                                programBeginsAt: widget.programBeginsAt,
-                                                programEndsAt: widget.programEndsAt,
-                                                currentPositionEpoch: widget.currentPositionEpoch,
+                                                streamStartEpoch: widget.streamStartEpoch,
                                                 onLiveSeek: widget.onLiveSeek,
-                                                onJumpToLive: widget.onJumpToLive,
                                                 serverId: widget.metadata.serverId,
                                                 showQueueTab: playbackState.isQueueActive,
                                                 onQueueItemSelected: playbackState.isQueueActive
@@ -2294,8 +2285,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         liveChannelName: widget.liveChannelName,
         captureBuffer: widget.captureBuffer,
         isAtLiveEdge: widget.isAtLiveEdge,
-        programBeginsAt: widget.programBeginsAt,
-        programEndsAt: widget.programEndsAt,
+        streamStartEpoch: widget.streamStartEpoch,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
         onJumpToLive: widget.onJumpToLive,

@@ -178,7 +178,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // Live TV time-shift
   CaptureBuffer? _captureBuffer;
   int? _programBeginsAt;
-  int? _programEndsAt;
   double _streamStartEpoch = 0;
   bool _isAtLiveEdge = true;
   String? _transcodeSessionId;
@@ -1046,9 +1045,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _liveDurationMs = tuneResult.metadata.duration;
           _captureBuffer = tuneResult.captureBuffer;
           _programBeginsAt = tuneResult.beginsAt;
-          _programEndsAt = tuneResult.beginsAt != null && tuneResult.metadata.duration != null
-              ? tuneResult.beginsAt! + tuneResult.metadata.duration! ~/ 1000
-              : null;
           _transcodeSessionId = PlexClient.generateSessionIdentifier();
 
           // Show "Watch from Start" dialog when an existing capture session has >60s of history.
@@ -2269,8 +2265,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final client = widget.liveClient;
     if (client == null) return;
 
-    if (mounted) setState(() => _hasFirstFrame.value = false);
-
     final streamPath = await client.buildLiveStreamPath(
       sessionPath: _liveSessionPath!,
       sessionIdentifier: _liveSessionIdentifier!,
@@ -2356,9 +2350,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Reset time-shift state for new channel
       _captureBuffer = tuneResult.captureBuffer;
       _programBeginsAt = tuneResult.beginsAt;
-      _programEndsAt = tuneResult.beginsAt != null && tuneResult.metadata.duration != null
-          ? tuneResult.beginsAt! + tuneResult.metadata.duration! ~/ 1000
-          : null;
       _streamStartEpoch = DateTime.now().millisecondsSinceEpoch / 1000.0;
       _isAtLiveEdge = true;
 
@@ -2822,8 +2813,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         liveChannelName: _liveChannelName,
                         captureBuffer: _captureBuffer,
                         isAtLiveEdge: _isAtLiveEdge,
-                        programBeginsAt: _programBeginsAt,
-                        programEndsAt: _programEndsAt,
+                        streamStartEpoch: _streamStartEpoch,
                         currentPositionEpoch: widget.isLive ? _currentPositionEpoch : null,
                         onLiveSeek: _captureBuffer != null ? _seekLivePosition : null,
                         onJumpToLive: _captureBuffer != null && !_isAtLiveEdge ? _jumpToLiveEdge : null,

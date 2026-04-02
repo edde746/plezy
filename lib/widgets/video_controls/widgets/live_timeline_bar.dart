@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../models/livetv_capture_buffer.dart';
+import '../../../mpv/mpv.dart';
 import '../../../focus/focusable_wrapper.dart';
 
 /// Timeline bar for live TV time-shift.
 ///
-/// Shows the full program range (beginsAt..endsAt) with the seekable capture
-/// buffer highlighted. The user can drag within the buffer region to seek.
+/// Listens to the player's position stream and computes the absolute epoch
+/// position from [streamStartEpoch] + player position. The slider range
+/// covers the capture buffer's seekable window.
 class LiveTimelineBar extends StatefulWidget {
+  final Player player;
   final CaptureBuffer captureBuffer;
-  final int? programBeginsAt;
-  final int? programEndsAt;
-  final int currentPositionEpoch;
+  final double streamStartEpoch;
   final bool isAtLiveEdge;
   final ValueChanged<int>? onSeekEnd;
-  final VoidCallback? onJumpToLive;
   final bool horizontalLayout;
   final FocusNode? focusNode;
   final KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent;
@@ -24,13 +24,11 @@ class LiveTimelineBar extends StatefulWidget {
 
   const LiveTimelineBar({
     super.key,
+    required this.player,
     required this.captureBuffer,
-    this.programBeginsAt,
-    this.programEndsAt,
-    required this.currentPositionEpoch,
+    required this.streamStartEpoch,
     this.isAtLiveEdge = true,
     this.onSeekEnd,
-    this.onJumpToLive,
     this.horizontalLayout = true,
     this.focusNode,
     this.onKeyEvent,
@@ -49,7 +47,11 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   int get _rangeStart => widget.captureBuffer.seekableStartEpoch;
   int get _rangeEnd => widget.captureBuffer.seekableEndEpoch;
 
-  int get _displayPosition => _isDragging ? _dragPositionEpoch : widget.currentPositionEpoch;
+  int _currentEpoch(Duration playerPosition) =>
+      (widget.streamStartEpoch + playerPosition.inSeconds).round();
+
+  int _displayPosition(Duration playerPosition) =>
+      _isDragging ? _dragPositionEpoch : _currentEpoch(playerPosition);
 
   String _formatEpochTime(int epochSeconds) {
     final dt = DateTime.fromMillisecondsSinceEpoch(epochSeconds * 1000);
@@ -58,7 +60,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
 
   double _epochToFraction(int epoch) {
     final range = _rangeEnd - _rangeStart;
-    if (range <= 0) return 0;
+    if (range <= 0) return 1.0; // No range yet → show at live edge (right)
     return ((epoch - _rangeStart) / range).clamp(0.0, 1.0);
   }
 
@@ -69,36 +71,45 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.horizontalLayout) {
-      return _buildHorizontalLayout();
-    }
-    return _buildVerticalLayout();
+    return StreamBuilder<Duration>(
+      stream: widget.player.streams.position,
+      initialData: widget.player.state.position,
+      builder: (context, posSnapshot) {
+        final position = posSnapshot.data ?? Duration.zero;
+        final displayPos = _displayPosition(position);
+
+        if (widget.horizontalLayout) {
+          return _buildHorizontalLayout(displayPos);
+        }
+        return _buildVerticalLayout(displayPos);
+      },
+    );
   }
 
-  Widget _buildHorizontalLayout() {
+  Widget _buildHorizontalLayout(int displayPos) {
     return Row(
       children: [
         Text(
-          _formatEpochTime(_displayPosition),
+          _formatEpochTime(displayPos),
           style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
         const SizedBox(width: 8),
-        Expanded(child: _buildSlider()),
+        Expanded(child: _buildSlider(displayPos)),
       ],
     );
   }
 
-  Widget _buildVerticalLayout() {
+  Widget _buildVerticalLayout(int displayPos) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildSlider(),
+          _buildSlider(displayPos),
           const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              _formatEpochTime(_displayPosition),
+              _formatEpochTime(displayPos),
               style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ),
@@ -107,8 +118,8 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
     );
   }
 
-  Widget _buildSlider() {
-    final positionFraction = _epochToFraction(_displayPosition);
+  Widget _buildSlider(int displayPos) {
+    final positionFraction = _epochToFraction(displayPos);
 
     return FocusableWrapper(
       focusNode: widget.focusNode,
@@ -142,7 +153,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   void _onDragStart(DragStartDetails details) {
     setState(() {
       _isDragging = true;
-      _dragPositionEpoch = widget.currentPositionEpoch;
+      _dragPositionEpoch = _currentEpoch(widget.player.state.position);
     });
   }
 

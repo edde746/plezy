@@ -61,11 +61,8 @@ class MobileVideoControls extends StatefulWidget {
   // Live TV time-shift
   final CaptureBuffer? captureBuffer;
   final bool isAtLiveEdge;
-  final int? programBeginsAt;
-  final int? programEndsAt;
-  final int? currentPositionEpoch;
+  final double streamStartEpoch;
   final ValueChanged<int>? onLiveSeek;
-  final VoidCallback? onJumpToLive;
 
   /// Server ID for chapter thumbnails in the content strip
   final String? serverId;
@@ -106,11 +103,8 @@ class MobileVideoControls extends StatefulWidget {
     this.liveChannelName,
     this.captureBuffer,
     this.isAtLiveEdge = true,
-    this.programBeginsAt,
-    this.programEndsAt,
-    this.currentPositionEpoch,
+    this.streamStartEpoch = 0,
     this.onLiveSeek,
-    this.onJumpToLive,
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
@@ -383,18 +377,16 @@ class _MobileVideoControlsState extends State<MobileVideoControls>
 
   Widget _buildBottomBar(BuildContext _) {
     if (widget.isLive) {
-      if (widget.captureBuffer != null && widget.currentPositionEpoch != null) {
+      if (widget.captureBuffer != null) {
         // Live TV with time-shift: show seekable timeline
         return FirstFrameGuard(
           hasFirstFrame: widget.hasFirstFrame,
           builder: (context) => LiveTimelineBar(
+            player: widget.player,
             captureBuffer: widget.captureBuffer!,
-            programBeginsAt: widget.programBeginsAt,
-            programEndsAt: widget.programEndsAt,
-            currentPositionEpoch: widget.currentPositionEpoch!,
+            streamStartEpoch: widget.streamStartEpoch,
             isAtLiveEdge: widget.isAtLiveEdge,
             onSeekEnd: widget.onLiveSeek,
-            onJumpToLive: widget.onJumpToLive,
             horizontalLayout: false,
             enabled: widget.canControl,
           ),
