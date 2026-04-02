@@ -116,6 +116,9 @@ class DisplayModeManager {
   // Check if running on Win11 24H2 or newer.
   static bool IsWin11_24H2OrNewer();
 
+  // Toggle HDR via DisplayConfig (version-dispatched).
+  static LONG SetHDRStateForTarget(const DisplayConfigId& target, bool enabled);
+
   // Registry helpers for crash recovery.
   static bool WriteRegistryDWORD(const wchar_t* value_name, DWORD value);
   static bool WriteRegistryString(const wchar_t* value_name, const std::wstring& value);

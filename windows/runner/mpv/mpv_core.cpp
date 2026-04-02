@@ -36,8 +36,7 @@ void MpvCore::CreateMpvView(HWND mpv_hwnd, RECT rect,
 
   // Remove window decorations.
   auto style = ::GetWindowLongPtr(mpv_hwnd, GWL_STYLE);
-  style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
-             WS_EX_APPWINDOW);
+  style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
   ::SetWindowLongPtr(mpv_hwnd, GWL_STYLE, style);
 
   device_pixel_ratio_ = device_pixel_ratio;
@@ -70,20 +69,9 @@ void MpvCore::SetVisible(bool visible) {
   visible_ = visible;
   if (container_) {
     if (visible) {
-      // Batch all window operations, single DwmFlush at end
-      ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
-                     SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-      if (!composition_enabled_) {
-        SetWindowComposition(flutter_window_, 2, 0);
-        composition_enabled_ = true;
-      }
-      ::ShowWindow(container_, SW_SHOWNOACTIVATE);
-      ::DwmFlush();  // Single sync with DWM after all operations
+      EnableComposition();
     } else {
-      SetWindowComposition(flutter_window_, 0, 0);
-      composition_enabled_ = false;
-      ::ShowWindow(container_, SW_HIDE);
-      ::DwmFlush();  // Sync with DWM after hiding
+      DisableComposition();
     }
   }
 }
@@ -108,10 +96,7 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
           last_wm_size_wparam_ == SIZE_MAXIMIZED ||
           was_window_hidden_due_to_minimize_) {
         was_window_hidden_due_to_minimize_ = false;
-        SetWindowComposition(flutter_window_, 0, 0);
-        composition_enabled_ = false;
-        ::ShowWindow(container_, SW_HIDE);
-        ::DwmFlush();  // Single sync after hiding
+        DisableComposition();
 
         // Cancel any pending timer and set a new one.
         ::KillTimer(flutter_window_, kCompositionRestoreTimerId);
@@ -133,15 +118,7 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
 
         // Restore transparency if video is visible
         if (visible_) {
-          // Batch all operations, single DwmFlush at end
-          ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
-                         SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-          if (!composition_enabled_) {
-            SetWindowComposition(flutter_window_, 2, 0);
-            composition_enabled_ = true;
-          }
-          ::ShowWindow(container_, SW_SHOWNOACTIVATE);
-          ::DwmFlush();  // Single sync after all operations
+          EnableComposition();
 
           // Force a redraw to ensure Flutter's render surface is correctly sized
           ::RedrawWindow(flutter_window_, nullptr, nullptr,
@@ -166,10 +143,7 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
         // Window is minimized (negative coordinates).
         if (window_rect.left < 0 && window_rect.top < 0 &&
             window_rect.right < 0 && window_rect.bottom < 0) {
-          SetWindowComposition(flutter_window_, 0, 0);
-          composition_enabled_ = false;
-          ::ShowWindow(container_, SW_HIDE);
-          ::DwmFlush();  // Single sync after hiding
+          DisableComposition();
           was_window_hidden_due_to_minimize_ = true;
         }
       }
@@ -213,6 +187,24 @@ RECT MpvCore::GetGlobalRect(int32_t left, int32_t top, int32_t right,
   rect.right = window_rect.left + right;
   rect.bottom = window_rect.top + bottom;
   return rect;
+}
+
+void MpvCore::EnableComposition() {
+  ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
+                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+  if (!composition_enabled_) {
+    SetWindowComposition(flutter_window_, 2, 0);
+    composition_enabled_ = true;
+  }
+  ::ShowWindow(container_, SW_SHOWNOACTIVATE);
+  ::DwmFlush();
+}
+
+void MpvCore::DisableComposition() {
+  SetWindowComposition(flutter_window_, 0, 0);
+  composition_enabled_ = false;
+  ::ShowWindow(container_, SW_HIDE);
+  ::DwmFlush();
 }
 
 void MpvCore::SetPowerResumeCallback(PowerResumeCallback callback) {

@@ -51,6 +51,8 @@ class MpvCore {
 
  private:
   RECT GetGlobalRect(int32_t left, int32_t top, int32_t right, int32_t bottom);
+  void EnableComposition();
+  void DisableComposition();
 
   HWND flutter_window_ = nullptr;
   HWND container_ = nullptr;

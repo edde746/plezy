@@ -3,6 +3,14 @@
 #include "mpv_container.h"
 #include "mpv_core.h"
 
+static flutter::EncodableMap DisplayModeToMap(const mpv::DisplayMode& mode) {
+  flutter::EncodableMap m;
+  m[flutter::EncodableValue("width")] = flutter::EncodableValue(static_cast<int32_t>(mode.width));
+  m[flutter::EncodableValue("height")] = flutter::EncodableValue(static_cast<int32_t>(mode.height));
+  m[flutter::EncodableValue("refreshRate")] = flutter::EncodableValue(static_cast<int32_t>(mode.refresh_rate));
+  return m;
+}
+
 void MpvPlayerPluginRegisterWithRegistrar(
     FlutterDesktopPluginRegistrarRef registrar) {
   mpv::MpvPlayerPlugin::RegisterWithRegistrar(
@@ -397,21 +405,13 @@ void MpvPlayerPlugin::HandleMethodCall(
     auto modes = display_mode_manager_.EnumerateDisplayModes(hwnd);
     flutter::EncodableList list;
     for (const auto& mode : modes) {
-      flutter::EncodableMap m;
-      m[flutter::EncodableValue("width")] = flutter::EncodableValue(static_cast<int32_t>(mode.width));
-      m[flutter::EncodableValue("height")] = flutter::EncodableValue(static_cast<int32_t>(mode.height));
-      m[flutter::EncodableValue("refreshRate")] = flutter::EncodableValue(static_cast<int32_t>(mode.refresh_rate));
-      list.push_back(flutter::EncodableValue(m));
+      list.push_back(flutter::EncodableValue(DisplayModeToMap(mode)));
     }
     result->Success(flutter::EncodableValue(list));
   } else if (method == "getCurrentDisplayMode") {
     HWND hwnd = GetWindow();
     auto mode = display_mode_manager_.GetCurrentMode(hwnd);
-    flutter::EncodableMap m;
-    m[flutter::EncodableValue("width")] = flutter::EncodableValue(static_cast<int32_t>(mode.width));
-    m[flutter::EncodableValue("height")] = flutter::EncodableValue(static_cast<int32_t>(mode.height));
-    m[flutter::EncodableValue("refreshRate")] = flutter::EncodableValue(static_cast<int32_t>(mode.refresh_rate));
-    result->Success(flutter::EncodableValue(m));
+    result->Success(flutter::EncodableValue(DisplayModeToMap(mode)));
   } else if (method == "setDisplayMode") {
     const auto* args = method_call.arguments();
     if (!args || !std::holds_alternative<flutter::EncodableMap>(*args)) {

@@ -324,26 +324,7 @@ bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
   EnumDisplaySettingsW(device_name.c_str(), ENUM_CURRENT_SETTINGS, &pre_toggle_dm);
 
   // Toggle HDR.
-  LONG result;
-  if (IsWin11_24H2OrNewer()) {
-    DISPLAYCONFIG_SET_HDR_STATE state = {};
-    state.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(
-        DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
-    state.header.size = sizeof(state);
-    state.header.adapterId = target_id->adapter_id;
-    state.header.id = target_id->id;
-    state.enableHdr = enabled ? TRUE : FALSE;
-    result = DisplayConfigSetDeviceInfo(&state.header);
-  } else {
-    DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE state = {};
-    state.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-    state.header.size = sizeof(state);
-    state.header.adapterId = target_id->adapter_id;
-    state.header.id = target_id->id;
-    state.enableAdvancedColor = enabled ? TRUE : FALSE;
-    result = DisplayConfigSetDeviceInfo(&state.header);
-  }
-
+  LONG result = SetHDRStateForTarget(*target_id, enabled);
   if (result != ERROR_SUCCESS) return false;
 
   // Restore DEVMODEW after toggle — Windows may have changed the display mode.
@@ -378,26 +359,7 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
   pre_toggle_dm.dmSize = sizeof(pre_toggle_dm);
   EnumDisplaySettingsW(original_hdr_device_name_.c_str(), ENUM_CURRENT_SETTINGS, &pre_toggle_dm);
 
-  LONG result;
-  if (IsWin11_24H2OrNewer()) {
-    DISPLAYCONFIG_SET_HDR_STATE state = {};
-    state.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(
-        DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
-    state.header.size = sizeof(state);
-    state.header.adapterId = target_id->adapter_id;
-    state.header.id = target_id->id;
-    state.enableHdr = original_hdr_enabled_ ? TRUE : FALSE;
-    result = DisplayConfigSetDeviceInfo(&state.header);
-  } else {
-    DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE state = {};
-    state.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-    state.header.size = sizeof(state);
-    state.header.adapterId = target_id->adapter_id;
-    state.header.id = target_id->id;
-    state.enableAdvancedColor = original_hdr_enabled_ ? TRUE : FALSE;
-    result = DisplayConfigSetDeviceInfo(&state.header);
-  }
-
+  LONG result = SetHDRStateForTarget(*target_id, original_hdr_enabled_);
   if (result != ERROR_SUCCESS) return false;
 
   // Restore DEVMODEW after toggle.
@@ -413,6 +375,27 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
 }
 
 // --- Crash recovery (Windows Registry) ---
+
+LONG DisplayModeManager::SetHDRStateForTarget(const DisplayConfigId& target, bool enabled) {
+  if (IsWin11_24H2OrNewer()) {
+    DISPLAYCONFIG_SET_HDR_STATE state = {};
+    state.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(
+        DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
+    state.header.size = sizeof(state);
+    state.header.adapterId = target.adapter_id;
+    state.header.id = target.id;
+    state.enableHdr = enabled ? TRUE : FALSE;
+    return DisplayConfigSetDeviceInfo(&state.header);
+  } else {
+    DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE state = {};
+    state.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+    state.header.size = sizeof(state);
+    state.header.adapterId = target.adapter_id;
+    state.header.id = target.id;
+    state.enableAdvancedColor = enabled ? TRUE : FALSE;
+    return DisplayConfigSetDeviceInfo(&state.header);
+  }
+}
 
 bool DisplayModeManager::WriteRegistryDWORD(const wchar_t* value_name, DWORD value) {
   HKEY key;
@@ -552,25 +535,7 @@ bool DisplayModeManager::RecoverIfNeeded(HWND window) {
       pre_dm.dmSize = sizeof(pre_dm);
       EnumDisplaySettingsW(device_name.c_str(), ENUM_CURRENT_SETTINGS, &pre_dm);
 
-      LONG result;
-      if (IsWin11_24H2OrNewer()) {
-        DISPLAYCONFIG_SET_HDR_STATE state = {};
-        state.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(
-            DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
-        state.header.size = sizeof(state);
-        state.header.adapterId = target_id->adapter_id;
-        state.header.id = target_id->id;
-        state.enableHdr = hdr_was_enabled ? TRUE : FALSE;
-        result = DisplayConfigSetDeviceInfo(&state.header);
-      } else {
-        DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE state = {};
-        state.header.type = DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-        state.header.size = sizeof(state);
-        state.header.adapterId = target_id->adapter_id;
-        state.header.id = target_id->id;
-        state.enableAdvancedColor = hdr_was_enabled ? TRUE : FALSE;
-        result = DisplayConfigSetDeviceInfo(&state.header);
-      }
+      LONG result = SetHDRStateForTarget(*target_id, hdr_was_enabled != 0);
 
       if (result == ERROR_SUCCESS) {
         recovered = true;

@@ -68,20 +68,23 @@ typedef LONG NTSTATUS, *PNTSTATUS;
 typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 
 static RTL_OSVERSIONINFOW GetWindowsVersion() {
-  HMODULE hmodule = ::GetModuleHandleW(L"ntdll.dll");
-  if (hmodule) {
-    RtlGetVersionPtr rtl_get_version_ptr =
-        (RtlGetVersionPtr)::GetProcAddress(hmodule, "RtlGetVersion");
-    if (rtl_get_version_ptr != nullptr) {
-      RTL_OSVERSIONINFOW rovi = {0};
-      rovi.dwOSVersionInfoSize = sizeof(rovi);
-      if (STATUS_SUCCESS == rtl_get_version_ptr(&rovi)) {
-        return rovi;
+  static RTL_OSVERSIONINFOW cached = []() {
+    HMODULE hmodule = ::GetModuleHandleW(L"ntdll.dll");
+    if (hmodule) {
+      RtlGetVersionPtr rtl_get_version_ptr =
+          (RtlGetVersionPtr)::GetProcAddress(hmodule, "RtlGetVersion");
+      if (rtl_get_version_ptr != nullptr) {
+        RTL_OSVERSIONINFOW rovi = {0};
+        rovi.dwOSVersionInfoSize = sizeof(rovi);
+        if (STATUS_SUCCESS == rtl_get_version_ptr(&rovi)) {
+          return rovi;
+        }
       }
     }
-  }
-  RTL_OSVERSIONINFOW rovi = {0};
-  return rovi;
+    RTL_OSVERSIONINFOW rovi = {0};
+    return rovi;
+  }();
+  return cached;
 }
 
 void SetWindowComposition(HWND window, int32_t accent_state,
