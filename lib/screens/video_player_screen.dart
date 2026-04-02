@@ -1091,6 +1091,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
         _trackManager?.cacheExternalSubtitles(const []);
 
+        await _initVideoFilterAndPip();
+
         if (mounted) {
           setState(() {
             _availableVersions = [];
@@ -1225,26 +1227,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           });
         }
 
-        // Initialize video PIP and filter manager with player and available versions
+        await _initVideoFilterAndPip();
+
         if (player != null) {
-          final settings = await SettingsService.getInstance();
-          _videoFilterManager = VideoFilterManager(
-            player: player!,
-            availableVersions: _availableVersions,
-            selectedMediaIndex: widget.selectedMediaIndex,
-            initialBoxFitMode: settings.getDefaultBoxFitMode(),
-            onBoxFitModeChanged: (mode) => settings.setDefaultBoxFitMode(mode),
-          );
-          // Update video filter once dimensions are available
-          _videoFilterManager!.updateVideoFilter();
-
-          // PIP Manager
-          _videoPIPManager = VideoPIPManager(player: player!);
-          _videoPIPManager!.onBeforeEnterPip = () {
-            _videoFilterManager?.enterPipMode();
-          };
-          _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
-
           // Auto-PiP: set up callback for API 26-30 path and initial state
           if (_autoPipEnabled) {
             PipService.onAutoPipEntering = () {
@@ -1396,6 +1381,27 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       externalSubtitles: offlineSubtitles,
       isOffline: true,
     );
+  }
+
+  /// Initialize VideoFilterManager and VideoPIPManager if not already set up.
+  /// Called from both live TV and VOD playback paths.
+  Future<void> _initVideoFilterAndPip() async {
+    if (player == null || _videoFilterManager != null) return;
+    final settings = await SettingsService.getInstance();
+    _videoFilterManager = VideoFilterManager(
+      player: player!,
+      availableVersions: _availableVersions,
+      selectedMediaIndex: widget.selectedMediaIndex,
+      initialBoxFitMode: settings.getDefaultBoxFitMode(),
+      onBoxFitModeChanged: (mode) => settings.setDefaultBoxFitMode(mode),
+    );
+    _videoFilterManager!.updateVideoFilter();
+
+    _videoPIPManager = VideoPIPManager(player: player!);
+    _videoPIPManager!.onBeforeEnterPip = () {
+      _videoFilterManager?.enterPipMode();
+    };
+    _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
   }
 
   Future<void> _togglePIPMode() async {
