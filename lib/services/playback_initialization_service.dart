@@ -27,7 +27,7 @@ class PlaybackInitializationService {
   ///
   /// Returns the local file path if the video is downloaded and completed.
   /// Returns null if not available offline or database is not provided.
-  Future<String?> getOfflineVideoPath(String serverId, String ratingKey) async {
+  Future<String?> getOfflineVideoPath(String serverId, String ratingKey, {int mediaIndex = 0}) async {
     if (database == null) {
       return null;
     }
@@ -41,6 +41,13 @@ class PlaybackInitializationService {
 
       // Return null if not found or not completed
       if (downloadedItem == null || downloadedItem.status != DownloadStatus.completed.index) {
+        return null;
+      }
+
+      // Skip offline file if a different version was requested
+      if (downloadedItem.mediaIndex != mediaIndex) {
+        appLogger.d('[VersionTrace] Offline video is version ${downloadedItem.mediaIndex}, '
+            'but requested version $mediaIndex — skipping offline');
         return null;
       }
 
@@ -87,7 +94,7 @@ class PlaybackInitializationService {
       // Check for offline content first if preferOffline is enabled
       String? offlineVideoPath;
       if (preferOffline && database != null) {
-        offlineVideoPath = await getOfflineVideoPath(client.serverId, metadata.ratingKey);
+        offlineVideoPath = await getOfflineVideoPath(client.serverId, metadata.ratingKey, mediaIndex: selectedMediaIndex);
       }
 
       // If offline video is available, use it
