@@ -14,17 +14,14 @@ class ChapterMarkerPainter extends CustomPainter {
 
     final paint = Paint()
       ..color = Colors.white.withValues(alpha: 0.7)
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
+      ..style = PaintingStyle.fill;
 
     for (final chapter in chapters) {
       final startMs = chapter.startTimeOffset ?? 0;
       if (startMs == 0) continue; // Skip first chapter marker at 0:00
 
-      final position = (startMs / duration.inMilliseconds) * size.width;
-
-      // Draw short vertical line for chapter marker (centered on slider track)
-      canvas.drawLine(Offset(position, size.height * 0.45), Offset(position, size.height * 0.55), paint);
+      final x = (startMs / duration.inMilliseconds) * size.width;
+      canvas.drawCircle(Offset(x, size.height / 2), 3, paint);
     }
   }
 

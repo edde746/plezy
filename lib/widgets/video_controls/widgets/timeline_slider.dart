@@ -5,9 +5,9 @@ import '../../../models/plex_media_info.dart';
 import '../../../mpv/models.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../focus/focusable_wrapper.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../utils/formatters.dart';
 import '../painters/buffer_range_painter.dart';
-import '../painters/chapter_marker_painter.dart';
 
 /// Timeline slider with chapter markers for video playback
 ///
@@ -60,9 +60,10 @@ class TimelineSlider extends StatefulWidget {
 class _TimelineSliderState extends State<TimelineSlider> {
   double? _mousePosition;
   double? _dragValue;
+  bool _isFocused = false;
 
   // Must match the slider track inset: max(overlayRadius, thumbRadius)
-  static const _sliderPadding = 12.0;
+  static const _sliderPadding = 0.0;
 
   static const _thumbWidth = 160.0;
   static const _thumbHeight = 90.0;
@@ -164,39 +165,17 @@ class _TimelineSliderState extends State<TimelineSlider> {
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            // Chapter markers layer
-            if (widget.chaptersLoaded && widget.chapters.isNotEmpty && widget.duration.inMilliseconds > 0)
-              Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
-                  child: Row(
-                    children:
-                        widget.chapters.map((chapter) {
-                          final chapterPosition = (chapter.startTimeOffset ?? 0) / widget.duration.inMilliseconds;
-                          return Expanded(flex: (chapterPosition * 1000).toInt(), child: const SizedBox());
-                        }).toList()..add(
-                          Expanded(
-                            flex:
-                                1000 -
-                                widget.chapters.fold<int>(
-                                  0,
-                                  (sum, chapter) =>
-                                      sum +
-                                      ((chapter.startTimeOffset ?? 0) / widget.duration.inMilliseconds * 1000).toInt(),
-                                ),
-                            child: const SizedBox(),
-                          ),
-                        ),
-                  ),
-                ),
-              ),
-            // Buffer range + background track painter
+            // Buffer range + segmented background track (with chapter gaps)
             Positioned.fill(
               child: IgnorePointer(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
                   child: CustomPaint(
-                    painter: BufferRangePainter(ranges: widget.bufferRanges, duration: widget.duration),
+                    painter: BufferRangePainter(
+                      ranges: widget.bufferRanges,
+                      duration: widget.duration,
+                      chapters: widget.chaptersLoaded ? widget.chapters : const [],
+                    ),
                   ),
                 ),
               ),
@@ -205,9 +184,17 @@ class _TimelineSliderState extends State<TimelineSlider> {
             IgnorePointer(
               ignoring: !widget.enabled,
               child: SliderTheme(
-                data: SliderThemeData(
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 8,
+                  trackGap: 0,
+                  padding: EdgeInsets.zero,
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                  tickMarkShape: SliderTickMarkShape.noTickMark,
+                  thumbSize: WidgetStatePropertyAll(
+                    (!InputModeTracker.isKeyboardMode(context) || _isFocused)
+                        ? const Size(4, 20)
+                        : Size.zero,
+                  ),
                 ),
                 child: Semantics(
                   label: t.videoControls.timelineSlider,
@@ -230,18 +217,6 @@ class _TimelineSliderState extends State<TimelineSlider> {
                 ),
               ),
             ),
-            // Chapter marker indicators
-            if (widget.chaptersLoaded && widget.chapters.isNotEmpty && widget.duration.inMilliseconds > 0)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
-                    child: CustomPaint(
-                      painter: ChapterMarkerPainter(chapters: widget.chapters, duration: widget.duration),
-                    ),
-                  ),
-                ),
-              ),
             ?tooltip,
           ],
         );
@@ -251,11 +226,14 @@ class _TimelineSliderState extends State<TimelineSlider> {
           slider = FocusableWrapper(
             focusNode: widget.focusNode,
             onKeyEvent: widget.enabled ? widget.onKeyEvent : null,
-            onFocusChange: widget.onFocusChange,
+            onFocusChange: (hasFocus) {
+              setState(() => _isFocused = hasFocus);
+              widget.onFocusChange?.call(hasFocus);
+            },
             borderRadius: 8,
             autoScroll: false,
-            useBackgroundFocus: true,
             disableScale: true,
+            focusColor: Colors.transparent,
             semanticLabel: t.videoControls.timelineSlider,
             child: slider,
           );

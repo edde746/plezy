@@ -192,30 +192,40 @@ class _LiveTimelinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final trackY = size.height / 2;
-    const trackHeight = 4.0;
-    const thumbRadius = 6.0;
+    const trackHeight = 8.0;
+    final trackRadius = Radius.circular(trackHeight / 2);
     final posX = positionFraction * w;
 
-    // Background track (unplayed)
+    // Background track
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(center: Offset(w / 2, trackY), width: w, height: trackHeight),
-        const Radius.circular(2),
+        trackRadius,
       ),
       Paint()..color = Colors.white.withValues(alpha: 0.15),
     );
 
     // Played region
+    if (posX > 0) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTRB(0, trackY - trackHeight / 2, posX, trackY + trackHeight / 2),
+          trackRadius,
+        ),
+        Paint()..color = Colors.red,
+      );
+    }
+
+    // Handle thumb (pill shape matching HandleThumbShape)
+    const thumbWidth = 4.0;
+    const thumbHeight = 20.0;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTRB(0, trackY - trackHeight / 2, posX, trackY + trackHeight / 2),
-        const Radius.circular(2),
+        Rect.fromCenter(center: Offset(posX, trackY), width: thumbWidth, height: thumbHeight),
+        Radius.circular(thumbWidth / 2),
       ),
       Paint()..color = Colors.red,
     );
-
-    // Thumb
-    canvas.drawCircle(Offset(posX, trackY), thumbRadius, Paint()..color = Colors.red);
   }
 
   @override

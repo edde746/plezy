@@ -205,8 +205,6 @@ class _VolumeControlState extends State<VolumeControl> {
   }
 
   Widget _buildVolumeSlider(double volume, bool isKeyboardMode) {
-    // Show visual indicator when in adjust mode with keyboard
-    final showAdjustIndicator = _isAdjustMode && isKeyboardMode;
     final maxVolumeDouble = _maxVolume.toDouble();
 
     // Calculate 100% marker position as fraction of slider width
@@ -244,10 +242,12 @@ class _VolumeControlState extends State<VolumeControl> {
               ),
             // Volume slider
             SliderTheme(
-              data: SliderThemeData(
-                trackHeight: showAdjustIndicator ? 4 : 3,
-                thumbShape: RoundSliderThumbShape(enabledThumbRadius: showAdjustIndicator ? 8 : 6),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 8,
+                trackGap: 0,
+                padding: EdgeInsets.zero,
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                tickMarkShape: SliderTickMarkShape.noTickMark,
               ),
               child: Semantics(
                 label: t.videoControls.volumeSlider,

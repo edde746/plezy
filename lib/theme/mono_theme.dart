@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'gapped_track_shape.dart';
 import 'mono_tokens.dart';
 
 ThemeData monoTheme({required bool dark, bool oled = false}) {
@@ -123,8 +124,9 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       trackGap: 6,
       thumbSize: const WidgetStatePropertyAll(Size(4, 20)),
       thumbShape: const HandleThumbShape(),
-      trackShape: const GappedSliderTrackShape(),
+      trackShape: const GappedTrackShape(),
       tickMarkShape: const RoundSliderTickMarkShape(tickMarkRadius: 2),
+      year2023: false,
     ),
     dividerTheme: DividerThemeData(space: 0, thickness: 1, color: c.outline),
     listTileTheme: ListTileThemeData(
