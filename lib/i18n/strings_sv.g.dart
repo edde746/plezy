@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingSv implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => 'Stilalternativ';
+	@override String get text => 'Text';
+	@override String get border => 'Kantlinje';
+	@override String get background => 'Bakgrund';
 	@override String get fontSize => 'Teckenstorlek';
 	@override String get textColor => 'Textfärg';
 	@override String get borderSize => 'Kantstorlek';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerSv implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => 'Använd extern spelare';
 	@override String get useExternalPlayerDescription => 'Öppna videor i en extern app istället för den inbyggda spelaren';
 	@override String get selectPlayer => 'Välj spelare';
+	@override String get customPlayers => 'Anpassade spelare';
 	@override String get systemDefault => 'Systemstandard';
 	@override String get addCustomPlayer => 'Lägg till anpassad spelare';
 	@override String get playerName => 'Spelarnamn';
@@ -1748,6 +1752,9 @@ extension on TranslationsSv {
 			'messages.logsUploadFailed' => 'Uppladdning av loggar misslyckades',
 			'messages.logId' => 'Logg-ID',
 			'subtitlingStyling.stylingOptions' => 'Stilalternativ',
+			'subtitlingStyling.text' => 'Text',
+			'subtitlingStyling.border' => 'Kantlinje',
+			'subtitlingStyling.background' => 'Bakgrund',
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
 			'subtitlingStyling.textColor' => 'Textfärg',
 			'subtitlingStyling.borderSize' => 'Kantstorlek',
@@ -1852,11 +1859,11 @@ extension on TranslationsSv {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Misslyckades att ladda servrar: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Utgivningsår',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => 'Datum tillagd',
 			'hubDetail.rating' => 'Betyg',
 			'hubDetail.noItemsFound' => 'Inga objekt hittades',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'Rensa loggar',
 			'logs.copyLogs' => 'Kopiera loggar',
 			'logs.uploadLogs' => 'Ladda upp loggar',
@@ -2108,6 +2115,7 @@ extension on TranslationsSv {
 			'externalPlayer.useExternalPlayer' => 'Använd extern spelare',
 			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en extern app istället för den inbyggda spelaren',
 			'externalPlayer.selectPlayer' => 'Välj spelare',
+			'externalPlayer.customPlayers' => 'Anpassade spelare',
 			'externalPlayer.systemDefault' => 'Systemstandard',
 			'externalPlayer.addCustomPlayer' => 'Lägg till anpassad spelare',
 			'externalPlayer.playerName' => 'Spelarnamn',

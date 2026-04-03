@@ -1364,6 +1364,15 @@ class TranslationsSubtitlingStylingEn {
 	/// en: 'Styling Options'
 	String get stylingOptions => 'Styling Options';
 
+	/// en: 'Text'
+	String get text => 'Text';
+
+	/// en: 'Border'
+	String get border => 'Border';
+
+	/// en: 'Background'
+	String get background => 'Background';
+
 	/// en: 'Font Size'
 	String get fontSize => 'Font Size';
 
@@ -2384,6 +2393,9 @@ class TranslationsExternalPlayerEn {
 
 	/// en: 'Select Player'
 	String get selectPlayer => 'Select Player';
+
+	/// en: 'Custom Players'
+	String get customPlayers => 'Custom Players';
 
 	/// en: 'System Default'
 	String get systemDefault => 'System Default';
@@ -3447,6 +3459,9 @@ extension on Translations {
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
 			'subtitlingStyling.stylingOptions' => 'Styling Options',
+			'subtitlingStyling.text' => 'Text',
+			'subtitlingStyling.border' => 'Border',
+			'subtitlingStyling.background' => 'Background',
 			'subtitlingStyling.fontSize' => 'Font Size',
 			'subtitlingStyling.textColor' => 'Text Color',
 			'subtitlingStyling.borderSize' => 'Border Size',
@@ -3551,11 +3566,11 @@ extension on Translations {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
 			'hubDetail.title' => 'Title',
 			'hubDetail.releaseYear' => 'Release Year',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => 'Date Added',
 			'hubDetail.rating' => 'Rating',
 			'hubDetail.noItemsFound' => 'No items found',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
 			'logs.uploadLogs' => 'Upload Logs',
@@ -3807,6 +3822,7 @@ extension on Translations {
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in an external app instead of the built-in player',
 			'externalPlayer.selectPlayer' => 'Select Player',
+			'externalPlayer.customPlayers' => 'Custom Players',
 			'externalPlayer.systemDefault' => 'System Default',
 			'externalPlayer.addCustomPlayer' => 'Add Custom Player',
 			'externalPlayer.playerName' => 'Player Name',

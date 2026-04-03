@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingEs implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => 'Opciones de Estilo';
+	@override String get text => 'Texto';
+	@override String get border => 'Borde';
+	@override String get background => 'Fondo';
 	@override String get fontSize => 'Tamaño de Fuente';
 	@override String get textColor => 'Color de Texto';
 	@override String get borderSize => 'Tamaño de Borde';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerEs implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => 'Usar reproductor externo';
 	@override String get useExternalPlayerDescription => 'Abrir vídeos en una app externa en lugar del reproductor integrado';
 	@override String get selectPlayer => 'Seleccionar reproductor';
+	@override String get customPlayers => 'Reproductores personalizados';
 	@override String get systemDefault => 'Predeterminado del sistema';
 	@override String get addCustomPlayer => 'Añadir reproductor personalizado';
 	@override String get playerName => 'Nombre del reproductor';
@@ -1748,6 +1752,9 @@ extension on TranslationsEs {
 			'messages.logsUploadFailed' => 'Error al subir registros',
 			'messages.logId' => 'ID de registro',
 			'subtitlingStyling.stylingOptions' => 'Opciones de Estilo',
+			'subtitlingStyling.text' => 'Texto',
+			'subtitlingStyling.border' => 'Borde',
+			'subtitlingStyling.background' => 'Fondo',
 			'subtitlingStyling.fontSize' => 'Tamaño de Fuente',
 			'subtitlingStyling.textColor' => 'Color de Texto',
 			'subtitlingStyling.borderSize' => 'Tamaño de Borde',
@@ -1852,11 +1859,11 @@ extension on TranslationsEs {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Error al cargar servidores: ${error}',
 			'hubDetail.title' => 'Título',
 			'hubDetail.releaseYear' => 'Año de lanzamiento',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => 'Añadido el',
 			'hubDetail.rating' => 'Calificación',
 			'hubDetail.noItemsFound' => 'No se encontraron elementos',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'Borrar Logs',
 			'logs.copyLogs' => 'Copiar Logs',
 			'logs.uploadLogs' => 'Subir registros',
@@ -2108,6 +2115,7 @@ extension on TranslationsEs {
 			'externalPlayer.useExternalPlayer' => 'Usar reproductor externo',
 			'externalPlayer.useExternalPlayerDescription' => 'Abrir vídeos en una app externa en lugar del reproductor integrado',
 			'externalPlayer.selectPlayer' => 'Seleccionar reproductor',
+			'externalPlayer.customPlayers' => 'Reproductores personalizados',
 			'externalPlayer.systemDefault' => 'Predeterminado del sistema',
 			'externalPlayer.addCustomPlayer' => 'Añadir reproductor personalizado',
 			'externalPlayer.playerName' => 'Nombre del reproductor',

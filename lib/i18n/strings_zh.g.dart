@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingZh implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => '样式选项';
+	@override String get text => '文本';
+	@override String get border => '边框';
+	@override String get background => '背景';
 	@override String get fontSize => '字号';
 	@override String get textColor => '文本颜色';
 	@override String get borderSize => '边框大小';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerZh implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => '使用外部播放器';
 	@override String get useExternalPlayerDescription => '在外部应用中打开视频，而不是使用内置播放器';
 	@override String get selectPlayer => '选择播放器';
+	@override String get customPlayers => '自定义播放器';
 	@override String get systemDefault => '系统默认';
 	@override String get addCustomPlayer => '添加自定义播放器';
 	@override String get playerName => '播放器名称';
@@ -1748,6 +1752,9 @@ extension on TranslationsZh {
 			'messages.logsUploadFailed' => '上传日志失败',
 			'messages.logId' => '日志 ID',
 			'subtitlingStyling.stylingOptions' => '样式选项',
+			'subtitlingStyling.text' => '文本',
+			'subtitlingStyling.border' => '边框',
+			'subtitlingStyling.background' => '背景',
 			'subtitlingStyling.fontSize' => '字号',
 			'subtitlingStyling.textColor' => '文本颜色',
 			'subtitlingStyling.borderSize' => '边框大小',
@@ -1852,11 +1859,11 @@ extension on TranslationsZh {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',
 			'hubDetail.title' => '标题',
 			'hubDetail.releaseYear' => '发行年份',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => '添加日期',
 			'hubDetail.rating' => '评分',
 			'hubDetail.noItemsFound' => '未找到项目',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => '清除日志',
 			'logs.copyLogs' => '复制日志',
 			'logs.uploadLogs' => '上传日志',
@@ -2108,6 +2115,7 @@ extension on TranslationsZh {
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在外部应用中打开视频，而不是使用内置播放器',
 			'externalPlayer.selectPlayer' => '选择播放器',
+			'externalPlayer.customPlayers' => '自定义播放器',
 			'externalPlayer.systemDefault' => '系统默认',
 			'externalPlayer.addCustomPlayer' => '添加自定义播放器',
 			'externalPlayer.playerName' => '播放器名称',

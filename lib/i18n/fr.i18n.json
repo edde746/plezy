@@ -439,6 +439,9 @@
   },
   "subtitlingStyling": {
     "stylingOptions": "Options de style",
+    "text": "Texte",
+    "border": "Bordure",
+    "background": "Arrière-plan",
     "fontSize": "Taille de la police",
     "textColor": "Couleur du texte",
     "borderSize": "Taille de la bordure",
@@ -847,6 +850,7 @@
     "useExternalPlayer": "Utiliser un lecteur externe",
     "useExternalPlayerDescription": "Ouvrir les vidéos dans une application externe au lieu du lecteur intégré",
     "selectPlayer": "Sélectionner le lecteur",
+    "customPlayers": "Lecteurs personnalisés",
     "systemDefault": "Par défaut du système",
     "addCustomPlayer": "Ajouter un lecteur personnalisé",
     "playerName": "Nom du lecteur",

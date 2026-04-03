@@ -439,6 +439,9 @@
   },
   "subtitlingStyling": {
     "stylingOptions": "スタイルオプション",
+    "text": "テキスト",
+    "border": "枠線",
+    "background": "背景",
     "fontSize": "フォントサイズ",
     "textColor": "テキストの色",
     "borderSize": "枠線サイズ",
@@ -847,6 +850,7 @@
     "useExternalPlayer": "外部プレーヤーを使用",
     "useExternalPlayerDescription": "内蔵プレーヤーの代わりに外部アプリで動画を開く",
     "selectPlayer": "プレーヤーを選択",
+    "customPlayers": "カスタムプレーヤー",
     "systemDefault": "システムデフォルト",
     "addCustomPlayer": "カスタムプレーヤーを追加",
     "playerName": "プレーヤー名",

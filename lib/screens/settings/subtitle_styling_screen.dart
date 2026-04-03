@@ -3,113 +3,19 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import '../../focus/focusable_button.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
-import '../../focus/input_mode_tracker.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/settings_section.dart';
 import '../../widgets/tv_color_picker.dart';
-import '../../widgets/tv_number_spinner.dart';
+import 'settings_utils.dart';
 
 class SubtitleStylingScreen extends StatefulWidget {
   const SubtitleStylingScreen({super.key});
 
   @override
   State<SubtitleStylingScreen> createState() => _SubtitleStylingScreenState();
-}
-
-// Composable widget for slider sections
-class _StylingSliderSection extends StatelessWidget {
-  final String label;
-  final int value;
-  final double min;
-  final double max;
-  final int divisions;
-  final ValueChanged<double> onChanged;
-  final ValueChanged<double>? onChangeEnd;
-  final String Function(int)? valueFormatter;
-
-  const _StylingSliderSection({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.divisions,
-    required this.onChanged,
-    this.onChangeEnd,
-    this.valueFormatter,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final formattedValue = valueFormatter?.call(value) ?? value.toString();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(formattedValue)]),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(
-                valueFormatter?.call(min.toInt()) ?? min.toInt().toString(),
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              Expanded(
-                child: Slider(
-                  value: value.toDouble(),
-                  min: min,
-                  max: max,
-                  divisions: divisions,
-                  label: formattedValue,
-                  onChanged: onChanged,
-                  onChangeEnd: onChangeEnd,
-                ),
-              ),
-              Text(
-                valueFormatter?.call(max.toInt()) ?? max.toInt().toString(),
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Composable widget for color picker tiles
-class _ColorSettingTile extends StatelessWidget {
-  final String label;
-  final String currentColor;
-  final VoidCallback onTap;
-  final Color Function(String) hexToColor;
-
-  const _ColorSettingTile({
-    required this.label,
-    required this.currentColor,
-    required this.onTap,
-    required this.hexToColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: hexToColor(currentColor),
-          border: const Border.fromBorderSide(BorderSide(color: Colors.grey)),
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
-        ),
-      ),
-      title: Text(label),
-      subtitle: Text(currentColor),
-      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-      onTap: onTap,
-    );
-  }
 }
 
 class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
@@ -156,72 +62,6 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   String _colorToHex(Color color) {
     return '#${((color.r * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.g * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.b * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}'
         .toUpperCase();
-  }
-
-  void _showTvSpinnerDialog({
-    required String title,
-    required int currentValue,
-    required int min,
-    required int max,
-    int step = 1,
-    String? suffix,
-    required ValueChanged<int> onSave,
-  }) {
-    int spinnerValue = currentValue;
-    final saveFocusNode = FocusNode();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(title),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TvNumberSpinner(
-                    value: spinnerValue,
-                    min: min,
-                    max: max,
-                    step: step,
-                    suffix: suffix,
-                    autofocus: true,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        spinnerValue = value;
-                      });
-                    },
-                    onConfirm: () => saveFocusNode.requestFocus(),
-                    onCancel: () => Navigator.pop(dialogContext),
-                  ),
-                ],
-              ),
-              actions: [
-                FocusableButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-                ),
-                FocusableButton(
-                  focusNode: saveFocusNode,
-                  onPressed: () {
-                    onSave(spinnerValue);
-                    Navigator.pop(dialogContext);
-                  },
-                  child: TextButton(
-                    onPressed: () {
-                      onSave(spinnerValue);
-                      Navigator.pop(dialogContext);
-                    },
-                    child: Text(t.common.save),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    ).then((_) => saveFocusNode.dispose());
   }
 
   Future<void> _showColorPicker(String title, String currentColor, Function(String) onColorSelected) async {
@@ -298,240 +138,176 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
     ).then((_) => saveFocusNode.dispose());
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return FocusedScrollScaffold(
-      title: Text(t.screens.subtitleStyling),
-      slivers: _isLoading
-          ? [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]
-          : [
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([_buildStylingCard(), const SizedBox(height: 24)]),
-                ),
-              ),
-            ],
-    );
+  void _openColorPicker(String title, String currentColor, Function(String) onColorSelected) {
+    if (InputModeTracker.isKeyboardMode(context)) {
+      _showTvColorPicker(title, currentColor, onColorSelected);
+    } else {
+      _showColorPicker(title, currentColor, onColorSelected);
+    }
   }
 
-  Widget _buildStylingCard() {
-    final useDpadControls = InputModeTracker.isKeyboardMode(context);
+  String _formatPosition(int value) {
+    if (value == 0) return 'Top';
+    if (value == 100) return 'Bottom';
+    return '$value%';
+  }
 
-    return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              t.subtitlingStyling.stylingOptions,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          // Font Size Slider
-          if (useDpadControls)
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return FocusedScrollScaffold(
+        title: Text(t.screens.subtitleStyling),
+        slivers: [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
+      );
+    }
+
+    return FocusedScrollScaffold(
+      title: Text(t.screens.subtitleStyling),
+      slivers: [
+        SliverList(
+          delegate: SliverChildListDelegate([
+            // --- Text ---
+            SettingsSectionHeader(t.subtitlingStyling.text),
             ListTile(
+              leading: const AppIcon(Symbols.format_size_rounded, fill: 1),
               title: Text(t.subtitlingStyling.fontSize),
-              trailing: Text('$_fontSize'),
-              onTap: () => _showTvSpinnerDialog(
+              subtitle: Text('$_fontSize'),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => showNumericInputDialog(
+                context: context,
                 title: t.subtitlingStyling.fontSize,
-                currentValue: _fontSize,
+                labelText: t.subtitlingStyling.fontSize,
+                suffixText: '',
                 min: 10,
                 max: 80,
-                onSave: (value) {
+                currentValue: _fontSize,
+                onSave: (value) async {
                   setState(() => _fontSize = value);
-                  _settingsService.setSubtitleFontSize(value);
+                  await _settingsService.setSubtitleFontSize(value);
                 },
               ),
-            )
-          else
-            _StylingSliderSection(
-              label: t.subtitlingStyling.fontSize,
-              value: _fontSize,
-              min: 10,
-              max: 80,
-              divisions: 70,
-              onChanged: (value) {
-                setState(() {
-                  _fontSize = value.toInt();
-                });
-              },
-              onChangeEnd: (value) {
-                _settingsService.setSubtitleFontSize(_fontSize);
-              },
             ),
-          const Divider(),
-          // Subtitle Position Slider
-          if (useDpadControls)
             ListTile(
-              title: Text(t.subtitlingStyling.position),
-              trailing: Text(() {
-                if (_subtitlePosition == 0) return 'Top';
-                if (_subtitlePosition == 100) return 'Bottom';
-                return '$_subtitlePosition%';
-              }()),
-              onTap: () => _showTvSpinnerDialog(
-                title: t.subtitlingStyling.position,
-                currentValue: _subtitlePosition,
-                min: 0,
-                max: 100,
-                step: 5,
-                onSave: (value) {
-                  setState(() => _subtitlePosition = value);
-                  _settingsService.setSubtitlePosition(value);
-                },
+              leading: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: _hexToColor(_textColor),
+                  border: const Border.fromBorderSide(BorderSide(color: Colors.grey)),
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                ),
               ),
-            )
-          else
-            _StylingSliderSection(
-              label: t.subtitlingStyling.position,
-              value: _subtitlePosition,
-              min: 0,
-              max: 100,
-              divisions: 20,
-              valueFormatter: (value) {
-                if (value == 0) return 'Top';
-                if (value == 100) return 'Bottom';
-                return '$value%';
-              },
-              onChanged: (value) {
-                setState(() {
-                  _subtitlePosition = value.toInt();
-                });
-              },
-              onChangeEnd: (value) {
-                _settingsService.setSubtitlePosition(_subtitlePosition);
-              },
-            ),
-          const Divider(),
-          // Text Color
-          _ColorSettingTile(
-            label: t.subtitlingStyling.textColor,
-            currentColor: _textColor,
-            hexToColor: _hexToColor,
-            onTap: () {
-              void onColorSelected(String color) {
+              title: Text(t.subtitlingStyling.textColor),
+              subtitle: Text(_textColor),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => _openColorPicker(t.subtitlingStyling.textColor, _textColor, (color) {
                 setState(() => _textColor = color);
                 _settingsService.setSubtitleTextColor(color);
-              }
-
-              if (useDpadControls) {
-                _showTvColorPicker(t.subtitlingStyling.textColor, _textColor, onColorSelected);
-              } else {
-                _showColorPicker(t.subtitlingStyling.textColor, _textColor, onColorSelected);
-              }
-            },
-          ),
-          const Divider(),
-          // Border Size Slider
-          if (useDpadControls)
-            ListTile(
-              title: Text(t.subtitlingStyling.borderSize),
-              trailing: Text('$_borderSize'),
-              onTap: () => _showTvSpinnerDialog(
-                title: t.subtitlingStyling.borderSize,
-                currentValue: _borderSize,
-                min: 0,
-                max: 5,
-                onSave: (value) {
-                  setState(() => _borderSize = value);
-                  _settingsService.setSubtitleBorderSize(value);
-                },
-              ),
-            )
-          else
-            _StylingSliderSection(
-              label: t.subtitlingStyling.borderSize,
-              value: _borderSize,
-              min: 0,
-              max: 5,
-              divisions: 5,
-              onChanged: (value) {
-                setState(() {
-                  _borderSize = value.toInt();
-                });
-              },
-              onChangeEnd: (value) {
-                _settingsService.setSubtitleBorderSize(_borderSize);
-              },
+              }),
             ),
-          const Divider(),
-          // Border Color
-          _ColorSettingTile(
-            label: t.subtitlingStyling.borderColor,
-            currentColor: _borderColor,
-            hexToColor: _hexToColor,
-            onTap: () {
-              void onColorSelected(String color) {
-                setState(() => _borderColor = color);
-                _settingsService.setSubtitleBorderColor(color);
-              }
-
-              if (useDpadControls) {
-                _showTvColorPicker(t.subtitlingStyling.borderColor, _borderColor, onColorSelected);
-              } else {
-                _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, onColorSelected);
-              }
-            },
-          ),
-          const Divider(),
-          // Background Opacity Slider
-          if (useDpadControls)
             ListTile(
-              title: Text(t.subtitlingStyling.backgroundOpacity),
-              trailing: Text('$_backgroundOpacity%'),
-              onTap: () => _showTvSpinnerDialog(
-                title: t.subtitlingStyling.backgroundOpacity,
-                currentValue: _backgroundOpacity,
+              leading: const AppIcon(Symbols.vertical_align_bottom_rounded, fill: 1),
+              title: Text(t.subtitlingStyling.position),
+              subtitle: Text(_formatPosition(_subtitlePosition)),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => showNumericInputDialog(
+                context: context,
+                title: t.subtitlingStyling.position,
+                labelText: t.subtitlingStyling.position,
+                suffixText: '%',
                 min: 0,
                 max: 100,
-                step: 5,
-                suffix: '%',
-                onSave: (value) {
-                  setState(() => _backgroundOpacity = value);
-                  _settingsService.setSubtitleBackgroundOpacity(value);
+                currentValue: _subtitlePosition,
+                onSave: (value) async {
+                  setState(() => _subtitlePosition = value);
+                  await _settingsService.setSubtitlePosition(value);
                 },
               ),
-            )
-          else
-            _StylingSliderSection(
-              label: t.subtitlingStyling.backgroundOpacity,
-              value: _backgroundOpacity,
-              min: 0,
-              max: 100,
-              divisions: 20,
-              valueFormatter: (value) => '$value%',
-              onChanged: (value) {
-                setState(() {
-                  _backgroundOpacity = value.toInt();
-                });
-              },
-              onChangeEnd: (value) {
-                _settingsService.setSubtitleBackgroundOpacity(_backgroundOpacity);
-              },
             ),
-          const Divider(),
-          // Background Color
-          _ColorSettingTile(
-            label: t.subtitlingStyling.backgroundColor,
-            currentColor: _backgroundColor,
-            hexToColor: _hexToColor,
-            onTap: () {
-              void onColorSelected(String color) {
+
+            // --- Border ---
+            SettingsSectionHeader(t.subtitlingStyling.border),
+            ListTile(
+              leading: const AppIcon(Symbols.border_style_rounded, fill: 1),
+              title: Text(t.subtitlingStyling.borderSize),
+              subtitle: Text('$_borderSize'),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => showNumericInputDialog(
+                context: context,
+                title: t.subtitlingStyling.borderSize,
+                labelText: t.subtitlingStyling.borderSize,
+                suffixText: '',
+                min: 0,
+                max: 5,
+                currentValue: _borderSize,
+                onSave: (value) async {
+                  setState(() => _borderSize = value);
+                  await _settingsService.setSubtitleBorderSize(value);
+                },
+              ),
+            ),
+            ListTile(
+              leading: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: _hexToColor(_borderColor),
+                  border: const Border.fromBorderSide(BorderSide(color: Colors.grey)),
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                ),
+              ),
+              title: Text(t.subtitlingStyling.borderColor),
+              subtitle: Text(_borderColor),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => _openColorPicker(t.subtitlingStyling.borderColor, _borderColor, (color) {
+                setState(() => _borderColor = color);
+                _settingsService.setSubtitleBorderColor(color);
+              }),
+            ),
+
+            // --- Background ---
+            SettingsSectionHeader(t.subtitlingStyling.background),
+            ListTile(
+              leading: const AppIcon(Symbols.opacity_rounded, fill: 1),
+              title: Text(t.subtitlingStyling.backgroundOpacity),
+              subtitle: Text('$_backgroundOpacity%'),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => showNumericInputDialog(
+                context: context,
+                title: t.subtitlingStyling.backgroundOpacity,
+                labelText: t.subtitlingStyling.backgroundOpacity,
+                suffixText: '%',
+                min: 0,
+                max: 100,
+                currentValue: _backgroundOpacity,
+                onSave: (value) async {
+                  setState(() => _backgroundOpacity = value);
+                  await _settingsService.setSubtitleBackgroundOpacity(value);
+                },
+              ),
+            ),
+            ListTile(
+              leading: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: _hexToColor(_backgroundColor),
+                  border: const Border.fromBorderSide(BorderSide(color: Colors.grey)),
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                ),
+              ),
+              title: Text(t.subtitlingStyling.backgroundColor),
+              subtitle: Text(_backgroundColor),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => _openColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, (color) {
                 setState(() => _backgroundColor = color);
                 _settingsService.setSubtitleBackgroundColor(color);
-              }
-
-              if (useDpadControls) {
-                _showTvColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, onColorSelected);
-              } else {
-                _showColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, onColorSelected);
-              }
-            },
-          ),
-        ],
-      ),
+              }),
+            ),
+            const SizedBox(height: 24),
+          ]),
+        ),
+      ],
     );
   }
 }

@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingPt implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => 'Opções de Estilo';
+	@override String get text => 'Texto';
+	@override String get border => 'Borda';
+	@override String get background => 'Fundo';
 	@override String get fontSize => 'Tamanho da Fonte';
 	@override String get textColor => 'Cor do Texto';
 	@override String get borderSize => 'Tamanho da Borda';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerPt implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => 'Usar Player Externo';
 	@override String get useExternalPlayerDescription => 'Abrir vídeos em um app externo em vez do player integrado';
 	@override String get selectPlayer => 'Selecionar Player';
+	@override String get customPlayers => 'Players Personalizados';
 	@override String get systemDefault => 'Padrão do Sistema';
 	@override String get addCustomPlayer => 'Adicionar Player Personalizado';
 	@override String get playerName => 'Nome do Player';
@@ -1748,6 +1752,9 @@ extension on TranslationsPt {
 			'messages.logsUploadFailed' => 'Falha ao enviar logs',
 			'messages.logId' => 'ID do Log',
 			'subtitlingStyling.stylingOptions' => 'Opções de Estilo',
+			'subtitlingStyling.text' => 'Texto',
+			'subtitlingStyling.border' => 'Borda',
+			'subtitlingStyling.background' => 'Fundo',
 			'subtitlingStyling.fontSize' => 'Tamanho da Fonte',
 			'subtitlingStyling.textColor' => 'Cor do Texto',
 			'subtitlingStyling.borderSize' => 'Tamanho da Borda',
@@ -1852,11 +1859,11 @@ extension on TranslationsPt {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Falha ao carregar servidores: ${error}',
 			'hubDetail.title' => 'Título',
 			'hubDetail.releaseYear' => 'Ano de Lançamento',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => 'Data de Adição',
 			'hubDetail.rating' => 'Avaliação',
 			'hubDetail.noItemsFound' => 'Nenhum item encontrado',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'Limpar Logs',
 			'logs.copyLogs' => 'Copiar Logs',
 			'logs.uploadLogs' => 'Enviar Logs',
@@ -2108,6 +2115,7 @@ extension on TranslationsPt {
 			'externalPlayer.useExternalPlayer' => 'Usar Player Externo',
 			'externalPlayer.useExternalPlayerDescription' => 'Abrir vídeos em um app externo em vez do player integrado',
 			'externalPlayer.selectPlayer' => 'Selecionar Player',
+			'externalPlayer.customPlayers' => 'Players Personalizados',
 			'externalPlayer.systemDefault' => 'Padrão do Sistema',
 			'externalPlayer.addCustomPlayer' => 'Adicionar Player Personalizado',
 			'externalPlayer.playerName' => 'Nome do Player',

@@ -439,6 +439,9 @@
   },
   "subtitlingStyling": {
     "stylingOptions": "Opcje stylu",
+    "text": "Tekst",
+    "border": "Obramowanie",
+    "background": "Tło",
     "fontSize": "Rozmiar czcionki",
     "textColor": "Kolor tekstu",
     "borderSize": "Rozmiar obramowania",
@@ -847,6 +850,7 @@
     "useExternalPlayer": "Użyj zewnętrznego odtwarzacza",
     "useExternalPlayerDescription": "Otwieraj wideo w zewnętrznej aplikacji zamiast wbudowanego odtwarzacza",
     "selectPlayer": "Wybierz odtwarzacz",
+    "customPlayers": "Niestandardowe odtwarzacze",
     "systemDefault": "Domyślny systemowy",
     "addCustomPlayer": "Dodaj niestandardowy odtwarzacz",
     "playerName": "Nazwa odtwarzacza",

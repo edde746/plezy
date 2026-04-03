@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingNb implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => 'Stilalternativer';
+	@override String get text => 'Tekst';
+	@override String get border => 'Kantlinje';
+	@override String get background => 'Bakgrunn';
 	@override String get fontSize => 'Skriftstørrelse';
 	@override String get textColor => 'Tekstfarge';
 	@override String get borderSize => 'Kantstørrelse';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerNb implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => 'Bruk ekstern spiller';
 	@override String get useExternalPlayerDescription => 'Åpne videoer i en ekstern app i stedet for den innebygde spilleren';
 	@override String get selectPlayer => 'Velg spiller';
+	@override String get customPlayers => 'Egendefinerte spillere';
 	@override String get systemDefault => 'Systemstandard';
 	@override String get addCustomPlayer => 'Legg til egendefinert spiller';
 	@override String get playerName => 'Spillernavn';
@@ -1748,6 +1752,9 @@ extension on TranslationsNb {
 			'messages.logsUploadFailed' => 'Kunne ikke laste opp logger',
 			'messages.logId' => 'Logg-ID',
 			'subtitlingStyling.stylingOptions' => 'Stilalternativer',
+			'subtitlingStyling.text' => 'Tekst',
+			'subtitlingStyling.border' => 'Kantlinje',
+			'subtitlingStyling.background' => 'Bakgrunn',
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			'subtitlingStyling.textColor' => 'Tekstfarge',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
@@ -1852,11 +1859,11 @@ extension on TranslationsNb {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke laste servere: ${error}',
 			'hubDetail.title' => 'Tittel',
 			'hubDetail.releaseYear' => 'Utgivelsesår',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => 'Dato lagt til',
 			'hubDetail.rating' => 'Vurdering',
 			'hubDetail.noItemsFound' => 'Ingen elementer funnet',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'Tøm logger',
 			'logs.copyLogs' => 'Kopier logger',
 			'logs.uploadLogs' => 'Last opp logger',
@@ -2108,6 +2115,7 @@ extension on TranslationsNb {
 			'externalPlayer.useExternalPlayer' => 'Bruk ekstern spiller',
 			'externalPlayer.useExternalPlayerDescription' => 'Åpne videoer i en ekstern app i stedet for den innebygde spilleren',
 			'externalPlayer.selectPlayer' => 'Velg spiller',
+			'externalPlayer.customPlayers' => 'Egendefinerte spillere',
 			'externalPlayer.systemDefault' => 'Systemstandard',
 			'externalPlayer.addCustomPlayer' => 'Legg til egendefinert spiller',
 			'externalPlayer.playerName' => 'Spillernavn',

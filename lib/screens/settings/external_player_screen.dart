@@ -9,6 +9,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/external_player_models.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/settings_section.dart';
 
 class ExternalPlayerScreen extends StatefulWidget {
   const ExternalPlayerScreen({super.key});
@@ -57,53 +58,31 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
     return FocusedScrollScaffold(
       title: Text(t.externalPlayer.title),
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              Card(
-                child: SwitchListTile(
-                  secondary: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
-                  title: Text(t.externalPlayer.useExternalPlayer),
-                  subtitle: Text(t.externalPlayer.useExternalPlayerDescription),
-                  value: _useExternalPlayer,
-                  onChanged: (value) async {
-                    setState(() => _useExternalPlayer = value);
-                    await _settingsService.setUseExternalPlayer(value);
-                  },
-                ),
+        SliverList(
+          delegate: SliverChildListDelegate([
+            SwitchListTile(
+              secondary: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
+              title: Text(t.externalPlayer.useExternalPlayer),
+              subtitle: Text(t.externalPlayer.useExternalPlayerDescription),
+              value: _useExternalPlayer,
+              onChanged: (value) async {
+                setState(() => _useExternalPlayer = value);
+                await _settingsService.setUseExternalPlayer(value);
+              },
+            ),
+            if (_useExternalPlayer) ...[
+              SettingsSectionHeader(t.externalPlayer.selectPlayer),
+              ...knownPlayers.map((player) => _buildPlayerTile(player)),
+              SettingsSectionHeader(t.externalPlayer.customPlayers),
+              ..._customPlayers.map((player) => _buildPlayerTile(player, isCustom: true)),
+              ListTile(
+                leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                title: Text(t.externalPlayer.addCustomPlayer),
+                onTap: _showAddCustomPlayerDialog,
               ),
-              if (_useExternalPlayer) ...[
-                const SizedBox(height: 16),
-                Card(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          t.externalPlayer.selectPlayer,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      // Known players
-                      ...knownPlayers.map((player) => _buildPlayerTile(player)),
-                      // Custom players
-                      if (_customPlayers.isNotEmpty) const Divider(),
-                      ..._customPlayers.map((player) => _buildPlayerTile(player, isCustom: true)),
-                      // Add custom player button
-                      const Divider(),
-                      ListTile(
-                        leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                        title: Text(t.externalPlayer.addCustomPlayer),
-                        onTap: _showAddCustomPlayerDialog,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ]),
-          ),
+            ],
+            const SizedBox(height: 24),
+          ]),
         ),
       ],
     );

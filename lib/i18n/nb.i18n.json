@@ -439,6 +439,9 @@
   },
   "subtitlingStyling": {
     "stylingOptions": "Stilalternativer",
+    "text": "Tekst",
+    "border": "Kantlinje",
+    "background": "Bakgrunn",
     "fontSize": "Skriftstørrelse",
     "textColor": "Tekstfarge",
     "borderSize": "Kantstørrelse",
@@ -847,6 +850,7 @@
     "useExternalPlayer": "Bruk ekstern spiller",
     "useExternalPlayerDescription": "Åpne videoer i en ekstern app i stedet for den innebygde spilleren",
     "selectPlayer": "Velg spiller",
+    "customPlayers": "Egendefinerte spillere",
     "systemDefault": "Systemstandard",
     "addCustomPlayer": "Legg til egendefinert spiller",
     "playerName": "Spillernavn",

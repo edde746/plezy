@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingJa implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => 'スタイルオプション';
+	@override String get text => 'テキスト';
+	@override String get border => '枠線';
+	@override String get background => '背景';
 	@override String get fontSize => 'フォントサイズ';
 	@override String get textColor => 'テキストの色';
 	@override String get borderSize => '枠線サイズ';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerJa implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => '外部プレーヤーを使用';
 	@override String get useExternalPlayerDescription => '内蔵プレーヤーの代わりに外部アプリで動画を開く';
 	@override String get selectPlayer => 'プレーヤーを選択';
+	@override String get customPlayers => 'カスタムプレーヤー';
 	@override String get systemDefault => 'システムデフォルト';
 	@override String get addCustomPlayer => 'カスタムプレーヤーを追加';
 	@override String get playerName => 'プレーヤー名';
@@ -1748,6 +1752,9 @@ extension on TranslationsJa {
 			'messages.logsUploadFailed' => 'ログのアップロードに失敗しました',
 			'messages.logId' => 'ログID',
 			'subtitlingStyling.stylingOptions' => 'スタイルオプション',
+			'subtitlingStyling.text' => 'テキスト',
+			'subtitlingStyling.border' => '枠線',
+			'subtitlingStyling.background' => '背景',
 			'subtitlingStyling.fontSize' => 'フォントサイズ',
 			'subtitlingStyling.textColor' => 'テキストの色',
 			'subtitlingStyling.borderSize' => '枠線サイズ',
@@ -1852,11 +1859,11 @@ extension on TranslationsJa {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'サーバーの読み込みに失敗しました: ${error}',
 			'hubDetail.title' => 'タイトル',
 			'hubDetail.releaseYear' => '公開年',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => '追加日',
 			'hubDetail.rating' => '評価',
 			'hubDetail.noItemsFound' => 'アイテムが見つかりません',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'ログをクリア',
 			'logs.copyLogs' => 'ログをコピー',
 			'logs.uploadLogs' => 'ログをアップロード',
@@ -2108,6 +2115,7 @@ extension on TranslationsJa {
 			'externalPlayer.useExternalPlayer' => '外部プレーヤーを使用',
 			'externalPlayer.useExternalPlayerDescription' => '内蔵プレーヤーの代わりに外部アプリで動画を開く',
 			'externalPlayer.selectPlayer' => 'プレーヤーを選択',
+			'externalPlayer.customPlayers' => 'カスタムプレーヤー',
 			'externalPlayer.systemDefault' => 'システムデフォルト',
 			'externalPlayer.addCustomPlayer' => 'カスタムプレーヤーを追加',
 			'externalPlayer.playerName' => 'プレーヤー名',

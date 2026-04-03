@@ -439,6 +439,9 @@
   },
   "subtitlingStyling": {
     "stylingOptions": "Opmaak opties",
+    "text": "Tekst",
+    "border": "Rand",
+    "background": "Achtergrond",
     "fontSize": "Lettergrootte",
     "textColor": "Tekstkleur",
     "borderSize": "Rand grootte",
@@ -847,6 +850,7 @@
     "useExternalPlayer": "Externe speler gebruiken",
     "useExternalPlayerDescription": "Open video's in een externe app in plaats van de ingebouwde speler",
     "selectPlayer": "Speler selecteren",
+    "customPlayers": "Aangepaste spelers",
     "systemDefault": "Systeemstandaard",
     "addCustomPlayer": "Aangepaste speler toevoegen",
     "playerName": "Spelernaam",

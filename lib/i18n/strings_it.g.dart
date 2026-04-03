@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingIt implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => 'Opzioni stile';
+	@override String get text => 'Testo';
+	@override String get border => 'Bordo';
+	@override String get background => 'Sfondo';
 	@override String get fontSize => 'Dimensione';
 	@override String get textColor => 'Colore testo';
 	@override String get borderSize => 'Dimensione bordo';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerIt implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => 'Usa lettore esterno';
 	@override String get useExternalPlayerDescription => 'Apri i video in un\'app esterna invece del lettore integrato';
 	@override String get selectPlayer => 'Seleziona lettore';
+	@override String get customPlayers => 'Lettori personalizzati';
 	@override String get systemDefault => 'Predefinito di sistema';
 	@override String get addCustomPlayer => 'Aggiungi lettore personalizzato';
 	@override String get playerName => 'Nome lettore';
@@ -1748,6 +1752,9 @@ extension on TranslationsIt {
 			'messages.logsUploadFailed' => 'Caricamento log fallito',
 			'messages.logId' => 'ID log',
 			'subtitlingStyling.stylingOptions' => 'Opzioni stile',
+			'subtitlingStyling.text' => 'Testo',
+			'subtitlingStyling.border' => 'Bordo',
+			'subtitlingStyling.background' => 'Sfondo',
 			'subtitlingStyling.fontSize' => 'Dimensione',
 			'subtitlingStyling.textColor' => 'Colore testo',
 			'subtitlingStyling.borderSize' => 'Dimensione bordo',
@@ -1852,11 +1859,11 @@ extension on TranslationsIt {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Impossibile caricare i server: ${error}',
 			'hubDetail.title' => 'Titolo',
 			'hubDetail.releaseYear' => 'Anno rilascio',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => 'Data aggiunta',
 			'hubDetail.rating' => 'Valutazione',
 			'hubDetail.noItemsFound' => 'Nessun elemento trovato',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'Cancella log',
 			'logs.copyLogs' => 'Copia log',
 			'logs.uploadLogs' => 'Carica log',
@@ -2108,6 +2115,7 @@ extension on TranslationsIt {
 			'externalPlayer.useExternalPlayer' => 'Usa lettore esterno',
 			'externalPlayer.useExternalPlayerDescription' => 'Apri i video in un\'app esterna invece del lettore integrato',
 			'externalPlayer.selectPlayer' => 'Seleziona lettore',
+			'externalPlayer.customPlayers' => 'Lettori personalizzati',
 			'externalPlayer.systemDefault' => 'Predefinito di sistema',
 			'externalPlayer.addCustomPlayer' => 'Aggiungi lettore personalizzato',
 			'externalPlayer.playerName' => 'Nome lettore',

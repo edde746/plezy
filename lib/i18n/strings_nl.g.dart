@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingNl implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => 'Opmaak opties';
+	@override String get text => 'Tekst';
+	@override String get border => 'Rand';
+	@override String get background => 'Achtergrond';
 	@override String get fontSize => 'Lettergrootte';
 	@override String get textColor => 'Tekstkleur';
 	@override String get borderSize => 'Rand grootte';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerNl implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => 'Externe speler gebruiken';
 	@override String get useExternalPlayerDescription => 'Open video\'s in een externe app in plaats van de ingebouwde speler';
 	@override String get selectPlayer => 'Speler selecteren';
+	@override String get customPlayers => 'Aangepaste spelers';
 	@override String get systemDefault => 'Systeemstandaard';
 	@override String get addCustomPlayer => 'Aangepaste speler toevoegen';
 	@override String get playerName => 'Spelernaam';
@@ -1748,6 +1752,9 @@ extension on TranslationsNl {
 			'messages.logsUploadFailed' => 'Uploaden van logs mislukt',
 			'messages.logId' => 'Log-ID',
 			'subtitlingStyling.stylingOptions' => 'Opmaak opties',
+			'subtitlingStyling.text' => 'Tekst',
+			'subtitlingStyling.border' => 'Rand',
+			'subtitlingStyling.background' => 'Achtergrond',
 			'subtitlingStyling.fontSize' => 'Lettergrootte',
 			'subtitlingStyling.textColor' => 'Tekstkleur',
 			'subtitlingStyling.borderSize' => 'Rand grootte',
@@ -1852,11 +1859,11 @@ extension on TranslationsNl {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Uitgavejaar',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => 'Datum toegevoegd',
 			'hubDetail.rating' => 'Beoordeling',
 			'hubDetail.noItemsFound' => 'Geen items gevonden',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'Wis logs',
 			'logs.copyLogs' => 'Kopieer logs',
 			'logs.uploadLogs' => 'Logs uploaden',
@@ -2108,6 +2115,7 @@ extension on TranslationsNl {
 			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een externe app in plaats van de ingebouwde speler',
 			'externalPlayer.selectPlayer' => 'Speler selecteren',
+			'externalPlayer.customPlayers' => 'Aangepaste spelers',
 			'externalPlayer.systemDefault' => 'Systeemstandaard',
 			'externalPlayer.addCustomPlayer' => 'Aangepaste speler toevoegen',
 			'externalPlayer.playerName' => 'Spelernaam',

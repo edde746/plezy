@@ -439,6 +439,9 @@
   },
   "subtitlingStyling": {
     "stylingOptions": "Styling Options",
+    "text": "Text",
+    "border": "Border",
+    "background": "Background",
     "fontSize": "Font Size",
     "textColor": "Text Color",
     "borderSize": "Border Size",
@@ -847,6 +850,7 @@
     "useExternalPlayer": "Use External Player",
     "useExternalPlayerDescription": "Open videos in an external app instead of the built-in player",
     "selectPlayer": "Select Player",
+    "customPlayers": "Custom Players",
     "systemDefault": "System Default",
     "addCustomPlayer": "Add Custom Player",
     "playerName": "Player Name",

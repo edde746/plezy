@@ -439,6 +439,9 @@
   },
   "subtitlingStyling": {
     "stylingOptions": "Stilalternativ",
+    "text": "Text",
+    "border": "Kantlinje",
+    "background": "Bakgrund",
     "fontSize": "Teckenstorlek",
     "textColor": "Textfärg",
     "borderSize": "Kantstorlek",
@@ -847,6 +850,7 @@
     "useExternalPlayer": "Använd extern spelare",
     "useExternalPlayerDescription": "Öppna videor i en extern app istället för den inbyggda spelaren",
     "selectPlayer": "Välj spelare",
+    "customPlayers": "Anpassade spelare",
     "systemDefault": "Systemstandard",
     "addCustomPlayer": "Lägg till anpassad spelare",
     "playerName": "Spelarnamn",

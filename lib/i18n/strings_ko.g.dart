@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingKo implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => '스타일 옵션';
+	@override String get text => '텍스트';
+	@override String get border => '테두리';
+	@override String get background => '배경';
 	@override String get fontSize => '글자 크기';
 	@override String get textColor => '텍스트 색상';
 	@override String get borderSize => '테두리 크기';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerKo implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => '외부 플레이어 사용';
 	@override String get useExternalPlayerDescription => '내장 플레이어 대신 외부 앱에서 동영상 열기';
 	@override String get selectPlayer => '플레이어 선택';
+	@override String get customPlayers => '사용자 정의 플레이어';
 	@override String get systemDefault => '시스템 기본값';
 	@override String get addCustomPlayer => '사용자 정의 플레이어 추가';
 	@override String get playerName => '플레이어 이름';
@@ -1748,6 +1752,9 @@ extension on TranslationsKo {
 			'messages.logsUploadFailed' => '로그 업로드 실패',
 			'messages.logId' => '로그 ID',
 			'subtitlingStyling.stylingOptions' => '스타일 옵션',
+			'subtitlingStyling.text' => '텍스트',
+			'subtitlingStyling.border' => '테두리',
+			'subtitlingStyling.background' => '배경',
 			'subtitlingStyling.fontSize' => '글자 크기',
 			'subtitlingStyling.textColor' => '텍스트 색상',
 			'subtitlingStyling.borderSize' => '테두리 크기',
@@ -1852,11 +1859,11 @@ extension on TranslationsKo {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
 			'hubDetail.title' => '제목',
 			'hubDetail.releaseYear' => '출시 연도',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => '추가 날짜',
 			'hubDetail.rating' => '평점',
 			'hubDetail.noItemsFound' => '항목이 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => '로그 지우기',
 			'logs.copyLogs' => '로그 복사',
 			'logs.uploadLogs' => '로그 업로드',
@@ -2108,6 +2115,7 @@ extension on TranslationsKo {
 			'externalPlayer.useExternalPlayer' => '외부 플레이어 사용',
 			'externalPlayer.useExternalPlayerDescription' => '내장 플레이어 대신 외부 앱에서 동영상 열기',
 			'externalPlayer.selectPlayer' => '플레이어 선택',
+			'externalPlayer.customPlayers' => '사용자 정의 플레이어',
 			'externalPlayer.systemDefault' => '시스템 기본값',
 			'externalPlayer.addCustomPlayer' => '사용자 정의 플레이어 추가',
 			'externalPlayer.playerName' => '플레이어 이름',

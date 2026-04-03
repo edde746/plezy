@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingRu implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => 'Параметры стиля';
+	@override String get text => 'Текст';
+	@override String get border => 'Обводка';
+	@override String get background => 'Фон';
 	@override String get fontSize => 'Размер шрифта';
 	@override String get textColor => 'Цвет текста';
 	@override String get borderSize => 'Размер обводки';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerRu implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => 'Использовать внешний плеер';
 	@override String get useExternalPlayerDescription => 'Открывать видео во внешнем приложении вместо встроенного плеера';
 	@override String get selectPlayer => 'Выбрать плеер';
+	@override String get customPlayers => 'Свои плееры';
 	@override String get systemDefault => 'Системный по умолчанию';
 	@override String get addCustomPlayer => 'Добавить свой плеер';
 	@override String get playerName => 'Название плеера';
@@ -1748,6 +1752,9 @@ extension on TranslationsRu {
 			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
 			'messages.logId' => 'ID лога',
 			'subtitlingStyling.stylingOptions' => 'Параметры стиля',
+			'subtitlingStyling.text' => 'Текст',
+			'subtitlingStyling.border' => 'Обводка',
+			'subtitlingStyling.background' => 'Фон',
 			'subtitlingStyling.fontSize' => 'Размер шрифта',
 			'subtitlingStyling.textColor' => 'Цвет текста',
 			'subtitlingStyling.borderSize' => 'Размер обводки',
@@ -1852,11 +1859,11 @@ extension on TranslationsRu {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Не удалось загрузить серверы: ${error}',
 			'hubDetail.title' => 'Название',
 			'hubDetail.releaseYear' => 'Год выпуска',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => 'Дата добавления',
 			'hubDetail.rating' => 'Рейтинг',
 			'hubDetail.noItemsFound' => 'Элементы не найдены',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'Очистить логи',
 			'logs.copyLogs' => 'Скопировать логи',
 			'logs.uploadLogs' => 'Загрузить логи',
@@ -2108,6 +2115,7 @@ extension on TranslationsRu {
 			'externalPlayer.useExternalPlayer' => 'Использовать внешний плеер',
 			'externalPlayer.useExternalPlayerDescription' => 'Открывать видео во внешнем приложении вместо встроенного плеера',
 			'externalPlayer.selectPlayer' => 'Выбрать плеер',
+			'externalPlayer.customPlayers' => 'Свои плееры',
 			'externalPlayer.systemDefault' => 'Системный по умолчанию',
 			'externalPlayer.addCustomPlayer' => 'Добавить свой плеер',
 			'externalPlayer.playerName' => 'Название плеера',

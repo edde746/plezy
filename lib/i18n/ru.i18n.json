@@ -439,6 +439,9 @@
   },
   "subtitlingStyling": {
     "stylingOptions": "Параметры стиля",
+    "text": "Текст",
+    "border": "Обводка",
+    "background": "Фон",
     "fontSize": "Размер шрифта",
     "textColor": "Цвет текста",
     "borderSize": "Размер обводки",
@@ -847,6 +850,7 @@
     "useExternalPlayer": "Использовать внешний плеер",
     "useExternalPlayerDescription": "Открывать видео во внешнем приложении вместо встроенного плеера",
     "selectPlayer": "Выбрать плеер",
+    "customPlayers": "Свои плееры",
     "systemDefault": "Системный по умолчанию",
     "addCustomPlayer": "Добавить свой плеер",
     "playerName": "Название плеера",

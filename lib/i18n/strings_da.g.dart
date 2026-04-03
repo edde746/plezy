@@ -600,6 +600,9 @@ class _TranslationsSubtitlingStylingDa implements TranslationsSubtitlingStylingE
 
 	// Translations
 	@override String get stylingOptions => 'Stilindstillinger';
+	@override String get text => 'Tekst';
+	@override String get border => 'Kant';
+	@override String get background => 'Baggrund';
 	@override String get fontSize => 'Skriftstørrelse';
 	@override String get textColor => 'Tekstfarve';
 	@override String get borderSize => 'Kantstørrelse';
@@ -1063,6 +1066,7 @@ class _TranslationsExternalPlayerDa implements TranslationsExternalPlayerEn {
 	@override String get useExternalPlayer => 'Brug ekstern afspiller';
 	@override String get useExternalPlayerDescription => 'Åbn videoer i en ekstern app i stedet for den indbyggede afspiller';
 	@override String get selectPlayer => 'Vælg afspiller';
+	@override String get customPlayers => 'Brugerdefinerede afspillere';
 	@override String get systemDefault => 'Systemstandard';
 	@override String get addCustomPlayer => 'Tilføj brugerdefineret afspiller';
 	@override String get playerName => 'Afspillernavn';
@@ -1748,6 +1752,9 @@ extension on TranslationsDa {
 			'messages.logsUploadFailed' => 'Kunne ikke uploade logs',
 			'messages.logId' => 'Log-ID',
 			'subtitlingStyling.stylingOptions' => 'Stilindstillinger',
+			'subtitlingStyling.text' => 'Tekst',
+			'subtitlingStyling.border' => 'Kant',
+			'subtitlingStyling.background' => 'Baggrund',
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			'subtitlingStyling.textColor' => 'Tekstfarve',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
@@ -1852,11 +1859,11 @@ extension on TranslationsDa {
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke indlæse servere: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Udgivelsesår',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.dateAdded' => 'Tilføjelsesdato',
 			'hubDetail.rating' => 'Bedømmelse',
 			'hubDetail.noItemsFound' => 'Ingen elementer fundet',
-			_ => null,
-		} ?? switch (path) {
 			'logs.clearLogs' => 'Ryd logs',
 			'logs.copyLogs' => 'Kopiér logs',
 			'logs.uploadLogs' => 'Upload logs',
@@ -2108,6 +2115,7 @@ extension on TranslationsDa {
 			'externalPlayer.useExternalPlayer' => 'Brug ekstern afspiller',
 			'externalPlayer.useExternalPlayerDescription' => 'Åbn videoer i en ekstern app i stedet for den indbyggede afspiller',
 			'externalPlayer.selectPlayer' => 'Vælg afspiller',
+			'externalPlayer.customPlayers' => 'Brugerdefinerede afspillere',
 			'externalPlayer.systemDefault' => 'Systemstandard',
 			'externalPlayer.addCustomPlayer' => 'Tilføj brugerdefineret afspiller',
 			'externalPlayer.playerName' => 'Afspillernavn',
