@@ -58,10 +58,8 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(PlexSubtitleTrack plexTrack, List<Sub
       score += 5;
     }
 
-    // Title match (+3)
-    if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
-      score += 3;
-    }
+    // Title match (+3 for text match, +1 for null/empty)
+    score += _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle);
 
     // Forced flag match (+2)
     if (mpvTrack.isForced == plexTrack.forced) {
@@ -129,10 +127,8 @@ PlexSubtitleTrack? findPlexTrackForMpvSubtitle(SubtitleTrack mpvTrack, List<Plex
       score += 5;
     }
 
-    // Title match (+3)
-    if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
-      score += 3;
-    }
+    // Title match (+3 for text match, +1 for null/empty)
+    score += _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle);
 
     // Forced flag match (+2)
     if (mpvTrack.isForced == plexTrack.forced) {
@@ -345,21 +341,27 @@ bool _audioCodecsMatch(String? mpvCodec, String? plexCodec) {
   return mpvAliases.contains(plexNorm);
 }
 
-/// Check if titles match (fuzzy comparison)
-bool _titlesMatch(String? mpvTitle, String? plexTitle, String? plexDisplayTitle) {
-  if (mpvTitle == null || mpvTitle.isEmpty) return true; // No title to match against
+/// Score how well titles match.
+/// Returns 3 for a real text match, 1 for null/empty (non-contradicting), 0 for mismatch.
+int _titleScore(String? mpvTitle, String? plexTitle, String? plexDisplayTitle) {
+  if (mpvTitle == null || mpvTitle.isEmpty) return 1; // No title to contradict — mild bonus
 
   final mpvNorm = mpvTitle.toLowerCase().trim();
 
   // Check exact match with either Plex title
-  if (plexTitle != null && plexTitle.toLowerCase().trim() == mpvNorm) return true;
-  if (plexDisplayTitle != null && plexDisplayTitle.toLowerCase().trim() == mpvNorm) return true;
+  if (plexTitle != null && plexTitle.toLowerCase().trim() == mpvNorm) return 3;
+  if (plexDisplayTitle != null && plexDisplayTitle.toLowerCase().trim() == mpvNorm) return 3;
 
   // Check if one contains the other (partial match)
-  if (plexTitle != null && plexTitle.toLowerCase().contains(mpvNorm)) return true;
-  if (plexDisplayTitle != null && plexDisplayTitle.toLowerCase().contains(mpvNorm)) return true;
+  if (plexTitle != null && plexTitle.toLowerCase().contains(mpvNorm)) return 3;
+  if (plexDisplayTitle != null && plexDisplayTitle.toLowerCase().contains(mpvNorm)) return 3;
 
-  return false;
+  return 0;
+}
+
+/// Check if titles match (fuzzy comparison) — used by audio matching
+bool _titlesMatch(String? mpvTitle, String? plexTitle, String? plexDisplayTitle) {
+  return _titleScore(mpvTitle, plexTitle, plexDisplayTitle) > 0;
 }
 
 /// Priority levels for track selection

@@ -57,7 +57,7 @@ class PlexMediaInfo {
               title: s['title'] as String?,
               displayTitle: s['displayTitle'] as String?,
               selected: s['selected'] == 1 || s['selected'] == true,
-              forced: s['forced'] == 1,
+              forced: s['forced'] == 1 || s['forced'] == true,
               key: s['key'] as String?,
             ));
           }
