@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show AppExitResponse;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -307,6 +308,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final AppDatabase _appDatabase;
   late final DownloadManagerService _downloadManager;
   late final OfflineWatchSyncService _offlineWatchSyncService;
+  late final AppLifecycleListener _appLifecycleListener;
 
   /// Last time server health probes ran from a resume event (cooldown for desktop)
   DateTime _lastResumeProbe = DateTime(0);
@@ -342,6 +344,13 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
 
+    _appLifecycleListener = AppLifecycleListener(
+      onExitRequested: () async {
+        await _appDatabase.close();
+        return AppExitResponse.exit;
+      },
+    );
+
     // Start in-app review session tracking
     InAppReviewService.instance.startSession();
   }
@@ -349,7 +358,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     _memoryCheckTimer?.cancel();
-    _appDatabase.close();
+    _appLifecycleListener.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -387,7 +396,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
-        _appDatabase.close();
+        if (Platform.isAndroid || Platform.isIOS) {
+          _appDatabase.close();
+        }
         InAppReviewService.instance.endSession();
         if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
           if (ProcessInfo.currentRss > 1024 * 1024 * 1024) { // 1GB
