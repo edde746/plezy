@@ -5,97 +5,47 @@ import 'platform_detector.dart';
 
 /// Utility class for calculating consistent grid sizes across the app
 class GridSizeCalculator {
-  /// Calculates the maximum cross-axis extent for grid items based on screen size and density
-  static double getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTV = PlatformDetector.isTV();
-    final isDesktopOrLarger = ScreenBreakpoints.isDesktopOrLarger(screenWidth);
-    final isTablet = ScreenBreakpoints.isTablet(screenWidth);
+  static double _lerp(double min, double max, double t) => min + (max - min) * t;
 
-    switch (density) {
-      case LibraryDensity.comfortable:
-        if (isTV) return GridLayoutConstants.comfortableTV;
-        if (isDesktopOrLarger) return GridLayoutConstants.comfortableDesktop;
-        if (isTablet) return GridLayoutConstants.comfortableTablet;
-        return GridLayoutConstants.comfortableMobile;
-      case LibraryDensity.compact:
-        if (isTV) return GridLayoutConstants.compactTV;
-        if (isDesktopOrLarger) return GridLayoutConstants.compactDesktop;
-        if (isTablet) return GridLayoutConstants.compactTablet;
-        return GridLayoutConstants.compactMobile;
-      case LibraryDensity.normal:
-        if (isTV) return GridLayoutConstants.normalTV;
-        if (isDesktopOrLarger) return GridLayoutConstants.normalDesktop;
-        if (isTablet) return GridLayoutConstants.normalTablet;
-        return GridLayoutConstants.normalMobile;
-    }
+  /// Calculates the maximum cross-axis extent for grid items based on screen size and density.
+  /// [density] is an int 1–5 (1 = most compact, 5 = most comfortable).
+  static double getMaxCrossAxisExtent(BuildContext context, int density) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final f = LibraryDensity.factor(density);
+
+    if (PlatformDetector.isTV()) return _lerp(120, 220, f);
+    if (ScreenBreakpoints.isDesktopOrLarger(screenWidth)) return _lerp(140, 280, f);
+    if (ScreenBreakpoints.isTablet(screenWidth)) return _lerp(120, 230, f);
+    return _lerp(100, 200, f);
   }
 
   /// Calculates the max cross-axis extent accounting for outer padding.
-  ///
-  /// Uses responsive strategies:
-  /// - Wide screens (>=900px): Divisor-based calculation with max item width
-  /// - Medium screens (600-899px): Fixed item count (4-6 items based on density)
-  /// - Small screens (<600px): Fixed item count (2-4 items based on density)
+  /// [density] is an int 1–5.
   static double getMaxCrossAxisExtentWithPadding(
     BuildContext context,
-    LibraryDensity density,
+    int density,
     double horizontalPadding,
   ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final availableWidth = screenWidth - horizontalPadding;
+    final f = LibraryDensity.factor(density);
 
     // TV-specific sizing for 10ft viewing distance
     if (PlatformDetector.isTV()) {
-      double divisor;
-      double maxItemWidth;
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 7.0;
-          maxItemWidth = 220;
-        case LibraryDensity.normal:
-          divisor = 9.0;
-          maxItemWidth = 190;
-        case LibraryDensity.compact:
-          divisor = 11.0;
-          maxItemWidth = 160;
-      }
+      final divisor = _lerp(12, 6, f);
+      final maxItemWidth = _lerp(140, 240, f);
       return (availableWidth / divisor).clamp(0, maxItemWidth);
     }
 
     if (ScreenBreakpoints.isWideTabletOrLarger(screenWidth)) {
-      // Wide screens (desktop/large tablet landscape): Responsive division
-      double divisor;
-      double maxItemWidth;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 5.5;
-          maxItemWidth = 260;
-        case LibraryDensity.normal:
-          divisor = 6.5;
-          maxItemWidth = 230;
-        case LibraryDensity.compact:
-          divisor = 9.0;
-          maxItemWidth = 160;
-      }
-
+      final divisor = _lerp(10, 5, f);
+      final maxItemWidth = _lerp(140, 280, f);
       return (availableWidth / divisor).clamp(0, maxItemWidth);
     } else if (ScreenBreakpoints.isTablet(screenWidth)) {
-      // Medium screens (tablets): Fixed 3-4-6 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 3,
-        LibraryDensity.normal => 4,
-        LibraryDensity.compact => 6,
-      };
+      final targetItemCount = _lerp(6, 3, f);
       return availableWidth / targetItemCount;
     } else {
-      // Small screens (phones): Fixed 2-3-4 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 2,
-        LibraryDensity.normal => 3,
-        LibraryDensity.compact => 4,
-      };
+      final targetItemCount = _lerp(5, 2, f);
       return availableWidth / targetItemCount;
     }
   }
@@ -111,6 +61,15 @@ class GridSizeCalculator {
   static int getColumnCount(double crossAxisExtent, double maxCrossAxisExtent) {
     final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
     return ((crossAxisExtent + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+  }
+
+  /// Computes the actual cell width that a grid with [getMaxCrossAxisExtent] would produce
+  /// for the given [availableWidth]. This matches SliverGridDelegateWithMaxCrossAxisExtent's
+  /// internal calculation, so horizontal scroll lists can use the same width as grids.
+  static double getCellWidth(double availableWidth, BuildContext context, int density) {
+    final maxExtent = getMaxCrossAxisExtent(context, density);
+    final columns = getColumnCount(availableWidth, maxExtent);
+    return availableWidth / columns;
   }
 
   /// Check if the given index is in the first row of a grid with given column count.

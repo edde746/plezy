@@ -31,6 +31,8 @@ import '../models/download_models.dart';
 import '../services/download_storage_service.dart';
 import '../utils/download_version_utils.dart';
 import '../providers/playback_state_provider.dart';
+import '../providers/settings_provider.dart';
+import '../utils/grid_size_calculator.dart';
 import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
 import '../theme/mono_tokens.dart';
@@ -1512,13 +1514,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return KeyEventResult.handled; // consume to prevent unwanted traversal
   }
 
-  /// Get the responsive card width used by seasons/extras/cast rows
+  /// Get the responsive card width used by seasons/extras/cast rows.
+  /// Uses the shared grid size calculator for consistency with library grids.
   double _getResponsiveCardWidth() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth >= 1400) return 220.0;
-    if (screenWidth >= 900) return 200.0;
-    if (screenWidth >= 700) return 190.0;
-    return 160.0;
+    final density = context.read<SettingsProvider>().libraryDensity;
+    final availableWidth = MediaQuery.of(context).size.width;
+    return GridSizeCalculator.getCellWidth(availableWidth, context, density);
   }
 
   /// Handle key events for the overview section
@@ -1759,7 +1760,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isLeftKey) {
       if (_focusedCastIndex > 0) {
         setState(() => _focusedCastIndex--);
-        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: 120.0 + 8 + 4, leadingPadding: 0);
+        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: _getResponsiveCardWidth() + 8 + 4, leadingPadding: 0);
       }
       return KeyEventResult.handled;
     }
@@ -1768,7 +1769,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isRightKey) {
       if (_focusedCastIndex < roleCount - 1) {
         setState(() => _focusedCastIndex++);
-        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: 120.0 + 8 + 4, leadingPadding: 0);
+        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: _getResponsiveCardWidth() + 8 + 4, leadingPadding: 0);
       }
       return KeyEventResult.handled;
     }
@@ -2648,10 +2649,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Build the cast section with locked focus pattern for D-pad navigation
   /// Uses same layout pattern as seasons/extras (ListView.builder + Padding(horizontal: 2))
   Widget _buildCastSection(PlexMetadata metadata) {
-    const cardWidth = 120.0;
+    final cardWidth = _getResponsiveCardWidth();
     const innerPadding = 4.0;
+    final imageSize = cardWidth;
     // image + inner padding + text area + outer list padding + focus scale headroom
-    const containerHeight = 120.0 + innerPadding * 2 + 66 + 16;
+    final containerHeight = imageSize + innerPadding * 2 + 66 + 16;
 
     final hasFocus = _castFocusNode.hasFocus;
 
@@ -2690,8 +2692,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             child: PlexOptimizedImage(
                               client: _getClientForMetadata(context),
                               imagePath: actor.thumb,
-                              width: 120,
-                              height: 120,
+                              width: imageSize,
+                              height: imageSize,
                               fit: BoxFit.cover,
                               imageType: ImageType.avatar,
                               fallbackIcon: Symbols.person_rounded,

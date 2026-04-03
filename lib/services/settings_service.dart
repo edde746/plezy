@@ -13,7 +13,16 @@ import '../utils/platform_detector.dart';
 
 enum ThemeMode { system, light, dark, oled }
 
-enum LibraryDensity { compact, normal, comfortable }
+/// Library density is now an int 1–5 (1 = most compact, 5 = most comfortable).
+/// Default is 3.
+class LibraryDensity {
+  static const int min = 1;
+  static const int max = 5;
+  static const int defaultValue = 3;
+
+  /// Returns a 0.0–1.0 factor for interpolation (0 = most compact, 1 = most comfortable).
+  static double factor(int density) => (density.clamp(min, max) - min) / (max - min);
+}
 
 enum ViewMode { grid, list }
 
@@ -209,13 +218,24 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getString(_keyPreferredAudioCodec) ?? 'auto';
   }
 
-  // Library Density
-  Future<void> setLibraryDensity(LibraryDensity density) async {
-    await prefs.setString(_keyLibraryDensity, density.name);
+  // Library Density (int 1–5)
+  Future<void> setLibraryDensity(int density) async {
+    await prefs.setInt(_keyLibraryDensity, density.clamp(LibraryDensity.min, LibraryDensity.max));
   }
 
-  LibraryDensity getLibraryDensity() {
-    return _getEnumValue(_keyLibraryDensity, LibraryDensity.values, LibraryDensity.normal);
+  int getLibraryDensity() {
+    // New int format
+    final intVal = prefs.getInt(_keyLibraryDensity);
+    if (intVal != null) return intVal.clamp(LibraryDensity.min, LibraryDensity.max);
+    // Migrate from old enum string format
+    final strVal = prefs.getString(_keyLibraryDensity);
+    final result = switch (strVal) {
+      'compact' => 2,
+      'comfortable' => 4,
+      _ => LibraryDensity.defaultValue,
+    };
+    prefs.setInt(_keyLibraryDensity, result);
+    return result;
   }
 
   // View Mode
@@ -1374,7 +1394,7 @@ class SettingsService extends BaseSharedPreferencesService {
       'enableHardwareDecoding': getEnableHardwareDecoding(),
       'preferredVideoCodec': getPreferredVideoCodec(),
       'preferredAudioCodec': getPreferredAudioCodec(),
-      'libraryDensity': getLibraryDensity().name,
+      'libraryDensity': getLibraryDensity(),
       'viewMode': getViewMode().name,
       'episodePosterMode': getEpisodePosterMode().name,
       'seekTimeSmall': getSeekTimeSmall(),

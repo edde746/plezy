@@ -194,7 +194,7 @@ class MediaCardState extends State<MediaCard> {
             onLongPress: _showContextMenu,
             onSecondaryTapDown: _storeTapPosition,
             onSecondaryTap: _showContextMenu,
-            density: context.select<SettingsProvider, LibraryDensity>((s) => s.libraryDensity),
+            density: context.select<SettingsProvider, int>((s) => s.libraryDensity),
             isOffline: widget.isOffline,
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
@@ -317,7 +317,7 @@ class _MediaCardList extends StatelessWidget {
   final void Function(TapDownDetails)? onTapDown;
   final VoidCallback? onSecondaryTap;
   final void Function(TapDownDetails)? onSecondaryTapDown;
-  final LibraryDensity density;
+  final int density;
   final bool isOffline;
   final String? localPosterPath;
   final bool showServerName;
@@ -337,14 +337,7 @@ class _MediaCardList extends StatelessWidget {
   });
 
   double _basePosterWidth() {
-    switch (density) {
-      case LibraryDensity.compact:
-        return 80;
-      case LibraryDensity.normal:
-        return 100;
-      case LibraryDensity.comfortable:
-        return 120;
-    }
+    return 70 + LibraryDensity.factor(density) * 50; // 70–120
   }
 
   double _posterWidth(BuildContext context) {
@@ -372,54 +365,18 @@ class _MediaCardList extends StatelessWidget {
     return base * 1.5; // Default 2:3 aspect ratio
   }
 
-  double get _titleFontSize {
-    switch (density) {
-      case LibraryDensity.compact:
-        return 14;
-      case LibraryDensity.normal:
-        return 15;
-      case LibraryDensity.comfortable:
-        return 16;
-    }
-  }
+  double get _titleFontSize => 13 + LibraryDensity.factor(density) * 3; // 13–16
 
-  double get _metadataFontSize {
-    switch (density) {
-      case LibraryDensity.compact:
-        return 11;
-      case LibraryDensity.normal:
-        return 12;
-      case LibraryDensity.comfortable:
-        return 13;
-    }
-  }
+  double get _metadataFontSize => 10 + LibraryDensity.factor(density) * 3; // 10–13
 
-  double get _subtitleFontSize {
-    switch (density) {
-      case LibraryDensity.compact:
-        return 12;
-      case LibraryDensity.normal:
-        return 13;
-      case LibraryDensity.comfortable:
-        return 14;
-    }
-  }
+  double get _subtitleFontSize => 11 + LibraryDensity.factor(density) * 3; // 11–14
 
   double get _summaryFontSize {
     // Summary uses the same sizing as metadata text
     return _metadataFontSize;
   }
 
-  int get _summaryMaxLines {
-    switch (density) {
-      case LibraryDensity.compact:
-        return 2;
-      case LibraryDensity.normal:
-        return 3;
-      case LibraryDensity.comfortable:
-        return 4;
-    }
-  }
+  int get _summaryMaxLines => density <= 2 ? 2 : density; // 2, 2, 3, 4, 5
 
   String _buildMetadataLine() {
     final parts = <String>[];

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../services/settings_service.dart' show ViewMode, LibraryDensity;
+import '../../services/settings_service.dart' show ViewMode;
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/layout_constants.dart';
 import '../main_screen.dart';
@@ -84,7 +84,7 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
   }
 
   /// Builds either a list or grid view based on the view mode
-  Widget _buildItemsView(BuildContext context, ViewMode viewMode, LibraryDensity density) {
+  Widget _buildItemsView(BuildContext context, ViewMode viewMode, int density) {
     final basePadding = padding ?? GridLayoutConstants.gridPadding;
     // Add extra top padding for focus decoration of first row items
     final effectivePadding = basePadding.copyWith(top: basePadding.top + _focusDecorationPadding);

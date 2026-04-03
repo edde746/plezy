@@ -137,16 +137,30 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   Widget _buildDensitySelector() {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
-        return SegmentedSetting<settings.LibraryDensity>(
-          icon: Symbols.grid_view_rounded,
-          title: t.settings.libraryDensity,
-          segments: [
-            ButtonSegment(value: settings.LibraryDensity.compact, label: Text(t.settings.compact)),
-            ButtonSegment(value: settings.LibraryDensity.normal, label: Text(t.settings.normal)),
-            ButtonSegment(value: settings.LibraryDensity.comfortable, label: Text(t.settings.comfortable)),
-          ],
-          selected: settingsProvider.libraryDensity,
-          onChanged: (value) => settingsProvider.setLibraryDensity(value),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const AppIcon(Symbols.grid_view_rounded, fill: 1),
+                  const SizedBox(width: 16),
+                  Text(t.settings.compact, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Expanded(
+                    child: Slider(
+                      value: settingsProvider.libraryDensity.toDouble(),
+                      min: 1,
+                      max: 5,
+                      divisions: 4,
+                      onChanged: (value) => settingsProvider.setLibraryDensity(value.round()),
+                    ),
+                  ),
+                  Text(t.settings.comfortable, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -178,8 +192,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
           segments: [
             ButtonSegment(value: settings.EpisodePosterMode.seriesPoster, label: Text(t.settings.seriesPoster)),
             ButtonSegment(value: settings.EpisodePosterMode.seasonPoster, label: Text(t.settings.seasonPoster)),
-            ButtonSegment(
-                value: settings.EpisodePosterMode.episodeThumbnail, label: Text(t.settings.episodeThumbnail)),
+            ButtonSegment(value: settings.EpisodePosterMode.episodeThumbnail, label: Text(t.settings.episodeThumbnail)),
           ],
           selected: settingsProvider.episodePosterMode,
           onChanged: (value) => settingsProvider.setEpisodePosterMode(value),

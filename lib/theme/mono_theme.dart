@@ -118,6 +118,14 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(style: buttonStyle),
     filledButtonTheme: FilledButtonThemeData(style: buttonStyle),
+    sliderTheme: SliderThemeData(
+      trackHeight: 16,
+      trackGap: 6,
+      thumbSize: const WidgetStatePropertyAll(Size(4, 20)),
+      thumbShape: const HandleThumbShape(),
+      trackShape: const GappedSliderTrackShape(),
+      tickMarkShape: const RoundSliderTickMarkShape(tickMarkRadius: 2),
+    ),
     dividerTheme: DividerThemeData(space: 0, thickness: 1, color: c.outline),
     listTileTheme: ListTileThemeData(
       dense: true,

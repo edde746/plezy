@@ -187,7 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   Widget _buildAppearanceTile() {
     return Consumer2<ThemeProvider, SettingsProvider>(
       builder: (context, themeProvider, settingsProvider, child) {
-        final summary = '${themeProvider.themeModeDisplayName} · ${settingsProvider.libraryDensityDisplayName}';
+        final summary = '${themeProvider.themeModeDisplayName} · ${t.settings.libraryDensity} ${settingsProvider.libraryDensity}';
         return ListTile(
           focusNode: _focusTracker.get(_kAppearance),
           leading: const AppIcon(Symbols.palette_rounded, fill: 1),

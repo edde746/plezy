@@ -14,10 +14,9 @@ import '../../../models/livetv_hub_result.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../providers/settings_provider.dart';
-import '../../../services/settings_service.dart' show LibraryDensity;
+import '../../../utils/grid_size_calculator.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/app_logger.dart';
-import '../../../utils/layout_constants.dart';
 import '../../../utils/live_tv_player_navigation.dart';
 import '../../../utils/plex_image_helper.dart';
 import '../../../utils/provider_extensions.dart';
@@ -470,12 +469,6 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
   Widget build(BuildContext context) {
     final hasFocus = _hubFocusNode.hasFocus;
     final settings = context.watch<SettingsProvider>();
-    final densityScale = switch (settings.libraryDensity) {
-      LibraryDensity.compact => 0.8,
-      LibraryDensity.normal => 1.0,
-      LibraryDensity.comfortable => 1.15,
-    };
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -507,20 +500,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
             onKeyEvent: _handleKeyEvent,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final screenWidth = constraints.maxWidth;
-                double baseWidth;
-                if (ScreenBreakpoints.isLargeDesktop(screenWidth)) {
-                  baseWidth = 220.0;
-                } else if (ScreenBreakpoints.isDesktop(screenWidth)) {
-                  baseWidth = 200.0;
-                } else if (ScreenBreakpoints.isWideTablet(screenWidth)) {
-                  baseWidth = 190.0;
-                } else {
-                  baseWidth = 160.0;
-                }
-                final baseCardWidth = baseWidth * densityScale;
-
-                final cardWidth = baseCardWidth;
+                final cardWidth = GridSizeCalculator.getCellWidth(constraints.maxWidth, context, settings.libraryDensity);
                 final posterWidth = cardWidth - 16;
                 final posterHeight = posterWidth * 1.5; // 2:3 aspect
                 final containerHeight = posterHeight + 66;

@@ -10,9 +10,9 @@ import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../providers/settings_provider.dart';
-import '../services/settings_service.dart' show EpisodePosterMode, LibraryDensity;
+import '../services/settings_service.dart' show EpisodePosterMode;
+import '../utils/grid_size_calculator.dart';
 import '../theme/mono_tokens.dart';
-import '../utils/layout_constants.dart';
 import '../focus/locked_hub_controller.dart';
 import '../models/plex_hub.dart';
 import '../screens/hub_detail_screen.dart';
@@ -378,28 +378,10 @@ class HubSectionState extends State<HubSection> {
           Focus(
             focusNode: _hubFocusNode,
             onKeyEvent: _handleKeyEvent,
-            child: Builder(
-              builder: (context) {
-                // Use MediaQuery instead of LayoutBuilder to save 1 element level.
-                // HubSection is always full-width inside CustomScrollView.
-                final screenWidth = MediaQuery.of(context).size.width;
+            child: LayoutBuilder(
+              builder: (context, constraints) {
                 final settings = context.watch<SettingsProvider>();
-                final densityScale = switch (settings.libraryDensity) {
-                  LibraryDensity.compact => 0.8,
-                  LibraryDensity.normal => 1.0,
-                  LibraryDensity.comfortable => 1.15,
-                };
-                double baseWidth;
-                if (ScreenBreakpoints.isLargeDesktop(screenWidth)) {
-                  baseWidth = 220.0;
-                } else if (ScreenBreakpoints.isDesktop(screenWidth)) {
-                  baseWidth = 200.0;
-                } else if (ScreenBreakpoints.isWideTablet(screenWidth)) {
-                  baseWidth = 190.0;
-                } else {
-                  baseWidth = 160.0;
-                }
-                final baseCardWidth = baseWidth * densityScale;
+                final baseCardWidth = GridSizeCalculator.getCellWidth(constraints.maxWidth, context, settings.libraryDensity);
 
                 // Get episode poster mode setting
                 final episodePosterMode = settings.episodePosterMode;

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/settings_service.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
 
@@ -13,7 +12,7 @@ class MediaGridDelegate {
   /// Set [useWideAspectRatio] to true to use 16:9 aspect ratio for episode thumbnails.
   static SliverGridDelegateWithMaxCrossAxisExtent createDelegate({
     required BuildContext context,
-    required LibraryDensity density,
+    required int density,
     bool usePaddingAware = false,
     double horizontalPadding = 16,
     bool useWideAspectRatio = false,

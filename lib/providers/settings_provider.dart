@@ -4,7 +4,7 @@ import '../services/settings_service.dart';
 
 class SettingsProvider extends ChangeNotifier {
   SettingsService? _settingsService;
-  LibraryDensity _libraryDensity = LibraryDensity.normal;
+  int _libraryDensity = LibraryDensity.defaultValue;
   ViewMode _viewMode = ViewMode.grid;
   EpisodePosterMode _episodePosterMode = EpisodePosterMode.seriesPoster;
   bool _showHeroSection = true;
@@ -49,7 +49,7 @@ class SettingsProvider extends ChangeNotifier {
   /// Whether the provider has completed initialization
   bool get isInitialized => _isInitialized;
 
-  LibraryDensity get libraryDensity => _libraryDensity;
+  int get libraryDensity => _libraryDensity;
 
   ViewMode get viewMode => _viewMode;
 
@@ -86,8 +86,8 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> setLibraryDensity(LibraryDensity density) => _updateSetting(
-    current: _libraryDensity, value: density,
+  Future<void> setLibraryDensity(int density) => _updateSetting(
+    current: _libraryDensity, value: density.clamp(LibraryDensity.min, LibraryDensity.max),
     setLocal: (v) => _libraryDensity = v,
     persist: _settingsService!.setLibraryDensity,
   );
@@ -151,17 +151,6 @@ class SettingsProvider extends ChangeNotifier {
     setLocal: (v) => _liveTvDefaultFavorites = v,
     persist: _settingsService!.setLiveTvDefaultFavorites,
   );
-
-  String get libraryDensityDisplayName {
-    switch (_libraryDensity) {
-      case LibraryDensity.compact:
-        return 'Compact';
-      case LibraryDensity.normal:
-        return 'Normal';
-      case LibraryDensity.comfortable:
-        return 'Comfortable';
-    }
-  }
 
   String get episodePosterModeDisplayName {
     switch (_episodePosterMode) {

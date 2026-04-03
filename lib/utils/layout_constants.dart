@@ -44,26 +44,6 @@ class ScreenBreakpoints {
 
 /// Grid layout constants
 class GridLayoutConstants {
-  /// Maximum cross-axis extent for grid items in comfortable density mode
-  static const double comfortableDesktop = 250;
-  static const double comfortableTablet = 210;
-  static const double comfortableMobile = 180;
-
-  /// Maximum cross-axis extent for grid items in compact density mode
-  static const double compactDesktop = 160;
-  static const double compactTablet = 140;
-  static const double compactMobile = 120;
-
-  /// Maximum cross-axis extent for grid items in normal density mode
-  static const double normalDesktop = 220;
-  static const double normalTablet = 185;
-  static const double normalMobile = 155;
-
-  /// Maximum cross-axis extent for grid items on TV (10ft viewing distance)
-  static const double comfortableTV = 200;
-  static const double normalTV = 170;
-  static const double compactTV = 140;
-
   /// Default aspect ratio for media card grid cells (poster + text)
   static const double posterAspectRatio = 2 / 3.3;
 
