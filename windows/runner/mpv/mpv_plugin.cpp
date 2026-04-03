@@ -65,12 +65,6 @@ MpvPlayerPlugin::MpvPlayerPlugin(flutter::PluginRegistrarWindows* registrar)
 }
 
 MpvPlayerPlugin::~MpvPlayerPlugin() {
-  // Clear power-resume callback and kill pending timer so they cannot
-  // invoke a dangling `this`.
-  if (MpvCore::GetInstance()) {
-    MpvCore::GetInstance()->SetPowerResumeCallback(nullptr);
-    ::KillTimer(GetWindow(), MpvCore::kPowerResumeTimerId);
-  }
   // Unregister window proc delegate.
   if (proc_id_) {
     registrar_->UnregisterTopLevelWindowProcDelegate(proc_id_.value());
@@ -135,16 +129,6 @@ void MpvPlayerPlugin::HandleMethodCall(
       RECT rect = {0, 0, 100, 100};
       MpvCore::GetInstance()->CreateMpvView(player_->GetHwnd(), rect, 1.0);
 
-      // Reload audio output on wake from sleep to recover stale WASAPI sessions.
-      MpvCore::GetInstance()->SetPowerResumeCallback([this]() {
-        if (player_ && player_->IsInitialized()) {
-          auto device = player_->GetProperty("audio-device");
-          if (!device.empty()) {
-            player_->SetProperty("audio-device", device);
-          }
-        }
-      });
-
       // Start hidden.
       MpvCore::GetInstance()->SetVisible(false);
       result->Success(flutter::EncodableValue(true));
@@ -153,11 +137,6 @@ void MpvPlayerPlugin::HandleMethodCall(
       result->Error("INIT_FAILED", "Failed to initialize MPV player");
     }
   } else if (method == "dispose") {
-    // Clear power-resume callback and kill pending timer before disposing.
-    if (MpvCore::GetInstance()) {
-      MpvCore::GetInstance()->SetPowerResumeCallback(nullptr);
-      ::KillTimer(GetWindow(), MpvCore::kPowerResumeTimerId);
-    }
     if (player_) {
       auto hwnd = player_->GetHwnd();
       player_->Dispose();

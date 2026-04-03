@@ -53,6 +53,11 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
   mpv_set_option_string(mpv_, "tone-mapping", "auto");
   mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
 
+  // When WASAPI becomes unavailable (sleep, device unplug), fall back to null
+  // audio output instead of permanently dropping the audio track. Recovery is
+  // handled in the event loop when audio-device-list changes.
+  mpv_set_option_string(mpv_, "audio-fallback-to-null", "yes");
+
   // Default to warn-level logging; Dart side can raise to "v" if debug logging is enabled.
   mpv_request_log_messages(mpv_, "warn");
 
@@ -353,6 +358,18 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
         double sigPeak = *static_cast<double*>(prop->data);
         last_sig_peak_ = sigPeak;
         UpdateHDRMode(sigPeak);
+      }
+
+      // Audio recovery: when the device list changes and audio has fallen back
+      // to null output (e.g. after sleep/wake or device unplug), re-set
+      // audio-device to switch back to the real output.
+      // Mirrors mpv's TOOLS/lua/ao-null-reload.lua for embedded libmpv.
+      if (strcmp(prop->name, "audio-device-list") == 0 &&
+          GetProperty("current-ao") == "null") {
+        auto device = GetProperty("audio-device");
+        if (!device.empty()) {
+          mpv_set_property_string(mpv_, "audio-device", device.c_str());
+        }
       }
 
       SendPropertyChange(prop->name, &node);

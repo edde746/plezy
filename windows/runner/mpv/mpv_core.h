@@ -4,7 +4,6 @@
 #include <Windows.h>
 
 #include <cmath>
-#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -16,9 +15,7 @@ namespace mpv {
 class MpvCore {
  public:
   static constexpr auto kPositionAndShowDelay = 300;
-  static constexpr auto kPowerResumeAudioDelay = 500;
   static constexpr UINT_PTR kCompositionRestoreTimerId = 1001;
-  static constexpr UINT_PTR kPowerResumeTimerId = 1002;
 
   static MpvCore* GetInstance();
   static void SetInstance(std::unique_ptr<MpvCore> instance);
@@ -45,10 +42,6 @@ class MpvCore {
   std::optional<HRESULT> WindowProc(HWND hwnd, UINT message, WPARAM wparam,
                                     LPARAM lparam);
 
-  // Callback invoked when Windows resumes from sleep/hibernate.
-  using PowerResumeCallback = std::function<void()>;
-  void SetPowerResumeCallback(PowerResumeCallback callback);
-
  private:
   RECT GetGlobalRect(int32_t left, int32_t top, int32_t right, int32_t bottom);
   void EnableComposition();
@@ -62,7 +55,6 @@ class MpvCore {
   bool was_window_hidden_due_to_minimize_ = false;
   bool visible_ = true;
   bool composition_enabled_ = false;
-  PowerResumeCallback power_resume_cb_;
 
   static std::unique_ptr<MpvCore> instance_;
 };

@@ -124,11 +124,6 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
           ::RedrawWindow(flutter_window_, nullptr, nullptr,
                          RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
         }
-      } else if (wparam == kPowerResumeTimerId) {
-        ::KillTimer(flutter_window_, kPowerResumeTimerId);
-        if (power_resume_cb_) {
-          power_resume_cb_();
-        }
       }
       break;
     }
@@ -146,14 +141,6 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
           DisableComposition();
           was_window_hidden_due_to_minimize_ = true;
         }
-      }
-      break;
-    }
-    case WM_POWERBROADCAST: {
-      if (wparam == PBT_APMRESUMEAUTOMATIC && power_resume_cb_) {
-        // Delay audio reload to let WASAPI fully reinitialize after wake.
-        ::KillTimer(flutter_window_, kPowerResumeTimerId);
-        ::SetTimer(flutter_window_, kPowerResumeTimerId, kPowerResumeAudioDelay, nullptr);
       }
       break;
     }
@@ -205,10 +192,6 @@ void MpvCore::DisableComposition() {
   composition_enabled_ = false;
   ::ShowWindow(container_, SW_HIDE);
   ::DwmFlush();
-}
-
-void MpvCore::SetPowerResumeCallback(PowerResumeCallback callback) {
-  power_resume_cb_ = std::move(callback);
 }
 
 std::unique_ptr<MpvCore> MpvCore::instance_ = nullptr;
