@@ -1093,6 +1093,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 emitLog("warn", "fallback", "Decoder hang: $decoderName queued $inputQueued buffers, 0 output after ${DECODER_HANG_TIMEOUT_MS}ms")
                 stopFrameWatchdog()
                 cancelDecoderHangCheck()
+                if (retryWithDvConversion("decoder hang: $decoderName")) return@Runnable
                 delegate?.onFormatUnsupported(
                     uri = uri,
                     headers = currentHeaders,
@@ -1141,6 +1142,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 if (hasAnyVideoGroup && !hasVideoTrack) {
                     emitLog("warn", "watchdog", "Video track deselected — triggering fallback")
                     stopFrameWatchdog()
+                    if (retryWithDvConversion("watchdog: video track deselected")) return
                     val uri = currentMediaUri ?: return
                     delegate?.onFormatUnsupported(
                         uri = uri,
@@ -1154,6 +1156,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 if (elapsed >= WATCHDOG_TIMEOUT_MS && player.isPlaying && hasVideoTrack) {
                     emitLog("warn", "watchdog", "0 frames rendered after ${elapsed}ms — triggering fallback")
                     stopFrameWatchdog()
+                    if (retryWithDvConversion("watchdog: black screen after ${elapsed}ms")) return
                     // Trigger fallback via the same delegate path as player errors
                     val uri = currentMediaUri ?: return
                     delegate?.onFormatUnsupported(
