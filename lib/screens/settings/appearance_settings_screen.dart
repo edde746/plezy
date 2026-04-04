@@ -7,8 +7,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/settings_service.dart' as settings;
-import '../../focus/dpad_navigator.dart';
-import '../../focus/focusable_wrapper.dart';
+import '../../focus/focusable_slider.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -150,28 +149,12 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   const SizedBox(width: 16),
                   Text(t.settings.compact, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   Expanded(
-                    child: FocusableWrapper(
-                      descendantsAreFocusable: false,
-                      disableScale: true,
-                      onKeyEvent: (node, event) {
-                        final key = event.logicalKey;
-                        if (key.isLeftKey || key.isRightKey) {
-                          if (event.isActionable) {
-                            final delta = key.isRightKey ? 1 : -1;
-                            final newValue = (settingsProvider.libraryDensity + delta).clamp(1, 5);
-                            settingsProvider.setLibraryDensity(newValue);
-                          }
-                          return KeyEventResult.handled;
-                        }
-                        return KeyEventResult.ignored;
-                      },
-                      child: Slider(
-                        value: settingsProvider.libraryDensity.toDouble(),
-                        min: 1,
-                        max: 5,
-                        divisions: 4,
-                        onChanged: (value) => settingsProvider.setLibraryDensity(value.round()),
-                      ),
+                    child: FocusableSlider(
+                      value: settingsProvider.libraryDensity.toDouble(),
+                      min: 1,
+                      max: 5,
+                      divisions: 4,
+                      onChanged: (value) => settingsProvider.setLibraryDensity(value.round()),
                     ),
                   ),
                   Text(t.settings.comfortable, style: const TextStyle(fontSize: 12, color: Colors.grey)),
