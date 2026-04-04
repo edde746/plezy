@@ -114,8 +114,10 @@ class VideoTimelineBar extends StatelessWidget {
     );
   }
 
+  static const _timestampStyle = TextStyle(color: Colors.white, fontSize: 14, fontFeatures: [FontFeature.tabularFigures()]);
+
   Widget _buildTimestamp(Duration time) {
-    return Text(formatDurationTimestamp(time), style: const TextStyle(color: Colors.white, fontSize: 14));
+    return Text(formatDurationTimestamp(time), style: _timestampStyle);
   }
 
   Widget _buildRemainingTimestamp(Duration remaining) {
@@ -128,7 +130,7 @@ class VideoTimelineBar extends StatelessWidget {
       builder: (context, rateSnap) {
         final rate = rateSnap.data ?? 1.0;
         final text = '${formatDurationTimestamp(remaining)} · ${formatFinishTime(remaining.abs(), rate: rate, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))}';
-        return Text(text, style: const TextStyle(color: Colors.white, fontSize: 14));
+        return Text(text, style: _timestampStyle);
       },
     );
   }

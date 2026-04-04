@@ -91,7 +91,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
       children: [
         Text(
           _formatEpochTime(displayPos),
-          style: const TextStyle(color: Colors.white70, fontSize: 13),
+          style: const TextStyle(color: Colors.white70, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()]),
         ),
         const SizedBox(width: 8),
         Expanded(child: _buildSlider(displayPos)),
@@ -110,7 +110,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
             alignment: Alignment.centerLeft,
             child: Text(
               _formatEpochTime(displayPos),
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              style: const TextStyle(color: Colors.white70, fontSize: 12, fontFeatures: [FontFeature.tabularFigures()]),
             ),
           ),
         ],
