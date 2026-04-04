@@ -2073,22 +2073,13 @@ class PlexClient {
         throw Exception('Could not get server machine identifier');
       }
 
-      // When starting from a specific episode, use continuous mode
-      // This lets the server determine playback order (respects episodeSort)
-      if (startingEpisodeKey != null && shuffle == 0) {
-        final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$startingEpisodeKey';
-        return await createPlayQueue(
-          uri: uri,
-          type: 'video',
-          continuous: 1,
-        );
-      }
-
       final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$showRatingKey/children';
       return await createPlayQueue(
         uri: uri,
         type: 'video',
         shuffle: shuffle,
+        key: startingEpisodeKey != null ? '/library/metadata/$startingEpisodeKey' : null,
+        continuous: startingEpisodeKey != null && shuffle == 0 ? 1 : 0,
       );
     } catch (e) {
       appLogger.e('Failed to create show play queue', error: e);
