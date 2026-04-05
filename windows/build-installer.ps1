@@ -19,7 +19,12 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent $ScriptDir
 Set-Location $ProjectRoot
 
-$ResolvedOutput = Resolve-Path $OutputDir
+if (-not (Test-Path $OutputDir)) {
+    New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+}
+
+$ResolvedOutput = (Resolve-Path $OutputDir).Path
+$IssOutputDir = $ResolvedOutput -replace '\\', '\\'
 
 # Auto-detect build dirs from default Flutter output paths if not provided
 if (-not $X64BuildDir -and (Test-Path "build\windows\x64\runner\Release")) {
@@ -124,7 +129,7 @@ AppPublisher={#Publisher}
 DefaultDirName={autopf}\{#Name}
 DefaultGroupName={#Name}
 AllowNoIcons=yes
-OutputDir=.
+OutputDir=$IssOutputDir
 OutputBaseFilename=plezy-windows-installer
 Compression=lzma
 SolidCompression=yes
@@ -200,7 +205,7 @@ AppPublisher={#Publisher}
 DefaultDirName={autopf}\{#Name}
 DefaultGroupName={#Name}
 AllowNoIcons=yes
-OutputDir=.
+OutputDir=$IssOutputDir
 OutputBaseFilename=plezy-windows-installer
 Compression=lzma
 SolidCompression=yes

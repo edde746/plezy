@@ -1,6 +1,8 @@
 import 'plex_client.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_playback_quality.dart';
+import '../models/plex_playback_session.dart';
 import '../models/plex_video_playback_data.dart';
 import '../models/download_models.dart';
 import '../mpv/mpv.dart';
@@ -89,8 +91,11 @@ class PlaybackInitializationService {
     required int selectedMediaIndex,
     bool preferOffline = false,
     PlexVideoPlaybackData? playbackData,
+    PlexPlaybackQualityOption? qualityOverride,
   }) async {
     try {
+      final resumeOffsetSeconds = _resolveResumeOffsetSeconds(metadata);
+
       // Check for offline content first if preferOffline is enabled
       String? offlineVideoPath;
       if (preferOffline && database != null) {
@@ -117,6 +122,9 @@ class PlaybackInitializationService {
             mediaInfo: data.mediaInfo,
             externalSubtitles: externalSubtitles,
             isOffline: true,
+            qualityOptions: data.qualityOptions,
+            selectedQuality: data.selectedQuality,
+            playbackSession: data.playbackSession,
           );
         } catch (e) {
           // If we can't fetch media info (e.g., no network), use offline-only mode
@@ -127,28 +135,43 @@ class PlaybackInitializationService {
             mediaInfo: null,
             externalSubtitles: const [],
             isOffline: true,
+            qualityOptions: const [],
           );
         }
       }
 
-      // Use pre-parsed data or fall back to network streaming
-      final data =
-          playbackData ?? await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
+      // Online playback should always go through Plex's decision/start flow.
+      final data = (playbackData != null &&
+              playbackData.playbackSession != null &&
+              resumeOffsetSeconds == null &&
+              (qualityOverride == null || playbackData.selectedQuality?.id == qualityOverride.id))
+          ? playbackData
+          : await client.getStreamingVideoPlaybackData(
+              metadata.ratingKey,
+              mediaIndex: selectedMediaIndex,
+              quality: qualityOverride,
+              offsetSeconds: resumeOffsetSeconds,
+            );
 
       if (!data.hasValidVideoUrl) {
         throw PlaybackException(t.messages.fileInfoNotAvailable);
       }
 
       // Build list of external subtitle tracks
-      final externalSubtitles = _buildExternalSubtitles(data.mediaInfo);
+      final externalSubtitles = data.playbackSession?.usesTranscodeEndpoint == true
+          ? const <SubtitleTrack>[]
+          : _buildExternalSubtitles(data.mediaInfo);
 
       // Return result with available versions and video URL
       return PlaybackInitializationResult(
         availableVersions: data.availableVersions,
-        videoUrl: data.videoUrl,
+        videoUrl: data.effectiveVideoUrl,
         mediaInfo: data.mediaInfo,
         externalSubtitles: externalSubtitles,
         isOffline: false,
+        qualityOptions: data.qualityOptions,
+        selectedQuality: data.selectedQuality,
+        playbackSession: data.playbackSession,
       );
     } catch (e) {
       if (e is PlaybackException) {
@@ -156,6 +179,15 @@ class PlaybackInitializationService {
       }
       throw PlaybackException(t.messages.errorLoading(error: e.toString()));
     }
+  }
+
+  double? _resolveResumeOffsetSeconds(PlexMetadata metadata) {
+    final viewOffset = metadata.viewOffset;
+    if (viewOffset == null || viewOffset <= 0) {
+      return null;
+    }
+
+    return viewOffset / 1000.0;
   }
 
   /// Build list of external subtitle tracks from media info
@@ -210,6 +242,9 @@ class PlaybackInitializationResult {
   final PlexMediaInfo? mediaInfo;
   final List<SubtitleTrack> externalSubtitles;
   final bool isOffline;
+  final List<PlexPlaybackQualityOption> qualityOptions;
+  final PlexPlaybackQualityOption? selectedQuality;
+  final PlexPlaybackSession? playbackSession;
 
   PlaybackInitializationResult({
     required this.availableVersions,
@@ -217,6 +252,9 @@ class PlaybackInitializationResult {
     this.mediaInfo,
     this.externalSubtitles = const [],
     this.isOffline = false,
+    this.qualityOptions = const [],
+    this.selectedQuality,
+    this.playbackSession,
   });
 }
 

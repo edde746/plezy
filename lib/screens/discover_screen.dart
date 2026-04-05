@@ -87,6 +87,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _isTabVisible = true;
   HiddenLibrariesProvider? _hiddenLibrariesProvider;
   Set<String> _lastSeenHiddenKeys = {};
+  MultiServerProvider? _multiServerProvider;
+  Set<String> _lastSeenOnlineServerIds = {};
+  Timer? _loadingGraceTimer;
+  Timer? _missingContentRetryTimer;
+  bool _isRefreshingOnDeck = false;
+  bool _isRefreshingHubs = false;
+  int _contentLoadGeneration = 0;
+  bool _isRecoveringMissingContent = false;
 
   // WatchStateAware: watch on-deck items and their parent shows/seasons
   @override
@@ -258,6 +266,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _hiddenLibrariesProvider = provider;
       _hiddenLibrariesProvider!.addListener(_onHiddenLibrariesChanged);
     }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    if (multiServerProvider != _multiServerProvider) {
+      _multiServerProvider?.removeListener(_onServerAvailabilityChanged);
+      _multiServerProvider = multiServerProvider;
+      _lastSeenOnlineServerIds = Set<String>.from(multiServerProvider.onlineServerIds);
+      _multiServerProvider!.addListener(_onServerAvailabilityChanged);
+    }
   }
 
   void _onHiddenLibrariesChanged() {
@@ -267,6 +283,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
     _lastSeenHiddenKeys = Set.of(currentKeys);
     _loadContent();
+  }
+
+  void _onServerAvailabilityChanged() {
+    final provider = _multiServerProvider;
+    if (provider == null) return;
+
+    final currentOnlineServerIds = Set<String>.from(provider.onlineServerIds);
+    final onlineServersChanged =
+        currentOnlineServerIds.length != _lastSeenOnlineServerIds.length ||
+        !currentOnlineServerIds.containsAll(_lastSeenOnlineServerIds);
+    _lastSeenOnlineServerIds = currentOnlineServerIds;
+
+    if (!onlineServersChanged || !mounted || _isLoading) return;
+    if (_onDeck.isNotEmpty && _hubs.isNotEmpty) return;
+
+    appLogger.d('Server availability changed - retrying missing Home content');
+    _scheduleMissingContentRetry(const Duration(milliseconds: 250));
   }
 
   /// Handle key events for the hero section
@@ -298,9 +331,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void dispose() {
     _hiddenLibrariesProvider?.removeListener(_onHiddenLibrariesChanged);
+    _multiServerProvider?.removeListener(_onServerAvailabilityChanged);
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _indicatorTimer?.cancel();
+    _loadingGraceTimer?.cancel();
+    _missingContentRetryTimer?.cancel();
     _indicatorProgress.dispose();
     _heroController.dispose();
     _scrollController.dispose();
@@ -446,11 +482,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Future<void> _loadContent() async {
+    final loadGeneration = ++_contentLoadGeneration;
     appLogger.d('Loading discover content from all servers');
     setState(() {
       _isLoading = true;
       _areHubsLoading = true;
       _errorMessage = null;
+      _isRecoveringMissingContent = false;
+    });
+    _loadingGraceTimer?.cancel();
+    _loadingGraceTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (!mounted || !_isLoading || _onDeck.isNotEmpty) return;
+      setState(() {
+        _isLoading = false;
+      });
     });
 
     try {
@@ -468,116 +513,269 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Get settings for hub mode preference (ensure initialized before accessing)
       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
-      // Reuse already-loaded libraries to avoid a redundant API call inside hub fetching
-      final librariesProvider = context.read<LibrariesProvider>();
-      final librariesByServer = librariesProvider.libraries.isNotEmpty
-          ? multiServerProvider.aggregationService.groupLibrariesByServer(librariesProvider.libraries)
-          : null;
-
       await settingsProvider.ensureInitialized();
 
-      // Start OnDeck and hubs fetch in parallel
-      final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(
-        limit: 20,
+      final onDeckFuture = _loadContinueWatchingProgressively(
+        loadGeneration: loadGeneration,
+        multiServerProvider: multiServerProvider,
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
       );
-      final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
+      await onDeckFuture;
+      if (!mounted || loadGeneration != _contentLoadGeneration) return;
+
+      await _loadHubsProgressively(
+        loadGeneration: loadGeneration,
+        multiServerProvider: multiServerProvider,
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
         useGlobalHubs: settingsProvider.useGlobalHubs,
-        librariesByServer: librariesByServer,
       );
-
-      // Wait for OnDeck to complete and show it immediately
-      final onDeck = await onDeckFuture;
-
-      if (!mounted) return;
-      setState(() {
-        _onDeck = onDeck;
-        _isLoading = false; // Show content, but hubs still loading
-
-        // Reset hero index to avoid sync issues
-        _currentHeroIndex = 0;
-
-        // Create continue watching hub key if needed
-        if (_onDeck.isNotEmpty) {
-          _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
-        }
-      });
-
-      // Focus hero section now that it's visible, but only if no modal route is on top
-      if (onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
-        _heroFocusNode.requestFocus();
-      }
-
-      // Sync to Android TV Watch Next row
-      if (Platform.isAndroid) {
-        _syncWatchNext(onDeck);
-      }
-
-      // Sync PageController to first page after OnDeck loads
-      if (_heroController.hasClients && onDeck.isNotEmpty) {
-        _heroController.jumpToPage(0);
-      }
-
-      // On initial load, focus the hero so the user starts on content (not the toolbar)
-      if (!_initialLoadComplete && onDeck.isNotEmpty) {
-        _initialLoadComplete = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _heroFocusNode.canRequestFocus && (ModalRoute.of(context)?.isCurrent ?? false)) {
-            _heroFocusNode.requestFocus();
-          }
-        });
-      }
-
-      // Wait for global hubs
-      final allHubs = await hubsFuture;
-
-      if (!mounted) return;
-
-      // Filter out Continue Watching / On Deck hubs (handled separately in hero section)
-      final filteredHubs = allHubs.where((hub) {
-        final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
-        final title = hub.title.toLowerCase();
-        return !hubId.contains('ondeck') &&
-            !hubId.contains('continue') &&
-            !title.contains('continue watching') &&
-            !title.contains('on deck');
-      }).toList();
-
-      // Sort hubs by the user's library order
-      final libraryOrder = context.read<LibrariesProvider>().libraries;
-      if (libraryOrder.isNotEmpty) {
-        final orderMap = <String, int>{};
-        for (var i = 0; i < libraryOrder.length; i++) {
-          orderMap[libraryOrder[i].globalKey] = i;
-        }
-        filteredHubs.sort((a, b) {
-          final aKey = _hubLibraryGlobalKey(a);
-          final bKey = _hubLibraryGlobalKey(b);
-          final aIndex = aKey != null ? orderMap[aKey] : null;
-          final bIndex = bKey != null ? orderMap[bKey] : null;
-          if (aIndex == null && bIndex == null) return 0;
-          if (aIndex == null) return 1;
-          if (bIndex == null) return -1;
-          return aIndex.compareTo(bIndex);
-        });
-      }
-
-      appLogger.d('Received ${onDeck.length} on deck items and ${filteredHubs.length} global hubs from all servers');
-      if (!mounted) return;
-      setState(() {
-        _hubs = filteredHubs;
-        _areHubsLoading = false;
-        _updateHubKeys();
-      });
+      if (!mounted || loadGeneration != _contentLoadGeneration) return;
 
       appLogger.d('Discover content loaded successfully');
+      _scheduleMissingContentRetry();
     } catch (e) {
       appLogger.e('Failed to load discover content', error: e);
       setState(() {
         _errorMessage = 'Failed to load content: $e';
         _isLoading = false;
         _areHubsLoading = false;
+        _isRecoveringMissingContent = false;
+      });
+      _scheduleMissingContentRetry();
+    }
+  }
+
+  void _applyHubs(List<PlexHub> allHubs, {required int onDeckCount}) {
+    final filteredHubs = _prepareVisibleHubs(allHubs);
+    appLogger.d('Received $onDeckCount on deck items and ${filteredHubs.length} global hubs from all servers');
+    if (!mounted) return;
+    setState(() {
+      _hubs = filteredHubs;
+      _areHubsLoading = false;
+      if (_onDeck.isNotEmpty || _hubs.isNotEmpty) {
+        _isRecoveringMissingContent = false;
+      }
+      _updateHubKeys();
+    });
+  }
+
+  List<PlexHub> _prepareVisibleHubs(List<PlexHub> allHubs) {
+    // Filter out Continue Watching / On Deck hubs (handled separately in hero section)
+    final filteredHubs = allHubs.where((hub) {
+      final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+      final title = hub.title.toLowerCase();
+      return !hubId.contains('ondeck') &&
+          !hubId.contains('continue') &&
+          !title.contains('continue watching') &&
+          !title.contains('on deck');
+    }).toList();
+
+    // Sort hubs by the user's library order
+    final libraryOrder = context.read<LibrariesProvider>().libraries;
+    if (libraryOrder.isNotEmpty) {
+      final orderMap = <String, int>{};
+      for (var i = 0; i < libraryOrder.length; i++) {
+        orderMap[libraryOrder[i].globalKey] = i;
+      }
+      filteredHubs.sort((a, b) {
+        final aKey = _hubLibraryGlobalKey(a);
+        final bKey = _hubLibraryGlobalKey(b);
+        final aIndex = aKey != null ? orderMap[aKey] : null;
+        final bIndex = bKey != null ? orderMap[bKey] : null;
+        if (aIndex == null && bIndex == null) return 0;
+        if (aIndex == null) return 1;
+        if (bIndex == null) return -1;
+        return aIndex.compareTo(bIndex);
+      });
+    }
+
+    return filteredHubs;
+  }
+
+  Future<void> _loadContinueWatchingProgressively({
+    required int loadGeneration,
+    required MultiServerProvider multiServerProvider,
+    required Set<String> hiddenLibraryKeys,
+  }) async {
+    final clients = multiServerProvider.serverManager.onlineClients;
+    if (clients.isEmpty) {
+      if (mounted && loadGeneration == _contentLoadGeneration) {
+        setState(() {
+          _isLoading = false;
+          _isRecoveringMissingContent = false;
+        });
+      }
+      return;
+    }
+
+    final onDeckByServer = <String, List<PlexMetadata>>{};
+    var publishedAnyResult = false;
+
+    final futures = clients.entries.map((entry) async {
+      final serverId = entry.key;
+      final client = entry.value;
+
+      try {
+        final items = await client.getContinueWatching();
+        if (!mounted || loadGeneration != _contentLoadGeneration) return;
+
+        onDeckByServer[serverId] = items;
+        final merged = _mergeOnDeckResults(onDeckByServer.values.expand((items) => items).toList(), hiddenLibraryKeys);
+        publishedAnyResult = true;
+        _applyOnDeck(merged, isInitialLoad: true);
+      } catch (e, stackTrace) {
+        appLogger.w('Failed to progressively fetch Continue Watching from server $serverId', error: e, stackTrace: stackTrace);
+      }
+    });
+
+    await Future.wait(futures);
+    if (!mounted || loadGeneration != _contentLoadGeneration) return;
+
+    if (!publishedAnyResult) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadHubsProgressively({
+    required int loadGeneration,
+    required MultiServerProvider multiServerProvider,
+    required Set<String> hiddenLibraryKeys,
+    required bool useGlobalHubs,
+  }) async {
+    if (!useGlobalHubs) {
+      final allHubs = await multiServerProvider.aggregationService.getHubsFromAllServers(
+        hiddenLibraryKeys: hiddenLibraryKeys,
+        useGlobalHubs: false,
+      );
+      if (!mounted || loadGeneration != _contentLoadGeneration) return;
+      _applyHubs(allHubs, onDeckCount: _onDeck.length);
+      return;
+    }
+
+    final clients = multiServerProvider.serverManager.onlineClients;
+    if (clients.isEmpty) {
+      if (mounted && loadGeneration == _contentLoadGeneration) {
+        setState(() {
+          _areHubsLoading = false;
+          _isRecoveringMissingContent = false;
+        });
+      }
+      return;
+    }
+
+    final hubsByServer = <String, List<PlexHub>>{};
+
+    final futures = clients.entries.map((entry) async {
+      final serverId = entry.key;
+      final client = entry.value;
+
+      try {
+        final hubs = await client.getGlobalHubs(limit: 10);
+        if (!mounted || loadGeneration != _contentLoadGeneration) return;
+
+        hubsByServer[serverId] = _filterHubsForHiddenLibraries(hubs, serverId, hiddenLibraryKeys);
+        final merged = hubsByServer.values.expand((items) => items).toList();
+        final prepared = _prepareVisibleHubs(merged);
+        setState(() {
+          _hubs = prepared;
+          _areHubsLoading = false;
+          _updateHubKeys();
+        });
+      } catch (e, stackTrace) {
+        appLogger.w('Failed to progressively fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
+      }
+    });
+
+    await Future.wait(futures);
+    if (!mounted || loadGeneration != _contentLoadGeneration) return;
+    setState(() {
+      _areHubsLoading = false;
+    });
+  }
+
+  List<PlexMetadata> _mergeOnDeckResults(List<PlexMetadata> allOnDeck, Set<String> hiddenLibraryKeys) {
+    final filteredOnDeck = allOnDeck.where((item) {
+      final librarySectionId = item.librarySectionID;
+      if (librarySectionId == null || item.serverId == null) return true;
+      final globalKey = buildGlobalKey(item.serverId!, librarySectionId.toString());
+      return !hiddenLibraryKeys.contains(globalKey);
+    }).toList();
+
+    filteredOnDeck.sort((a, b) {
+      final aTime = a.lastViewedAt ?? a.addedAt ?? 0;
+      final bTime = b.lastViewedAt ?? b.addedAt ?? 0;
+      return bTime.compareTo(aTime);
+    });
+
+    return filteredOnDeck.length > 20 ? filteredOnDeck.sublist(0, 20) : filteredOnDeck;
+  }
+
+  List<PlexHub> _filterHubsForHiddenLibraries(List<PlexHub> hubs, String serverId, Set<String> hiddenLibraryKeys) {
+    if (hiddenLibraryKeys.isEmpty) return hubs;
+
+    return hubs
+        .map((hub) {
+          final filteredItems = hub.items.where((item) {
+            final librarySectionId = item.librarySectionID;
+            if (librarySectionId == null) return true;
+            final globalKey = buildGlobalKey(serverId, librarySectionId.toString());
+            return !hiddenLibraryKeys.contains(globalKey);
+          }).toList();
+
+          if (filteredItems.isEmpty) return null;
+
+          return PlexHub(
+            hubKey: hub.hubKey,
+            title: hub.title,
+            type: hub.type,
+            hubIdentifier: hub.hubIdentifier,
+            size: filteredItems.length,
+            more: hub.more,
+            items: filteredItems,
+            serverId: hub.serverId,
+            serverName: hub.serverName,
+            librarySectionID: hub.librarySectionID,
+          );
+        })
+        .whereType<PlexHub>()
+        .toList();
+  }
+
+  void _applyOnDeck(List<PlexMetadata> onDeck, {bool isInitialLoad = false}) {
+    setState(() {
+      _onDeck = onDeck;
+      _isLoading = false;
+
+      if (_currentHeroIndex >= _onDeck.length) {
+        _currentHeroIndex = 0;
+      }
+
+      if (_onDeck.isNotEmpty) {
+        _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
+        _isRecoveringMissingContent = false;
+      }
+    });
+
+    if (Platform.isAndroid) {
+      _syncWatchNext(onDeck);
+    }
+
+    if (_heroController.hasClients && onDeck.isNotEmpty) {
+      _heroController.jumpToPage(0);
+    }
+
+    if (onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
+      _heroFocusNode.requestFocus();
+    }
+
+    if (isInitialLoad && !_initialLoadComplete && onDeck.isNotEmpty) {
+      _initialLoadComplete = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _heroFocusNode.canRequestFocus && (ModalRoute.of(context)?.isCurrent ?? false)) {
+          _heroFocusNode.requestFocus();
+        }
       });
     }
   }
@@ -595,6 +793,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// This is called when returning to the home screen to avoid blocking UI
   Future<void> _refreshContinueWatching() async {
     appLogger.d('Refreshing Continue Watching in background from all servers');
+    if (_isRefreshingOnDeck) return;
+    _isRefreshingOnDeck = true;
 
     try {
       final multiServerProvider = context.read<MultiServerProvider>();
@@ -610,28 +810,85 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       );
 
       if (mounted) {
-        setState(() {
-          _onDeck = onDeck;
-          // Reset hero index if needed
-          if (_currentHeroIndex >= onDeck.length) {
-            _currentHeroIndex = 0;
-            if (_heroController.hasClients && onDeck.isNotEmpty) {
-              _heroController.jumpToPage(0);
-            }
-          }
-        });
-
-        // Sync to Android TV Watch Next row
-        if (Platform.isAndroid) {
-          _syncWatchNext(onDeck);
-        }
+        _applyOnDeck(onDeck);
 
         appLogger.d('Continue Watching refreshed successfully');
       }
     } catch (e) {
       appLogger.w('Failed to refresh Continue Watching', error: e);
       // Silently fail - don't show error to user for background refresh
+    } finally {
+      _isRefreshingOnDeck = false;
     }
+  }
+
+  Future<void> _refreshHubsInBackground() async {
+    appLogger.d('Refreshing Home hubs in background from all servers');
+    if (_isRefreshingHubs) return;
+    _isRefreshingHubs = true;
+
+    try {
+      final multiServerProvider = context.read<MultiServerProvider>();
+      if (!multiServerProvider.hasConnectedServers) {
+        appLogger.w('No servers available for hub refresh');
+        return;
+      }
+
+      final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+      final settingsProvider = context.read<SettingsProvider>();
+      await settingsProvider.ensureInitialized();
+
+      final librariesProvider = context.read<LibrariesProvider>();
+      final librariesByServer = librariesProvider.libraries.isNotEmpty
+          ? multiServerProvider.aggregationService.groupLibrariesByServer(librariesProvider.libraries)
+          : null;
+
+      final allHubs = await multiServerProvider.aggregationService.getHubsFromAllServers(
+        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+        useGlobalHubs: settingsProvider.useGlobalHubs,
+        librariesByServer: librariesByServer,
+      );
+
+      if (!mounted) return;
+      _applyHubs(allHubs, onDeckCount: _onDeck.length);
+      appLogger.d('Home hubs refreshed successfully');
+    } catch (e) {
+      appLogger.w('Failed to refresh Home hubs', error: e);
+    } finally {
+      _isRefreshingHubs = false;
+    }
+  }
+
+  void _scheduleMissingContentRetry([Duration delay = const Duration(seconds: 4)]) {
+    _missingContentRetryTimer?.cancel();
+    if (mounted && (_onDeck.isEmpty || _hubs.isEmpty)) {
+      setState(() {
+        _isRecoveringMissingContent = true;
+      });
+    }
+    _missingContentRetryTimer = Timer(delay, () async {
+      if (!mounted) return;
+      if (_onDeck.isNotEmpty && _hubs.isNotEmpty) return;
+
+      appLogger.d(
+        'Retrying missing Home content in background '
+        '(onDeck=${_onDeck.length}, hubs=${_hubs.length}, hubsLoading=$_areHubsLoading)',
+      );
+
+      if (_onDeck.isEmpty) {
+        await _refreshContinueWatching();
+      }
+      if (_hubs.isEmpty) {
+        await _refreshHubsInBackground();
+      }
+
+      if (!mounted) return;
+      if (_onDeck.isNotEmpty || _hubs.isNotEmpty) {
+        setState(() {
+          _isRecoveringMissingContent = false;
+        });
+      }
+    });
   }
 
   /// Sync On Deck items to Android TV Watch Next row
@@ -1166,7 +1423,46 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ),
                     ),
 
-                if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
+                if (_onDeck.isEmpty && _hubs.isEmpty && (_areHubsLoading || _isRecoveringMissingContent))
+                  for (int i = 0; i < 3; i++)
+                    SliverToBoxAdapter(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 220,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                borderRadius: const BorderRadius.all(Radius.circular(4)),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 200,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 5,
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    margin: const EdgeInsets.only(right: 12),
+                                    width: 140,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading && !_isRecoveringMissingContent)
                   SliverFillRemaining(
                     child: Center(
                       child: Column(

@@ -54,9 +54,10 @@ class PlexConfig {
       'X-Plex-Version': version,
       'X-Plex-Platform': platform,
       'X-Plex-Client-Profile-Name': 'Generic',
-      'X-Plex-Device': ?device,
       if (acceptJson) 'Accept': 'application/json',
       'Accept-Charset': 'utf-8',
+      if (device != null && device!.isNotEmpty) 'X-Plex-Device': device!,
+      if (device != null && device!.isNotEmpty) 'X-Plex-Device-Name': device!,
     };
 
     if (token != null) {

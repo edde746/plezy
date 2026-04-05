@@ -41,6 +41,7 @@ import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
+import 'services/app_exit_playback_cleanup_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
@@ -346,6 +347,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _appLifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
+        await AppExitPlaybackCleanupService.instance.prepareForExit();
+        // Give player routes a short window to dispose and flush final
+        // Plex timeline updates before the process exits.
+        await Future.delayed(const Duration(milliseconds: 500));
         await _appDatabase.close();
         return AppExitResponse.exit;
       },
@@ -396,9 +401,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
-        if (Platform.isAndroid || Platform.isIOS) {
-          _appDatabase.close();
-        }
+        // Do not close the shared Drift database on mobile lifecycle pauses.
+        // First-run auth and browser handoffs pause the app, and closing here
+        // leaves singleton services holding a dead database connection until
+        // the entire app process is restarted.
         InAppReviewService.instance.endSession();
         if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
           if (ProcessInfo.currentRss > 1024 * 1024 * 1024) { // 1GB

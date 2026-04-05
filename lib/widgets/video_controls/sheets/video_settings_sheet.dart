@@ -10,6 +10,7 @@ import 'package:path/path.dart' as path;
 
 import 'package:provider/provider.dart';
 
+import '../../../models/plex_playback_quality.dart';
 import '../../../models/shader_preset.dart';
 import '../../../mpv/mpv.dart';
 import '../../../providers/shader_provider.dart';
@@ -29,7 +30,7 @@ import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
 
-enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice, shader }
+enum _SettingsView { menu, quality, speed, sleep, audioSync, subtitleSync, audioDevice, shader }
 
 /// Reusable menu item widget for settings sheet
 class _SettingsMenuItem extends StatelessWidget {
@@ -79,6 +80,9 @@ class VideoSettingsSheet extends StatefulWidget {
   final Player player;
   final int audioSyncOffset;
   final int subtitleSyncOffset;
+  final List<PlexPlaybackQualityOption> availablePlaybackQualities;
+  final PlexPlaybackQualityOption? selectedPlaybackQuality;
+  final Future<void> Function(PlexPlaybackQualityOption quality)? onPlaybackQualityChanged;
 
   /// Whether the user can control playback (false hides speed option in host-only mode).
   final bool canControl;
@@ -112,6 +116,9 @@ class VideoSettingsSheet extends StatefulWidget {
     required this.player,
     required this.audioSyncOffset,
     required this.subtitleSyncOffset,
+    this.availablePlaybackQualities = const [],
+    this.selectedPlaybackQuality,
+    this.onPlaybackQualityChanged,
     this.canControl = true,
     this.isLive = false,
     this.shaderService,
@@ -282,6 +289,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     switch (_currentView) {
       case _SettingsView.menu:
         return t.videoSettings.playbackSettings;
+      case _SettingsView.quality:
+        return 'Playback Quality';
       case _SettingsView.speed:
         return t.videoSettings.playbackSpeed;
       case _SettingsView.sleep:
@@ -301,6 +310,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     switch (_currentView) {
       case _SettingsView.menu:
         return Symbols.tune_rounded;
+      case _SettingsView.quality:
+        return Symbols.high_quality_rounded;
       case _SettingsView.speed:
         return Symbols.speed_rounded;
       case _SettingsView.sleep:
@@ -348,6 +359,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 onTap: () => _navigateTo(_SettingsView.speed),
               );
             },
+          ),
+
+        if (widget.canControl && !widget.isLive && widget.availablePlaybackQualities.isNotEmpty)
+          _SettingsMenuItem(
+            icon: Symbols.high_quality_rounded,
+            title: 'Playback Quality',
+            valueText: widget.selectedPlaybackQuality?.displayLabel ?? 'Original',
+            isHighlighted: widget.selectedPlaybackQuality != null && !widget.selectedPlaybackQuality!.isOriginal,
+            onTap: () => _navigateTo(_SettingsView.quality),
           ),
 
         // Sleep Timer
@@ -555,6 +575,32 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 }
               },
             );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildQualityView() {
+    final options = widget.availablePlaybackQualities;
+    final selectedId = widget.selectedPlaybackQuality?.id;
+
+    return ListView.builder(
+      itemCount: options.length,
+      itemBuilder: (context, index) {
+        final option = options[index];
+        final isSelected = option.id == selectedId;
+        final primary = Theme.of(context).colorScheme.primary;
+
+        return FocusableListTile(
+          title: Text(option.title, style: TextStyle(color: isSelected ? primary : null)),
+          subtitle: option.subtitle.isNotEmpty
+              ? Text(option.subtitle, style: TextStyle(color: tokens(context).textMuted, fontSize: 12))
+              : null,
+          trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+          onTap: () async {
+            OverlaySheetController.of(context).close();
+            await widget.onPlaybackQualityChanged?.call(option);
           },
         );
       },
@@ -802,9 +848,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget build(BuildContext context) {
     final sleepTimer = SleepTimerService();
     final isShaderActive = widget.shaderService != null && widget.shaderService!.currentPreset.isEnabled;
+    final hasManualQuality = widget.selectedPlaybackQuality != null && !widget.selectedPlaybackQuality!.isOriginal;
     final isIconActive =
         _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive);
+        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive || hasManualQuality);
 
     return BaseVideoControlSheet(
       title: _getTitle(),
@@ -819,6 +866,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         switch (_currentView) {
           case _SettingsView.menu:
             return _buildMenuView();
+          case _SettingsView.quality:
+            return _buildQualityView();
           case _SettingsView.speed:
             return _buildSpeedView();
           case _SettingsView.sleep:

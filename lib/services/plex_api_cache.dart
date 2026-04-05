@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
 import '../models/plex_metadata.dart';
+import '../utils/app_logger.dart';
 import '../utils/plex_cache_parser.dart';
 import '../utils/global_key_utils.dart';
 
@@ -38,22 +39,33 @@ class PlexApiCache {
 
   /// Get cached response for an endpoint
   Future<Map<String, dynamic>?> get(String serverId, String endpoint) async {
-    final key = _buildKey(serverId, endpoint);
-    final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
+    try {
+      final key = _buildKey(serverId, endpoint);
+      final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
 
-    if (result != null) {
-      return await tryIsolateRun(() => jsonDecode(result.data) as Map<String, dynamic>);
+      if (result != null) {
+        return await tryIsolateRun(() => jsonDecode(result.data) as Map<String, dynamic>);
+      }
+    } catch (e) {
+      // The API cache is best-effort. On mobile, lifecycle/auth flows can
+      // temporarily invalidate the Drift isolate; callers should continue with
+      // network data rather than failing playback.
+      appLogger.w('API cache read failed for $serverId:$endpoint', error: e);
     }
     return null;
   }
 
   /// Cache a response for an endpoint
   Future<void> put(String serverId, String endpoint, Map<String, dynamic> data) async {
-    final key = _buildKey(serverId, endpoint);
-    final encoded = await tryIsolateRun(() => jsonEncode(data));
-    await _db
-        .into(_db.apiCache)
-        .insertOnConflictUpdate(ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded), cachedAt: Value(DateTime.now())));
+    try {
+      final key = _buildKey(serverId, endpoint);
+      final encoded = await tryIsolateRun(() => jsonEncode(data));
+      await _db.into(_db.apiCache).insertOnConflictUpdate(
+        ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded), cachedAt: Value(DateTime.now())),
+      );
+    } catch (e) {
+      appLogger.w('API cache write failed for $serverId:$endpoint', error: e);
+    }
   }
 
   /// Delete all cached data for a server

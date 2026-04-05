@@ -11,6 +11,31 @@ import 'player_base.dart';
 /// or FlTextureGL (Linux).
 class PlayerNative extends PlayerBase {
   int? _textureIdValue;
+  Duration _serverManagedStartOffset = Duration.zero;
+
+  bool _isPlexServerManagedStartUri(String uri) {
+    try {
+      final parsed = Uri.parse(uri);
+      final path = parsed.path;
+      final protocol = parsed.queryParameters['protocol']?.toLowerCase();
+      return protocol == 'hls' &&
+          (path.contains('/video/:/transcode/universal/start') ||
+              path.contains('/video/:/transcode/universal/session/'));
+    } catch (_) {
+      return uri.contains('protocol=hls') &&
+          (uri.contains('/video/:/transcode/universal/start') ||
+              uri.contains('/video/:/transcode/universal/session/'));
+    }
+  }
+
+  Duration _toNativePosition(Duration requestedPosition) {
+    if (_serverManagedStartOffset <= Duration.zero) {
+      return requestedPosition;
+    }
+
+    final normalized = requestedPosition - _serverManagedStartOffset;
+    return normalized.isNegative ? Duration.zero : normalized;
+  }
 
   @override
   int? get textureId => _textureIdValue;
@@ -37,6 +62,22 @@ class PlayerNative extends PlayerBase {
   // ============================================
   // Initialization
   // ============================================
+
+  @override
+  void handlePropertyChange(String name, dynamic value) {
+    if (_serverManagedStartOffset > Duration.zero && value is num) {
+      final offsetSeconds = _serverManagedStartOffset.inMilliseconds / 1000.0;
+      switch (name) {
+        case 'time-pos':
+        case 'duration':
+        case 'demuxer-cache-time':
+          super.handlePropertyChange(name, value + offsetSeconds);
+          return;
+      }
+    }
+
+    super.handlePropertyChange(name, value);
+  }
 
   Future<void> _ensureInitialized() async {
     if (initialized) return;
@@ -105,9 +146,17 @@ class PlayerNative extends PlayerBase {
       await setProperty('http-header-fields', headerList.join(','));
     }
 
+    // Plex HLS transcode URLs already honor offset server-side.
+    // Applying MPV's local start on top of that can leave playback stuck
+    // on a black frame while the server keeps transcoding.
+    final requestedStart = media.start ?? Duration.zero;
+    final usesServerManagedStart =
+        requestedStart > Duration.zero && _isPlexServerManagedStartUri(media.uri);
+    _serverManagedStartOffset = usesServerManagedStart ? requestedStart : Duration.zero;
+
     // Set start position if provided (must be set before loading file)
-    if (media.start != null && media.start!.inSeconds > 0) {
-      await setProperty('start', media.start!.inSeconds.toString());
+    if (requestedStart > Duration.zero && !usesServerManagedStart) {
+      await setProperty('start', requestedStart.inSeconds.toString());
     } else {
       // Reset start position if not resuming
       await setProperty('start', 'none');
@@ -116,9 +165,7 @@ class PlayerNative extends PlayerBase {
     // Set pause BEFORE loadfile to prevent decoder from starting immediately.
     // This is important for adding external subtitles before playback begins,
     // avoiding a race condition that can freeze the video decoder on Android (issue #226).
-    if (!play) {
-      await setProperty('pause', 'yes');
-    }
+    await setProperty('pause', play ? 'no' : 'yes');
 
     // Convert content:// URIs to fdclose:// for MPV on Android (SAF SD card downloads)
     var uri = media.uri;
@@ -147,12 +194,14 @@ class PlayerNative extends PlayerBase {
     await command(['stop']);
     setSeekable(false);
     await invoke('setVisible', {'visible': false});
+    _serverManagedStartOffset = Duration.zero;
   }
 
   @override
   Future<void> seek(Duration position) async {
     try {
-      await command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']);
+      final nativePosition = _toNativePosition(position);
+      await command(['seek', (nativePosition.inMilliseconds / 1000.0).toString(), 'absolute']);
     } on PlatformException catch (e) {
       if (e.code == 'COMMAND_FAILED' || e.code == 'NOT_INITIALIZED') {
         appLogger.w('Seek failed (${e.code}), player not ready');

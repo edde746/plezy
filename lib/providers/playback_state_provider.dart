@@ -72,7 +72,7 @@ class PlaybackStateProvider with ChangeNotifier {
     // Use size or items length as fallback if totalCount is null
     _playQueueTotalCount = playQueue.playQueueTotalCount ?? playQueue.size ?? (playQueue.items?.length ?? 0);
     _playQueueShuffled = playQueue.playQueueShuffled;
-    _currentPlayQueueItemID = playQueue.playQueueSelectedItemID;
+    _currentPlayQueueItemID = playQueue.playQueueSelectedItemID ?? _deriveSelectedQueueItemId(playQueue);
 
     // Items are already tagged with server info by PlexClient
     _loadedItems = playQueue.items ?? [];
@@ -80,6 +80,29 @@ class PlaybackStateProvider with ChangeNotifier {
     _contextKey = contextKey;
     _isQueueMode = true;
     notifyListeners();
+  }
+
+  int? _deriveSelectedQueueItemId(PlayQueueResponse playQueue) {
+    final items = playQueue.items;
+    if (items == null || items.isEmpty) return null;
+
+    final selectedMetadataId = playQueue.playQueueSelectedMetadataItemID;
+    if (selectedMetadataId != null && selectedMetadataId.isNotEmpty) {
+      final normalizedMetadataId = selectedMetadataId.split('/').last;
+      final matched = items.cast<PlexMetadata?>().firstWhere(
+        (item) => item?.ratingKey == normalizedMetadataId,
+        orElse: () => null,
+      );
+      if (matched?.playQueueItemID != null) {
+        return matched!.playQueueItemID;
+      }
+    }
+
+    final firstWithQueueId = items.cast<PlexMetadata?>().firstWhere(
+      (item) => item?.playQueueItemID != null,
+      orElse: () => null,
+    );
+    return firstWithQueueId?.playQueueItemID;
   }
 
   /// Load more items from the play queue if needed

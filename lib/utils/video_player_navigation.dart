@@ -6,11 +6,13 @@ import 'package:provider/provider.dart';
 
 import '../mpv/mpv.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_playback_quality.dart';
 import '../models/plex_video_playback_data.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
+import '../services/plex_client.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import 'app_logger.dart';
@@ -55,11 +57,12 @@ Future<bool?> navigateToVideoPlayer(
   bool usePushReplacement = false,
   bool isOffline = false,
   PlexVideoPlaybackData? playbackData,
+  PlexPlaybackQualityOption? qualityOverride,
 }) async {
   // Extract context-dependent values before any async operations
   final navigator = Navigator.of(context);
   final downloadProvider = context.read<DownloadProvider>();
-  final client = isOffline ? null : context.getClientForMetadata(metadata);
+  PlexClient? client;
 
   // Load saved media version preference if not explicitly provided
   int mediaIndex = selectedMediaIndex ?? 0;
@@ -97,6 +100,7 @@ Future<bool?> navigateToVideoPlayer(
           launched = await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
         }
       } else if (context.mounted) {
+        client ??= await context.waitForClientForMetadata(metadata);
         launched = await ExternalPlayerService.launch(
           context: context,
           metadata: metadata,
@@ -132,6 +136,7 @@ Future<bool?> navigateToVideoPlayer(
       selectedMediaIndex: mediaIndex,
       isOffline: isOffline,
       playbackData: effectivePlaybackData,
+      qualityOverride: qualityOverride,
     ),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,
@@ -165,6 +170,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   int? selectedMediaIndex,
   bool usePushReplacement = false,
   PlexVideoPlaybackData? playbackData,
+  PlexPlaybackQualityOption? qualityOverride,
 }) async {
   final result = await navigateToVideoPlayer(
     context,
@@ -176,6 +182,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
     selectedMediaIndex: selectedMediaIndex,
     usePushReplacement: usePushReplacement,
     playbackData: playbackData,
+    qualityOverride: qualityOverride,
   );
 
   appLogger.d('Returned from playback, refreshing metadata');

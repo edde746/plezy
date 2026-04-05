@@ -644,6 +644,21 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
     }
 
+    private fun isPlexHlsTranscodeUri(uri: String): Boolean {
+        return try {
+            val parsed = Uri.parse(uri)
+            val path = parsed.path.orEmpty()
+            val protocol = parsed.getQueryParameter("protocol")?.lowercase()
+            protocol == "hls" ||
+                path.contains("/video/:/transcode/universal/start") ||
+                path.contains("/video/:/transcode/universal/session/")
+        } catch (_: Exception) {
+            uri.contains("/video/:/transcode/universal/start") ||
+                uri.contains("/video/:/transcode/universal/session/") ||
+                uri.contains("protocol=hls")
+        }
+    }
+
     override fun onFormatUnsupported(
         uri: String,
         headers: Map<String, String>?,
@@ -653,6 +668,24 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         if (usingMpvFallback || fallbackInProgress) {
             Log.w(TAG, "Fallback already active/in-progress, ignoring duplicate request")
             return true
+        }
+
+        // Plex's HLS transcode sessions are a normal ExoPlayer workload.
+        // Keep playback on ExoPlayer so a slow transcode startup or seek
+        // doesn't trigger an unnecessary backend handoff to MPV.
+        if (isPlexHlsTranscodeUri(uri)) {
+            Log.w(
+                TAG,
+                "Suppressing MPV fallback for Plex HLS playback at ${positionMs}ms: $errorMessage",
+            )
+            if (debugLoggingEnabled) {
+                onEvent("log-message", mapOf(
+                    "prefix" to "fallback",
+                    "level" to "warn",
+                    "text" to "Keeping Plex HLS playback on ExoPlayer: $errorMessage",
+                ))
+            }
+            return false
         }
 
         val currentActivity = activity ?: return false

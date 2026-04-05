@@ -1,8 +1,12 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../models/plex_media_info.dart';
+import '../../../models/plex_playback_session.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../utils/track_label_builder.dart';
 import '../../../widgets/app_icon.dart';
@@ -23,6 +27,8 @@ class TrackSheet extends StatelessWidget {
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
+  final PlexMediaInfo? plexMediaInfo;
+  final PlexPlaybackSession? playbackSession;
 
   const TrackSheet({
     super.key,
@@ -34,6 +40,8 @@ class TrackSheet extends StatelessWidget {
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
+    this.plexMediaInfo,
+    this.playbackSession,
   });
 
   @override
@@ -43,11 +51,14 @@ class TrackSheet extends StatelessWidget {
       initialData: player.state.tracks,
       builder: (context, tracksSnapshot) {
         final tracks = tracksSnapshot.data;
-        final audioTracks = TrackFilterHelper.extractAndFilterTracks<AudioTrack>(tracks, (t) => t?.audio ?? []);
-        final subtitleTracks = TrackFilterHelper.extractAndFilterTracks<SubtitleTrack>(
-          tracks,
-          (t) => t?.subtitle ?? [],
-        );
+        final usePlexTrackFallback =
+            Platform.isWindows && playbackSession?.usesTranscodeEndpoint == true && plexMediaInfo != null;
+        final audioTracks = usePlexTrackFallback
+            ? _buildFallbackAudioTracks(plexMediaInfo!)
+            : TrackFilterHelper.extractAndFilterTracks<AudioTrack>(tracks, (t) => t?.audio ?? []);
+        final subtitleTracks = usePlexTrackFallback
+            ? _buildFallbackSubtitleTracks(plexMediaInfo!)
+            : TrackFilterHelper.extractAndFilterTracks<SubtitleTrack>(tracks, (t) => t?.subtitle ?? []);
 
         final showAudio = audioTracks.length > 1;
         final showSubtitles = subtitleTracks.isNotEmpty;
@@ -71,11 +82,13 @@ class TrackSheet extends StatelessWidget {
           icon: icon,
           child: StreamBuilder<TrackSelection>(
             stream: player.streams.track,
-            initialData: player.state.track,
+            initialData: usePlexTrackFallback ? _buildFallbackSelection(plexMediaInfo!) : player.state.track,
             builder: (context, selSnapshot) {
-              final selection = selSnapshot.data ?? player.state.track;
+              final selection = usePlexTrackFallback
+                  ? _buildFallbackSelection(plexMediaInfo!)
+                  : (selSnapshot.data ?? player.state.track);
 
-              final supportsSecondary = player.supportsSecondarySubtitles;
+              final supportsSecondary = !usePlexTrackFallback && player.supportsSecondarySubtitles;
 
               if (showAudio && showSubtitles) {
                 return Row(
@@ -88,6 +101,7 @@ class TrackSheet extends StatelessWidget {
                           selection: selection,
                           player: player,
                           onTrackChanged: onAudioTrackChanged,
+                          usePlexTrackFallback: usePlexTrackFallback,
                           showHeader: true,
                         ),
                       ),
@@ -106,6 +120,7 @@ class TrackSheet extends StatelessWidget {
                           onTrackChanged: onSubtitleTrackChanged,
                           onSecondaryTrackChanged: onSecondarySubtitleTrackChanged,
                           supportsSecondary: supportsSecondary,
+                          usePlexTrackFallback: usePlexTrackFallback,
                           showHeader: true,
                         ),
                       ),
@@ -120,6 +135,7 @@ class TrackSheet extends StatelessWidget {
                   selection: selection,
                   player: player,
                   onTrackChanged: onAudioTrackChanged,
+                  usePlexTrackFallback: usePlexTrackFallback,
                   showHeader: false,
                 );
               }
@@ -135,12 +151,86 @@ class TrackSheet extends StatelessWidget {
                 onTrackChanged: onSubtitleTrackChanged,
                 onSecondaryTrackChanged: onSecondarySubtitleTrackChanged,
                 supportsSecondary: supportsSecondary,
+                usePlexTrackFallback: usePlexTrackFallback,
                 showHeader: false,
               );
             },
           ),
         );
       },
+    );
+  }
+
+  static List<AudioTrack> _buildFallbackAudioTracks(PlexMediaInfo mediaInfo) {
+    return mediaInfo.audioTracks
+        .map(
+          (track) => AudioTrack(
+            id: 'plex-audio:${track.id}',
+            title: track.displayTitle ?? track.title,
+            language: track.languageCode ?? track.language,
+            codec: track.codec,
+            channels: track.channels,
+            isDefault: track.selected,
+          ),
+        )
+        .toList();
+  }
+
+  static List<SubtitleTrack> _buildFallbackSubtitleTracks(PlexMediaInfo mediaInfo) {
+    return mediaInfo.subtitleTracks
+        .map(
+          (track) => SubtitleTrack(
+            id: 'plex-subtitle:${track.id}',
+            title: track.displayTitle ?? track.title,
+            language: track.languageCode ?? track.language,
+            codec: track.codec,
+            isDefault: track.selected,
+            isForced: track.forced,
+            isExternal: track.isExternal,
+          ),
+        )
+        .toList();
+  }
+
+  static TrackSelection _buildFallbackSelection(PlexMediaInfo mediaInfo) {
+    PlexAudioTrack? selectedAudio;
+    for (final track in mediaInfo.audioTracks) {
+      if (track.selected) {
+        selectedAudio = track;
+        break;
+      }
+    }
+
+    PlexSubtitleTrack? selectedSubtitle;
+    for (final track in mediaInfo.subtitleTracks) {
+      if (track.selected) {
+        selectedSubtitle = track;
+        break;
+      }
+    }
+
+    return TrackSelection(
+      audio: selectedAudio == null
+          ? null
+          : AudioTrack(
+              id: 'plex-audio:${selectedAudio.id}',
+              title: selectedAudio.displayTitle ?? selectedAudio.title,
+              language: selectedAudio.languageCode ?? selectedAudio.language,
+              codec: selectedAudio.codec,
+              channels: selectedAudio.channels,
+              isDefault: true,
+            ),
+      subtitle: selectedSubtitle == null
+          ? SubtitleTrack.off
+          : SubtitleTrack(
+              id: 'plex-subtitle:${selectedSubtitle.id}',
+              title: selectedSubtitle.displayTitle ?? selectedSubtitle.title,
+              language: selectedSubtitle.languageCode ?? selectedSubtitle.language,
+              codec: selectedSubtitle.codec,
+              isDefault: true,
+              isForced: selectedSubtitle.forced,
+              isExternal: selectedSubtitle.isExternal,
+            ),
     );
   }
 }
@@ -150,6 +240,7 @@ class _AudioColumn extends StatefulWidget {
   final TrackSelection selection;
   final Player player;
   final Function(AudioTrack)? onTrackChanged;
+  final bool usePlexTrackFallback;
   final bool showHeader;
 
   const _AudioColumn({
@@ -157,6 +248,7 @@ class _AudioColumn extends StatefulWidget {
     required this.selection,
     required this.player,
     this.onTrackChanged,
+    required this.usePlexTrackFallback,
     required this.showHeader,
   });
 
@@ -209,7 +301,9 @@ class _AudioColumnState extends State<_AudioColumn> {
                 label: label,
                 isSelected: track.id == selectedId,
                 onTap: () {
-                  widget.player.selectAudioTrack(track);
+                  if (!widget.usePlexTrackFallback) {
+                    widget.player.selectAudioTrack(track);
+                  }
                   widget.onTrackChanged?.call(track);
                   OverlaySheetController.of(context).close();
                 },
@@ -233,6 +327,7 @@ class _SubtitleColumn extends StatefulWidget {
   final Function(SubtitleTrack)? onTrackChanged;
   final Function(SubtitleTrack)? onSecondaryTrackChanged;
   final bool supportsSecondary;
+  final bool usePlexTrackFallback;
   final bool showHeader;
 
   const _SubtitleColumn({
@@ -246,6 +341,7 @@ class _SubtitleColumn extends StatefulWidget {
     this.onTrackChanged,
     this.onSecondaryTrackChanged,
     this.supportsSecondary = false,
+    required this.usePlexTrackFallback,
     required this.showHeader,
   });
 
@@ -299,21 +395,23 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                   isSelected: isOffSelected,
                   onTap: () {
                     // Turning off primary also clears secondary
-                    if (hasSecondary) {
+                    if (!widget.usePlexTrackFallback && hasSecondary) {
                       widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
                       widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
                     }
-                    widget.player.selectSubtitleTrack(SubtitleTrack.off);
+                    if (!widget.usePlexTrackFallback) {
+                      widget.player.selectSubtitleTrack(SubtitleTrack.off);
+                    }
                     widget.onTrackChanged?.call(SubtitleTrack.off);
                     OverlaySheetController.of(context).close();
                   },
-                  onLongPress: widget.supportsSecondary && hasSecondary
+                  onLongPress: !widget.usePlexTrackFallback && widget.supportsSecondary && hasSecondary
                       ? () {
                           widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
                           widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
                         }
                       : null,
-                  onSecondaryTap: widget.supportsSecondary && hasSecondary
+                  onSecondaryTap: !widget.usePlexTrackFallback && widget.supportsSecondary && hasSecondary
                       ? () {
                           widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
                           widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
@@ -349,15 +447,17 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                 badge: badge,
                 onTap: () {
                   // If tapping a track that is currently the secondary, clear secondary first
-                  if (isSecondary) {
+                  if (!widget.usePlexTrackFallback && isSecondary) {
                     widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
                     widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
                   }
-                  widget.player.selectSubtitleTrack(track);
+                  if (!widget.usePlexTrackFallback) {
+                    widget.player.selectSubtitleTrack(track);
+                  }
                   widget.onTrackChanged?.call(track);
                   OverlaySheetController.of(context).close();
                 },
-                onLongPress: widget.supportsSecondary
+                onLongPress: !widget.usePlexTrackFallback && widget.supportsSecondary
                     ? () {
                         if (isSecondary) {
                           // Already secondary — clear it
@@ -370,7 +470,7 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                         }
                       }
                     : null,
-                onSecondaryTap: widget.supportsSecondary
+                onSecondaryTap: !widget.usePlexTrackFallback && widget.supportsSecondary
                     ? () {
                         if (isSecondary) {
                           widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);

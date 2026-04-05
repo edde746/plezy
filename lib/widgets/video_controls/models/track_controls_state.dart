@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../models/plex_playback_quality.dart';
 import '../../../models/plex_media_version.dart';
 import '../../../models/plex_metadata.dart';
+import '../../../models/plex_media_info.dart';
+import '../../../models/plex_playback_session.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/shader_service.dart';
 
@@ -9,6 +12,8 @@ import '../../../services/shader_service.dart';
 class TrackControlsState {
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
+  final List<PlexPlaybackQualityOption> availablePlaybackQualities;
+  final PlexPlaybackQualityOption? selectedPlaybackQuality;
   final int boxFitMode;
   final int audioSyncOffset;
   final int subtitleSyncOffset;
@@ -23,6 +28,7 @@ class TrackControlsState {
   final VoidCallback? onToggleFullscreen;
   final VoidCallback? onToggleAlwaysOnTop;
   final Function(int)? onSwitchVersion;
+  final Future<void> Function(PlexPlaybackQualityOption quality)? onPlaybackQualityChanged;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
@@ -43,10 +49,14 @@ class TrackControlsState {
   final String ratingKey;
   final String? mediaTitle;
   final Future<void> Function()? onSubtitleDownloaded;
+  final PlexMediaInfo? plexMediaInfo;
+  final PlexPlaybackSession? playbackSession;
 
   const TrackControlsState({
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
+    this.availablePlaybackQualities = const [],
+    this.selectedPlaybackQuality,
     this.boxFitMode = 0,
     this.audioSyncOffset = 0,
     this.subtitleSyncOffset = 0,
@@ -61,6 +71,7 @@ class TrackControlsState {
     this.onToggleFullscreen,
     this.onToggleAlwaysOnTop,
     this.onSwitchVersion,
+    this.onPlaybackQualityChanged,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
@@ -81,5 +92,7 @@ class TrackControlsState {
     this.ratingKey = '',
     this.mediaTitle,
     this.onSubtitleDownloaded,
+    this.plexMediaInfo,
+    this.playbackSession,
   });
 }

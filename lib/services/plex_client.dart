@@ -25,6 +25,8 @@ import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
 import '../models/plex_playlist.dart';
+import '../models/plex_playback_quality.dart';
+import '../models/plex_playback_session.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_video_playback_data.dart';
 import '../utils/endpoint_failover_interceptor.dart';
@@ -124,6 +126,8 @@ class PlexClient {
 
   /// Libraries parsed from /media/providers (includes individually shared items)
   late final List<PlexLibrary> _providerLibraries;
+
+  List<PlexPlaybackQualityOption>? _cachedPlaybackQualityOptions;
 
   /// EPG providers parsed from /media/providers
   late final List<({String identifier, String gridEndpoint})> _providerEpg;
@@ -433,6 +437,15 @@ class PlexClient {
     return null;
   }
 
+  Map<String, dynamic>? _getMediaContainerFromData(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    final container = data['MediaContainer'];
+    if (container is Map<String, dynamic>) {
+      return container;
+    }
+    return data;
+  }
+
   /// Tag a PlexMetadata with this client's serverId and serverName
   PlexMetadata _tagMetadata(PlexMetadata metadata) => metadata.copyWith(serverId: serverId, serverName: serverName);
 
@@ -504,6 +517,26 @@ class PlexClient {
   Future<Map<String, dynamic>> getServerIdentity() async {
     final response = await _dio.get('/identity');
     return response.data;
+  }
+
+  Future<List<PlexPlaybackQualityOption>> getPlaybackQualityOptions() async {
+    final cached = _cachedPlaybackQualityOptions;
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+
+    try {
+      final identity = await getServerIdentity();
+      final container = _getMediaContainerFromData(identity);
+      final options = PlexPlaybackQualityOption.fromIdentity(container);
+      _cachedPlaybackQualityOptions = options;
+      return options;
+    } catch (e) {
+      appLogger.w('Failed to load Plex playback quality options, using fallback ladder', error: e);
+      final options = PlexPlaybackQualityOption.fallbackOptions();
+      _cachedPlaybackQualityOptions = options;
+      return options;
+    }
   }
 
   /// Check if the server connection is healthy (reachable AND authenticated).
@@ -1217,20 +1250,419 @@ class PlexClient {
   /// This is the primary method for playback initialization.
   /// Uses cache for offline mode support and network fallback.
   Future<PlexVideoPlaybackData> getVideoPlaybackData(String ratingKey, {int mediaIndex = 0}) async {
-    Map<String, dynamic>? data;
-    try {
-      data = await _fetchWithCacheFallback<Map<String, dynamic>>(
-        cacheKey: '/library/metadata/$ratingKey',
-        networkCall: () =>
-            _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
-        parseCache: (cached) => cached as Map<String, dynamic>?,
-        parseResponse: (response) => response.data as Map<String, dynamic>?,
-      );
-    } catch (_) {
-      // Gracefully degrade: return empty playback data on total failure
+    Object? lastError;
+
+    for (int attempt = 1; attempt <= 3; attempt++) {
+      Map<String, dynamic>? data;
+
+      try {
+        data = await _fetchWithCacheFallback<Map<String, dynamic>>(
+          cacheKey: '/library/metadata/$ratingKey',
+          networkCall: () =>
+              _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
+          parseCache: (cached) => cached as Map<String, dynamic>?,
+          parseResponse: (response) => response.data as Map<String, dynamic>?,
+        );
+      } catch (e) {
+        lastError = e;
+        appLogger.w('Playback metadata fetch attempt $attempt failed for $ratingKey', error: e);
+      }
+
+      final metadataJson = _getFirstMetadataJsonFromData(data);
+      final playbackData = parseVideoPlaybackDataFromJson(metadataJson, mediaIndex: mediaIndex);
+      if (playbackData.hasValidVideoUrl) {
+        if (attempt > 1) {
+          appLogger.i('Playback metadata fetch succeeded on retry $attempt for $ratingKey');
+        }
+        return playbackData;
+      }
+
+      if (attempt < 3) {
+        appLogger.w(
+          'Playback metadata missing playable media on attempt $attempt for $ratingKey, retrying',
+          error: {
+            'hasMetadata': metadataJson != null,
+            'hasMedia': metadataJson?['Media'] is List && (metadataJson!['Media'] as List).isNotEmpty,
+          },
+        );
+        await Future.delayed(Duration(milliseconds: 500 * attempt));
+        continue;
+      }
+
+      if (lastError != null) {
+        appLogger.w('Playback metadata exhausted retries for $ratingKey', error: lastError);
+      }
+      return playbackData;
     }
-    final metadataJson = _getFirstMetadataJsonFromData(data);
-    return parseVideoPlaybackDataFromJson(metadataJson, mediaIndex: mediaIndex);
+
+    return parseVideoPlaybackDataFromJson(null, mediaIndex: mediaIndex);
+  }
+
+  /// Get playback data for streaming through Plex's official media-decision flow.
+  ///
+  /// This keeps [getVideoPlaybackData] unchanged for downloads and metadata helpers,
+  /// while actual online playback can request direct play, direct stream, or transcode
+  /// using Plex's universal decision/start endpoints.
+  Future<PlexVideoPlaybackData> getStreamingVideoPlaybackData(
+    String ratingKey, {
+    int mediaIndex = 0,
+    PlexPlaybackQualityOption? quality,
+    double? offsetSeconds,
+  }) async {
+    final directData = await getVideoPlaybackData(ratingKey, mediaIndex: mediaIndex);
+    final qualityOptions = await getPlaybackQualityOptions();
+    final selectedQuality = PlexPlaybackQualityOption.matchAgainst(qualityOptions, quality);
+
+    if (!directData.hasValidVideoUrl) {
+      return PlexVideoPlaybackData(
+        videoUrl: directData.videoUrl,
+        playbackSession: directData.playbackSession,
+        mediaInfo: directData.mediaInfo,
+        availableVersions: directData.availableVersions,
+        markers: directData.markers,
+        qualityOptions: qualityOptions,
+        selectedQuality: selectedQuality,
+      );
+    }
+
+    try {
+      final resolvedSession = await _buildStreamingPlaybackSession(
+        ratingKey: ratingKey,
+        mediaIndex: mediaIndex,
+        quality: selectedQuality,
+        offsetSeconds: offsetSeconds,
+      );
+
+      final playbackSession = resolvedSession.route == PlexPlaybackRoute.directPlay
+          ? PlexPlaybackSession(
+              route: PlexPlaybackRoute.directPlay,
+              sessionIdentifier: resolvedSession.sessionIdentifier,
+              streamUrl: directData.videoUrl!,
+              sourcePath: resolvedSession.sourcePath,
+              mediaIndex: resolvedSession.mediaIndex,
+              partIndex: resolvedSession.partIndex,
+            )
+          : resolvedSession;
+
+      if (resolvedSession.route == PlexPlaybackRoute.directPlay) {
+        appLogger.d('Using direct media URL for Plex direct-play session on $ratingKey');
+      }
+
+      return PlexVideoPlaybackData(
+        videoUrl: playbackSession.streamUrl,
+        playbackSession: playbackSession,
+        mediaInfo: directData.mediaInfo,
+        availableVersions: directData.availableVersions,
+        markers: directData.markers,
+        qualityOptions: qualityOptions,
+        selectedQuality: selectedQuality,
+      );
+    } catch (e) {
+      appLogger.w('Failed to resolve Plex playback decision, falling back where possible', error: e);
+
+      if (selectedQuality.isAuto) {
+        final boundedAutoQuality = _buildBoundedAutoFallbackQuality(qualityOptions);
+        if (boundedAutoQuality != null) {
+          try {
+            final playbackSession = await _buildStreamingPlaybackSession(
+              ratingKey: ratingKey,
+              mediaIndex: mediaIndex,
+              quality: boundedAutoQuality,
+              offsetSeconds: offsetSeconds,
+            );
+
+            appLogger.i(
+              'Auto playback decision fell back to bounded streaming profile '
+              '(${boundedAutoQuality.maxVideoBitrate ?? 'unknown'} kbps, '
+              '${boundedAutoQuality.videoResolution ?? 'unknown'})',
+            );
+
+            return PlexVideoPlaybackData(
+              videoUrl: playbackSession.streamUrl,
+              playbackSession: playbackSession,
+              mediaInfo: directData.mediaInfo,
+              availableVersions: directData.availableVersions,
+              markers: directData.markers,
+              qualityOptions: qualityOptions,
+              selectedQuality: selectedQuality,
+            );
+          } catch (fallbackError) {
+            appLogger.w('Bounded auto-quality fallback failed', error: fallbackError);
+          }
+        }
+      }
+
+      if (!selectedQuality.isAuto && !selectedQuality.isOriginal) {
+        rethrow;
+      }
+
+      return PlexVideoPlaybackData(
+        videoUrl: directData.videoUrl,
+        mediaInfo: directData.mediaInfo,
+        availableVersions: directData.availableVersions,
+        markers: directData.markers,
+        qualityOptions: qualityOptions,
+        selectedQuality: selectedQuality,
+        playbackSession: PlexPlaybackSession(
+          route: PlexPlaybackRoute.directPlay,
+          sessionIdentifier: generateSessionIdentifier(),
+          streamUrl: directData.videoUrl!,
+          sourcePath: '/library/metadata/$ratingKey',
+          mediaIndex: mediaIndex,
+          partIndex: 0,
+        ),
+      );
+    }
+  }
+
+  PlexPlaybackQualityOption? _buildBoundedAutoFallbackQuality(
+    List<PlexPlaybackQualityOption> qualityOptions,
+  ) {
+    final customOptions = qualityOptions.where((option) => option.mode == PlexPlaybackQualityMode.custom).toList()
+      ..sort((a, b) => (b.maxVideoBitrate ?? 0).compareTo(a.maxVideoBitrate ?? 0));
+
+    if (customOptions.isEmpty) {
+      return null;
+    }
+
+    final preferred = customOptions.firstWhere(
+      (option) => (option.maxVideoBitrate ?? 0) <= 12000,
+      orElse: () => customOptions.first,
+    );
+
+    return preferred.copyWith(
+      id: 'auto-fallback-${preferred.id}',
+      mode: PlexPlaybackQualityMode.custom,
+      title: preferred.title,
+      subtitle: preferred.subtitle,
+      autoAdjustQuality: false,
+    );
+  }
+
+  Future<PlexPlaybackSession> _buildStreamingPlaybackSession({
+    required String ratingKey,
+    required int mediaIndex,
+    required PlexPlaybackQualityOption quality,
+    double? offsetSeconds,
+  }) async {
+    final sessionIdentifier = generateSessionIdentifier();
+    final sourcePath = '/library/metadata/$ratingKey';
+    final queryParameters = _buildUniversalPlaybackQueryParameters(
+      sourcePath: sourcePath,
+      mediaIndex: mediaIndex,
+      quality: quality,
+      sessionIdentifier: sessionIdentifier,
+      offsetSeconds: offsetSeconds,
+    );
+
+    final response = await _dio.get(
+      '/video/:/transcode/universal/decision',
+      queryParameters: queryParameters,
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Plex decision request failed with HTTP ${response.statusCode}');
+    }
+
+    final container = _getMediaContainer(response);
+    if (container == null) {
+      throw Exception('Plex decision response did not contain MediaContainer');
+    }
+
+    final inferredRoute = _inferPlaybackRoute(container, mediaIndex: mediaIndex);
+    final requiresConstrainedStreaming = !quality.isAuto && !quality.isOriginal;
+    final route = requiresConstrainedStreaming && inferredRoute == PlexPlaybackRoute.directPlay
+        ? PlexPlaybackRoute.directStream
+        : inferredRoute;
+    final streamUrl = '${config.baseUrl}/video/:/transcode/universal/start?${_encodeQueryParameters(queryParameters)}';
+
+    appLogger.d(
+      'Resolved Plex playback decision for $ratingKey '
+      '(quality=${quality.id}, inferredRoute=$inferredRoute, route=$route, '
+      'directPlay=${queryParameters['directPlay']}, '
+      'offset=${queryParameters['offset'] ?? '0'}, '
+      'maxVideoBitrate=${queryParameters['maxVideoBitrate'] ?? 'none'}, '
+      'videoResolution=${queryParameters['videoResolution'] ?? 'none'}, '
+      'directPlayDecisionCode=${container['directPlayDecisionCode'] ?? 'none'}, '
+      'generalDecisionCode=${container['generalDecisionCode'] ?? 'none'}, '
+      'generalDecisionText=${container['generalDecisionText'] ?? 'none'})',
+    );
+
+    return PlexPlaybackSession(
+      route: route,
+      sessionIdentifier: sessionIdentifier,
+      streamUrl: streamUrl,
+      sourcePath: sourcePath,
+      mediaIndex: mediaIndex,
+      partIndex: 0,
+    );
+  }
+
+  Map<String, String> _buildUniversalPlaybackQueryParameters({
+    required String sourcePath,
+    required int mediaIndex,
+    required PlexPlaybackQualityOption quality,
+    required String sessionIdentifier,
+    double? offsetSeconds,
+  }) {
+    final allowsDirectPlay = quality.isAuto || quality.isOriginal;
+    final queryParameters = <String, String>{
+      'hasMDE': '1',
+      'path': sourcePath,
+      'mediaIndex': mediaIndex.toString(),
+      'partIndex': '0',
+      'session': sessionIdentifier,
+      'protocol': quality.protocol,
+      'directPlay': allowsDirectPlay ? '1' : '0',
+      'directStream': '1',
+      'directStreamAudio': '1',
+      'fastSeek': '1',
+      'copyts': '0',
+      'mediaBufferSize': '102400',
+      'location': _inferConnectionLocation(),
+      'subtitles': 'auto',
+      'advancedSubtitles': 'text',
+      'subtitleSize': '100',
+      'audioBoost': '100',
+      'autoAdjustQuality': quality.autoAdjustQuality ? '1' : '0',
+      'X-Plex-Session-Identifier': sessionIdentifier,
+      'X-Plex-Client-Identifier': config.clientIdentifier,
+      'X-Plex-Product': config.product,
+      'X-Plex-Version': config.version,
+      'X-Plex-Platform': config.platform,
+      'X-Plex-Client-Profile-Name': 'Generic',
+      if (config.device != null && config.device!.isNotEmpty) 'X-Plex-Device': config.device!,
+      if (config.device != null && config.device!.isNotEmpty) 'X-Plex-Device-Name': config.device!,
+      if (config.token != null) 'X-Plex-Token': config.token!,
+      if (offsetSeconds != null && offsetSeconds > 0) 'offset': _formatPlaybackOffset(offsetSeconds),
+    };
+
+    final clientProfileExtra = _buildClientProfileExtra(protocol: quality.protocol);
+    if (clientProfileExtra != null) {
+      queryParameters['X-Plex-Client-Profile-Extra'] = clientProfileExtra;
+    }
+
+    if (quality.maxVideoBitrate != null) {
+      queryParameters['maxVideoBitrate'] = quality.maxVideoBitrate.toString();
+    }
+    if (quality.peakBitrate != null) {
+      queryParameters['peakBitrate'] = quality.peakBitrate.toString();
+    }
+    if (quality.videoBitrate != null) {
+      queryParameters['videoBitrate'] = quality.videoBitrate.toString();
+    }
+    if (quality.videoQuality != null) {
+      queryParameters['videoQuality'] = quality.videoQuality.toString();
+    }
+    if (quality.videoResolution != null && quality.videoResolution!.isNotEmpty) {
+      queryParameters['videoResolution'] = quality.videoResolution!;
+    }
+
+    return queryParameters;
+  }
+
+  PlexPlaybackRoute _inferPlaybackRoute(Map<String, dynamic> container, {required int mediaIndex}) {
+    final metadataList = container['Metadata'] as List<dynamic>?;
+    final metadataJson = metadataList != null && metadataList.isNotEmpty ? metadataList.first as Map<String, dynamic> : null;
+    final mediaList = metadataJson?['Media'] as List<dynamic>?;
+    final resolvedMediaIndex = mediaList == null || mediaList.isEmpty
+        ? 0
+        : mediaIndex.clamp(0, mediaList.length - 1).toInt();
+    final mediaJson = mediaList != null && mediaList.isNotEmpty ? mediaList[resolvedMediaIndex] as Map<String, dynamic> : null;
+    final partList = mediaJson?['Part'] as List<dynamic>?;
+    final partJson = partList != null && partList.isNotEmpty ? partList.first as Map<String, dynamic> : null;
+    final streamList = partJson?['Stream'] as List<dynamic>? ?? const [];
+
+    final partDecision = partJson?['decision']?.toString().toLowerCase();
+    final streamDecisions = streamList
+        .map((stream) => (stream as Map<String, dynamic>)['decision']?.toString().toLowerCase())
+        .whereType<String>()
+        .toList();
+    final generalDecisionText = container['generalDecisionText']?.toString().toLowerCase() ?? '';
+    final directPlayDecisionCode = int.tryParse(container['directPlayDecisionCode']?.toString() ?? '');
+
+    if (partDecision == 'transcode' || streamDecisions.contains('transcode') || generalDecisionText.contains('conversion ok')) {
+      return PlexPlaybackRoute.transcode;
+    }
+
+    if (partDecision == 'copy' ||
+        partDecision == 'directstream' ||
+        streamDecisions.contains('copy') ||
+        generalDecisionText.contains('direct stream') ||
+        partJson?['protocol']?.toString().toLowerCase() == 'hls') {
+      return PlexPlaybackRoute.directStream;
+    }
+
+    if (partDecision == 'directplay' || directPlayDecisionCode == 1000) {
+      return PlexPlaybackRoute.directPlay;
+    }
+
+    return PlexPlaybackRoute.directPlay;
+  }
+
+  String _encodeQueryParameters(Map<String, String> queryParameters) {
+    return queryParameters.entries
+        .map((entry) => '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}')
+        .join('&');
+  }
+
+  String _formatPlaybackOffset(double seconds) {
+    final rounded = seconds.toStringAsFixed(3);
+    return rounded.contains('.')
+        ? rounded.replaceFirst(RegExp(r'\.?0+$'), '')
+        : rounded;
+  }
+
+  String _inferConnectionLocation() {
+    try {
+      final uri = Uri.parse(config.baseUrl);
+      return _isPrivateHost(uri.host) ? 'lan' : 'wan';
+    } catch (_) {
+      return 'wan';
+    }
+  }
+
+  bool _isPrivateHost(String host) {
+    if (host.isEmpty) return false;
+    if (host == 'localhost' || host == '127.0.0.1') return true;
+
+    final candidate = host.endsWith('.plex.direct') ? host.split('.').first.replaceAll('-', '.') : host;
+    final octets = candidate.split('.');
+    if (octets.length != 4) return false;
+
+    final values = octets.map(int.tryParse).toList();
+    if (values.any((value) => value == null)) return false;
+
+    final first = values[0]!;
+    final second = values[1]!;
+
+    if (first == 10 || first == 127) return true;
+    if (first == 192 && second == 168) return true;
+    if (first == 172 && second >= 16 && second <= 31) return true;
+    if (first == 169 && second == 254) return true;
+    return false;
+  }
+
+  String? _buildClientProfileExtra({required String protocol}) {
+    if (protocol != 'hls') return null;
+    return [
+      'add-transcode-target('
+          'type=videoProfile&'
+          'context=streaming&'
+          'protocol=hls&'
+          'container=mpegts&'
+          'videoCodec=h264&'
+          'audioCodec=aac&'
+          'subtitleCodec=webvtt&'
+          'replace=true'
+          ')',
+      'add-transcode-target-codec('
+          'type=videoProfile&'
+          'context=streaming&'
+          'protocol=hls&'
+          'audioCodec=ac3,eac3'
+          ')',
+    ].join('+');
   }
 
   /// Get file information for a media item
@@ -1330,16 +1762,53 @@ class PlexClient {
     required int time,
     required String state, // 'playing', 'paused', 'stopped', 'buffering'
     int? duration,
+    String? guid,
+    PlexPlaybackSession? playbackSession,
+    int? playQueueItemId,
   }) async {
-    await _dio.post(
+    final queryParameters = <String, dynamic>{
+      'ratingKey': ratingKey,
+      'key': playbackSession?.sourcePath ?? '/library/metadata/$ratingKey',
+      if (guid != null && guid.isNotEmpty) 'guid': guid,
+      'time': time,
+      'state': state,
+      if (duration != null) 'duration': duration,
+      if (playQueueItemId != null) 'playQueueItemID': playQueueItemId,
+      if (playbackSession != null) 'playbackTime': time,
+      if (playbackSession != null) 'X-Plex-Session-Identifier': playbackSession.sessionIdentifier,
+      if (playbackSession?.isPlexManagedSession == true) 'hasMDE': '1',
+    };
+
+    final headers = <String, String>{
+      ...config.headers,
+      if (playbackSession != null) 'X-Plex-Session-Identifier': playbackSession.sessionIdentifier,
+    };
+
+    appLogger.d(
+      'Timeline request: ratingKey=$ratingKey state=$state time=$time '
+      'duration=${duration ?? "null"} playQueueItemID=${playQueueItemId ?? "null"} '
+      'session=${playbackSession?.sessionIdentifier ?? "null"} key=${queryParameters['key']}',
+    );
+
+    final timelineDio = Dio(
+      BaseOptions(
+        baseUrl: config.baseUrl,
+        headers: headers,
+        connectTimeout: ConnectionTimeouts.connect,
+        receiveTimeout: ConnectionTimeouts.receive,
+        validateStatus: (status) => status != null && status < 500,
+        responseType: ResponseType.plain,
+      ),
+    );
+
+    final response = await timelineDio.get(
       '/:/timeline',
-      queryParameters: {
-        'ratingKey': ratingKey,
-        'key': '/library/metadata/$ratingKey',
-        'time': time,
-        'state': state,
-        'duration': ?duration,
-      },
+      queryParameters: queryParameters,
+    );
+
+    appLogger.d(
+      'Timeline response: ratingKey=$ratingKey state=$state '
+      'status=${response.statusCode}',
     );
   }
 
@@ -2083,6 +2552,42 @@ class PlexClient {
       );
     } catch (e) {
       appLogger.e('Failed to create show play queue', error: e);
+      return null;
+    }
+  }
+
+  /// Create a play queue for a single video metadata item.
+  ///
+  /// This mirrors Plex's queue-centric playback model for standalone movies
+  /// and clips so timeline reporting can include a stable playQueueItemID.
+  Future<PlayQueueResponse?> createMetadataPlayQueue({
+    required String ratingKey,
+    int shuffle = 0,
+  }) async {
+    try {
+      final machineId = config.machineIdentifier ?? await getMachineIdentifier();
+      if (machineId == null) {
+        throw Exception('Could not get server machine identifier');
+      }
+
+      final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$ratingKey';
+      var playQueue = await createPlayQueue(
+        uri: uri,
+        type: 'video',
+        key: '/library/metadata/$ratingKey',
+        shuffle: shuffle,
+      );
+
+      if (playQueue != null && (playQueue.items == null || playQueue.items!.isEmpty)) {
+        final fetchedQueue = await getPlayQueue(playQueue.playQueueID);
+        if (fetchedQueue != null) {
+          playQueue = fetchedQueue;
+        }
+      }
+
+      return playQueue;
+    } catch (e) {
+      appLogger.e('Failed to create metadata play queue', error: e);
       return null;
     }
   }

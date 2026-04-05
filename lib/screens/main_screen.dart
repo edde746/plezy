@@ -1,4 +1,5 @@
-import 'dart:io' show Platform, exit;
+import 'dart:async' show unawaited;
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, SystemNavigator;
@@ -30,6 +31,7 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import '../providers/offline_mode_provider.dart';
 import '../services/plex_auth_service.dart';
+import '../services/app_exit_playback_cleanup_service.dart';
 import '../services/storage_service.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../providers/companion_remote_provider.dart';
@@ -394,6 +396,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   bool _companionRemoteSetup = false;
+  bool _isClosingApp = false;
 
   @override
   void didChangeDependencies() {
@@ -498,7 +501,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   @override
   void onWindowClose() {
-    exit(0);
+    unawaited(_closeApplication());
   }
 
   @override
@@ -673,6 +676,25 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   /// so BackKeySuppressorObserver misses them and they leak into _handleBackKey.
   bool _suppressBackAfterPop = false;
 
+  Future<void> _closeApplication() async {
+    if (_isClosingApp) return;
+    _isClosingApp = true;
+
+    try {
+      await AppExitPlaybackCleanupService.instance.prepareForExit();
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+        await windowManager.setPreventClose(false);
+        await windowManager.close();
+      } else {
+        await SystemNavigator.pop();
+      }
+    } finally {
+      _isClosingApp = false;
+    }
+  }
+
   KeyEventResult _handleBackKey(KeyEvent event) {
     if (_suppressBackAfterPop && event.logicalKey.isBackKey) {
       if (event is KeyUpEvent) _suppressBackAfterPop = false;
@@ -702,7 +724,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
           if (!result.confirmed) return;
         }
       }
-      SystemNavigator.pop();
+      await _closeApplication();
     });
   }
 

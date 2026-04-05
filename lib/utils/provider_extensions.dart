@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/plex_client.dart';
@@ -33,6 +35,52 @@ extension ProviderExtensions on BuildContext {
     return serverClient;
   }
 
+  /// Wait briefly for a specific server client to become available.
+  ///
+  /// This covers first-launch cases where playback can be requested while the
+  /// multi-server connection layer is still finishing startup.
+  Future<PlexClient> waitForClientForServer(
+    String serverId, {
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
+
+    final existing = multiServerProvider.getClientForServer(serverId);
+    if (existing != null) {
+      return existing;
+    }
+
+    appLogger.w('Client for server $serverId not ready, waiting up to ${timeout.inSeconds}s');
+
+    unawaited(multiServerProvider.serverManager.reconnectOfflineServers());
+
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      final client = multiServerProvider.getClientForServer(serverId);
+      if (client != null) {
+        return client;
+      }
+
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) {
+        break;
+      }
+
+      final waitSlice = remaining > const Duration(milliseconds: 500)
+          ? const Duration(milliseconds: 500)
+          : remaining;
+
+      try {
+        await multiServerProvider.serverManager.statusStream.first.timeout(waitSlice);
+      } on TimeoutException {
+        // No status event yet — poll again until timeout expires.
+      }
+    }
+
+    appLogger.e('No client found for server $serverId after waiting ${timeout.inSeconds}s');
+    throw Exception(t.errors.noClientAvailable);
+  }
+
   /// Get PlexClient for a specific server ID, or null if unavailable.
   PlexClient? tryGetClientForServer(String? serverId) {
     if (serverId == null) return null;
@@ -62,6 +110,50 @@ extension ProviderExtensions on BuildContext {
       return getClientForServer(metadata.serverId!);
     }
     return getFirstAvailableClient();
+  }
+
+  /// Wait briefly for a metadata-scoped client to become available.
+  Future<PlexClient> waitForClientForMetadata(
+    PlexMetadata metadata, {
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    if (metadata.serverId != null) {
+      return waitForClientForServer(metadata.serverId!, timeout: timeout);
+    }
+
+    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
+    final existingServerId = multiServerProvider.onlineServerIds.firstOrNull;
+    if (existingServerId != null) {
+      return getClientForServer(existingServerId);
+    }
+
+    appLogger.w('No online server yet for metadata ${metadata.ratingKey}, waiting up to ${timeout.inSeconds}s');
+    unawaited(multiServerProvider.serverManager.reconnectOfflineServers());
+
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      final serverId = multiServerProvider.onlineServerIds.firstOrNull;
+      if (serverId != null) {
+        return getClientForServer(serverId);
+      }
+
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) {
+        break;
+      }
+
+      final waitSlice = remaining > const Duration(milliseconds: 500)
+          ? const Duration(milliseconds: 500)
+          : remaining;
+
+      try {
+        await multiServerProvider.serverManager.statusStream.first.timeout(waitSlice);
+      } on TimeoutException {
+        // No status event yet — poll again until timeout expires.
+      }
+    }
+
+    throw Exception(t.errors.noClientAvailable);
   }
 
   /// Get PlexClient for metadata, or null if offline mode or no serverId

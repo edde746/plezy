@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../mpv/mpv.dart';
 
+import '../models/plex_playback_session.dart';
 import 'plex_client.dart';
 import 'offline_watch_sync_service.dart';
 import '../models/plex_metadata.dart';
@@ -28,6 +29,13 @@ class PlaybackProgressTracker {
   /// Whether playback is in offline mode
   final bool isOffline;
 
+  /// Plex playback session resolved during media decision/start.
+  final PlexPlaybackSession? playbackSession;
+
+  /// Resolver for the active play queue item ID.
+  /// This lets timeline reporting pick up queue IDs created after navigation.
+  final int? Function()? playQueueItemIdResolver;
+
   /// Service for queuing offline progress updates
   final OfflineWatchSyncService? offlineWatchService;
 
@@ -51,6 +59,8 @@ class PlaybackProgressTracker {
     required this.metadata,
     required this.player,
     this.isOffline = false,
+    this.playbackSession,
+    this.playQueueItemIdResolver,
     this.offlineWatchService,
     this.updateInterval = const Duration(seconds: 10),
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
@@ -66,10 +76,17 @@ class PlaybackProgressTracker {
       return;
     }
 
-    // Send initial progress immediately (don't wait for first timer tick)
-    if (player.state.playing) {
-      _sendProgress('playing');
-    }
+    // Send an initial heartbeat immediately so Plex can create/update
+    // the dashboard session even while startup buffering is still happening.
+    final initialState = player.state.playing
+        ? 'playing'
+        : (player.state.buffering ? 'buffering' : 'paused');
+    appLogger.d(
+      'Starting progress tracking for ${metadata.ratingKey} '
+      '(initialState=$initialState, offline=$isOffline, '
+      'session=${playbackSession?.sessionIdentifier ?? "null"})',
+    );
+    _sendProgress(initialState);
 
     _progressTimer = Timer.periodic(updateInterval, (timer) {
       if (player.state.playing) {
@@ -81,6 +98,13 @@ class PlaybackProgressTracker {
           return;
         }
         _sendProgress('playing');
+      } else if (player.state.buffering) {
+        _pausedTickCounter = 0;
+        if (_ticksToSkip > 0) {
+          _ticksToSkip--;
+          return;
+        }
+        _sendProgress('buffering');
       } else {
         // Send periodic "paused" updates to keep the Plex session alive
         // (~60s with default 10s interval)
@@ -117,17 +141,23 @@ class PlaybackProgressTracker {
 
   Future<void> _sendProgress(String state) async {
     try {
+      appLogger.d(
+        'Progress tick for ${metadata.ratingKey}: '
+        'state=$state playing=${player.state.playing} '
+        'buffering=${player.state.buffering}',
+      );
       final position = player.state.position;
-      final duration = player.state.duration;
-
-      // Don't send progress if no duration (not ready)
-      if (duration.inMilliseconds == 0) {
-        return;
-      }
+      final playerDuration = player.state.duration;
+      final effectiveDurationMs = playerDuration.inMilliseconds > 0
+          ? playerDuration.inMilliseconds
+          : (metadata.duration ?? 0);
+      final duration = effectiveDurationMs > 0 ? Duration(milliseconds: effectiveDurationMs) : null;
 
       if (isOffline) {
         // Queue progress update for later sync
-        await _sendOfflineProgress(position, duration);
+        if (duration != null) {
+          await _sendOfflineProgress(position, duration);
+        }
       } else if (state == 'stopped') {
         // Stopped must complete before disposal
         await _sendOnlineProgress(state, position, duration);
@@ -151,7 +181,7 @@ class PlaybackProgressTracker {
       }
 
       // Emit watch state event on stop for UI updates across screens
-      if (state == 'stopped' && position.inMilliseconds > 0) {
+      if (state == 'stopped' && position.inMilliseconds > 0 && duration != null) {
         WatchStateNotifier().notifyProgress(
           metadata: metadata,
           viewOffset: position.inMilliseconds,
@@ -181,12 +211,15 @@ class PlaybackProgressTracker {
   }
 
   /// Send progress update to Plex server (online mode)
-  Future<void> _sendOnlineProgress(String state, Duration position, Duration duration) async {
+  Future<void> _sendOnlineProgress(String state, Duration position, Duration? duration) async {
     await client!.updateProgress(
       metadata.ratingKey,
       time: position.inMilliseconds,
       state: state,
-      duration: duration.inMilliseconds,
+      duration: duration?.inMilliseconds,
+      guid: metadata.guid,
+      playbackSession: playbackSession,
+      playQueueItemId: playQueueItemIdResolver?.call() ?? metadata.playQueueItemID,
     );
   }
 

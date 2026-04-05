@@ -31,6 +31,8 @@ import '../../models/livetv_capture_buffer.dart';
 import '../../services/plex_client.dart';
 import '../../services/plex_api_cache.dart';
 import '../../models/plex_media_info.dart';
+import '../../models/plex_playback_quality.dart';
+import '../../models/plex_playback_session.dart';
 import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
 import '../../screens/video_player_screen.dart';
@@ -70,11 +72,16 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onTogglePIPMode,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
+  List<PlexPlaybackQualityOption>? availablePlaybackQualities,
+  PlexPlaybackQualityOption? selectedPlaybackQuality,
+  Future<void> Function(PlexPlaybackQualityOption quality)? onPlaybackQualityChanged,
   VoidCallback? onCycleAudioTrack,
   VoidCallback? onCycleSubtitleTrack,
   Function(AudioTrack)? onAudioTrackChanged,
   Function(SubtitleTrack)? onSubtitleTrackChanged,
   Function(SubtitleTrack)? onSecondarySubtitleTrackChanged,
+  PlexMediaInfo? plexMediaInfo,
+  PlexPlaybackSession? playbackSession,
   Function(Duration position)? onSeekCompleted,
   VoidCallback? onBack,
   bool canControl = true,
@@ -105,11 +112,16 @@ Widget plexVideoControlsBuilder(
     boxFitMode: boxFitMode,
     onTogglePIPMode: onTogglePIPMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
+    availablePlaybackQualities: availablePlaybackQualities ?? const [],
+    selectedPlaybackQuality: selectedPlaybackQuality,
+    onPlaybackQualityChanged: onPlaybackQualityChanged,
     onCycleAudioTrack: onCycleAudioTrack,
     onCycleSubtitleTrack: onCycleSubtitleTrack,
     onAudioTrackChanged: onAudioTrackChanged,
     onSubtitleTrackChanged: onSubtitleTrackChanged,
     onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
+    plexMediaInfo: plexMediaInfo,
+    playbackSession: playbackSession,
     onSeekCompleted: onSeekCompleted,
     onBack: onBack,
     canControl: canControl,
@@ -139,14 +151,19 @@ class PlexVideoControls extends StatefulWidget {
   final VoidCallback? onPrevious;
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
+  final List<PlexPlaybackQualityOption> availablePlaybackQualities;
+  final PlexPlaybackQualityOption? selectedPlaybackQuality;
   final int boxFitMode;
   final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
+  final Future<void> Function(PlexPlaybackQualityOption quality)? onPlaybackQualityChanged;
   final VoidCallback? onCycleAudioTrack;
   final VoidCallback? onCycleSubtitleTrack;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
+  final PlexMediaInfo? plexMediaInfo;
+  final PlexPlaybackSession? playbackSession;
 
   /// Called when a seek operation completes (for Watch Together sync)
   final Function(Duration position)? onSeekCompleted;
@@ -213,14 +230,19 @@ class PlexVideoControls extends StatefulWidget {
     this.onPrevious,
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
+    this.availablePlaybackQualities = const [],
+    this.selectedPlaybackQuality,
     this.boxFitMode = 0,
     this.onTogglePIPMode,
     this.onCycleBoxFitMode,
+    this.onPlaybackQualityChanged,
     this.onCycleAudioTrack,
     this.onCycleSubtitleTrack,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
+    this.plexMediaInfo,
+    this.playbackSession,
     this.onSeekCompleted,
     this.onBack,
     this.canControl = true,
@@ -1119,6 +1141,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     return TrackControlsState(
       availableVersions: widget.availableVersions,
       selectedMediaIndex: widget.selectedMediaIndex,
+      availablePlaybackQualities: widget.availablePlaybackQualities,
+      selectedPlaybackQuality: widget.selectedPlaybackQuality,
       boxFitMode: widget.boxFitMode,
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
@@ -1135,6 +1159,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       onToggleFullscreen: _toggleFullscreen,
       onToggleAlwaysOnTop: onToggleAlwaysOnTop,
       onSwitchVersion: _switchMediaVersion,
+      onPlaybackQualityChanged: widget.onPlaybackQualityChanged,
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
@@ -1167,6 +1192,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       ratingKey: widget.metadata.ratingKey,
       mediaTitle: widget.metadata.title,
       onSubtitleDownloaded: _onSubtitleDownloaded,
+      plexMediaInfo: widget.plexMediaInfo,
+      playbackSession: widget.playbackSession,
     );
   }
 
@@ -2503,6 +2530,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
               metadata: widget.metadata.copyWith(viewOffset: currentPosition.inMilliseconds),
               selectedMediaIndex: newMediaIndex,
+              qualityOverride: widget.selectedPlaybackQuality,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,

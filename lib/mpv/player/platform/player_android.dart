@@ -12,6 +12,7 @@ class PlayerAndroid extends PlayerBase {
 
   int? _bufferSizeBytes;
   bool _tunnelingEnabled = true;
+  Duration _serverManagedStartOffset = Duration.zero;
 
   /// Stored subtitle track ID when subtitles are hidden via sub-visibility.
   String? _hiddenSubtitleTrackId;
@@ -31,9 +32,49 @@ class PlayerAndroid extends PlayerBase {
   @override
   bool get supportsSecondarySubtitles => false;
 
+  bool _isPlexServerManagedStartUri(String uri) {
+    try {
+      final parsed = Uri.parse(uri);
+      final path = parsed.path;
+      final protocol = parsed.queryParameters['protocol']?.toLowerCase();
+      return protocol == 'hls' &&
+          (path.contains('/video/:/transcode/universal/start') ||
+              path.contains('/video/:/transcode/universal/session/'));
+    } catch (_) {
+      return uri.contains('protocol=hls') &&
+          (uri.contains('/video/:/transcode/universal/start') ||
+              uri.contains('/video/:/transcode/universal/session/'));
+    }
+  }
+
+  Duration _toNativePosition(Duration requestedPosition) {
+    if (_serverManagedStartOffset <= Duration.zero) {
+      return requestedPosition;
+    }
+
+    final normalized = requestedPosition - _serverManagedStartOffset;
+    return normalized.isNegative ? Duration.zero : normalized;
+  }
+
   // ============================================
   // Platform-Specific Event Handling
   // ============================================
+
+  @override
+  void handlePropertyChange(String name, dynamic value) {
+    if (_serverManagedStartOffset > Duration.zero && value is num) {
+      final offsetSeconds = _serverManagedStartOffset.inMilliseconds / 1000.0;
+      switch (name) {
+        case 'time-pos':
+        case 'duration':
+        case 'demuxer-cache-time':
+          super.handlePropertyChange(name, value + offsetSeconds);
+          return;
+      }
+    }
+
+    super.handlePropertyChange(name, value);
+  }
 
   @override
   void handlePlayerEvent(String name, Map? data) {
@@ -97,13 +138,18 @@ class PlayerAndroid extends PlayerBase {
     await _ensureInitialized();
     setSeekable(false);
 
+    final requestedStart = media.start ?? Duration.zero;
+    final usesServerManagedStart = requestedStart > Duration.zero && _isPlexServerManagedStartUri(media.uri);
+    _serverManagedStartOffset = usesServerManagedStart ? requestedStart : Duration.zero;
+    final nativeStart = usesServerManagedStart ? Duration.zero : requestedStart;
+
     // Show the video layer
     await setVisible(true);
 
     await invoke('open', {
       'uri': media.uri,
       'headers': media.headers,
-      'startPositionMs': media.start?.inMilliseconds ?? 0,
+      'startPositionMs': nativeStart.inMilliseconds,
       'autoPlay': play,
       'isLive': isLive,
       if (externalSubtitles != null && externalSubtitles.isNotEmpty)
@@ -129,12 +175,14 @@ class PlayerAndroid extends PlayerBase {
     await invoke('stop');
     setSeekable(false);
     await setVisible(false);
+    _serverManagedStartOffset = Duration.zero;
   }
 
   @override
   Future<void> seek(Duration position) async {
     try {
-      await invoke('seek', {'positionMs': position.inMilliseconds});
+      final nativePosition = _toNativePosition(position);
+      await invoke('seek', {'positionMs': nativePosition.inMilliseconds});
     } on PlatformException catch (e) {
       if (e.code == 'COMMAND_FAILED' || e.code == 'NOT_INITIALIZED') {
         appLogger.w('Seek failed (${e.code}), player not ready');

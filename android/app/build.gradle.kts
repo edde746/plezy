@@ -131,12 +131,13 @@ android {
 
     buildTypes {
         release {
-            // Only use release signing if key.properties exists (not in CI/CD)
+            // Fall back to the debug keystore for local sideloadable release builds.
             val keystorePropertiesFile = rootProject.file("key.properties")
-            if (keystorePropertiesFile.exists()) {
-                signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
             }
-            // If key.properties doesn't exist, it will use debug signing for CI builds
             ndk {
                 debugSymbolLevel = "FULL"
             }
@@ -176,6 +177,8 @@ dependencies {
 
     // Media3 ExoPlayer for Android
     implementation("androidx.media3:media3-exoplayer:1.9.2")
+    implementation("androidx.media3:media3-exoplayer-hls:1.9.2")
+    implementation("androidx.media3:media3-exoplayer-dash:1.9.2")
     implementation("androidx.media3:media3-ui:1.9.2")
     implementation("androidx.media3:media3-common:1.9.2")
 

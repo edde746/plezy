@@ -102,8 +102,10 @@ class MultiServerManager {
     final workingConnection = streamIterator.current;
     final baseUrl = workingConnection.uri;
 
-    // Create PlexClient with failover support
-    final prioritizedEndpoints = server.prioritizedEndpointUrls(preferredFirst: cachedEndpoint ?? baseUrl);
+    // Only fail over between endpoints that have already been proven to work.
+    // The raw Plex candidate list can include local/private endpoints that are
+    // valid in theory but not actually reachable from this device.
+    final prioritizedEndpoints = _buildManagedEndpoints(primaryUrl: baseUrl);
     final config = await PlexConfig.create(
       baseUrl: baseUrl,
       token: server.accessToken,
@@ -158,7 +160,7 @@ class MultiServerManager {
           );
 
           await storage.saveServerEndpoint(serverId, newUrl);
-          final newEndpoints = server.prioritizedEndpointUrls(preferredFirst: newUrl);
+          final newEndpoints = _buildManagedEndpoints(primaryUrl: newUrl, fallbackUrl: client.config.baseUrl);
           await client.updateEndpointPreferences(newEndpoints, switchToFirst: true);
         }
       } catch (e, stackTrace) {
@@ -437,7 +439,7 @@ class MultiServerManager {
 
         // Actively switch the running client to the better endpoint
         if (client != null) {
-          final newEndpoints = server.prioritizedEndpointUrls(preferredFirst: newUrl);
+          final newEndpoints = _buildManagedEndpoints(primaryUrl: newUrl, fallbackUrl: client.config.baseUrl);
           await client.updateEndpointPreferences(newEndpoints, switchToFirst: true);
           appLogger.i('Switched ${server.name} to better endpoint: $newUrl', error: {'type': connection.displayType});
         } else {
@@ -558,5 +560,15 @@ class MultiServerManager {
   void dispose() {
     disconnectAll();
     _statusController.close();
+  }
+
+  /// Keeps the active endpoint sticky and only allows fallback to another
+  /// endpoint that has already been proven by discovery/optimization.
+  List<String> _buildManagedEndpoints({required String primaryUrl, String? fallbackUrl}) {
+    final endpoints = <String>[primaryUrl];
+    if (fallbackUrl != null && fallbackUrl.isNotEmpty && fallbackUrl != primaryUrl) {
+      endpoints.add(fallbackUrl);
+    }
+    return endpoints;
   }
 }

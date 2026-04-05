@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import '../../../focus/dpad_navigator.dart';
 import '../../../mpv/mpv.dart';
 import '../../../models/plex_media_info.dart';
+import '../../../models/plex_playback_session.dart';
+import '../../../models/plex_playback_quality.dart';
 import '../../../models/plex_media_version.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/platform_detector.dart';
@@ -66,6 +68,8 @@ class TrackChapterControls extends StatelessWidget {
 
   List<PlexMediaVersion> get availableVersions => trackControlsState.availableVersions;
   int get selectedMediaIndex => trackControlsState.selectedMediaIndex;
+  List<PlexPlaybackQualityOption> get availablePlaybackQualities => trackControlsState.availablePlaybackQualities;
+  PlexPlaybackQualityOption? get selectedPlaybackQuality => trackControlsState.selectedPlaybackQuality;
   int get boxFitMode => trackControlsState.boxFitMode;
   int get audioSyncOffset => trackControlsState.audioSyncOffset;
   int get subtitleSyncOffset => trackControlsState.subtitleSyncOffset;
@@ -80,6 +84,8 @@ class TrackChapterControls extends StatelessWidget {
   VoidCallback? get onToggleFullscreen => trackControlsState.onToggleFullscreen;
   VoidCallback? get onToggleAlwaysOnTop => trackControlsState.onToggleAlwaysOnTop;
   Function(int)? get onSwitchVersion => trackControlsState.onSwitchVersion;
+  Future<void> Function(PlexPlaybackQualityOption quality)? get onPlaybackQualityChanged =>
+      trackControlsState.onPlaybackQualityChanged;
   Function(AudioTrack)? get onAudioTrackChanged => trackControlsState.onAudioTrackChanged;
   Function(SubtitleTrack)? get onSubtitleTrackChanged => trackControlsState.onSubtitleTrackChanged;
   Function(SubtitleTrack)? get onSecondarySubtitleTrackChanged => trackControlsState.onSecondarySubtitleTrackChanged;
@@ -100,6 +106,8 @@ class TrackChapterControls extends StatelessWidget {
   String get ratingKey => trackControlsState.ratingKey;
   String? get mediaTitle => trackControlsState.mediaTitle;
   Future<void> Function()? get onSubtitleDownloaded => trackControlsState.onSubtitleDownloaded;
+  PlexMediaInfo? get plexMediaInfo => trackControlsState.plexMediaInfo;
+  PlexPlaybackSession? get playbackSession => trackControlsState.playbackSession;
 
   /// Handle key event for button navigation
   KeyEventResult _handleButtonKeyEvent(FocusNode _, KeyEvent event, int index, int totalButtons) {
@@ -195,7 +203,13 @@ class TrackChapterControls extends StatelessWidget {
               final sleepTimer = SleepTimerService();
               final isShaderActive =
                   shaderService != null && shaderService!.isSupported && shaderService!.currentPreset.isEnabled;
-              final isActive = sleepTimer.isActive || audioSyncOffset != 0 || subtitleSyncOffset != 0 || isShaderActive;
+              final hasManualQuality = selectedPlaybackQuality != null && !selectedPlaybackQuality!.isOriginal;
+              final isActive =
+                  sleepTimer.isActive ||
+                  audioSyncOffset != 0 ||
+                  subtitleSyncOffset != 0 ||
+                  isShaderActive ||
+                  hasManualQuality;
               return _buildTrackButton(
                 buttonIndex: 0,
                 icon: Symbols.tune_rounded,
@@ -213,6 +227,9 @@ class TrackChapterControls extends StatelessWidget {
                           player: player,
                           audioSyncOffset: audioSyncOffset,
                           subtitleSyncOffset: subtitleSyncOffset,
+                          availablePlaybackQualities: availablePlaybackQualities,
+                          selectedPlaybackQuality: selectedPlaybackQuality,
+                          onPlaybackQualityChanged: onPlaybackQualityChanged,
                           canControl: canControl,
                           isLive: isLive,
                           shaderService: shaderService,
@@ -267,6 +284,8 @@ class TrackChapterControls extends StatelessWidget {
                         onAudioTrackChanged: onAudioTrackChanged,
                         onSubtitleTrackChanged: onSubtitleTrackChanged,
                         onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
+                        plexMediaInfo: plexMediaInfo,
+                        playbackSession: playbackSession,
                       ),
                     )
                     .whenComplete(() => onStartAutoHide?.call());
@@ -490,11 +509,17 @@ class TrackChapterControls extends StatelessWidget {
   }
 
   bool _hasMultipleAudioTracks(Tracks? tracks) {
+    if (Platform.isWindows && playbackSession?.usesTranscodeEndpoint == true) {
+      return (plexMediaInfo?.audioTracks.length ?? 0) > 1;
+    }
     if (tracks == null) return false;
     return TrackFilterHelper.hasMultipleTracks<AudioTrack>(tracks.audio);
   }
 
   bool _hasSubtitles(Tracks? tracks) {
+    if (Platform.isWindows && playbackSession?.usesTranscodeEndpoint == true) {
+      return (plexMediaInfo?.subtitleTracks.length ?? 0) > 0;
+    }
     if (tracks == null) return false;
     return TrackFilterHelper.hasTracks<SubtitleTrack>(tracks.subtitle);
   }

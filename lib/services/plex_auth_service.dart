@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
 import 'storage_service.dart';
@@ -399,6 +400,16 @@ class PlexServer {
 
     const preferredTimeout = ConnectionTimeouts.preferredEndpointProbe;
     const raceTimeout = ConnectionTimeouts.connectionRace;
+    final stickyPreferredEndpoint = Platform.isWindows;
+
+    appLogger.d(
+      'Connection discovery timeouts',
+      error: {
+        'preferredProbeMs': preferredTimeout.inMilliseconds,
+        'raceMs': raceTimeout.inMilliseconds,
+        'connectAllMs': ConnectionTimeouts.connectAll.inMilliseconds,
+      },
+    );
 
     final candidates = _buildPrioritizedCandidates();
     if (candidates.isEmpty) {
@@ -426,80 +437,112 @@ class PlexServer {
       );
     }
 
-    _ConnectionCandidate? firstCandidate;
+    final preferredCandidate = preferredUri != null ? _candidateForUrl(preferredUri) : null;
 
-    // Fast-path: if we have a cached working URI, probe it with a short timeout
-    if (preferredUri != null) {
-      final cachedCandidate = _candidateForUrl(preferredUri);
-      if (cachedCandidate != null) {
-        appLogger.d('Testing cached endpoint before running full race', error: {'uri': preferredUri});
-        final result = await PlexClient.testConnectionWithLatency(
-          cachedCandidate.url,
-          accessToken,
-          timeout: preferredTimeout,
-          clientIdentifier: clientIdentifier,
+    if (stickyPreferredEndpoint && preferredCandidate != null) {
+      appLogger.d('Testing cached endpoint in sticky mode', error: {'uri': preferredCandidate.url, 'platform': 'windows'});
+      final preferredResult = await PlexClient.testConnectionWithLatency(
+        preferredCandidate.url,
+        accessToken,
+        timeout: preferredTimeout,
+        clientIdentifier: clientIdentifier,
+      );
+
+      if (preferredResult.success) {
+        appLogger.i(
+          'Sticky cached endpoint succeeded, using immediately',
+          error: {'uri': preferredCandidate.url, 'platform': 'windows'},
         );
-
-        if (result.success) {
-          appLogger.i('Cached endpoint succeeded, using immediately', error: {'uri': preferredUri});
-          firstCandidate = cachedCandidate;
-        } else {
-          appLogger.w('Cached endpoint failed, falling back to candidate race', error: {'uri': preferredUri});
-        }
-      }
-    }
-
-    // If no cached candidate or it failed, race candidates to find first success
-    if (firstCandidate == null) {
-      final completer = Completer<_ConnectionCandidate?>();
-      int completedTests = 0;
-
-      appLogger.d('Running connection race to find first working endpoint', error: {'candidateCount': totalCandidates});
-
-      for (final candidate in candidates) {
-        PlexClient.testConnectionWithLatency(candidate.url, accessToken, timeout: raceTimeout, clientIdentifier: clientIdentifier).then((result) {
-          completedTests++;
-
-          if (!result.success) {
-            appLogger.w(
-              'Connection candidate failed',
-              error: {
-                'url': candidate.url,
-                'type': candidate.connection.displayType,
-                'https': candidate.isHttps,
-                'error': result.error,
-                'latencyMs': result.latencyMs,
-              },
-            );
-          }
-
-          if (result.success && !completer.isCompleted) {
-            completer.complete(candidate);
-          }
-
-          if (completedTests == candidates.length && !completer.isCompleted) {
-            completer.complete(null);
-          }
-        });
+        yield _updateConnectionUrl(preferredCandidate.connection, preferredCandidate.url);
+        return;
       }
 
-      firstCandidate = await completer.future;
-      if (firstCandidate == null) {
-        appLogger.e(
-          'No working server connections after race',
-          error: {
-            'server': name,
-            'candidateCount': totalCandidates,
-            'types': candidates.map((c) => c.connection.displayType).toSet().toList(),
-          },
-        );
-        return; // No working connections found
-      }
-      appLogger.i(
-        'Connection race found first working endpoint',
-        error: {'uri': firstCandidate.url, 'type': firstCandidate.connection.displayType},
+      appLogger.w(
+        'Sticky cached endpoint failed, falling back to full connection race',
+        error: {'uri': preferredCandidate.url, 'platform': 'windows'},
       );
     }
+
+    final raceCandidates = [
+      if (preferredCandidate != null) preferredCandidate,
+      ...candidates.where((candidate) => candidate.url != preferredCandidate?.url),
+    ];
+
+    final completer = Completer<_ConnectionCandidate?>();
+    int completedTests = 0;
+    bool preferredFailed = false;
+
+    appLogger.d(
+      'Running connection race to find first working endpoint',
+      error: {
+        'candidateCount': raceCandidates.length,
+        if (preferredCandidate != null) 'preferred': preferredCandidate.url,
+      },
+    );
+
+    if (preferredCandidate != null) {
+      appLogger.d('Testing cached endpoint as part of connection race', error: {'uri': preferredUri});
+    }
+
+    for (final candidate in raceCandidates) {
+      final timeout = candidate.url == preferredCandidate?.url ? preferredTimeout : raceTimeout;
+      PlexClient.testConnectionWithLatency(
+        candidate.url,
+        accessToken,
+        timeout: timeout,
+        clientIdentifier: clientIdentifier,
+      ).then((result) {
+        completedTests++;
+
+        if (!result.success) {
+          if (candidate.url == preferredCandidate?.url) {
+            preferredFailed = true;
+            appLogger.w('Cached endpoint failed during connection race', error: {'uri': candidate.url});
+          }
+
+          appLogger.w(
+            'Connection candidate failed',
+            error: {
+              'url': candidate.url,
+              'type': candidate.connection.displayType,
+              'https': candidate.isHttps,
+              'error': result.error,
+              'latencyMs': result.latencyMs,
+            },
+          );
+        } else if (candidate.url == preferredCandidate?.url) {
+          appLogger.i('Cached endpoint succeeded during connection race', error: {'uri': candidate.url});
+        }
+
+        if (result.success && !completer.isCompleted) {
+          completer.complete(candidate);
+        }
+
+        if (completedTests == raceCandidates.length && !completer.isCompleted) {
+          completer.complete(null);
+        }
+      });
+    }
+
+    final firstCandidate = await completer.future;
+    if (firstCandidate == null) {
+      if (preferredCandidate != null && preferredFailed) {
+        appLogger.w('Cached endpoint failed, no other candidates succeeded', error: {'uri': preferredCandidate.url});
+      }
+      appLogger.e(
+        'No working server connections after race',
+        error: {
+          'server': name,
+          'candidateCount': raceCandidates.length,
+          'types': raceCandidates.map((c) => c.connection.displayType).toSet().toList(),
+        },
+      );
+      return; // No working connections found
+    }
+    appLogger.i(
+      'Connection race found first working endpoint',
+      error: {'uri': firstCandidate.url, 'type': firstCandidate.connection.displayType},
+    );
 
     // Attempt HTTPS upgrade on the Phase 1 winner before emitting
     final upgradedFirstCandidate = await _upgradeCandidateToHttpsIfPossible(firstCandidate, clientIdentifier: clientIdentifier);
@@ -548,14 +591,35 @@ class PlexServer {
 
     // Emit the best connection if it's different from the first one
     if (bestCandidate != null) {
-      final upgradedCandidate = await _upgradeCandidateToHttpsIfPossible(bestCandidate, clientIdentifier: clientIdentifier) ?? bestCandidate;
+      // If latency testing found a better HTTP endpoint, emit it immediately so
+      // callers can use the faster path right away. We can still attempt an
+      // HTTPS promotion afterward, but we no longer block the improved endpoint
+      // on a potentially slow/failed HTTPS probe.
+      if (!bestCandidate.isHttps) {
+        final immediateConnection = _updateConnectionUrl(bestCandidate.connection, bestCandidate.url);
+        if (immediateConnection.uri != firstConnection.uri) {
+          appLogger.i('Latency sweep selected better endpoint', error: {'uri': immediateConnection.uri});
+          yield immediateConnection;
+        }
 
-      final bestConnection = _updateConnectionUrl(upgradedCandidate.connection, upgradedCandidate.url);
-      if (bestConnection.uri != firstConnection.uri) {
-        appLogger.i('Latency sweep selected better endpoint', error: {'uri': bestConnection.uri});
-        yield bestConnection;
+        final upgradedCandidate = await _upgradeCandidateToHttpsIfPossible(bestCandidate, clientIdentifier: clientIdentifier);
+        if (upgradedCandidate != null) {
+          final upgradedConnection = _updateConnectionUrl(upgradedCandidate.connection, upgradedCandidate.url);
+          if (upgradedConnection.uri != immediateConnection.uri && upgradedConnection.uri != firstConnection.uri) {
+            appLogger.i('Latency sweep upgraded better endpoint to HTTPS', error: {'uri': upgradedConnection.uri});
+            yield upgradedConnection;
+          }
+        } else if (immediateConnection.uri == firstConnection.uri) {
+          appLogger.d('Latency sweep confirmed initial endpoint is optimal', error: {'uri': immediateConnection.uri});
+        }
       } else {
-        appLogger.d('Latency sweep confirmed initial endpoint is optimal', error: {'uri': bestConnection.uri});
+        final bestConnection = _updateConnectionUrl(bestCandidate.connection, bestCandidate.url);
+        if (bestConnection.uri != firstConnection.uri) {
+          appLogger.i('Latency sweep selected better endpoint', error: {'uri': bestConnection.uri});
+          yield bestConnection;
+        } else {
+          appLogger.d('Latency sweep confirmed initial endpoint is optimal', error: {'uri': bestConnection.uri});
+        }
       }
     }
   }

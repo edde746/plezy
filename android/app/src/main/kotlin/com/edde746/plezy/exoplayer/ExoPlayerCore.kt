@@ -1031,11 +1031,27 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         val mediaItemBuilder = MediaItem.Builder()
             .setUri(uri)
 
+        detectMediaMimeType(uri)?.let { mimeType ->
+            mediaItemBuilder.setMimeType(mimeType)
+        }
+
         if (externalSubtitles.isNotEmpty()) {
             mediaItemBuilder.setSubtitleConfigurations(externalSubtitles.toList())
         }
 
         return mediaItemBuilder.build()
+    }
+
+    private fun detectMediaMimeType(uri: String): String? {
+        val parsedUri = Uri.parse(uri)
+        val protocol = parsedUri.getQueryParameter("protocol")?.lowercase()
+        val path = parsedUri.path?.lowercase().orEmpty()
+
+        return when {
+            protocol == "hls" || path.endsWith(".m3u8") -> MimeTypes.APPLICATION_M3U8
+            protocol == "dash" || path.endsWith(".mpd") -> MimeTypes.APPLICATION_MPD
+            else -> null
+        }
     }
 
     // Decoder hang detection via AnalyticsListener:

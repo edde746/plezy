@@ -55,3 +55,5 @@ duplication-report/
 **/fastlane/**/
 **/fastlane/report.xml
 maestro/**/*.png
+dist/
+setup.iss
