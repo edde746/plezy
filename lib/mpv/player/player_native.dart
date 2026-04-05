@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 
 import '../models.dart';
@@ -98,6 +100,14 @@ class PlayerNative extends PlayerBase {
 
     // Show the video layer
     await setVisible(true);
+
+    // Linux: wait one frame so texture populate() runs and creates MPV render context before loadfile.
+    if (Platform.isLinux) {
+      WidgetsBinding.instance.scheduleFrame();
+      final c = Completer<void>();
+      WidgetsBinding.instance.addPostFrameCallback((_) => c.complete());
+      await c.future;
+    }
 
     // Set HTTP headers for Plex authentication and profile
     if (media.headers != null && media.headers!.isNotEmpty) {
