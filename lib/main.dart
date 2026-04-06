@@ -397,7 +397,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
         if (Platform.isAndroid || Platform.isIOS) {
-          _appDatabase.close();
+          unawaited(_appDatabase.close());
         }
         InAppReviewService.instance.endSession();
         if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {

@@ -578,7 +578,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           ],
         );
       },
-    ).then((_) => saveFocusNode.dispose());
+    ).then((_) {
+      controller.dispose();
+      saveFocusNode.dispose();
+    });
   }
 
   void _showClearCacheDialog() {

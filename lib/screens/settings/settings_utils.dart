@@ -220,6 +220,7 @@ void _showNumericInputDialogStandard({
       );
     },
   ).then((_) {
+    controller.dispose();
     saveFocusNode.dispose();
   });
 }
@@ -286,5 +287,8 @@ void showTextInputDialog({
         },
       );
     },
-  ).then((_) => saveFocusNode.dispose());
+  ).then((_) {
+    controller.dispose();
+    saveFocusNode.dispose();
+  });
 }
