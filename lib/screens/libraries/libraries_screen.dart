@@ -142,6 +142,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   Future<void> _initializeWithLibraries() async {
     final librariesProvider = context.read<LibrariesProvider>();
     final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+    await hiddenLibrariesProvider.ensureInitialized();
     final allLibraries = librariesProvider.libraries;
 
     if (allLibraries.isEmpty) {

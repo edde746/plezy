@@ -463,6 +463,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
       // Get hidden libraries for filtering
       final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
+      await hiddenLibrariesProvider.ensureInitialized();
       _lastSeenHiddenKeys = Set.of(hiddenLibrariesProvider.hiddenLibraryKeys);
 
       // Get settings for hub mode preference (ensure initialized before accessing)
