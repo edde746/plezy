@@ -2575,14 +2575,34 @@ class PlexClient {
       final subList = subscriptions is List ? subscriptions : subscriptions is Map ? [subscriptions] : null;
       if (subList != null && subList.isNotEmpty) {
         final sub = subList.first as Map<String, dynamic>;
+
+        final timeline = sub['Timeline'];
+
+        // Safely extract the first element if it's a list, or the map itself
+        final op = timeline is List
+            ? (timeline.isNotEmpty ? timeline.first : null)
+            : (timeline is Map ? timeline : null);
+
+        if (op is Map) {
+          if (op['Metadata'] case [Map firstMetadata, ...]) {
+            if (firstMetadata['Media'] case [Map firstMedia, ...]) {
+              final rawBeginsAt = firstMedia['beginsAt'];
+
+              beginsAt = switch (rawBeginsAt) {
+                num n => n.toInt(),
+                String s => int.tryParse(s),
+                _ => null,
+              };
+
+              appLogger.d('beginsAt=$beginsAt');
+            }
+          }
+        }
+
         final ops = sub['MediaGrabOperation'];
         final opList = ops is List ? ops : ops is Map ? [ops] : null;
         if (opList != null && opList.isNotEmpty) {
           final op = opList.first as Map<String, dynamic>;
-          final rawBeginsAt = op['beginsAt'];
-          beginsAt = rawBeginsAt is num
-              ? rawBeginsAt.toInt()
-              : rawBeginsAt is String ? int.tryParse(rawBeginsAt) : null;
           final nested = op['Metadata'];
           if (nested is Map<String, dynamic>) {
             metadataJson = nested;
@@ -2629,13 +2649,18 @@ class PlexClient {
       }
 
       // beginsAt may also be on the Media items (not just the GrabOperation)
+      // This value is the start of the requested stream, not the current program. So it will effectively be the current time
       if (beginsAt == null) {
         final media = metadataJson['Media'];
         if (media is List && media.isNotEmpty) {
           final firstMedia = media.first;
           if (firstMedia is Map<String, dynamic>) {
-            final raw = firstMedia['beginsAt'];
-            beginsAt = raw is num ? raw.toInt() : raw is String ? int.tryParse(raw) : null;
+            final rawBeginsAt = firstMedia['beginsAt'];
+            beginsAt = switch (rawBeginsAt) {
+              num n => n.toInt(),
+              String s => int.tryParse(s),
+              _ => null,
+            };
           }
         }
       }

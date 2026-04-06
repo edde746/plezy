@@ -1127,7 +1127,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
               if (!mounted) return;
               if (watchFromStart == true) {
-                offsetSeconds = max(_programBeginsAt! - _captureBuffer!.startedAt.round(), 0);
+                final programBeginsAtOffset = _programBeginsAt! - _captureBuffer!.startedAt.round();
+                offsetSeconds = max(programBeginsAtOffset, _captureBuffer!.seekStartSeconds.round());
               }
             }
           }
