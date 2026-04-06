@@ -177,10 +177,10 @@ packages:
     dependency: transitive
     description:
       name: characters
-      sha256: faf38497bda5ead2a8c7615f4f7939df04333478bf32e4173fcb06d428b5716b
+      sha256: f71061c654a3380576a52b451dd5532377954cf9dbd272a78fc8479606670803
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.1"
+    version: "1.4.0"
   charcode:
     dependency: transitive
     description:
@@ -653,18 +653,18 @@ packages:
     dependency: transitive
     description:
       name: matcher
-      sha256: dc0b7dc7651697ea4ff3e69ef44b0407ea32c487a39fff6a4004fa585e901861
+      sha256: dc58c723c3c24bf8d3e2d3ad3f2f9d7bd9cf43ec6feaa64181775e60190153f2
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.19"
+    version: "0.12.17"
   material_color_utilities:
     dependency: transitive
     description:
       name: material_color_utilities
-      sha256: "9c337007e82b1889149c82ed242ed1cb24a66044e30979c44912381e9be4c48b"
+      sha256: f7142bb1154231d7ea5f96bc7bde4bda2a0945d2806bb11670e30b850d56bdec
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.0"
+    version: "0.11.1"
   material_symbols_icons:
     dependency: "direct main"
     description:
@@ -1004,21 +1004,23 @@ packages:
     source: hosted
     version: "0.2.0"
   sentry:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: sentry
-      sha256: a49b4fb1cba576fe216347dc2a0e6d76076fb998e6012857db96f991c23b7b3c
-      url: "https://pub.dev"
-    source: hosted
-    version: "9.15.0"
+      path: "packages/dart"
+      ref: "build/fetch-native-zip"
+      resolved-ref: "711f54f34d6cda9cccfb57519b9e3b72dd116b69"
+      url: "https://github.com/edde746/sentry-dart"
+    source: git
+    version: "9.16.0"
   sentry_flutter:
     dependency: "direct main"
     description:
-      name: sentry_flutter
-      sha256: "25150030c93bd1d4b727ab61cfb09e99121c69ce90fa820bb9ca16dab433e43a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "9.15.0"
+      path: "packages/flutter"
+      ref: "build/fetch-native-zip"
+      resolved-ref: "711f54f34d6cda9cccfb57519b9e3b72dd116b69"
+      url: "https://github.com/edde746/sentry-dart"
+    source: git
+    version: "9.16.0"
   serial_csv:
     dependency: transitive
     description:
@@ -1268,10 +1270,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: "8161c84903fd860b26bfdefb7963b3f0b68fee7adea0f59ef805ecca346f0c7a"
+      sha256: ab2726c1a94d3176a45960b6234466ec367179b87dd74f1611adb1f3b5fb9d55
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.10"
+    version: "0.7.7"
   typed_data:
     dependency: transitive
     description:

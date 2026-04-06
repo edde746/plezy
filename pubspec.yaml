@@ -54,7 +54,11 @@ dependencies:
   flutter_svg: ^2.2.3
   mobile_scanner: ^7.2.0
   background_downloader: ^9.5.2
-  sentry_flutter: ^9.15.0
+  sentry_flutter:
+    git:
+      url: https://github.com/edde746/sentry-dart
+      path: packages/flutter
+      ref: build/fetch-native-zip
   auto_updater:
     git:
       url: https://github.com/edde746/auto_updater
@@ -87,6 +91,16 @@ dependency_overrides:
       url: https://github.com/edde746/auto_updater
       ref: 9e150f7
       path: packages/auto_updater_windows
+  sentry:
+    git:
+      url: https://github.com/edde746/sentry-dart
+      path: packages/dart
+      ref: build/fetch-native-zip
+  sentry_flutter:
+    git:
+      url: https://github.com/edde746/sentry-dart
+      path: packages/flutter
+      ref: build/fetch-native-zip
   material_symbols_icons:
     git:
       url: https://github.com/edde746/material_symbols_icons
