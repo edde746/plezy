@@ -6,7 +6,15 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/image_cache_service.dart';
 import '../../services/plex_client.dart';
+import '../utils/app_logger.dart';
 import '../utils/plex_image_helper.dart';
+
+/// Tracks recent image load failures to log a periodic summary instead of
+/// spamming per-image. Resets after [_logInterval] so recurring issues
+/// remain visible.
+int _imageFailureCount = 0;
+DateTime _lastFailureLog = DateTime.now();
+const _logInterval = Duration(seconds: 10);
 
 /// Set to `true` to blur all artwork (for store screenshots).
 const kBlurArtwork = false;
@@ -348,7 +356,16 @@ class PlexOptimizedImage extends StatelessWidget {
       fit: fit,
       filterQuality: filterQuality,
       alignment: alignment,
-      errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context, error),
+      errorBuilder: (context, error, stackTrace) {
+        _imageFailureCount++;
+        final now = DateTime.now();
+        if (now.difference(_lastFailureLog) >= _logInterval) {
+          appLogger.w('Image load failed ($_imageFailureCount since last log): $error');
+          _imageFailureCount = 0;
+          _lastFailureLog = now;
+        }
+        return _buildErrorWidget(context, error);
+      },
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded) return child;
         return AnimatedSwitcher(
