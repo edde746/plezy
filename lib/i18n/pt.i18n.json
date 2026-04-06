@@ -84,7 +84,7 @@
     "seriesPosterDescription": "Mostrar o poster da série para todos os episódios",
     "seasonPoster": "Poster da Temporada",
     "seasonPosterDescription": "Mostrar o poster específico da temporada para episódios",
-    "episodeThumbnail": "Miniatura do Episódio",
+    "episodeThumbnail": "Miniatura",
     "episodeThumbnailDescription": "Mostrar miniaturas 16:9 de captura de tela do episódio",
     "showHeroSectionDescription": "Exibir carrossel de conteúdo em destaque na tela inicial",
     "secondsLabel": "Segundos",

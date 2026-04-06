@@ -203,7 +203,7 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => 'Visa seriens affisch för alla avsnitt';
 	@override String get seasonPoster => 'Säsongsaffisch';
 	@override String get seasonPosterDescription => 'Visa säsongens affisch för avsnitt';
-	@override String get episodeThumbnail => 'Avsnittsminiatyr';
+	@override String get episodeThumbnail => 'Miniatyr';
 	@override String get episodeThumbnailDescription => 'Visa 16:9 skärmbild från avsnittet';
 	@override String get showHeroSectionDescription => 'Visa utvalda innehållskarusell på startsidan';
 	@override String get secondsLabel => 'Sekunder';
@@ -1421,7 +1421,7 @@ extension on TranslationsSv {
 			'settings.seriesPosterDescription' => 'Visa seriens affisch för alla avsnitt',
 			'settings.seasonPoster' => 'Säsongsaffisch',
 			'settings.seasonPosterDescription' => 'Visa säsongens affisch för avsnitt',
-			'settings.episodeThumbnail' => 'Avsnittsminiatyr',
+			'settings.episodeThumbnail' => 'Miniatyr',
 			'settings.episodeThumbnailDescription' => 'Visa 16:9 skärmbild från avsnittet',
 			'settings.showHeroSectionDescription' => 'Visa utvalda innehållskarusell på startsidan',
 			'settings.secondsLabel' => 'Sekunder',

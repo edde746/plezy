@@ -84,7 +84,7 @@
     "seriesPosterDescription": "Show the series poster for all episodes",
     "seasonPoster": "Season Poster",
     "seasonPosterDescription": "Show the season-specific poster for episodes",
-    "episodeThumbnail": "Episode Thumbnail",
+    "episodeThumbnail": "Thumbnail",
     "episodeThumbnailDescription": "Show 16:9 episode screenshot thumbnails",
     "showHeroSectionDescription": "Display featured content carousel on home screen",
     "secondsLabel": "Seconds",

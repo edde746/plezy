@@ -203,7 +203,7 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => 'Vis seriens plakat for alle episoder';
 	@override String get seasonPoster => 'Sæsonplakat';
 	@override String get seasonPosterDescription => 'Vis sæsonspecifik plakat for episoder';
-	@override String get episodeThumbnail => 'Episodeminiature';
+	@override String get episodeThumbnail => 'Miniature';
 	@override String get episodeThumbnailDescription => 'Vis 16:9 episodeskærmbilledeminiaturer';
 	@override String get showHeroSectionDescription => 'Vis karrusel med udvalgt indhold på startskærmen';
 	@override String get secondsLabel => 'Sekunder';
@@ -1421,7 +1421,7 @@ extension on TranslationsDa {
 			'settings.seriesPosterDescription' => 'Vis seriens plakat for alle episoder',
 			'settings.seasonPoster' => 'Sæsonplakat',
 			'settings.seasonPosterDescription' => 'Vis sæsonspecifik plakat for episoder',
-			'settings.episodeThumbnail' => 'Episodeminiature',
+			'settings.episodeThumbnail' => 'Miniature',
 			'settings.episodeThumbnailDescription' => 'Vis 16:9 episodeskærmbilledeminiaturer',
 			'settings.showHeroSectionDescription' => 'Vis karrusel med udvalgt indhold på startskærmen',
 			'settings.secondsLabel' => 'Sekunder',

@@ -203,7 +203,7 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => 'Показывать постер сериала для всех эпизодов';
 	@override String get seasonPoster => 'Постер сезона';
 	@override String get seasonPosterDescription => 'Показывать постер конкретного сезона для эпизодов';
-	@override String get episodeThumbnail => 'Миниатюра эпизода';
+	@override String get episodeThumbnail => 'Миниатюра';
 	@override String get episodeThumbnailDescription => 'Показывать миниатюры скриншотов эпизодов 16:9';
 	@override String get showHeroSectionDescription => 'Показывать карусель избранного контента на главном экране';
 	@override String get secondsLabel => 'Секунды';
@@ -1421,7 +1421,7 @@ extension on TranslationsRu {
 			'settings.seriesPosterDescription' => 'Показывать постер сериала для всех эпизодов',
 			'settings.seasonPoster' => 'Постер сезона',
 			'settings.seasonPosterDescription' => 'Показывать постер конкретного сезона для эпизодов',
-			'settings.episodeThumbnail' => 'Миниатюра эпизода',
+			'settings.episodeThumbnail' => 'Миниатюра',
 			'settings.episodeThumbnailDescription' => 'Показывать миниатюры скриншотов эпизодов 16:9',
 			'settings.showHeroSectionDescription' => 'Показывать карусель избранного контента на главном экране',
 			'settings.secondsLabel' => 'Секунды',

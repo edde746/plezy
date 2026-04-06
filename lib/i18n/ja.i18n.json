@@ -84,7 +84,7 @@
     "seriesPosterDescription": "すべてのエピソードにシリーズポスターを表示",
     "seasonPoster": "シーズンポスター",
     "seasonPosterDescription": "エピソードにシーズン固有のポスターを表示",
-    "episodeThumbnail": "エピソードサムネイル",
+    "episodeThumbnail": "サムネイル",
     "episodeThumbnailDescription": "16:9のエピソードスクリーンショットサムネイルを表示",
     "showHeroSectionDescription": "ホーム画面に注目コンテンツのカルーセルを表示",
     "secondsLabel": "秒",

@@ -84,7 +84,7 @@
     "seriesPosterDescription": "为所有剧集显示剧集海报",
     "seasonPoster": "季海报",
     "seasonPosterDescription": "为剧集显示特定季的海报",
-    "episodeThumbnail": "剧集缩略图",
+    "episodeThumbnail": "缩略图",
     "episodeThumbnailDescription": "显示16:9剧集截图缩略图",
     "showHeroSectionDescription": "在主屏幕上显示精选内容轮播区",
     "secondsLabel": "秒",

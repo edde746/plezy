@@ -203,7 +203,7 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => 'すべてのエピソードにシリーズポスターを表示';
 	@override String get seasonPoster => 'シーズンポスター';
 	@override String get seasonPosterDescription => 'エピソードにシーズン固有のポスターを表示';
-	@override String get episodeThumbnail => 'エピソードサムネイル';
+	@override String get episodeThumbnail => 'サムネイル';
 	@override String get episodeThumbnailDescription => '16:9のエピソードスクリーンショットサムネイルを表示';
 	@override String get showHeroSectionDescription => 'ホーム画面に注目コンテンツのカルーセルを表示';
 	@override String get secondsLabel => '秒';
@@ -1421,7 +1421,7 @@ extension on TranslationsJa {
 			'settings.seriesPosterDescription' => 'すべてのエピソードにシリーズポスターを表示',
 			'settings.seasonPoster' => 'シーズンポスター',
 			'settings.seasonPosterDescription' => 'エピソードにシーズン固有のポスターを表示',
-			'settings.episodeThumbnail' => 'エピソードサムネイル',
+			'settings.episodeThumbnail' => 'サムネイル',
 			'settings.episodeThumbnailDescription' => '16:9のエピソードスクリーンショットサムネイルを表示',
 			'settings.showHeroSectionDescription' => 'ホーム画面に注目コンテンツのカルーセルを表示',
 			'settings.secondsLabel' => '秒',

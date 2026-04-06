@@ -203,7 +203,7 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => 'Vis serieplakaten for alle episoder';
 	@override String get seasonPoster => 'Sesongplakat';
 	@override String get seasonPosterDescription => 'Vis den sesongspesifikke plakaten for episoder';
-	@override String get episodeThumbnail => 'Episodeminiatyrbilde';
+	@override String get episodeThumbnail => 'Miniatyrbilde';
 	@override String get episodeThumbnailDescription => 'Vis 16:9 episodeskjermbilder som miniatyrbilder';
 	@override String get showHeroSectionDescription => 'Vis fremhevet innholdskarusell på hjemmeskjermen';
 	@override String get secondsLabel => 'Sekunder';
@@ -1421,7 +1421,7 @@ extension on TranslationsNb {
 			'settings.seriesPosterDescription' => 'Vis serieplakaten for alle episoder',
 			'settings.seasonPoster' => 'Sesongplakat',
 			'settings.seasonPosterDescription' => 'Vis den sesongspesifikke plakaten for episoder',
-			'settings.episodeThumbnail' => 'Episodeminiatyrbilde',
+			'settings.episodeThumbnail' => 'Miniatyrbilde',
 			'settings.episodeThumbnailDescription' => 'Vis 16:9 episodeskjermbilder som miniatyrbilder',
 			'settings.showHeroSectionDescription' => 'Vis fremhevet innholdskarusell på hjemmeskjermen',
 			'settings.secondsLabel' => 'Sekunder',

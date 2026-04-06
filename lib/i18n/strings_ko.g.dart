@@ -203,7 +203,7 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => '모든 에피소드에 시리즈 포스터 표시';
 	@override String get seasonPoster => '시즌 포스터';
 	@override String get seasonPosterDescription => '에피소드에 시즌별 포스터 표시';
-	@override String get episodeThumbnail => '에피소드 썸네일';
+	@override String get episodeThumbnail => '썸네일';
 	@override String get episodeThumbnailDescription => '16:9 에피소드 스크린샷 썸네일 표시';
 	@override String get showHeroSectionDescription => '홈 화면에 주요 콘텐츠 캐러셀(슬라이드) 표시';
 	@override String get secondsLabel => '초';
@@ -1421,7 +1421,7 @@ extension on TranslationsKo {
 			'settings.seriesPosterDescription' => '모든 에피소드에 시리즈 포스터 표시',
 			'settings.seasonPoster' => '시즌 포스터',
 			'settings.seasonPosterDescription' => '에피소드에 시즌별 포스터 표시',
-			'settings.episodeThumbnail' => '에피소드 썸네일',
+			'settings.episodeThumbnail' => '썸네일',
 			'settings.episodeThumbnailDescription' => '16:9 에피소드 스크린샷 썸네일 표시',
 			'settings.showHeroSectionDescription' => '홈 화면에 주요 콘텐츠 캐러셀(슬라이드) 표시',
 			'settings.secondsLabel' => '초',

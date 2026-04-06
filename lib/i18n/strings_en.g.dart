@@ -355,8 +355,8 @@ class TranslationsSettingsEn {
 	/// en: 'Show the season-specific poster for episodes'
 	String get seasonPosterDescription => 'Show the season-specific poster for episodes';
 
-	/// en: 'Episode Thumbnail'
-	String get episodeThumbnail => 'Episode Thumbnail';
+	/// en: 'Thumbnail'
+	String get episodeThumbnail => 'Thumbnail';
 
 	/// en: 'Show 16:9 episode screenshot thumbnails'
 	String get episodeThumbnailDescription => 'Show 16:9 episode screenshot thumbnails';
@@ -3128,7 +3128,7 @@ extension on Translations {
 			'settings.seriesPosterDescription' => 'Show the series poster for all episodes',
 			'settings.seasonPoster' => 'Season Poster',
 			'settings.seasonPosterDescription' => 'Show the season-specific poster for episodes',
-			'settings.episodeThumbnail' => 'Episode Thumbnail',
+			'settings.episodeThumbnail' => 'Thumbnail',
 			'settings.episodeThumbnailDescription' => 'Show 16:9 episode screenshot thumbnails',
 			'settings.showHeroSectionDescription' => 'Display featured content carousel on home screen',
 			'settings.secondsLabel' => 'Seconds',

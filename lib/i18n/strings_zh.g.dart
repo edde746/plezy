@@ -203,7 +203,7 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => '为所有剧集显示剧集海报';
 	@override String get seasonPoster => '季海报';
 	@override String get seasonPosterDescription => '为剧集显示特定季的海报';
-	@override String get episodeThumbnail => '剧集缩略图';
+	@override String get episodeThumbnail => '缩略图';
 	@override String get episodeThumbnailDescription => '显示16:9剧集截图缩略图';
 	@override String get showHeroSectionDescription => '在主屏幕上显示精选内容轮播区';
 	@override String get secondsLabel => '秒';
@@ -1421,7 +1421,7 @@ extension on TranslationsZh {
 			'settings.seriesPosterDescription' => '为所有剧集显示剧集海报',
 			'settings.seasonPoster' => '季海报',
 			'settings.seasonPosterDescription' => '为剧集显示特定季的海报',
-			'settings.episodeThumbnail' => '剧集缩略图',
+			'settings.episodeThumbnail' => '缩略图',
 			'settings.episodeThumbnailDescription' => '显示16:9剧集截图缩略图',
 			'settings.showHeroSectionDescription' => '在主屏幕上显示精选内容轮播区',
 			'settings.secondsLabel' => '秒',

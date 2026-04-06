@@ -203,7 +203,7 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => 'Pokaż plakat serialu dla wszystkich odcinków';
 	@override String get seasonPoster => 'Plakat sezonu';
 	@override String get seasonPosterDescription => 'Pokaż plakat odpowiedniego sezonu dla odcinków';
-	@override String get episodeThumbnail => 'Miniatura odcinka';
+	@override String get episodeThumbnail => 'Miniatura';
 	@override String get episodeThumbnailDescription => 'Pokaż miniatury zrzutów ekranu odcinków w formacie 16:9';
 	@override String get showHeroSectionDescription => 'Wyświetl karuzelę wyróżnionych treści na ekranie głównym';
 	@override String get secondsLabel => 'Sekundy';
@@ -1421,7 +1421,7 @@ extension on TranslationsPl {
 			'settings.seriesPosterDescription' => 'Pokaż plakat serialu dla wszystkich odcinków',
 			'settings.seasonPoster' => 'Plakat sezonu',
 			'settings.seasonPosterDescription' => 'Pokaż plakat odpowiedniego sezonu dla odcinków',
-			'settings.episodeThumbnail' => 'Miniatura odcinka',
+			'settings.episodeThumbnail' => 'Miniatura',
 			'settings.episodeThumbnailDescription' => 'Pokaż miniatury zrzutów ekranu odcinków w formacie 16:9',
 			'settings.showHeroSectionDescription' => 'Wyświetl karuzelę wyróżnionych treści na ekranie głównym',
 			'settings.secondsLabel' => 'Sekundy',

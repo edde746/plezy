@@ -203,7 +203,7 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => 'Mostrar el póster de la serie para todos los episodios';
 	@override String get seasonPoster => 'Póster de Temporada';
 	@override String get seasonPosterDescription => 'Mostrar el póster de la temporada para los episodios';
-	@override String get episodeThumbnail => 'Miniatura de Episodio';
+	@override String get episodeThumbnail => 'Miniatura';
 	@override String get episodeThumbnailDescription => 'Mostrar miniaturas de capturas de pantalla de episodios en 16:9';
 	@override String get showHeroSectionDescription => 'Mostrar carrusel de contenido destacado en la pantalla de inicio';
 	@override String get secondsLabel => 'Segundos';
@@ -1421,7 +1421,7 @@ extension on TranslationsEs {
 			'settings.seriesPosterDescription' => 'Mostrar el póster de la serie para todos los episodios',
 			'settings.seasonPoster' => 'Póster de Temporada',
 			'settings.seasonPosterDescription' => 'Mostrar el póster de la temporada para los episodios',
-			'settings.episodeThumbnail' => 'Miniatura de Episodio',
+			'settings.episodeThumbnail' => 'Miniatura',
 			'settings.episodeThumbnailDescription' => 'Mostrar miniaturas de capturas de pantalla de episodios en 16:9',
 			'settings.showHeroSectionDescription' => 'Mostrar carrusel de contenido destacado en la pantalla de inicio',
 			'settings.secondsLabel' => 'Segundos',

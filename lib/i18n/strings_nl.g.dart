@@ -203,7 +203,7 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get seriesPosterDescription => 'Toon de serie poster voor alle afleveringen';
 	@override String get seasonPoster => 'Seizoen poster';
 	@override String get seasonPosterDescription => 'Toon de seizoensspecifieke poster voor afleveringen';
-	@override String get episodeThumbnail => 'Aflevering miniatuur';
+	@override String get episodeThumbnail => 'Miniatuur';
 	@override String get episodeThumbnailDescription => 'Toon 16:9 aflevering miniaturen';
 	@override String get showHeroSectionDescription => 'Toon uitgelichte inhoud carrousel op startscherm';
 	@override String get secondsLabel => 'Seconden';
@@ -1421,7 +1421,7 @@ extension on TranslationsNl {
 			'settings.seriesPosterDescription' => 'Toon de serie poster voor alle afleveringen',
 			'settings.seasonPoster' => 'Seizoen poster',
 			'settings.seasonPosterDescription' => 'Toon de seizoensspecifieke poster voor afleveringen',
-			'settings.episodeThumbnail' => 'Aflevering miniatuur',
+			'settings.episodeThumbnail' => 'Miniatuur',
 			'settings.episodeThumbnailDescription' => 'Toon 16:9 aflevering miniaturen',
 			'settings.showHeroSectionDescription' => 'Toon uitgelichte inhoud carrousel op startscherm',
 			'settings.secondsLabel' => 'Seconden',

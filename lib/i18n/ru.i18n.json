@@ -84,7 +84,7 @@
     "seriesPosterDescription": "Показывать постер сериала для всех эпизодов",
     "seasonPoster": "Постер сезона",
     "seasonPosterDescription": "Показывать постер конкретного сезона для эпизодов",
-    "episodeThumbnail": "Миниатюра эпизода",
+    "episodeThumbnail": "Миниатюра",
     "episodeThumbnailDescription": "Показывать миниатюры скриншотов эпизодов 16:9",
     "showHeroSectionDescription": "Показывать карусель избранного контента на главном экране",
     "secondsLabel": "Секунды",
