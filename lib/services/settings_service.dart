@@ -224,11 +224,20 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   int getLibraryDensity() {
-    // New int format
-    final intVal = prefs.getInt(_keyLibraryDensity);
-    if (intVal != null) return intVal.clamp(LibraryDensity.min, LibraryDensity.max);
+    // New int format — getInt throws if the stored value is a different type
+    try {
+      final intVal = prefs.getInt(_keyLibraryDensity);
+      if (intVal != null) return intVal.clamp(LibraryDensity.min, LibraryDensity.max);
+    } on TypeError {
+      // Stored value is a String from old enum format — fall through to migration
+    }
     // Migrate from old enum string format
-    final strVal = prefs.getString(_keyLibraryDensity);
+    String? strVal;
+    try {
+      strVal = prefs.getString(_keyLibraryDensity);
+    } on TypeError {
+      // Value exists but isn't a String either
+    }
     final result = switch (strVal) {
       'compact' => 2,
       'comfortable' => 4,
