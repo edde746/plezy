@@ -668,7 +668,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               onFocusChange: _onFocusChange,
               enabled: canInteract,
             ),
-            const SizedBox(height: 4),
           ] else if (!_isLive) ...[
             VideoTimelineBar(
               player: widget.player,
@@ -683,7 +682,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               enabled: canInteract,
               thumbnailDataBuilder: widget.thumbnailDataBuilder,
             ),
-            const SizedBox(height: 4),
           ],
           // Row 2: Playback controls and options
           Focus(
