@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:dio/dio.dart';
 
+import '../utils/http_client.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
@@ -198,6 +199,7 @@ class PlexClient {
         responseDecoder: _lenientUtf8Decoder,
       ),
     );
+    _dio.httpClientAdapter = createHttp2Adapter();
     _dio.transformer = BackgroundTransformer();
 
     // Add interceptor for logging (optional, can be disabled in production)

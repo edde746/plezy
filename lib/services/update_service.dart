@@ -155,8 +155,7 @@ class UpdateService {
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      final dio = createHttpClient();
-      final response = await dio.get(
+      final response = await httpClient.get(
         'https://api.github.com/repos/$_githubRepo/releases/latest',
         options: Options(headers: {'Accept': 'application/vnd.github+json'}),
       );

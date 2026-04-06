@@ -8,6 +8,7 @@ import '../models/plex_home.dart';
 import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
 import '../utils/connection_constants.dart';
+import '../utils/http_client.dart';
 
 /// Redacts the middle of an IP address or hostname for safe logging.
 /// E.g. `192.168.1.50` → `192.***.***.50`, `my.server.example.com` → `my.***.***. com`.
@@ -53,7 +54,7 @@ class PlexAuthService {
     final storage = await StorageService.getInstance();
     final dio = Dio(
       BaseOptions(connectTimeout: ConnectionTimeouts.plexTvConnect, receiveTimeout: ConnectionTimeouts.plexTvReceive),
-    );
+    )..httpClientAdapter = createHttp2Adapter();
 
     // Get or create client identifier
     String? clientIdentifier = storage.getClientIdentifier();

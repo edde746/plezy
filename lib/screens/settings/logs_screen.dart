@@ -133,7 +133,7 @@ class _LogsScreenState extends State<LogsScreen> {
     );
 
     try {
-      final response = await createHttpClient().post(
+      final response = await httpClient.post(
         'https://ice.plezy.app/logs',
         data: logText,
         options: Options(contentType: 'text/plain'),

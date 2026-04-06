@@ -59,6 +59,7 @@ dependencies:
       url: https://github.com/edde746/sentry-dart
       path: packages/flutter
       ref: build/fetch-native-zip
+  dio_http2_adapter: ^2.7.0
   auto_updater:
     git:
       url: https://github.com/edde746/auto_updater

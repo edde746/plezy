@@ -300,8 +300,7 @@ class DiscordRPCService {
       if (imageUrl.isEmpty) return null;
 
       // Fetch image data
-      final dio = createHttpClient();
-      final imageResponse = await dio.get<List<int>>(
+      final imageResponse = await httpClient.get<List<int>>(
         imageUrl,
         options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 10)),
       );
@@ -316,7 +315,7 @@ class DiscordRPCService {
         'fileToUpload': MultipartFile.fromBytes(Uint8List.fromList(imageBytes), filename: 'thumbnail.jpg'),
       });
 
-      final uploadResponse = await dio.post<String>(
+      final uploadResponse = await httpClient.post<String>(
         _litterboxUrl,
         data: formData,
         options: Options(receiveTimeout: const Duration(seconds: 15)),

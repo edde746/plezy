@@ -122,7 +122,7 @@ class DownloadManagerService {
   DownloadManagerService({required AppDatabase database, required DownloadStorageService storageService, Dio? dio})
     : _database = database,
       _storageService = storageService,
-      _dio = dio ?? createHttpClient();
+      _dio = dio ?? httpClient;
 
   /// Initialize background_downloader with callbacks, notifications, and concurrency config.
   Future<void> _initializeFileDownloader() async {

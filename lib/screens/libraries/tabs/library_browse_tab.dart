@@ -1310,7 +1310,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           maxHeight: memHeight,
         ),
         context,
-      );
+      ).ignore();
     }
   }
 
