@@ -2656,11 +2656,11 @@ class PlexClient {
           final firstMedia = media.first;
           if (firstMedia is Map<String, dynamic>) {
             final rawBeginsAt = firstMedia['beginsAt'];
-              beginsAt = switch (rawBeginsAt) {
-                num n => n.toInt(),
-                String s => int.tryParse(s),
-                _ => null,
-              };
+            beginsAt = switch (rawBeginsAt) {
+              num n => n.toInt(),
+              String s => int.tryParse(s),
+              _ => null,
+            };
           }
         }
       }
