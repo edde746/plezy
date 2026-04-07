@@ -180,7 +180,7 @@ class PlexSubtitleTrack with _TrackLabelMixin {
     final ext = CodecUtils.getSubtitleExtension(codec);
 
     // Construct URL with authentication token
-    return '$baseUrl$key.$ext?X-Plex-Token=$token';
+    return '$baseUrl$key.$ext?encoding=utf-8&X-Plex-Token=$token';
   }
 }
 
