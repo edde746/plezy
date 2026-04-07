@@ -11,6 +11,7 @@ import android.app.AppOpsManager
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.res.Configuration
+import android.util.Log
 import android.util.Rational
 import android.view.KeyEvent
 import android.view.TextureView
@@ -34,6 +35,7 @@ import java.io.File
 class MainActivity : FlutterActivity() {
 
     companion object {
+        private const val TAG = "MainActivity"
         var usingSkia = false
     }
 
@@ -294,11 +296,7 @@ class MainActivity : FlutterActivity() {
                     try {
                         val width = call.argument<Int>("width") ?: 16
                         val height = call.argument<Int>("height") ?: 9
-                        val clamped = clampAspectRatio(width, height)
-
-                        val params = PictureInPictureParams.Builder()
-                            .setAspectRatio(Rational(clamped.first, clamped.second))
-                            .build()
+                        val params = buildPipParams(width, height)
                         val success = enterPictureInPictureMode(params)
                         if (success) {
                             result.success(mapOf("success" to true))
@@ -318,13 +316,11 @@ class MainActivity : FlutterActivity() {
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         try {
-                            val clamped = clampAspectRatio(autoPipWidth, autoPipHeight)
-                            val params = PictureInPictureParams.Builder()
-                                .setAspectRatio(Rational(clamped.first, clamped.second))
-                                .setAutoEnterEnabled(autoPipReady)
-                                .build()
+                            val params = buildPipParams(autoPipWidth, autoPipHeight, autoEnterEnabled = autoPipReady)
                             setPictureInPictureParams(params)
-                        } catch (_: Exception) {}
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to set auto-PiP params", e)
+                        }
                     }
                     result.success(true)
                 }
@@ -354,12 +350,11 @@ class MainActivity : FlutterActivity() {
                 flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
                     MethodChannel(messenger, PIP_CHANNEL).invokeMethod("onAutoPipEntering", null)
                 }
-                val clamped = clampAspectRatio(autoPipWidth, autoPipHeight)
-                val params = PictureInPictureParams.Builder()
-                    .setAspectRatio(Rational(clamped.first, clamped.second))
-                    .build()
+                val params = buildPipParams(autoPipWidth, autoPipHeight)
                 enterPictureInPictureMode(params)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to enter auto-PiP", e)
+            }
         }
     }
 
@@ -372,12 +367,22 @@ class MainActivity : FlutterActivity() {
         ) == AppOpsManager.MODE_ALLOWED
     }
 
-    private fun clampAspectRatio(width: Int, height: Int): Pair<Int, Int> {
-        val ratio = width.toFloat() / height.toFloat()
-        return when {
-            ratio < 0.42f -> Pair(5, 12)
-            ratio > 2.39f -> Pair(12, 5)
-            else -> Pair(width, height)
+    private fun buildPipParams(width: Int, height: Int, autoEnterEnabled: Boolean? = null): PictureInPictureParams {
+        val (w, h) = if (width <= 0 || height <= 0) {
+            Pair(16, 9)
+        } else {
+            val ratio = width.toFloat() / height.toFloat()
+            when {
+                ratio < 1f / 2.39f -> Pair(100, 239)
+                ratio > 2.39f -> Pair(239, 100)
+                else -> Pair(width, height)
+            }
         }
+        val builder = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(w, h))
+        if (autoEnterEnabled != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setAutoEnterEnabled(autoEnterEnabled)
+        }
+        return builder.build()
     }
 }
