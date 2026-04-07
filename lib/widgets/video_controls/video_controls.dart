@@ -682,19 +682,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     widget.onCycleSubtitleTrack?.call();
   }
 
-  void _nextChapter() {
-    // Go to next chapter - this would use your existing chapter navigation
-    if (widget.onNext != null) {
-      widget.onNext!();
-    }
-  }
+  void _nextChapter() => _seekToNextChapter();
 
-  void _previousChapter() {
-    // Go to previous chapter - this would use your existing chapter navigation
-    if (widget.onPrevious != null) {
-      widget.onPrevious!();
-    }
-  }
+  void _previousChapter() => _seekToPreviousChapter();
 
   @override
   void dispose() {
