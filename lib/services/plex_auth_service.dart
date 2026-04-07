@@ -721,7 +721,7 @@ class PlexServer {
     );
 
     if (!result.success) {
-      appLogger.w('HTTPS upgrade failed, staying on HTTP candidate', error: {'url': currentUrl});
+      appLogger.w('HTTPS upgrade failed, staying on HTTP candidate', error: {'url': currentUrl, 'reason': result.error});
       return null;
     }
 
