@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:dart_discord_presence/dart_discord_presence.dart';
-import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/plex_metadata.dart';
-import '../utils/http_client.dart';
+import '../utils/plex_http_client.dart';
 import '../utils/app_logger.dart';
 import 'plex_client.dart';
 import 'settings_service.dart';
@@ -300,29 +299,28 @@ class DiscordRPCService {
       if (imageUrl.isEmpty) return null;
 
       // Fetch image data
-      final imageResponse = await httpClient.get<List<int>>(
+      final imageBytes = await httpClient.getBytes(
         imageUrl,
-        options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 10)),
+        timeout: const Duration(seconds: 10),
       );
-
-      final imageBytes = imageResponse.data;
-      if (imageBytes == null || imageBytes.isEmpty) return null;
+      if (imageBytes.isEmpty) return null;
 
       // Upload to Litterbox
-      final formData = FormData.fromMap({
-        'reqtype': 'fileupload',
-        'time': '1h',
-        'fileToUpload': MultipartFile.fromBytes(Uint8List.fromList(imageBytes), filename: 'thumbnail.jpg'),
-      });
+      final uploadRequest = http.MultipartRequest('POST', Uri.parse(_litterboxUrl))
+        ..fields['reqtype'] = 'fileupload'
+        ..fields['time'] = '1h'
+        ..files.add(http.MultipartFile.fromBytes(
+          'fileToUpload',
+          imageBytes,
+          filename: 'thumbnail.jpg',
+        ));
 
-      final uploadResponse = await httpClient.post<String>(
-        _litterboxUrl,
-        data: formData,
-        options: Options(receiveTimeout: const Duration(seconds: 15)),
-      );
+      final uploadStreamed = await httpClient.inner
+          .send(uploadRequest)
+          .timeout(const Duration(seconds: 15));
+      final uploadedUrl = (await uploadStreamed.stream.bytesToString()).trim();
 
-      final uploadedUrl = uploadResponse.data?.trim();
-      if (uploadedUrl != null && uploadedUrl.startsWith('http')) {
+      if (uploadedUrl.startsWith('http')) {
         // Cache the URL with 1 hour expiry (matching Litterbox)
         _litterboxCache[thumbPath] = _CachedUrl(uploadedUrl, DateTime.now().add(const Duration(hours: 1)));
         appLogger.d('Uploaded and cached thumbnail: $uploadedUrl');

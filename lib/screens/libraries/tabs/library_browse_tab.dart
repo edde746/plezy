@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
+import '../../../utils/plex_http_client.dart';
+import '../../../utils/plex_http_exception.dart';
 import '../../../focus/dpad_navigator.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../../services/plex_client.dart';
@@ -203,7 +204,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   int _totalSize = 0;
   final Map<int, PlexMetadata> _loadedItems = {};
   final Set<int> _loadingRanges = {};
-  CancelToken? _cancelToken;
+  AbortController? _cancelToken;
   int _requestId = 0;
   int _firstCharactersRequestId = 0;
   static const int _fetchSize = 200;
@@ -229,7 +230,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   @override
   void dispose() {
-    _cancelToken?.cancel();
+    _cancelToken?.abort();
     _retryTimer?.cancel();
     _scrollActivityTimer?.cancel();
     _scrollIdleTimer?.cancel();
@@ -353,9 +354,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   Future<void> _loadContent() async {
     // Cancel any pending request
-    _cancelToken?.cancel();
+    _cancelToken?.abort();
     _retryTimer?.cancel();
-    _cancelToken = CancelToken();
+    _cancelToken = AbortController();
     // Use a generation counter for the filter/sort loading phase
     final generation = ++_requestId;
     final firstCharactersGeneration = ++_firstCharactersRequestId;
@@ -458,9 +459,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   Future<void> _loadItems() async {
     final currentRequestId = ++_requestId;
-    _cancelToken?.cancel();
+    _cancelToken?.abort();
     _retryTimer?.cancel();
-    _cancelToken = CancelToken();
+    _cancelToken = AbortController();
 
     setState(() {
       isLoading = true;
@@ -485,7 +486,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         start: 0,
         size: _calculateInitialFetchSize(),
         filters: filterParams,
-        cancelToken: _cancelToken,
+        abort: _cancelToken,
       );
 
       if (currentRequestId != _requestId) return;
@@ -537,7 +538,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         start: start,
         size: clampedSize,
         filters: filterParams,
-        cancelToken: _cancelToken,
+        abort: _cancelToken,
       );
 
       if (currentRequestId != _requestId || !mounted) return false;
@@ -555,7 +556,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       _prefetchImages(start, result.items);
       return true;
     } catch (e) {
-      if (e is DioException && e.type == DioExceptionType.cancel) return false;
+      if (e is PlexHttpException && e.type == PlexHttpErrorType.cancelled) return false;
       _retryCount++;
       final delay = Duration(milliseconds: 500 * (1 << _retryCount.clamp(0, 4)));
       _retryTimer?.cancel();
@@ -632,8 +633,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   String _getErrorMessage(dynamic error) {
-    if (error is DioException) {
-      return mapDioErrorToMessage(error, context: t.libraries.content);
+    if (error is PlexHttpException) {
+      return mapHttpErrorToMessage(error, context: t.libraries.content);
     }
     return mapUnexpectedErrorToMessage(error, context: t.libraries.content);
   }

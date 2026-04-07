@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:plezy/utils/http_client.dart';
+import 'package:plezy/utils/plex_http_client.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
@@ -135,17 +134,15 @@ class _LogsScreenState extends State<LogsScreen> {
     try {
       final response = await httpClient.post(
         'https://ice.plezy.app/logs',
-        data: logText,
-        options: Options(contentType: 'text/plain'),
+        body: logText,
+        headers: {'Content-Type': 'text/plain'},
       );
 
       if (!mounted) return;
       Navigator.of(context).pop(); // dismiss loading
 
-      final id =
-          (jsonDecode(response.data is String ? response.data : jsonEncode(response.data))
-                  as Map<String, dynamic>)['id']
-              as String;
+      final data = response.data is String ? jsonDecode(response.data) : response.data;
+      final id = (data as Map<String, dynamic>)['id'] as String;
 
       showDialog(
         context: context,

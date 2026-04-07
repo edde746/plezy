@@ -1,15 +1,16 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:http/http.dart' as http;
 
-import '../utils/http_client.dart';
+import '../utils/plex_http_client.dart';
 
 /// Custom cache manager for Plex image transcoding with HTTP/2 multiplexing.
 ///
-/// Uses Dio with [Http2Adapter] so all platforms benefit from HTTP/2 connection
-/// multiplexing — many concurrent image downloads over a single connection
-/// instead of being limited to a handful of HTTP/1.1 connections.
+/// Uses the platform-native HTTP client so iOS/macOS (CupertinoClient) and
+/// Android (CronetClient) benefit from HTTP/2 connection multiplexing —
+/// many concurrent image downloads over a single connection instead of
+/// being limited to a handful of HTTP/1.1 connections.
 class PlexImageCacheManager extends CacheManager with ImageCacheManager {
   static const _key = 'plexImageCache';
 
@@ -21,56 +22,50 @@ class PlexImageCacheManager extends CacheManager with ImageCacheManager {
             _key,
             stalePeriod: const Duration(days: 14),
             maxNrOfCacheObjects: 3000,
-            fileService: _DioFileService(
-              Dio()..httpClientAdapter = createHttp2Adapter(),
-            ),
+            fileService: _HttpFileService(httpClient.inner),
           ),
         );
 }
 
-class _DioFileService extends FileService {
-  final Dio _dio;
+class _HttpFileService extends FileService {
+  final http.Client _client;
 
-  _DioFileService(this._dio);
+  _HttpFileService(this._client);
 
   @override
   Future<FileServiceResponse> get(
     String url, {
     Map<String, String>? headers,
   }) async {
-    final response = await _dio.get<ResponseBody>(
-      url,
-      options: Options(
-        headers: headers,
-        responseType: ResponseType.stream,
-      ),
-    );
-    return _DioGetResponse(response);
+    final request = http.Request('GET', Uri.parse(url));
+    if (headers != null) request.headers.addAll(headers);
+    final response = await _client.send(request);
+    return _HttpGetResponse(response);
   }
 }
 
-class _DioGetResponse implements FileServiceResponse {
-  final Response<ResponseBody> _response;
+class _HttpGetResponse implements FileServiceResponse {
+  final http.StreamedResponse _response;
   final DateTime _receivedTime = DateTime.now();
 
-  _DioGetResponse(this._response);
+  _HttpGetResponse(this._response);
 
   @override
-  Stream<List<int>> get content => _response.data!.stream;
+  Stream<List<int>> get content => _response.stream;
 
   @override
   int? get contentLength {
-    final value = _header(HttpHeaders.contentLengthHeader);
+    final value = _response.headers[HttpHeaders.contentLengthHeader];
     return value != null ? int.tryParse(value) : null;
   }
 
   @override
-  int get statusCode => _response.statusCode ?? 200;
+  int get statusCode => _response.statusCode;
 
   @override
   DateTime get validTill {
     var ageDuration = const Duration(days: 7);
-    final controlHeader = _header(HttpHeaders.cacheControlHeader);
+    final controlHeader = _response.headers[HttpHeaders.cacheControlHeader];
     if (controlHeader != null) {
       for (final setting in controlHeader.split(',')) {
         final s = setting.trim().toLowerCase();
@@ -85,17 +80,15 @@ class _DioGetResponse implements FileServiceResponse {
   }
 
   @override
-  String? get eTag => _header(HttpHeaders.etagHeader);
+  String? get eTag => _response.headers[HttpHeaders.etagHeader];
 
   @override
   String get fileExtension {
-    final contentTypeHeader = _header(HttpHeaders.contentTypeHeader);
+    final contentTypeHeader = _response.headers[HttpHeaders.contentTypeHeader];
     if (contentTypeHeader != null) {
       final ct = ContentType.parse(contentTypeHeader);
       return '.${ct.subType}';
     }
     return '';
   }
-
-  String? _header(String name) => _response.headers.value(name);
 }

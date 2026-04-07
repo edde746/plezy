@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:plezy/utils/content_utils.dart';
-import 'package:plezy/utils/http_client.dart';
+import 'package:plezy/utils/plex_http_client.dart';
 import '../database/app_database.dart';
 import '../database/download_operations.dart';
 import 'settings_service.dart';
@@ -50,7 +49,7 @@ class DownloadManagerService {
   final AppDatabase _database;
   final DownloadStorageService _storageService;
   final PlexApiCache _apiCache = PlexApiCache.instance;
-  final Dio _dio;
+  final PlexHttpClient _http;
 
   // Stream controller for download progress updates
   final _progressController = StreamController<DownloadProgress>.broadcast();
@@ -119,10 +118,10 @@ class DownloadManagerService {
   /// Await this before reading download state from the DB to avoid races.
   late final Future<void> recoveryFuture;
 
-  DownloadManagerService({required AppDatabase database, required DownloadStorageService storageService, Dio? dio})
+  DownloadManagerService({required AppDatabase database, required DownloadStorageService storageService, PlexHttpClient? http})
     : _database = database,
       _storageService = storageService,
-      _dio = dio ?? httpClient;
+      _http = http ?? httpClient;
 
   /// Initialize background_downloader with callbacks, notifications, and concurrency config.
   Future<void> _initializeFileDownloader() async {
@@ -957,7 +956,7 @@ class DownloadManagerService {
       await file.parent.create(recursive: true);
 
       // Download the artwork
-      await _dio.download(url, filePath);
+      await _http.downloadFile(url, filePath);
       appLogger.i('Downloaded artwork: $artworkPath -> $filePath');
     } catch (e, stack) {
       appLogger.w('Failed to download artwork: $artworkPath', error: e, stackTrace: stack);
@@ -1062,7 +1061,7 @@ class DownloadManagerService {
         // Download subtitle file
         final file = File(subtitlePath);
         await file.parent.create(recursive: true);
-        await _dio.download(subtitleUrl, subtitlePath);
+        await _http.downloadFile(subtitleUrl, subtitlePath);
 
         appLogger.d('Downloaded subtitle ${subtitle.id} for $globalKey');
       }

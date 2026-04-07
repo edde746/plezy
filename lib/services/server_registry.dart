@@ -1,8 +1,7 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
-
 import '../utils/app_logger.dart';
+import '../utils/plex_http_exception.dart';
 import 'plex_auth_service.dart';
 import 'storage_service.dart';
 
@@ -125,8 +124,8 @@ class ServerRegistry {
       await saveServers(updatedServers);
       appLogger.i('Refreshed ${updatedServers.length} servers from API');
       return ServerRefreshResult.success;
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
+    } on PlexHttpException catch (e) {
+      if (e.statusCode == 401) {
         appLogger.w('Plex token is invalid (401), re-authentication required');
         return ServerRefreshResult.authError;
       }

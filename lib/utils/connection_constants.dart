@@ -8,18 +8,18 @@ class ConnectionTimeouts {
   /// parallel (used in [PlexServer.findBestWorkingConnection]).
   static const connectionRace = Duration(seconds: 2);
 
-  /// Dio connect timeout for individual HTTP requests to a Plex server.
+  /// HTTP connect timeout for individual HTTP requests to a Plex server.
   static const connect = Duration(seconds: 10);
 
   /// Per-server connection budget: preferred probe + race + HTTPS upgrade attempt + 1s buffer.
   static const perServerConnect = Duration(milliseconds: 1500 + 2000 + 2000 + 1000);
 
-  /// Dio receive timeout for streaming/large responses from a Plex server.
+  /// HTTP receive timeout for streaming/large responses from a Plex server.
   static const receive = Duration(seconds: 120);
 
-  /// Dio connect timeout for plex.tv / clients.plex.tv API requests.
+  /// HTTP connect timeout for plex.tv / clients.plex.tv API requests.
   static const plexTvConnect = Duration(seconds: 5);
 
-  /// Dio receive timeout for plex.tv / clients.plex.tv API responses.
+  /// HTTP receive timeout for plex.tv / clients.plex.tv API responses.
   static const plexTvReceive = Duration(seconds: 10);
 }

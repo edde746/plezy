@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
@@ -8,7 +7,8 @@ import '../models/plex_home.dart';
 import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
 import '../utils/connection_constants.dart';
-import '../utils/http_client.dart';
+import '../utils/plex_http_client.dart';
+import '../utils/plex_http_exception.dart';
 
 /// Redacts the middle of an IP address or hostname for safe logging.
 /// E.g. `192.168.1.50` → `192.***.***.50`, `my.server.example.com` → `my.***.***. com`.
@@ -45,16 +45,17 @@ class PlexAuthService {
   static const String _plexApiBase = 'https://plex.tv/api/v2';
   static const String _clientsApi = 'https://clients.plex.tv/api/v2';
 
-  final Dio _dio;
+  final PlexHttpClient _http;
   final String _clientIdentifier;
 
-  PlexAuthService._(this._dio, this._clientIdentifier);
+  PlexAuthService._(this._http, this._clientIdentifier);
 
   static Future<PlexAuthService> create() async {
     final storage = await StorageService.getInstance();
-    final dio = Dio(
-      BaseOptions(connectTimeout: ConnectionTimeouts.plexTvConnect, receiveTimeout: ConnectionTimeouts.plexTvReceive),
-    )..httpClientAdapter = createHttp2Adapter();
+    final http = PlexHttpClient(
+      connectTimeout: ConnectionTimeouts.plexTvConnect,
+      receiveTimeout: ConnectionTimeouts.plexTvReceive,
+    );
 
     // Get or create client identifier
     String? clientIdentifier = storage.getClientIdentifier();
@@ -63,12 +64,12 @@ class PlexAuthService {
       await storage.saveClientIdentifier(clientIdentifier);
     }
 
-    return PlexAuthService._(dio, clientIdentifier);
+    return PlexAuthService._(http, clientIdentifier);
   }
 
   String get clientIdentifier => _clientIdentifier;
 
-  Options _getCommonOptions({String? authToken}) {
+  Map<String, String> _getCommonHeaders({String? authToken}) {
     final headers = {
       'Accept': 'application/json',
       'X-Plex-Product': _appName,
@@ -79,18 +80,30 @@ class PlexAuthService {
       headers['X-Plex-Token'] = authToken;
     }
 
-    return Options(headers: headers);
+    return headers;
   }
 
-  Future<Response> _getUser(String authToken) {
-    return _dio.get('$_plexApiBase/user', options: _getCommonOptions(authToken: authToken));
+  Future<PlexResponse> _getUser(String authToken) {
+    return _http.get('$_plexApiBase/user', headers: _getCommonHeaders(authToken: authToken));
+  }
+
+  /// Throw [PlexHttpException] if the response indicates a client/server error.
+  void _checkStatus(PlexResponse response) {
+    if (response.statusCode >= 400) {
+      throw PlexHttpException(
+        type: PlexHttpErrorType.unknown,
+        statusCode: response.statusCode,
+        responseData: response.data,
+        message: 'HTTP ${response.statusCode}',
+      );
+    }
   }
 
   /// Verify if a plex.tv token is valid
   Future<bool> verifyToken(String authToken) async {
     try {
-      await _getUser(authToken);
-      return true;
+      final response = await _getUser(authToken);
+      return response.statusCode == 200;
     } catch (e) {
       return false;
     }
@@ -98,8 +111,8 @@ class PlexAuthService {
 
   /// Create a PIN for authentication
   Future<Map<String, dynamic>> createPin() async {
-    final response = await _dio.post('$_plexApiBase/pins?strong=true', options: _getCommonOptions());
-
+    final response = await _http.post('$_plexApiBase/pins?strong=true', headers: _getCommonHeaders());
+    _checkStatus(response);
     return response.data as Map<String, dynamic>;
   }
 
@@ -117,7 +130,7 @@ class PlexAuthService {
   /// Poll the PIN to check if it has been claimed
   Future<String?> checkPin(int pinId) async {
     try {
-      final response = await _dio.get('$_plexApiBase/pins/$pinId', options: _getCommonOptions());
+      final response = await _http.get('$_plexApiBase/pins/$pinId', headers: _getCommonHeaders());
 
       final data = response.data as Map<String, dynamic>;
       return data['authToken'] as String?;
@@ -154,10 +167,12 @@ class PlexAuthService {
 
   /// Fetch available Plex servers for the authenticated user
   Future<List<PlexServer>> fetchServers(String authToken) async {
-    final response = await _dio.get(
+    final response = await _http.get(
       '$_clientsApi/resources?includeHttps=1&includeRelay=1&includeIPv6=1',
-      options: _getCommonOptions(authToken: authToken),
+      headers: _getCommonHeaders(authToken: authToken),
     );
+
+    _checkStatus(response);
 
     final List<dynamic> resources = response.data as List<dynamic>;
 
@@ -191,21 +206,21 @@ class PlexAuthService {
   /// Get user information
   Future<Map<String, dynamic>> getUserInfo(String authToken) async {
     final response = await _getUser(authToken);
-
+    _checkStatus(response);
     return response.data as Map<String, dynamic>;
   }
 
   /// Get user profile with preferences (audio/subtitle settings)
   Future<PlexUserProfile> getUserProfile(String authToken) async {
-    final response = await _dio.get('$_clientsApi/user', options: _getCommonOptions(authToken: authToken));
-
+    final response = await _http.get('$_clientsApi/user', headers: _getCommonHeaders(authToken: authToken));
+    _checkStatus(response);
     return PlexUserProfile.fromJson(response.data as Map<String, dynamic>);
   }
 
   /// Get home users for the authenticated user
   Future<PlexHome> getHomeUsers(String authToken) async {
-    final response = await _dio.get('$_clientsApi/home/users', options: _getCommonOptions(authToken: authToken));
-
+    final response = await _http.get('$_clientsApi/home/users', headers: _getCommonHeaders(authToken: authToken));
+    _checkStatus(response);
     return PlexHome.fromJson(response.data as Map<String, dynamic>);
   }
 
@@ -226,15 +241,13 @@ class PlexAuthService {
       'pin': ?pin,
     };
 
-    final queryString = queryParams.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-
-    final response = await _dio.post(
-      '$_clientsApi/home/users/$userUUID/switch?$queryString',
-      options: Options(headers: {'Accept': 'application/json', 'Content-Length': '0'}),
+    final response = await _http.post(
+      '$_clientsApi/home/users/$userUUID/switch',
+      queryParameters: queryParams,
+      headers: {'Accept': 'application/json', 'Content-Length': '0'},
     );
 
+    _checkStatus(response);
     return UserSwitchResponse.fromJson(response.data as Map<String, dynamic>);
   }
 }

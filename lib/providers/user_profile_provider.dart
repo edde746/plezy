@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../utils/plex_http_exception.dart';
 import '../models/plex_home.dart';
 import '../models/plex_home_user.dart';
 import '../models/plex_user_profile.dart';
@@ -302,8 +302,8 @@ class UserProfileProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       // Check if it's a PIN validation error
-      if (e is DioException && e.response?.statusCode == 403) {
-        final errors = e.response?.data['errors'] as List?;
+      if (e is PlexHttpException && e.statusCode == 403) {
+        final errors = (e.responseData is Map) ? (e.responseData as Map)['errors'] as List? : null;
         if (errors != null && errors.isNotEmpty) {
           final errorCode = errors.first['code'] as int?;
           final errorMessage = errors.first['message'] as String?;

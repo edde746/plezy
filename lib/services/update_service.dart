@@ -2,9 +2,8 @@ import 'dart:io';
 
 import 'package:auto_updater/auto_updater.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
-import 'package:plezy/utils/http_client.dart';
+import 'package:plezy/utils/plex_http_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service to check for new versions on GitHub
@@ -157,7 +156,7 @@ class UpdateService {
 
       final response = await httpClient.get(
         'https://api.github.com/repos/$_githubRepo/releases/latest',
-        options: Options(headers: {'Accept': 'application/vnd.github+json'}),
+        headers: {'Accept': 'application/vnd.github+json'},
       );
 
       if (response.statusCode == 200) {

@@ -10,7 +10,6 @@ dependencies:
   flutter:
     sdk: flutter
   intl: ^0.20.2
-  dio: ^5.9.2
   json_annotation: ^4.9.0
   shared_preferences: ^2.2.2
   cached_network_image: ^3.4.1
@@ -59,12 +58,13 @@ dependencies:
       url: https://github.com/edde746/sentry-dart
       path: packages/flutter
       ref: build/fetch-native-zip
-  dio_http2_adapter: ^2.7.0
   auto_updater:
     git:
       url: https://github.com/edde746/auto_updater
       path: packages/auto_updater
       ref: 9e150f7
+  cupertino_http: ^2.4.0
+  cronet_http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

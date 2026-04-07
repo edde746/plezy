@@ -1,14 +1,14 @@
-import 'package:dio/dio.dart';
 import '../i18n/strings.g.dart';
 import 'app_logger.dart';
+import 'plex_http_exception.dart';
 
 /// Shared helpers for translating network errors into user-friendly messages.
-String mapDioErrorToMessage(DioException error, {required String context}) {
+String mapHttpErrorToMessage(PlexHttpException error, {required String context}) {
   switch (error.type) {
-    case DioExceptionType.connectionTimeout:
-    case DioExceptionType.receiveTimeout:
+    case PlexHttpErrorType.connectionTimeout:
+    case PlexHttpErrorType.receiveTimeout:
       return t.errors.connectionTimeout(context: context);
-    case DioExceptionType.connectionError:
+    case PlexHttpErrorType.connectionError:
       return t.errors.connectionFailed;
     default:
       appLogger.e('Error loading $context', error: error);
