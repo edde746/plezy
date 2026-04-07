@@ -396,9 +396,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
-        if (Platform.isAndroid || Platform.isIOS) {
-          unawaited(_appDatabase.close());
-        }
+        // Database is session-scoped and must survive suspend/resume.
+        // Closing here would kill the Drift isolate channel while services
+        // (sync, downloads, cache) still hold references to the executor.
+        // SQLite WAL mode handles process death; desktop uses onExitRequested.
         InAppReviewService.instance.endSession();
         if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
           if (ProcessInfo.currentRss > 1024 * 1024 * 1024) { // 1GB

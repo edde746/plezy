@@ -25,6 +25,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   VoidCallback? _offlineModeListener;
   bool _isSyncing = false;
   bool _isBidirectionalSyncing = false;
+  bool _isShutDown = false;
   DateTime? _lastSyncTime;
   bool _hasPerformedStartupSync = false;
 
@@ -82,6 +83,8 @@ class OfflineWatchSyncService extends ChangeNotifier {
   ///
   /// Push always happens immediately. Pull respects [minSyncInterval] unless [force] is true.
   Future<void> _performBidirectionalSync({bool force = false}) async {
+    if (_isShutDown) return;
+
     // Prevent overlapping bidirectional syncs
     if (_isBidirectionalSyncing) {
       appLogger.d('Bidirectional sync already in progress, skipping');
@@ -121,6 +124,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// On mobile, always syncs immediately (device-switching scenario).
   /// On desktop, respects the throttle interval.
   void onAppResumed() {
+    if (_isShutDown) return;
     if (_offlineModeProvider?.isOffline != true) {
       final isMobile = Platform.isIOS || Platform.isAndroid;
       appLogger.d('App resumed - ${isMobile ? "forcing" : "checking"} sync');
@@ -133,6 +137,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Triggers the initial sync now that PlexClients are available.
   /// Only runs once per app session.
   void onServersConnected() {
+    if (_isShutDown) return;
     if (_hasPerformedStartupSync) return;
     _hasPerformedStartupSync = true;
 
@@ -558,6 +563,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isShutDown = true;
     if (_offlineModeProvider != null && _offlineModeListener != null) {
       _offlineModeProvider!.removeListener(_offlineModeListener!);
     }
