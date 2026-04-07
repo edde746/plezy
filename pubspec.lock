@@ -1475,6 +1475,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  win_http:
+    dependency: "direct main"
+    description:
+      name: win_http
+      sha256: f5da1c955a39822f4287fd2ddaef9b878542d382d023a482b207647bf945023b
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   window_manager:
     dependency: "direct main"
     description:
