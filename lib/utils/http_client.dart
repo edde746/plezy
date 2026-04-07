@@ -43,6 +43,13 @@ class _Http2WithFallbackAdapter implements HttpClientAdapter {
       appLogger.d('H2 handshake failed for ${options.uri.host}, falling back to HTTP/1.1');
       _http1Hosts.add(options.uri.host);
       return _http1Fallback.fetch(options, requestStream, cancelFuture);
+    } catch (e) {
+      if (e.toString().contains('HTTP/2')) {
+        appLogger.d('H2 connection error for ${options.uri.host}, falling back to HTTP/1.1');
+        _http1Hosts.add(options.uri.host);
+        return _http1Fallback.fetch(options, requestStream, cancelFuture);
+      }
+      rethrow;
     }
   }
 

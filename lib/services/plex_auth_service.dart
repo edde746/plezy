@@ -795,18 +795,19 @@ class PlexServer {
   ) {
     if (entries.isEmpty) return null;
 
-    // Sort by latency first, then by protocol (HTTPS > HTTP), then by URL type (prefer plex.direct)
+    // Sort by protocol first (HTTPS enables H2 multiplexing), then latency, then URL type
     entries.sort((a, b) {
-      final latencyCompare = a.value.latencyMs.compareTo(b.value.latencyMs);
-      if (latencyCompare != 0) return latencyCompare;
-
-      // If latencies are equal, prefer HTTPS over HTTP
+      // Prefer HTTPS over HTTP
       final aIsHttps = a.key.isHttps;
       final bIsHttps = b.key.isHttps;
       if (aIsHttps && !bIsHttps) return -1;
       if (!aIsHttps && bIsHttps) return 1;
 
-      // If latencies and protocols are equal, prefer plex.direct URI (isPlexDirectUri = true)
+      // Within same protocol, sort by latency
+      final latencyCompare = a.value.latencyMs.compareTo(b.value.latencyMs);
+      if (latencyCompare != 0) return latencyCompare;
+
+      // Prefer plex.direct URI on tie
       if (a.key.isPlexDirectUri && !b.key.isPlexDirectUri) return -1;
       if (!a.key.isPlexDirectUri && b.key.isPlexDirectUri) return 1;
       return 0;
