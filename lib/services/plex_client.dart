@@ -2740,6 +2740,7 @@ class PlexClient {
           headers: {'Accept-Language': 'en'},
           connectTimeout: ConnectionTimeouts.connect,
           receiveTimeout: ConnectionTimeouts.receive,
+          validateStatus: (status) => status != null && status < 500,
         ),
       );
       final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';

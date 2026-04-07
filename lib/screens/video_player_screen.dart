@@ -2313,10 +2313,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   /// Retry the live stream with degraded direct-stream settings.
-  /// Level 1: disable video direct stream. Level 2: also disable audio direct stream.
+  /// Re-tunes the channel for a fresh server session (the old one expires
+  /// while MPV exhausts its reconnect attempts).
   Future<void> _retryLiveStream() async {
     final client = widget.liveClient;
-    if (client == null || _liveSessionPath == null || _liveSessionIdentifier == null || _transcodeSessionId == null) {
+    final channels = widget.liveChannels;
+    final channelIndex = _liveChannelIndex;
+    if (client == null || channels == null || channelIndex < 0 || channelIndex >= channels.length || widget.liveDvrKey == null) {
       appLogger.w('Cannot retry live stream — missing session info');
       showGlobalErrorSnackBar(_lastLogError ?? 'Live stream failed');
       _handleBackButton();
@@ -2325,14 +2328,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     final ds = _liveStreamFallbackLevel < 1;
     final dsa = _liveStreamFallbackLevel < 2;
-    appLogger.i('Retrying live stream: directStream=$ds directStreamAudio=$dsa');
+    final channel = channels[channelIndex];
+    appLogger.i('Retrying live stream (re-tune ${channel.key}): directStream=$ds directStreamAudio=$dsa');
 
-    // New transcode session so the server doesn't reuse the failed one.
+    // Re-tune to get a fresh capture session — the previous one is dead.
+    final tuneResult = await client.tuneChannel(widget.liveDvrKey!, channel.key);
+    if (tuneResult == null || !mounted) {
+      showGlobalErrorSnackBar(_lastLogError ?? 'Live stream failed');
+      _handleBackButton();
+      return;
+    }
+
+    _liveSessionIdentifier = tuneResult.sessionIdentifier;
+    _liveSessionPath = tuneResult.sessionPath;
     _transcodeSessionId = PlexClient.generateSessionIdentifier();
 
     final streamPath = await client.buildLiveStreamPath(
-      sessionPath: _liveSessionPath!,
-      sessionIdentifier: _liveSessionIdentifier!,
+      sessionPath: tuneResult.sessionPath,
+      sessionIdentifier: tuneResult.sessionIdentifier,
       transcodeSessionId: _transcodeSessionId!,
       directStream: ds,
       directStreamAudio: dsa,
