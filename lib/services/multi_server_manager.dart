@@ -103,7 +103,7 @@ class MultiServerManager {
     final baseUrl = workingConnection.uri;
 
     // Create PlexClient with failover support
-    final prioritizedEndpoints = server.prioritizedEndpointUrls(preferredFirst: cachedEndpoint ?? baseUrl);
+    final prioritizedEndpoints = server.prioritizedEndpointUrls(preferredFirst: baseUrl);
     final config = await PlexConfig.create(
       baseUrl: baseUrl,
       token: server.accessToken,
@@ -131,6 +131,18 @@ class MultiServerManager {
     return client;
   }
 
+  /// Persists a new endpoint, rebuilds the failover list, and switches the client.
+  Future<void> _promoteEndpoint({
+    required PlexClient client,
+    required PlexServer server,
+    required StorageService storage,
+    required String newUrl,
+  }) async {
+    await storage.saveServerEndpoint(server.clientIdentifier, newUrl);
+    final newEndpoints = server.prioritizedEndpointUrls(preferredFirst: newUrl);
+    await client.updateEndpointPreferences(newEndpoints, switchToFirst: true);
+  }
+
   /// Continues draining the connection optimization stream in the background,
   /// switching the client to any better endpoint found.
   void _drainOptimizationStream(
@@ -139,8 +151,6 @@ class MultiServerManager {
     required PlexServer server,
     required StorageService storage,
   }) {
-    final serverId = server.clientIdentifier;
-
     () async {
       try {
         while (await streamIterator.moveNext()) {
@@ -157,9 +167,7 @@ class MultiServerManager {
             error: {'from': client.config.baseUrl, 'to': newUrl, 'type': connection.displayType},
           );
 
-          await storage.saveServerEndpoint(serverId, newUrl);
-          final newEndpoints = server.prioritizedEndpointUrls(preferredFirst: newUrl);
-          await client.updateEndpointPreferences(newEndpoints, switchToFirst: true);
+          await _promoteEndpoint(client: client, server: server, storage: storage, newUrl: newUrl);
         }
       } catch (e, stackTrace) {
         appLogger.w('Background connection optimization failed for ${server.name}', error: e, stackTrace: stackTrace);
@@ -174,7 +182,7 @@ class MultiServerManager {
   Future<int> connectToAllServers(
     List<PlexServer> servers, {
     String? clientIdentifier,
-    Duration timeout = ConnectionTimeouts.connectAll,
+    Duration timeout = ConnectionTimeouts.perServerConnect,
     Function(String serverId, PlexClient client)? onServerConnected,
     Function(String serverId, Object error)? onServerFailed,
   }) async {
@@ -190,14 +198,15 @@ class MultiServerManager {
     final effectiveClientId = clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
     _clientIdentifier = effectiveClientId;
 
-    // Create connection tasks for all servers
+    // Create connection tasks for all servers (timeout is inside each task
+    // so a timed-out task cannot keep mutating manager state).
     final connectionFutures = servers.map((server) async {
       final serverId = server.clientIdentifier;
 
       try {
         appLogger.d('Attempting connection to server: ${server.name}');
 
-        final client = await _createClientForServer(server: server, clientIdentifier: effectiveClientId);
+        final client = await _createClientForServer(server: server, clientIdentifier: effectiveClientId).timeout(timeout);
 
         // Store the client and server info
         _clients[serverId] = client;
@@ -208,6 +217,12 @@ class MultiServerManager {
         appLogger.i('Successfully connected to ${server.name}');
 
         return serverId;
+      } on TimeoutException {
+        appLogger.w('Server connection timed out for ${server.name}');
+        _servers[serverId] = server;
+        _serverStatus[serverId] = false;
+        onServerFailed?.call(serverId, TimeoutException('Connection to ${server.name} timed out'));
+        return null;
       } catch (e, stackTrace) {
         appLogger.e('Failed to connect to ${server.name}', error: e, stackTrace: stackTrace);
 
@@ -220,18 +235,7 @@ class MultiServerManager {
       }
     });
 
-    // Wait for all connections with timeout
-    final results = await Future.wait(
-      connectionFutures.map(
-        (f) => f.timeout(
-          timeout,
-          onTimeout: () {
-            appLogger.w('Server connection timed out');
-            return null;
-          },
-        ),
-      ),
-    );
+    final results = await Future.wait(connectionFutures);
 
     // Count successful connections
     final successCount = results.where((id) => id != null).length;
@@ -432,15 +436,11 @@ class MultiServerManager {
           continue;
         }
 
-        // Save the new endpoint
-        await storage.saveServerEndpoint(serverId, newUrl);
-
-        // Actively switch the running client to the better endpoint
         if (client != null) {
-          final newEndpoints = server.prioritizedEndpointUrls(preferredFirst: newUrl);
-          await client.updateEndpointPreferences(newEndpoints, switchToFirst: true);
+          await _promoteEndpoint(client: client, server: server, storage: storage, newUrl: newUrl);
           appLogger.i('Switched ${server.name} to better endpoint: $newUrl', error: {'type': connection.displayType});
         } else {
+          await storage.saveServerEndpoint(serverId, newUrl);
           appLogger.i('Updated optimal endpoint for ${server.name}: $newUrl', error: {'type': connection.displayType});
         }
       }

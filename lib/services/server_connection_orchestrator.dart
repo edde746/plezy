@@ -36,7 +36,7 @@ class ServerConnectionOrchestrator {
     required LibrariesProvider librariesProvider,
     required OfflineWatchSyncService syncService,
     String? clientIdentifier,
-    Duration timeout = ConnectionTimeouts.connectAll,
+    Duration timeout = ConnectionTimeouts.perServerConnect,
     void Function(String serverId, bool success)? onServerStatus,
   }) async {
     appLogger.i('Connecting to ${servers.length} servers...');

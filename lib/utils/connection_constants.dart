@@ -11,9 +11,8 @@ class ConnectionTimeouts {
   /// Dio connect timeout for individual HTTP requests to a Plex server.
   static const connect = Duration(seconds: 10);
 
-  /// Timeout for [MultiServerManager.connectToAllServers] — the maximum time
-  /// to wait for each server's connection future.
-  static const connectAll = Duration(seconds: 4);
+  /// Per-server connection budget: preferred probe + race + HTTPS upgrade attempt + 1s buffer.
+  static const perServerConnect = Duration(milliseconds: 1500 + 2000 + 2000 + 1000);
 
   /// Dio receive timeout for streaming/large responses from a Plex server.
   static const receive = Duration(seconds: 120);

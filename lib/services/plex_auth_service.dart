@@ -365,26 +365,6 @@ class PlexServer {
   /// Check if server is online using the presence field
   bool get isOnline => presence;
 
-  PlexConnection? _selectBest(Iterable<PlexConnection> candidates) {
-    final local = candidates.where((c) => c.local && !c.relay).toList();
-    if (local.isNotEmpty) return local.first;
-
-    final remote = candidates.where((c) => !c.local && !c.relay).toList();
-    if (remote.isNotEmpty) return remote.first;
-
-    final relay = candidates.where((c) => c.relay).toList();
-    if (relay.isNotEmpty) return relay.first;
-
-    if (candidates.isNotEmpty) return candidates.first;
-    return null;
-  }
-
-  /// Get the best connection URL
-  /// Priority: local > remote > relay
-  PlexConnection? getBestConnection() {
-    return _selectBest(connections);
-  }
-
   /// Find the best working connection by testing them
   /// Returns a Stream that emits connections progressively:
   /// 1. First emission: The first connection that responds successfully
