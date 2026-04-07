@@ -733,7 +733,12 @@
     "pauseAll": "모두 일시정지",
     "resumeAll": "모두 재개",
     "deleteAll": "모두 삭제",
-    "selectVersion": "버전 선택"
+    "selectVersion": "버전 선택",
+    "allEpisodes": "모든 에피소드",
+    "unwatchedOnly": "시청하지 않은 것만",
+    "nextNUnwatched": "다음 ${count}개 미시청",
+    "customAmount": "직접 입력...",
+    "howManyEpisodes": "몇 개의 에피소드?"
   },
   "shaders": {
     "title": "셰이더",

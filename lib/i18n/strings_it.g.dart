@@ -870,6 +870,11 @@ class _TranslationsDownloadsIt implements TranslationsDownloadsEn {
 	@override String get resumeAll => 'Riprendi tutto';
 	@override String get deleteAll => 'Elimina tutto';
 	@override String get selectVersion => 'Seleziona versione';
+	@override String get allEpisodes => 'Tutti gli episodi';
+	@override String get unwatchedOnly => 'Solo non visti';
+	@override String nextNUnwatched({required Object count}) => 'Prossimi ${count} non visti';
+	@override String get customAmount => 'Quantità personalizzata...';
+	@override String get howManyEpisodes => 'Quanti episodi?';
 }
 
 // Path: playlists
@@ -1916,6 +1921,11 @@ extension on TranslationsIt {
 			'downloads.resumeAll' => 'Riprendi tutto',
 			'downloads.deleteAll' => 'Elimina tutto',
 			'downloads.selectVersion' => 'Seleziona versione',
+			'downloads.allEpisodes' => 'Tutti gli episodi',
+			'downloads.unwatchedOnly' => 'Solo non visti',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Prossimi ${count} non visti',
+			'downloads.customAmount' => 'Quantità personalizzata...',
+			'downloads.howManyEpisodes' => 'Quanti episodi?',
 			'playlists.title' => 'Playlist',
 			'playlists.noPlaylists' => 'Nessuna playlist trovata',
 			'playlists.create' => 'Crea playlist',

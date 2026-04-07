@@ -994,6 +994,11 @@ class _TranslationsDownloadsRu implements TranslationsDownloadsEn {
 	@override String get resumeAll => 'Возобновить все';
 	@override String get deleteAll => 'Удалить все';
 	@override String get selectVersion => 'Выбрать версию';
+	@override String get allEpisodes => 'Все эпизоды';
+	@override String get unwatchedOnly => 'Только непросмотренные';
+	@override String nextNUnwatched({required Object count}) => 'Следующие ${count} непросмотренных';
+	@override String get customAmount => 'Указать количество...';
+	@override String get howManyEpisodes => 'Сколько эпизодов?';
 }
 
 // Path: shaders
@@ -2013,6 +2018,11 @@ extension on TranslationsRu {
 			'downloads.resumeAll' => 'Возобновить все',
 			'downloads.deleteAll' => 'Удалить все',
 			'downloads.selectVersion' => 'Выбрать версию',
+			'downloads.allEpisodes' => 'Все эпизоды',
+			'downloads.unwatchedOnly' => 'Только непросмотренные',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Следующие ${count} непросмотренных',
+			'downloads.customAmount' => 'Указать количество...',
+			'downloads.howManyEpisodes' => 'Сколько эпизодов?',
 			'shaders.title' => 'Шейдеры',
 			'shaders.noShaderDescription' => 'Без улучшения видео',
 			'shaders.nvscalerDescription' => 'Масштабирование NVIDIA для более чёткого видео',

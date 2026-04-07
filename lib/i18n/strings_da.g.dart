@@ -994,6 +994,11 @@ class _TranslationsDownloadsDa implements TranslationsDownloadsEn {
 	@override String get resumeAll => 'Genoptag alle';
 	@override String get deleteAll => 'Slet alle';
 	@override String get selectVersion => 'Vælg version';
+	@override String get allEpisodes => 'Alle episoder';
+	@override String get unwatchedOnly => 'Kun usete';
+	@override String nextNUnwatched({required Object count}) => 'Næste ${count} usete';
+	@override String get customAmount => 'Angiv antal...';
+	@override String get howManyEpisodes => 'Hvor mange episoder?';
 }
 
 // Path: shaders
@@ -2013,6 +2018,11 @@ extension on TranslationsDa {
 			'downloads.resumeAll' => 'Genoptag alle',
 			'downloads.deleteAll' => 'Slet alle',
 			'downloads.selectVersion' => 'Vælg version',
+			'downloads.allEpisodes' => 'Alle episoder',
+			'downloads.unwatchedOnly' => 'Kun usete',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Næste ${count} usete',
+			'downloads.customAmount' => 'Angiv antal...',
+			'downloads.howManyEpisodes' => 'Hvor mange episoder?',
 			'shaders.title' => 'Shadere',
 			'shaders.noShaderDescription' => 'Ingen videoforbedring',
 			'shaders.nvscalerDescription' => 'NVIDIA-billedskalering for skarpere video',

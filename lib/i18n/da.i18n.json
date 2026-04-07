@@ -733,7 +733,12 @@
     "pauseAll": "Pause alle",
     "resumeAll": "Genoptag alle",
     "deleteAll": "Slet alle",
-    "selectVersion": "Vælg version"
+    "selectVersion": "Vælg version",
+    "allEpisodes": "Alle episoder",
+    "unwatchedOnly": "Kun usete",
+    "nextNUnwatched": "Næste ${count} usete",
+    "customAmount": "Angiv antal...",
+    "howManyEpisodes": "Hvor mange episoder?"
   },
   "shaders": {
     "title": "Shadere",

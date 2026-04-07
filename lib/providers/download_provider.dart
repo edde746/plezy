@@ -15,6 +15,10 @@ import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 
+/// Filter mode for batch downloads (shows/seasons).
+/// Use [all] to download everything, or [unwatched] with an optional maxCount.
+enum DownloadFilter { all, unwatched }
+
 /// Holds Plex thumb path reference for downloaded artwork.
 /// The actual file path is computed from the hash of serverId + thumb path.
 class DownloadedArtwork {
@@ -599,6 +603,8 @@ class DownloadProvider extends ChangeNotifier {
     PlexMetadata metadata,
     PlexClient client, {
     DownloadVersionConfig? versionConfig,
+    DownloadFilter filter = DownloadFilter.all,
+    int? maxCount,
   }) async {
     final globalKey = metadata.globalKey;
     final config = versionConfig ?? DownloadVersionConfig();
@@ -620,10 +626,10 @@ class DownloadProvider extends ChangeNotifier {
         return queued ? 1 : 0;
       } else if (mt == PlexMediaType.show) {
         _metadata[globalKey] = metadata;
-        return await _queueShowDownload(metadata, client, versionConfig: config);
+        return await _queueShowDownload(metadata, client, versionConfig: config, filter: filter, maxCount: maxCount);
       } else if (mt == PlexMediaType.season) {
         _metadata[globalKey] = metadata;
-        return await _queueSeasonDownload(metadata, client, versionConfig: config);
+        return await _queueSeasonDownload(metadata, client, versionConfig: config, filter: filter, maxCount: maxCount);
       } else {
         throw Exception('Cannot download ${metadata.type}');
       }
@@ -750,16 +756,22 @@ class DownloadProvider extends ChangeNotifier {
   }
 
   /// Queue all episodes from a TV show for download
-  Future<int> _queueShowDownload(PlexMetadata show, PlexClient client, {DownloadVersionConfig? versionConfig}) async {
+  Future<int> _queueShowDownload(PlexMetadata show, PlexClient client,
+      {DownloadVersionConfig? versionConfig, DownloadFilter filter = DownloadFilter.all, int? maxCount}) async {
     int count = 0;
     final seasons = await client.getChildren(show.ratingKey);
 
     await _storeLeafCount(show.globalKey, show);
 
+    int? remaining = maxCount;
     for (final season in seasons) {
       if (season.type == 'season') {
+        if (remaining != null && remaining <= 0) break;
         final seasonWithServer = _ensureServerId(season, show.serverId);
-        count += await _queueSeasonDownload(seasonWithServer, client, versionConfig: versionConfig);
+        final queued = await _queueSeasonDownload(seasonWithServer, client,
+            versionConfig: versionConfig, filter: filter, maxCount: remaining);
+        count += queued;
+        if (remaining != null) remaining -= queued;
       }
     }
 
@@ -768,7 +780,7 @@ class DownloadProvider extends ChangeNotifier {
 
   /// Queue all episodes from a season for download
   Future<int> _queueSeasonDownload(PlexMetadata season, PlexClient client,
-      {DownloadVersionConfig? versionConfig}) async {
+      {DownloadVersionConfig? versionConfig, DownloadFilter filter = DownloadFilter.all, int? maxCount}) async {
     int count = 0;
     final episodes = await client.getChildren(season.ratingKey);
 
@@ -776,6 +788,9 @@ class DownloadProvider extends ChangeNotifier {
 
     for (final episode in episodes) {
       if (episode.type == 'episode') {
+        if (filter == DownloadFilter.unwatched && episode.isWatched && !episode.hasActiveProgress) continue;
+        if (maxCount != null && count >= maxCount) break;
+
         final episodeWithServer = _ensureServerId(episode, season.serverId);
         final queued = await _queueSingleDownload(episodeWithServer, client, versionConfig: versionConfig);
         if (queued) count++;

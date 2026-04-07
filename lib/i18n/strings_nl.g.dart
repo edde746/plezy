@@ -870,6 +870,11 @@ class _TranslationsDownloadsNl implements TranslationsDownloadsEn {
 	@override String get resumeAll => 'Alles hervatten';
 	@override String get deleteAll => 'Alles verwijderen';
 	@override String get selectVersion => 'Versie selecteren';
+	@override String get allEpisodes => 'Alle afleveringen';
+	@override String get unwatchedOnly => 'Alleen onbekeken';
+	@override String nextNUnwatched({required Object count}) => 'Volgende ${count} onbekeken';
+	@override String get customAmount => 'Aangepast aantal...';
+	@override String get howManyEpisodes => 'Hoeveel afleveringen?';
 }
 
 // Path: playlists
@@ -1916,6 +1921,11 @@ extension on TranslationsNl {
 			'downloads.resumeAll' => 'Alles hervatten',
 			'downloads.deleteAll' => 'Alles verwijderen',
 			'downloads.selectVersion' => 'Versie selecteren',
+			'downloads.allEpisodes' => 'Alle afleveringen',
+			'downloads.unwatchedOnly' => 'Alleen onbekeken',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Volgende ${count} onbekeken',
+			'downloads.customAmount' => 'Aangepast aantal...',
+			'downloads.howManyEpisodes' => 'Hoeveel afleveringen?',
 			'playlists.title' => 'Afspeellijsten',
 			'playlists.noPlaylists' => 'Geen afspeellijsten gevonden',
 			'playlists.create' => 'Afspeellijst maken',

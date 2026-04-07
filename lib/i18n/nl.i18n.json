@@ -630,7 +630,12 @@
     "pauseAll": "Alles pauzeren",
     "resumeAll": "Alles hervatten",
     "deleteAll": "Alles verwijderen",
-    "selectVersion": "Versie selecteren"
+    "selectVersion": "Versie selecteren",
+    "allEpisodes": "Alle afleveringen",
+    "unwatchedOnly": "Alleen onbekeken",
+    "nextNUnwatched": "Volgende ${count} onbekeken",
+    "customAmount": "Aangepast aantal...",
+    "howManyEpisodes": "Hoeveel afleveringen?"
   },
   "playlists": {
     "title": "Afspeellijsten",

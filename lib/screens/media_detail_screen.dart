@@ -30,6 +30,7 @@ import '../utils/rating_utils.dart';
 import '../models/download_models.dart';
 import '../services/download_storage_service.dart';
 import '../utils/download_version_utils.dart';
+import '../utils/download_utils.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/grid_size_calculator.dart';
@@ -777,17 +778,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     final client = _getClientForMetadata(context);
                     if (client == null) return;
 
-                    final versionConfig = await _resolveDownloadVersion(context, metadata, client);
-                    if (versionConfig == null || !context.mounted) return;
-
                     try {
-                      final count = await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
-                      if (context.mounted) {
-                        final message = count > 1
-                            ? t.downloads.episodesQueued(count: count)
-                            : t.downloads.downloadQueued;
-                        showSuccessSnackBar(context, message);
-                      }
+                      final count = await showDownloadOptionsAndQueue(
+                        context,
+                        metadata: metadata,
+                        client: client,
+                        downloadProvider: downloadProvider,
+                      );
+                      if (count == null || !context.mounted) return;
+
+                      final message = count > 1
+                          ? t.downloads.episodesQueued(count: count)
+                          : t.downloads.downloadQueued;
+                      showSuccessSnackBar(context, message);
                     } on CellularDownloadBlockedException {
                       if (context.mounted) {
                         showErrorSnackBar(context, t.settings.cellularDownloadBlocked);

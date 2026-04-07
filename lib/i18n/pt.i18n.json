@@ -733,7 +733,12 @@
     "pauseAll": "Pausar todos",
     "resumeAll": "Retomar todos",
     "deleteAll": "Excluir todos",
-    "selectVersion": "Selecionar versão"
+    "selectVersion": "Selecionar versão",
+    "allEpisodes": "Todos os episódios",
+    "unwatchedOnly": "Apenas não assistidos",
+    "nextNUnwatched": "Próximos ${count} não assistidos",
+    "customAmount": "Quantidade personalizada...",
+    "howManyEpisodes": "Quantos episódios?"
   },
   "shaders": {
     "title": "Shaders",

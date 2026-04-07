@@ -994,6 +994,11 @@ class _TranslationsDownloadsPl implements TranslationsDownloadsEn {
 	@override String get resumeAll => 'Wznów wszystko';
 	@override String get deleteAll => 'Usuń wszystko';
 	@override String get selectVersion => 'Wybierz wersję';
+	@override String get allEpisodes => 'Wszystkie odcinki';
+	@override String get unwatchedOnly => 'Tylko nieobejrzane';
+	@override String nextNUnwatched({required Object count}) => 'Następne ${count} nieobejrzanych';
+	@override String get customAmount => 'Własna ilość...';
+	@override String get howManyEpisodes => 'Ile odcinków?';
 }
 
 // Path: shaders
@@ -2013,6 +2018,11 @@ extension on TranslationsPl {
 			'downloads.resumeAll' => 'Wznów wszystko',
 			'downloads.deleteAll' => 'Usuń wszystko',
 			'downloads.selectVersion' => 'Wybierz wersję',
+			'downloads.allEpisodes' => 'Wszystkie odcinki',
+			'downloads.unwatchedOnly' => 'Tylko nieobejrzane',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Następne ${count} nieobejrzanych',
+			'downloads.customAmount' => 'Własna ilość...',
+			'downloads.howManyEpisodes' => 'Ile odcinków?',
 			'shaders.title' => 'Shadery',
 			'shaders.noShaderDescription' => 'Bez ulepszenia wideo',
 			'shaders.nvscalerDescription' => 'Skalowanie obrazu NVIDIA dla ostrzejszego wideo',

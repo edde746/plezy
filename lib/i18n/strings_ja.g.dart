@@ -994,6 +994,11 @@ class _TranslationsDownloadsJa implements TranslationsDownloadsEn {
 	@override String get resumeAll => 'すべて再開';
 	@override String get deleteAll => 'すべて削除';
 	@override String get selectVersion => 'バージョンを選択';
+	@override String get allEpisodes => 'すべてのエピソード';
+	@override String get unwatchedOnly => '未視聴のみ';
+	@override String nextNUnwatched({required Object count}) => '次の${count}件の未視聴';
+	@override String get customAmount => '数を指定...';
+	@override String get howManyEpisodes => '何エピソード？';
 }
 
 // Path: shaders
@@ -2013,6 +2018,11 @@ extension on TranslationsJa {
 			'downloads.resumeAll' => 'すべて再開',
 			'downloads.deleteAll' => 'すべて削除',
 			'downloads.selectVersion' => 'バージョンを選択',
+			'downloads.allEpisodes' => 'すべてのエピソード',
+			'downloads.unwatchedOnly' => '未視聴のみ',
+			'downloads.nextNUnwatched' => ({required Object count}) => '次の${count}件の未視聴',
+			'downloads.customAmount' => '数を指定...',
+			'downloads.howManyEpisodes' => '何エピソード？',
 			'shaders.title' => 'シェーダー',
 			'shaders.noShaderDescription' => '映像補正なし',
 			'shaders.nvscalerDescription' => 'よりシャープな映像のためのNVIDIA画像スケーリング',

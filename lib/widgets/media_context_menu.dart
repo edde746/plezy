@@ -8,6 +8,7 @@ import '../services/play_queue_launcher.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../utils/download_version_utils.dart';
+import '../utils/download_utils.dart';
 import '../utils/content_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -1115,15 +1116,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final client = _getClientForItem();
 
     try {
-      final versionConfig = await resolveDownloadVersion(context, metadata, client);
-      if (versionConfig == null) return;
-      if (!context.mounted) return;
+      final count = await showDownloadOptionsAndQueue(
+        context,
+        metadata: metadata,
+        client: client,
+        downloadProvider: downloadProvider,
+      );
+      if (count == null || !context.mounted) return;
 
-      final count = await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
-      if (context.mounted) {
-        final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
-        showSuccessSnackBar(context, message);
-      }
+      final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
+      showSuccessSnackBar(context, message);
     } on CellularDownloadBlockedException {
       if (context.mounted) {
         showErrorSnackBar(context, t.settings.cellularDownloadBlocked);

@@ -630,7 +630,12 @@
     "pauseAll": "Metti tutto in pausa",
     "resumeAll": "Riprendi tutto",
     "deleteAll": "Elimina tutto",
-    "selectVersion": "Seleziona versione"
+    "selectVersion": "Seleziona versione",
+    "allEpisodes": "Tutti gli episodi",
+    "unwatchedOnly": "Solo non visti",
+    "nextNUnwatched": "Prossimi ${count} non visti",
+    "customAmount": "Quantità personalizzata...",
+    "howManyEpisodes": "Quanti episodi?"
   },
   "playlists": {
     "title": "Playlist",

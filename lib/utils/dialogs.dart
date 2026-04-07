@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../focus/focusable_button.dart';
+import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/focusable_list_tile.dart';
@@ -281,17 +282,19 @@ Future<T?> showOptionPickerDialog<T>(
   required String title,
   required List<({IconData icon, String label, T value})> options,
 }) {
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context);
   return showDialog<T>(
     context: context,
-    builder: (context) => _OptionPickerDialog<T>(title: title, options: options),
+    builder: (context) => _OptionPickerDialog<T>(title: title, options: options, focusFirstItem: focusFirstItem),
   );
 }
 
 class _OptionPickerDialog<T> extends StatefulWidget {
   final String title;
   final List<({IconData icon, String label, T value})> options;
+  final bool focusFirstItem;
 
-  const _OptionPickerDialog({required this.title, required this.options});
+  const _OptionPickerDialog({required this.title, required this.options, this.focusFirstItem = false});
 
   @override
   State<_OptionPickerDialog<T>> createState() => _OptionPickerDialogState<T>();
@@ -304,7 +307,9 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
   void initState() {
     super.initState();
     _initialFocusNode = FocusNode(debugLabel: 'OptionPickerInitialFocus');
-    FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
+    if (widget.focusFirstItem) {
+      FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
+    }
   }
 
   @override
@@ -321,7 +326,7 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
       children: List.generate(widget.options.length, (index) {
         final option = widget.options[index];
         return FocusableListTile(
-          focusNode: index == 0 ? _initialFocusNode : null,
+          focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
           leading: AppIcon(option.icon, fill: 1, size: 24),
           title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
           contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),

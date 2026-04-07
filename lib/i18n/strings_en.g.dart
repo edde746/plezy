@@ -2254,6 +2254,21 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Select Version'
 	String get selectVersion => 'Select Version';
+
+	/// en: 'All episodes'
+	String get allEpisodes => 'All episodes';
+
+	/// en: 'Unwatched only'
+	String get unwatchedOnly => 'Unwatched only';
+
+	/// en: 'Next ${count} unwatched'
+	String nextNUnwatched({required Object count}) => 'Next ${count} unwatched';
+
+	/// en: 'Custom amount...'
+	String get customAmount => 'Custom amount...';
+
+	/// en: 'How many episodes?'
+	String get howManyEpisodes => 'How many episodes?';
 }
 
 // Path: shaders
@@ -3720,6 +3735,11 @@ extension on Translations {
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
+			'downloads.allEpisodes' => 'All episodes',
+			'downloads.unwatchedOnly' => 'Unwatched only',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
+			'downloads.customAmount' => 'Custom amount...',
+			'downloads.howManyEpisodes' => 'How many episodes?',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',

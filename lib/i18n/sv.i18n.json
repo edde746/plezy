@@ -630,7 +630,12 @@
     "pauseAll": "Pausa alla",
     "resumeAll": "Återuppta alla",
     "deleteAll": "Ta bort alla",
-    "selectVersion": "Välj version"
+    "selectVersion": "Välj version",
+    "allEpisodes": "Alla avsnitt",
+    "unwatchedOnly": "Endast osedda",
+    "nextNUnwatched": "Nästa ${count} osedda",
+    "customAmount": "Ange antal...",
+    "howManyEpisodes": "Hur många avsnitt?"
   },
   "playlists": {
     "title": "Spellistor",

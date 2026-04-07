@@ -630,7 +630,12 @@
     "pauseAll": "全部暂停",
     "resumeAll": "全部继续",
     "deleteAll": "全部删除",
-    "selectVersion": "选择版本"
+    "selectVersion": "选择版本",
+    "allEpisodes": "所有剧集",
+    "unwatchedOnly": "仅未观看",
+    "nextNUnwatched": "接下来 ${count} 集未观看",
+    "customAmount": "自定义数量...",
+    "howManyEpisodes": "下载几集？"
   },
   "playlists": {
     "title": "播放列表",

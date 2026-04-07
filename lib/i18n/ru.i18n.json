@@ -733,7 +733,12 @@
     "pauseAll": "Приостановить все",
     "resumeAll": "Возобновить все",
     "deleteAll": "Удалить все",
-    "selectVersion": "Выбрать версию"
+    "selectVersion": "Выбрать версию",
+    "allEpisodes": "Все эпизоды",
+    "unwatchedOnly": "Только непросмотренные",
+    "nextNUnwatched": "Следующие ${count} непросмотренных",
+    "customAmount": "Указать количество...",
+    "howManyEpisodes": "Сколько эпизодов?"
   },
   "shaders": {
     "title": "Шейдеры",

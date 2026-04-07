@@ -870,6 +870,11 @@ class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
 	@override String get resumeAll => 'Återuppta alla';
 	@override String get deleteAll => 'Ta bort alla';
 	@override String get selectVersion => 'Välj version';
+	@override String get allEpisodes => 'Alla avsnitt';
+	@override String get unwatchedOnly => 'Endast osedda';
+	@override String nextNUnwatched({required Object count}) => 'Nästa ${count} osedda';
+	@override String get customAmount => 'Ange antal...';
+	@override String get howManyEpisodes => 'Hur många avsnitt?';
 }
 
 // Path: playlists
@@ -1916,6 +1921,11 @@ extension on TranslationsSv {
 			'downloads.resumeAll' => 'Återuppta alla',
 			'downloads.deleteAll' => 'Ta bort alla',
 			'downloads.selectVersion' => 'Välj version',
+			'downloads.allEpisodes' => 'Alla avsnitt',
+			'downloads.unwatchedOnly' => 'Endast osedda',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Nästa ${count} osedda',
+			'downloads.customAmount' => 'Ange antal...',
+			'downloads.howManyEpisodes' => 'Hur många avsnitt?',
 			'playlists.title' => 'Spellistor',
 			'playlists.noPlaylists' => 'Inga spellistor hittades',
 			'playlists.create' => 'Skapa spellista',

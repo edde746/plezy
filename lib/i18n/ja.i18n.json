@@ -733,7 +733,12 @@
     "pauseAll": "すべて一時停止",
     "resumeAll": "すべて再開",
     "deleteAll": "すべて削除",
-    "selectVersion": "バージョンを選択"
+    "selectVersion": "バージョンを選択",
+    "allEpisodes": "すべてのエピソード",
+    "unwatchedOnly": "未視聴のみ",
+    "nextNUnwatched": "次の${count}件の未視聴",
+    "customAmount": "数を指定...",
+    "howManyEpisodes": "何エピソード？"
   },
   "shaders": {
     "title": "シェーダー",

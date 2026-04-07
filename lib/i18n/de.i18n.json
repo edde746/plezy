@@ -630,7 +630,12 @@
     "pauseAll": "Alle pausieren",
     "resumeAll": "Alle fortsetzen",
     "deleteAll": "Alle löschen",
-    "selectVersion": "Version auswählen"
+    "selectVersion": "Version auswählen",
+    "allEpisodes": "Alle Episoden",
+    "unwatchedOnly": "Nur ungesehene",
+    "nextNUnwatched": "Nächste ${count} ungesehene",
+    "customAmount": "Eigene Anzahl...",
+    "howManyEpisodes": "Wie viele Episoden?"
   },
   "playlists": {
     "title": "Wiedergabelisten",

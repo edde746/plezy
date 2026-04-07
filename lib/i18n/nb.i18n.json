@@ -733,7 +733,12 @@
     "pauseAll": "Pause alle",
     "resumeAll": "Gjenoppta alle",
     "deleteAll": "Slett alle",
-    "selectVersion": "Velg versjon"
+    "selectVersion": "Velg versjon",
+    "allEpisodes": "Alle episoder",
+    "unwatchedOnly": "Kun usette",
+    "nextNUnwatched": "Neste ${count} usette",
+    "customAmount": "Egendefinert antall...",
+    "howManyEpisodes": "Hvor mange episoder?"
   },
   "shaders": {
     "title": "Shadere",

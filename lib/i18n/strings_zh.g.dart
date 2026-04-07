@@ -870,6 +870,11 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String get resumeAll => '全部继续';
 	@override String get deleteAll => '全部删除';
 	@override String get selectVersion => '选择版本';
+	@override String get allEpisodes => '所有剧集';
+	@override String get unwatchedOnly => '仅未观看';
+	@override String nextNUnwatched({required Object count}) => '接下来 ${count} 集未观看';
+	@override String get customAmount => '自定义数量...';
+	@override String get howManyEpisodes => '下载几集？';
 }
 
 // Path: playlists
@@ -1916,6 +1921,11 @@ extension on TranslationsZh {
 			'downloads.resumeAll' => '全部继续',
 			'downloads.deleteAll' => '全部删除',
 			'downloads.selectVersion' => '选择版本',
+			'downloads.allEpisodes' => '所有剧集',
+			'downloads.unwatchedOnly' => '仅未观看',
+			'downloads.nextNUnwatched' => ({required Object count}) => '接下来 ${count} 集未观看',
+			'downloads.customAmount' => '自定义数量...',
+			'downloads.howManyEpisodes' => '下载几集？',
 			'playlists.title' => '播放列表',
 			'playlists.noPlaylists' => '未找到播放列表',
 			'playlists.create' => '创建播放列表',
