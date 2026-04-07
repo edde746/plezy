@@ -185,6 +185,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isAtLiveEdge = true;
   String? _transcodeSessionId;
 
+  /// Fallback level for live TV stream errors (mirrors Plex web client behavior).
+  /// 0 = directStream+directStreamAudio, 1 = no directStream, 2 = no DS + no DS audio.
+  int _liveStreamFallbackLevel = 0;
+  bool _isRetryingLiveStream = false;
+
   // Auto-play next episode
   Timer? _autoPlayTimer;
   int _autoPlayCountdown = 5;
@@ -671,6 +676,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Listen to playback restart to detect first frame ready
       _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
         _lastLogError = null;
+        _liveStreamFallbackLevel = 0;
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
           Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player'));
@@ -2101,6 +2107,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   void _onPlayerError(String error) {
     appLogger.e('[Player ERROR] $error');
     if (!mounted || _isExiting.value) return;
+
+    // Live TV: retry with progressively degraded stream settings
+    // (mirrors Plex web client fallback chain).
+    if (widget.isLive && _liveStreamFallbackLevel < 2 && !_isRetryingLiveStream) {
+      _liveStreamFallbackLevel++;
+      _isRetryingLiveStream = true;
+      appLogger.w('Live stream failed, retrying with fallback level $_liveStreamFallbackLevel');
+      _retryLiveStream().whenComplete(() => _isRetryingLiveStream = false);
+      return;
+    }
+
     showGlobalErrorSnackBar(_lastLogError ?? error);
     _handleBackButton();
   }
@@ -2295,6 +2312,46 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
+  /// Retry the live stream with degraded direct-stream settings.
+  /// Level 1: disable video direct stream. Level 2: also disable audio direct stream.
+  Future<void> _retryLiveStream() async {
+    final client = widget.liveClient;
+    if (client == null || _liveSessionPath == null || _liveSessionIdentifier == null || _transcodeSessionId == null) {
+      appLogger.w('Cannot retry live stream — missing session info');
+      showGlobalErrorSnackBar(_lastLogError ?? 'Live stream failed');
+      _handleBackButton();
+      return;
+    }
+
+    final ds = _liveStreamFallbackLevel < 1;
+    final dsa = _liveStreamFallbackLevel < 2;
+    appLogger.i('Retrying live stream: directStream=$ds directStreamAudio=$dsa');
+
+    // New transcode session so the server doesn't reuse the failed one.
+    _transcodeSessionId = PlexClient.generateSessionIdentifier();
+
+    final streamPath = await client.buildLiveStreamPath(
+      sessionPath: _liveSessionPath!,
+      sessionIdentifier: _liveSessionIdentifier!,
+      transcodeSessionId: _transcodeSessionId!,
+      directStream: ds,
+      directStreamAudio: dsa,
+    );
+    if (streamPath == null || !mounted) {
+      showGlobalErrorSnackBar(_lastLogError ?? 'Live stream failed');
+      _handleBackButton();
+      return;
+    }
+
+    final streamUrl = '${client.config.baseUrl}$streamPath'.withPlexToken(client.config.token);
+    _livePlaybackStartTime = DateTime.now();
+    _streamStartEpoch = DateTime.now().millisecondsSinceEpoch / 1000.0;
+    _isAtLiveEdge = true;
+
+    await _setLiveStreamOptions();
+    await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
+  }
+
   /// Force mpv to reconnect its HTTP stream by seeking to the current position.
   /// This bypasses ffmpeg's exponential reconnect backoff when the app detects
   /// that network connectivity has been restored.
@@ -2418,6 +2475,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (tuneResult == null || !mounted) return;
 
       _transcodeSessionId = PlexClient.generateSessionIdentifier();
+      _liveStreamFallbackLevel = 0;
 
       final streamPath = await client.buildLiveStreamPath(
         sessionPath: tuneResult.sessionPath,

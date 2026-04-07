@@ -2692,6 +2692,8 @@ class PlexClient {
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? offsetSeconds,
+    bool directStream = true,
+    bool directStreamAudio = true,
   }) async {
     try {
       final allParams = <String, String>{
@@ -2702,13 +2704,13 @@ class PlexClient {
         'protocol': 'http',
         'fastSeek': '1',
         'directPlay': '0',
-        'directStream': '1',
+        'directStream': directStream ? '1' : '0',
         'subtitleSize': '100',
         'audioBoost': '100',
         'location': 'lan',
         'addDebugOverlay': '0',
         'autoAdjustQuality': '0',
-        'directStreamAudio': '1',
+        'directStreamAudio': directStreamAudio ? '1' : '0',
         'advancedSubtitles': 'text',
         'mediaBufferSize': '157286',
         'session': transcodeSessionId,
@@ -2746,6 +2748,13 @@ class PlexClient {
       if (decisionResponse.statusCode != 200) {
         appLogger.w('Decision returned ${decisionResponse.statusCode}');
         return null;
+      }
+
+      // Log decision response for diagnostics (the web client parses this XML
+      // to extract generalDecisionCode, mdeDecisionCode, transcodeDecisionCode).
+      final decisionBody = decisionResponse.data?.toString() ?? '';
+      if (decisionBody.isNotEmpty) {
+        appLogger.d('Decision response: ${decisionBody.length > 500 ? '${decisionBody.substring(0, 500)}...' : decisionBody}');
       }
 
       // Token is added by the caller via .withPlexToken()
