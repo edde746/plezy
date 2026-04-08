@@ -448,7 +448,8 @@
     "borderColor": "Rahmenfarbe",
     "backgroundOpacity": "Hintergrunddeckkraft",
     "backgroundColor": "Hintergrundfarbe",
-    "position": "Position"
+    "position": "Position",
+    "assOverride": "ASS-Überschreibung"
   },
   "mpvConfig": {
     "title": "mpv-Konfiguration",

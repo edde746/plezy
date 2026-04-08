@@ -1393,6 +1393,9 @@ class TranslationsSubtitlingStylingEn {
 
 	/// en: 'Position'
 	String get position => 'Position';
+
+	/// en: 'ASS Override'
+	String get assOverride => 'ASS Override';
 }
 
 // Path: mpvConfig
@@ -3487,6 +3490,7 @@ extension on Translations {
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
 			'subtitlingStyling.backgroundColor' => 'Background Color',
 			'subtitlingStyling.position' => 'Position',
+			'subtitlingStyling.assOverride' => 'ASS Override',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
 			'mpvConfig.presets' => 'Presets',
@@ -3583,9 +3587,9 @@ extension on Translations {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
 			'hubDetail.title' => 'Title',
-			'hubDetail.releaseYear' => 'Release Year',
 			_ => null,
 		} ?? switch (path) {
+			'hubDetail.releaseYear' => 'Release Year',
 			'hubDetail.dateAdded' => 'Date Added',
 			'hubDetail.rating' => 'Rating',
 			'hubDetail.noItemsFound' => 'No items found',

@@ -448,7 +448,8 @@
     "borderColor": "Kolor obramowania",
     "backgroundOpacity": "Przezroczystość tła",
     "backgroundColor": "Kolor tła",
-    "position": "Pozycja"
+    "position": "Pozycja",
+    "assOverride": "Nadpisywanie ASS"
   },
   "mpvConfig": {
     "title": "mpv.conf",

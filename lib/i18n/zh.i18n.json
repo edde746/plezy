@@ -448,7 +448,8 @@
     "borderColor": "边框颜色",
     "backgroundOpacity": "背景不透明度",
     "backgroundColor": "背景颜色",
-    "position": "位置"
+    "position": "位置",
+    "assOverride": "ASS 样式覆盖"
   },
   "mpvConfig": {
     "title": "mpv 配置",

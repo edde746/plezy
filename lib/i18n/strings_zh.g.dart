@@ -610,6 +610,7 @@ class _TranslationsSubtitlingStylingZh implements TranslationsSubtitlingStylingE
 	@override String get backgroundOpacity => '背景不透明度';
 	@override String get backgroundColor => '背景颜色';
 	@override String get position => '位置';
+	@override String get assOverride => 'ASS 样式覆盖';
 }
 
 // Path: mpvConfig
@@ -1768,6 +1769,7 @@ extension on TranslationsZh {
 			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
 			'subtitlingStyling.backgroundColor' => '背景颜色',
 			'subtitlingStyling.position' => '位置',
+			'subtitlingStyling.assOverride' => 'ASS 样式覆盖',
 			'mpvConfig.title' => 'mpv 配置',
 			'mpvConfig.description' => '高级视频播放器设置',
 			'mpvConfig.presets' => '预设',
@@ -1864,9 +1866,9 @@ extension on TranslationsZh {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',
 			'hubDetail.title' => '标题',
-			'hubDetail.releaseYear' => '发行年份',
 			_ => null,
 		} ?? switch (path) {
+			'hubDetail.releaseYear' => '发行年份',
 			'hubDetail.dateAdded' => '添加日期',
 			'hubDetail.rating' => '评分',
 			'hubDetail.noItemsFound' => '未找到项目',

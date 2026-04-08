@@ -448,7 +448,8 @@
     "borderColor": "Цвет обводки",
     "backgroundOpacity": "Прозрачность фона",
     "backgroundColor": "Цвет фона",
-    "position": "Позиция"
+    "position": "Позиция",
+    "assOverride": "Переопределение ASS"
   },
   "mpvConfig": {
     "title": "mpv.conf",

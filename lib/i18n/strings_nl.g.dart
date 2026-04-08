@@ -610,6 +610,7 @@ class _TranslationsSubtitlingStylingNl implements TranslationsSubtitlingStylingE
 	@override String get backgroundOpacity => 'Achtergrond transparantie';
 	@override String get backgroundColor => 'Achtergrondkleur';
 	@override String get position => 'Positie';
+	@override String get assOverride => 'ASS-overschrijving';
 }
 
 // Path: mpvConfig
@@ -1768,6 +1769,7 @@ extension on TranslationsNl {
 			'subtitlingStyling.backgroundOpacity' => 'Achtergrond transparantie',
 			'subtitlingStyling.backgroundColor' => 'Achtergrondkleur',
 			'subtitlingStyling.position' => 'Positie',
+			'subtitlingStyling.assOverride' => 'ASS-overschrijving',
 			'mpvConfig.title' => 'mpv-configuratie',
 			'mpvConfig.description' => 'Geavanceerde videospeler-instellingen',
 			'mpvConfig.presets' => 'Voorinstellingen',
@@ -1864,9 +1866,9 @@ extension on TranslationsNl {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
 			'hubDetail.title' => 'Titel',
-			'hubDetail.releaseYear' => 'Uitgavejaar',
 			_ => null,
 		} ?? switch (path) {
+			'hubDetail.releaseYear' => 'Uitgavejaar',
 			'hubDetail.dateAdded' => 'Datum toegevoegd',
 			'hubDetail.rating' => 'Beoordeling',
 			'hubDetail.noItemsFound' => 'Geen items gevonden',

@@ -448,7 +448,8 @@
     "borderColor": "Color de Borde",
     "backgroundOpacity": "Opacidad de Fondo",
     "backgroundColor": "Color de Fondo",
-    "position": "Posición"
+    "position": "Posición",
+    "assOverride": "Sobreescritura ASS"
   },
   "mpvConfig": {
     "title": "Configuración de mpv",

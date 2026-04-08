@@ -28,6 +28,8 @@ enum ViewMode { grid, list }
 
 enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 
+enum SubAssOverride { no, yes, scale, force, strip }
+
 class SettingsService extends BaseSharedPreferencesService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
@@ -63,6 +65,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySubtitleBackgroundColor = 'subtitle_background_color';
   static const String _keySubtitleBackgroundOpacity = 'subtitle_background_opacity';
   static const String _keySubtitlePosition = 'subtitle_position';
+  static const String _keySubAssOverride = 'sub_ass_override';
   static const String _keyAppLocale = 'app_locale';
   static const String _keyRememberTrackSelections = 'remember_track_selections';
   static const String _keyClickVideoTogglesPlayback = 'click_video_toggles_playback';
@@ -446,6 +449,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   int getSubtitlePosition() {
     return prefs.getInt(_keySubtitlePosition) ?? 100; // Default: bottom
+  }
+
+  // Sub ASS Override
+  Future<void> setSubAssOverride(SubAssOverride mode) async {
+    await prefs.setString(_keySubAssOverride, mode.name);
+  }
+
+  SubAssOverride getSubAssOverride() {
+    return _getEnumValue(_keySubAssOverride, SubAssOverride.values, SubAssOverride.no);
   }
 
   // Keyboard Shortcuts (Legacy String-based)

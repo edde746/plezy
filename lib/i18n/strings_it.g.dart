@@ -610,6 +610,7 @@ class _TranslationsSubtitlingStylingIt implements TranslationsSubtitlingStylingE
 	@override String get backgroundOpacity => 'Opacità sfondo';
 	@override String get backgroundColor => 'Colore sfondo';
 	@override String get position => 'Posizione';
+	@override String get assOverride => 'Sovrascrittura ASS';
 }
 
 // Path: mpvConfig
@@ -1768,6 +1769,7 @@ extension on TranslationsIt {
 			'subtitlingStyling.backgroundOpacity' => 'Opacità sfondo',
 			'subtitlingStyling.backgroundColor' => 'Colore sfondo',
 			'subtitlingStyling.position' => 'Posizione',
+			'subtitlingStyling.assOverride' => 'Sovrascrittura ASS',
 			'mpvConfig.title' => 'Configurazione mpv',
 			'mpvConfig.description' => 'Impostazioni avanzate del lettore video',
 			'mpvConfig.presets' => 'Preset',
@@ -1864,9 +1866,9 @@ extension on TranslationsIt {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nessun server trovato per ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Impossibile caricare i server: ${error}',
 			'hubDetail.title' => 'Titolo',
-			'hubDetail.releaseYear' => 'Anno rilascio',
 			_ => null,
 		} ?? switch (path) {
+			'hubDetail.releaseYear' => 'Anno rilascio',
 			'hubDetail.dateAdded' => 'Data aggiunta',
 			'hubDetail.rating' => 'Valutazione',
 			'hubDetail.noItemsFound' => 'Nessun elemento trovato',

@@ -610,6 +610,7 @@ class _TranslationsSubtitlingStylingDa implements TranslationsSubtitlingStylingE
 	@override String get backgroundOpacity => 'Baggrundsgennemsigtighed';
 	@override String get backgroundColor => 'Baggrundsfarve';
 	@override String get position => 'Position';
+	@override String get assOverride => 'ASS-tilsidesættelse';
 }
 
 // Path: mpvConfig
@@ -1768,6 +1769,7 @@ extension on TranslationsDa {
 			'subtitlingStyling.backgroundOpacity' => 'Baggrundsgennemsigtighed',
 			'subtitlingStyling.backgroundColor' => 'Baggrundsfarve',
 			'subtitlingStyling.position' => 'Position',
+			'subtitlingStyling.assOverride' => 'ASS-tilsidesættelse',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Avancerede videoafspillerindstillinger',
 			'mpvConfig.presets' => 'Forudindstillinger',
@@ -1864,9 +1866,9 @@ extension on TranslationsDa {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere fundet for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke indlæse servere: ${error}',
 			'hubDetail.title' => 'Titel',
-			'hubDetail.releaseYear' => 'Udgivelsesår',
 			_ => null,
 		} ?? switch (path) {
+			'hubDetail.releaseYear' => 'Udgivelsesår',
 			'hubDetail.dateAdded' => 'Tilføjelsesdato',
 			'hubDetail.rating' => 'Bedømmelse',
 			'hubDetail.noItemsFound' => 'Ingen elementer fundet',

@@ -610,6 +610,7 @@ class _TranslationsSubtitlingStylingRu implements TranslationsSubtitlingStylingE
 	@override String get backgroundOpacity => 'Прозрачность фона';
 	@override String get backgroundColor => 'Цвет фона';
 	@override String get position => 'Позиция';
+	@override String get assOverride => 'Переопределение ASS';
 }
 
 // Path: mpvConfig
@@ -1768,6 +1769,7 @@ extension on TranslationsRu {
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачность фона',
 			'subtitlingStyling.backgroundColor' => 'Цвет фона',
 			'subtitlingStyling.position' => 'Позиция',
+			'subtitlingStyling.assOverride' => 'Переопределение ASS',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Расширенные настройки видеоплеера',
 			'mpvConfig.presets' => 'Пресеты',
@@ -1864,9 +1866,9 @@ extension on TranslationsRu {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Не удалось загрузить серверы: ${error}',
 			'hubDetail.title' => 'Название',
-			'hubDetail.releaseYear' => 'Год выпуска',
 			_ => null,
 		} ?? switch (path) {
+			'hubDetail.releaseYear' => 'Год выпуска',
 			'hubDetail.dateAdded' => 'Дата добавления',
 			'hubDetail.rating' => 'Рейтинг',
 			'hubDetail.noItemsFound' => 'Элементы не найдены',

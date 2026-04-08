@@ -610,6 +610,7 @@ class _TranslationsSubtitlingStylingJa implements TranslationsSubtitlingStylingE
 	@override String get backgroundOpacity => '背景の不透明度';
 	@override String get backgroundColor => '背景色';
 	@override String get position => '位置';
+	@override String get assOverride => 'ASSオーバーライド';
 }
 
 // Path: mpvConfig
@@ -1768,6 +1769,7 @@ extension on TranslationsJa {
 			'subtitlingStyling.backgroundOpacity' => '背景の不透明度',
 			'subtitlingStyling.backgroundColor' => '背景色',
 			'subtitlingStyling.position' => '位置',
+			'subtitlingStyling.assOverride' => 'ASSオーバーライド',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => '高度な動画プレーヤー設定',
 			'mpvConfig.presets' => 'プリセット',
@@ -1864,9 +1866,9 @@ extension on TranslationsJa {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})のサーバーが見つかりません',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'サーバーの読み込みに失敗しました: ${error}',
 			'hubDetail.title' => 'タイトル',
-			'hubDetail.releaseYear' => '公開年',
 			_ => null,
 		} ?? switch (path) {
+			'hubDetail.releaseYear' => '公開年',
 			'hubDetail.dateAdded' => '追加日',
 			'hubDetail.rating' => '評価',
 			'hubDetail.noItemsFound' => 'アイテムが見つかりません',

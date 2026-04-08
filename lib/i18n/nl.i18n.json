@@ -448,7 +448,8 @@
     "borderColor": "Randkleur",
     "backgroundOpacity": "Achtergrond transparantie",
     "backgroundColor": "Achtergrondkleur",
-    "position": "Positie"
+    "position": "Positie",
+    "assOverride": "ASS-overschrijving"
   },
   "mpvConfig": {
     "title": "mpv-configuratie",

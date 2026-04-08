@@ -610,6 +610,7 @@ class _TranslationsSubtitlingStylingKo implements TranslationsSubtitlingStylingE
 	@override String get backgroundOpacity => '배경 불투명도';
 	@override String get backgroundColor => '배경색';
 	@override String get position => '위치';
+	@override String get assOverride => 'ASS 오버라이드';
 }
 
 // Path: mpvConfig
@@ -1768,6 +1769,7 @@ extension on TranslationsKo {
 			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
 			'subtitlingStyling.backgroundColor' => '배경색',
 			'subtitlingStyling.position' => '위치',
+			'subtitlingStyling.assOverride' => 'ASS 오버라이드',
 			'mpvConfig.title' => 'mpv 설정',
 			'mpvConfig.description' => '고급 비디오 플레이어 설정',
 			'mpvConfig.presets' => '사전 설정',
@@ -1864,9 +1866,9 @@ extension on TranslationsKo {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
 			'hubDetail.title' => '제목',
-			'hubDetail.releaseYear' => '출시 연도',
 			_ => null,
 		} ?? switch (path) {
+			'hubDetail.releaseYear' => '출시 연도',
 			'hubDetail.dateAdded' => '추가 날짜',
 			'hubDetail.rating' => '평점',
 			'hubDetail.noItemsFound' => '항목이 없습니다',

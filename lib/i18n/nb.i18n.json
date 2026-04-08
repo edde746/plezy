@@ -448,7 +448,8 @@
     "borderColor": "Kantfarge",
     "backgroundOpacity": "Bakgrunnsopasitet",
     "backgroundColor": "Bakgrunnsfarge",
-    "position": "Posisjon"
+    "position": "Posisjon",
+    "assOverride": "ASS-overstyring"
   },
   "mpvConfig": {
     "title": "mpv.conf",

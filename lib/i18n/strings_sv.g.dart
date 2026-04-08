@@ -610,6 +610,7 @@ class _TranslationsSubtitlingStylingSv implements TranslationsSubtitlingStylingE
 	@override String get backgroundOpacity => 'Bakgrundsopacitet';
 	@override String get backgroundColor => 'Bakgrundsfärg';
 	@override String get position => 'Position';
+	@override String get assOverride => 'ASS-åsidosättning';
 }
 
 // Path: mpvConfig
@@ -1768,6 +1769,7 @@ extension on TranslationsSv {
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrundsopacitet',
 			'subtitlingStyling.backgroundColor' => 'Bakgrundsfärg',
 			'subtitlingStyling.position' => 'Position',
+			'subtitlingStyling.assOverride' => 'ASS-åsidosättning',
 			'mpvConfig.title' => 'mpv-konfiguration',
 			'mpvConfig.description' => 'Avancerade videospelares inställningar',
 			'mpvConfig.presets' => 'Förval',
@@ -1864,9 +1866,9 @@ extension on TranslationsSv {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Misslyckades att ladda servrar: ${error}',
 			'hubDetail.title' => 'Titel',
-			'hubDetail.releaseYear' => 'Utgivningsår',
 			_ => null,
 		} ?? switch (path) {
+			'hubDetail.releaseYear' => 'Utgivningsår',
 			'hubDetail.dateAdded' => 'Datum tillagd',
 			'hubDetail.rating' => 'Betyg',
 			'hubDetail.noItemsFound' => 'Inga objekt hittades',

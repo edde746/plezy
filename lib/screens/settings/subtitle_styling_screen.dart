@@ -29,6 +29,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   String _backgroundColor = '#000000';
   int _backgroundOpacity = 0;
   int _subtitlePosition = 100;
+  SubAssOverride _assOverride = SubAssOverride.no;
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
       _backgroundColor = _settingsService.getSubtitleBackgroundColor();
       _backgroundOpacity = _settingsService.getSubtitleBackgroundOpacity();
       _subtitlePosition = _settingsService.getSubtitlePosition();
+      _assOverride = _settingsService.getSubAssOverride();
       _isLoading = false;
     });
   }
@@ -146,6 +148,16 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
     }
   }
 
+  String _assOverrideLabel(SubAssOverride value) {
+    return switch (value) {
+      SubAssOverride.no => 'No',
+      SubAssOverride.yes => 'Yes',
+      SubAssOverride.scale => 'Scale',
+      SubAssOverride.force => 'Force',
+      SubAssOverride.strip => 'Strip',
+    };
+  }
+
   String _formatPosition(int value) {
     if (value == 0) return 'Top';
     if (value == 100) return 'Bottom';
@@ -168,6 +180,26 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
           delegate: SliverChildListDelegate([
             // --- Text ---
             SettingsSectionHeader(t.subtitlingStyling.text),
+            ListTile(
+              leading: const AppIcon(Symbols.subtitles_rounded, fill: 1),
+              title: Text(t.subtitlingStyling.assOverride),
+              subtitle: Text(_assOverrideLabel(_assOverride)),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () async {
+                final value = await showSelectionDialog<SubAssOverride>(
+                  context: context,
+                  title: t.subtitlingStyling.assOverride,
+                  options: SubAssOverride.values
+                      .map((v) => DialogOption(value: v, title: _assOverrideLabel(v)))
+                      .toList(),
+                  currentValue: _assOverride,
+                );
+                if (value != null) {
+                  setState(() => _assOverride = value);
+                  await _settingsService.setSubAssOverride(value);
+                }
+              },
+            ),
             ListTile(
               leading: const AppIcon(Symbols.format_size_rounded, fill: 1),
               title: Text(t.subtitlingStyling.fontSize),
