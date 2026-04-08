@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../focus/focusable_button.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
@@ -131,11 +132,23 @@ Future<String?> showTextInputDialog(
   required String labelText,
   required String hintText,
   String? initialValue,
+  String? confirmText,
+  TextInputType? keyboardType,
+  List<TextInputFormatter>? inputFormatters,
+  String? Function(String)? validator,
 }) {
   return showDialog<String>(
     context: context,
-    builder: (context) =>
-        _TextInputDialog(title: title, labelText: labelText, hintText: hintText, initialValue: initialValue),
+    builder: (context) => _TextInputDialog(
+      title: title,
+      labelText: labelText,
+      hintText: hintText,
+      initialValue: initialValue,
+      confirmText: confirmText,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      validator: validator,
+    ),
   );
 }
 
@@ -219,8 +232,21 @@ class _TextInputDialog extends StatefulWidget {
   final String labelText;
   final String hintText;
   final String? initialValue;
+  final String? confirmText;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final String? Function(String)? validator;
 
-  const _TextInputDialog({required this.title, required this.labelText, required this.hintText, this.initialValue});
+  const _TextInputDialog({
+    required this.title,
+    required this.labelText,
+    required this.hintText,
+    this.initialValue,
+    this.confirmText,
+    this.keyboardType,
+    this.inputFormatters,
+    this.validator,
+  });
 
   @override
   State<_TextInputDialog> createState() => _TextInputDialogState();
@@ -244,9 +270,10 @@ class _TextInputDialogState extends State<_TextInputDialog> {
   }
 
   void _submit() {
-    if (_controller.text.isNotEmpty) {
-      Navigator.pop(context, _controller.text);
-    }
+    final text = _controller.text;
+    if (text.isEmpty) return;
+    if (widget.validator != null && widget.validator!(text) != null) return;
+    Navigator.pop(context, text);
   }
 
   @override
@@ -257,6 +284,8 @@ class _TextInputDialogState extends State<_TextInputDialog> {
         controller: _controller,
         autofocus: true,
         decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText),
+        keyboardType: widget.keyboardType,
+        inputFormatters: widget.inputFormatters,
         textInputAction: TextInputAction.done,
         onSubmitted: (_) => _saveFocusNode.requestFocus(),
       ),
@@ -268,7 +297,7 @@ class _TextInputDialogState extends State<_TextInputDialog> {
         FocusableButton(
           focusNode: _saveFocusNode,
           onPressed: _submit,
-          child: TextButton(onPressed: _submit, child: Text(t.common.save)),
+          child: TextButton(onPressed: _submit, child: Text(widget.confirmText ?? t.common.save)),
         ),
       ],
     );
@@ -281,11 +310,17 @@ Future<T?> showOptionPickerDialog<T>(
   BuildContext context, {
   required String title,
   required List<({IconData icon, String label, T value})> options,
+  Future<T?> Function(T value)? onBeforeClose,
 }) {
   final focusFirstItem = InputModeTracker.isKeyboardMode(context);
   return showDialog<T>(
     context: context,
-    builder: (context) => _OptionPickerDialog<T>(title: title, options: options, focusFirstItem: focusFirstItem),
+    builder: (context) => _OptionPickerDialog<T>(
+      title: title,
+      options: options,
+      focusFirstItem: focusFirstItem,
+      onBeforeClose: onBeforeClose,
+    ),
   );
 }
 
@@ -293,8 +328,9 @@ class _OptionPickerDialog<T> extends StatefulWidget {
   final String title;
   final List<({IconData icon, String label, T value})> options;
   final bool focusFirstItem;
+  final Future<T?> Function(T value)? onBeforeClose;
 
-  const _OptionPickerDialog({required this.title, required this.options, this.focusFirstItem = false});
+  const _OptionPickerDialog({required this.title, required this.options, this.focusFirstItem = false, this.onBeforeClose});
 
   @override
   State<_OptionPickerDialog<T>> createState() => _OptionPickerDialogState<T>();
@@ -330,7 +366,14 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
           leading: AppIcon(option.icon, fill: 1, size: 24),
           title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
           contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-          onTap: () => Navigator.pop(context, option.value),
+          onTap: () async {
+            if (widget.onBeforeClose != null) {
+              final result = await widget.onBeforeClose!(option.value);
+              if (context.mounted) Navigator.pop(context, result);
+            } else {
+              Navigator.pop(context, option.value);
+            }
+          },
         );
       }),
     );

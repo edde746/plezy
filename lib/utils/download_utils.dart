@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../focus/focusable_button.dart';
-import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 import '../models/plex_metadata.dart';
 import '../providers/download_provider.dart';
@@ -28,6 +26,7 @@ Future<int?> showDownloadOptionsAndQueue(
   int? maxCount;
 
   if (mt == PlexMediaType.show || mt == PlexMediaType.season) {
+    int? customCount;
     final selected = await showOptionPickerDialog<_DownloadChoice>(
       context,
       title: t.downloads.downloadNow,
@@ -38,6 +37,11 @@ Future<int?> showDownloadOptionsAndQueue(
         (icon: Symbols.filter_9_plus_rounded, label: t.downloads.nextNUnwatched(count: 10), value: _DownloadChoice.next10),
         (icon: Symbols.tune_rounded, label: t.downloads.customAmount, value: _DownloadChoice.custom),
       ],
+      onBeforeClose: (value) async {
+        if (value != _DownloadChoice.custom) return value;
+        customCount = await _showEpisodeCountDialog(context);
+        return customCount != null ? value : null;
+      },
     );
 
     if (selected == null || !context.mounted) return null;
@@ -54,10 +58,8 @@ Future<int?> showDownloadOptionsAndQueue(
         filter = DownloadFilter.unwatched;
         maxCount = 10;
       case _DownloadChoice.custom:
-        final count = await _showEpisodeCountDialog(context);
-        if (count == null || !context.mounted) return null;
         filter = DownloadFilter.unwatched;
-        maxCount = count;
+        maxCount = customCount;
     }
   }
 
@@ -101,69 +103,21 @@ Future<int?> showPlaylistDownloadOptionsAndQueue(
   );
 }
 
-Future<int?> _showEpisodeCountDialog(BuildContext context) {
-  final autoFocus = InputModeTracker.isKeyboardMode(context);
-  return showDialog<int>(
-    context: context,
-    builder: (context) => _EpisodeCountDialog(autoFocus: autoFocus),
+Future<int?> _showEpisodeCountDialog(BuildContext context) async {
+  final result = await showTextInputDialog(
+    context,
+    title: t.downloads.howManyEpisodes,
+    labelText: '',
+    hintText: '',
+    confirmText: t.common.ok,
+    keyboardType: TextInputType.number,
+    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+    validator: (text) {
+      final n = int.tryParse(text);
+      if (n == null || n <= 0) return '';
+      return null;
+    },
   );
-}
-
-class _EpisodeCountDialog extends StatefulWidget {
-  final bool autoFocus;
-  const _EpisodeCountDialog({this.autoFocus = false});
-
-  @override
-  State<_EpisodeCountDialog> createState() => _EpisodeCountDialogState();
-}
-
-class _EpisodeCountDialogState extends State<_EpisodeCountDialog> {
-  late final TextEditingController _controller;
-  final _submitFocusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _submitFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final count = int.tryParse(_controller.text);
-    if (count != null && count > 0) {
-      Navigator.pop(context, count);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(t.downloads.howManyEpisodes),
-      content: TextField(
-        controller: _controller,
-        autofocus: widget.autoFocus,
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        textInputAction: TextInputAction.done,
-        onSubmitted: (_) => _submitFocusNode.requestFocus(),
-      ),
-      actions: [
-        FocusableButton(
-          onPressed: () => Navigator.pop(context),
-          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        ),
-        FocusableButton(
-          focusNode: _submitFocusNode,
-          onPressed: _submit,
-          child: TextButton(onPressed: _submit, child: Text(t.common.ok)),
-        ),
-      ],
-    );
-  }
+  if (result == null) return null;
+  return int.tryParse(result);
 }
