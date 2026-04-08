@@ -65,7 +65,7 @@ dependencies:
       ref: 9e150f7
   cupertino_http: ^2.4.0
   cronet_http: ^1.6.0
-  win_http: ^0.1.0
+  win_http: ^0.2.0
 
 dev_dependencies:
   flutter_test:
