@@ -43,7 +43,7 @@ class _FocusableSliderState extends State<FocusableSlider> {
     return (widget.max - widget.min) * 0.05;
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
     if (key.isLeftKey || key.isRightKey) {
       if (event.isActionable && widget.onChanged != null) {
