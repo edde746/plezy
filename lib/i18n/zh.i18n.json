@@ -635,7 +635,8 @@
     "unwatchedOnly": "仅未观看",
     "nextNUnwatched": "接下来 ${count} 集未观看",
     "customAmount": "自定义数量...",
-    "howManyEpisodes": "下载几集？"
+    "howManyEpisodes": "下载几集？",
+    "itemsQueued": "${count} 个项目已加入下载队列"
   },
   "playlists": {
     "title": "播放列表",

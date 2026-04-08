@@ -738,7 +738,8 @@
     "unwatchedOnly": "Non vus uniquement",
     "nextNUnwatched": "${count} prochains non vus",
     "customAmount": "Quantité personnalisée...",
-    "howManyEpisodes": "Combien d'épisodes ?"
+    "howManyEpisodes": "Combien d'épisodes ?",
+    "itemsQueued": "${count} éléments mis en file d'attente"
   },
   "shaders": {
     "title": "Shaders",

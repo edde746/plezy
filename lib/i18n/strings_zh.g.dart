@@ -875,6 +875,7 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String nextNUnwatched({required Object count}) => '接下来 ${count} 集未观看';
 	@override String get customAmount => '自定义数量...';
 	@override String get howManyEpisodes => '下载几集？';
+	@override String itemsQueued({required Object count}) => '${count} 个项目已加入下载队列';
 }
 
 // Path: playlists
@@ -1926,6 +1927,7 @@ extension on TranslationsZh {
 			'downloads.nextNUnwatched' => ({required Object count}) => '接下来 ${count} 集未观看',
 			'downloads.customAmount' => '自定义数量...',
 			'downloads.howManyEpisodes' => '下载几集？',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} 个项目已加入下载队列',
 			'playlists.title' => '播放列表',
 			'playlists.noPlaylists' => '未找到播放列表',
 			'playlists.create' => '创建播放列表',

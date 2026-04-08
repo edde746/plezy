@@ -639,6 +639,29 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
+  /// Queue all video items from a playlist for download.
+  /// Returns the number of items queued.
+  Future<int> queuePlaylistDownload(
+    List<PlexMetadata> items,
+    PlexClient client, {
+    DownloadFilter filter = DownloadFilter.all,
+  }) async {
+    if (await DownloadManagerService.shouldBlockDownloadOnCellular()) {
+      throw CellularDownloadBlockedException();
+    }
+
+    int count = 0;
+    for (final item in items) {
+      final mt = item.mediaType;
+      if (mt != PlexMediaType.movie && mt != PlexMediaType.episode) continue;
+      if (filter == DownloadFilter.unwatched && item.isWatched && !item.hasActiveProgress) continue;
+
+      final queued = await _queueSingleDownload(item, client);
+      if (queued) count++;
+    }
+    return count;
+  }
+
   /// Queue a single movie or episode for download.
   /// Returns true if the item was actually queued, false if skipped.
   Future<bool> _queueSingleDownload(

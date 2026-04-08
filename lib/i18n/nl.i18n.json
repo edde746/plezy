@@ -635,7 +635,8 @@
     "unwatchedOnly": "Alleen onbekeken",
     "nextNUnwatched": "Volgende ${count} onbekeken",
     "customAmount": "Aangepast aantal...",
-    "howManyEpisodes": "Hoeveel afleveringen?"
+    "howManyEpisodes": "Hoeveel afleveringen?",
+    "itemsQueued": "${count} items in downloadwachtrij"
   },
   "playlists": {
     "title": "Afspeellijsten",

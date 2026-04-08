@@ -738,7 +738,8 @@
     "unwatchedOnly": "시청하지 않은 것만",
     "nextNUnwatched": "다음 ${count}개 미시청",
     "customAmount": "직접 입력...",
-    "howManyEpisodes": "몇 개의 에피소드?"
+    "howManyEpisodes": "몇 개의 에피소드?",
+    "itemsQueued": "${count}개 항목이 다운로드 대기열에 추가됨"
   },
   "shaders": {
     "title": "셰이더",

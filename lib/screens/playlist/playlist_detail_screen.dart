@@ -13,9 +13,12 @@ import '../../widgets/desktop_app_bar.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
+import 'package:provider/provider.dart';
 import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
+import '../../providers/download_provider.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/download_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
@@ -58,6 +61,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
+      if (items.isNotEmpty && widget.playlist.playlistType == 'video')
+        FocusableAction(icon: Symbols.download_rounded, tooltip: t.downloads.downloadNow, onPressed: _downloadPlaylist),
       if (!widget.playlist.smart)
         FocusableAction(icon: Symbols.delete_rounded, tooltip: t.playlists.delete, onPressed: _deletePlaylist, iconColor: Colors.red),
     ];
@@ -137,6 +142,31 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// Get the correct PlexClient for this playlist's server
   PlexClient _getClientForPlaylist() {
     return context.getClientForServer(widget.playlist.serverId!);
+  }
+
+  Future<void> _downloadPlaylist() async {
+    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+
+    try {
+      final count = await showPlaylistDownloadOptionsAndQueue(
+        context,
+        items: items,
+        client: client,
+        downloadProvider: downloadProvider,
+      );
+      if (count == null || !mounted) return;
+
+      final message = count > 1 ? t.downloads.itemsQueued(count: count) : t.downloads.downloadQueued;
+      showSuccessSnackBar(context, message);
+    } on CellularDownloadBlockedException {
+      if (mounted) {
+        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+      }
+    } catch (e) {
+      if (mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
+    }
   }
 
   Future<void> _deletePlaylist() async {

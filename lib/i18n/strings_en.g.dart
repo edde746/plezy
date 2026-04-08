@@ -2269,6 +2269,9 @@ class TranslationsDownloadsEn {
 
 	/// en: 'How many episodes?'
 	String get howManyEpisodes => 'How many episodes?';
+
+	/// en: '${count} items queued for download'
+	String itemsQueued({required Object count}) => '${count} items queued for download';
 }
 
 // Path: shaders
@@ -3740,6 +3743,7 @@ extension on Translations {
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
 			'downloads.howManyEpisodes' => 'How many episodes?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',

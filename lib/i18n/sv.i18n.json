@@ -635,7 +635,8 @@
     "unwatchedOnly": "Endast osedda",
     "nextNUnwatched": "Nästa ${count} osedda",
     "customAmount": "Ange antal...",
-    "howManyEpisodes": "Hur många avsnitt?"
+    "howManyEpisodes": "Hur många avsnitt?",
+    "itemsQueued": "${count} objekt köade för nedladdning"
   },
   "playlists": {
     "title": "Spellistor",

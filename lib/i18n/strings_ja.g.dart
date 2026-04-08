@@ -999,6 +999,7 @@ class _TranslationsDownloadsJa implements TranslationsDownloadsEn {
 	@override String nextNUnwatched({required Object count}) => '次の${count}件の未視聴';
 	@override String get customAmount => '数を指定...';
 	@override String get howManyEpisodes => '何エピソード？';
+	@override String itemsQueued({required Object count}) => '${count}件をダウンロードキューに追加';
 }
 
 // Path: shaders
@@ -2023,6 +2024,7 @@ extension on TranslationsJa {
 			'downloads.nextNUnwatched' => ({required Object count}) => '次の${count}件の未視聴',
 			'downloads.customAmount' => '数を指定...',
 			'downloads.howManyEpisodes' => '何エピソード？',
+			'downloads.itemsQueued' => ({required Object count}) => '${count}件をダウンロードキューに追加',
 			'shaders.title' => 'シェーダー',
 			'shaders.noShaderDescription' => '映像補正なし',
 			'shaders.nvscalerDescription' => 'よりシャープな映像のためのNVIDIA画像スケーリング',

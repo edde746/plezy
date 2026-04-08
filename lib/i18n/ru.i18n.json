@@ -738,7 +738,8 @@
     "unwatchedOnly": "Только непросмотренные",
     "nextNUnwatched": "Следующие ${count} непросмотренных",
     "customAmount": "Указать количество...",
-    "howManyEpisodes": "Сколько эпизодов?"
+    "howManyEpisodes": "Сколько эпизодов?",
+    "itemsQueued": "${count} элементов добавлено в очередь загрузки"
   },
   "shaders": {
     "title": "Шейдеры",

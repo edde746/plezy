@@ -875,6 +875,7 @@ class _TranslationsDownloadsDe implements TranslationsDownloadsEn {
 	@override String nextNUnwatched({required Object count}) => 'Nächste ${count} ungesehene';
 	@override String get customAmount => 'Eigene Anzahl...';
 	@override String get howManyEpisodes => 'Wie viele Episoden?';
+	@override String itemsQueued({required Object count}) => '${count} Elemente zum Download eingereiht';
 }
 
 // Path: playlists
@@ -1926,6 +1927,7 @@ extension on TranslationsDe {
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Nächste ${count} ungesehene',
 			'downloads.customAmount' => 'Eigene Anzahl...',
 			'downloads.howManyEpisodes' => 'Wie viele Episoden?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} Elemente zum Download eingereiht',
 			'playlists.title' => 'Wiedergabelisten',
 			'playlists.noPlaylists' => 'Keine Wiedergabelisten gefunden',
 			'playlists.create' => 'Wiedergabeliste erstellen',

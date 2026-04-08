@@ -999,6 +999,7 @@ class _TranslationsDownloadsRu implements TranslationsDownloadsEn {
 	@override String nextNUnwatched({required Object count}) => 'Следующие ${count} непросмотренных';
 	@override String get customAmount => 'Указать количество...';
 	@override String get howManyEpisodes => 'Сколько эпизодов?';
+	@override String itemsQueued({required Object count}) => '${count} элементов добавлено в очередь загрузки';
 }
 
 // Path: shaders
@@ -2023,6 +2024,7 @@ extension on TranslationsRu {
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Следующие ${count} непросмотренных',
 			'downloads.customAmount' => 'Указать количество...',
 			'downloads.howManyEpisodes' => 'Сколько эпизодов?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} элементов добавлено в очередь загрузки',
 			'shaders.title' => 'Шейдеры',
 			'shaders.noShaderDescription' => 'Без улучшения видео',
 			'shaders.nvscalerDescription' => 'Масштабирование NVIDIA для более чёткого видео',

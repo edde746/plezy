@@ -999,6 +999,7 @@ class _TranslationsDownloadsPt implements TranslationsDownloadsEn {
 	@override String nextNUnwatched({required Object count}) => 'Próximos ${count} não assistidos';
 	@override String get customAmount => 'Quantidade personalizada...';
 	@override String get howManyEpisodes => 'Quantos episódios?';
+	@override String itemsQueued({required Object count}) => '${count} itens na fila de download';
 }
 
 // Path: shaders
@@ -2023,6 +2024,7 @@ extension on TranslationsPt {
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Próximos ${count} não assistidos',
 			'downloads.customAmount' => 'Quantidade personalizada...',
 			'downloads.howManyEpisodes' => 'Quantos episódios?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} itens na fila de download',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Sem aprimoramento de vídeo',
 			'shaders.nvscalerDescription' => 'Escalonamento de imagem NVIDIA para vídeo mais nítido',

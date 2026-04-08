@@ -635,7 +635,8 @@
     "unwatchedOnly": "Solo non visti",
     "nextNUnwatched": "Prossimi ${count} non visti",
     "customAmount": "Quantità personalizzata...",
-    "howManyEpisodes": "Quanti episodi?"
+    "howManyEpisodes": "Quanti episodi?",
+    "itemsQueued": "${count} elementi in coda per il download"
   },
   "playlists": {
     "title": "Playlist",

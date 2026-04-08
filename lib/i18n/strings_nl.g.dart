@@ -875,6 +875,7 @@ class _TranslationsDownloadsNl implements TranslationsDownloadsEn {
 	@override String nextNUnwatched({required Object count}) => 'Volgende ${count} onbekeken';
 	@override String get customAmount => 'Aangepast aantal...';
 	@override String get howManyEpisodes => 'Hoeveel afleveringen?';
+	@override String itemsQueued({required Object count}) => '${count} items in downloadwachtrij';
 }
 
 // Path: playlists
@@ -1926,6 +1927,7 @@ extension on TranslationsNl {
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Volgende ${count} onbekeken',
 			'downloads.customAmount' => 'Aangepast aantal...',
 			'downloads.howManyEpisodes' => 'Hoeveel afleveringen?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} items in downloadwachtrij',
 			'playlists.title' => 'Afspeellijsten',
 			'playlists.noPlaylists' => 'Geen afspeellijsten gevonden',
 			'playlists.create' => 'Afspeellijst maken',

@@ -999,6 +999,7 @@ class _TranslationsDownloadsDa implements TranslationsDownloadsEn {
 	@override String nextNUnwatched({required Object count}) => 'Næste ${count} usete';
 	@override String get customAmount => 'Angiv antal...';
 	@override String get howManyEpisodes => 'Hvor mange episoder?';
+	@override String itemsQueued({required Object count}) => '${count} elementer sat i kø til download';
 }
 
 // Path: shaders
@@ -2023,6 +2024,7 @@ extension on TranslationsDa {
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Næste ${count} usete',
 			'downloads.customAmount' => 'Angiv antal...',
 			'downloads.howManyEpisodes' => 'Hvor mange episoder?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} elementer sat i kø til download',
 			'shaders.title' => 'Shadere',
 			'shaders.noShaderDescription' => 'Ingen videoforbedring',
 			'shaders.nvscalerDescription' => 'NVIDIA-billedskalering for skarpere video',

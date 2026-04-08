@@ -999,6 +999,7 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String nextNUnwatched({required Object count}) => '다음 ${count}개 미시청';
 	@override String get customAmount => '직접 입력...';
 	@override String get howManyEpisodes => '몇 개의 에피소드?';
+	@override String itemsQueued({required Object count}) => '${count}개 항목이 다운로드 대기열에 추가됨';
 }
 
 // Path: shaders
@@ -2023,6 +2024,7 @@ extension on TranslationsKo {
 			'downloads.nextNUnwatched' => ({required Object count}) => '다음 ${count}개 미시청',
 			'downloads.customAmount' => '직접 입력...',
 			'downloads.howManyEpisodes' => '몇 개의 에피소드?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count}개 항목이 다운로드 대기열에 추가됨',
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
 			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',

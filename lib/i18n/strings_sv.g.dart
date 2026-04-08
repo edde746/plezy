@@ -875,6 +875,7 @@ class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
 	@override String nextNUnwatched({required Object count}) => 'Nästa ${count} osedda';
 	@override String get customAmount => 'Ange antal...';
 	@override String get howManyEpisodes => 'Hur många avsnitt?';
+	@override String itemsQueued({required Object count}) => '${count} objekt köade för nedladdning';
 }
 
 // Path: playlists
@@ -1926,6 +1927,7 @@ extension on TranslationsSv {
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Nästa ${count} osedda',
 			'downloads.customAmount' => 'Ange antal...',
 			'downloads.howManyEpisodes' => 'Hur många avsnitt?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} objekt köade för nedladdning',
 			'playlists.title' => 'Spellistor',
 			'playlists.noPlaylists' => 'Inga spellistor hittades',
 			'playlists.create' => 'Skapa spellista',

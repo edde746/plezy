@@ -158,6 +158,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Shuffle
       menuActions.add(_MenuAction(value: 'shuffle', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay));
 
+      // Download (video playlists only)
+      if (isPlaylist && (widget.item as PlexPlaylist).playlistType == 'video') {
+        menuActions.add(_MenuAction(value: 'download_playlist', icon: Symbols.download_rounded, label: t.downloads.downloadNow));
+      }
+
       // Delete
       menuActions.add(_MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete));
 
@@ -532,6 +537,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'play_external':
           await _handlePlayExternal(context);
+          break;
+
+        case 'download_playlist':
+          await _handleDownloadPlaylist(context);
           break;
 
         case 'download':
@@ -1107,6 +1116,38 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final client = _getClientForItem();
     if (!context.mounted) return;
     await ExternalPlayerService.launch(context: context, metadata: metadata, client: client);
+  }
+
+  /// Handle download playlist action
+  Future<void> _handleDownloadPlaylist(BuildContext context) async {
+    final playlist = widget.item as PlexPlaylist;
+    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+    final client = _getClientForItem();
+
+    try {
+      final items = await client.getPlaylist(playlist.ratingKey);
+      if (!context.mounted) return;
+
+      final count = await showPlaylistDownloadOptionsAndQueue(
+        context,
+        items: items,
+        client: client,
+        downloadProvider: downloadProvider,
+      );
+      if (count == null || !context.mounted) return;
+
+      final message = count > 1 ? t.downloads.itemsQueued(count: count) : t.downloads.downloadQueued;
+      showSuccessSnackBar(context, message);
+    } on CellularDownloadBlockedException {
+      if (context.mounted) {
+        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+      }
+    } catch (e) {
+      appLogger.e('Failed to queue playlist download', error: e);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
+    }
   }
 
   /// Handle download action

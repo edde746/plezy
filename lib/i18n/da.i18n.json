@@ -738,7 +738,8 @@
     "unwatchedOnly": "Kun usete",
     "nextNUnwatched": "Næste ${count} usete",
     "customAmount": "Angiv antal...",
-    "howManyEpisodes": "Hvor mange episoder?"
+    "howManyEpisodes": "Hvor mange episoder?",
+    "itemsQueued": "${count} elementer sat i kø til download"
   },
   "shaders": {
     "title": "Shadere",

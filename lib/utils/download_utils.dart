@@ -75,6 +75,32 @@ Future<int?> showDownloadOptionsAndQueue(
   );
 }
 
+/// Shows download options dialog for playlists, then queues the download.
+/// Returns the number of items queued, or null if cancelled.
+Future<int?> showPlaylistDownloadOptionsAndQueue(
+  BuildContext context, {
+  required List<PlexMetadata> items,
+  required PlexClient client,
+  required DownloadProvider downloadProvider,
+}) async {
+  final selected = await showOptionPickerDialog<DownloadFilter>(
+    context,
+    title: t.downloads.downloadNow,
+    options: [
+      (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: DownloadFilter.all),
+      (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: DownloadFilter.unwatched),
+    ],
+  );
+
+  if (selected == null || !context.mounted) return null;
+
+  return await downloadProvider.queuePlaylistDownload(
+    items,
+    client,
+    filter: selected,
+  );
+}
+
 Future<int?> _showEpisodeCountDialog(BuildContext context) {
   final autoFocus = InputModeTracker.isKeyboardMode(context);
   return showDialog<int>(
