@@ -234,8 +234,9 @@ class MediaCardState extends State<MediaCard> {
         onSecondaryTap: _showContextMenu,
         borderRadius: BorderRadius.circular(tokens(context).radiusSm),
         child: Padding(
-          padding: const EdgeInsets.all(3),
+          padding: const EdgeInsets.fromLTRB(3, 3, 3, 1),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Poster with overlay

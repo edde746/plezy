@@ -409,7 +409,7 @@ class HubSectionState extends State<HubSection> {
                           (9 / 16) // 16:9 for wide layout
                     : posterWidth * 1.5; // 2:3 for poster layout
 
-                final containerHeight = posterHeight + 48;
+                final containerHeight = posterHeight + 33;
                 final focusBorderWidth = FocusTheme.focusBorderWidth;
                 final focusExtra = focusBorderWidth * 2; // border on both sides
                 _itemExtent = cardWidth + focusExtra + 4;
