@@ -24,6 +24,7 @@ import '../utils/plex_image_helper.dart';
 import '../../services/plex_client.dart';
 import '../services/plex_api_cache.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_role.dart';
 import '../models/plex_video_playback_data.dart';
 import '../utils/content_utils.dart';
 import '../utils/rating_utils.dart';
@@ -56,6 +57,7 @@ import '../mixins/server_bound_media_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
 import '../widgets/episode_card.dart';
+import 'actor_media_screen.dart';
 import '../widgets/focusable_tab_chip.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -1080,6 +1082,25 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return getServerBoundClient(context);
   }
 
+  void _navigateToActorMedia(PlexRole actor) {
+    final personId = actor.id?.toString() ?? actor.tagKey;
+    if (personId == null || widget.metadata.serverId == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActorMediaScreen(
+          actorName: actor.tag,
+          personId: personId,
+          actorThumb: actor.thumb,
+          characterName: actor.role,
+          serverId: widget.metadata.serverId!,
+          serverName: widget.metadata.serverName,
+        ),
+      ),
+    );
+  }
+
   /// Resolve version selection for download using shared utility.
   Future<DownloadVersionConfig?> _resolveDownloadVersion(
     BuildContext context,
@@ -1808,8 +1829,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
-    // SELECT: consume (cast is informational)
+    // SELECT: navigate to actor media
     if (key.isSelectKey) {
+      final metadata = _fullMetadata ?? widget.metadata;
+      if (_focusedCastIndex < (metadata.role?.length ?? 0)) {
+        _navigateToActorMedia(metadata.role![_focusedCastIndex]);
+      }
       return KeyEventResult.handled;
     }
 
@@ -2683,6 +2708,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   context: context,
                   isFocused: isFocused,
                   borderRadius: tokens(context).radiusSm,
+                  onTap: () => _navigateToActorMedia(actor),
                   child: Padding(
                     padding: const EdgeInsets.all(innerPadding),
                     child: SizedBox(

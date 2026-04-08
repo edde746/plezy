@@ -1897,6 +1897,15 @@ class PlexClient {
     );
   }
 
+  /// Get media featuring a specific person (actor/director)
+  Future<List<PlexMetadata>> getPersonMedia(String personId) {
+    return _wrapListApiCall<PlexMetadata>(
+      () => _http.get('/library/people/$personId/media'),
+      _extractMetadataList,
+      'Failed to get person media',
+    );
+  }
+
   /// Delete a collection
   /// Deletes a library collection from the server
   Future<bool> deleteCollection(String sectionId, String collectionId) async {
