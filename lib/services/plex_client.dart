@@ -175,6 +175,10 @@ class PlexClient {
     );
   }
 
+  void close() {
+    _http.close();
+  }
+
   bool _failoverSwitching = false;
 
   /// Execute a GET request with endpoint failover retry. On timeout/connection

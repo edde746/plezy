@@ -209,6 +209,7 @@ class MultiServerManager {
         final client = await _createClientForServer(server: server, clientIdentifier: effectiveClientId).timeout(timeout);
 
         // Store the client and server info
+        _clients[serverId]?.close();
         _clients[serverId] = client;
         _servers[serverId] = server;
         _serverStatus[serverId] = true;
@@ -265,6 +266,7 @@ class MultiServerManager {
       final client = await _createClientForServer(server: server, clientIdentifier: effectiveClientId);
 
       // Store
+      _clients[serverId]?.close();
       _clients[serverId] = client;
       _servers[serverId] = server;
       _serverStatus[serverId] = true;
@@ -287,7 +289,7 @@ class MultiServerManager {
 
   /// Remove a server connection
   void removeServer(String serverId) {
-    _clients.remove(serverId);
+    _clients.remove(serverId)?.close();
     _servers.remove(serverId);
     _serverStatus.remove(serverId);
     _statusController.add(Map.from(_serverStatus));
@@ -461,6 +463,7 @@ class MultiServerManager {
       appLogger.d('Attempting reconnection for ${server.name}');
       final client = await _createClientForServer(server: server, clientIdentifier: clientId);
 
+      _clients[serverId]?.close();
       _clients[serverId] = client;
       updateServerStatus(serverId, true);
       appLogger.i('Successfully reconnected to ${server.name}');
@@ -547,6 +550,9 @@ class MultiServerManager {
     _reconnectDebounce.clear();
     _activeHealthCheck = null;
     _activeReconnect = null;
+    for (final client in _clients.values) {
+      client.close();
+    }
     _clients.clear();
     _servers.clear();
     _serverStatus.clear();
