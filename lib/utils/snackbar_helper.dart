@@ -61,6 +61,13 @@ void showGlobalErrorSnackBar(String message) {
   );
 }
 
+/// Shows an info snackbar using the root ScaffoldMessenger (survives navigation).
+void showGlobalSnackBar(String message, {Duration duration = const Duration(seconds: 2)}) {
+  rootScaffoldMessengerKey.currentState
+    ?..removeCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message), duration: duration));
+}
+
 /// Shows a success snackbar with a message
 ///
 /// [context] The build context

@@ -8,6 +8,7 @@ import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 import 'settings_service.dart';
 import '../utils/player_utils.dart';
+import '../utils/snackbar_helper.dart';
 
 class KeyboardShortcutsService {
   static KeyboardShortcutsService? _instance;
@@ -293,15 +294,18 @@ class KeyboardShortcutsService {
         final newRateUp = (player.state.rate + 0.25).clamp(0.25, 3.0);
         player.setRate(newRateUp);
         _settingsService.setDefaultPlaybackSpeed(newRateUp);
+        showGlobalSnackBar(_formatSpeed(newRateUp));
         break;
       case 'speed_decrease':
         final newRateDown = (player.state.rate - 0.25).clamp(0.25, 3.0);
         player.setRate(newRateDown);
         _settingsService.setDefaultPlaybackSpeed(newRateDown);
+        showGlobalSnackBar(_formatSpeed(newRateDown));
         break;
       case 'speed_reset':
         player.setRate(1.0);
         _settingsService.setDefaultPlaybackSpeed(1.0);
+        showGlobalSnackBar(_formatSpeed(1.0));
         break;
       case 'sub_seek_next':
         player.command(['sub-seek', '1']);
@@ -386,5 +390,10 @@ class KeyboardShortcutsService {
     final bModifiers = Set.from(b.modifiers ?? []);
 
     return aModifiers.length == bModifiers.length && aModifiers.every((modifier) => bModifiers.contains(modifier));
+  }
+
+  String _formatSpeed(double speed) {
+    final s = speed.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
+    return '${s}x';
   }
 }
