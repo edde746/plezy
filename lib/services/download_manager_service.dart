@@ -65,8 +65,10 @@ class DownloadManagerService {
   // Items recovered with video complete but supplementary downloads missing
   final Set<String> _pendingSupplementaryDownloads = {};
 
-  // Cached client for recovery and queue processing
-  PlexClient? _lastClient;
+  // Resolve the correct PlexClient for a given serverId (set via setClientResolver).
+  // Falls back to _fallbackClient when the resolver is unavailable or returns null.
+  PlexClient? Function(String serverId)? _clientResolver;
+  PlexClient? _fallbackClient;
 
   // background_downloader state
   bool _fileDownloaderInitialized = false;
@@ -122,6 +124,20 @@ class DownloadManagerService {
     : _database = database,
       _storageService = storageService,
       _http = http ?? httpClient;
+
+  /// Register a callback to resolve the correct PlexClient for a given serverId.
+  void setClientResolver(PlexClient? Function(String serverId) resolver) {
+    _clientResolver = resolver;
+  }
+
+  /// Look up the correct client for [serverId].
+  /// Returns null if the server is offline — callers should skip/defer the work.
+  PlexClient? _getClient(String? serverId) {
+    if (serverId != null && _clientResolver != null) {
+      return _clientResolver!(serverId);
+    }
+    return _fallbackClient;
+  }
 
   /// Initialize background_downloader with callbacks, notifications, and concurrency config.
   Future<void> _initializeFileDownloader() async {
@@ -252,7 +268,7 @@ class DownloadManagerService {
   /// Resume queued downloads that have no active processing.
   /// Call after a PlexClient becomes available (e.g. after server connect on launch).
   void resumeQueuedDownloads(PlexClient client) {
-    _lastClient = client;
+    _fallbackClient = client;
 
     // Attempt deferred supplementary downloads for recovered items
     _processPendingSupplementaryDownloads(client);
@@ -275,6 +291,15 @@ class DownloadManagerService {
 
     for (final globalKey in keys) {
       try {
+        // Resolve the correct client for this item's server
+        final parsed = parseGlobalKey(globalKey);
+        final itemClient = _getClient(parsed?.serverId);
+        if (itemClient == null) {
+          appLogger.d('Deferring supplementary download $globalKey: server offline');
+          _pendingSupplementaryDownloads.add(globalKey);
+          continue;
+        }
+
         final metadata = await _resolveMetadata(globalKey);
         if (metadata == null) {
           appLogger.w('No metadata for deferred supplementary download: $globalKey');
@@ -284,20 +309,19 @@ class DownloadManagerService {
         // Look up show year for episodes
         int? showYear;
         if (metadata.type == 'episode' && metadata.grandparentRatingKey != null) {
-          final parsed = parseGlobalKey(globalKey);
           if (parsed != null) {
             showYear = await _fetchShowYear(parsed.serverId, metadata.grandparentRatingKey);
           }
         }
 
-        await _downloadArtwork(globalKey, metadata, client);
-        await _downloadChapterThumbnails(metadata.serverId!, metadata.ratingKey, client);
+        await _downloadArtwork(globalKey, metadata, itemClient);
+        await _downloadChapterThumbnails(metadata.serverId!, metadata.ratingKey, itemClient);
 
         // Attempt subtitles
         try {
-          final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+          final playbackData = await itemClient.getVideoPlaybackData(metadata.ratingKey);
           if (playbackData.mediaInfo != null) {
-            await _downloadSubtitles(globalKey, metadata, playbackData.mediaInfo!, client, showYear: showYear);
+            await _downloadSubtitles(globalKey, metadata, playbackData.mediaInfo!, itemClient, showYear: showYear);
           }
         } catch (e) {
           appLogger.w('Could not fetch playback data for deferred subtitles: $globalKey', error: e);
@@ -381,7 +405,7 @@ class DownloadManagerService {
   Future<void> _processQueue(PlexClient client) async {
     if (_isProcessingQueue) return;
     _isProcessingQueue = true;
-    _lastClient = client;
+    _fallbackClient = client;
 
     try {
       await _initializeFileDownloader();
@@ -390,7 +414,14 @@ class DownloadManagerService {
         final nextItem = await _database.getNextQueueItem();
         if (nextItem == null) break;
 
-        await _prepareAndEnqueueDownload(nextItem.mediaGlobalKey, client, nextItem);
+        // Resolve the correct client for the item's server — skip if server is offline
+        final parsed = parseGlobalKey(nextItem.mediaGlobalKey);
+        final itemClient = _getClient(parsed?.serverId);
+        if (itemClient == null) {
+          appLogger.d('Skipping queued download ${nextItem.mediaGlobalKey}: server offline');
+          continue;
+        }
+        await _prepareAndEnqueueDownload(nextItem.mediaGlobalKey, itemClient, nextItem);
       }
     } finally {
       _isProcessingQueue = false;
@@ -647,7 +678,8 @@ class DownloadManagerService {
     await _database.updateBgTaskId(globalKey, null);
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
-    if (_lastClient != null) _processQueue(_lastClient!);
+    final client = _getClient(parseGlobalKey(globalKey)?.serverId);
+    if (client != null) _processQueue(client);
   }
 
   /// Handle a failed download — auto-retry if retries remain, otherwise permanently fail.
@@ -666,7 +698,8 @@ class DownloadManagerService {
     }
     final retryCount = existing?.retryCount ?? 0;
 
-    if (retryCount < _maxAppRetries && _lastClient != null) {
+    final client = _getClient(parseGlobalKey(globalKey)?.serverId);
+    if (retryCount < _maxAppRetries && client != null) {
       // App-level auto-retry: schedule a fresh download after a delay.
       // Each new task gets 5 native retries with Range-based resume.
       appLogger.w(
@@ -682,7 +715,7 @@ class DownloadManagerService {
       });
 
       // Advance the queue while we wait for the retry timer
-      if (_lastClient != null) _processQueue(_lastClient!);
+      _processQueue(client);
     } else {
       await _onDownloadPermanentlyFailed(globalKey, errorMessage);
     }
@@ -707,13 +740,14 @@ class DownloadManagerService {
     await _database.removeFromQueue(globalKey);
 
     // Try to enqueue more items from the queue
-    if (_lastClient != null) _processQueue(_lastClient!);
+    final client = _getClient(parseGlobalKey(globalKey)?.serverId);
+    if (client != null) _processQueue(client);
   }
 
   /// Execute an app-level auto-retry: transition back to queued and re-enqueue.
   Future<void> _performAutoRetry(String globalKey) async {
     if (_disposed) return;
-    final client = _lastClient;
+    final client = _getClient(parseGlobalKey(globalKey)?.serverId);
     if (client == null) {
       appLogger.w('Cannot auto-retry $globalKey: no client available');
       return;
@@ -801,7 +835,7 @@ class DownloadManagerService {
       // ── Phase 2 (best-effort): supplementary downloads ──
       try {
         final metadata = ctx?.metadata ?? await _resolveMetadata(globalKey);
-        final client = ctx?.client ?? _lastClient;
+        final client = ctx?.client ?? _getClient(parseGlobalKey(globalKey)?.serverId);
         final showYear = ctx?.showYear;
 
         // Get queue item settings (still in drift at this point)
@@ -848,7 +882,8 @@ class DownloadManagerService {
     } finally {
       _completingKeys.remove(globalKey);
       // Always advance the queue, even after errors
-      if (_lastClient != null) _processQueue(_lastClient!);
+      final nextClient = _getClient(parseGlobalKey(globalKey)?.serverId);
+      if (nextClient != null) _processQueue(nextClient);
     }
   }
 
@@ -1183,7 +1218,8 @@ class DownloadManagerService {
     await _database.updateBgTaskId(globalKey, null);
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
-    _processQueue(client);
+    final resolvedClient = _getClient(parseGlobalKey(globalKey)?.serverId) ?? client;
+    _processQueue(resolvedClient);
   }
 
   /// Retry a failed download
@@ -1193,7 +1229,8 @@ class DownloadManagerService {
     await _database.updateBgTaskId(globalKey, null);
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
-    _processQueue(client);
+    final resolvedClient = _getClient(parseGlobalKey(globalKey)?.serverId) ?? client;
+    _processQueue(resolvedClient);
   }
 
   /// Cancel a download
