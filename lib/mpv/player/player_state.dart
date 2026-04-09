@@ -117,6 +117,12 @@ class PlayerState {
     );
   }
 
+  /// Whether media is actively playing (not paused, not at EOF).
+  ///
+  /// mpv keeps [playing] true at EOF, so raw [playing] alone is unreliable
+  /// for gating wakelock, media controls, progress tracking, etc.
+  bool get isActive => playing && !completed;
+
   @override
   String toString() => 'PlayerState(playing: $playing, position: $position, duration: $duration, seekable: $seekable)';
 }

@@ -67,12 +67,12 @@ class PlaybackProgressTracker {
     }
 
     // Send initial progress immediately (don't wait for first timer tick)
-    if (player.state.playing) {
+    if (player.state.isActive) {
       _sendProgress('playing');
     }
 
     _progressTimer = Timer.periodic(updateInterval, (timer) {
-      if (player.state.playing) {
+      if (player.state.isActive) {
         _pausedTickCounter = 0;
         // Skip ticks when backing off after consecutive failures to avoid
         // flooding the network with doomed requests during an outage.

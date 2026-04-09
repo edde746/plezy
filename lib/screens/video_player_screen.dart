@@ -72,7 +72,11 @@ import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/widgets/watch_together_overlay.dart';
 
+bool? _wakelockEnabled;
+
 Future<void> _setWakelock(bool enabled) async {
+  if (_wakelockEnabled == enabled) return;
+  _wakelockEnabled = enabled;
   try {
     if (enabled) {
       await WakelockPlus.enable();
@@ -80,6 +84,7 @@ Future<void> _setWakelock(bool enabled) async {
       await WakelockPlus.disable();
     }
   } catch (e) {
+    _wakelockEnabled = null;
     appLogger.w('Wakelock ${enabled ? 'enable' : 'disable'} failed: $e');
   }
 }
@@ -403,7 +408,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Pause first so Android MPV does not keep decoding against a transient
     // background surface while the app is locking or hiding.
     if (PlatformDetector.isMobile(context)) {
-      _wasPlayingBeforeInactive = currentPlayer.state.playing;
+      _wasPlayingBeforeInactive = currentPlayer.state.isActive;
       if (_wasPlayingBeforeInactive) {
         try {
           await currentPlayer.pause();
@@ -890,7 +895,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _updateMediaControlsPlaybackState();
       } else if (event is TogglePlayPauseEvent) {
         appLogger.d('Media control: Toggle play/pause event received');
-        if (currentPlayer!.state.playing) {
+        if (currentPlayer!.state.isActive) {
           currentPlayer.pause();
         } else {
           _seekBackForRewind(currentPlayer);
@@ -929,7 +934,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Listen to position updates for media controls and Discord
     _mediaControlsPositionSubscription = player!.streams.position.listen((position) {
       _mediaControlsManager?.updatePlaybackState(
-        isPlaying: player!.state.playing,
+        isPlaying: player!.state.isActive,
         position: position,
         speed: player!.state.rate,
       );
@@ -2066,9 +2071,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Live TV streams are continuous — ignore spurious EOF events caused by
     // inter-segment gaps in the chunked MKV transcode stream.
     if (widget.isLive) return;
+    if (!completed) return;
 
-    if (completed &&
-        _nextEpisode != null &&
+    // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
+    // never fires false.  Normalize all playback-dependent state.
+    _setWakelock(false);
+    _progressTracker?.sendProgress('paused');
+    _updateMediaControlsPlaybackState();
+    DiscordRPCService.instance.pausePlayback();
+    if (_autoPipEnabled) {
+      _videoPIPManager?.updateAutoPipState(isPlaying: false);
+    }
+
+    if (_nextEpisode != null &&
         !_showPlayNextDialog &&
         !_showStillWatchingPrompt &&
         !_completionTriggered) {
@@ -2098,7 +2113,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    } else if (completed && _nextEpisode == null && !_completionTriggered) {
+    } else if (_nextEpisode == null && !_completionTriggered) {
       _completionTriggered = true;
       _handleBackButton();
     }
@@ -2167,7 +2182,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _restoreMediaControlsAfterResume() async {
     if (!_isPlayerInitialized || !mounted) return;
 
-    _setWakelock(true);
+    _setWakelock(player?.state.isActive ?? false);
 
     final manager = _mediaControlsManager;
     final currentPlayer = player;
@@ -2196,7 +2211,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     _updateMediaControlsPlaybackState();
-    appLogger.d('Media controls restored and wakelock re-enabled on app resume');
+    appLogger.d('Media controls restored on app resume');
   }
 
   /// Wrapper method to update media controls playback state
@@ -2204,7 +2219,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (player == null) return;
 
     _mediaControlsManager?.updatePlaybackState(
-      isPlaying: player!.state.playing,
+      isPlaying: player!.state.isActive,
       position: player!.state.position,
       speed: player!.state.rate,
       force: true, // Force update since this is an explicit state change
