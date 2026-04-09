@@ -236,7 +236,7 @@ class TrackChapterControls extends StatelessWidget {
         buttonIndex++;
 
         // Combined audio & subtitles button
-        if (_hasMultipleAudioTracks(tracks) || _hasSubtitles(tracks)) {
+        {
           final currentIndex = buttonIndex;
           final hasSubs = _hasSubtitles(tracks);
           final selectedSub = player.state.track.subtitle;
@@ -477,7 +477,7 @@ class TrackChapterControls extends StatelessWidget {
   /// Calculate total button count for navigation
   int _getButtonCount(Tracks? tracks, bool isMobile, bool isDesktop) {
     int count = 1; // Settings button always shown
-    if (_hasMultipleAudioTracks(tracks) || _hasSubtitles(tracks)) count++;
+    count++; // Audio & subtitles button always shown
     if (chapters.isNotEmpty && !hideChaptersAndQueue) count++;
     if (showQueueButton && onQueueItemSelected != null && !hideChaptersAndQueue) count++;
     if (availableVersions.length > 1 && onSwitchVersion != null) count++;
@@ -487,11 +487,6 @@ class TrackChapterControls extends StatelessWidget {
     if (isDesktop && onToggleAlwaysOnTop != null) count++; // Always on top
     if (isDesktop) count++; // Fullscreen
     return count;
-  }
-
-  bool _hasMultipleAudioTracks(Tracks? tracks) {
-    if (tracks == null) return false;
-    return TrackFilterHelper.hasMultipleTracks<AudioTrack>(tracks.audio);
   }
 
   bool _hasSubtitles(Tracks? tracks) {
