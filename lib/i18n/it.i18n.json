@@ -223,6 +223,8 @@
     "requireProfileSelectionOnOpenDescription": "Mostra la selezione del profilo ogni volta che l'app viene aperta",
     "confirmExitOnBack": "Conferma prima di uscire",
     "confirmExitOnBackDescription": "Mostra una finestra di conferma quando si preme indietro per uscire dall'app",
+    "autoHidePerformanceOverlay": "Nascondi automaticamente overlay prestazioni",
+    "autoHidePerformanceOverlayDescription": "Dissolvi l'overlay prestazioni con i controlli di riproduzione",
     "showNavBarLabels": "Mostra etichette barra di navigazione",
     "showNavBarLabelsDescription": "Mostra le etichette sotto le icone della barra di navigazione",
     "liveTvDefaultFavorites": "Canali preferiti predefiniti",

@@ -342,6 +342,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostrar seleção de perfil toda vez que o app for aberto';
 	@override String get confirmExitOnBack => 'Confirmar antes de sair';
 	@override String get confirmExitOnBackDescription => 'Mostrar diálogo de confirmação ao pressionar voltar para sair do app';
+	@override String get autoHidePerformanceOverlay => 'Ocultar overlay de desempenho automaticamente';
+	@override String get autoHidePerformanceOverlayDescription => 'Desvanecer o overlay de desempenho com os controles de reprodução';
 	@override String get showNavBarLabels => 'Mostrar Rótulos da Barra de Navegação';
 	@override String get showNavBarLabelsDescription => 'Exibir rótulos de texto sob os ícones da barra de navegação';
 	@override String get liveTvDefaultFavorites => 'Canais favoritos por padrão';
@@ -1567,6 +1569,8 @@ extension on TranslationsPt {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostrar seleção de perfil toda vez que o app for aberto',
 			'settings.confirmExitOnBack' => 'Confirmar antes de sair',
 			'settings.confirmExitOnBackDescription' => 'Mostrar diálogo de confirmação ao pressionar voltar para sair do app',
+			'settings.autoHidePerformanceOverlay' => 'Ocultar overlay de desempenho automaticamente',
+			'settings.autoHidePerformanceOverlayDescription' => 'Desvanecer o overlay de desempenho com os controles de reprodução',
 			'settings.showNavBarLabels' => 'Mostrar Rótulos da Barra de Navegação',
 			'settings.showNavBarLabelsDescription' => 'Exibir rótulos de texto sob os ícones da barra de navegação',
 			'settings.liveTvDefaultFavorites' => 'Canais favoritos por padrão',
@@ -1864,10 +1868,10 @@ extension on TranslationsPt {
 			'about.viewLicensesDescription' => 'Ver licenças de bibliotecas de terceiros',
 			'serverSelection.allServerConnectionsFailed' => 'Falha ao conectar a qualquer servidor. Verifique sua rede e tente novamente.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nenhum servidor encontrado para ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Falha ao carregar servidores: ${error}',
-			'hubDetail.title' => 'Título',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Falha ao carregar servidores: ${error}',
+			'hubDetail.title' => 'Título',
 			'hubDetail.releaseYear' => 'Ano de Lançamento',
 			'hubDetail.dateAdded' => 'Data de Adição',
 			'hubDetail.rating' => 'Avaliação',

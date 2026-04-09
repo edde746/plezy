@@ -223,6 +223,8 @@
     "requireProfileSelectionOnOpenDescription": "Profilauswahl bei jedem Öffnen der App anzeigen",
     "confirmExitOnBack": "Vor dem Beenden bestätigen",
     "confirmExitOnBackDescription": "Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird",
+    "autoHidePerformanceOverlay": "Leistungsoverlay automatisch ausblenden",
+    "autoHidePerformanceOverlayDescription": "Leistungsoverlay mit den Wiedergabesteuerungen ein-/ausblenden",
     "showNavBarLabels": "Navigationsleisten-Beschriftungen anzeigen",
     "showNavBarLabelsDescription": "Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen",
     "liveTvDefaultFavorites": "Standardmäßig Favoritenkanäle",

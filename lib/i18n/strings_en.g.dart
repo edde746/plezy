@@ -772,6 +772,12 @@ class TranslationsSettingsEn {
 	/// en: 'Show a confirmation dialog when pressing back to exit the app'
 	String get confirmExitOnBackDescription => 'Show a confirmation dialog when pressing back to exit the app';
 
+	/// en: 'Auto-Hide Performance Overlay'
+	String get autoHidePerformanceOverlay => 'Auto-Hide Performance Overlay';
+
+	/// en: 'Fade the performance overlay with the playback controls'
+	String get autoHidePerformanceOverlayDescription => 'Fade the performance overlay with the playback controls';
+
 	/// en: 'Show Navigation Bar Labels'
 	String get showNavBarLabels => 'Show Navigation Bar Labels';
 
@@ -3288,6 +3294,8 @@ extension on Translations {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.confirmExitOnBack' => 'Confirm before exiting',
 			'settings.confirmExitOnBackDescription' => 'Show a confirmation dialog when pressing back to exit the app',
+			'settings.autoHidePerformanceOverlay' => 'Auto-Hide Performance Overlay',
+			'settings.autoHidePerformanceOverlayDescription' => 'Fade the performance overlay with the playback controls',
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
 			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
 			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
@@ -3585,10 +3593,10 @@ extension on Translations {
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
 			'serverSelection.allServerConnectionsFailed' => 'Failed to connect to any servers. Please check your network and try again.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
-			'hubDetail.title' => 'Title',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
+			'hubDetail.title' => 'Title',
 			'hubDetail.releaseYear' => 'Release Year',
 			'hubDetail.dateAdded' => 'Date Added',
 			'hubDetail.rating' => 'Rating',

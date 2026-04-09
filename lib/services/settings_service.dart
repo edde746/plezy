@@ -84,6 +84,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
   static const String _keyVideoPlayerNavigationEnabled = 'video_player_navigation_enabled';
   static const String _keyShowPerformanceOverlay = 'show_performance_overlay';
+  static const String _keyAutoHidePerformanceOverlay = 'auto_hide_performance_overlay';
   static const String _keyMpvConfigEntries = 'mpv_config_entries'; // Legacy
   static const String _keyMpvConfigText = 'mpv_config_text';
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
@@ -622,6 +623,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getShowPerformanceOverlay() {
     return prefs.getBool(_keyShowPerformanceOverlay) ?? false; // Default: disabled
+  }
+
+  // Auto-hide performance overlay (fade with playback controls)
+  Future<void> setAutoHidePerformanceOverlay(bool enabled) async {
+    await prefs.setBool(_keyAutoHidePerformanceOverlay, enabled);
+  }
+
+  bool getAutoHidePerformanceOverlay() {
+    return prefs.getBool(_keyAutoHidePerformanceOverlay) ?? true; // Default: enabled
   }
 
   // Helper methods for HotKey serialization
@@ -1368,6 +1378,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyDownloadOnWifiOnly),
       prefs.remove(_keyVideoPlayerNavigationEnabled),
       prefs.remove(_keyShowPerformanceOverlay),
+      prefs.remove(_keyAutoHidePerformanceOverlay),
       prefs.remove(_keyMpvConfigEntries),
       prefs.remove(_keyMpvConfigText),
       prefs.remove(_keyMpvConfigPresets),

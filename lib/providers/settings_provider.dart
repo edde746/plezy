@@ -15,6 +15,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _hideSpoilers = false;
   bool _showNavBarLabels = true;
   bool _liveTvDefaultFavorites = false;
+  bool _autoHidePerformanceOverlay = true;
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
@@ -42,6 +43,7 @@ class SettingsProvider extends ChangeNotifier {
     _hideSpoilers = _settingsService!.getHideSpoilers();
     _showNavBarLabels = _settingsService!.getShowNavBarLabels();
     _liveTvDefaultFavorites = _settingsService!.getLiveTvDefaultFavorites();
+    _autoHidePerformanceOverlay = _settingsService!.getAutoHidePerformanceOverlay();
     _isInitialized = true;
     notifyListeners();
   }
@@ -70,6 +72,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get showNavBarLabels => _showNavBarLabels;
 
   bool get liveTvDefaultFavorites => _liveTvDefaultFavorites;
+
+  bool get autoHidePerformanceOverlay => _autoHidePerformanceOverlay;
 
   /// Helper to update a setting: ensures init, deduplicates, persists, notifies.
   Future<void> _updateSetting<T>({
@@ -150,6 +154,12 @@ class SettingsProvider extends ChangeNotifier {
     current: _liveTvDefaultFavorites, value: value,
     setLocal: (v) => _liveTvDefaultFavorites = v,
     persist: _settingsService!.setLiveTvDefaultFavorites,
+  );
+
+  Future<void> setAutoHidePerformanceOverlay(bool value) => _updateSetting(
+    current: _autoHidePerformanceOverlay, value: value,
+    setLocal: (v) => _autoHidePerformanceOverlay = v,
+    persist: _settingsService!.setAutoHidePerformanceOverlay,
   );
 
   String get episodePosterModeDisplayName {

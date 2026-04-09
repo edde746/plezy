@@ -342,6 +342,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Vis profilvalg hver gang appen åpnes';
 	@override String get confirmExitOnBack => 'Bekreft før avslutning';
 	@override String get confirmExitOnBackDescription => 'Vis en bekreftelsesdialog når du trykker tilbake for å avslutte appen';
+	@override String get autoHidePerformanceOverlay => 'Skjul ytelsesoverlegg automatisk';
+	@override String get autoHidePerformanceOverlayDescription => 'Fade ytelsesoverlegget med avspillingskontrollene';
 	@override String get showNavBarLabels => 'Vis navigasjonsfeltlabeler';
 	@override String get showNavBarLabelsDescription => 'Vis tekstlabeler under navigasjonsfeltikoner';
 	@override String get liveTvDefaultFavorites => 'Standard til favorittkanaler';
@@ -1567,6 +1569,8 @@ extension on TranslationsNb {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Vis profilvalg hver gang appen åpnes',
 			'settings.confirmExitOnBack' => 'Bekreft før avslutning',
 			'settings.confirmExitOnBackDescription' => 'Vis en bekreftelsesdialog når du trykker tilbake for å avslutte appen',
+			'settings.autoHidePerformanceOverlay' => 'Skjul ytelsesoverlegg automatisk',
+			'settings.autoHidePerformanceOverlayDescription' => 'Fade ytelsesoverlegget med avspillingskontrollene',
 			'settings.showNavBarLabels' => 'Vis navigasjonsfeltlabeler',
 			'settings.showNavBarLabelsDescription' => 'Vis tekstlabeler under navigasjonsfeltikoner',
 			'settings.liveTvDefaultFavorites' => 'Standard til favorittkanaler',
@@ -1864,10 +1868,10 @@ extension on TranslationsNb {
 			'about.viewLicensesDescription' => 'Vis lisenser for tredjepartsbiblioteker',
 			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke koble til noen servere. Sjekk nettverket ditt og prøv igjen.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere funnet for ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke laste servere: ${error}',
-			'hubDetail.title' => 'Tittel',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke laste servere: ${error}',
+			'hubDetail.title' => 'Tittel',
 			'hubDetail.releaseYear' => 'Utgivelsesår',
 			'hubDetail.dateAdded' => 'Dato lagt til',
 			'hubDetail.rating' => 'Vurdering',

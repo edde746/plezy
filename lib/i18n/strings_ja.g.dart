@@ -342,6 +342,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'アプリを開くたびにプロフィール選択を表示';
 	@override String get confirmExitOnBack => '終了前に確認';
 	@override String get confirmExitOnBackDescription => '戻るボタンでアプリを終了する際に確認ダイアログを表示';
+	@override String get autoHidePerformanceOverlay => 'パフォーマンスオーバーレイを自動非表示';
+	@override String get autoHidePerformanceOverlayDescription => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする';
 	@override String get showNavBarLabels => 'ナビゲーションバーラベルを表示';
 	@override String get showNavBarLabelsDescription => 'ナビゲーションバーアイコンの下にテキストラベルを表示';
 	@override String get liveTvDefaultFavorites => 'お気に入りチャンネルをデフォルトに';
@@ -1567,6 +1569,8 @@ extension on TranslationsJa {
 			'settings.requireProfileSelectionOnOpenDescription' => 'アプリを開くたびにプロフィール選択を表示',
 			'settings.confirmExitOnBack' => '終了前に確認',
 			'settings.confirmExitOnBackDescription' => '戻るボタンでアプリを終了する際に確認ダイアログを表示',
+			'settings.autoHidePerformanceOverlay' => 'パフォーマンスオーバーレイを自動非表示',
+			'settings.autoHidePerformanceOverlayDescription' => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする',
 			'settings.showNavBarLabels' => 'ナビゲーションバーラベルを表示',
 			'settings.showNavBarLabelsDescription' => 'ナビゲーションバーアイコンの下にテキストラベルを表示',
 			'settings.liveTvDefaultFavorites' => 'お気に入りチャンネルをデフォルトに',
@@ -1864,10 +1868,10 @@ extension on TranslationsJa {
 			'about.viewLicensesDescription' => 'サードパーティライブラリのライセンスを表示',
 			'serverSelection.allServerConnectionsFailed' => 'どのサーバーにも接続できませんでした。ネットワークを確認してもう一度お試しください。',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})のサーバーが見つかりません',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'サーバーの読み込みに失敗しました: ${error}',
-			'hubDetail.title' => 'タイトル',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'サーバーの読み込みに失敗しました: ${error}',
+			'hubDetail.title' => 'タイトル',
 			'hubDetail.releaseYear' => '公開年',
 			'hubDetail.dateAdded' => '追加日',
 			'hubDetail.rating' => '評価',

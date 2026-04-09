@@ -83,6 +83,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
             _buildHideSpoilers(),
             _buildRequireProfileSelection(),
             if (PlatformDetector.isTV()) _buildConfirmExitOnBack(),
+            _buildAutoHidePerformanceOverlay(),
             const SizedBox(height: 24),
           ]),
         ),
@@ -363,6 +364,22 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
       onChanged: (value) async {
         setState(() => _confirmExitOnBack = value);
         await _settingsService.setConfirmExitOnBack(value);
+      },
+    );
+  }
+
+  Widget _buildAutoHidePerformanceOverlay() {
+    return Consumer<SettingsProvider>(
+      builder: (context, settingsProvider, child) {
+        return SwitchListTile(
+          secondary: const AppIcon(Symbols.speed_rounded, fill: 1),
+          title: Text(t.settings.autoHidePerformanceOverlay),
+          subtitle: Text(t.settings.autoHidePerformanceOverlayDescription),
+          value: settingsProvider.autoHidePerformanceOverlay,
+          onChanged: (value) async {
+            await settingsProvider.setAutoHidePerformanceOverlay(value);
+          },
+        );
       },
     );
   }

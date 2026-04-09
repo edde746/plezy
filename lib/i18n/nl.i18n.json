@@ -223,6 +223,8 @@
     "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
     "confirmExitOnBack": "Bevestigen voor afsluiten",
     "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten",
+    "autoHidePerformanceOverlay": "Prestatie-overlay automatisch verbergen",
+    "autoHidePerformanceOverlayDescription": "Laat de prestatie-overlay meevervagen met de afspeelknoppen",
     "showNavBarLabels": "Navigatiebalk labels tonen",
     "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen van de navigatiebalk weergeven",
     "liveTvDefaultFavorites": "Standaard favoriete zenders",

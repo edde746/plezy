@@ -342,6 +342,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
 	@override String get confirmExitOnBack => '退出前确认';
 	@override String get confirmExitOnBackDescription => '按返回键退出应用时显示确认对话框';
+	@override String get autoHidePerformanceOverlay => '自动隐藏性能叠加层';
+	@override String get autoHidePerformanceOverlayDescription => '性能叠加层随播放控件一起淡入淡出';
 	@override String get showNavBarLabels => '显示导航栏标签';
 	@override String get showNavBarLabelsDescription => '在导航栏图标下方显示文字标签';
 	@override String get liveTvDefaultFavorites => '默认显示收藏频道';
@@ -1567,6 +1569,8 @@ extension on TranslationsZh {
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
 			'settings.confirmExitOnBack' => '退出前确认',
 			'settings.confirmExitOnBackDescription' => '按返回键退出应用时显示确认对话框',
+			'settings.autoHidePerformanceOverlay' => '自动隐藏性能叠加层',
+			'settings.autoHidePerformanceOverlayDescription' => '性能叠加层随播放控件一起淡入淡出',
 			'settings.showNavBarLabels' => '显示导航栏标签',
 			'settings.showNavBarLabelsDescription' => '在导航栏图标下方显示文字标签',
 			'settings.liveTvDefaultFavorites' => '默认显示收藏频道',
@@ -1864,10 +1868,10 @@ extension on TranslationsZh {
 			'about.viewLicensesDescription' => '查看第三方库的许可证',
 			'serverSelection.allServerConnectionsFailed' => '无法连接到任何服务器。请检查你的网络并重试。',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',
-			'hubDetail.title' => '标题',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',
+			'hubDetail.title' => '标题',
 			'hubDetail.releaseYear' => '发行年份',
 			'hubDetail.dateAdded' => '添加日期',
 			'hubDetail.rating' => '评分',

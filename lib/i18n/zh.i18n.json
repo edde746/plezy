@@ -223,6 +223,8 @@
     "requireProfileSelectionOnOpenDescription": "每次打开应用时显示配置文件选择",
     "confirmExitOnBack": "退出前确认",
     "confirmExitOnBackDescription": "按返回键退出应用时显示确认对话框",
+    "autoHidePerformanceOverlay": "自动隐藏性能叠加层",
+    "autoHidePerformanceOverlayDescription": "性能叠加层随播放控件一起淡入淡出",
     "showNavBarLabels": "显示导航栏标签",
     "showNavBarLabelsDescription": "在导航栏图标下方显示文字标签",
     "liveTvDefaultFavorites": "默认显示收藏频道",

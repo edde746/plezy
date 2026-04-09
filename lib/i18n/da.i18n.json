@@ -223,6 +223,8 @@
     "requireProfileSelectionOnOpenDescription": "Vis profilvalg hver gang appen åbnes",
     "confirmExitOnBack": "Bekræft før lukning",
     "confirmExitOnBackDescription": "Vis bekræftelsesdialog ved tryk på tilbage for at lukke appen",
+    "autoHidePerformanceOverlay": "Skjul ydelses-overlay automatisk",
+    "autoHidePerformanceOverlayDescription": "Fade ydelses-overlayet med afspilningskontrollerne",
     "showNavBarLabels": "Vis navigationsbarlabels",
     "showNavBarLabelsDescription": "Vis tekstlabels under navigationsbarikoner",
     "liveTvDefaultFavorites": "Standard til favoritkanaler",

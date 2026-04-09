@@ -223,6 +223,8 @@
     "requireProfileSelectionOnOpenDescription": "Pokaż wybór profilu za każdym razem, gdy aplikacja jest otwierana",
     "confirmExitOnBack": "Potwierdź przed wyjściem",
     "confirmExitOnBackDescription": "Pokaż dialog potwierdzenia przy naciśnięciu wstecz, aby wyjść z aplikacji",
+    "autoHidePerformanceOverlay": "Automatycznie ukrywaj nakładkę wydajności",
+    "autoHidePerformanceOverlayDescription": "Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania",
     "showNavBarLabels": "Pokaż etykiety paska nawigacji",
     "showNavBarLabelsDescription": "Wyświetl tekstowe etykiety pod ikonami paska nawigacji",
     "liveTvDefaultFavorites": "Domyślnie ulubione kanały",

@@ -312,6 +312,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _videoPlayerNavigationEnabled = false;
   // Performance overlay
   bool _showPerformanceOverlay = false;
+  bool _autoHidePerformanceOverlay = true;
   // Long-press 2x speed state
   bool _isLongPressing = false;
   // Subtitle visibility toggle state
@@ -603,6 +604,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _autoSkipDelay = settingsService.getAutoSkipDelay();
         _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
         _showPerformanceOverlay = settingsService.getShowPerformanceOverlay();
+        _autoHidePerformanceOverlay = settingsService.getAutoHidePerformanceOverlay();
         _clickVideoTogglesPlayback = settingsService.getClickVideoTogglesPlayback();
       });
 
@@ -2191,7 +2193,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                       curve: Curves.easeInOut,
                       top: _showControls && isMobile ? 80.0 : 16.0,
                       left: 16,
-                      child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
+                      child: AnimatedOpacity(
+                        opacity: (!_autoHidePerformanceOverlay || _showControls || _forceShowControls) ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
+                      ),
                     ),
                   // Screen lock overlay - absorbs all touches when active
                   if (_isScreenLocked)

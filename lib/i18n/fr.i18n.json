@@ -223,6 +223,8 @@
     "requireProfileSelectionOnOpenDescription": "Afficher la sélection de profil à chaque ouverture de l'application",
     "confirmExitOnBack": "Confirmer avant de quitter",
     "confirmExitOnBackDescription": "Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter",
+    "autoHidePerformanceOverlay": "Masquer auto. superposition performances",
+    "autoHidePerformanceOverlayDescription": "Faire apparaître/disparaître la superposition avec les contrôles de lecture",
     "showNavBarLabels": "Afficher les libellés de la barre de navigation",
     "showNavBarLabelsDescription": "Afficher les libellés sous les icônes de la barre de navigation",
     "liveTvDefaultFavorites": "Chaînes favorites par défaut",

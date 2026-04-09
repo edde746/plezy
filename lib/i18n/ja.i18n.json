@@ -223,6 +223,8 @@
     "requireProfileSelectionOnOpenDescription": "アプリを開くたびにプロフィール選択を表示",
     "confirmExitOnBack": "終了前に確認",
     "confirmExitOnBackDescription": "戻るボタンでアプリを終了する際に確認ダイアログを表示",
+    "autoHidePerformanceOverlay": "パフォーマンスオーバーレイを自動非表示",
+    "autoHidePerformanceOverlayDescription": "再生コントロールと一緒にパフォーマンスオーバーレイをフェードする",
     "showNavBarLabels": "ナビゲーションバーラベルを表示",
     "showNavBarLabelsDescription": "ナビゲーションバーアイコンの下にテキストラベルを表示",
     "liveTvDefaultFavorites": "お気に入りチャンネルをデフォルトに",
