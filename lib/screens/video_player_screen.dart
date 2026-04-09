@@ -223,14 +223,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _wasPlayingBeforeInactive = false;
   bool _hiddenForBackground = false;
   bool _autoPipEnabled = false;
+  bool _androidAutoPipTransitionInFlight = false;
+  bool _resumeLiveTimelineOnResume = false;
   int _rewindOnResume = 0;
   Future<void> _lifecycleTransition = Future<void>.value();
+  String _playerBackendLabel = 'unknown';
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
-  /// iOS auto-PiP is system-initiated during the background transition, so
-  /// isPipActive may not be true yet — we also check the auto-PiP setting.
+  /// Apple auto-PiP is system-initiated during the background transition, and
+  /// Android auto-PiP on API 26-30 has a brief native transition window before
+  /// onPipChanged fires.
   bool get _shouldSkipForPip =>
-      PipService().isPipActive.value || ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled);
+      PipService().isPipActive.value ||
+      ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled) ||
+      (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
   // Services
   MediaControlsManager? _mediaControlsManager;
@@ -360,25 +366,32 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     switch (state) {
       case AppLifecycleState.inactive:
+        _recordLifecycleState('inactive');
         // App is inactive (notification shade, split-screen, etc.)
         // Don't pause - user may still be watching
         break;
       case AppLifecycleState.hidden:
+        _recordLifecycleState('hidden');
         _enqueueLifecycleTransition('hidden', _handleAppHidden);
         break;
       case AppLifecycleState.paused:
-        if (_shouldSkipForPip) break;
+        if (_shouldSkipForPip) {
+          _recordLifecycleState('paused', action: 'skipped_for_pip');
+          break;
+        }
         // Clear media controls when app truly goes to background
         // (we don't support background playback)
         _mediaControlsManager?.clear();
         // Disable wakelock when app goes to background
         _setWakelock(false);
-        appLogger.d('Media controls cleared and wakelock disabled due to app being paused/backgrounded');
+        _recordLifecycleState('paused', action: 'backgrounded');
         break;
       case AppLifecycleState.resumed:
+        _recordLifecycleState('resumed');
         _enqueueLifecycleTransition('resumed', _handleAppResumed);
         break;
       case AppLifecycleState.detached:
+        _recordLifecycleState('detached');
         // No action needed for this state
         break;
     }
@@ -399,35 +412,107 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         });
   }
 
+  void _recordLifecycleState(String state, {String? action}) {
+    final isTv = PlatformDetector.isTV();
+    final pipActive = PipService().isPipActive.value;
+    final breadcrumbData = <String, dynamic>{
+      'state': state,
+      'isTv': isTv,
+      'autoPipEnabled': _autoPipEnabled,
+      'pipActive': pipActive,
+      'pipTransitionInFlight': _androidAutoPipTransitionInFlight,
+      'hiddenForBackground': _hiddenForBackground,
+      'backend': _playerBackendLabel,
+    };
+    if (action != null) {
+      breadcrumbData['action'] = action;
+    }
+
+    Sentry.addBreadcrumb(
+      Breadcrumb(message: 'Player lifecycle $state', category: 'player.lifecycle', data: breadcrumbData),
+    );
+
+    appLogger.d(
+      'Player lifecycle: state=$state'
+      '${action != null ? ' action=$action' : ''}'
+      ' isTv=$isTv'
+      ' autoPipEnabled=$_autoPipEnabled'
+      ' pipActive=$pipActive'
+      ' pipTransitionInFlight=$_androidAutoPipTransitionInFlight'
+      ' hiddenForBackground=$_hiddenForBackground'
+      ' backend=$_playerBackendLabel',
+    );
+  }
+
+  void _setAndroidAutoPipTransitionInFlight(bool value, {required String reason}) {
+    if (!Platform.isAndroid || _androidAutoPipTransitionInFlight == value) return;
+    _androidAutoPipTransitionInFlight = value;
+    _recordLifecycleState('pip_transition', action: '${value ? 'started' : 'cleared'}:$reason');
+  }
+
+  void _suspendLiveTimelineForBackground() {
+    _resumeLiveTimelineOnResume = _liveTimelineTimer != null;
+    _stopLiveTimelineUpdates();
+  }
+
+  void _resumeLiveTimelineAfterBackgroundIfNeeded() {
+    final shouldResume = _resumeLiveTimelineOnResume;
+    _resumeLiveTimelineOnResume = false;
+    if (shouldResume && _liveSessionIdentifier != null) {
+      _startLiveTimelineUpdates();
+    }
+  }
+
   Future<void> _handleAppHidden() async {
-    if (_shouldSkipForPip) return;
+    if (_shouldSkipForPip) {
+      _recordLifecycleState('hidden', action: 'skipped_for_pip');
+      return;
+    }
 
     final currentPlayer = player;
-    if (currentPlayer == null || !_isPlayerInitialized) return;
+    if (currentPlayer == null || !_isPlayerInitialized) {
+      _recordLifecycleState('hidden', action: 'skipped_no_player');
+      return;
+    }
+
+    final isTv = PlatformDetector.isTV();
+    final shouldPauseForBackground = PlatformDetector.isHandheld(context) || isTv;
 
     // Pause first so Android MPV does not keep decoding against a transient
     // background surface while the app is locking or hiding.
-    if (PlatformDetector.isMobile(context)) {
+    if (shouldPauseForBackground) {
       _wasPlayingBeforeInactive = currentPlayer.state.isActive;
       if (_wasPlayingBeforeInactive) {
         try {
           await currentPlayer.pause();
-          appLogger.d('Video paused due to app being hidden (mobile)');
+          appLogger.d('Video paused due to app being hidden (${isTv ? 'tv' : 'handheld'})');
         } catch (e) {
-          appLogger.w('Failed to pause video before hiding render layer', error: e);
+          appLogger.w('Failed to pause video before background transition', error: e);
         }
       }
     }
 
     if (!mounted || currentPlayer != player) return;
 
+    _suspendLiveTimelineForBackground();
+
+    if (isTv) {
+      _recordLifecycleState('hidden', action: 'tv_background_pause_only');
+      return;
+    }
+
     _hiddenForBackground = true;
-    _liveTimelineTimer?.cancel();
     await currentPlayer.setVisible(false);
-    appLogger.d('Render layer hidden due to app being hidden');
+    _recordLifecycleState('hidden', action: 'render_hidden');
   }
 
   Future<void> _handleAppResumed() async {
+    _recordLifecycleState('resumed', action: 'begin');
+
+    if (Platform.isAndroid && _androidAutoPipTransitionInFlight && !PipService().isPipActive.value) {
+      _setAndroidAutoPipTransitionInFlight(false, reason: 'resume_without_pip');
+    }
+
     final currentPlayer = player;
 
     // Restore render layer if it was hidden for background, then force a
@@ -439,16 +524,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (!mounted || currentPlayer != player) return;
 
       _hiddenForBackground = false;
-      if (_liveSessionIdentifier != null) {
-        _startLiveTimelineUpdates();
-      }
-      appLogger.d('Render layer restored after app resumed');
+      _recordLifecycleState('resumed', action: 'render_restored');
     }
 
     // Restore media controls and wakelock when app is resumed.
     if (_isPlayerInitialized && mounted) {
       await _restoreMediaControlsAfterResume();
     }
+
+    _resumeLiveTimelineAfterBackgroundIfNeeded();
+    _recordLifecycleState('resumed', action: 'complete');
   }
 
   Future<void> _initializePlayer() async {
@@ -471,6 +556,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Create player (on Android, uses ExoPlayer by default, MPV as fallback)
       player = Player(useExoPlayer: useExoPlayer);
+      _playerBackendLabel = player!.playerType;
 
       await player!.configureSubtitleFonts();
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
@@ -805,10 +891,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final sigPeakStr = await player!.getProperty('video-params/sig-peak');
       final sigPeak = double.tryParse(sigPeakStr ?? '');
 
-      final delay = await _displayModeService!.applyDisplayMatching(
-        fps: fps,
-        sigPeak: sigPeak,
-      );
+      final delay = await _displayModeService!.applyDisplayMatching(fps: fps, sigPeak: sigPeak);
 
       if (delay > Duration.zero) {
         await Future.delayed(delay);
@@ -1132,8 +1215,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             final nowEpoch = DateTime.now().millisecondsSinceEpoch ~/ 1000;
             final effectiveStart = max(_captureBuffer!.seekableStartEpoch, _programBeginsAt!);
             final elapsed = nowEpoch - effectiveStart;
-            appLogger.d('Time-shift: buffer=${_captureBuffer!.seekableDurationSeconds}s, '
-                'beginsAt=$_programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)');
+            appLogger.d(
+              'Time-shift: buffer=${_captureBuffer!.seekableDurationSeconds}s, '
+              'beginsAt=$_programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)',
+            );
             if (elapsed > 60) {
               final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
               if (!mounted) return;
@@ -1312,6 +1397,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           // Auto-PiP: set up callback for API 26-30 path and initial state
           if (_autoPipEnabled) {
             PipService.onAutoPipEntering = () {
+              _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
               _videoFilterManager?.enterPipMode();
             };
             if (player!.state.playing) {
@@ -1492,9 +1578,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Handle PiP state changes to restore video scaling when exiting PiP
   void _onPipStateChanged() {
+    final isInPip = _videoPIPManager?.isPipActive.value ?? PipService().isPipActive.value;
+    _setAndroidAutoPipTransitionInFlight(false, reason: 'pip_state_changed');
+    _recordLifecycleState('pip_state_changed', action: isInPip ? 'entered' : 'exited');
+
     if (_videoPIPManager == null || _videoFilterManager == null) return;
 
-    final isInPip = _videoPIPManager!.isPipActive.value;
     // Only handle exit - entry is handled by onBeforeEnterPip callback
     if (!isInPip) {
       final restoreAmbient = _videoFilterManager!.hadAmbientLightingBeforePip;
@@ -2083,10 +2172,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _videoPIPManager?.updateAutoPipState(isPlaying: false);
     }
 
-    if (_nextEpisode != null &&
-        !_showPlayNextDialog &&
-        !_showStillWatchingPrompt &&
-        !_completionTriggered) {
+    if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionTriggered) {
       _completionTriggered = true;
 
       // Capture keyboard mode before async gap
@@ -2146,6 +2232,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Handle notification when native player switched from ExoPlayer to MPV
   Future<void> _onBackendSwitched() async {
+    _playerBackendLabel = 'mpv';
+    _recordLifecycleState('backend_switched', action: 'mpv_fallback');
+
     if (mounted) {
       showAppSnackBar(context, t.messages.switchingToCompatiblePlayer);
     }
@@ -2334,7 +2423,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final client = widget.liveClient;
     final channels = widget.liveChannels;
     final channelIndex = _liveChannelIndex;
-    if (client == null || channels == null || channelIndex < 0 || channelIndex >= channels.length || widget.liveDvrKey == null) {
+    if (client == null ||
+        channels == null ||
+        channelIndex < 0 ||
+        channelIndex >= channels.length ||
+        widget.liveDvrKey == null) {
       appLogger.w('Cannot retry live stream — missing session info');
       showGlobalErrorSnackBar(_lastLogError ?? 'Live stream failed');
       _handleBackButton();
@@ -2399,8 +2492,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   /// The current playback position as an absolute epoch second (for live TV time-shift).
-  int get _currentPositionEpoch =>
-      (_streamStartEpoch + (player?.state.position.inSeconds ?? 0)).round();
+  int get _currentPositionEpoch => (_streamStartEpoch + (player?.state.position.inSeconds ?? 0)).round();
 
   /// Show "Watch from Start" / "Watch Live" dialog.
   /// Returns true if user chose "Watch from start", false for "Watch Live", null if dismissed.
@@ -2419,12 +2511,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Seek the live TV stream to an absolute epoch second.
   /// Creates a new transcode session at the target offset.
   Future<void> _seekLivePosition(int targetEpochSeconds) async {
-    if (_captureBuffer == null || _liveSessionPath == null || _liveSessionIdentifier == null || _transcodeSessionId == null) return;
+    if (_captureBuffer == null ||
+        _liveSessionPath == null ||
+        _liveSessionIdentifier == null ||
+        _transcodeSessionId == null) {
+      return;
+    }
 
-    final clamped = targetEpochSeconds.clamp(
-      _captureBuffer!.seekableStartEpoch,
-      _captureBuffer!.seekableEndEpoch,
-    );
+    final clamped = targetEpochSeconds.clamp(_captureBuffer!.seekableStartEpoch, _captureBuffer!.seekableEndEpoch);
 
     final offsetSeconds = clamped - _captureBuffer!.startedAt.round();
 
@@ -2446,11 +2540,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _livePlaybackStartTime = DateTime.now();
 
     await _setLiveStreamOptions();
-    await player!.open(
-      Media(streamUrl, headers: const {'Accept-Language': 'en'}),
-      play: true,
-      isLive: true,
-    );
+    await player!.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
     if (mounted) setState(() {});
   }
 

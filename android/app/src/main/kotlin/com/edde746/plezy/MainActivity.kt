@@ -49,6 +49,10 @@ class MainActivity : FlutterActivity() {
     private var autoPipWidth: Int = 16
     private var autoPipHeight: Int = 9
 
+    private fun isAndroidTvDevice(): Boolean {
+        return packageManager.hasSystemFeature("android.software.leanback")
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Apply persisted theme color to the window background before anything
         // else renders.  This prevents a white flash between the native splash
@@ -280,11 +284,16 @@ class MainActivity : FlutterActivity() {
         MethodChannel( flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "isSupported" -> {
-                    result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                    result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isAndroidTvDevice())
                 }
                 "enter" -> {
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                         result.success(mapOf("success" to false, "errorCode" to "android_version"))
+                        return@setMethodCallHandler
+                    }
+
+                    if (isAndroidTvDevice()) {
+                        result.success(mapOf("success" to false, "errorCode" to "not_supported"))
                         return@setMethodCallHandler
                     }
 
@@ -310,6 +319,12 @@ class MainActivity : FlutterActivity() {
                     }
                 }
                 "setAutoPipReady" -> {
+                    if (isAndroidTvDevice()) {
+                        autoPipReady = false
+                        result.success(true)
+                        return@setMethodCallHandler
+                    }
+
                     autoPipReady = call.argument<Boolean>("ready") ?: false
                     autoPipWidth = call.argument<Int>("width") ?: 16
                     autoPipHeight = call.argument<Int>("height") ?: 9
@@ -342,7 +357,8 @@ class MainActivity : FlutterActivity() {
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         // Auto PiP for API 26-30 (API 31+ uses setAutoEnterEnabled)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+        if (!isAndroidTvDevice() &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             Build.VERSION.SDK_INT < Build.VERSION_CODES.S &&
             autoPipReady && isPipPermissionGranted()) {
             try {

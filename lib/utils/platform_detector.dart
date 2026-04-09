@@ -64,6 +64,11 @@ class PlatformDetector {
     return platform == TargetPlatform.iOS || platform == TargetPlatform.android;
   }
 
+  /// Detects if running on a handheld mobile device (phone or tablet, not TV).
+  static bool isHandheld(BuildContext context) {
+    return isMobile(context) && !isTV();
+  }
+
   /// Detects if running on a desktop platform (Windows, macOS, or Linux)
   static bool isDesktop(BuildContext context) {
     return !isMobile(context);
@@ -86,6 +91,6 @@ class PlatformDetector {
 
   /// Detects if the device is a phone (mobile but not tablet)
   static bool isPhone(BuildContext context) {
-    return isMobile(context) && !isTablet(context);
+    return isHandheld(context) && !isTablet(context);
   }
 }
