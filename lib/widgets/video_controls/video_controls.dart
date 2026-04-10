@@ -1909,6 +1909,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                 final isHorizontal = key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight;
                 if (isHorizontal) {
                   _showControlsWithTimelineFocus();
+                  if (widget.canControl) {
+                    final forward = key == LogicalKeyboardKey.arrowRight;
+                    unawaited(_seekByTime(forward: forward));
+                  }
                 } else {
                   _showControlsWithFocus();
                 }

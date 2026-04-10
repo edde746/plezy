@@ -497,7 +497,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
       // Live TV: epoch-based seeking via onLiveSeek
       if (_isLive && widget.onLiveSeek != null && widget.currentPositionEpoch != null) {
-        final stepSeconds = (10.0 * effectiveMultiplier).clamp(1, 300).round();
+        final stepSeconds = (widget.seekTimeSmall * effectiveMultiplier).clamp(1, 300).round();
         final targetEpoch = widget.currentPositionEpoch! + (isForward ? stepSeconds : -stepSeconds);
         widget.onLiveSeek!(targetEpoch);
         widget.onFocusActivity?.call();
@@ -506,9 +506,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
       if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
 
-      // Base step: 0.5% of duration, minimum 500ms, maximum 15s
-      final baseStepMs = (duration.inMilliseconds * 0.005).clamp(500, 15000).toInt();
-      final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 60000).toInt();
+      final baseStepMs = widget.seekTimeSmall * 1000;
+      final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 120000).toInt();
       final step = Duration(milliseconds: stepMs);
 
       final newPosition = isForward ? position + step : position - step;
