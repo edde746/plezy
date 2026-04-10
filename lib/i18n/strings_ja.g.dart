@@ -1110,8 +1110,12 @@ class _TranslationsMetadataEditJa implements TranslationsMetadataEditEn {
 	@override String get summary => 'あらすじ';
 	@override String get poster => 'ポスター';
 	@override String get background => '背景';
+	@override String get logo => 'ロゴ';
+	@override String get squareArt => '正方形アート';
 	@override String get selectPoster => 'ポスターを選択';
 	@override String get selectBackground => '背景を選択';
+	@override String get selectLogo => 'ロゴを選択';
+	@override String get selectSquareArt => '正方形アートを選択';
 	@override String get fromUrl => 'URLから';
 	@override String get uploadFile => 'ファイルをアップロード';
 	@override String get enterImageUrl => '画像URLを入力';
@@ -2159,8 +2163,12 @@ extension on TranslationsJa {
 			'metadataEdit.summary' => 'あらすじ',
 			'metadataEdit.poster' => 'ポスター',
 			'metadataEdit.background' => '背景',
+			'metadataEdit.logo' => 'ロゴ',
+			'metadataEdit.squareArt' => '正方形アート',
 			'metadataEdit.selectPoster' => 'ポスターを選択',
 			'metadataEdit.selectBackground' => '背景を選択',
+			'metadataEdit.selectLogo' => 'ロゴを選択',
+			'metadataEdit.selectSquareArt' => '正方形アートを選択',
 			'metadataEdit.fromUrl' => 'URLから',
 			'metadataEdit.uploadFile' => 'ファイルをアップロード',
 			'metadataEdit.enterImageUrl' => '画像URLを入力',

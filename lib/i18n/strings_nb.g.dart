@@ -1110,8 +1110,12 @@ class _TranslationsMetadataEditNb implements TranslationsMetadataEditEn {
 	@override String get summary => 'Sammendrag';
 	@override String get poster => 'Plakat';
 	@override String get background => 'Bakgrunn';
+	@override String get logo => 'Logo';
+	@override String get squareArt => 'Kvadratisk bilde';
 	@override String get selectPoster => 'Velg plakat';
 	@override String get selectBackground => 'Velg bakgrunn';
+	@override String get selectLogo => 'Velg logo';
+	@override String get selectSquareArt => 'Velg kvadratisk bilde';
 	@override String get fromUrl => 'Fra URL';
 	@override String get uploadFile => 'Last opp fil';
 	@override String get enterImageUrl => 'Skriv inn bilde-URL';
@@ -2159,8 +2163,12 @@ extension on TranslationsNb {
 			'metadataEdit.summary' => 'Sammendrag',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Bakgrunn',
+			'metadataEdit.logo' => 'Logo',
+			'metadataEdit.squareArt' => 'Kvadratisk bilde',
 			'metadataEdit.selectPoster' => 'Velg plakat',
 			'metadataEdit.selectBackground' => 'Velg bakgrunn',
+			'metadataEdit.selectLogo' => 'Velg logo',
+			'metadataEdit.selectSquareArt' => 'Velg kvadratisk bilde',
 			'metadataEdit.fromUrl' => 'Fra URL',
 			'metadataEdit.uploadFile' => 'Last opp fil',
 			'metadataEdit.enterImageUrl' => 'Skriv inn bilde-URL',

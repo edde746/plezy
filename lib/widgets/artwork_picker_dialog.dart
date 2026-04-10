@@ -31,7 +31,15 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
   bool _isLoading = true;
   bool _isApplying = false;
 
-  bool get _isPosters => widget.element == 'posters';
+  ({int crossAxisCount, double aspectRatio, String title}) get _elementConfig {
+    return switch (widget.element) {
+      'posters' => (crossAxisCount: 3, aspectRatio: 2.0 / 3.0, title: t.metadataEdit.selectPoster),
+      'arts' => (crossAxisCount: 2, aspectRatio: 16.0 / 9.0, title: t.metadataEdit.selectBackground),
+      'clearLogos' => (crossAxisCount: 2, aspectRatio: 2.5 / 1.0, title: t.metadataEdit.selectLogo),
+      'squareArts' => (crossAxisCount: 3, aspectRatio: 1.0, title: t.metadataEdit.selectSquareArt),
+      _ => (crossAxisCount: 3, aspectRatio: 2.0 / 3.0, title: t.metadataEdit.selectPoster),
+    };
+  }
 
   @override
   void initState() {
@@ -124,10 +132,8 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _isPosters ? t.metadataEdit.selectPoster : t.metadataEdit.selectBackground;
-
     return AlertDialog(
-      title: Text(title),
+      title: Text(_elementConfig.title),
       content: SizedBox(
         width: 500,
         height: 400,
@@ -177,15 +183,14 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
   }
 
   Widget _buildGrid() {
-    final crossAxisCount = _isPosters ? 3 : 2;
-    final aspectRatio = _isPosters ? 2.0 / 3.0 : 16.0 / 9.0;
+    final config = _elementConfig;
 
     return GridView.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
+        crossAxisCount: config.crossAxisCount,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
-        childAspectRatio: aspectRatio,
+        childAspectRatio: config.aspectRatio,
       ),
       itemCount: _artworkList!.length,
       itemBuilder: (context, index) {

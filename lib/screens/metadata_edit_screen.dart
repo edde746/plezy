@@ -367,6 +367,8 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
   bool get _showTagline => _mediaType == PlexMediaType.movie || _mediaType == PlexMediaType.show;
   bool get _showBackground =>
       _mediaType == PlexMediaType.movie || _mediaType == PlexMediaType.show || _mediaType == PlexMediaType.episode;
+  bool get _showExtendedArtwork =>
+      _mediaType == PlexMediaType.movie || _mediaType == PlexMediaType.show || _mediaType == PlexMediaType.collection;
   bool get _showAdvanced => _mediaType != PlexMediaType.episode;
 
   List<({String key, String label})> get _tagFields {
@@ -606,6 +608,35 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     );
   }
 
+  Widget _buildArtworkTile({
+    required double width,
+    required double height,
+    required String? imagePath,
+    required String label,
+    required String element,
+    BoxFit fit = BoxFit.cover,
+  }) {
+    return ListTile(
+      leading: SizedBox(
+        width: width,
+        height: height,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(4)),
+          child: PlexOptimizedImage(
+            client: _client,
+            imagePath: imagePath,
+            width: width,
+            height: height,
+            fit: fit,
+          ),
+        ),
+      ),
+      title: Text(label),
+      trailing: const AppIcon(Symbols.chevron_right_rounded),
+      onTap: () => _openArtworkPicker(element),
+    );
+  }
+
   Widget _buildArtworkCard() {
     final meta = _fullMetadata ?? widget.metadata;
 
@@ -620,45 +651,13 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
-          ListTile(
-            leading: SizedBox(
-              width: 40,
-              height: 60,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.all(Radius.circular(4)),
-                child: PlexOptimizedImage(
-                  client: _client,
-                  imagePath: meta.thumb,
-                  width: 40,
-                  height: 60,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            title: Text(t.metadataEdit.poster),
-            trailing: const AppIcon(Symbols.chevron_right_rounded),
-            onTap: () => _openArtworkPicker('posters'),
-          ),
+          _buildArtworkTile(width: 40, height: 60, imagePath: meta.thumb, label: t.metadataEdit.poster, element: 'posters'),
           if (_showBackground)
-            ListTile(
-              leading: SizedBox(
-                width: 80,
-                height: 45,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(4)),
-                  child: PlexOptimizedImage(
-                    client: _client,
-                    imagePath: meta.art,
-                    width: 80,
-                    height: 45,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              title: Text(t.metadataEdit.background),
-              trailing: const AppIcon(Symbols.chevron_right_rounded),
-              onTap: () => _openArtworkPicker('arts'),
-            ),
+            _buildArtworkTile(width: 80, height: 45, imagePath: meta.art, label: t.metadataEdit.background, element: 'arts'),
+          if (_showExtendedArtwork)
+            _buildArtworkTile(width: 80, height: 32, imagePath: meta.clearLogo, label: t.metadataEdit.logo, element: 'clearLogos', fit: BoxFit.contain),
+          if (_showExtendedArtwork)
+            _buildArtworkTile(width: 50, height: 50, imagePath: meta.backgroundSquare, label: t.metadataEdit.squareArt, element: 'squareArts'),
         ],
       ),
     );

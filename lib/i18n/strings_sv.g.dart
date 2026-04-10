@@ -1110,8 +1110,12 @@ class _TranslationsMetadataEditSv implements TranslationsMetadataEditEn {
 	@override String get summary => 'Sammanfattning';
 	@override String get poster => 'Poster';
 	@override String get background => 'Bakgrund';
+	@override String get logo => 'Logotyp';
+	@override String get squareArt => 'Kvadratisk bild';
 	@override String get selectPoster => 'Välj poster';
 	@override String get selectBackground => 'Välj bakgrund';
+	@override String get selectLogo => 'Välj logotyp';
+	@override String get selectSquareArt => 'Välj kvadratisk bild';
 	@override String get fromUrl => 'Från URL';
 	@override String get uploadFile => 'Ladda upp fil';
 	@override String get enterImageUrl => 'Ange bild-URL';
@@ -2159,8 +2163,12 @@ extension on TranslationsSv {
 			'metadataEdit.summary' => 'Sammanfattning',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Bakgrund',
+			'metadataEdit.logo' => 'Logotyp',
+			'metadataEdit.squareArt' => 'Kvadratisk bild',
 			'metadataEdit.selectPoster' => 'Välj poster',
 			'metadataEdit.selectBackground' => 'Välj bakgrund',
+			'metadataEdit.selectLogo' => 'Välj logotyp',
+			'metadataEdit.selectSquareArt' => 'Välj kvadratisk bild',
 			'metadataEdit.fromUrl' => 'Från URL',
 			'metadataEdit.uploadFile' => 'Ladda upp fil',
 			'metadataEdit.enterImageUrl' => 'Ange bild-URL',

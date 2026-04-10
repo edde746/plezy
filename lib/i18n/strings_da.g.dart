@@ -1110,8 +1110,12 @@ class _TranslationsMetadataEditDa implements TranslationsMetadataEditEn {
 	@override String get summary => 'Resumé';
 	@override String get poster => 'Plakat';
 	@override String get background => 'Baggrund';
+	@override String get logo => 'Logo';
+	@override String get squareArt => 'Kvadratisk billede';
 	@override String get selectPoster => 'Vælg plakat';
 	@override String get selectBackground => 'Vælg baggrund';
+	@override String get selectLogo => 'Vælg logo';
+	@override String get selectSquareArt => 'Vælg kvadratisk billede';
 	@override String get fromUrl => 'Fra URL';
 	@override String get uploadFile => 'Upload fil';
 	@override String get enterImageUrl => 'Indtast billed-URL';
@@ -2159,8 +2163,12 @@ extension on TranslationsDa {
 			'metadataEdit.summary' => 'Resumé',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Baggrund',
+			'metadataEdit.logo' => 'Logo',
+			'metadataEdit.squareArt' => 'Kvadratisk billede',
 			'metadataEdit.selectPoster' => 'Vælg plakat',
 			'metadataEdit.selectBackground' => 'Vælg baggrund',
+			'metadataEdit.selectLogo' => 'Vælg logo',
+			'metadataEdit.selectSquareArt' => 'Vælg kvadratisk billede',
 			'metadataEdit.fromUrl' => 'Fra URL',
 			'metadataEdit.uploadFile' => 'Upload fil',
 			'metadataEdit.enterImageUrl' => 'Indtast billed-URL',

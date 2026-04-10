@@ -1110,8 +1110,12 @@ class _TranslationsMetadataEditPt implements TranslationsMetadataEditEn {
 	@override String get summary => 'Sinopse';
 	@override String get poster => 'Poster';
 	@override String get background => 'Plano de Fundo';
+	@override String get logo => 'Logo';
+	@override String get squareArt => 'Imagem Quadrada';
 	@override String get selectPoster => 'Selecionar Poster';
 	@override String get selectBackground => 'Selecionar Plano de Fundo';
+	@override String get selectLogo => 'Selecionar Logo';
+	@override String get selectSquareArt => 'Selecionar Imagem Quadrada';
 	@override String get fromUrl => 'Da URL';
 	@override String get uploadFile => 'Enviar Arquivo';
 	@override String get enterImageUrl => 'Insira a URL da imagem';
@@ -2159,8 +2163,12 @@ extension on TranslationsPt {
 			'metadataEdit.summary' => 'Sinopse',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Plano de Fundo',
+			'metadataEdit.logo' => 'Logo',
+			'metadataEdit.squareArt' => 'Imagem Quadrada',
 			'metadataEdit.selectPoster' => 'Selecionar Poster',
 			'metadataEdit.selectBackground' => 'Selecionar Plano de Fundo',
+			'metadataEdit.selectLogo' => 'Selecionar Logo',
+			'metadataEdit.selectSquareArt' => 'Selecionar Imagem Quadrada',
 			'metadataEdit.fromUrl' => 'Da URL',
 			'metadataEdit.uploadFile' => 'Enviar Arquivo',
 			'metadataEdit.enterImageUrl' => 'Insira a URL da imagem',

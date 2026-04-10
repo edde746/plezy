@@ -1110,8 +1110,12 @@ class _TranslationsMetadataEditZh implements TranslationsMetadataEditEn {
 	@override String get summary => '简介';
 	@override String get poster => '海报';
 	@override String get background => '背景';
+	@override String get logo => '标志';
+	@override String get squareArt => '方形图片';
 	@override String get selectPoster => '选择海报';
 	@override String get selectBackground => '选择背景';
+	@override String get selectLogo => '选择标志';
+	@override String get selectSquareArt => '选择方形图片';
 	@override String get fromUrl => '从 URL';
 	@override String get uploadFile => '上传文件';
 	@override String get enterImageUrl => '输入图片 URL';
@@ -2159,8 +2163,12 @@ extension on TranslationsZh {
 			'metadataEdit.summary' => '简介',
 			'metadataEdit.poster' => '海报',
 			'metadataEdit.background' => '背景',
+			'metadataEdit.logo' => '标志',
+			'metadataEdit.squareArt' => '方形图片',
 			'metadataEdit.selectPoster' => '选择海报',
 			'metadataEdit.selectBackground' => '选择背景',
+			'metadataEdit.selectLogo' => '选择标志',
+			'metadataEdit.selectSquareArt' => '选择方形图片',
 			'metadataEdit.fromUrl' => '从 URL',
 			'metadataEdit.uploadFile' => '上传文件',
 			'metadataEdit.enterImageUrl' => '输入图片 URL',

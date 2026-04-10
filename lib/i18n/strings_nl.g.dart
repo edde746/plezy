@@ -1110,8 +1110,12 @@ class _TranslationsMetadataEditNl implements TranslationsMetadataEditEn {
 	@override String get summary => 'Samenvatting';
 	@override String get poster => 'Poster';
 	@override String get background => 'Achtergrond';
+	@override String get logo => 'Logo';
+	@override String get squareArt => 'Vierkante afbeelding';
 	@override String get selectPoster => 'Poster selecteren';
 	@override String get selectBackground => 'Achtergrond selecteren';
+	@override String get selectLogo => 'Logo selecteren';
+	@override String get selectSquareArt => 'Vierkante afbeelding selecteren';
 	@override String get fromUrl => 'Vanaf URL';
 	@override String get uploadFile => 'Bestand uploaden';
 	@override String get enterImageUrl => 'Voer afbeeldings-URL in';
@@ -2159,8 +2163,12 @@ extension on TranslationsNl {
 			'metadataEdit.summary' => 'Samenvatting',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Achtergrond',
+			'metadataEdit.logo' => 'Logo',
+			'metadataEdit.squareArt' => 'Vierkante afbeelding',
 			'metadataEdit.selectPoster' => 'Poster selecteren',
 			'metadataEdit.selectBackground' => 'Achtergrond selecteren',
+			'metadataEdit.selectLogo' => 'Logo selecteren',
+			'metadataEdit.selectSquareArt' => 'Vierkante afbeelding selecteren',
 			'metadataEdit.fromUrl' => 'Vanaf URL',
 			'metadataEdit.uploadFile' => 'Bestand uploaden',
 			'metadataEdit.enterImageUrl' => 'Voer afbeeldings-URL in',

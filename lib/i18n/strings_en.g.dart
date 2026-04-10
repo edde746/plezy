@@ -2508,11 +2508,23 @@ class TranslationsMetadataEditEn {
 	/// en: 'Background'
 	String get background => 'Background';
 
+	/// en: 'Logo'
+	String get logo => 'Logo';
+
+	/// en: 'Square Art'
+	String get squareArt => 'Square Art';
+
 	/// en: 'Select Poster'
 	String get selectPoster => 'Select Poster';
 
 	/// en: 'Select Background'
 	String get selectBackground => 'Select Background';
+
+	/// en: 'Select Logo'
+	String get selectLogo => 'Select Logo';
+
+	/// en: 'Select Square Art'
+	String get selectSquareArt => 'Select Square Art';
 
 	/// en: 'From URL'
 	String get fromUrl => 'From URL';
@@ -3884,8 +3896,12 @@ extension on Translations {
 			'metadataEdit.summary' => 'Summary',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Background',
+			'metadataEdit.logo' => 'Logo',
+			'metadataEdit.squareArt' => 'Square Art',
 			'metadataEdit.selectPoster' => 'Select Poster',
 			'metadataEdit.selectBackground' => 'Select Background',
+			'metadataEdit.selectLogo' => 'Select Logo',
+			'metadataEdit.selectSquareArt' => 'Select Square Art',
 			'metadataEdit.fromUrl' => 'From URL',
 			'metadataEdit.uploadFile' => 'Upload File',
 			'metadataEdit.enterImageUrl' => 'Enter image URL',

@@ -1110,8 +1110,12 @@ class _TranslationsMetadataEditKo implements TranslationsMetadataEditEn {
 	@override String get summary => '줄거리';
 	@override String get poster => '포스터';
 	@override String get background => '배경';
+	@override String get logo => '로고';
+	@override String get squareArt => '정사각형 아트';
 	@override String get selectPoster => '포스터 선택';
 	@override String get selectBackground => '배경 선택';
+	@override String get selectLogo => '로고 선택';
+	@override String get selectSquareArt => '정사각형 아트 선택';
 	@override String get fromUrl => 'URL에서';
 	@override String get uploadFile => '파일 업로드';
 	@override String get enterImageUrl => '이미지 URL 입력';
@@ -2159,8 +2163,12 @@ extension on TranslationsKo {
 			'metadataEdit.summary' => '줄거리',
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',
+			'metadataEdit.logo' => '로고',
+			'metadataEdit.squareArt' => '정사각형 아트',
 			'metadataEdit.selectPoster' => '포스터 선택',
 			'metadataEdit.selectBackground' => '배경 선택',
+			'metadataEdit.selectLogo' => '로고 선택',
+			'metadataEdit.selectSquareArt' => '정사각형 아트 선택',
 			'metadataEdit.fromUrl' => 'URL에서',
 			'metadataEdit.uploadFile' => '파일 업로드',
 			'metadataEdit.enterImageUrl' => '이미지 URL 입력',

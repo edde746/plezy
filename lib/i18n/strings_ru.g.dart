@@ -1110,8 +1110,12 @@ class _TranslationsMetadataEditRu implements TranslationsMetadataEditEn {
 	@override String get summary => 'Описание';
 	@override String get poster => 'Постер';
 	@override String get background => 'Фон';
+	@override String get logo => 'Логотип';
+	@override String get squareArt => 'Квадратное изображение';
 	@override String get selectPoster => 'Выбрать постер';
 	@override String get selectBackground => 'Выбрать фон';
+	@override String get selectLogo => 'Выбрать логотип';
+	@override String get selectSquareArt => 'Выбрать квадратное изображение';
 	@override String get fromUrl => 'По URL';
 	@override String get uploadFile => 'Загрузить файл';
 	@override String get enterImageUrl => 'Введите URL изображения';
@@ -2159,8 +2163,12 @@ extension on TranslationsRu {
 			'metadataEdit.summary' => 'Описание',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',
+			'metadataEdit.logo' => 'Логотип',
+			'metadataEdit.squareArt' => 'Квадратное изображение',
 			'metadataEdit.selectPoster' => 'Выбрать постер',
 			'metadataEdit.selectBackground' => 'Выбрать фон',
+			'metadataEdit.selectLogo' => 'Выбрать логотип',
+			'metadataEdit.selectSquareArt' => 'Выбрать квадратное изображение',
 			'metadataEdit.fromUrl' => 'По URL',
 			'metadataEdit.uploadFile' => 'Загрузить файл',
 			'metadataEdit.enterImageUrl' => 'Введите URL изображения',
