@@ -1213,7 +1213,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           int? offsetSeconds;
           if (_captureBuffer != null && _programBeginsAt != null) {
             final nowEpoch = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-            final effectiveStart = max(_captureBuffer!.seekableStartEpoch, _programBeginsAt!);
+            final offsetProgramStart = _programBeginsAt! - _captureBuffer!.startedAt.round();
+            // If a session recording started after current program start, offset of program start at will be negative.
+            // If a session recording started before current program start, offset of program start will be positive.
+            // If guide data is not available, program start will be equal to current time.
+            final useProgramStart = offsetProgramStart > 0 && nowEpoch - _programBeginsAt! > 60;
+            final effectiveStart = useProgramStart ? _programBeginsAt! : _captureBuffer!.seekableStartEpoch;
             final elapsed = nowEpoch - effectiveStart;
             appLogger.d(
               'Time-shift: buffer=${_captureBuffer!.seekableDurationSeconds}s, '
@@ -1223,8 +1228,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
               if (!mounted) return;
               if (watchFromStart == true) {
-                final programBeginsAtOffset = _programBeginsAt! - _captureBuffer!.startedAt.round();
-                offsetSeconds = max(programBeginsAtOffset, _captureBuffer!.seekStartSeconds.round());
+                offsetSeconds = useProgramStart ? offsetProgramStart : _captureBuffer!.seekStartSeconds.round();
               }
             }
           }
