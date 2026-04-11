@@ -407,6 +407,8 @@ class _TranslationsFileInfoJa implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => '色原色';
 	@override String get chromaSubsampling => 'クロマサブサンプリング';
 	@override String get channels => 'チャンネル';
+	@override String get subtitles => '字幕';
+	@override String get overallBitrate => '全体ビットレート';
 	@override String get path => 'パス';
 	@override String get size => 'サイズ';
 	@override String get container => 'コンテナ';
@@ -1629,6 +1631,8 @@ extension on TranslationsJa {
 			'fileInfo.colorPrimaries' => '色原色',
 			'fileInfo.chromaSubsampling' => 'クロマサブサンプリング',
 			'fileInfo.channels' => 'チャンネル',
+			'fileInfo.subtitles' => '字幕',
+			'fileInfo.overallBitrate' => '全体ビットレート',
 			'fileInfo.path' => 'パス',
 			'fileInfo.size' => 'サイズ',
 			'fileInfo.container' => 'コンテナ',
@@ -1870,10 +1874,10 @@ extension on TranslationsJa {
 			'about.versionLabel' => ({required Object version}) => 'バージョン ${version}',
 			'about.appDescription' => 'Flutter製の美しいPlexクライアント',
 			'about.viewLicensesDescription' => 'サードパーティライブラリのライセンスを表示',
-			'serverSelection.allServerConnectionsFailed' => 'どのサーバーにも接続できませんでした。ネットワークを確認してもう一度お試しください。',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})のサーバーが見つかりません',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'どのサーバーにも接続できませんでした。ネットワークを確認してもう一度お試しください。',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})のサーバーが見つかりません',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'サーバーの読み込みに失敗しました: ${error}',
 			'hubDetail.title' => 'タイトル',
 			'hubDetail.releaseYear' => '公開年',

@@ -287,6 +287,8 @@
     "colorPrimaries": "Primárias de Cor",
     "chromaSubsampling": "Subamostragem de Croma",
     "channels": "Canais",
+    "subtitles": "Legendas",
+    "overallBitrate": "Taxa de bits total",
     "path": "Caminho",
     "size": "Tamanho",
     "container": "Container",

@@ -287,6 +287,8 @@
     "colorPrimaries": "颜色原色",
     "chromaSubsampling": "色度子采样",
     "channels": "声道",
+    "subtitles": "字幕",
+    "overallBitrate": "总比特率",
     "path": "路径",
     "size": "大小",
     "container": "容器",

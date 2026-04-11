@@ -287,6 +287,8 @@
     "colorPrimaries": "Färggrunder",
     "chromaSubsampling": "Kroma-undersampling",
     "channels": "Kanaler",
+    "subtitles": "Undertexter",
+    "overallBitrate": "Total bithastighet",
     "path": "Sökväg",
     "size": "Storlek",
     "container": "Container",

@@ -1266,7 +1266,7 @@ class PlexClient {
         final media = metadataJson['Media'][0];
         final part = media['Part'] != null && (media['Part'] as List).isNotEmpty ? media['Part'][0] : null;
 
-        // Extract video stream details
+        // Extract video stream details and all audio/subtitle tracks
         final streams = part?['Stream'] as List<dynamic>? ?? [];
         Map<String, dynamic>? videoStream;
         Map<String, dynamic>? audioStream;
@@ -1279,6 +1279,8 @@ class PlexClient {
             audioStream = stream;
           }
         }
+
+        final parsedTracks = _parseStreams(streams);
 
         return PlexFileInfo(
           // Media level properties
@@ -1308,8 +1310,12 @@ class PlexClient {
           chromaSubsampling: videoStream?['chromaSubsampling'] as String?,
           frameRate: (videoStream?['frameRate'] as num?)?.toDouble(),
           bitDepth: videoStream?['bitDepth'] as int?,
+          videoBitrate: videoStream?['bitrate'] as int?,
           // Audio stream details
           audioChannelLayout: audioStream?['audioChannelLayout'] as String?,
+          // All audio and subtitle tracks
+          audioTracks: parsedTracks.audio,
+          subtitleTracks: parsedTracks.subtitles,
         );
       }
 

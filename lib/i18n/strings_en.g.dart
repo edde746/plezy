@@ -912,6 +912,12 @@ class TranslationsFileInfoEn {
 	/// en: 'Channels'
 	String get channels => 'Channels';
 
+	/// en: 'Subtitles'
+	String get subtitles => 'Subtitles';
+
+	/// en: 'Overall Bitrate'
+	String get overallBitrate => 'Overall Bitrate';
+
 	/// en: 'Path'
 	String get path => 'Path';
 
@@ -3362,6 +3368,8 @@ extension on Translations {
 			'fileInfo.colorPrimaries' => 'Color Primaries',
 			'fileInfo.chromaSubsampling' => 'Chroma Subsampling',
 			'fileInfo.channels' => 'Channels',
+			'fileInfo.subtitles' => 'Subtitles',
+			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
 			'fileInfo.size' => 'Size',
 			'fileInfo.container' => 'Container',
@@ -3603,10 +3611,10 @@ extension on Translations {
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'A beautiful Plex client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
-			'serverSelection.allServerConnectionsFailed' => 'Failed to connect to any servers. Please check your network and try again.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'Failed to connect to any servers. Please check your network and try again.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
 			'hubDetail.title' => 'Title',
 			'hubDetail.releaseYear' => 'Release Year',

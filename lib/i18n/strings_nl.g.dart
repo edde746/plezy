@@ -407,6 +407,8 @@ class _TranslationsFileInfoNl implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => 'Kleurprimaires';
 	@override String get chromaSubsampling => 'Chroma subsampling';
 	@override String get channels => 'Kanalen';
+	@override String get subtitles => 'Ondertitels';
+	@override String get overallBitrate => 'Totale bitrate';
 	@override String get path => 'Pad';
 	@override String get size => 'Grootte';
 	@override String get container => 'Container';
@@ -1629,6 +1631,8 @@ extension on TranslationsNl {
 			'fileInfo.colorPrimaries' => 'Kleurprimaires',
 			'fileInfo.chromaSubsampling' => 'Chroma subsampling',
 			'fileInfo.channels' => 'Kanalen',
+			'fileInfo.subtitles' => 'Ondertitels',
+			'fileInfo.overallBitrate' => 'Totale bitrate',
 			'fileInfo.path' => 'Pad',
 			'fileInfo.size' => 'Grootte',
 			'fileInfo.container' => 'Container',
@@ -1870,10 +1874,10 @@ extension on TranslationsNl {
 			'about.versionLabel' => ({required Object version}) => 'Versie ${version}',
 			'about.appDescription' => 'Een mooie Plex client voor Flutter',
 			'about.viewLicensesDescription' => 'Bekijk licenties van third-party bibliotheken',
-			'serverSelection.allServerConnectionsFailed' => 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Uitgavejaar',

@@ -407,6 +407,8 @@ class _TranslationsFileInfoIt implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => 'Colori primari';
 	@override String get chromaSubsampling => 'Sottocampionamento cromatico';
 	@override String get channels => 'Canali';
+	@override String get subtitles => 'Sottotitoli';
+	@override String get overallBitrate => 'Bitrate complessivo';
 	@override String get path => 'Percorso';
 	@override String get size => 'Dimensione';
 	@override String get container => 'Contenitore';
@@ -1629,6 +1631,8 @@ extension on TranslationsIt {
 			'fileInfo.colorPrimaries' => 'Colori primari',
 			'fileInfo.chromaSubsampling' => 'Sottocampionamento cromatico',
 			'fileInfo.channels' => 'Canali',
+			'fileInfo.subtitles' => 'Sottotitoli',
+			'fileInfo.overallBitrate' => 'Bitrate complessivo',
 			'fileInfo.path' => 'Percorso',
 			'fileInfo.size' => 'Dimensione',
 			'fileInfo.container' => 'Contenitore',
@@ -1870,10 +1874,10 @@ extension on TranslationsIt {
 			'about.versionLabel' => ({required Object version}) => 'Versione ${version}',
 			'about.appDescription' => 'Un bellissimo client Plex per Flutter',
 			'about.viewLicensesDescription' => 'Visualizza le licenze delle librerie di terze parti',
-			'serverSelection.allServerConnectionsFailed' => 'Impossibile connettersi a nessun server. Controlla la tua rete e riprova.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nessun server trovato per ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'Impossibile connettersi a nessun server. Controlla la tua rete e riprova.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nessun server trovato per ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Impossibile caricare i server: ${error}',
 			'hubDetail.title' => 'Titolo',
 			'hubDetail.releaseYear' => 'Anno rilascio',

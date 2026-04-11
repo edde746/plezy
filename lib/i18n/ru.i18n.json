@@ -287,6 +287,8 @@
     "colorPrimaries": "Цветовые первичные",
     "chromaSubsampling": "Субдискретизация цветности",
     "channels": "Каналы",
+    "subtitles": "Субтитры",
+    "overallBitrate": "Общий битрейт",
     "path": "Путь",
     "size": "Размер",
     "container": "Контейнер",

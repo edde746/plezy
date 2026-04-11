@@ -407,6 +407,8 @@ class _TranslationsFileInfoDa implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => 'Farveprimærer';
 	@override String get chromaSubsampling => 'Chroma-subsampling';
 	@override String get channels => 'Kanaler';
+	@override String get subtitles => 'Undertekster';
+	@override String get overallBitrate => 'Samlet bitrate';
 	@override String get path => 'Sti';
 	@override String get size => 'Størrelse';
 	@override String get container => 'Container';
@@ -1629,6 +1631,8 @@ extension on TranslationsDa {
 			'fileInfo.colorPrimaries' => 'Farveprimærer',
 			'fileInfo.chromaSubsampling' => 'Chroma-subsampling',
 			'fileInfo.channels' => 'Kanaler',
+			'fileInfo.subtitles' => 'Undertekster',
+			'fileInfo.overallBitrate' => 'Samlet bitrate',
 			'fileInfo.path' => 'Sti',
 			'fileInfo.size' => 'Størrelse',
 			'fileInfo.container' => 'Container',
@@ -1870,10 +1874,10 @@ extension on TranslationsDa {
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'En smuk Plex-klient til Flutter',
 			'about.viewLicensesDescription' => 'Se licenser for tredjepartsbiblioteker',
-			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke forbinde til nogen servere. Tjek dit netværk og prøv igen.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere fundet for ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke forbinde til nogen servere. Tjek dit netværk og prøv igen.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere fundet for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke indlæse servere: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Udgivelsesår',

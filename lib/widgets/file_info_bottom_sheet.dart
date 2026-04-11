@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../models/plex_file_info.dart';
 import '../i18n/strings.g.dart';
+import '../utils/scroll_utils.dart';
 import 'bottom_sheet_header.dart';
 
 class FileInfoBottomSheet extends StatefulWidget {
@@ -58,7 +59,8 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               const SizedBox(height: 8),
               _buildInfoRow(t.fileInfo.codec, widget.fileInfo.videoCodec ?? t.common.unknown),
               _buildInfoRow(t.fileInfo.resolution, widget.fileInfo.resolutionFormatted),
-              _buildInfoRow(t.fileInfo.bitrate, widget.fileInfo.bitrateFormatted),
+              if (widget.fileInfo.videoBitrate != null)
+                _buildInfoRow(t.fileInfo.bitrate, widget.fileInfo.videoBitrateFormatted),
               _buildInfoRow(t.fileInfo.frameRate, widget.fileInfo.frameRateFormatted),
               _buildInfoRow(t.fileInfo.aspectRatio, widget.fileInfo.aspectRatioFormatted),
               if (widget.fileInfo.videoProfile != null)
@@ -76,11 +78,25 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               // Audio Section
               _buildSectionHeader(t.fileInfo.audio),
               const SizedBox(height: 8),
-              _buildInfoRow(t.fileInfo.codec, widget.fileInfo.audioCodec ?? t.common.unknown),
-              _buildInfoRow(t.fileInfo.channels, widget.fileInfo.audioChannelsFormatted),
-              if (widget.fileInfo.audioProfile != null)
-                _buildInfoRow(t.fileInfo.profile, widget.fileInfo.audioProfile!),
+              if (widget.fileInfo.audioTracks.isNotEmpty)
+                for (int i = 0; i < widget.fileInfo.audioTracks.length; i++)
+                  _buildInfoRow('${i + 1}', widget.fileInfo.audioTracks[i].label),
+              if (widget.fileInfo.audioTracks.isEmpty) ...[
+                _buildInfoRow(t.fileInfo.codec, widget.fileInfo.audioCodec ?? t.common.unknown),
+                _buildInfoRow(t.fileInfo.channels, widget.fileInfo.audioChannelsFormatted),
+                if (widget.fileInfo.audioProfile != null)
+                  _buildInfoRow(t.fileInfo.profile, widget.fileInfo.audioProfile!),
+              ],
               const SizedBox(height: 20),
+
+              // Subtitles Section
+              if (widget.fileInfo.subtitleTracks.isNotEmpty) ...[
+                _buildSectionHeader(t.fileInfo.subtitles),
+                const SizedBox(height: 8),
+                for (int i = 0; i < widget.fileInfo.subtitleTracks.length; i++)
+                  _buildInfoRow('${i + 1}', widget.fileInfo.subtitleTracks[i].label),
+                const SizedBox(height: 20),
+              ],
 
               // File Section
               _buildSectionHeader(t.fileInfo.file),
@@ -90,6 +106,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               _buildInfoRow(t.fileInfo.size, widget.fileInfo.fileSizeFormatted),
               _buildInfoRow(t.fileInfo.container, widget.fileInfo.container ?? t.common.unknown),
               _buildInfoRow(t.fileInfo.duration, widget.fileInfo.durationFormatted),
+              _buildInfoRow(t.fileInfo.overallBitrate, widget.fileInfo.bitrateFormatted),
               const SizedBox(height: 20),
 
               // Advanced Section
@@ -118,22 +135,65 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
   }
 
   Widget _buildInfoRow(String label, String value, {bool isMonospace = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(label, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 14)),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 14, fontFamily: isMonospace ? 'monospace' : null),
+    return _FocusableInfoRow(label: label, value: value, isMonospace: isMonospace);
+  }
+}
+
+class _FocusableInfoRow extends StatefulWidget {
+  final String label;
+  final String value;
+  final bool isMonospace;
+
+  const _FocusableInfoRow({required this.label, required this.value, this.isMonospace = false});
+
+  @override
+  State<_FocusableInfoRow> createState() => _FocusableInfoRowState();
+}
+
+class _FocusableInfoRowState extends State<_FocusableInfoRow> {
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (_focusNode.hasFocus) {
+      scrollContextToCenter(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      focusNode: _focusNode,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 140,
+              child: Text(widget.label, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 14)),
             ),
-          ),
-        ],
+            Expanded(
+              child: Text(
+                widget.value,
+                style: TextStyle(fontSize: 14, fontFamily: widget.isMonospace ? 'monospace' : null),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

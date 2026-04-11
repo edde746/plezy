@@ -407,6 +407,8 @@ class _TranslationsFileInfoNb implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => 'Fargeprimærer';
 	@override String get chromaSubsampling => 'Krominansnedsampling';
 	@override String get channels => 'Kanaler';
+	@override String get subtitles => 'Undertekster';
+	@override String get overallBitrate => 'Total bitrate';
 	@override String get path => 'Sti';
 	@override String get size => 'Størrelse';
 	@override String get container => 'Beholder';
@@ -1629,6 +1631,8 @@ extension on TranslationsNb {
 			'fileInfo.colorPrimaries' => 'Fargeprimærer',
 			'fileInfo.chromaSubsampling' => 'Krominansnedsampling',
 			'fileInfo.channels' => 'Kanaler',
+			'fileInfo.subtitles' => 'Undertekster',
+			'fileInfo.overallBitrate' => 'Total bitrate',
 			'fileInfo.path' => 'Sti',
 			'fileInfo.size' => 'Størrelse',
 			'fileInfo.container' => 'Beholder',
@@ -1870,10 +1874,10 @@ extension on TranslationsNb {
 			'about.versionLabel' => ({required Object version}) => 'Versjon ${version}',
 			'about.appDescription' => 'En vakker Plex-klient for Flutter',
 			'about.viewLicensesDescription' => 'Vis lisenser for tredjepartsbiblioteker',
-			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke koble til noen servere. Sjekk nettverket ditt og prøv igjen.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere funnet for ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke koble til noen servere. Sjekk nettverket ditt og prøv igjen.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere funnet for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke laste servere: ${error}',
 			'hubDetail.title' => 'Tittel',
 			'hubDetail.releaseYear' => 'Utgivelsesår',

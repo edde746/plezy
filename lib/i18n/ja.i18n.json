@@ -287,6 +287,8 @@
     "colorPrimaries": "色原色",
     "chromaSubsampling": "クロマサブサンプリング",
     "channels": "チャンネル",
+    "subtitles": "字幕",
+    "overallBitrate": "全体ビットレート",
     "path": "パス",
     "size": "サイズ",
     "container": "コンテナ",

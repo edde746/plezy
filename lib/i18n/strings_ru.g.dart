@@ -407,6 +407,8 @@ class _TranslationsFileInfoRu implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => 'Цветовые первичные';
 	@override String get chromaSubsampling => 'Субдискретизация цветности';
 	@override String get channels => 'Каналы';
+	@override String get subtitles => 'Субтитры';
+	@override String get overallBitrate => 'Общий битрейт';
 	@override String get path => 'Путь';
 	@override String get size => 'Размер';
 	@override String get container => 'Контейнер';
@@ -1629,6 +1631,8 @@ extension on TranslationsRu {
 			'fileInfo.colorPrimaries' => 'Цветовые первичные',
 			'fileInfo.chromaSubsampling' => 'Субдискретизация цветности',
 			'fileInfo.channels' => 'Каналы',
+			'fileInfo.subtitles' => 'Субтитры',
+			'fileInfo.overallBitrate' => 'Общий битрейт',
 			'fileInfo.path' => 'Путь',
 			'fileInfo.size' => 'Размер',
 			'fileInfo.container' => 'Контейнер',
@@ -1870,10 +1874,10 @@ extension on TranslationsRu {
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
 			'about.appDescription' => 'Красивый клиент Plex на Flutter',
 			'about.viewLicensesDescription' => 'Просмотр лицензий сторонних библиотек',
-			'serverSelection.allServerConnectionsFailed' => 'Не удалось подключиться ни к одному серверу. Проверьте сеть и попробуйте снова.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'Не удалось подключиться ни к одному серверу. Проверьте сеть и попробуйте снова.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Не удалось загрузить серверы: ${error}',
 			'hubDetail.title' => 'Название',
 			'hubDetail.releaseYear' => 'Год выпуска',

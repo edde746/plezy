@@ -407,6 +407,8 @@ class _TranslationsFileInfoKo implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => '색상 원색';
 	@override String get chromaSubsampling => '채도 서브샘플링';
 	@override String get channels => '채널';
+	@override String get subtitles => '자막';
+	@override String get overallBitrate => '전체 비트레이트';
 	@override String get path => '경로';
 	@override String get size => '크기';
 	@override String get container => '컨테이너';
@@ -1629,6 +1631,8 @@ extension on TranslationsKo {
 			'fileInfo.colorPrimaries' => '색상 원색',
 			'fileInfo.chromaSubsampling' => '채도 서브샘플링',
 			'fileInfo.channels' => '채널',
+			'fileInfo.subtitles' => '자막',
+			'fileInfo.overallBitrate' => '전체 비트레이트',
 			'fileInfo.path' => '경로',
 			'fileInfo.size' => '크기',
 			'fileInfo.container' => '컨테이너',
@@ -1870,10 +1874,10 @@ extension on TranslationsKo {
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
 			'about.appDescription' => '아름다운 Flutter Plex 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
-			'serverSelection.allServerConnectionsFailed' => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
 			'hubDetail.title' => '제목',
 			'hubDetail.releaseYear' => '출시 연도',

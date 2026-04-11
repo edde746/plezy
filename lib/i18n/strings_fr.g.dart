@@ -407,6 +407,8 @@ class _TranslationsFileInfoFr implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => 'Couleurs primaires';
 	@override String get chromaSubsampling => 'Sous-échantillonnage chromatique';
 	@override String get channels => 'Canaux';
+	@override String get subtitles => 'Sous-titres';
+	@override String get overallBitrate => 'Débit global';
 	@override String get path => 'Chemin';
 	@override String get size => 'Taille';
 	@override String get container => 'Conteneur';
@@ -1629,6 +1631,8 @@ extension on TranslationsFr {
 			'fileInfo.colorPrimaries' => 'Couleurs primaires',
 			'fileInfo.chromaSubsampling' => 'Sous-échantillonnage chromatique',
 			'fileInfo.channels' => 'Canaux',
+			'fileInfo.subtitles' => 'Sous-titres',
+			'fileInfo.overallBitrate' => 'Débit global',
 			'fileInfo.path' => 'Chemin',
 			'fileInfo.size' => 'Taille',
 			'fileInfo.container' => 'Conteneur',
@@ -1870,10 +1874,10 @@ extension on TranslationsFr {
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'Un magnifique client Plex pour Flutter',
 			'about.viewLicensesDescription' => 'Afficher les licences des bibliothèques tierces',
-			'serverSelection.allServerConnectionsFailed' => 'Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Échec du chargement des serveurs: ${error}',
 			'hubDetail.title' => 'Titre',
 			'hubDetail.releaseYear' => 'Année de sortie',

@@ -287,6 +287,8 @@
     "colorPrimaries": "Primarias de color",
     "chromaSubsampling": "Submuestreo de croma",
     "channels": "Canales",
+    "subtitles": "Subtítulos",
+    "overallBitrate": "Bitrate total",
     "path": "Ruta",
     "size": "Tamaño",
     "container": "Contenedor",

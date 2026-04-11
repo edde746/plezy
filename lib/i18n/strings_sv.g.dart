@@ -407,6 +407,8 @@ class _TranslationsFileInfoSv implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => 'Färggrunder';
 	@override String get chromaSubsampling => 'Kroma-undersampling';
 	@override String get channels => 'Kanaler';
+	@override String get subtitles => 'Undertexter';
+	@override String get overallBitrate => 'Total bithastighet';
 	@override String get path => 'Sökväg';
 	@override String get size => 'Storlek';
 	@override String get container => 'Container';
@@ -1629,6 +1631,8 @@ extension on TranslationsSv {
 			'fileInfo.colorPrimaries' => 'Färggrunder',
 			'fileInfo.chromaSubsampling' => 'Kroma-undersampling',
 			'fileInfo.channels' => 'Kanaler',
+			'fileInfo.subtitles' => 'Undertexter',
+			'fileInfo.overallBitrate' => 'Total bithastighet',
 			'fileInfo.path' => 'Sökväg',
 			'fileInfo.size' => 'Storlek',
 			'fileInfo.container' => 'Container',
@@ -1870,10 +1874,10 @@ extension on TranslationsSv {
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'En vacker Plex-klient för Flutter',
 			'about.viewLicensesDescription' => 'Visa licenser för tredjepartsbibliotek',
-			'serverSelection.allServerConnectionsFailed' => 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Misslyckades att ladda servrar: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Utgivningsår',

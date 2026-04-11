@@ -287,6 +287,8 @@
     "colorPrimaries": "Kolory podstawowe",
     "chromaSubsampling": "Subsampling chrominancji",
     "channels": "Kanały",
+    "subtitles": "Napisy",
+    "overallBitrate": "Całkowity bitrate",
     "path": "Ścieżka",
     "size": "Rozmiar",
     "container": "Kontener",

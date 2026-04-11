@@ -287,6 +287,8 @@
     "colorPrimaries": "Fargeprimærer",
     "chromaSubsampling": "Krominansnedsampling",
     "channels": "Kanaler",
+    "subtitles": "Undertekster",
+    "overallBitrate": "Total bitrate",
     "path": "Sti",
     "size": "Størrelse",
     "container": "Beholder",

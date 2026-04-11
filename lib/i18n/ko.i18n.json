@@ -287,6 +287,8 @@
     "colorPrimaries": "색상 원색",
     "chromaSubsampling": "채도 서브샘플링",
     "channels": "채널",
+    "subtitles": "자막",
+    "overallBitrate": "전체 비트레이트",
     "path": "경로",
     "size": "크기",
     "container": "컨테이너",

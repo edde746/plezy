@@ -407,6 +407,8 @@ class _TranslationsFileInfoEs implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => 'Primarias de color';
 	@override String get chromaSubsampling => 'Submuestreo de croma';
 	@override String get channels => 'Canales';
+	@override String get subtitles => 'Subtítulos';
+	@override String get overallBitrate => 'Bitrate total';
 	@override String get path => 'Ruta';
 	@override String get size => 'Tamaño';
 	@override String get container => 'Contenedor';
@@ -1629,6 +1631,8 @@ extension on TranslationsEs {
 			'fileInfo.colorPrimaries' => 'Primarias de color',
 			'fileInfo.chromaSubsampling' => 'Submuestreo de croma',
 			'fileInfo.channels' => 'Canales',
+			'fileInfo.subtitles' => 'Subtítulos',
+			'fileInfo.overallBitrate' => 'Bitrate total',
 			'fileInfo.path' => 'Ruta',
 			'fileInfo.size' => 'Tamaño',
 			'fileInfo.container' => 'Contenedor',
@@ -1870,10 +1874,10 @@ extension on TranslationsEs {
 			'about.versionLabel' => ({required Object version}) => 'Versión ${version}',
 			'about.appDescription' => 'Un cliente de Plex para Flutter',
 			'about.viewLicensesDescription' => 'Ver licencias de librerías de terceros',
-			'serverSelection.allServerConnectionsFailed' => 'No se pudo conectar con ningún servidor. Por favor, comprueba tu conexión e inténtalo de nuevo.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No se encontraron servidores para ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'No se pudo conectar con ningún servidor. Por favor, comprueba tu conexión e inténtalo de nuevo.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No se encontraron servidores para ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Error al cargar servidores: ${error}',
 			'hubDetail.title' => 'Título',
 			'hubDetail.releaseYear' => 'Año de lanzamiento',

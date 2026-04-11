@@ -1,4 +1,5 @@
 import '../utils/formatters.dart';
+import 'plex_media_info.dart';
 
 class PlexFileInfo {
   // Media level properties
@@ -30,7 +31,12 @@ class PlexFileInfo {
   final String? chromaSubsampling;
   final double? frameRate;
   final int? bitDepth;
+  final int? videoBitrate;
   final String? audioChannelLayout;
+
+  // Multi-track support
+  final List<PlexAudioTrack> audioTracks;
+  final List<PlexSubtitleTrack> subtitleTracks;
 
   PlexFileInfo({
     this.container,
@@ -57,7 +63,10 @@ class PlexFileInfo {
     this.chromaSubsampling,
     this.frameRate,
     this.bitDepth,
+    this.videoBitrate,
     this.audioChannelLayout,
+    this.audioTracks = const [],
+    this.subtitleTracks = const [],
   });
 
   /// Format file size in human-readable format (GB, MB, KB, bytes)
@@ -78,10 +87,16 @@ class PlexFileInfo {
     return hours > 0 ? '${hours}h ${minutes}m ${secs}s' : '${minutes}m ${secs}s';
   }
 
-  /// Format bitrate in Mbps or Kbps
+  /// Format overall bitrate in Mbps or kbps (Plex API returns kbps)
   String get bitrateFormatted {
     if (bitrate == null) return 'Unknown';
-    return ByteFormatter.formatBitrateBps(bitrate!);
+    return ByteFormatter.formatBitrate(bitrate!);
+  }
+
+  /// Format video stream bitrate in Mbps or kbps
+  String get videoBitrateFormatted {
+    if (videoBitrate == null) return 'Unknown';
+    return ByteFormatter.formatBitrate(videoBitrate!);
   }
 
   /// Format resolution as widthxheight

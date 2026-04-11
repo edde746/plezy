@@ -407,6 +407,8 @@ class _TranslationsFileInfoZh implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => '颜色原色';
 	@override String get chromaSubsampling => '色度子采样';
 	@override String get channels => '声道';
+	@override String get subtitles => '字幕';
+	@override String get overallBitrate => '总比特率';
 	@override String get path => '路径';
 	@override String get size => '大小';
 	@override String get container => '容器';
@@ -1629,6 +1631,8 @@ extension on TranslationsZh {
 			'fileInfo.colorPrimaries' => '颜色原色',
 			'fileInfo.chromaSubsampling' => '色度子采样',
 			'fileInfo.channels' => '声道',
+			'fileInfo.subtitles' => '字幕',
+			'fileInfo.overallBitrate' => '总比特率',
 			'fileInfo.path' => '路径',
 			'fileInfo.size' => '大小',
 			'fileInfo.container' => '容器',
@@ -1870,10 +1874,10 @@ extension on TranslationsZh {
 			'about.versionLabel' => ({required Object version}) => '版本 ${version}',
 			'about.appDescription' => '一款精美的 Flutter Plex 客户端',
 			'about.viewLicensesDescription' => '查看第三方库的许可证',
-			'serverSelection.allServerConnectionsFailed' => '无法连接到任何服务器。请检查你的网络并重试。',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => '无法连接到任何服务器。请检查你的网络并重试。',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',
 			'hubDetail.title' => '标题',
 			'hubDetail.releaseYear' => '发行年份',

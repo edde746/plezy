@@ -407,6 +407,8 @@ class _TranslationsFileInfoDe implements TranslationsFileInfoEn {
 	@override String get colorPrimaries => 'Primärfarben';
 	@override String get chromaSubsampling => 'Chroma-Subsampling';
 	@override String get channels => 'Kanäle';
+	@override String get subtitles => 'Untertitel';
+	@override String get overallBitrate => 'Gesamt-Bitrate';
 	@override String get path => 'Pfad';
 	@override String get size => 'Größe';
 	@override String get container => 'Container';
@@ -1629,6 +1631,8 @@ extension on TranslationsDe {
 			'fileInfo.colorPrimaries' => 'Primärfarben',
 			'fileInfo.chromaSubsampling' => 'Chroma-Subsampling',
 			'fileInfo.channels' => 'Kanäle',
+			'fileInfo.subtitles' => 'Untertitel',
+			'fileInfo.overallBitrate' => 'Gesamt-Bitrate',
 			'fileInfo.path' => 'Pfad',
 			'fileInfo.size' => 'Größe',
 			'fileInfo.container' => 'Container',
@@ -1870,10 +1874,10 @@ extension on TranslationsDe {
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'Ein schöner Plex-Client für Flutter',
 			'about.viewLicensesDescription' => 'Lizenzen von Drittanbieter-Bibliotheken anzeigen',
-			'serverSelection.allServerConnectionsFailed' => 'Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Keine Server gefunden für ${username} (${email})',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.allServerConnectionsFailed' => 'Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.',
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Keine Server gefunden für ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Server konnten nicht geladen werden: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Erscheinungsjahr',
