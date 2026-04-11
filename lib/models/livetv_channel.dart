@@ -1,3 +1,5 @@
+import '../utils/json_utils.dart';
+
 /// Represents a Live TV channel from the EPG
 class LiveTvChannel {
   final String key;
@@ -41,10 +43,10 @@ class LiveTvChannel {
       thumb: json['thumb'] as String?,
       art: json['art'] as String?,
       number: json['number'] as String? ?? json['channelNumber'] as String? ?? json['channelVcn']?.toString() ?? json['vcn']?.toString(),
-      hd: json['hd'] == true || json['hd'] == 1,
+      hd: flexibleBool(json['hd']),
       lineup: json['lineup'] as String?,
       slug: json['slug'] as String?,
-      drm: json['drm'] == true || json['drm'] == 1,
+      drm: flexibleBool(json['drm']),
     );
   }
 

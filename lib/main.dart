@@ -56,6 +56,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
 const String gitCommit = String.fromEnvironment('GIT_COMMIT');
+const String _plexTokenDefine = String.fromEnvironment('PLEX_TOKEN');
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
@@ -142,6 +143,12 @@ Future<void> _bootstrapApp() async {
 
   // Wait for all parallel services to complete
   await Future.wait(futures);
+
+  // Seed Plex token from dart-define (used by screenshot automation)
+  if (_plexTokenDefine.isNotEmpty) {
+    final storage = await StorageService.getInstance();
+    await storage.savePlexToken(_plexTokenDefine);
+  }
 
   // Initialize logger level based on debug setting
   final debugEnabled = settings.getEnableDebugLogging();

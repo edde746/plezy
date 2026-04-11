@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../utils/isolate_helper.dart';
+import '../utils/json_utils.dart';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 
@@ -44,22 +45,28 @@ class LibraryContentResult {
 
 /// Process hub response in an isolate.
 /// Top-level function so it can be passed to [Isolate.run].
-List<PlexHub> _processHubResponse(Map<String, dynamic> decoded, String serverId, String? serverName) {
+List<PlexHub> _processHubResponse(
+  Map<String, dynamic> decoded,
+  String serverId,
+  String? serverName, {
+  bool Function(PlexMetadata)? filter,
+}) {
   final container = decoded['MediaContainer'] as Map<String, dynamic>?;
   if (container == null || container['Hub'] == null) return [];
 
+  final itemFilter = filter ?? (PlexMetadata item) => item.isVideoContent;
   final hubs = <PlexHub>[];
   for (final hubJson in container['Hub'] as List) {
     try {
       final hub = PlexHub.fromJson(hubJson as Map<String, dynamic>);
       if (hub.items.isEmpty) continue;
 
-      final videoItems = hub.items
-          .where((item) => item.isVideoContent)
+      final filteredItems = hub.items
+          .where(itemFilter)
           .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
           .toList();
 
-      if (videoItems.isNotEmpty) {
+      if (filteredItems.isNotEmpty) {
         hubs.add(
           PlexHub(
             hubKey: hub.hubKey,
@@ -68,7 +75,7 @@ List<PlexHub> _processHubResponse(Map<String, dynamic> decoded, String serverId,
             hubIdentifier: hub.hubIdentifier,
             size: hub.size,
             more: hub.more,
-            items: videoItems,
+            items: filteredItems,
             serverId: serverId,
             serverName: serverName,
           ),
@@ -839,7 +846,7 @@ class PlexClient {
             title: stream['title'] as String?,
             displayTitle: stream['displayTitle'] as String?,
             channels: stream['channels'] as int?,
-            selected: stream['selected'] == 1 || stream['selected'] == true,
+            selected: flexibleBool(stream['selected']),
           ),
         );
       } else if (streamType == PlexStreamType.subtitle) {
@@ -852,8 +859,8 @@ class PlexClient {
             languageCode: stream['languageCode'] as String?,
             title: stream['title'] as String?,
             displayTitle: stream['displayTitle'] as String?,
-            selected: stream['selected'] == 1 || stream['selected'] == true,
-            forced: stream['forced'] == 1,
+            selected: flexibleBool(stream['selected']),
+            forced: flexibleBool(stream['forced']),
             key: stream['key'] as String?,
           ),
         );
@@ -1297,8 +1304,8 @@ class PlexClient {
           audioCodec: media['audioCodec'] as String?,
           audioProfile: media['audioProfile'] as String?,
           audioChannels: media['audioChannels'] as int?,
-          optimizedForStreaming: media['optimizedForStreaming'] as bool?,
-          has64bitOffsets: media['has64bitOffsets'] as bool?,
+          optimizedForStreaming: flexibleBool(media['optimizedForStreaming']),
+          has64bitOffsets: flexibleBool(media['has64bitOffsets']),
           // Part level properties (file)
           filePath: part?['file'] as String?,
           fileSize: part?['size'] as int?,
@@ -1590,6 +1597,25 @@ class PlexClient {
       return await tryIsolateRun(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get global hubs: $e');
+    }
+    return [];
+  }
+
+  /// Get related hubs for a specific metadata item (collections, similar, "more from" director/actor)
+  Future<List<PlexHub>> getRelatedHubs(String ratingKey, {int count = 10}) async {
+    try {
+      final response = await _getWithFailover(
+        '/hubs/metadata/$ratingKey/related',
+        queryParameters: {'count': count},
+      );
+      final sid = serverId;
+      final sname = serverName;
+      return await tryIsolateRun(() => _processHubResponse(
+        response.data as Map<String, dynamic>, sid, sname,
+        filter: (item) => item.isVideoContent || item.isCollection,
+      ));
+    } catch (e) {
+      appLogger.e('Failed to get related hubs: $e');
     }
     return [];
   }

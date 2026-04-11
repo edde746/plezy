@@ -1,3 +1,5 @@
+import '../utils/json_utils.dart';
+
 /// Represents an EPG program entry (what's on a channel at a given time)
 class LiveTvProgram {
   final String? key;
@@ -66,8 +68,8 @@ class LiveTvProgram {
       channelIdentifier:
           json['channelIdentifier'] as String? ?? media?['channelIdentifier']?.toString() ?? channel?['id']?.toString(),
       channelCallSign: json['channelCallSign'] as String? ?? media?['channelCallSign'] as String?,
-      live: json['live'] == true || json['live'] == 1 || json['live'] == '1',
-      premiere: json['premiere'] == true || json['premiere'] == 1 || json['premiere'] == '1',
+      live: flexibleBool(json['live']),
+      premiere: flexibleBool(json['premiere']),
     );
   }
 

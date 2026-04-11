@@ -1,3 +1,4 @@
+import '../utils/json_utils.dart';
 import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
 import 'plex_metadata.dart';
 
@@ -64,7 +65,7 @@ class PlexHub {
       type: json['type'] as String? ?? 'hub',
       hubIdentifier: json['hubIdentifier'] as String?,
       size: (json['size'] as num?)?.toInt() ?? metadataList.length,
-      more: json['more'] == true || json['more'] == 1,
+      more: flexibleBool(json['more']),
       items: metadataList,
     );
   }

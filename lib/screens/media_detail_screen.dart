@@ -59,6 +59,8 @@ import '../utils/deletion_notifier.dart';
 import '../widgets/episode_card.dart';
 import 'actor_media_screen.dart';
 import '../widgets/focusable_tab_chip.dart';
+import '../widgets/hub_section.dart';
+import '../models/plex_hub.dart';
 
 class MediaDetailScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -87,6 +89,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   PlexVideoPlaybackData? _playbackData;
   bool _isLoadingMetadata = true;
   List<PlexMetadata>? _extras;
+  List<PlexHub> _relatedHubs = [];
+  List<GlobalKey<HubSectionState>> _relatedHubKeys = [];
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
@@ -1193,6 +1197,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
         // Load extras (trailers, behind-the-scenes, etc.)
         _loadExtras();
+        _loadRelatedHubs();
 
         return;
       }
@@ -1480,6 +1485,58 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
+  /// Load related hubs (collections, similar, "more from" director/actor)
+  Future<void> _loadRelatedHubs() async {
+    if (!widget.metadata.isMovie && !widget.metadata.isShow) {
+      return;
+    }
+
+    if (widget.isOffline) {
+      return;
+    }
+
+    try {
+      final client = _getClientForMetadata(context);
+      if (client == null) return;
+
+      final hubs = await client.getRelatedHubs(widget.metadata.ratingKey);
+
+      setStateIfMounted(() {
+        _relatedHubs = hubs;
+        _relatedHubKeys = List.generate(hubs.length, (_) => GlobalKey<HubSectionState>());
+      });
+    } catch (e) {
+      // Silently fail - related sections won't appear if fetch fails
+    }
+  }
+
+  /// Focus the first visible section above cast: season tabs → overview → play button.
+  /// Shared by cast UP, extras UP, and related hub UP handlers.
+  void _focusSectionAboveCast() {
+    final metadata = _fullMetadata ?? widget.metadata;
+    if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
+      _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
+      _scrollSectionIntoView(_seasonsSectionKey);
+    } else if (metadata.summary != null && metadata.summary!.isNotEmpty) {
+      _overviewFocusNode.requestFocus();
+      _scrollSectionIntoView(_overviewSectionKey);
+    } else {
+      _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+      _playButtonFocusNode.requestFocus();
+    }
+  }
+
+  /// Focus the first visible section above extras: cast → season tabs → overview → play button.
+  void _focusSectionAboveExtras() {
+    final metadata = _fullMetadata ?? widget.metadata;
+    if (metadata.role != null && metadata.role!.isNotEmpty) {
+      _castFocusNode.requestFocus();
+      _scrollSectionIntoView(_castSectionKey);
+    } else {
+      _focusSectionAboveCast();
+    }
+  }
+
   /// Scroll the main scroll view so the section with the given key is centered
   void _scrollSectionIntoView(GlobalKey key) {
     scrollContextToCenter(key.currentContext);
@@ -1535,6 +1592,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
+    if (_relatedHubs.isNotEmpty) {
+      _relatedHubKeys.first.currentState?.requestFocusFromMemory();
+      return KeyEventResult.handled;
+    }
+
     return KeyEventResult.handled; // consume to prevent unwanted traversal
   }
 
@@ -1561,7 +1623,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
-    // DOWN: season tabs → cast → extras
     if (key.isDownKey) {
       if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
         _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
@@ -1575,6 +1636,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       } else if (_extras != null && _extras!.isNotEmpty) {
         _extrasFocusNode.requestFocus();
         _scrollSectionIntoView(_extrasSectionKey);
+      } else if (_relatedHubs.isNotEmpty) {
+        _relatedHubKeys.first.currentState?.requestFocusFromMemory();
       }
       return KeyEventResult.handled;
     }
@@ -1744,27 +1807,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
-    // UP: cast → season tabs → overview → play button
     if (key.isUpKey) {
-      final metadata = _fullMetadata ?? widget.metadata;
-      if (metadata.role != null && metadata.role!.isNotEmpty) {
-        _castFocusNode.requestFocus();
-        _scrollSectionIntoView(_castSectionKey);
-      } else if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
-        _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
-        _scrollSectionIntoView(_seasonsSectionKey);
-      } else if (metadata.summary != null && metadata.summary!.isNotEmpty) {
-        _overviewFocusNode.requestFocus();
-        _scrollSectionIntoView(_overviewSectionKey);
-      } else {
-        _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-        _playButtonFocusNode.requestFocus();
-      }
+      _focusSectionAboveExtras();
       return KeyEventResult.handled;
     }
 
-    // DOWN: consume (nothing below extras to focus)
+    // DOWN: related hubs → consume
     if (key.isDownKey) {
+      if (_relatedHubs.isNotEmpty) {
+        _relatedHubKeys.first.currentState?.requestFocusFromMemory();
+      }
       return KeyEventResult.handled;
     }
 
@@ -1798,33 +1850,24 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
-    // UP: season tabs → overview → play button
     if (key.isUpKey) {
       // If episodes are visible, focus the last episode (cast is right below episodes)
       if (_episodes.isNotEmpty) {
-        // For single episode, _lastEpisodeFocusNode isn't attached — use first
         final target = _episodes.length == 1 ? _firstEpisodeFocusNode : _lastEpisodeFocusNode;
         target.requestFocus();
-        return KeyEventResult.handled;
-      }
-      if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
-        _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
-        _scrollSectionIntoView(_seasonsSectionKey);
-      } else if (metadata.summary != null && metadata.summary!.isNotEmpty) {
-        _overviewFocusNode.requestFocus();
-        _scrollSectionIntoView(_overviewSectionKey);
       } else {
-        _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-        _playButtonFocusNode.requestFocus();
+        _focusSectionAboveCast();
       }
       return KeyEventResult.handled;
     }
 
-    // DOWN: extras (if available) → consume
+    // DOWN: extras → related hubs → consume
     if (key.isDownKey) {
       if (_extras != null && _extras!.isNotEmpty) {
         _extrasFocusNode.requestFocus();
         _scrollSectionIntoView(_extrasSectionKey);
+      } else if (_relatedHubs.isNotEmpty) {
+        _relatedHubKeys.first.currentState?.requestFocusFromMemory();
       }
       return KeyEventResult.handled;
     }
@@ -1839,6 +1882,38 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     return KeyEventResult.ignored;
+  }
+
+  /// Handle vertical navigation between related hub sections
+  bool _handleRelatedHubNavigation(int hubIndex, bool isUp) {
+    if (_relatedHubKeys.isEmpty) return false;
+
+    if (isUp && hubIndex == 0) {
+      if (_extras != null && _extras!.isNotEmpty) {
+        _extrasFocusNode.requestFocus();
+        _scrollSectionIntoView(_extrasSectionKey);
+      } else {
+        _focusSectionAboveExtras();
+      }
+      return true;
+    }
+
+    final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
+    if (targetIndex < 0 || targetIndex >= _relatedHubKeys.length) {
+      return true; // at boundary, consume
+    }
+
+    _relatedHubKeys[targetIndex].currentState?.requestFocusFromMemory();
+    return true;
+  }
+
+  IconData _getRelatedHubIcon(PlexHub hub) {
+    final lower = hub.title.toLowerCase();
+    if (lower.contains('collection')) return Symbols.video_library_rounded;
+    if (lower.contains('similar')) return Symbols.auto_awesome_rounded;
+    if (lower.contains('more from') || lower.contains('more with')) return Symbols.person_rounded;
+    if (lower.contains('genre') || lower.contains('director')) return Symbols.movie_rounded;
+    return Symbols.recommend_rounded;
   }
 
   /// Build episode list directly when the library hides seasons for single-season shows
@@ -2568,6 +2643,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             const SizedBox(height: 12),
                             _buildExtrasSection(),
                             const SizedBox(height: 24),
+                          ],
+
+                          // Related Hubs (Collections, Similar, More From...)
+                          for (int i = 0; i < _relatedHubs.length; i++) ...[
+                            HubSection(
+                              key: _relatedHubKeys[i],
+                              hub: _relatedHubs[i],
+                              icon: _getRelatedHubIcon(_relatedHubs[i]),
+                              onVerticalNavigation: (isUp) => _handleRelatedHubNavigation(i, isUp),
+                            ),
+                            const SizedBox(height: 8),
                           ],
 
                           // Additional info

@@ -1,3 +1,5 @@
+import '../utils/json_utils.dart';
+
 /// Represents a Plex Live TV DVR device (e.g., HDHomeRun tuner, IPTV provider)
 class LiveTvDvr {
   final String key;
@@ -74,7 +76,7 @@ class ChannelMapping {
     return ChannelMapping(
       channelKey: json['channelKey'] as String?,
       deviceIdentifier: json['deviceIdentifier'] as String?,
-      enabled: json['enabled'] == true || json['enabled'] == 1 || json['enabled'] == '1',
+      enabled: flexibleBool(json['enabled']),
       lineupIdentifier: json['lineupIdentifier'] as String?,
     );
   }

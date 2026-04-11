@@ -1,3 +1,5 @@
+import '../utils/json_utils.dart';
+
 class PlexSubtitleSearchResult {
   final int id;
   final String key;
@@ -40,10 +42,10 @@ class PlexSubtitleSearchResult {
       providerTitle: json['providerTitle']?.toString(),
       title: json['title']?.toString(),
       displayTitle: json['displayTitle']?.toString(),
-      hearingImpaired: json['hearingImpaired'] == 1 || json['hearingImpaired'] == true,
-      perfectMatch: json['perfectMatch'] == 1 || json['perfectMatch'] == true,
-      downloaded: json['downloaded'] == 1 || json['downloaded'] == true,
-      forced: json['forced'] == 1 || json['forced'] == true,
+      hearingImpaired: flexibleBool(json['hearingImpaired']),
+      perfectMatch: flexibleBool(json['perfectMatch']),
+      downloaded: flexibleBool(json['downloaded']),
+      forced: flexibleBool(json['forced']),
     );
   }
 

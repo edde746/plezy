@@ -1,4 +1,5 @@
 import '../utils/app_logger.dart';
+import '../utils/json_utils.dart';
 import '../utils/codec_utils.dart';
 import '../utils/track_label_builder.dart' show buildTrackLabel;
 
@@ -45,7 +46,7 @@ class PlexMediaInfo {
               title: s['title'] as String?,
               displayTitle: s['displayTitle'] as String?,
               channels: s['channels'] as int?,
-              selected: s['selected'] == 1 || s['selected'] == true,
+              selected: flexibleBool(s['selected']),
             ));
           } else if (streamType == 3) {
             subtitleTracks.add(PlexSubtitleTrack(
@@ -56,8 +57,8 @@ class PlexMediaInfo {
               languageCode: s['languageCode'] as String?,
               title: s['title'] as String?,
               displayTitle: s['displayTitle'] as String?,
-              selected: s['selected'] == 1 || s['selected'] == true,
-              forced: s['forced'] == 1 || s['forced'] == true,
+              selected: flexibleBool(s['selected']),
+              forced: flexibleBool(s['forced']),
               key: s['key'] as String?,
             ));
           }
