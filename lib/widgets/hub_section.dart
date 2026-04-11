@@ -54,6 +54,10 @@ class HubSection extends StatefulWidget {
   /// Used to navigate focus to the sidebar.
   final VoidCallback? onNavigateToSidebar;
 
+  /// When true, removes internal horizontal padding (header + list).
+  /// Use when the parent already provides edge spacing (e.g. inside Padding(16)).
+  final bool inset;
+
   const HubSection({
     super.key,
     required this.hub,
@@ -66,6 +70,7 @@ class HubSection extends StatefulWidget {
     this.onBack,
     this.onNavigateUp,
     this.onNavigateToSidebar,
+    this.inset = false,
   });
 
   @override
@@ -83,7 +88,7 @@ class HubSectionState extends State<HubSection> {
 
   /// Item extent for scroll calculations
   double _itemExtent = 0;
-  static const double _leadingPadding = 12.0;
+  double get _leadingPadding => widget.inset ? 0.0 : 12.0;
 
   Timer? _longPressTimer;
   bool _isSelectKeyDown = false;
@@ -326,13 +331,13 @@ class HubSectionState extends State<HubSection> {
       children: [
         // Hub header (NOT focusable - titles should not be focusable)
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+          padding: widget.inset ? const EdgeInsets.symmetric(vertical: 2) : const EdgeInsets.fromLTRB(8, 2, 8, 2),
           child: ExcludeFocus(
             child: InkWell(
               onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,
               borderRadius: BorderRadius.circular(tokens(context).radiusSm),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                padding: widget.inset ? const EdgeInsets.symmetric(vertical: 2) : const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -422,7 +427,7 @@ class HubSectionState extends State<HubSection> {
                       controller: scrollController,
                       scrollDirection: Axis.horizontal,
                       clipBehavior: Clip.none,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: widget.inset ? const EdgeInsets.symmetric(vertical: 2) : const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       itemCount: isKeyboardMode ? _totalItemCount : widget.hub.items.length,
                       itemBuilder: (context, index) {
                         final isItemFocused = hasFocus && index == _focusedIndex;
@@ -430,7 +435,7 @@ class HubSectionState extends State<HubSection> {
                         // "View All" card at end
                         if (index == widget.hub.items.length) {
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            padding: widget.inset ? const EdgeInsets.only(right: 4) : const EdgeInsets.symmetric(horizontal: 2),
                             child: FocusBuilders.buildLockedFocusWrapper(
                               context: context,
                               isFocused: isItemFocused,
@@ -468,7 +473,7 @@ class HubSectionState extends State<HubSection> {
                         final item = widget.hub.items[index];
 
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          padding: widget.inset ? const EdgeInsets.only(right: 4) : const EdgeInsets.symmetric(horizontal: 2),
                           child: FocusBuilders.buildLockedFocusWrapper(
                             context: context,
                             isFocused: isItemFocused,
@@ -496,7 +501,7 @@ class HubSectionState extends State<HubSection> {
           )
         else
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: widget.inset ? const EdgeInsets.symmetric(vertical: 8) : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               t.messages.noItemsAvailable,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),

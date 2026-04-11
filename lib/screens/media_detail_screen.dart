@@ -1836,7 +1836,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isLeftKey) {
       if (_focusedCastIndex > 0) {
         setState(() => _focusedCastIndex--);
-        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: _getResponsiveCardWidth() + 8 + 4, leadingPadding: 0);
+        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: _getResponsiveCardWidth() + 6 + 4, leadingPadding: 0);
       }
       return KeyEventResult.handled;
     }
@@ -1845,7 +1845,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isRightKey) {
       if (_focusedCastIndex < roleCount - 1) {
         setState(() => _focusedCastIndex++);
-        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: _getResponsiveCardWidth() + 8 + 4, leadingPadding: 0);
+        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: _getResponsiveCardWidth() + 6 + 4, leadingPadding: 0);
       }
       return KeyEventResult.handled;
     }
@@ -2651,6 +2651,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               key: _relatedHubKeys[i],
                               hub: _relatedHubs[i],
                               icon: _getRelatedHubIcon(_relatedHubs[i]),
+                              inset: true,
                               onVerticalNavigation: (isUp) => _handleRelatedHubNavigation(i, isUp),
                             ),
                             const SizedBox(height: 8),
@@ -2764,7 +2765,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Uses same layout pattern as seasons/extras (ListView.builder + Padding(horizontal: 2))
   Widget _buildCastSection(PlexMetadata metadata) {
     final cardWidth = _getResponsiveCardWidth();
-    const innerPadding = 4.0;
+    const innerPadding = 3.0;
     final imageSize = cardWidth;
     // image + inner padding + text area + outer list padding + focus scale headroom
     final containerHeight = imageSize + innerPadding * 2 + 66 + 16;
@@ -2782,6 +2783,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           builder: (scrollController) => ListView.builder(
             controller: scrollController,
             scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
             padding: const EdgeInsets.symmetric(vertical: 5),
             itemCount: metadata.role!.length,
             itemBuilder: (context, index) {
@@ -2870,6 +2872,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           builder: (scrollController) => ListView.builder(
             controller: scrollController,
             scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
             padding: const EdgeInsets.symmetric(vertical: 5),
             itemCount: _extras!.length,
             itemBuilder: (context, index) {
