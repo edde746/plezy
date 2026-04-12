@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
+import '../utils/content_utils.dart';
 import 'plex_client.dart';
 import 'settings_service.dart' show EpisodePosterMode;
 
@@ -54,8 +55,9 @@ class WatchNextService {
   /// Sync On Deck items to Watch Next row.
   Future<bool> syncFromOnDeck(
     List<PlexMetadata> onDeckItems,
-    PlexClient Function(String serverId) getClientForServerId,
-  ) async {
+    PlexClient Function(String serverId) getClientForServerId, {
+    bool hideSpoilers = false,
+  }) async {
     if (!Platform.isAndroid) return false;
 
     try {
@@ -63,7 +65,7 @@ class WatchNextService {
       if (!supported) return false;
 
       final items = onDeckItems.map((item) {
-        return _convertToWatchNextItem(item, getClientForServerId);
+        return _convertToWatchNextItem(item, getClientForServerId, hideSpoilers: hideSpoilers);
       }).toList();
 
       return await _channel.invokeMethod<bool>('sync', {'items': items}) ?? false;
@@ -111,15 +113,20 @@ class WatchNextService {
 
   Map<String, dynamic> _convertToWatchNextItem(
     PlexMetadata item,
-    PlexClient Function(String serverId) getClientForServerId,
-  ) {
+    PlexClient Function(String serverId) getClientForServerId, {
+    bool hideSpoilers = false,
+  }) {
     final contentId = _buildContentId(item.serverId, item.ratingKey);
 
     String? posterUri;
     try {
       if (item.serverId != null) {
         final client = getClientForServerId(item.serverId!);
-        final thumbPath = item.posterThumb(mode: EpisodePosterMode.episodeThumbnail, mixedHubContext: true);
+        String? thumbPath;
+        if (hideSpoilers && item.shouldHideSpoiler) {
+          thumbPath = item.spoilerSafeArt;
+        }
+        thumbPath ??= item.posterThumb(mode: EpisodePosterMode.episodeThumbnail, mixedHubContext: true);
         if (thumbPath != null) {
           posterUri = client.getThumbnailUrl(thumbPath);
         }

@@ -638,7 +638,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// Sync On Deck items to Android TV Watch Next row
   Future<void> _syncWatchNext(List<PlexMetadata> onDeck) async {
     try {
-      await WatchNextService().syncFromOnDeck(onDeck, (serverId) => context.getClientForServer(serverId));
+      await WatchNextService().syncFromOnDeck(
+        onDeck,
+        (serverId) => context.getClientForServer(serverId),
+        hideSpoilers: context.read<SettingsProvider>().hideSpoilers,
+      );
     } catch (e) {
       appLogger.w('Failed to sync Watch Next', error: e);
     }

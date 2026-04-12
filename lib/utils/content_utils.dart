@@ -108,4 +108,7 @@ extension PlexMetadataType on PlexMetadata {
     }
     return true;
   }
+
+  /// Non-spoiler art path for episodes (show/season background).
+  String? get spoilerSafeArt => grandparentArt ?? art;
 }
