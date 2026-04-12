@@ -833,10 +833,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Widget _buildLibraryDropdownTitle(List<PlexLibrary> visibleLibraries) {
-    final selectedLibrary = visibleLibraries.firstWhere(
-      (lib) => lib.globalKey == _selectedLibraryGlobalKey,
-      orElse: () => visibleLibraries.first,
-    );
+    final selectedLibrary = visibleLibraries
+            .where((lib) => lib.globalKey == _selectedLibraryGlobalKey)
+            .firstOrNull ??
+        visibleLibraries.firstOrNull;
+    if (selectedLibrary == null) return Text(t.libraries.title);
 
     return PopupMenuButton<String>(
       key: _libraryDropdownKey,
