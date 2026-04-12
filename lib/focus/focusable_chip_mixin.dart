@@ -152,9 +152,8 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
           _isSelectKeyDown = false;
           return KeyEventResult.handled;
         }
-      } else if (event.isActionable && callbacks.onSelect != null) {
-        callbacks.onSelect!();
-        return KeyEventResult.handled;
+      } else if (callbacks.onSelect != null) {
+        return handleOneShotSelect(event, callbacks.onSelect!);
       }
     }
 

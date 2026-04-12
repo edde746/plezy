@@ -87,6 +87,18 @@ KeyEventResult handleBackKeyNavigation<T>(BuildContext context, KeyEvent event, 
   return handleBackKeyAction(event, () => Navigator.pop(context, result));
 }
 
+/// Handles a select key as a one-shot button activation.
+///
+/// Fires [onActivate] on the initial [KeyDownEvent] only.
+/// Consumes all select key events (down, repeat, up) to prevent
+/// unhandled events from reaching platform-level handling.
+/// Returns [KeyEventResult.ignored] for non-select keys.
+KeyEventResult handleOneShotSelect(KeyEvent event, VoidCallback onActivate) {
+  if (!event.logicalKey.isSelectKey) return KeyEventResult.ignored;
+  if (event is KeyDownEvent) onActivate();
+  return KeyEventResult.handled;
+}
+
 /// Creates a [FocusOnKeyEventCallback] that dispatches d-pad / arrow keys to
 /// the provided directional callbacks.
 ///
@@ -94,7 +106,8 @@ KeyEventResult handleBackKeyNavigation<T>(BuildContext context, KeyEvent event, 
 /// (passed through to the framework). Directions mapped to a callback
 /// automatically return [KeyEventResult.handled].
 ///
-/// Only [KeyDownEvent] and [KeyRepeatEvent] are handled (via [isActionable]).
+/// Directional keys repeat on [KeyRepeatEvent] (via [isActionable]).
+/// Select is one-shot: fires on [KeyDownEvent] only, consumes repeat and up.
 ///
 /// ```dart
 /// Focus(
@@ -115,6 +128,13 @@ FocusOnKeyEventCallback dpadKeyHandler({
   VoidCallback? onSelect,
 }) {
   return (FocusNode _, KeyEvent event) {
+    // Select: one-shot activation (no repeat), must run before isActionable
+    // filter so KeyUpEvent is also consumed.
+    if (onSelect != null) {
+      final result = handleOneShotSelect(event, onSelect);
+      if (result != KeyEventResult.ignored) return result;
+    }
+
     if (!event.isActionable) return KeyEventResult.ignored;
     final key = event.logicalKey;
 
@@ -132,10 +152,6 @@ FocusOnKeyEventCallback dpadKeyHandler({
     }
     if (key.isRightKey && onRight != null) {
       onRight();
-      return KeyEventResult.handled;
-    }
-    if (key.isSelectKey && onSelect != null) {
-      onSelect();
       return KeyEventResult.handled;
     }
 

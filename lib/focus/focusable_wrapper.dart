@@ -366,12 +366,8 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
           _isSelectKeyDown = false;
           return KeyEventResult.handled;
         }
-      } else {
-        // Simple select handling without long-press
-        if (event is KeyDownEvent) {
-          widget.onSelect?.call();
-          return KeyEventResult.handled;
-        }
+      } else if (widget.onSelect != null) {
+        return handleOneShotSelect(event, widget.onSelect!);
       }
     }
 
