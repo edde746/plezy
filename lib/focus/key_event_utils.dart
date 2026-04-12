@@ -82,6 +82,11 @@ KeyEventResult handleBackKeyNavigation<T>(BuildContext context, KeyEvent event, 
   if (!Navigator.canPop(context)) {
     return KeyEventResult.ignored;
   }
+  // Don't handle back when a dialog/overlay is on top of our route —
+  // the overlay handles its own dismissal via DismissAction.
+  if (ModalRoute.of(context)?.isCurrent != true) {
+    return KeyEventResult.ignored;
+  }
   // Handle on KeyUpEvent to prevent double-pop when returning from child screens
   // (KeyDownEvent can be received by both the popping screen and the returned-to screen)
   return handleBackKeyAction(event, () => Navigator.pop(context, result));
