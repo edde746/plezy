@@ -56,6 +56,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
 const String gitCommit = String.fromEnvironment('GIT_COMMIT');
+const String _sentryEnvironment = String.fromEnvironment('SENTRY_ENVIRONMENT');
 const String _plexTokenDefine = String.fromEnvironment('PLEX_TOKEN');
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
@@ -87,6 +88,7 @@ Future<void> main() async {
       options.release = gitCommit.isNotEmpty
           ? 'plezy@${gitCommit.substring(0, 7)}'
           : 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
+      if (_sentryEnvironment.isNotEmpty) options.environment = _sentryEnvironment;
       options.tracesSampleRate = 0;
       options.attachStacktrace = true;
       options.enableAutoSessionTracking = false;

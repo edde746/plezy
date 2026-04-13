@@ -6,6 +6,7 @@ on:
 env:
   SENTRY_DART_DEFINE: ${{ github.repository == 'edde746/plezy' && '--dart-define=ENABLE_SENTRY=true' || '' }}
   GIT_COMMIT_DART_DEFINE: --dart-define=GIT_COMMIT=${{ github.sha }}
+  SENTRY_ENV_DART_DEFINE: --dart-define=SENTRY_ENVIRONMENT=github
 
 jobs:
   build-android:
@@ -62,7 +63,7 @@ jobs:
           EOF
 
       - name: Build APKs
-        run: flutter build apk --release --split-per-abi --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }}
+        run: flutter build apk --release --split-per-abi --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }}
 
       - name: Clean up keystore
         if: always()
@@ -130,7 +131,7 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }}
+        run: flutter build ios --release --no-codesign --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }}
 
       - name: Create IPA
         run: |
@@ -188,7 +189,7 @@ jobs:
         run: flutter pub get
 
       - name: Build macOS
-        run: flutter build macos --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }}
+        run: flutter build macos --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }}
 
       - name: Import Code Signing Certificate
         env:
@@ -339,7 +340,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows x64
-        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }}
+        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }}
 
       - name: Upload x64 build
         uses: actions/upload-artifact@v4
@@ -376,7 +377,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows arm64
-        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }}
+        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }}
 
       - name: Upload arm64 build
         uses: actions/upload-artifact@v4
@@ -520,7 +521,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Linux x64
-        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }}
+        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }}
         env:
           PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/x86_64-linux-gnu/pkgconfig
 
@@ -628,7 +629,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Linux arm64
-        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }}
+        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }}
         env:
           PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/aarch64-linux-gnu/pkgconfig
 

@@ -9,7 +9,7 @@ platform :ios do
     git_commit = `git rev-parse --short HEAD`.strip
 
     # Build the Flutter app
-    sh("cd #{ENV['PWD']}/.. && flutter build ipa --dart-define=ENABLE_IN_APP_REVIEW=true --dart-define=ENABLE_SENTRY=true --dart-define=GIT_COMMIT=#{git_commit}")
+    sh("cd #{ENV['PWD']}/.. && flutter build ipa --dart-define=ENABLE_IN_APP_REVIEW=true --dart-define=ENABLE_SENTRY=true --dart-define=GIT_COMMIT=#{git_commit} --dart-define=SENTRY_ENVIRONMENT=app-store")
 
     # Upload to App Store
     upload_to_app_store(
