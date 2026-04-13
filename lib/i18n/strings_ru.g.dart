@@ -955,10 +955,10 @@ class _TranslationsWatchTogetherRu implements TranslationsWatchTogetherEn {
 	@override String get leave => 'Покинуть';
 	@override String get syncing => 'Синхронизация...';
 	@override String get joinWatchSession => 'Присоединиться к просмотру';
-	@override String get enterCodeHint => 'Введите 8-символьный код';
+	@override String get enterCodeHint => 'Введите 5-символьный код';
 	@override String get pasteFromClipboard => 'Вставить из буфера обмена';
 	@override String get pleaseEnterCode => 'Введите код сессии';
-	@override String get codeMustBe8Chars => 'Код сессии должен содержать 8 символов';
+	@override String get codeMustBe5Chars => 'Код сессии должен содержать 5 символов';
 	@override String get joinInstructions => 'Введите код сессии, предоставленный хостом, чтобы присоединиться к просмотру.';
 	@override String get failedToCreate => 'Не удалось создать сессию';
 	@override String get failedToJoin => 'Не удалось присоединиться к сессии';
@@ -971,6 +971,12 @@ class _TranslationsWatchTogetherRu implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => 'Не удалось открыть текущее воспроизведение';
 	@override String participantJoined({required Object name}) => '${name} присоединился';
 	@override String participantLeft({required Object name}) => '${name} вышел';
+	@override String participantPaused({required Object name}) => '${name} поставил на паузу';
+	@override String participantResumed({required Object name}) => '${name} возобновил';
+	@override String participantSeeked({required Object name}) => '${name} перемотал';
+	@override String get recentRooms => 'Недавние комнаты';
+	@override String get renameRoom => 'Переименовать комнату';
+	@override String get removeRoom => 'Удалить';
 }
 
 // Path: downloads
@@ -1998,10 +2004,10 @@ extension on TranslationsRu {
 			'watchTogether.leave' => 'Покинуть',
 			'watchTogether.syncing' => 'Синхронизация...',
 			'watchTogether.joinWatchSession' => 'Присоединиться к просмотру',
-			'watchTogether.enterCodeHint' => 'Введите 8-символьный код',
+			'watchTogether.enterCodeHint' => 'Введите 5-символьный код',
 			'watchTogether.pasteFromClipboard' => 'Вставить из буфера обмена',
 			'watchTogether.pleaseEnterCode' => 'Введите код сессии',
-			'watchTogether.codeMustBe8Chars' => 'Код сессии должен содержать 8 символов',
+			'watchTogether.codeMustBe5Chars' => 'Код сессии должен содержать 5 символов',
 			'watchTogether.joinInstructions' => 'Введите код сессии, предоставленный хостом, чтобы присоединиться к просмотру.',
 			'watchTogether.failedToCreate' => 'Не удалось создать сессию',
 			'watchTogether.failedToJoin' => 'Не удалось присоединиться к сессии',
@@ -2014,6 +2020,12 @@ extension on TranslationsRu {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Не удалось открыть текущее воспроизведение',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} присоединился',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} вышел',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} поставил на паузу',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} возобновил',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} перемотал',
+			'watchTogether.recentRooms' => 'Недавние комнаты',
+			'watchTogether.renameRoom' => 'Переименовать комнату',
+			'watchTogether.removeRoom' => 'Удалить',
 			'downloads.title' => 'Загрузки',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'Сериалы',

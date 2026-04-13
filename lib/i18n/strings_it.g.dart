@@ -989,10 +989,10 @@ class _TranslationsWatchTogetherIt implements TranslationsWatchTogetherEn {
 	@override String get leave => 'Lascia';
 	@override String get syncing => 'Sincronizzazione...';
 	@override String get joinWatchSession => 'Unisciti alla Sessione di Visione';
-	@override String get enterCodeHint => 'Inserisci codice di 8 caratteri';
+	@override String get enterCodeHint => 'Inserisci codice di 5 caratteri';
 	@override String get pasteFromClipboard => 'Incolla dagli appunti';
 	@override String get pleaseEnterCode => 'Inserisci un codice sessione';
-	@override String get codeMustBe8Chars => 'Il codice sessione deve essere di 8 caratteri';
+	@override String get codeMustBe5Chars => 'Il codice sessione deve essere di 5 caratteri';
 	@override String get joinInstructions => 'Inserisci il codice sessione condiviso dall\'host per unirti alla loro sessione di visione.';
 	@override String get failedToCreate => 'Impossibile creare la sessione';
 	@override String get failedToJoin => 'Impossibile unirsi alla sessione';
@@ -1005,6 +1005,12 @@ class _TranslationsWatchTogetherIt implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => 'Impossibile aprire la riproduzione corrente';
 	@override String participantJoined({required Object name}) => '${name} si è unito';
 	@override String participantLeft({required Object name}) => '${name} se ne è andato';
+	@override String participantPaused({required Object name}) => '${name} ha messo in pausa';
+	@override String participantResumed({required Object name}) => '${name} ha ripreso';
+	@override String participantSeeked({required Object name}) => '${name} ha cercato';
+	@override String get recentRooms => 'Stanze recenti';
+	@override String get renameRoom => 'Rinomina stanza';
+	@override String get removeRoom => 'Rimuovi';
 }
 
 // Path: shaders
@@ -2023,10 +2029,10 @@ extension on TranslationsIt {
 			'watchTogether.leave' => 'Lascia',
 			'watchTogether.syncing' => 'Sincronizzazione...',
 			'watchTogether.joinWatchSession' => 'Unisciti alla Sessione di Visione',
-			'watchTogether.enterCodeHint' => 'Inserisci codice di 8 caratteri',
+			'watchTogether.enterCodeHint' => 'Inserisci codice di 5 caratteri',
 			'watchTogether.pasteFromClipboard' => 'Incolla dagli appunti',
 			'watchTogether.pleaseEnterCode' => 'Inserisci un codice sessione',
-			'watchTogether.codeMustBe8Chars' => 'Il codice sessione deve essere di 8 caratteri',
+			'watchTogether.codeMustBe5Chars' => 'Il codice sessione deve essere di 5 caratteri',
 			'watchTogether.joinInstructions' => 'Inserisci il codice sessione condiviso dall\'host per unirti alla loro sessione di visione.',
 			'watchTogether.failedToCreate' => 'Impossibile creare la sessione',
 			'watchTogether.failedToJoin' => 'Impossibile unirsi alla sessione',
@@ -2039,6 +2045,12 @@ extension on TranslationsIt {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Impossibile aprire la riproduzione corrente',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} si è unito',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} se ne è andato',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} ha messo in pausa',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} ha ripreso',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} ha cercato',
+			'watchTogether.recentRooms' => 'Stanze recenti',
+			'watchTogether.renameRoom' => 'Rinomina stanza',
+			'watchTogether.removeRoom' => 'Rimuovi',
 			'shaders.title' => 'Shader',
 			'shaders.noShaderDescription' => 'Nessun miglioramento video',
 			'shaders.nvscalerDescription' => 'Ridimensionamento NVIDIA per video più nitido',

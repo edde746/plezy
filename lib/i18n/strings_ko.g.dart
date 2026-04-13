@@ -955,10 +955,10 @@ class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
 	@override String get leave => '이탈';
 	@override String get syncing => '동기화 중...';
 	@override String get joinWatchSession => '시청 세션에 참여';
-	@override String get enterCodeHint => '8자리 코드 입력';
+	@override String get enterCodeHint => '5자리 코드 입력';
 	@override String get pasteFromClipboard => '클립보드에서 붙여넣기';
 	@override String get pleaseEnterCode => '세션 코드를 입력하세요';
-	@override String get codeMustBe8Chars => '세션 코드는 반드시 8자리여야 합니다';
+	@override String get codeMustBe5Chars => '세션 코드는 반드시 5자리여야 합니다';
 	@override String get joinInstructions => '호스트가 공유한 세션 코드를 입력하여 시청 세션에 참여하세요.';
 	@override String get failedToCreate => '세션 생성 실패';
 	@override String get failedToJoin => '세션 참여 실패';
@@ -971,6 +971,12 @@ class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => '현재 재생을 열 수 없습니다';
 	@override String participantJoined({required Object name}) => '${name}님이 참여했습니다';
 	@override String participantLeft({required Object name}) => '${name}님이 나갔습니다';
+	@override String participantPaused({required Object name}) => '${name}님이 일시정지했습니다';
+	@override String participantResumed({required Object name}) => '${name}님이 재생했습니다';
+	@override String participantSeeked({required Object name}) => '${name}님이 탐색했습니다';
+	@override String get recentRooms => '최근 방';
+	@override String get renameRoom => '방 이름 변경';
+	@override String get removeRoom => '제거';
 }
 
 // Path: downloads
@@ -1998,10 +2004,10 @@ extension on TranslationsKo {
 			'watchTogether.leave' => '이탈',
 			'watchTogether.syncing' => '동기화 중...',
 			'watchTogether.joinWatchSession' => '시청 세션에 참여',
-			'watchTogether.enterCodeHint' => '8자리 코드 입력',
+			'watchTogether.enterCodeHint' => '5자리 코드 입력',
 			'watchTogether.pasteFromClipboard' => '클립보드에서 붙여넣기',
 			'watchTogether.pleaseEnterCode' => '세션 코드를 입력하세요',
-			'watchTogether.codeMustBe8Chars' => '세션 코드는 반드시 8자리여야 합니다',
+			'watchTogether.codeMustBe5Chars' => '세션 코드는 반드시 5자리여야 합니다',
 			'watchTogether.joinInstructions' => '호스트가 공유한 세션 코드를 입력하여 시청 세션에 참여하세요.',
 			'watchTogether.failedToCreate' => '세션 생성 실패',
 			'watchTogether.failedToJoin' => '세션 참여 실패',
@@ -2014,6 +2020,12 @@ extension on TranslationsKo {
 			'watchTogether.failedToOpenCurrentPlayback' => '현재 재생을 열 수 없습니다',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}님이 참여했습니다',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}님이 나갔습니다',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name}님이 일시정지했습니다',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name}님이 재생했습니다',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name}님이 탐색했습니다',
+			'watchTogether.recentRooms' => '최근 방',
+			'watchTogether.renameRoom' => '방 이름 변경',
+			'watchTogether.removeRoom' => '제거',
 			'downloads.title' => '다운로드',
 			'downloads.manage' => '관리',
 			'downloads.tvShows' => 'TV 프로그램',

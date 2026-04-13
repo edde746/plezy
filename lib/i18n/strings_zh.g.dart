@@ -989,10 +989,10 @@ class _TranslationsWatchTogetherZh implements TranslationsWatchTogetherEn {
 	@override String get leave => '离开';
 	@override String get syncing => '同步中...';
 	@override String get joinWatchSession => '加入观看会话';
-	@override String get enterCodeHint => '输入8位代码';
+	@override String get enterCodeHint => '输入5位代码';
 	@override String get pasteFromClipboard => '从剪贴板粘贴';
 	@override String get pleaseEnterCode => '请输入会话代码';
-	@override String get codeMustBe8Chars => '会话代码必须是8个字符';
+	@override String get codeMustBe5Chars => '会话代码必须是5个字符';
 	@override String get joinInstructions => '输入主持人分享的会话代码以加入他们的观看会话。';
 	@override String get failedToCreate => '创建会话失败';
 	@override String get failedToJoin => '加入会话失败';
@@ -1005,6 +1005,12 @@ class _TranslationsWatchTogetherZh implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => '无法打开当前播放';
 	@override String participantJoined({required Object name}) => '${name} 加入了';
 	@override String participantLeft({required Object name}) => '${name} 离开了';
+	@override String participantPaused({required Object name}) => '${name} 暂停了';
+	@override String participantResumed({required Object name}) => '${name} 继续播放了';
+	@override String participantSeeked({required Object name}) => '${name} 跳转了';
+	@override String get recentRooms => '最近的房间';
+	@override String get renameRoom => '重命名房间';
+	@override String get removeRoom => '移除';
 }
 
 // Path: shaders
@@ -2023,10 +2029,10 @@ extension on TranslationsZh {
 			'watchTogether.leave' => '离开',
 			'watchTogether.syncing' => '同步中...',
 			'watchTogether.joinWatchSession' => '加入观看会话',
-			'watchTogether.enterCodeHint' => '输入8位代码',
+			'watchTogether.enterCodeHint' => '输入5位代码',
 			'watchTogether.pasteFromClipboard' => '从剪贴板粘贴',
 			'watchTogether.pleaseEnterCode' => '请输入会话代码',
-			'watchTogether.codeMustBe8Chars' => '会话代码必须是8个字符',
+			'watchTogether.codeMustBe5Chars' => '会话代码必须是5个字符',
 			'watchTogether.joinInstructions' => '输入主持人分享的会话代码以加入他们的观看会话。',
 			'watchTogether.failedToCreate' => '创建会话失败',
 			'watchTogether.failedToJoin' => '加入会话失败',
@@ -2039,6 +2045,12 @@ extension on TranslationsZh {
 			'watchTogether.failedToOpenCurrentPlayback' => '无法打开当前播放',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} 加入了',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} 离开了',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} 暂停了',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} 继续播放了',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} 跳转了',
+			'watchTogether.recentRooms' => '最近的房间',
+			'watchTogether.renameRoom' => '重命名房间',
+			'watchTogether.removeRoom' => '移除',
 			'shaders.title' => '着色器',
 			'shaders.noShaderDescription' => '无视频增强',
 			'shaders.nvscalerDescription' => 'NVIDIA 图像缩放，使视频更清晰',

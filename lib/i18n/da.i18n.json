@@ -702,10 +702,10 @@
     "leave": "Forlad",
     "syncing": "Synkroniserer...",
     "joinWatchSession": "Deltag i se-session",
-    "enterCodeHint": "Indtast 8-tegns kode",
+    "enterCodeHint": "Indtast 5-tegns kode",
     "pasteFromClipboard": "Indsæt fra udklipsholder",
     "pleaseEnterCode": "Indtast en sessionskode",
-    "codeMustBe8Chars": "Sessionskode skal være 8 tegn",
+    "codeMustBe5Chars": "Sessionskode skal være 5 tegn",
     "joinInstructions": "Indtast sessionskoden delt af værten for at deltage i se-sessionen.",
     "failedToCreate": "Kunne ikke oprette session",
     "failedToJoin": "Kunne ikke deltage i session",
@@ -717,7 +717,13 @@
     "joinCurrentPlaybackDescription": "Hop tilbage til det værten ser nu",
     "failedToOpenCurrentPlayback": "Kunne ikke åbne nuværende afspilning",
     "participantJoined": "${name} deltog",
-    "participantLeft": "${name} forlod"
+    "participantLeft": "${name} forlod",
+    "participantPaused": "${name} satte på pause",
+    "participantResumed": "${name} genoptog",
+    "participantSeeked": "${name} spoled",
+    "recentRooms": "Seneste rum",
+    "renameRoom": "Omdøb rum",
+    "removeRoom": "Fjern"
   },
   "downloads": {
     "title": "Downloads",

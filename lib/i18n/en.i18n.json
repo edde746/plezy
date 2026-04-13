@@ -702,10 +702,10 @@
     "leave": "Leave",
     "syncing": "Syncing...",
     "joinWatchSession": "Join Watch Session",
-    "enterCodeHint": "Enter 8-character code",
+    "enterCodeHint": "Enter 5-character code",
     "pasteFromClipboard": "Paste from clipboard",
     "pleaseEnterCode": "Please enter a session code",
-    "codeMustBe8Chars": "Session code must be 8 characters",
+    "codeMustBe5Chars": "Session code must be 5 characters",
     "joinInstructions": "Enter the session code shared by the host to join their watch session.",
     "failedToCreate": "Failed to create session",
     "failedToJoin": "Failed to join session",
@@ -717,7 +717,13 @@
     "joinCurrentPlaybackDescription": "Jump back into what the host is currently watching",
     "failedToOpenCurrentPlayback": "Failed to open current playback",
     "participantJoined": "${name} joined",
-    "participantLeft": "${name} left"
+    "participantLeft": "${name} left",
+    "participantPaused": "${name} paused",
+    "participantResumed": "${name} resumed",
+    "participantSeeked": "${name} seeked",
+    "recentRooms": "Recent Rooms",
+    "renameRoom": "Rename Room",
+    "removeRoom": "Remove"
   },
   "downloads": {
     "title": "Downloads",

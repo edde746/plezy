@@ -702,10 +702,10 @@
     "leave": "Покинуть",
     "syncing": "Синхронизация...",
     "joinWatchSession": "Присоединиться к просмотру",
-    "enterCodeHint": "Введите 8-символьный код",
+    "enterCodeHint": "Введите 5-символьный код",
     "pasteFromClipboard": "Вставить из буфера обмена",
     "pleaseEnterCode": "Введите код сессии",
-    "codeMustBe8Chars": "Код сессии должен содержать 8 символов",
+    "codeMustBe5Chars": "Код сессии должен содержать 5 символов",
     "joinInstructions": "Введите код сессии, предоставленный хостом, чтобы присоединиться к просмотру.",
     "failedToCreate": "Не удалось создать сессию",
     "failedToJoin": "Не удалось присоединиться к сессии",
@@ -717,7 +717,13 @@
     "joinCurrentPlaybackDescription": "Вернуться к тому, что сейчас смотрит хост",
     "failedToOpenCurrentPlayback": "Не удалось открыть текущее воспроизведение",
     "participantJoined": "${name} присоединился",
-    "participantLeft": "${name} вышел"
+    "participantLeft": "${name} вышел",
+    "participantPaused": "${name} поставил на паузу",
+    "participantResumed": "${name} возобновил",
+    "participantSeeked": "${name} перемотал",
+    "recentRooms": "Недавние комнаты",
+    "renameRoom": "Переименовать комнату",
+    "removeRoom": "Удалить"
   },
   "downloads": {
     "title": "Загрузки",

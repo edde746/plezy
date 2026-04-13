@@ -72,7 +72,7 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
                     border: const OutlineInputBorder(),
                   ),
                   textCapitalization: TextCapitalization.characters,
-                  maxLength: 8,
+                  maxLength: 5,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
                     UpperCaseTextFormatter(),
@@ -81,8 +81,8 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
                     if (value == null || value.isEmpty) {
                       return t.watchTogether.pleaseEnterCode;
                     }
-                    if (value.length != 8) {
-                      return t.watchTogether.codeMustBe8Chars;
+                    if (value.length != 5) {
+                      return t.watchTogether.codeMustBe5Chars;
                     }
                     return null;
                   },
@@ -123,7 +123,7 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
       // Clean the pasted text - extract alphanumeric characters and take first 8
       final cleaned = data!.text!.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
       if (cleaned.isNotEmpty) {
-        _sessionIdController.text = cleaned.substring(0, cleaned.length.clamp(0, 8));
+        _sessionIdController.text = cleaned.substring(0, cleaned.length.clamp(0, 5));
         _sessionIdController.selection = TextSelection.collapsed(offset: _sessionIdController.text.length);
       }
     }

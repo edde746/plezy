@@ -2156,8 +2156,8 @@ class TranslationsWatchTogetherEn {
 	/// en: 'Join Watch Session'
 	String get joinWatchSession => 'Join Watch Session';
 
-	/// en: 'Enter 8-character code'
-	String get enterCodeHint => 'Enter 8-character code';
+	/// en: 'Enter 5-character code'
+	String get enterCodeHint => 'Enter 5-character code';
 
 	/// en: 'Paste from clipboard'
 	String get pasteFromClipboard => 'Paste from clipboard';
@@ -2165,8 +2165,8 @@ class TranslationsWatchTogetherEn {
 	/// en: 'Please enter a session code'
 	String get pleaseEnterCode => 'Please enter a session code';
 
-	/// en: 'Session code must be 8 characters'
-	String get codeMustBe8Chars => 'Session code must be 8 characters';
+	/// en: 'Session code must be 5 characters'
+	String get codeMustBe5Chars => 'Session code must be 5 characters';
 
 	/// en: 'Enter the session code shared by the host to join their watch session.'
 	String get joinInstructions => 'Enter the session code shared by the host to join their watch session.';
@@ -2203,6 +2203,24 @@ class TranslationsWatchTogetherEn {
 
 	/// en: '${name} left'
 	String participantLeft({required Object name}) => '${name} left';
+
+	/// en: '${name} paused'
+	String participantPaused({required Object name}) => '${name} paused';
+
+	/// en: '${name} resumed'
+	String participantResumed({required Object name}) => '${name} resumed';
+
+	/// en: '${name} seeked'
+	String participantSeeked({required Object name}) => '${name} seeked';
+
+	/// en: 'Recent Rooms'
+	String get recentRooms => 'Recent Rooms';
+
+	/// en: 'Rename Room'
+	String get renameRoom => 'Rename Room';
+
+	/// en: 'Remove'
+	String get removeRoom => 'Remove';
 }
 
 // Path: downloads
@@ -3735,10 +3753,10 @@ extension on Translations {
 			'watchTogether.leave' => 'Leave',
 			'watchTogether.syncing' => 'Syncing...',
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
-			'watchTogether.enterCodeHint' => 'Enter 8-character code',
+			'watchTogether.enterCodeHint' => 'Enter 5-character code',
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
 			'watchTogether.pleaseEnterCode' => 'Please enter a session code',
-			'watchTogether.codeMustBe8Chars' => 'Session code must be 8 characters',
+			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
 			'watchTogether.joinInstructions' => 'Enter the session code shared by the host to join their watch session.',
 			'watchTogether.failedToCreate' => 'Failed to create session',
 			'watchTogether.failedToJoin' => 'Failed to join session',
@@ -3751,6 +3769,12 @@ extension on Translations {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
+			'watchTogether.recentRooms' => 'Recent Rooms',
+			'watchTogether.renameRoom' => 'Rename Room',
+			'watchTogether.removeRoom' => 'Remove',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',

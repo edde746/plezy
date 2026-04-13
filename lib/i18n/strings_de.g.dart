@@ -989,10 +989,10 @@ class _TranslationsWatchTogetherDe implements TranslationsWatchTogetherEn {
 	@override String get leave => 'Verlassen';
 	@override String get syncing => 'Synchronisieren...';
 	@override String get joinWatchSession => 'Schausitzung Beitreten';
-	@override String get enterCodeHint => '8-stelligen Code eingeben';
+	@override String get enterCodeHint => '5-stelligen Code eingeben';
 	@override String get pasteFromClipboard => 'Aus Zwischenablage einfügen';
 	@override String get pleaseEnterCode => 'Bitte gib einen Sitzungscode ein';
-	@override String get codeMustBe8Chars => 'Sitzungscode muss 8 Zeichen haben';
+	@override String get codeMustBe5Chars => 'Sitzungscode muss 5 Zeichen haben';
 	@override String get joinInstructions => 'Gib den vom Host geteilten Sitzungscode ein, um seiner Schausitzung beizutreten.';
 	@override String get failedToCreate => 'Sitzung konnte nicht erstellt werden';
 	@override String get failedToJoin => 'Sitzung konnte nicht beigetreten werden';
@@ -1005,6 +1005,12 @@ class _TranslationsWatchTogetherDe implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => 'Aktuelle Wiedergabe konnte nicht geöffnet werden';
 	@override String participantJoined({required Object name}) => '${name} ist beigetreten';
 	@override String participantLeft({required Object name}) => '${name} hat die Sitzung verlassen';
+	@override String participantPaused({required Object name}) => '${name} hat pausiert';
+	@override String participantResumed({required Object name}) => '${name} hat fortgesetzt';
+	@override String participantSeeked({required Object name}) => '${name} hat gespult';
+	@override String get recentRooms => 'Letzte Räume';
+	@override String get renameRoom => 'Raum umbenennen';
+	@override String get removeRoom => 'Entfernen';
 }
 
 // Path: shaders
@@ -2023,10 +2029,10 @@ extension on TranslationsDe {
 			'watchTogether.leave' => 'Verlassen',
 			'watchTogether.syncing' => 'Synchronisieren...',
 			'watchTogether.joinWatchSession' => 'Schausitzung Beitreten',
-			'watchTogether.enterCodeHint' => '8-stelligen Code eingeben',
+			'watchTogether.enterCodeHint' => '5-stelligen Code eingeben',
 			'watchTogether.pasteFromClipboard' => 'Aus Zwischenablage einfügen',
 			'watchTogether.pleaseEnterCode' => 'Bitte gib einen Sitzungscode ein',
-			'watchTogether.codeMustBe8Chars' => 'Sitzungscode muss 8 Zeichen haben',
+			'watchTogether.codeMustBe5Chars' => 'Sitzungscode muss 5 Zeichen haben',
 			'watchTogether.joinInstructions' => 'Gib den vom Host geteilten Sitzungscode ein, um seiner Schausitzung beizutreten.',
 			'watchTogether.failedToCreate' => 'Sitzung konnte nicht erstellt werden',
 			'watchTogether.failedToJoin' => 'Sitzung konnte nicht beigetreten werden',
@@ -2039,6 +2045,12 @@ extension on TranslationsDe {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Aktuelle Wiedergabe konnte nicht geöffnet werden',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} ist beigetreten',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} hat die Sitzung verlassen',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} hat pausiert',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} hat fortgesetzt',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} hat gespult',
+			'watchTogether.recentRooms' => 'Letzte Räume',
+			'watchTogether.renameRoom' => 'Raum umbenennen',
+			'watchTogether.removeRoom' => 'Entfernen',
 			'shaders.title' => 'Shader',
 			'shaders.noShaderDescription' => 'Keine Videoverbesserung',
 			'shaders.nvscalerDescription' => 'NVIDIA-Bildskalierung für schärferes Video',

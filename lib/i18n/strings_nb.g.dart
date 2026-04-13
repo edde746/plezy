@@ -955,10 +955,10 @@ class _TranslationsWatchTogetherNb implements TranslationsWatchTogetherEn {
 	@override String get leave => 'Forlat';
 	@override String get syncing => 'Synkroniserer...';
 	@override String get joinWatchSession => 'Bli med i se sammen-økt';
-	@override String get enterCodeHint => 'Skriv inn 8-tegns kode';
+	@override String get enterCodeHint => 'Skriv inn 5-tegns kode';
 	@override String get pasteFromClipboard => 'Lim inn fra utklippstavle';
 	@override String get pleaseEnterCode => 'Vennligst skriv inn en øktkode';
-	@override String get codeMustBe8Chars => 'Øktkoden må være 8 tegn';
+	@override String get codeMustBe5Chars => 'Øktkoden må være 5 tegn';
 	@override String get joinInstructions => 'Skriv inn øktkoden delt av verten for å bli med i se sammen-økten.';
 	@override String get failedToCreate => 'Kunne ikke opprette økt';
 	@override String get failedToJoin => 'Kunne ikke bli med i økt';
@@ -971,6 +971,12 @@ class _TranslationsWatchTogetherNb implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => 'Kunne ikke åpne gjeldende avspilling';
 	@override String participantJoined({required Object name}) => '${name} ble med';
 	@override String participantLeft({required Object name}) => '${name} forlot';
+	@override String participantPaused({required Object name}) => '${name} pauset';
+	@override String participantResumed({required Object name}) => '${name} gjenopptok';
+	@override String participantSeeked({required Object name}) => '${name} spolet';
+	@override String get recentRooms => 'Nylige rom';
+	@override String get renameRoom => 'Gi nytt navn til rom';
+	@override String get removeRoom => 'Fjern';
 }
 
 // Path: downloads
@@ -1998,10 +2004,10 @@ extension on TranslationsNb {
 			'watchTogether.leave' => 'Forlat',
 			'watchTogether.syncing' => 'Synkroniserer...',
 			'watchTogether.joinWatchSession' => 'Bli med i se sammen-økt',
-			'watchTogether.enterCodeHint' => 'Skriv inn 8-tegns kode',
+			'watchTogether.enterCodeHint' => 'Skriv inn 5-tegns kode',
 			'watchTogether.pasteFromClipboard' => 'Lim inn fra utklippstavle',
 			'watchTogether.pleaseEnterCode' => 'Vennligst skriv inn en øktkode',
-			'watchTogether.codeMustBe8Chars' => 'Øktkoden må være 8 tegn',
+			'watchTogether.codeMustBe5Chars' => 'Øktkoden må være 5 tegn',
 			'watchTogether.joinInstructions' => 'Skriv inn øktkoden delt av verten for å bli med i se sammen-økten.',
 			'watchTogether.failedToCreate' => 'Kunne ikke opprette økt',
 			'watchTogether.failedToJoin' => 'Kunne ikke bli med i økt',
@@ -2014,6 +2020,12 @@ extension on TranslationsNb {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunne ikke åpne gjeldende avspilling',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} ble med',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} forlot',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} pauset',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} gjenopptok',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spolet',
+			'watchTogether.recentRooms' => 'Nylige rom',
+			'watchTogether.renameRoom' => 'Gi nytt navn til rom',
+			'watchTogether.removeRoom' => 'Fjern',
 			'downloads.title' => 'Nedlastinger',
 			'downloads.manage' => 'Administrer',
 			'downloads.tvShows' => 'TV-serier',

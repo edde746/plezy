@@ -729,10 +729,10 @@
     "leave": "Lämna",
     "syncing": "Synkroniserar...",
     "joinWatchSession": "Gå med i Tittarsession",
-    "enterCodeHint": "Ange 8-teckens kod",
+    "enterCodeHint": "Ange 5-teckens kod",
     "pasteFromClipboard": "Klistra in från urklipp",
     "pleaseEnterCode": "Vänligen ange en sessionskod",
-    "codeMustBe8Chars": "Sessionskod måste vara 8 tecken",
+    "codeMustBe5Chars": "Sessionskod måste vara 5 tecken",
     "joinInstructions": "Ange sessionskoden som delats av värden för att gå med i deras tittarsession.",
     "failedToCreate": "Det gick inte att skapa session",
     "failedToJoin": "Det gick inte att gå med i session",
@@ -744,7 +744,13 @@
     "joinCurrentPlaybackDescription": "Hoppa tillbaka till det värden tittar på just nu",
     "failedToOpenCurrentPlayback": "Kunde inte öppna aktuell uppspelning",
     "participantJoined": "${name} gick med",
-    "participantLeft": "${name} lämnade"
+    "participantLeft": "${name} lämnade",
+    "participantPaused": "${name} pausade",
+    "participantResumed": "${name} återupptog",
+    "participantSeeked": "${name} spolade",
+    "recentRooms": "Senaste rum",
+    "renameRoom": "Byt namn på rum",
+    "removeRoom": "Ta bort"
   },
   "shaders": {
     "title": "Shaders",

@@ -955,10 +955,10 @@ class _TranslationsWatchTogetherPl implements TranslationsWatchTogetherEn {
 	@override String get leave => 'Opuść';
 	@override String get syncing => 'Synchronizacja...';
 	@override String get joinWatchSession => 'Dołącz do sesji oglądania';
-	@override String get enterCodeHint => 'Wprowadź 8-znakowy kod';
+	@override String get enterCodeHint => 'Wprowadź 5-znakowy kod';
 	@override String get pasteFromClipboard => 'Wklej ze schowka';
 	@override String get pleaseEnterCode => 'Wprowadź kod sesji';
-	@override String get codeMustBe8Chars => 'Kod sesji musi mieć 8 znaków';
+	@override String get codeMustBe5Chars => 'Kod sesji musi mieć 5 znaków';
 	@override String get joinInstructions => 'Wprowadź kod sesji udostępniony przez hosta, aby dołączyć do sesji oglądania.';
 	@override String get failedToCreate => 'Nie udało się utworzyć sesji';
 	@override String get failedToJoin => 'Nie udało się dołączyć do sesji';
@@ -971,6 +971,12 @@ class _TranslationsWatchTogetherPl implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => 'Nie udało się otworzyć bieżącego odtwarzania';
 	@override String participantJoined({required Object name}) => '${name} dołączył';
 	@override String participantLeft({required Object name}) => '${name} opuścił';
+	@override String participantPaused({required Object name}) => '${name} wstrzymał';
+	@override String participantResumed({required Object name}) => '${name} wznowił';
+	@override String participantSeeked({required Object name}) => '${name} przewinął';
+	@override String get recentRooms => 'Ostatnie pokoje';
+	@override String get renameRoom => 'Zmień nazwę pokoju';
+	@override String get removeRoom => 'Usuń';
 }
 
 // Path: downloads
@@ -1998,10 +2004,10 @@ extension on TranslationsPl {
 			'watchTogether.leave' => 'Opuść',
 			'watchTogether.syncing' => 'Synchronizacja...',
 			'watchTogether.joinWatchSession' => 'Dołącz do sesji oglądania',
-			'watchTogether.enterCodeHint' => 'Wprowadź 8-znakowy kod',
+			'watchTogether.enterCodeHint' => 'Wprowadź 5-znakowy kod',
 			'watchTogether.pasteFromClipboard' => 'Wklej ze schowka',
 			'watchTogether.pleaseEnterCode' => 'Wprowadź kod sesji',
-			'watchTogether.codeMustBe8Chars' => 'Kod sesji musi mieć 8 znaków',
+			'watchTogether.codeMustBe5Chars' => 'Kod sesji musi mieć 5 znaków',
 			'watchTogether.joinInstructions' => 'Wprowadź kod sesji udostępniony przez hosta, aby dołączyć do sesji oglądania.',
 			'watchTogether.failedToCreate' => 'Nie udało się utworzyć sesji',
 			'watchTogether.failedToJoin' => 'Nie udało się dołączyć do sesji',
@@ -2014,6 +2020,12 @@ extension on TranslationsPl {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Nie udało się otworzyć bieżącego odtwarzania',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} dołączył',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} opuścił',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} wstrzymał',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} wznowił',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} przewinął',
+			'watchTogether.recentRooms' => 'Ostatnie pokoje',
+			'watchTogether.renameRoom' => 'Zmień nazwę pokoju',
+			'watchTogether.removeRoom' => 'Usuń',
 			'downloads.title' => 'Pobrania',
 			'downloads.manage' => 'Zarządzaj',
 			'downloads.tvShows' => 'Seriale TV',

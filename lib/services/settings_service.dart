@@ -113,6 +113,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyCustomShaderPresets = 'custom_shader_presets';
   static const String _keyLiveTvDefaultFavorites = 'live_tv_default_favorites';
   static const String _keyCustomRelayUrl = 'custom_relay_url';
+  static const String _keyRecentRooms = 'watch_together_recent_rooms';
   static const String _keyMatchRefreshRate = 'match_refresh_rate';
   static const String _keyMatchDynamicRange = 'match_dynamic_range';
   static const String _keyDisplaySwitchDelay = 'display_switch_delay';
@@ -936,6 +937,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   String? getCustomRelayUrl() {
     return prefs.getString(_keyCustomRelayUrl);
+  }
+
+  // Recent Watch Together rooms
+  Future<void> setRecentRooms(String json) async {
+    await prefs.setString(_keyRecentRooms, json);
+  }
+
+  String? getRecentRooms() {
+    return prefs.getString(_keyRecentRooms);
   }
 
   // Download on WiFi Only

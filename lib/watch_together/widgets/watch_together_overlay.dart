@@ -346,9 +346,13 @@ class _ParticipantNotificationOverlayState extends State<ParticipantNotification
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: _notifications.map((n) {
-            final text = n.event.type == ParticipantEventType.joined
-                ? t.watchTogether.participantJoined(name: n.event.displayName)
-                : t.watchTogether.participantLeft(name: n.event.displayName);
+            final text = switch (n.event.type) {
+              ParticipantEventType.joined => t.watchTogether.participantJoined(name: n.event.displayName),
+              ParticipantEventType.left => t.watchTogether.participantLeft(name: n.event.displayName),
+              ParticipantEventType.paused => t.watchTogether.participantPaused(name: n.event.displayName),
+              ParticipantEventType.resumed => t.watchTogether.participantResumed(name: n.event.displayName),
+              ParticipantEventType.seeked => t.watchTogether.participantSeeked(name: n.event.displayName),
+            };
             return Container(
               margin: const EdgeInsets.only(bottom: 4),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

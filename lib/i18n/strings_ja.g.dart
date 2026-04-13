@@ -955,10 +955,10 @@ class _TranslationsWatchTogetherJa implements TranslationsWatchTogetherEn {
 	@override String get leave => '退出';
 	@override String get syncing => '同期中...';
 	@override String get joinWatchSession => '視聴セッションに参加';
-	@override String get enterCodeHint => '8文字のコードを入力';
+	@override String get enterCodeHint => '5文字のコードを入力';
 	@override String get pasteFromClipboard => 'クリップボードから貼り付け';
 	@override String get pleaseEnterCode => 'セッションコードを入力してください';
-	@override String get codeMustBe8Chars => 'セッションコードは8文字である必要があります';
+	@override String get codeMustBe5Chars => 'セッションコードは5文字である必要があります';
 	@override String get joinInstructions => 'ホストが共有したセッションコードを入力して視聴セッションに参加してください。';
 	@override String get failedToCreate => 'セッションの作成に失敗しました';
 	@override String get failedToJoin => 'セッションへの参加に失敗しました';
@@ -971,6 +971,12 @@ class _TranslationsWatchTogetherJa implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => '現在の再生を開けませんでした';
 	@override String participantJoined({required Object name}) => '${name}が参加しました';
 	@override String participantLeft({required Object name}) => '${name}が退出しました';
+	@override String participantPaused({required Object name}) => '${name}が一時停止しました';
+	@override String participantResumed({required Object name}) => '${name}が再開しました';
+	@override String participantSeeked({required Object name}) => '${name}がシークしました';
+	@override String get recentRooms => '最近のルーム';
+	@override String get renameRoom => 'ルーム名を変更';
+	@override String get removeRoom => '削除';
 }
 
 // Path: downloads
@@ -1998,10 +2004,10 @@ extension on TranslationsJa {
 			'watchTogether.leave' => '退出',
 			'watchTogether.syncing' => '同期中...',
 			'watchTogether.joinWatchSession' => '視聴セッションに参加',
-			'watchTogether.enterCodeHint' => '8文字のコードを入力',
+			'watchTogether.enterCodeHint' => '5文字のコードを入力',
 			'watchTogether.pasteFromClipboard' => 'クリップボードから貼り付け',
 			'watchTogether.pleaseEnterCode' => 'セッションコードを入力してください',
-			'watchTogether.codeMustBe8Chars' => 'セッションコードは8文字である必要があります',
+			'watchTogether.codeMustBe5Chars' => 'セッションコードは5文字である必要があります',
 			'watchTogether.joinInstructions' => 'ホストが共有したセッションコードを入力して視聴セッションに参加してください。',
 			'watchTogether.failedToCreate' => 'セッションの作成に失敗しました',
 			'watchTogether.failedToJoin' => 'セッションへの参加に失敗しました',
@@ -2014,6 +2020,12 @@ extension on TranslationsJa {
 			'watchTogether.failedToOpenCurrentPlayback' => '現在の再生を開けませんでした',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}が参加しました',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}が退出しました',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name}が一時停止しました',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name}が再開しました',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name}がシークしました',
+			'watchTogether.recentRooms' => '最近のルーム',
+			'watchTogether.renameRoom' => 'ルーム名を変更',
+			'watchTogether.removeRoom' => '削除',
 			'downloads.title' => 'ダウンロード',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',

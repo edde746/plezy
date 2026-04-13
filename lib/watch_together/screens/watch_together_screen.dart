@@ -11,12 +11,14 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/provider_extensions.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/video_player_navigation.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
+import '../services/recent_rooms_service.dart';
 import '../services/watch_together_peer_service.dart';
 import '../widgets/join_session_dialog.dart';
 
@@ -80,15 +82,22 @@ class _NotInSessionView extends StatefulWidget {
 class _NotInSessionViewState extends State<_NotInSessionView> {
   bool _isCreating = false;
   bool _isJoining = false;
+  String? _enteringRoomCode;
   bool? _healthOk;
   String? _customRelayUrl;
+  List<RecentRoom> _recentRooms = [];
 
   @override
   void initState() {
     super.initState();
     _customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
+    _recentRooms = RecentRoomsService.getRecentRooms();
     _checkHealth();
   }
+
+  bool get _isBusy => _isCreating || _isJoining || _enteringRoomCode != null;
+
+  String? get _plexDisplayName => context.userProfile.currentUser?.displayName;
 
   Future<void> _checkHealth() async {
     try {
@@ -117,7 +126,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
               const SizedBox(height: 24),
@@ -153,10 +162,10 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
               SizedBox(
                 width: double.infinity,
                 child: FocusableButton(
-                  autofocus: true,
-                  onPressed: _isCreating || _isJoining ? null : _createSession,
+                  autofocus: _recentRooms.isEmpty,
+                  onPressed: _isBusy ? null : _createSession,
                   child: FilledButton.icon(
-                    onPressed: _isCreating || _isJoining ? null : _createSession,
+                    onPressed: _isBusy ? null : _createSession,
                     icon: _isCreating
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Symbols.add_rounded),
@@ -168,9 +177,9 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
               SizedBox(
                 width: double.infinity,
                 child: FocusableButton(
-                  onPressed: _isCreating || _isJoining ? null : _joinSession,
+                  onPressed: _isBusy ? null : _joinSession,
                   child: OutlinedButton.icon(
-                    onPressed: _isCreating || _isJoining ? null : _joinSession,
+                    onPressed: _isBusy ? null : _joinSession,
                     icon: _isJoining
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Symbols.group_add_rounded),
@@ -178,6 +187,22 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
                   ),
                 ),
               ),
+              if (_recentRooms.isNotEmpty) ...[
+                const SizedBox(height: 32),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(t.watchTogether.recentRooms, style: theme.textTheme.titleSmall),
+                ),
+                const SizedBox(height: 8),
+                ..._recentRooms.map((room) => _RecentRoomTile(
+                      room: room,
+                      isBusy: _isBusy,
+                      isEntering: _enteringRoomCode == room.code,
+                      onTap: () => _enterRoom(room),
+                      onRename: () => _renameRoom(room),
+                      onRemove: () => _removeRoom(room),
+                    )),
+              ],
             ],
           ),
         ),
@@ -192,7 +217,12 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     setState(() => _isCreating = true);
 
     try {
-      await widget.watchTogether.createSession(controlMode: controlMode);
+      final sessionId = await widget.watchTogether.createSession(
+        controlMode: controlMode,
+        displayName: _plexDisplayName,
+      );
+      await RecentRoomsService.addOrUpdateRoom(sessionId);
+      if (mounted) setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
     } catch (e) {
       appLogger.e('Failed to create session', error: e);
       if (mounted) {
@@ -250,7 +280,9 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     setState(() => _isJoining = true);
 
     try {
-      await widget.watchTogether.joinSession(sessionId);
+      await widget.watchTogether.joinSession(sessionId, displayName: _plexDisplayName);
+      await RecentRoomsService.addOrUpdateRoom(sessionId);
+      if (mounted) setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
     } catch (e) {
       appLogger.e('Failed to join session', error: e);
       if (mounted) {
@@ -261,6 +293,133 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
         setState(() => _isJoining = false);
       }
     }
+  }
+
+  Future<void> _enterRoom(RecentRoom room) async {
+    setState(() => _enteringRoomCode = room.code);
+
+    try {
+      await widget.watchTogether.enterRoom(room.code, displayName: _plexDisplayName);
+      await RecentRoomsService.addOrUpdateRoom(room.code);
+      if (mounted) setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
+    } catch (e) {
+      appLogger.e('Failed to enter room', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${t.watchTogether.failedToJoin}: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _enteringRoomCode = null);
+      }
+    }
+  }
+
+  Future<void> _renameRoom(RecentRoom room) async {
+    final controller = TextEditingController(text: room.name ?? '');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.watchTogether.renameRoom),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(hintText: room.code),
+          onSubmitted: (value) => Navigator.pop(context, value),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(t.common.save)),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || !mounted) return;
+
+    await RecentRoomsService.renameRoom(room.code, name.isEmpty ? null : name);
+    setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
+  }
+
+  Future<void> _removeRoom(RecentRoom room) async {
+    await RecentRoomsService.removeRoom(room.code);
+    setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
+  }
+}
+
+class _RecentRoomTile extends StatelessWidget {
+  final RecentRoom room;
+  final bool isBusy;
+  final bool isEntering;
+  final VoidCallback onTap;
+  final VoidCallback onRename;
+  final VoidCallback onRemove;
+
+  const _RecentRoomTile({
+    required this.room,
+    required this.isBusy,
+    required this.isEntering,
+    required this.onTap,
+    required this.onRename,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final title = room.name ?? room.code;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: FocusableWrapper(
+        useBackgroundFocus: true,
+        borderRadius: 12,
+        onSelect: isBusy ? null : onTap,
+        onLongPress: () => _showActions(context),
+        child: ListTile(
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          leading: isEntering
+              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Symbols.meeting_room_rounded),
+          title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: room.name != null
+              ? Text(room.code, style: TextStyle(fontFamily: 'monospace', color: theme.colorScheme.onSurfaceVariant))
+              : null,
+          trailing: IconButton(
+            icon: const Icon(Symbols.more_vert_rounded),
+            onPressed: () => _showActions(context),
+          ),
+          onTap: isBusy ? null : onTap,
+        ),
+      ),
+    );
+  }
+
+  void _showActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Symbols.edit_rounded),
+              title: Text(t.watchTogether.renameRoom),
+              onTap: () {
+                Navigator.pop(context);
+                onRename();
+              },
+            ),
+            ListTile(
+              leading: Icon(Symbols.delete_rounded, color: Theme.of(context).colorScheme.error),
+              title: Text(t.watchTogether.removeRoom, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              onTap: () {
+                Navigator.pop(context);
+                onRemove();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

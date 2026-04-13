@@ -955,10 +955,10 @@ class _TranslationsWatchTogetherDa implements TranslationsWatchTogetherEn {
 	@override String get leave => 'Forlad';
 	@override String get syncing => 'Synkroniserer...';
 	@override String get joinWatchSession => 'Deltag i se-session';
-	@override String get enterCodeHint => 'Indtast 8-tegns kode';
+	@override String get enterCodeHint => 'Indtast 5-tegns kode';
 	@override String get pasteFromClipboard => 'Indsæt fra udklipsholder';
 	@override String get pleaseEnterCode => 'Indtast en sessionskode';
-	@override String get codeMustBe8Chars => 'Sessionskode skal være 8 tegn';
+	@override String get codeMustBe5Chars => 'Sessionskode skal være 5 tegn';
 	@override String get joinInstructions => 'Indtast sessionskoden delt af værten for at deltage i se-sessionen.';
 	@override String get failedToCreate => 'Kunne ikke oprette session';
 	@override String get failedToJoin => 'Kunne ikke deltage i session';
@@ -971,6 +971,12 @@ class _TranslationsWatchTogetherDa implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => 'Kunne ikke åbne nuværende afspilning';
 	@override String participantJoined({required Object name}) => '${name} deltog';
 	@override String participantLeft({required Object name}) => '${name} forlod';
+	@override String participantPaused({required Object name}) => '${name} satte på pause';
+	@override String participantResumed({required Object name}) => '${name} genoptog';
+	@override String participantSeeked({required Object name}) => '${name} spoled';
+	@override String get recentRooms => 'Seneste rum';
+	@override String get renameRoom => 'Omdøb rum';
+	@override String get removeRoom => 'Fjern';
 }
 
 // Path: downloads
@@ -1998,10 +2004,10 @@ extension on TranslationsDa {
 			'watchTogether.leave' => 'Forlad',
 			'watchTogether.syncing' => 'Synkroniserer...',
 			'watchTogether.joinWatchSession' => 'Deltag i se-session',
-			'watchTogether.enterCodeHint' => 'Indtast 8-tegns kode',
+			'watchTogether.enterCodeHint' => 'Indtast 5-tegns kode',
 			'watchTogether.pasteFromClipboard' => 'Indsæt fra udklipsholder',
 			'watchTogether.pleaseEnterCode' => 'Indtast en sessionskode',
-			'watchTogether.codeMustBe8Chars' => 'Sessionskode skal være 8 tegn',
+			'watchTogether.codeMustBe5Chars' => 'Sessionskode skal være 5 tegn',
 			'watchTogether.joinInstructions' => 'Indtast sessionskoden delt af værten for at deltage i se-sessionen.',
 			'watchTogether.failedToCreate' => 'Kunne ikke oprette session',
 			'watchTogether.failedToJoin' => 'Kunne ikke deltage i session',
@@ -2014,6 +2020,12 @@ extension on TranslationsDa {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunne ikke åbne nuværende afspilning',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} deltog',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} forlod',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} satte på pause',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} genoptog',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spoled',
+			'watchTogether.recentRooms' => 'Seneste rum',
+			'watchTogether.renameRoom' => 'Omdøb rum',
+			'watchTogether.removeRoom' => 'Fjern',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Administrer',
 			'downloads.tvShows' => 'TV-serier',

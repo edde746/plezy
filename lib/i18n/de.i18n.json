@@ -729,10 +729,10 @@
     "leave": "Verlassen",
     "syncing": "Synchronisieren...",
     "joinWatchSession": "Schausitzung Beitreten",
-    "enterCodeHint": "8-stelligen Code eingeben",
+    "enterCodeHint": "5-stelligen Code eingeben",
     "pasteFromClipboard": "Aus Zwischenablage einfügen",
     "pleaseEnterCode": "Bitte gib einen Sitzungscode ein",
-    "codeMustBe8Chars": "Sitzungscode muss 8 Zeichen haben",
+    "codeMustBe5Chars": "Sitzungscode muss 5 Zeichen haben",
     "joinInstructions": "Gib den vom Host geteilten Sitzungscode ein, um seiner Schausitzung beizutreten.",
     "failedToCreate": "Sitzung konnte nicht erstellt werden",
     "failedToJoin": "Sitzung konnte nicht beigetreten werden",
@@ -744,7 +744,13 @@
     "joinCurrentPlaybackDescription": "Springe zurück zu dem, was der Host gerade ansieht",
     "failedToOpenCurrentPlayback": "Aktuelle Wiedergabe konnte nicht geöffnet werden",
     "participantJoined": "${name} ist beigetreten",
-    "participantLeft": "${name} hat die Sitzung verlassen"
+    "participantLeft": "${name} hat die Sitzung verlassen",
+    "participantPaused": "${name} hat pausiert",
+    "participantResumed": "${name} hat fortgesetzt",
+    "participantSeeked": "${name} hat gespult",
+    "recentRooms": "Letzte Räume",
+    "renameRoom": "Raum umbenennen",
+    "removeRoom": "Entfernen"
   },
   "shaders": {
     "title": "Shader",

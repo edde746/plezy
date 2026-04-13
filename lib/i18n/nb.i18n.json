@@ -702,10 +702,10 @@
     "leave": "Forlat",
     "syncing": "Synkroniserer...",
     "joinWatchSession": "Bli med i se sammen-økt",
-    "enterCodeHint": "Skriv inn 8-tegns kode",
+    "enterCodeHint": "Skriv inn 5-tegns kode",
     "pasteFromClipboard": "Lim inn fra utklippstavle",
     "pleaseEnterCode": "Vennligst skriv inn en øktkode",
-    "codeMustBe8Chars": "Øktkoden må være 8 tegn",
+    "codeMustBe5Chars": "Øktkoden må være 5 tegn",
     "joinInstructions": "Skriv inn øktkoden delt av verten for å bli med i se sammen-økten.",
     "failedToCreate": "Kunne ikke opprette økt",
     "failedToJoin": "Kunne ikke bli med i økt",
@@ -717,7 +717,13 @@
     "joinCurrentPlaybackDescription": "Hopp tilbake til det verten ser på nå",
     "failedToOpenCurrentPlayback": "Kunne ikke åpne gjeldende avspilling",
     "participantJoined": "${name} ble med",
-    "participantLeft": "${name} forlot"
+    "participantLeft": "${name} forlot",
+    "participantPaused": "${name} pauset",
+    "participantResumed": "${name} gjenopptok",
+    "participantSeeked": "${name} spolet",
+    "recentRooms": "Nylige rom",
+    "renameRoom": "Gi nytt navn til rom",
+    "removeRoom": "Fjern"
   },
   "downloads": {
     "title": "Nedlastinger",

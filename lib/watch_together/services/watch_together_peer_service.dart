@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:uuid/uuid.dart';
 import '../../utils/future_extensions.dart';
@@ -98,9 +99,11 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// List of connected peer IDs
   List<String> get connectedPeers => _connectedPeers.toList();
 
-  /// Generate a short, readable session ID
-  String _generateSessionId() {
-    return const Uuid().v4().substring(0, 8).toUpperCase();
+  /// Generate a short, readable session ID (5 alphanumeric chars)
+  static String _generateSessionId() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random.secure();
+    return String.fromCharCodes(List.generate(5, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
   }
 
   /// Connect to the relay WebSocket and set up the message listener.
@@ -308,13 +311,14 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Create a new session as host
   ///
   /// Returns the session ID that others can use to join.
-  Future<String> createSession() async {
+  /// If [sessionId] is provided, uses that instead of generating a new one.
+  Future<String> createSession({String? sessionId}) async {
     if (_channel != null) {
       await disconnect();
     }
 
     _isHost = true;
-    _sessionId = _generateSessionId();
+    _sessionId = sessionId?.toUpperCase() ?? _generateSessionId();
     _myPeerId = 'wt-$_sessionId';
     _reconnectAttempts = 0;
 
@@ -377,6 +381,20 @@ class WatchTogetherPeerService with KeepaliveMixin {
       appLogger.e('WatchTogether: Failed to join session', error: e);
       await disconnect();
       rethrow;
+    }
+  }
+
+  /// Try to join a session; if it doesn't exist, create it as host.
+  ///
+  /// Returns `true` if the user became the host (room was empty).
+  Future<bool> joinOrCreateSession(String sessionId) async {
+    try {
+      await joinSession(sessionId);
+      return false; // joined as guest
+    } on PeerError catch (e) {
+      if (e.type != PeerErrorType.serverError) rethrow;
+      await createSession(sessionId: sessionId);
+      return true; // created as host
     }
   }
 

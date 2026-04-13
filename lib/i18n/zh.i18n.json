@@ -729,10 +729,10 @@
     "leave": "离开",
     "syncing": "同步中...",
     "joinWatchSession": "加入观看会话",
-    "enterCodeHint": "输入8位代码",
+    "enterCodeHint": "输入5位代码",
     "pasteFromClipboard": "从剪贴板粘贴",
     "pleaseEnterCode": "请输入会话代码",
-    "codeMustBe8Chars": "会话代码必须是8个字符",
+    "codeMustBe5Chars": "会话代码必须是5个字符",
     "joinInstructions": "输入主持人分享的会话代码以加入他们的观看会话。",
     "failedToCreate": "创建会话失败",
     "failedToJoin": "加入会话失败",
@@ -744,7 +744,13 @@
     "joinCurrentPlaybackDescription": "回到房主当前正在观看的内容",
     "failedToOpenCurrentPlayback": "无法打开当前播放",
     "participantJoined": "${name} 加入了",
-    "participantLeft": "${name} 离开了"
+    "participantLeft": "${name} 离开了",
+    "participantPaused": "${name} 暂停了",
+    "participantResumed": "${name} 继续播放了",
+    "participantSeeked": "${name} 跳转了",
+    "recentRooms": "最近的房间",
+    "renameRoom": "重命名房间",
+    "removeRoom": "移除"
   },
   "shaders": {
     "title": "着色器",

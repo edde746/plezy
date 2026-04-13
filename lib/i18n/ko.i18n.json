@@ -702,10 +702,10 @@
     "leave": "이탈",
     "syncing": "동기화 중...",
     "joinWatchSession": "시청 세션에 참여",
-    "enterCodeHint": "8자리 코드 입력",
+    "enterCodeHint": "5자리 코드 입력",
     "pasteFromClipboard": "클립보드에서 붙여넣기",
     "pleaseEnterCode": "세션 코드를 입력하세요",
-    "codeMustBe8Chars": "세션 코드는 반드시 8자리여야 합니다",
+    "codeMustBe5Chars": "세션 코드는 반드시 5자리여야 합니다",
     "joinInstructions": "호스트가 공유한 세션 코드를 입력하여 시청 세션에 참여하세요.",
     "failedToCreate": "세션 생성 실패",
     "failedToJoin": "세션 참여 실패",
@@ -717,7 +717,13 @@
     "joinCurrentPlaybackDescription": "호스트가 현재 보고 있는 항목으로 돌아갑니다",
     "failedToOpenCurrentPlayback": "현재 재생을 열 수 없습니다",
     "participantJoined": "${name}님이 참여했습니다",
-    "participantLeft": "${name}님이 나갔습니다"
+    "participantLeft": "${name}님이 나갔습니다",
+    "participantPaused": "${name}님이 일시정지했습니다",
+    "participantResumed": "${name}님이 재생했습니다",
+    "participantSeeked": "${name}님이 탐색했습니다",
+    "recentRooms": "최근 방",
+    "renameRoom": "방 이름 변경",
+    "removeRoom": "제거"
   },
   "downloads": {
     "title": "다운로드",

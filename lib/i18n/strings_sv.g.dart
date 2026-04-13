@@ -989,10 +989,10 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String get leave => 'Lämna';
 	@override String get syncing => 'Synkroniserar...';
 	@override String get joinWatchSession => 'Gå med i Tittarsession';
-	@override String get enterCodeHint => 'Ange 8-teckens kod';
+	@override String get enterCodeHint => 'Ange 5-teckens kod';
 	@override String get pasteFromClipboard => 'Klistra in från urklipp';
 	@override String get pleaseEnterCode => 'Vänligen ange en sessionskod';
-	@override String get codeMustBe8Chars => 'Sessionskod måste vara 8 tecken';
+	@override String get codeMustBe5Chars => 'Sessionskod måste vara 5 tecken';
 	@override String get joinInstructions => 'Ange sessionskoden som delats av värden för att gå med i deras tittarsession.';
 	@override String get failedToCreate => 'Det gick inte att skapa session';
 	@override String get failedToJoin => 'Det gick inte att gå med i session';
@@ -1005,6 +1005,12 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => 'Kunde inte öppna aktuell uppspelning';
 	@override String participantJoined({required Object name}) => '${name} gick med';
 	@override String participantLeft({required Object name}) => '${name} lämnade';
+	@override String participantPaused({required Object name}) => '${name} pausade';
+	@override String participantResumed({required Object name}) => '${name} återupptog';
+	@override String participantSeeked({required Object name}) => '${name} spolade';
+	@override String get recentRooms => 'Senaste rum';
+	@override String get renameRoom => 'Byt namn på rum';
+	@override String get removeRoom => 'Ta bort';
 }
 
 // Path: shaders
@@ -2023,10 +2029,10 @@ extension on TranslationsSv {
 			'watchTogether.leave' => 'Lämna',
 			'watchTogether.syncing' => 'Synkroniserar...',
 			'watchTogether.joinWatchSession' => 'Gå med i Tittarsession',
-			'watchTogether.enterCodeHint' => 'Ange 8-teckens kod',
+			'watchTogether.enterCodeHint' => 'Ange 5-teckens kod',
 			'watchTogether.pasteFromClipboard' => 'Klistra in från urklipp',
 			'watchTogether.pleaseEnterCode' => 'Vänligen ange en sessionskod',
-			'watchTogether.codeMustBe8Chars' => 'Sessionskod måste vara 8 tecken',
+			'watchTogether.codeMustBe5Chars' => 'Sessionskod måste vara 5 tecken',
 			'watchTogether.joinInstructions' => 'Ange sessionskoden som delats av värden för att gå med i deras tittarsession.',
 			'watchTogether.failedToCreate' => 'Det gick inte att skapa session',
 			'watchTogether.failedToJoin' => 'Det gick inte att gå med i session',
@@ -2039,6 +2045,12 @@ extension on TranslationsSv {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunde inte öppna aktuell uppspelning',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} gick med',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} lämnade',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} pausade',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} återupptog',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spolade',
+			'watchTogether.recentRooms' => 'Senaste rum',
+			'watchTogether.renameRoom' => 'Byt namn på rum',
+			'watchTogether.removeRoom' => 'Ta bort',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Ingen videoförbättring',
 			'shaders.nvscalerDescription' => 'NVIDIA-bildskalning för skarpare video',

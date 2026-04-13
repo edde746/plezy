@@ -702,10 +702,10 @@
     "leave": "Salir",
     "syncing": "Sincronizando...",
     "joinWatchSession": "Unirse a Sesión de Visualización",
-    "enterCodeHint": "Introduce el código de 8 caracteres",
+    "enterCodeHint": "Introduce el código de 5 caracteres",
     "pasteFromClipboard": "Pegar desde el portapapeles",
     "pleaseEnterCode": "Por favor, introduce un código de sesión",
-    "codeMustBe8Chars": "El código de sesión debe tener 8 caracteres",
+    "codeMustBe5Chars": "El código de sesión debe tener 5 caracteres",
     "joinInstructions": "Introduce el código de sesión compartido por el anfitrión para unirte a su sesión.",
     "failedToCreate": "Error al crear la sesión",
     "failedToJoin": "Error al unirse a la sesión",
@@ -717,7 +717,13 @@
     "joinCurrentPlaybackDescription": "Vuelve a lo que el anfitrión está viendo ahora mismo",
     "failedToOpenCurrentPlayback": "No se pudo abrir la reproducción actual",
     "participantJoined": "${name} se unió",
-    "participantLeft": "${name} se fue"
+    "participantLeft": "${name} se fue",
+    "participantPaused": "${name} pausó",
+    "participantResumed": "${name} reanudó",
+    "participantSeeked": "${name} avanzó",
+    "recentRooms": "Salas recientes",
+    "renameRoom": "Renombrar sala",
+    "removeRoom": "Eliminar"
   },
   "downloads": {
     "title": "Descargas",

@@ -989,10 +989,10 @@ class _TranslationsWatchTogetherNl implements TranslationsWatchTogetherEn {
 	@override String get leave => 'Verlaten';
 	@override String get syncing => 'Synchroniseren...';
 	@override String get joinWatchSession => 'Kijksessie Deelnemen';
-	@override String get enterCodeHint => 'Voer 8-teken code in';
+	@override String get enterCodeHint => 'Voer 5-teken code in';
 	@override String get pasteFromClipboard => 'Plakken van klembord';
 	@override String get pleaseEnterCode => 'Voer een sessiecode in';
-	@override String get codeMustBe8Chars => 'Sessiecode moet 8 tekens zijn';
+	@override String get codeMustBe5Chars => 'Sessiecode moet 5 tekens zijn';
 	@override String get joinInstructions => 'Voer de sessiecode in die door de host is gedeeld om deel te nemen aan hun kijksessie.';
 	@override String get failedToCreate => 'Sessie maken mislukt';
 	@override String get failedToJoin => 'Sessie deelnemen mislukt';
@@ -1005,6 +1005,12 @@ class _TranslationsWatchTogetherNl implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => 'Huidige weergave kon niet worden geopend';
 	@override String participantJoined({required Object name}) => '${name} is toegetreden';
 	@override String participantLeft({required Object name}) => '${name} heeft de sessie verlaten';
+	@override String participantPaused({required Object name}) => '${name} heeft gepauzeerd';
+	@override String participantResumed({required Object name}) => '${name} heeft hervat';
+	@override String participantSeeked({required Object name}) => '${name} heeft gespoeld';
+	@override String get recentRooms => 'Recente kamers';
+	@override String get renameRoom => 'Kamer hernoemen';
+	@override String get removeRoom => 'Verwijderen';
 }
 
 // Path: shaders
@@ -2023,10 +2029,10 @@ extension on TranslationsNl {
 			'watchTogether.leave' => 'Verlaten',
 			'watchTogether.syncing' => 'Synchroniseren...',
 			'watchTogether.joinWatchSession' => 'Kijksessie Deelnemen',
-			'watchTogether.enterCodeHint' => 'Voer 8-teken code in',
+			'watchTogether.enterCodeHint' => 'Voer 5-teken code in',
 			'watchTogether.pasteFromClipboard' => 'Plakken van klembord',
 			'watchTogether.pleaseEnterCode' => 'Voer een sessiecode in',
-			'watchTogether.codeMustBe8Chars' => 'Sessiecode moet 8 tekens zijn',
+			'watchTogether.codeMustBe5Chars' => 'Sessiecode moet 5 tekens zijn',
 			'watchTogether.joinInstructions' => 'Voer de sessiecode in die door de host is gedeeld om deel te nemen aan hun kijksessie.',
 			'watchTogether.failedToCreate' => 'Sessie maken mislukt',
 			'watchTogether.failedToJoin' => 'Sessie deelnemen mislukt',
@@ -2039,6 +2045,12 @@ extension on TranslationsNl {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Huidige weergave kon niet worden geopend',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} is toegetreden',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} heeft de sessie verlaten',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} heeft gepauzeerd',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} heeft hervat',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} heeft gespoeld',
+			'watchTogether.recentRooms' => 'Recente kamers',
+			'watchTogether.renameRoom' => 'Kamer hernoemen',
+			'watchTogether.removeRoom' => 'Verwijderen',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Geen videoverbetering',
 			'shaders.nvscalerDescription' => 'NVIDIA-beeldschaling voor scherpere video',

@@ -729,10 +729,10 @@
     "leave": "Verlaten",
     "syncing": "Synchroniseren...",
     "joinWatchSession": "Kijksessie Deelnemen",
-    "enterCodeHint": "Voer 8-teken code in",
+    "enterCodeHint": "Voer 5-teken code in",
     "pasteFromClipboard": "Plakken van klembord",
     "pleaseEnterCode": "Voer een sessiecode in",
-    "codeMustBe8Chars": "Sessiecode moet 8 tekens zijn",
+    "codeMustBe5Chars": "Sessiecode moet 5 tekens zijn",
     "joinInstructions": "Voer de sessiecode in die door de host is gedeeld om deel te nemen aan hun kijksessie.",
     "failedToCreate": "Sessie maken mislukt",
     "failedToJoin": "Sessie deelnemen mislukt",
@@ -744,7 +744,13 @@
     "joinCurrentPlaybackDescription": "Ga terug naar wat de host nu kijkt",
     "failedToOpenCurrentPlayback": "Huidige weergave kon niet worden geopend",
     "participantJoined": "${name} is toegetreden",
-    "participantLeft": "${name} heeft de sessie verlaten"
+    "participantLeft": "${name} heeft de sessie verlaten",
+    "participantPaused": "${name} heeft gepauzeerd",
+    "participantResumed": "${name} heeft hervat",
+    "participantSeeked": "${name} heeft gespoeld",
+    "recentRooms": "Recente kamers",
+    "renameRoom": "Kamer hernoemen",
+    "removeRoom": "Verwijderen"
   },
   "shaders": {
     "title": "Shaders",

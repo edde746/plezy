@@ -729,10 +729,10 @@
     "leave": "Lascia",
     "syncing": "Sincronizzazione...",
     "joinWatchSession": "Unisciti alla Sessione di Visione",
-    "enterCodeHint": "Inserisci codice di 8 caratteri",
+    "enterCodeHint": "Inserisci codice di 5 caratteri",
     "pasteFromClipboard": "Incolla dagli appunti",
     "pleaseEnterCode": "Inserisci un codice sessione",
-    "codeMustBe8Chars": "Il codice sessione deve essere di 8 caratteri",
+    "codeMustBe5Chars": "Il codice sessione deve essere di 5 caratteri",
     "joinInstructions": "Inserisci il codice sessione condiviso dall'host per unirti alla loro sessione di visione.",
     "failedToCreate": "Impossibile creare la sessione",
     "failedToJoin": "Impossibile unirsi alla sessione",
@@ -744,7 +744,13 @@
     "joinCurrentPlaybackDescription": "Torna a ciò che l'host sta guardando in questo momento",
     "failedToOpenCurrentPlayback": "Impossibile aprire la riproduzione corrente",
     "participantJoined": "${name} si è unito",
-    "participantLeft": "${name} se ne è andato"
+    "participantLeft": "${name} se ne è andato",
+    "participantPaused": "${name} ha messo in pausa",
+    "participantResumed": "${name} ha ripreso",
+    "participantSeeked": "${name} ha cercato",
+    "recentRooms": "Stanze recenti",
+    "renameRoom": "Rinomina stanza",
+    "removeRoom": "Rimuovi"
   },
   "shaders": {
     "title": "Shader",

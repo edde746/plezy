@@ -702,10 +702,10 @@
     "leave": "退出",
     "syncing": "同期中...",
     "joinWatchSession": "視聴セッションに参加",
-    "enterCodeHint": "8文字のコードを入力",
+    "enterCodeHint": "5文字のコードを入力",
     "pasteFromClipboard": "クリップボードから貼り付け",
     "pleaseEnterCode": "セッションコードを入力してください",
-    "codeMustBe8Chars": "セッションコードは8文字である必要があります",
+    "codeMustBe5Chars": "セッションコードは5文字である必要があります",
     "joinInstructions": "ホストが共有したセッションコードを入力して視聴セッションに参加してください。",
     "failedToCreate": "セッションの作成に失敗しました",
     "failedToJoin": "セッションへの参加に失敗しました",
@@ -717,7 +717,13 @@
     "joinCurrentPlaybackDescription": "ホストが現在視聴中のコンテンツに戻る",
     "failedToOpenCurrentPlayback": "現在の再生を開けませんでした",
     "participantJoined": "${name}が参加しました",
-    "participantLeft": "${name}が退出しました"
+    "participantLeft": "${name}が退出しました",
+    "participantPaused": "${name}が一時停止しました",
+    "participantResumed": "${name}が再開しました",
+    "participantSeeked": "${name}がシークしました",
+    "recentRooms": "最近のルーム",
+    "renameRoom": "ルーム名を変更",
+    "removeRoom": "削除"
   },
   "downloads": {
     "title": "ダウンロード",

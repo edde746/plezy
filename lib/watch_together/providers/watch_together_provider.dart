@@ -50,6 +50,9 @@ class WatchTogetherProvider with ChangeNotifier {
   Timer? _hostReconnectTimer;
   bool _isWaitingForHostReconnect = false;
 
+  // Debounce map for action events (peerId+type → last emission timestamp)
+  final Map<String, int> _lastActionEventMs = {};
+
   /// Generate a random display name for this session
   static String _generateDisplayName() {
     const adjectives = ['Happy', 'Sleepy', 'Sunny', 'Cozy', 'Chill', 'Swift', 'Brave', 'Calm', 'Jolly', 'Lucky'];
@@ -180,6 +183,8 @@ class WatchTogetherProvider with ChangeNotifier {
   /// Create a new watch together session as host
   Future<String> createSession({
     required ControlMode controlMode,
+    String? displayName,
+    String? sessionId,
     String? mediaRatingKey,
     String? mediaServerId,
     String? mediaTitle,
@@ -195,10 +200,10 @@ class WatchTogetherProvider with ChangeNotifier {
     _setupPeerServiceListeners();
 
     try {
-      final sessionId = await _peerService!.createSession();
+      final createdSessionId = await _peerService!.createSession(sessionId: sessionId);
 
       _session = WatchSession.createAsHost(
-        sessionId: sessionId,
+        sessionId: createdSessionId,
         hostPeerId: _peerService!.myPeerId!,
         controlMode: controlMode,
         mediaRatingKey: mediaRatingKey,
@@ -206,8 +211,7 @@ class WatchTogetherProvider with ChangeNotifier {
         mediaTitle: mediaTitle,
       ).copyWith(state: SessionState.connected);
 
-      // Generate a random display name and add self to participants
-      _displayName = _generateDisplayName();
+      _displayName = displayName ?? _generateDisplayName();
       _participants.add(Participant(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: true));
 
       _syncManager = WatchTogetherSyncManager(
@@ -219,9 +223,9 @@ class WatchTogetherProvider with ChangeNotifier {
       _wireSyncStateChanges();
 
       notifyListeners();
-      appLogger.d('WatchTogether: Session created: $sessionId');
+      appLogger.d('WatchTogether: Session created: $createdSessionId');
 
-      return sessionId;
+      return createdSessionId;
     } catch (e) {
       appLogger.e('WatchTogether: Failed to create session', error: e);
       _session = _session?.copyWith(state: SessionState.error, errorMessage: e.toString());
@@ -231,7 +235,7 @@ class WatchTogetherProvider with ChangeNotifier {
   }
 
   /// Join an existing session as guest
-  Future<void> joinSession(String sessionId) async {
+  Future<void> joinSession(String sessionId, {String? displayName}) async {
     // Clean up any existing session
     await leaveSession();
     _lastHandledCurrentPlaybackKey = null;
@@ -251,8 +255,7 @@ class WatchTogetherProvider with ChangeNotifier {
       // Session will be fully configured when we receive sessionConfig from host
       _session = _session!.copyWith(state: SessionState.connected, hostPeerId: 'wt-${sessionId.toUpperCase()}');
 
-      // Generate a random display name for this session
-      _displayName = _generateDisplayName();
+      _displayName = displayName ?? _generateDisplayName();
 
       _syncManager = WatchTogetherSyncManager(
         peerService: _peerService!,
@@ -281,6 +284,32 @@ class WatchTogetherProvider with ChangeNotifier {
       appLogger.e('WatchTogether: Failed to join session', error: e);
       _session = _session?.copyWith(state: SessionState.error, errorMessage: e.toString());
       notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Enter a room by code — joins if it exists, creates if empty.
+  ///
+  /// Returns `true` if the user became the host.
+  Future<bool> enterRoom(String sessionId, {ControlMode controlMode = ControlMode.anyone, String? displayName}) async {
+    // Probe the relay to determine if the room exists, then delegate to
+    // the existing createSession / joinSession which handle all setup.
+    final customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
+    final probe = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
+    try {
+      final becameHost = await probe.joinOrCreateSession(sessionId);
+      await probe.disconnect();
+      probe.dispose();
+
+      if (becameHost) {
+        await createSession(controlMode: controlMode, displayName: displayName, sessionId: sessionId);
+      } else {
+        await joinSession(sessionId, displayName: displayName);
+      }
+      return becameHost;
+    } catch (e) {
+      await probe.disconnect();
+      probe.dispose();
       rethrow;
     }
   }
@@ -320,6 +349,7 @@ class WatchTogetherProvider with ChangeNotifier {
     _participants.clear();
     _isSyncing = false;
     _lastHandledCurrentPlaybackKey = null;
+    _lastActionEventMs.clear();
 
     notifyListeners();
     appLogger.d('WatchTogether: Session left');
@@ -493,8 +523,36 @@ class WatchTogetherProvider with ChangeNotifier {
         // Handled at sync manager level (host responds with config)
         break;
 
+      case SyncMessageType.play:
+        _emitActionEvent(message.peerId, ParticipantEventType.resumed);
+        break;
+
+      case SyncMessageType.pause:
+        _emitActionEvent(message.peerId, ParticipantEventType.paused);
+        break;
+
+      case SyncMessageType.seek:
+        _emitActionEvent(message.peerId, ParticipantEventType.seeked);
+        break;
+
       default:
         break;
+    }
+  }
+
+  /// Emit an action event for a remote peer (with 1s debounce per peer+type)
+  void _emitActionEvent(String? peerId, ParticipantEventType type) {
+    if (peerId == null || peerId == _peerService?.myPeerId) return;
+
+    final key = '$peerId:${type.name}';
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final last = _lastActionEventMs[key] ?? 0;
+    if (now - last < 1000) return;
+    _lastActionEventMs[key] = now;
+
+    final name = _participants.where((p) => p.peerId == peerId).map((p) => p.displayName).firstOrNull;
+    if (name != null) {
+      _participantEventController.add(ParticipantEvent(displayName: name, type: type));
     }
   }
 
@@ -679,7 +737,7 @@ class WatchTogetherProvider with ChangeNotifier {
 }
 
 /// Type of participant event
-enum ParticipantEventType { joined, left }
+enum ParticipantEventType { joined, left, paused, resumed, seeked }
 
 /// Event emitted when a participant joins or leaves
 class ParticipantEvent {

@@ -955,10 +955,10 @@ class _TranslationsWatchTogetherFr implements TranslationsWatchTogetherEn {
 	@override String get leave => 'Fin';
 	@override String get syncing => 'Synchronisation...';
 	@override String get joinWatchSession => 'Rejoindre la session de visionnage';
-	@override String get enterCodeHint => 'Entrez le code à 8 caractères';
+	@override String get enterCodeHint => 'Entrez le code à 5 caractères';
 	@override String get pasteFromClipboard => 'Coller depuis le presse-papiers';
 	@override String get pleaseEnterCode => 'Veuillez saisir un code de session';
-	@override String get codeMustBe8Chars => 'Le code de session doit comporter 8 caractères';
+	@override String get codeMustBe5Chars => 'Le code de session doit comporter 5 caractères';
 	@override String get joinInstructions => 'Entrez le code de session partagé par l\'hôte pour rejoindre sa session de visionnage.';
 	@override String get failedToCreate => 'Échec de la création de la session';
 	@override String get failedToJoin => 'Échec de la connexion à la session';
@@ -971,6 +971,12 @@ class _TranslationsWatchTogetherFr implements TranslationsWatchTogetherEn {
 	@override String get failedToOpenCurrentPlayback => 'Impossible d\'ouvrir la lecture en cours';
 	@override String participantJoined({required Object name}) => '${name} a rejoint';
 	@override String participantLeft({required Object name}) => '${name} est parti';
+	@override String participantPaused({required Object name}) => '${name} a mis en pause';
+	@override String participantResumed({required Object name}) => '${name} a repris';
+	@override String participantSeeked({required Object name}) => '${name} a avancé';
+	@override String get recentRooms => 'Salons récents';
+	@override String get renameRoom => 'Renommer le salon';
+	@override String get removeRoom => 'Supprimer';
 }
 
 // Path: downloads
@@ -1998,10 +2004,10 @@ extension on TranslationsFr {
 			'watchTogether.leave' => 'Fin',
 			'watchTogether.syncing' => 'Synchronisation...',
 			'watchTogether.joinWatchSession' => 'Rejoindre la session de visionnage',
-			'watchTogether.enterCodeHint' => 'Entrez le code à 8 caractères',
+			'watchTogether.enterCodeHint' => 'Entrez le code à 5 caractères',
 			'watchTogether.pasteFromClipboard' => 'Coller depuis le presse-papiers',
 			'watchTogether.pleaseEnterCode' => 'Veuillez saisir un code de session',
-			'watchTogether.codeMustBe8Chars' => 'Le code de session doit comporter 8 caractères',
+			'watchTogether.codeMustBe5Chars' => 'Le code de session doit comporter 5 caractères',
 			'watchTogether.joinInstructions' => 'Entrez le code de session partagé par l\'hôte pour rejoindre sa session de visionnage.',
 			'watchTogether.failedToCreate' => 'Échec de la création de la session',
 			'watchTogether.failedToJoin' => 'Échec de la connexion à la session',
@@ -2014,6 +2020,12 @@ extension on TranslationsFr {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Impossible d\'ouvrir la lecture en cours',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} a rejoint',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} est parti',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} a mis en pause',
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} a repris',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} a avancé',
+			'watchTogether.recentRooms' => 'Salons récents',
+			'watchTogether.renameRoom' => 'Renommer le salon',
+			'watchTogether.removeRoom' => 'Supprimer',
 			'downloads.title' => 'Téléchargements',
 			'downloads.manage' => 'Gérer',
 			'downloads.tvShows' => 'Show TV',
