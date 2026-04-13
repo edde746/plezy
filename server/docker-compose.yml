@@ -2,14 +2,21 @@ services:
   relay:
     build: .
     restart: unless-stopped
+    mem_limit: 128m
     volumes:
       - logs:/data/logs
     expose:
       - "8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    mem_limit: 128m
     ports:
       - "80:80"
       - "443:443"
@@ -17,10 +24,16 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   bugs:
     image: ghcr.io/edde746/bugs:latest
     restart: unless-stopped
+    mem_limit: 128m
     volumes:
       - bugs_data:/data
     environment:
@@ -29,6 +42,11 @@ services:
       BUGS_RETENTION_DAYS: 90
     expose:
       - "9000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   logs:

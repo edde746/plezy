@@ -1,5 +1,13 @@
 ice.plezy.app {
-	reverse_proxy relay:8080
+	log {
+		output stderr
+		level ERROR
+	}
+	reverse_proxy relay:8080 {
+		transport http {
+			max_conns_per_host 100
+		}
+	}
 }
 
 bugs.plezy.app {

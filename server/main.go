@@ -35,6 +35,11 @@ const (
 	logIDLength        = 5
 	logRateInterval    = 1 * time.Minute
 	maxLogEntries      = 500
+	maxConnsPerIP      = 5
+	maxGlobalConns     = 100
+	maxRoomsPerIP      = 3
+	connRateBurst      = 5
+	connRateSustained  = 1
 )
 
 var upgrader = websocket.Upgrader{
@@ -80,6 +85,95 @@ func (rl *rateLimiter) allow() bool {
 	}
 	rl.tokens--
 	return true
+}
+
+// --- Connection tracker (per-IP limits) ---
+
+type connTracker struct {
+	mu          sync.Mutex
+	perIP       map[string]int
+	ipRate      map[string]*rateLimiter
+	roomsPerIP  map[string]int
+	globalCount int
+}
+
+func newConnTracker() *connTracker {
+	return &connTracker{
+		perIP:      make(map[string]int),
+		ipRate:     make(map[string]*rateLimiter),
+		roomsPerIP: make(map[string]int),
+	}
+}
+
+func (ct *connTracker) tryConnect(ip string) bool {
+	ct.mu.Lock()
+	defer ct.mu.Unlock()
+
+	if ct.globalCount >= maxGlobalConns {
+		return false
+	}
+	if ct.perIP[ip] >= maxConnsPerIP {
+		return false
+	}
+
+	rl, ok := ct.ipRate[ip]
+	if !ok {
+		rl = newRateLimiter(connRateBurst, connRateSustained)
+		ct.ipRate[ip] = rl
+	}
+	// Unlock ct.mu before calling rl.allow() would be cleaner,
+	// but since rl has its own mutex this is safe (no deadlock).
+	if !rl.allow() {
+		return false
+	}
+
+	ct.perIP[ip]++
+	ct.globalCount++
+	return true
+}
+
+func (ct *connTracker) disconnect(ip string) {
+	ct.mu.Lock()
+	defer ct.mu.Unlock()
+
+	if ct.perIP[ip] > 0 {
+		ct.perIP[ip]--
+		ct.globalCount--
+	}
+	if ct.perIP[ip] == 0 {
+		delete(ct.perIP, ip)
+	}
+}
+
+func (ct *connTracker) tryCreateRoom(ip string) bool {
+	ct.mu.Lock()
+	defer ct.mu.Unlock()
+	if ct.roomsPerIP[ip] >= maxRoomsPerIP {
+		return false
+	}
+	ct.roomsPerIP[ip]++
+	return true
+}
+
+func (ct *connTracker) releaseRoom(ip string) {
+	ct.mu.Lock()
+	defer ct.mu.Unlock()
+	if ct.roomsPerIP[ip] > 0 {
+		ct.roomsPerIP[ip]--
+	}
+	if ct.roomsPerIP[ip] == 0 {
+		delete(ct.roomsPerIP, ip)
+	}
+}
+
+func (ct *connTracker) cleanup() {
+	ct.mu.Lock()
+	defer ct.mu.Unlock()
+	for ip := range ct.ipRate {
+		if ct.perIP[ip] == 0 {
+			delete(ct.ipRate, ip)
+		}
+	}
 }
 
 // --- Messages ---
@@ -220,11 +314,12 @@ func (ls *logStore) cleanup() {
 type Server struct {
 	rooms map[string]*Room
 	logs  *logStore
+	conns *connTracker
 	mu    sync.RWMutex
 }
 
 func newServer(logDir string) *Server {
-	s := &Server{rooms: make(map[string]*Room), logs: newLogStore(logDir)}
+	s := &Server{rooms: make(map[string]*Room), logs: newLogStore(logDir), conns: newConnTracker()}
 	go s.cleanupLoop()
 	return s
 }
@@ -248,18 +343,34 @@ func (s *Server) cleanupLoop() {
 		}
 		s.mu.Unlock()
 		s.logs.cleanup()
+		s.conns.cleanup()
+
+		s.conns.mu.Lock()
+		log.Printf("stats: conns=%d ips=%d rooms=%d",
+			s.conns.globalCount, len(s.conns.perIP), len(s.rooms))
+		s.conns.mu.Unlock()
 	}
 }
 
 func clientIP(r *http.Request) string {
+	var raw string
 	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-		return strings.SplitN(fwd, ",", 2)[0]
+		raw = strings.TrimSpace(strings.SplitN(fwd, ",", 2)[0])
+	} else {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			raw = r.RemoteAddr
+		} else {
+			raw = host
+		}
 	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
+	// Normalize IPv6 to /64 prefix to prevent per-address bypass
+	ip := net.ParseIP(raw)
+	if ip != nil && ip.To4() == nil {
+		mask := net.CIDRMask(64, 128)
+		return ip.Mask(mask).String()
 	}
-	return host
+	return raw
 }
 
 func (s *Server) handlePostLogs(w http.ResponseWriter, r *http.Request) {
@@ -365,6 +476,14 @@ func (s *Server) sendJSON(conn *websocket.Conn, msg serverMsg) {
 }
 
 func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
+	ip := clientIP(r)
+
+	if !s.conns.tryConnect(ip) {
+		http.Error(w, "Too many connections", http.StatusTooManyRequests)
+		return
+	}
+	defer s.conns.disconnect(ip)
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("upgrade error: %v", err)
@@ -394,6 +513,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	rl := newRateLimiter(rateBurst, rateSustained)
 	var currentRoom *Room
 	var currentPeerID string
+	var isHost bool
 
 	// Cleanup on disconnect
 	defer func() {
@@ -405,6 +525,9 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				Type:   "peerLeft",
 				PeerID: currentPeerID,
 			})
+			if isHost {
+				s.conns.releaseRoom(ip)
+			}
 			log.Printf("peer %s left room %s", currentPeerID, currentRoom.SessionID)
 		}
 	}()
@@ -435,9 +558,14 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				s.sendError(conn, "invalid_message", "sessionId and peerId required")
 				continue
 			}
+			if !s.conns.tryCreateRoom(ip) {
+				s.sendError(conn, "rate_limited", "Too many rooms created")
+				continue
+			}
 			s.mu.Lock()
 			if _, exists := s.rooms[msg.SessionID]; exists {
 				s.mu.Unlock()
+				s.conns.releaseRoom(ip)
 				s.sendError(conn, "room_exists", "Room already exists")
 				continue
 			}
@@ -451,6 +579,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			s.mu.Unlock()
 			currentRoom = room
 			currentPeerID = msg.PeerID
+			isHost = true
 			log.Printf("room %s created by %s", msg.SessionID, msg.PeerID)
 			s.sendJSON(conn, serverMsg{Type: "created", SessionID: msg.SessionID})
 
