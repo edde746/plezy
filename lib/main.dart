@@ -203,26 +203,33 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   final instance = SettingsService.instanceOrNull;
   if (instance != null && !instance.getCrashReporting()) return null;
 
-  // Drop harmless Windows file-lock errors from cache manager cleanup
+  // Drop unactionable errors
   var exceptions = event.exceptions;
-  if (exceptions != null &&
-      exceptions.any(
-        (e) =>
-            e.type == 'FileSystemException' &&
-            e.value != null &&
-            e.value!.contains('plexImageCache') &&
-            e.value!.contains('errno = 32'),
-      )) {
-    return null;
-  }
-
-  // Drop DBusServiceUnknownException from Linux without NetworkManager
-  if (exceptions != null && exceptions.any((e) => e.type == 'DBusServiceUnknownException')) {
-    return null;
-  }
-
-  // Scrub Plex tokens and server URLs from exception messages
   if (exceptions != null) {
+    bool shouldDrop(SentryException e) {
+      final v = e.value;
+      // Windows file-lock errors from cache manager cleanup
+      if (e.type == 'FileSystemException' &&
+          v != null &&
+          v.contains('plexImageCache') &&
+          v.contains('errno = 32')) {
+        return true;
+      }
+      // Linux without DBus/NetworkManager
+      if (e.type == 'DBusServiceUnknownException' ||
+          (v != null && v.contains('system_bus_socket'))) {
+        return true;
+      }
+      // Device out of disk space
+      if (v != null && (v.contains('SQLITE_FULL') || v.contains('No space left on device'))) {
+        return true;
+      }
+      return false;
+    }
+
+    if (exceptions.any(shouldDrop)) return null;
+
+    // Scrub Plex tokens and server URLs from exception messages
     for (final e in exceptions) {
       final value = e.value;
       if (value != null) {
