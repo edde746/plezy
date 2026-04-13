@@ -102,9 +102,10 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
 
   /// Find the nearest displayed letter at or before [letter] in the full list.
   String _nearestDisplayed(String letter) {
+    if (_displayed.isEmpty) return letter;
     if (_displayed.contains(letter)) return letter;
     final pos = _helper.letters.indexOf(letter);
-    if (pos < 0 && _displayed.isNotEmpty) return _displayed.first;
+    if (pos < 0) return _displayed.first;
     String result = _displayed.first;
     for (final dl in _displayed) {
       final dlPos = _helper.letters.indexOf(dl);
@@ -132,6 +133,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
 
   /// Resolves a vertical drag position to a displayed-letter index.
   int _letterIndexFromDy(double dy, double totalHeight) {
+    if (_displayed.isEmpty) return 0;
     final index = (dy / totalHeight * _displayed.length).floor();
     return index.clamp(0, _displayed.length - 1);
   }
@@ -189,6 +191,8 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           _updateDisplayed(constraints.maxHeight);
+
+          if (_displayed.isEmpty) return const SizedBox.shrink();
 
           final currentLetter = _nearestDisplayed(widget.currentLetter);
 
