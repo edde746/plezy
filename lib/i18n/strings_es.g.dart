@@ -320,6 +320,8 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Error al seleccionar la carpeta';
 	@override String get downloadOnWifiOnly => 'Descargar solo con WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Evitar descargas cuando se usan datos móviles';
+	@override String get autoRemoveWatchedDownloads => 'Eliminar descargas vistas automáticamente';
+	@override String get autoRemoveWatchedDownloadsDescription => 'Eliminar automáticamente episodios y películas descargados cuando se marquen como vistos';
 	@override String get cellularDownloadBlocked => 'Las descargas están desactivadas en datos móviles. Conéctate a una red WiFi o cambia la configuración.';
 	@override String get maxVolume => 'Volumen Máximo';
 	@override String get maxVolumeDescription => 'Permitir aumento de volumen por encima del 100% para medios con sonido bajo';
@@ -565,6 +567,7 @@ class _TranslationsMessagesEs implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => 'Marcado como no visto';
 	@override String get markedAsWatchedOffline => 'Marcado como visto (se sincronizará al estar en línea)';
 	@override String get markedAsUnwatchedOffline => 'Marcado como no visto (se sincronizará al estar en línea)';
+	@override String autoRemovedWatchedDownload({required Object title}) => 'Eliminado automáticamente: ${title}';
 	@override String get removedFromContinueWatching => 'Eliminado de Seguir Viendo';
 	@override String errorLoading({required Object error}) => 'Error: ${error}';
 	@override String get fileInfoNotAvailable => 'Información de archivo no disponible';
@@ -1559,6 +1562,8 @@ extension on TranslationsEs {
 			'settings.downloadLocationSelectError' => 'Error al seleccionar la carpeta',
 			'settings.downloadOnWifiOnly' => 'Descargar solo con WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Evitar descargas cuando se usan datos móviles',
+			'settings.autoRemoveWatchedDownloads' => 'Eliminar descargas vistas automáticamente',
+			'settings.autoRemoveWatchedDownloadsDescription' => 'Eliminar automáticamente episodios y películas descargados cuando se marquen como vistos',
 			'settings.cellularDownloadBlocked' => 'Las descargas están desactivadas en datos móviles. Conéctate a una red WiFi o cambia la configuración.',
 			'settings.maxVolume' => 'Volumen Máximo',
 			'settings.maxVolumeDescription' => 'Permitir aumento de volumen por encima del 100% para medios con sonido bajo',
@@ -1747,6 +1752,7 @@ extension on TranslationsEs {
 			'messages.markedAsUnwatched' => 'Marcado como no visto',
 			'messages.markedAsWatchedOffline' => 'Marcado como visto (se sincronizará al estar en línea)',
 			'messages.markedAsUnwatchedOffline' => 'Marcado como no visto (se sincronizará al estar en línea)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Eliminado automáticamente: ${title}',
 			'messages.removedFromContinueWatching' => 'Eliminado de Seguir Viendo',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.fileInfoNotAvailable' => 'Información de archivo no disponible',
@@ -1877,11 +1883,11 @@ extension on TranslationsEs {
 			'libraries.groupings.folders' => 'Carpetas',
 			'about.title' => 'Acerca de',
 			'about.openSourceLicenses' => 'Licencias de Código Abierto',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'Versión ${version}',
 			'about.appDescription' => 'Un cliente de Plex para Flutter',
 			'about.viewLicensesDescription' => 'Ver licencias de librerías de terceros',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'No se pudo conectar con ningún servidor. Por favor, comprueba tu conexión e inténtalo de nuevo.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No se encontraron servidores para ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Error al cargar servidores: ${error}',

@@ -320,6 +320,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Falha ao selecionar pasta';
 	@override String get downloadOnWifiOnly => 'Baixar apenas no WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Impedir downloads quando em dados móveis';
+	@override String get autoRemoveWatchedDownloads => 'Remover downloads assistidos automaticamente';
+	@override String get autoRemoveWatchedDownloadsDescription => 'Excluir automaticamente episódios e filmes baixados quando marcados como assistidos';
 	@override String get cellularDownloadBlocked => 'Downloads estão desativados em dados móveis. Conecte ao WiFi ou altere a configuração.';
 	@override String get maxVolume => 'Volume Máximo';
 	@override String get maxVolumeDescription => 'Permitir aumento de volume acima de 100% para mídias silenciosas';
@@ -565,6 +567,7 @@ class _TranslationsMessagesPt implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => 'Marcado como não assistido';
 	@override String get markedAsWatchedOffline => 'Marcado como assistido (será sincronizado quando online)';
 	@override String get markedAsUnwatchedOffline => 'Marcado como não assistido (será sincronizado quando online)';
+	@override String autoRemovedWatchedDownload({required Object title}) => 'Removido automaticamente: ${title}';
 	@override String get removedFromContinueWatching => 'Removido de Continuar Assistindo';
 	@override String errorLoading({required Object error}) => 'Erro: ${error}';
 	@override String get fileInfoNotAvailable => 'Informações do arquivo não disponíveis';
@@ -1559,6 +1562,8 @@ extension on TranslationsPt {
 			'settings.downloadLocationSelectError' => 'Falha ao selecionar pasta',
 			'settings.downloadOnWifiOnly' => 'Baixar apenas no WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Impedir downloads quando em dados móveis',
+			'settings.autoRemoveWatchedDownloads' => 'Remover downloads assistidos automaticamente',
+			'settings.autoRemoveWatchedDownloadsDescription' => 'Excluir automaticamente episódios e filmes baixados quando marcados como assistidos',
 			'settings.cellularDownloadBlocked' => 'Downloads estão desativados em dados móveis. Conecte ao WiFi ou altere a configuração.',
 			'settings.maxVolume' => 'Volume Máximo',
 			'settings.maxVolumeDescription' => 'Permitir aumento de volume acima de 100% para mídias silenciosas',
@@ -1747,6 +1752,7 @@ extension on TranslationsPt {
 			'messages.markedAsUnwatched' => 'Marcado como não assistido',
 			'messages.markedAsWatchedOffline' => 'Marcado como assistido (será sincronizado quando online)',
 			'messages.markedAsUnwatchedOffline' => 'Marcado como não assistido (será sincronizado quando online)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Removido automaticamente: ${title}',
 			'messages.removedFromContinueWatching' => 'Removido de Continuar Assistindo',
 			'messages.errorLoading' => ({required Object error}) => 'Erro: ${error}',
 			'messages.fileInfoNotAvailable' => 'Informações do arquivo não disponíveis',
@@ -1877,11 +1883,11 @@ extension on TranslationsPt {
 			'libraries.groupings.folders' => 'Pastas',
 			'about.title' => 'Sobre',
 			'about.openSourceLicenses' => 'Licenças Open Source',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'Versão ${version}',
 			'about.appDescription' => 'Um belo cliente Plex para Flutter',
 			'about.viewLicensesDescription' => 'Ver licenças de bibliotecas de terceiros',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'Falha ao conectar a qualquer servidor. Verifique sua rede e tente novamente.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nenhum servidor encontrado para ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Falha ao carregar servidores: ${error}',

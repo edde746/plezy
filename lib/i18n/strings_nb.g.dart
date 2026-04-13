@@ -320,6 +320,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Kunne ikke velge mappe';
 	@override String get downloadOnWifiOnly => 'Last ned kun på WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Forhindre nedlastinger på mobildata';
+	@override String get autoRemoveWatchedDownloads => 'Fjern sette nedlastinger automatisk';
+	@override String get autoRemoveWatchedDownloadsDescription => 'Slett nedlastede episoder og filmer automatisk når de er markert som sett';
 	@override String get cellularDownloadBlocked => 'Nedlastinger er deaktivert på mobildata. Koble til WiFi eller endre innstillingen.';
 	@override String get maxVolume => 'Maks volum';
 	@override String get maxVolumeDescription => 'Tillat volumforsterkning over 100% for stille media';
@@ -565,6 +567,7 @@ class _TranslationsMessagesNb implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => 'Merket som usett';
 	@override String get markedAsWatchedOffline => 'Merket som sett (synkroniseres når tilkoblet)';
 	@override String get markedAsUnwatchedOffline => 'Merket som usett (synkroniseres når tilkoblet)';
+	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatisk fjernet: ${title}';
 	@override String get removedFromContinueWatching => 'Fjernet fra Fortsett å se';
 	@override String errorLoading({required Object error}) => 'Feil: ${error}';
 	@override String get fileInfoNotAvailable => 'Filinformasjon ikke tilgjengelig';
@@ -1559,6 +1562,8 @@ extension on TranslationsNb {
 			'settings.downloadLocationSelectError' => 'Kunne ikke velge mappe',
 			'settings.downloadOnWifiOnly' => 'Last ned kun på WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Forhindre nedlastinger på mobildata',
+			'settings.autoRemoveWatchedDownloads' => 'Fjern sette nedlastinger automatisk',
+			'settings.autoRemoveWatchedDownloadsDescription' => 'Slett nedlastede episoder og filmer automatisk når de er markert som sett',
 			'settings.cellularDownloadBlocked' => 'Nedlastinger er deaktivert på mobildata. Koble til WiFi eller endre innstillingen.',
 			'settings.maxVolume' => 'Maks volum',
 			'settings.maxVolumeDescription' => 'Tillat volumforsterkning over 100% for stille media',
@@ -1747,6 +1752,7 @@ extension on TranslationsNb {
 			'messages.markedAsUnwatched' => 'Merket som usett',
 			'messages.markedAsWatchedOffline' => 'Merket som sett (synkroniseres når tilkoblet)',
 			'messages.markedAsUnwatchedOffline' => 'Merket som usett (synkroniseres når tilkoblet)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
 			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsett å se',
 			'messages.errorLoading' => ({required Object error}) => 'Feil: ${error}',
 			'messages.fileInfoNotAvailable' => 'Filinformasjon ikke tilgjengelig',
@@ -1877,11 +1883,11 @@ extension on TranslationsNb {
 			'libraries.groupings.folders' => 'Mapper',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Åpen kildekode-lisenser',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'Versjon ${version}',
 			'about.appDescription' => 'En vakker Plex-klient for Flutter',
 			'about.viewLicensesDescription' => 'Vis lisenser for tredjepartsbiblioteker',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke koble til noen servere. Sjekk nettverket ditt og prøv igjen.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere funnet for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke laste servere: ${error}',

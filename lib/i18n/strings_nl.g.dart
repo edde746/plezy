@@ -320,6 +320,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Kan map niet selecteren';
 	@override String get downloadOnWifiOnly => 'Alleen via WiFi downloaden';
 	@override String get downloadOnWifiOnlyDescription => 'Voorkom downloads bij gebruik van mobiele data';
+	@override String get autoRemoveWatchedDownloads => 'Bekeken downloads automatisch verwijderen';
+	@override String get autoRemoveWatchedDownloadsDescription => 'Gedownloade afleveringen en films automatisch verwijderen wanneer ze als bekeken zijn gemarkeerd';
 	@override String get cellularDownloadBlocked => 'Downloads zijn uitgeschakeld bij mobiele data. Maak verbinding met WiFi of wijzig de instelling.';
 	@override String get maxVolume => 'Maximaal volume';
 	@override String get maxVolumeDescription => 'Volume boven 100% toestaan voor stille media';
@@ -565,6 +567,7 @@ class _TranslationsMessagesNl implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => 'Gemarkeerd als ongekeken';
 	@override String get markedAsWatchedOffline => 'Gemarkeerd als gekeken (sync wanneer online)';
 	@override String get markedAsUnwatchedOffline => 'Gemarkeerd als ongekeken (sync wanneer online)';
+	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatisch verwijderd: ${title}';
 	@override String get removedFromContinueWatching => 'Verwijderd uit Doorgaan met kijken';
 	@override String errorLoading({required Object error}) => 'Fout: ${error}';
 	@override String get fileInfoNotAvailable => 'Bestand informatie niet beschikbaar';
@@ -1559,6 +1562,8 @@ extension on TranslationsNl {
 			'settings.downloadLocationSelectError' => 'Kan map niet selecteren',
 			'settings.downloadOnWifiOnly' => 'Alleen via WiFi downloaden',
 			'settings.downloadOnWifiOnlyDescription' => 'Voorkom downloads bij gebruik van mobiele data',
+			'settings.autoRemoveWatchedDownloads' => 'Bekeken downloads automatisch verwijderen',
+			'settings.autoRemoveWatchedDownloadsDescription' => 'Gedownloade afleveringen en films automatisch verwijderen wanneer ze als bekeken zijn gemarkeerd',
 			'settings.cellularDownloadBlocked' => 'Downloads zijn uitgeschakeld bij mobiele data. Maak verbinding met WiFi of wijzig de instelling.',
 			'settings.maxVolume' => 'Maximaal volume',
 			'settings.maxVolumeDescription' => 'Volume boven 100% toestaan voor stille media',
@@ -1747,6 +1752,7 @@ extension on TranslationsNl {
 			'messages.markedAsUnwatched' => 'Gemarkeerd als ongekeken',
 			'messages.markedAsWatchedOffline' => 'Gemarkeerd als gekeken (sync wanneer online)',
 			'messages.markedAsUnwatchedOffline' => 'Gemarkeerd als ongekeken (sync wanneer online)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisch verwijderd: ${title}',
 			'messages.removedFromContinueWatching' => 'Verwijderd uit Doorgaan met kijken',
 			'messages.errorLoading' => ({required Object error}) => 'Fout: ${error}',
 			'messages.fileInfoNotAvailable' => 'Bestand informatie niet beschikbaar',
@@ -1877,11 +1883,11 @@ extension on TranslationsNl {
 			'libraries.groupings.folders' => 'Mappen',
 			'about.title' => 'Over',
 			'about.openSourceLicenses' => 'Open Source licenties',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'Versie ${version}',
 			'about.appDescription' => 'Een mooie Plex client voor Flutter',
 			'about.viewLicensesDescription' => 'Bekijk licenties van third-party bibliotheken',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',

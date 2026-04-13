@@ -129,6 +129,20 @@ class PlexClient {
   /// EPG providers parsed from /media/providers
   late final List<({String identifier, String gridEndpoint})> _providerEpg;
 
+  /// Server-level preferences fetched from /:/prefs
+  Map<String, dynamic> _serverPrefs = {};
+
+  /// Get all fetched server preferences
+  Map<String, dynamic> get serverPrefs => Map.unmodifiable(_serverPrefs);
+
+  /// Get the server's watched threshold percentage (default 90)
+  int get watchedThresholdPercent {
+    final value = _serverPrefs['LibraryVideoPlayedThreshold'];
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 90;
+    return 90;
+  }
+
   /// Set offline mode - when true, only cached responses are returned
   void setOfflineMode(bool offline) {
     _offlineMode = offline;
@@ -1464,17 +1478,34 @@ class PlexClient {
     return _wrapBoolApiCall(() => _http.delete('/library/metadata/$ratingKey'), 'Failed to delete media item');
   }
 
-  /// Get preferences for a library section.
-  ///
-  /// Returns a map of setting id --> value for all settings in the library.
-  Future<Map<String, dynamic>> getLibrarySectionPrefs(String sectionId) async {
-    final response = await _getWithFailover('/library/sections/$sectionId/prefs');
+  /// Parse a Plex Settings response into a map of id --> value.
+  Map<String, dynamic> _parseSettingsMap(dynamic response) {
     final container = _getMediaContainer(response);
     if (container == null) return {};
     final settings = container['Setting'];
     if (settings == null) return {};
     final list = settings is List ? settings : [settings];
     return {for (final s in list) s['id'] as String: s['value']};
+  }
+
+  /// Fetch all server-level preferences and store them in [serverPrefs].
+  ///
+  /// Non-blocking: intended to be called fire-and-forget on connect.
+  Future<void> fetchServerPrefs() async {
+    try {
+      final response = await _getWithFailover('/:/prefs');
+      _serverPrefs = _parseSettingsMap(response);
+    } catch (e) {
+      appLogger.d('Failed to fetch server prefs: $e');
+    }
+  }
+
+  /// Get preferences for a library section.
+  ///
+  /// Returns a map of setting id --> value for all settings in the library.
+  Future<Map<String, dynamic>> getLibrarySectionPrefs(String sectionId) async {
+    final response = await _getWithFailover('/library/sections/$sectionId/prefs');
+    return _parseSettingsMap(response);
   }
 
   /// Get available filters for a library section

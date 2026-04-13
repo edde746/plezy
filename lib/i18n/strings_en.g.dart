@@ -706,6 +706,12 @@ class TranslationsSettingsEn {
 	/// en: 'Prevent downloads when on cellular data'
 	String get downloadOnWifiOnlyDescription => 'Prevent downloads when on cellular data';
 
+	/// en: 'Auto-remove watched downloads'
+	String get autoRemoveWatchedDownloads => 'Auto-remove watched downloads';
+
+	/// en: 'Automatically delete downloaded episodes and movies when marked as watched'
+	String get autoRemoveWatchedDownloadsDescription => 'Automatically delete downloaded episodes and movies when marked as watched';
+
 	/// en: 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.'
 	String get cellularDownloadBlocked => 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.';
 
@@ -1276,6 +1282,9 @@ class TranslationsMessagesEn {
 
 	/// en: 'Marked as unwatched (will sync when online)'
 	String get markedAsUnwatchedOffline => 'Marked as unwatched (will sync when online)';
+
+	/// en: 'Auto-removed: ${title}'
+	String autoRemovedWatchedDownload({required Object title}) => 'Auto-removed: ${title}';
 
 	/// en: 'Removed from Continue Watching'
 	String get removedFromContinueWatching => 'Removed from Continue Watching';
@@ -3308,6 +3317,8 @@ extension on Translations {
 			'settings.downloadLocationSelectError' => 'Failed to select folder',
 			'settings.downloadOnWifiOnly' => 'Download on WiFi only',
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
+			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
+			'settings.autoRemoveWatchedDownloadsDescription' => 'Automatically delete downloaded episodes and movies when marked as watched',
 			'settings.cellularDownloadBlocked' => 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
@@ -3496,6 +3507,7 @@ extension on Translations {
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
 			'messages.markedAsUnwatchedOffline' => 'Marked as unwatched (will sync when online)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.fileInfoNotAvailable' => 'File information not available',
@@ -3626,11 +3638,11 @@ extension on Translations {
 			'libraries.groupings.folders' => 'Folders',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'A beautiful Plex client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'Failed to connect to any servers. Please check your network and try again.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',

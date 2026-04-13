@@ -320,6 +320,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Не удалось выбрать папку';
 	@override String get downloadOnWifiOnly => 'Загружать только по WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Запретить загрузку по мобильным данным';
+	@override String get autoRemoveWatchedDownloads => 'Автоудаление просмотренных загрузок';
+	@override String get autoRemoveWatchedDownloadsDescription => 'Автоматически удалять загруженные эпизоды и фильмы после просмотра';
 	@override String get cellularDownloadBlocked => 'Загрузка по мобильным данным отключена. Подключитесь к WiFi или измените настройку.';
 	@override String get maxVolume => 'Максимальная громкость';
 	@override String get maxVolumeDescription => 'Разрешить усиление громкости выше 100% для тихих медиа';
@@ -565,6 +567,7 @@ class _TranslationsMessagesRu implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => 'Отмечено как непросмотренное';
 	@override String get markedAsWatchedOffline => 'Отмечено как просмотренное (синхронизируется при подключении)';
 	@override String get markedAsUnwatchedOffline => 'Отмечено как непросмотренное (синхронизируется при подключении)';
+	@override String autoRemovedWatchedDownload({required Object title}) => 'Автоудалено: ${title}';
 	@override String get removedFromContinueWatching => 'Удалено из «Продолжить просмотр»';
 	@override String errorLoading({required Object error}) => 'Ошибка: ${error}';
 	@override String get fileInfoNotAvailable => 'Информация о файле недоступна';
@@ -1559,6 +1562,8 @@ extension on TranslationsRu {
 			'settings.downloadLocationSelectError' => 'Не удалось выбрать папку',
 			'settings.downloadOnWifiOnly' => 'Загружать только по WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Запретить загрузку по мобильным данным',
+			'settings.autoRemoveWatchedDownloads' => 'Автоудаление просмотренных загрузок',
+			'settings.autoRemoveWatchedDownloadsDescription' => 'Автоматически удалять загруженные эпизоды и фильмы после просмотра',
 			'settings.cellularDownloadBlocked' => 'Загрузка по мобильным данным отключена. Подключитесь к WiFi или измените настройку.',
 			'settings.maxVolume' => 'Максимальная громкость',
 			'settings.maxVolumeDescription' => 'Разрешить усиление громкости выше 100% для тихих медиа',
@@ -1747,6 +1752,7 @@ extension on TranslationsRu {
 			'messages.markedAsUnwatched' => 'Отмечено как непросмотренное',
 			'messages.markedAsWatchedOffline' => 'Отмечено как просмотренное (синхронизируется при подключении)',
 			'messages.markedAsUnwatchedOffline' => 'Отмечено как непросмотренное (синхронизируется при подключении)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоудалено: ${title}',
 			'messages.removedFromContinueWatching' => 'Удалено из «Продолжить просмотр»',
 			'messages.errorLoading' => ({required Object error}) => 'Ошибка: ${error}',
 			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
@@ -1877,11 +1883,11 @@ extension on TranslationsRu {
 			'libraries.groupings.folders' => 'Папки',
 			'about.title' => 'О приложении',
 			'about.openSourceLicenses' => 'Лицензии открытого ПО',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
 			'about.appDescription' => 'Красивый клиент Plex на Flutter',
 			'about.viewLicensesDescription' => 'Просмотр лицензий сторонних библиотек',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'Не удалось подключиться ни к одному серверу. Проверьте сеть и попробуйте снова.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Не удалось загрузить серверы: ${error}',

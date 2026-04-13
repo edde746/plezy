@@ -47,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kPlayback = 'playback';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
+  static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
   static const _kCrashReporting = 'crash_reporting';
@@ -65,6 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _crashReporting = true;
   bool _enableDebugLogging = false;
   bool _downloadOnWifiOnly = false;
+  bool _autoRemoveWatchedDownloads = false;
   bool _videoPlayerNavigationEnabled = false;
   String? _customRelayUrl;
 
@@ -121,6 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _crashReporting = _settingsService.getCrashReporting();
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
+      _autoRemoveWatchedDownloads = _settingsService.getAutoRemoveWatchedDownloads();
       _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
       _customRelayUrl = _settingsService.getCustomRelayUrl();
       _isLoading = false;
@@ -247,6 +250,17 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           onChanged: (value) async {
             setState(() => _downloadOnWifiOnly = value);
             await _settingsService.setDownloadOnWifiOnly(value);
+          },
+        ),
+        SwitchListTile(
+          focusNode: _focusTracker.get(_kAutoRemoveWatchedDownloads),
+          secondary: const AppIcon(Symbols.delete_sweep_rounded, fill: 1),
+          title: Text(t.settings.autoRemoveWatchedDownloads),
+          subtitle: Text(t.settings.autoRemoveWatchedDownloadsDescription),
+          value: _autoRemoveWatchedDownloads,
+          onChanged: (value) async {
+            setState(() => _autoRemoveWatchedDownloads = value);
+            await _settingsService.setAutoRemoveWatchedDownloads(value);
           },
         ),
       ],

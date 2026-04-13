@@ -320,6 +320,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => '폴더 선택 실패';
 	@override String get downloadOnWifiOnly => 'WiFi 연결 시에만 다운로드';
 	@override String get downloadOnWifiOnlyDescription => '셀룰러 데이터 사용 시 다운로드 불가';
+	@override String get autoRemoveWatchedDownloads => '시청한 다운로드 자동 삭제';
+	@override String get autoRemoveWatchedDownloadsDescription => '시청 완료로 표시된 에피소드와 영화의 다운로드를 자동으로 삭제';
 	@override String get cellularDownloadBlocked => '셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요.';
 	@override String get maxVolume => '최대 볼륨';
 	@override String get maxVolumeDescription => '조용한 미디어를 위해 100% 이상의 볼륨 허용';
@@ -565,6 +567,7 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => '시청 안 함으로 표시됨';
 	@override String get markedAsWatchedOffline => '시청 완료로 표시됨 (연결 시 동기화됨)';
 	@override String get markedAsUnwatchedOffline => '미시청으로 표시됨 (연결 시 동기화됨)';
+	@override String autoRemovedWatchedDownload({required Object title}) => '자동 삭제됨: ${title}';
 	@override String get removedFromContinueWatching => '계속 시청 목록에서 제거됨';
 	@override String errorLoading({required Object error}) => '오류: ${error}';
 	@override String get fileInfoNotAvailable => '파일 정보가 없습니다';
@@ -1559,6 +1562,8 @@ extension on TranslationsKo {
 			'settings.downloadLocationSelectError' => '폴더 선택 실패',
 			'settings.downloadOnWifiOnly' => 'WiFi 연결 시에만 다운로드',
 			'settings.downloadOnWifiOnlyDescription' => '셀룰러 데이터 사용 시 다운로드 불가',
+			'settings.autoRemoveWatchedDownloads' => '시청한 다운로드 자동 삭제',
+			'settings.autoRemoveWatchedDownloadsDescription' => '시청 완료로 표시된 에피소드와 영화의 다운로드를 자동으로 삭제',
 			'settings.cellularDownloadBlocked' => '셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요.',
 			'settings.maxVolume' => '최대 볼륨',
 			'settings.maxVolumeDescription' => '조용한 미디어를 위해 100% 이상의 볼륨 허용',
@@ -1747,6 +1752,7 @@ extension on TranslationsKo {
 			'messages.markedAsUnwatched' => '시청 안 함으로 표시됨',
 			'messages.markedAsWatchedOffline' => '시청 완료로 표시됨 (연결 시 동기화됨)',
 			'messages.markedAsUnwatchedOffline' => '미시청으로 표시됨 (연결 시 동기화됨)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '자동 삭제됨: ${title}',
 			'messages.removedFromContinueWatching' => '계속 시청 목록에서 제거됨',
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
@@ -1877,11 +1883,11 @@ extension on TranslationsKo {
 			'libraries.groupings.folders' => '폴더',
 			'about.title' => '소개',
 			'about.openSourceLicenses' => '오픈소스 라이선스',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
 			'about.appDescription' => '아름다운 Flutter Plex 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',

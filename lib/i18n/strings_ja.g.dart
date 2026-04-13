@@ -320,6 +320,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'フォルダの選択に失敗しました';
 	@override String get downloadOnWifiOnly => 'WiFiのみでダウンロード';
 	@override String get downloadOnWifiOnlyDescription => 'モバイルデータ通信時のダウンロードを防止';
+	@override String get autoRemoveWatchedDownloads => '視聴済みダウンロードの自動削除';
+	@override String get autoRemoveWatchedDownloadsDescription => '視聴済みにしたエピソードや映画のダウンロードを自動的に削除';
 	@override String get cellularDownloadBlocked => 'モバイルデータ通信ではダウンロードが無効です。WiFiに接続するか設定を変更してください。';
 	@override String get maxVolume => '最大音量';
 	@override String get maxVolumeDescription => '静かなメディアに対して100%以上の音量ブーストを許可';
@@ -565,6 +567,7 @@ class _TranslationsMessagesJa implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => '未視聴にしました';
 	@override String get markedAsWatchedOffline => '視聴済みにしました（オンライン時に同期）';
 	@override String get markedAsUnwatchedOffline => '未視聴にしました（オンライン時に同期）';
+	@override String autoRemovedWatchedDownload({required Object title}) => '自動削除: ${title}';
 	@override String get removedFromContinueWatching => '視聴中から削除しました';
 	@override String errorLoading({required Object error}) => 'エラー: ${error}';
 	@override String get fileInfoNotAvailable => 'ファイル情報が利用できません';
@@ -1559,6 +1562,8 @@ extension on TranslationsJa {
 			'settings.downloadLocationSelectError' => 'フォルダの選択に失敗しました',
 			'settings.downloadOnWifiOnly' => 'WiFiのみでダウンロード',
 			'settings.downloadOnWifiOnlyDescription' => 'モバイルデータ通信時のダウンロードを防止',
+			'settings.autoRemoveWatchedDownloads' => '視聴済みダウンロードの自動削除',
+			'settings.autoRemoveWatchedDownloadsDescription' => '視聴済みにしたエピソードや映画のダウンロードを自動的に削除',
 			'settings.cellularDownloadBlocked' => 'モバイルデータ通信ではダウンロードが無効です。WiFiに接続するか設定を変更してください。',
 			'settings.maxVolume' => '最大音量',
 			'settings.maxVolumeDescription' => '静かなメディアに対して100%以上の音量ブーストを許可',
@@ -1747,6 +1752,7 @@ extension on TranslationsJa {
 			'messages.markedAsUnwatched' => '未視聴にしました',
 			'messages.markedAsWatchedOffline' => '視聴済みにしました（オンライン時に同期）',
 			'messages.markedAsUnwatchedOffline' => '未視聴にしました（オンライン時に同期）',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '自動削除: ${title}',
 			'messages.removedFromContinueWatching' => '視聴中から削除しました',
 			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
 			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
@@ -1877,11 +1883,11 @@ extension on TranslationsJa {
 			'libraries.groupings.folders' => 'フォルダ',
 			'about.title' => 'アプリについて',
 			'about.openSourceLicenses' => 'オープンソースライセンス',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'バージョン ${version}',
 			'about.appDescription' => 'Flutter製の美しいPlexクライアント',
 			'about.viewLicensesDescription' => 'サードパーティライブラリのライセンスを表示',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'どのサーバーにも接続できませんでした。ネットワークを確認してもう一度お試しください。',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})のサーバーが見つかりません',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'サーバーの読み込みに失敗しました: ${error}',

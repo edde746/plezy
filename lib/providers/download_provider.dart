@@ -1025,6 +1025,35 @@ class DownloadProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Auto-delete downloaded episodes/movies that are now marked as watched.
+  ///
+  /// Only deletes individual episodes and movies, never show/season containers.
+  Future<List<String>> autoDeleteWatchedDownloads() async {
+    final deletedTitles = <String>[];
+
+    final completedKeys = _downloads.entries
+        .where((e) => e.value.status == DownloadStatus.completed)
+        .map((e) => e.key)
+        .toList();
+
+    for (final globalKey in completedKeys) {
+      final meta = _metadata[globalKey];
+      if (meta == null) continue;
+      if (!meta.isEpisode && !meta.isMovie) continue;
+      if (!meta.isWatched) continue;
+
+      try {
+        appLogger.i('Auto-deleting watched download: ${meta.title} ($globalKey)');
+        await deleteDownload(globalKey);
+        deletedTitles.add(meta.title ?? 'Unknown');
+      } catch (e) {
+        appLogger.w('Failed to auto-delete watched download $globalKey: $e');
+      }
+    }
+
+    return deletedTitles;
+  }
 }
 
 /// Exception thrown when download is blocked due to cellular-only setting

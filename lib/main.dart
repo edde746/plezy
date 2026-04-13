@@ -457,8 +457,18 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             final downloadProvider = context.read<DownloadProvider>();
 
             // Wire up callback to refresh download provider after watch state sync
-            _offlineWatchSyncService.onWatchStatesRefreshed = () {
-              downloadProvider.refreshMetadataFromCache();
+            _offlineWatchSyncService.onWatchStatesRefreshed = () async {
+              await downloadProvider.refreshMetadataFromCache();
+              final settings = SettingsService.instanceOrNull;
+              if (settings != null && settings.getAutoRemoveWatchedDownloads()) {
+                final deleted = await downloadProvider.autoDeleteWatchedDownloads();
+                if (deleted.isNotEmpty) {
+                  final msg = deleted.length == 1
+                      ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
+                      : t.messages.autoRemovedWatchedDownload(title: '${deleted.length} items');
+                  showGlobalSnackBar(msg);
+                }
+              }
             };
 
             _offlineWatchSyncService.startConnectivityMonitoring(offlineModeProvider);

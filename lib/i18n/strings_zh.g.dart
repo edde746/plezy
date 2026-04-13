@@ -320,6 +320,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => '选择文件夹失败';
 	@override String get downloadOnWifiOnly => '仅在 WiFi 时下载';
 	@override String get downloadOnWifiOnlyDescription => '使用蜂窝数据时禁止下载';
+	@override String get autoRemoveWatchedDownloads => '自动移除已观看的下载';
+	@override String get autoRemoveWatchedDownloadsDescription => '当剧集和电影被标记为已观看时自动删除下载内容';
 	@override String get cellularDownloadBlocked => '蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。';
 	@override String get maxVolume => '最大音量';
 	@override String get maxVolumeDescription => '允许音量超过 100% 以适应安静的媒体';
@@ -565,6 +567,7 @@ class _TranslationsMessagesZh implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => '已标记为未观看';
 	@override String get markedAsWatchedOffline => '已标记为已观看 (将在联网时同步)';
 	@override String get markedAsUnwatchedOffline => '已标记为未观看 (将在联网时同步)';
+	@override String autoRemovedWatchedDownload({required Object title}) => '已自动移除: ${title}';
 	@override String get removedFromContinueWatching => '已从继续观看中移除';
 	@override String errorLoading({required Object error}) => '错误: ${error}';
 	@override String get fileInfoNotAvailable => '文件信息不可用';
@@ -1559,6 +1562,8 @@ extension on TranslationsZh {
 			'settings.downloadLocationSelectError' => '选择文件夹失败',
 			'settings.downloadOnWifiOnly' => '仅在 WiFi 时下载',
 			'settings.downloadOnWifiOnlyDescription' => '使用蜂窝数据时禁止下载',
+			'settings.autoRemoveWatchedDownloads' => '自动移除已观看的下载',
+			'settings.autoRemoveWatchedDownloadsDescription' => '当剧集和电影被标记为已观看时自动删除下载内容',
 			'settings.cellularDownloadBlocked' => '蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。',
 			'settings.maxVolume' => '最大音量',
 			'settings.maxVolumeDescription' => '允许音量超过 100% 以适应安静的媒体',
@@ -1747,6 +1752,7 @@ extension on TranslationsZh {
 			'messages.markedAsUnwatched' => '已标记为未观看',
 			'messages.markedAsWatchedOffline' => '已标记为已观看 (将在联网时同步)',
 			'messages.markedAsUnwatchedOffline' => '已标记为未观看 (将在联网时同步)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自动移除: ${title}',
 			'messages.removedFromContinueWatching' => '已从继续观看中移除',
 			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
@@ -1877,11 +1883,11 @@ extension on TranslationsZh {
 			'libraries.groupings.folders' => '文件夹',
 			'about.title' => '关于',
 			'about.openSourceLicenses' => '开源许可证',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => '版本 ${version}',
 			'about.appDescription' => '一款精美的 Flutter Plex 客户端',
 			'about.viewLicensesDescription' => '查看第三方库的许可证',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => '无法连接到任何服务器。请检查你的网络并重试。',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',

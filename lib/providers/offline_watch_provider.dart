@@ -1,7 +1,13 @@
 import 'package:flutter/foundation.dart';
 
+import '../i18n/strings.g.dart';
+import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
 import '../services/offline_watch_sync_service.dart';
+import '../services/settings_service.dart';
+import '../utils/app_logger.dart';
+import '../utils/content_utils.dart';
+import '../utils/snackbar_helper.dart';
 import '../utils/watch_state_notifier.dart';
 import 'download_provider.dart';
 import '../utils/global_key_utils.dart';
@@ -175,6 +181,28 @@ class OfflineWatchProvider extends ChangeNotifier {
       changeType: WatchStateChangeType.watched,
     );
     notifyListeners();
+    _autoDeleteIfWatched(serverId, ratingKey);
+  }
+
+  /// Auto-delete a download if the auto-remove setting is enabled.
+  void _autoDeleteIfWatched(String serverId, String ratingKey) {
+    final settings = SettingsService.instanceOrNull;
+    if (settings == null || !settings.getAutoRemoveWatchedDownloads()) return;
+
+    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final meta = _downloadProvider.getMetadata(globalKey);
+    if (meta == null) return;
+    if (!meta.isEpisode && !meta.isMovie) return;
+
+    final progress = _downloadProvider.downloads[globalKey];
+    if (progress?.status != DownloadStatus.completed) return;
+
+    appLogger.i('Auto-deleting locally-watched download: ${meta.title} ($globalKey)');
+    _downloadProvider.deleteDownload(globalKey).then((_) {
+      showGlobalSnackBar(t.messages.autoRemovedWatchedDownload(title: meta.title ?? 'Unknown'));
+    }, onError: (e) {
+      appLogger.w('Failed to auto-delete locally-watched download $globalKey: $e');
+    });
   }
 
   /// Mark an item as unwatched while offline.

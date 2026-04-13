@@ -320,6 +320,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Impossibile selezionare la cartella';
 	@override String get downloadOnWifiOnly => 'Scarica solo con WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Impedisci i download quando si utilizza la rete dati cellulare';
+	@override String get autoRemoveWatchedDownloads => 'Rimuovi automaticamente i download visti';
+	@override String get autoRemoveWatchedDownloadsDescription => 'Elimina automaticamente episodi e film scaricati quando vengono segnati come visti';
 	@override String get cellularDownloadBlocked => 'I download sono disabilitati sulla rete dati cellulare. Connettiti al WiFi o modifica l\'impostazione.';
 	@override String get maxVolume => 'Volume massimo';
 	@override String get maxVolumeDescription => 'Consenti volume superiore al 100% per contenuti audio bassi';
@@ -565,6 +567,7 @@ class _TranslationsMessagesIt implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => 'Segna come non visto';
 	@override String get markedAsWatchedOffline => 'Segnato come visto (sincronizzato online)';
 	@override String get markedAsUnwatchedOffline => 'Segnato come non visto (sincronizzato online)';
+	@override String autoRemovedWatchedDownload({required Object title}) => 'Rimosso automaticamente: ${title}';
 	@override String get removedFromContinueWatching => 'Rimosso da Continua a guardare';
 	@override String errorLoading({required Object error}) => 'Errore: ${error}';
 	@override String get fileInfoNotAvailable => 'Informazioni sul file non disponibili';
@@ -1559,6 +1562,8 @@ extension on TranslationsIt {
 			'settings.downloadLocationSelectError' => 'Impossibile selezionare la cartella',
 			'settings.downloadOnWifiOnly' => 'Scarica solo con WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Impedisci i download quando si utilizza la rete dati cellulare',
+			'settings.autoRemoveWatchedDownloads' => 'Rimuovi automaticamente i download visti',
+			'settings.autoRemoveWatchedDownloadsDescription' => 'Elimina automaticamente episodi e film scaricati quando vengono segnati come visti',
 			'settings.cellularDownloadBlocked' => 'I download sono disabilitati sulla rete dati cellulare. Connettiti al WiFi o modifica l\'impostazione.',
 			'settings.maxVolume' => 'Volume massimo',
 			'settings.maxVolumeDescription' => 'Consenti volume superiore al 100% per contenuti audio bassi',
@@ -1747,6 +1752,7 @@ extension on TranslationsIt {
 			'messages.markedAsUnwatched' => 'Segna come non visto',
 			'messages.markedAsWatchedOffline' => 'Segnato come visto (sincronizzato online)',
 			'messages.markedAsUnwatchedOffline' => 'Segnato come non visto (sincronizzato online)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Rimosso automaticamente: ${title}',
 			'messages.removedFromContinueWatching' => 'Rimosso da Continua a guardare',
 			'messages.errorLoading' => ({required Object error}) => 'Errore: ${error}',
 			'messages.fileInfoNotAvailable' => 'Informazioni sul file non disponibili',
@@ -1877,11 +1883,11 @@ extension on TranslationsIt {
 			'libraries.groupings.folders' => 'Cartelle',
 			'about.title' => 'Informazioni',
 			'about.openSourceLicenses' => 'Licenze Open Source',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'Versione ${version}',
 			'about.appDescription' => 'Un bellissimo client Plex per Flutter',
 			'about.viewLicensesDescription' => 'Visualizza le licenze delle librerie di terze parti',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'Impossibile connettersi a nessun server. Controlla la tua rete e riprova.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nessun server trovato per ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Impossibile caricare i server: ${error}',

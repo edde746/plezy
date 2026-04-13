@@ -8,6 +8,7 @@ import '../utils/app_logger.dart';
 import '../utils/connection_constants.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'plex_auth_service.dart';
+import 'settings_service.dart';
 import 'storage_service.dart';
 
 /// Manages multiple Plex server connections simultaneously
@@ -216,6 +217,12 @@ class MultiServerManager {
 
         onServerConnected?.call(serverId, client);
         appLogger.i('Successfully connected to ${server.name}');
+
+        // Fire-and-forget: fetch server prefs and cache watched threshold
+        client.fetchServerPrefs().then((_) {
+          final threshold = client.watchedThresholdPercent;
+          SettingsService.instanceOrNull?.setWatchedThreshold(serverId, threshold);
+        });
 
         return serverId;
       } on TimeoutException {

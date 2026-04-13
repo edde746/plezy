@@ -320,6 +320,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Échec de la sélection du dossier';
 	@override String get downloadOnWifiOnly => 'Télécharger uniquement via WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Empêcher les téléchargements lorsque vous utilisez les données cellulaires';
+	@override String get autoRemoveWatchedDownloads => 'Supprimer automatiquement les téléchargements vus';
+	@override String get autoRemoveWatchedDownloadsDescription => 'Supprimer automatiquement les épisodes et films téléchargés lorsqu\'ils sont marqués comme vus';
 	@override String get cellularDownloadBlocked => 'Les téléchargements sont désactivés sur les données cellulaires. Connectez-vous au Wi-Fi ou modifiez le paramètre.';
 	@override String get maxVolume => 'Volume maximal';
 	@override String get maxVolumeDescription => 'Autoriser l\'augmentation du volume au-delà de 100 % pour les médias silencieux';
@@ -565,6 +567,7 @@ class _TranslationsMessagesFr implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => 'Marqué comme non vu';
 	@override String get markedAsWatchedOffline => 'Marqué comme vu (se synchronisera lorsque vous serez en ligne)';
 	@override String get markedAsUnwatchedOffline => 'Marqué comme non vu (sera synchronisé lorsque vous serez en ligne)';
+	@override String autoRemovedWatchedDownload({required Object title}) => 'Supprimé automatiquement : ${title}';
 	@override String get removedFromContinueWatching => 'Supprimer de "Continuer à regarder"';
 	@override String errorLoading({required Object error}) => 'Erreur: ${error}';
 	@override String get fileInfoNotAvailable => 'Informations sur le fichier non disponibles';
@@ -1559,6 +1562,8 @@ extension on TranslationsFr {
 			'settings.downloadLocationSelectError' => 'Échec de la sélection du dossier',
 			'settings.downloadOnWifiOnly' => 'Télécharger uniquement via WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Empêcher les téléchargements lorsque vous utilisez les données cellulaires',
+			'settings.autoRemoveWatchedDownloads' => 'Supprimer automatiquement les téléchargements vus',
+			'settings.autoRemoveWatchedDownloadsDescription' => 'Supprimer automatiquement les épisodes et films téléchargés lorsqu\'ils sont marqués comme vus',
 			'settings.cellularDownloadBlocked' => 'Les téléchargements sont désactivés sur les données cellulaires. Connectez-vous au Wi-Fi ou modifiez le paramètre.',
 			'settings.maxVolume' => 'Volume maximal',
 			'settings.maxVolumeDescription' => 'Autoriser l\'augmentation du volume au-delà de 100 % pour les médias silencieux',
@@ -1747,6 +1752,7 @@ extension on TranslationsFr {
 			'messages.markedAsUnwatched' => 'Marqué comme non vu',
 			'messages.markedAsWatchedOffline' => 'Marqué comme vu (se synchronisera lorsque vous serez en ligne)',
 			'messages.markedAsUnwatchedOffline' => 'Marqué comme non vu (sera synchronisé lorsque vous serez en ligne)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Supprimé automatiquement : ${title}',
 			'messages.removedFromContinueWatching' => 'Supprimer de "Continuer à regarder"',
 			'messages.errorLoading' => ({required Object error}) => 'Erreur: ${error}',
 			'messages.fileInfoNotAvailable' => 'Informations sur le fichier non disponibles',
@@ -1877,11 +1883,11 @@ extension on TranslationsFr {
 			'libraries.groupings.folders' => 'Dossiers',
 			'about.title' => 'À propos',
 			'about.openSourceLicenses' => 'Licences Open Source',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'Un magnifique client Plex pour Flutter',
 			'about.viewLicensesDescription' => 'Afficher les licences des bibliothèques tierces',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Échec du chargement des serveurs: ${error}',

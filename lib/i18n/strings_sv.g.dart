@@ -320,6 +320,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get downloadLocationSelectError => 'Kunde inte välja mapp';
 	@override String get downloadOnWifiOnly => 'Ladda ner endast på WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Förhindra nedladdningar vid användning av mobildata';
+	@override String get autoRemoveWatchedDownloads => 'Ta bort sedda nedladdningar automatiskt';
+	@override String get autoRemoveWatchedDownloadsDescription => 'Ta automatiskt bort nedladdade avsnitt och filmer när de markerats som sedda';
 	@override String get cellularDownloadBlocked => 'Nedladdningar är inaktiverade på mobildata. Anslut till WiFi eller ändra inställningen.';
 	@override String get maxVolume => 'Maximal volym';
 	@override String get maxVolumeDescription => 'Tillåt volym över 100% för tyst media';
@@ -565,6 +567,7 @@ class _TranslationsMessagesSv implements TranslationsMessagesEn {
 	@override String get markedAsUnwatched => 'Markerad som osedd';
 	@override String get markedAsWatchedOffline => 'Markerad som sedd (synkroniseras när online)';
 	@override String get markedAsUnwatchedOffline => 'Markerad som osedd (synkroniseras när online)';
+	@override String autoRemovedWatchedDownload({required Object title}) => 'Automatiskt borttagen: ${title}';
 	@override String get removedFromContinueWatching => 'Borttagen från Fortsätt titta';
 	@override String errorLoading({required Object error}) => 'Fel: ${error}';
 	@override String get fileInfoNotAvailable => 'Filinformation inte tillgänglig';
@@ -1559,6 +1562,8 @@ extension on TranslationsSv {
 			'settings.downloadLocationSelectError' => 'Kunde inte välja mapp',
 			'settings.downloadOnWifiOnly' => 'Ladda ner endast på WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Förhindra nedladdningar vid användning av mobildata',
+			'settings.autoRemoveWatchedDownloads' => 'Ta bort sedda nedladdningar automatiskt',
+			'settings.autoRemoveWatchedDownloadsDescription' => 'Ta automatiskt bort nedladdade avsnitt och filmer när de markerats som sedda',
 			'settings.cellularDownloadBlocked' => 'Nedladdningar är inaktiverade på mobildata. Anslut till WiFi eller ändra inställningen.',
 			'settings.maxVolume' => 'Maximal volym',
 			'settings.maxVolumeDescription' => 'Tillåt volym över 100% för tyst media',
@@ -1747,6 +1752,7 @@ extension on TranslationsSv {
 			'messages.markedAsUnwatched' => 'Markerad som osedd',
 			'messages.markedAsWatchedOffline' => 'Markerad som sedd (synkroniseras när online)',
 			'messages.markedAsUnwatchedOffline' => 'Markerad som osedd (synkroniseras när online)',
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatiskt borttagen: ${title}',
 			'messages.removedFromContinueWatching' => 'Borttagen från Fortsätt titta',
 			'messages.errorLoading' => ({required Object error}) => 'Fel: ${error}',
 			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
@@ -1877,11 +1883,11 @@ extension on TranslationsSv {
 			'libraries.groupings.folders' => 'Mappar',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Öppen källkod-licenser',
+			_ => null,
+		} ?? switch (path) {
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'En vacker Plex-klient för Flutter',
 			'about.viewLicensesDescription' => 'Visa licenser för tredjepartsbibliotek',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.allServerConnectionsFailed' => 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Misslyckades att ladda servrar: ${error}',

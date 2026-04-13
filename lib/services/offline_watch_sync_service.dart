@@ -9,13 +9,14 @@ import '../utils/plex_cache_parser.dart';
 import 'multi_server_manager.dart';
 import 'plex_api_cache.dart';
 import 'plex_client.dart';
+import 'settings_service.dart';
 
 /// Service for managing offline watch progress and syncing to Plex servers.
 ///
 /// Handles:
 /// - Queuing progress updates when offline
 /// - Queuing manual watch/unwatch actions
-/// - Auto-marking items as watched at 90% threshold
+/// - Auto-marking items as watched at the server's threshold
 /// - Syncing queued actions when connectivity is restored
 class OfflineWatchSyncService extends ChangeNotifier {
   final AppDatabase _database;
@@ -32,8 +33,18 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Callback to refresh download provider metadata after sync
   VoidCallback? onWatchStatesRefreshed;
 
-  /// Watch threshold - mark as watched when progress exceeds this percentage
-  static const double watchedThreshold = 0.9;
+  /// Get watched threshold for a server. Cascades:
+  /// 1. Online client's fetched server prefs
+  /// 2. Cached value in SettingsService
+  /// 3. Default 90%
+  double getWatchedThreshold(String serverId) {
+    final client = _serverManager.getClient(serverId);
+    if (client != null && client.serverPrefs.isNotEmpty) {
+      return client.watchedThresholdPercent / 100.0;
+    }
+    final cached = SettingsService.instanceOrNull?.getWatchedThreshold(serverId) ?? 90;
+    return cached / 100.0;
+  }
 
   /// Minimum interval between syncs.
   /// Mobile: no throttle (always sync on resume for cross-device updates)
@@ -150,14 +161,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Queue a progress update for later sync.
   ///
   /// This is called during offline playback to track the watch position.
-  /// If progress exceeds 90%, shouldMarkWatched is set to true.
+  /// If progress exceeds the server's threshold, shouldMarkWatched is set to true.
   Future<void> queueProgressUpdate({
     required String serverId,
     required String ratingKey,
     required int viewOffset,
     required int duration,
   }) async {
-    final shouldMarkWatched = isWatchedByProgress(viewOffset, duration);
+    final shouldMarkWatched = isWatchedByProgress(viewOffset, duration, serverId: serverId);
 
     await _database.upsertProgressAction(
       serverId: serverId,
@@ -199,15 +210,16 @@ class OfflineWatchSyncService extends ChangeNotifier {
   }
 
   /// Check if an item should be considered watched based on progress percentage.
-  bool isWatchedByProgress(int viewOffset, int duration) {
+  bool isWatchedByProgress(int viewOffset, int duration, {String? serverId}) {
     if (duration == 0) return false;
-    return (viewOffset / duration) >= watchedThreshold;
+    final threshold = serverId != null ? getWatchedThreshold(serverId) : 0.9;
+    return (viewOffset / duration) >= threshold;
   }
 
   /// Get the local watch status for a media item.
   ///
   /// Returns:
-  /// - `true` if item was marked as watched locally or progress >= 90%
+  /// - `true` if item was marked as watched locally or progress >= server threshold
   /// - `false` if item was marked as unwatched locally
   /// - `null` if no local action exists (use cached server data)
   Future<bool?> getLocalWatchStatus(String globalKey) async {
