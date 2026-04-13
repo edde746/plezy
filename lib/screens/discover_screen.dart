@@ -188,7 +188,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (_isHeroSectionVisible) {
       _heroFocusNode.requestFocus();
     } else {
-      _actionBarKey.currentState?.getFocusNode(0).requestFocus();
+      _actionBarKey.currentState?.requestFocusOnFirst();
     }
     _scrollToTop();
   }
@@ -275,7 +275,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final keys = _allHubKeys;
       if (keys.isNotEmpty) keys.first.currentState?.requestFocusFromMemory();
     },
-    onUp: () => _actionBarKey.currentState?.getFocusNode(0).requestFocus(),
+    onUp: () => _actionBarKey.currentState?.requestFocusOnFirst(),
     onLeft: () {
       if (_currentHeroIndex > 0) {
         _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
@@ -824,7 +824,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final actionBar = _actionBarKey.currentState;
     if (actionBar == null) return;
     final lastNode = actionBar.getFocusNode(actionBar.widget.actions.length - 1);
-    final RenderBox? button = lastNode.context?.findRenderObject() as RenderBox?;
+    final RenderBox? button = lastNode?.context?.findRenderObject() as RenderBox?;
     if (button == null) return;
 
     final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;

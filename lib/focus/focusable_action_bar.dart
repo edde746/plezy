@@ -88,8 +88,12 @@ class FocusableActionBarState extends State<FocusableActionBar> {
   late List<FocusNode> _focusNodes;
   late List<bool> _focusStates;
 
-  /// Access a focus node by index (e.g. for external `requestFocus()` calls).
-  FocusNode getFocusNode(int index) => _focusNodes[index];
+  FocusNode? getFocusNode(int index) =>
+      index >= 0 && index < _focusNodes.length ? _focusNodes[index] : null;
+
+  void requestFocusOnFirst() {
+    if (_focusNodes.isNotEmpty) _focusNodes.first.requestFocus();
+  }
 
   @override
   void initState() {

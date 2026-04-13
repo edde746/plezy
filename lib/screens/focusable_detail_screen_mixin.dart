@@ -47,10 +47,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     setState(() {
       isAppBarFocused = true;
     });
-    final state = actionBarKey.currentState;
-    if (state != null && getAppBarActions().isNotEmpty) {
-      state.getFocusNode(0).requestFocus();
-    }
+    actionBarKey.currentState?.requestFocusOnFirst();
     // Scroll to top to show the app bar
     scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
   }
