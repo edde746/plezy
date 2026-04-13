@@ -47,13 +47,20 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     setState(() {
       isAppBarFocused = true;
     });
-    actionBarKey.currentState?.getFocusNode(0).requestFocus();
+    final state = actionBarKey.currentState;
+    if (state != null && getAppBarActions().isNotEmpty) {
+      state.getFocusNode(0).requestFocus();
+    }
     // Scroll to top to show the app bar
     scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
   }
 
   /// Handle BACK key from content - navigate to app bar and set flag to prevent PopScope exit
   void handleBackFromContent() {
+    if (getAppBarActions().isEmpty) {
+      if (mounted) Navigator.pop(context);
+      return;
+    }
     backHandledByKeyEvent = true;
     navigateToAppBar();
   }
@@ -83,8 +90,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
       return false;
     }
 
-    if (isAppBarFocused) {
-      // Already on app bar, allow exit
+    if (isAppBarFocused || getAppBarActions().isEmpty) {
       return true;
     } else {
       // Focus app bar first
