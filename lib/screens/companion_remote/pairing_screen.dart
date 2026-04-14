@@ -28,12 +28,34 @@ class _PairingScreenState extends State<PairingScreen> {
   // QR scanner state
   MobileScannerController? _scannerController;
   String? _lastScannedCode;
+  bool _hasCamera = false;
 
-  bool get _isMobile => Platform.isAndroid || Platform.isIOS;
+  bool get _canScan => (Platform.isAndroid || Platform.isIOS) && _hasCamera;
 
-  // Tab indices: mobile gets Scan (0) + Manual (1), desktop gets Manual (0)
-  int get _scanTabIndex => _isMobile ? 0 : -1;
-  int get _manualTabIndex => _isMobile ? 1 : 0;
+  // Tab indices: scannable gets Scan (0) + Manual (1), otherwise Manual (0)
+  int get _scanTabIndex => _canScan ? 0 : -1;
+  int get _manualTabIndex => _canScan ? 1 : 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCamera();
+  }
+
+  Future<void> _checkCamera() async {
+    if (Platform.isIOS) {
+      setState(() => _hasCamera = true);
+      return;
+    }
+    if (!Platform.isAndroid) return;
+    try {
+      const channel = MethodChannel('com.plezy/theme');
+      final result = await channel.invokeMethod<bool>('hasCamera');
+      if (mounted) setState(() => _hasCamera = result ?? false);
+    } catch (e) {
+      debugPrint('Camera check failed: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -158,7 +180,7 @@ class _PairingScreenState extends State<PairingScreen> {
       ),
       body: Column(
         children: [
-          if (_isMobile)
+          if (_canScan)
             SegmentedButton<int>(
               segments: [
                 ButtonSegment(
@@ -186,7 +208,7 @@ class _PairingScreenState extends State<PairingScreen> {
   }
 
   Widget _buildTabContent() {
-    if (_selectedTab == _scanTabIndex && _isMobile) return _buildScanTab();
+    if (_selectedTab == _scanTabIndex && _canScan) return _buildScanTab();
     return _buildManualEntryTab();
   }
 
@@ -416,7 +438,7 @@ class _PairingScreenState extends State<PairingScreen> {
             Text(t.companionRemote.pairing.tips, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             _buildTipCard(context, Icons.computer, t.companionRemote.pairing.tipDesktop),
-            if (_isMobile) ...[
+            if (_canScan) ...[
               const SizedBox(height: 8),
               _buildTipCard(context, Icons.qr_code, t.companionRemote.pairing.tipScan),
             ],

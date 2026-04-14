@@ -23,6 +23,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
 
+    <!-- Camera not required (QR scanning is optional, some devices lack cameras) -->
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+
     <!-- Android TV support (not required, but allow detection) -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <!-- Android TV Watch Next integration -->
