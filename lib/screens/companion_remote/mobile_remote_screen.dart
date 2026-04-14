@@ -8,9 +8,9 @@ import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/app_logger.dart';
+import '../../widgets/companion_remote/discovery_view.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/pill_input_decoration.dart';
-import 'pairing_screen.dart';
 
 class MobileRemoteScreen extends StatefulWidget {
   const MobileRemoteScreen({super.key});
@@ -90,30 +90,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
             }
 
             if (!provider.isConnected) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.phonelink_off, size: 64, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    Text(
-                      provider.status == RemoteSessionStatus.error
-                          ? provider.session?.errorMessage ?? t.companionRemote.remote.connectionError
-                          : t.companionRemote.remote.notConnected,
-                      style: const TextStyle(fontSize: 20, color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    FilledButton.icon(
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const PairingScreen()));
-                      },
-                      icon: const Icon(Icons.link),
-                      label: Text(t.companionRemote.connectToDevice),
-                    ),
-                  ],
-                ),
-              );
+              return const DiscoveryView();
             }
 
             return const _RemoteControlLayout();

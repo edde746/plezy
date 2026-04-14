@@ -8,14 +8,15 @@ import '../../providers/companion_remote_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../utils/app_logger.dart';
 
-class PairingScreen extends StatefulWidget {
-  const PairingScreen({super.key});
+/// Discovers LAN hosts and provides UI to connect to them.
+class DiscoveryView extends StatefulWidget {
+  const DiscoveryView({super.key});
 
   @override
-  State<PairingScreen> createState() => _PairingScreenState();
+  State<DiscoveryView> createState() => _DiscoveryViewState();
 }
 
-class _PairingScreenState extends State<PairingScreen> {
+class _DiscoveryViewState extends State<DiscoveryView> {
   final _hostAddressController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isConnecting = false;
@@ -23,6 +24,7 @@ class _PairingScreenState extends State<PairingScreen> {
   bool _showManualEntry = false;
   bool _cryptoReady = false;
 
+  late final CompanionRemoteProvider _provider;
   StreamSubscription<List<DiscoveredHost>>? _discoverySubscription;
   List<DiscoveredHost> _hosts = [];
   bool _isSearching = true;
@@ -31,16 +33,16 @@ class _PairingScreenState extends State<PairingScreen> {
   @override
   void initState() {
     super.initState();
+    _provider = context.read<CompanionRemoteProvider>();
     _initCryptoAndDiscover();
   }
 
   Future<void> _initCryptoAndDiscover() async {
-    final provider = context.read<CompanionRemoteProvider>();
     final home = context.read<UserProfileProvider>().home;
-    await provider.ensureCryptoReady(home);
+    await _provider.ensureCryptoReady(home);
     if (!mounted) return;
 
-    if (provider.isCryptoReady) {
+    if (_provider.isCryptoReady) {
       setState(() => _cryptoReady = true);
       _startDiscovery();
     } else {
@@ -53,8 +55,7 @@ class _PairingScreenState extends State<PairingScreen> {
   }
 
   void _startDiscovery() {
-    final provider = context.read<CompanionRemoteProvider>();
-    final stream = provider.discoverHosts();
+    final stream = _provider.discoverHosts();
     if (stream == null) return;
 
     _discoverySubscription = stream.listen((hosts) {
@@ -66,7 +67,6 @@ class _PairingScreenState extends State<PairingScreen> {
       }
     });
 
-    // Show "no devices found" after 10 seconds of no results
     _searchTimeout = Timer(const Duration(seconds: 10), () {
       if (mounted && _hosts.isEmpty) {
         setState(() => _isSearching = false);
@@ -79,55 +79,25 @@ class _PairingScreenState extends State<PairingScreen> {
     _hostAddressController.dispose();
     _discoverySubscription?.cancel();
     _searchTimeout?.cancel();
-    context.read<CompanionRemoteProvider>().stopDiscovery();
+    _provider.stopDiscovery();
     super.dispose();
   }
 
-  Future<void> _connectToHost(DiscoveredHost host) async {
+  Future<void> _connect(Future<void> Function() action) async {
     setState(() {
       _isConnecting = true;
       _errorMessage = null;
     });
 
     try {
-      final provider = context.read<CompanionRemoteProvider>();
-      await provider.connectToDiscoveredHost(host);
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
+      _provider.stopDiscovery();
+      await action();
     } catch (e) {
-      appLogger.e('Failed to connect to host', error: e);
+      appLogger.e('Failed to connect', error: e);
       if (!mounted) return;
-      setState(() {
-        _isConnecting = false;
-        _errorMessage = _parseErrorMessage(e.toString());
-      });
-    }
-  }
-
-  Future<void> _connectManual() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isConnecting = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final provider = context.read<CompanionRemoteProvider>();
-      await provider.connectToManualHost(_hostAddressController.text.trim());
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      appLogger.e('Failed to connect to manual host', error: e);
-      if (!mounted) return;
-      setState(() {
-        _isConnecting = false;
-        _errorMessage = _parseErrorMessage(e.toString());
-      });
+      setState(() => _errorMessage = _parseErrorMessage(e.toString()));
+    } finally {
+      if (mounted) setState(() => _isConnecting = false);
     }
   }
 
@@ -157,28 +127,11 @@ class _PairingScreenState extends State<PairingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t.companionRemote.connectToDevice),
-      ),
-      body: _buildBody(),
-    );
-  }
-
-  Widget _buildBody() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.devices, size: 64, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 16),
-          Text(
-            t.companionRemote.pairing.pairWithDesktop,
-            style: Theme.of(context).textTheme.headlineMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
           Text(
             t.companionRemote.pairing.discoveryDescription,
             style: Theme.of(context).textTheme.bodyMedium,
@@ -208,14 +161,12 @@ class _PairingScreenState extends State<PairingScreen> {
             const SizedBox(height: 16),
           ],
 
-          // Discovered hosts
           _buildDiscoverySection(),
 
           const SizedBox(height: 24),
           const Divider(),
           const SizedBox(height: 16),
 
-          // Manual entry fallback
           _buildManualEntrySection(),
         ],
       ),
@@ -231,10 +182,7 @@ class _PairingScreenState extends State<PairingScreen> {
             children: [
               const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
               const SizedBox(height: 12),
-              Text(
-                t.companionRemote.pairing.cryptoInitFailed,
-                textAlign: TextAlign.center,
-              ),
+              Text(t.companionRemote.pairing.cryptoInitFailed, textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -247,16 +195,9 @@ class _PairingScreenState extends State<PairingScreen> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              const SizedBox(
-                width: 32,
-                height: 32,
-                child: CircularProgressIndicator(strokeWidth: 3),
-              ),
+              const SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 3)),
               const SizedBox(height: 16),
-              Text(
-                t.companionRemote.pairing.searchingForDevices,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              Text(t.companionRemote.pairing.searchingForDevices, style: Theme.of(context).textTheme.bodyMedium),
             ],
           ),
         ),
@@ -291,10 +232,7 @@ class _PairingScreenState extends State<PairingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          t.companionRemote.pairing.availableDevices,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text(t.companionRemote.pairing.availableDevices, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         ..._hosts.map((host) => Card(
               child: ListTile(
@@ -304,7 +242,7 @@ class _PairingScreenState extends State<PairingScreen> {
                 trailing: _isConnecting
                     ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.arrow_forward),
-                onTap: _isConnecting ? null : () => _connectToHost(host),
+                onTap: _isConnecting ? null : () => _connect(() => _provider.connectToDiscoveredHost(host)),
               ),
             )),
       ],
@@ -326,9 +264,7 @@ class _PairingScreenState extends State<PairingScreen> {
               const SizedBox(width: 8),
               Text(
                 t.companionRemote.pairing.manualConnection,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
               ),
             ],
           ),
@@ -352,8 +288,7 @@ class _PairingScreenState extends State<PairingScreen> {
                     if (value == null || value.isEmpty) {
                       return t.companionRemote.pairing.validationHostRequired;
                     }
-                    final parts = value.split(':');
-                    if (parts.length != 2) {
+                    if (value.split(':').length != 2) {
                       return t.companionRemote.pairing.validationHostFormat;
                     }
                     return null;
@@ -362,7 +297,12 @@ class _PairingScreenState extends State<PairingScreen> {
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: _isConnecting ? null : _connectManual,
+                  onPressed: _isConnecting
+                      ? null
+                      : () {
+                          if (!_formKey.currentState!.validate()) return;
+                          _connect(() => _provider.connectToManualHost(_hostAddressController.text.trim()));
+                        },
                   icon: _isConnecting
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.link),
