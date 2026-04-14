@@ -726,6 +726,8 @@
     "participantPaused": "${name} поставил на паузу",
     "participantResumed": "${name} возобновил",
     "participantSeeked": "${name} перемотал",
+    "participantBuffering": "${name} буферизует",
+    "waitingForParticipants": "Ожидание загрузки у других...",
     "recentRooms": "Недавние комнаты",
     "renameRoom": "Переименовать комнату",
     "removeRoom": "Удалить"

@@ -726,6 +726,8 @@
     "participantPaused": "${name} pauset",
     "participantResumed": "${name} gjenopptok",
     "participantSeeked": "${name} spolet",
+    "participantBuffering": "${name} buffrer",
+    "waitingForParticipants": "Venter på at andre laster inn...",
     "recentRooms": "Nylige rom",
     "renameRoom": "Gi nytt navn til rom",
     "removeRoom": "Fjern"

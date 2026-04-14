@@ -979,6 +979,8 @@ class _TranslationsWatchTogetherDa implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} satte på pause';
 	@override String participantResumed({required Object name}) => '${name} genoptog';
 	@override String participantSeeked({required Object name}) => '${name} spoled';
+	@override String participantBuffering({required Object name}) => '${name} bufferer';
+	@override String get waitingForParticipants => 'Venter på at andre indlæser...';
 	@override String get recentRooms => 'Seneste rum';
 	@override String get renameRoom => 'Omdøb rum';
 	@override String get removeRoom => 'Fjern';
@@ -2021,6 +2023,8 @@ extension on TranslationsDa {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} satte på pause',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} genoptog',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spoled',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} bufferer',
+			'watchTogether.waitingForParticipants' => 'Venter på at andre indlæser...',
 			'watchTogether.recentRooms' => 'Seneste rum',
 			'watchTogether.renameRoom' => 'Omdøb rum',
 			'watchTogether.removeRoom' => 'Fjern',

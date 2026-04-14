@@ -1013,6 +1013,8 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} pausade';
 	@override String participantResumed({required Object name}) => '${name} återupptog';
 	@override String participantSeeked({required Object name}) => '${name} spolade';
+	@override String participantBuffering({required Object name}) => '${name} buffrar';
+	@override String get waitingForParticipants => 'Väntar på att andra laddar...';
 	@override String get recentRooms => 'Senaste rum';
 	@override String get renameRoom => 'Byt namn på rum';
 	@override String get removeRoom => 'Ta bort';
@@ -2046,6 +2048,8 @@ extension on TranslationsSv {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} pausade',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} återupptog',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spolade',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} buffrar',
+			'watchTogether.waitingForParticipants' => 'Väntar på att andra laddar...',
 			'watchTogether.recentRooms' => 'Senaste rum',
 			'watchTogether.renameRoom' => 'Byt namn på rum',
 			'watchTogether.removeRoom' => 'Ta bort',

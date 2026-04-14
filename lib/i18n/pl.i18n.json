@@ -726,6 +726,8 @@
     "participantPaused": "${name} wstrzymał",
     "participantResumed": "${name} wznowił",
     "participantSeeked": "${name} przewinął",
+    "participantBuffering": "${name} buforuje",
+    "waitingForParticipants": "Oczekiwanie na załadowanie u innych...",
     "recentRooms": "Ostatnie pokoje",
     "renameRoom": "Zmień nazwę pokoju",
     "removeRoom": "Usuń"

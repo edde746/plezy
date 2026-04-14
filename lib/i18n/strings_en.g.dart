@@ -2228,6 +2228,12 @@ class TranslationsWatchTogetherEn {
 	/// en: '${name} seeked'
 	String participantSeeked({required Object name}) => '${name} seeked';
 
+	/// en: '${name} is buffering'
+	String participantBuffering({required Object name}) => '${name} is buffering';
+
+	/// en: 'Waiting for others to load...'
+	String get waitingForParticipants => 'Waiting for others to load...';
+
 	/// en: 'Recent Rooms'
 	String get recentRooms => 'Recent Rooms';
 
@@ -3756,6 +3762,8 @@ extension on Translations {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
+			'watchTogether.waitingForParticipants' => 'Waiting for others to load...',
 			'watchTogether.recentRooms' => 'Recent Rooms',
 			'watchTogether.renameRoom' => 'Rename Room',
 			'watchTogether.removeRoom' => 'Remove',

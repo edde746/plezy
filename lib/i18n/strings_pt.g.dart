@@ -979,6 +979,8 @@ class _TranslationsWatchTogetherPt implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} pausou';
 	@override String participantResumed({required Object name}) => '${name} retomou';
 	@override String participantSeeked({required Object name}) => '${name} avançou';
+	@override String participantBuffering({required Object name}) => '${name} está carregando';
+	@override String get waitingForParticipants => 'Aguardando outros carregarem...';
 	@override String get recentRooms => 'Salas recentes';
 	@override String get renameRoom => 'Renomear sala';
 	@override String get removeRoom => 'Remover';
@@ -2021,6 +2023,8 @@ extension on TranslationsPt {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} pausou',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} retomou',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} avançou',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} está carregando',
+			'watchTogether.waitingForParticipants' => 'Aguardando outros carregarem...',
 			'watchTogether.recentRooms' => 'Salas recentes',
 			'watchTogether.renameRoom' => 'Renomear sala',
 			'watchTogether.removeRoom' => 'Remover',

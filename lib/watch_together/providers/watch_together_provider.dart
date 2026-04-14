@@ -28,6 +28,7 @@ class WatchTogetherProvider with ChangeNotifier {
   WatchTogetherSyncManager? _syncManager;
   final List<Participant> _participants = [];
   bool _isSyncing = false;
+  bool _isDeferredPlay = false;
   String _displayName = 'User';
   String? _lastHandledCurrentPlaybackKey;
 
@@ -83,6 +84,7 @@ class WatchTogetherProvider with ChangeNotifier {
   bool get isHost => _session?.isHost ?? false;
   bool get isConnected => _session?.isConnected ?? false;
   bool get isSyncing => _isSyncing;
+  bool get isDeferredPlay => _isDeferredPlay;
   WatchSession? get session => _session;
   List<Participant> get participants => List.unmodifiable(_participants);
   int get participantCount => _participants.length;
@@ -176,6 +178,10 @@ class WatchTogetherProvider with ChangeNotifier {
   void _wireSyncStateChanges() {
     _syncManager!.onSyncStateChanged = (isSyncing) {
       _isSyncing = isSyncing;
+      notifyListeners();
+    };
+    _syncManager!.onDeferredPlayChanged = (isDeferredPlay) {
+      _isDeferredPlay = isDeferredPlay;
       notifyListeners();
     };
   }
@@ -348,6 +354,7 @@ class WatchTogetherProvider with ChangeNotifier {
     _session = null;
     _participants.clear();
     _isSyncing = false;
+    _isDeferredPlay = false;
     _lastHandledCurrentPlaybackKey = null;
     _lastActionEventMs.clear();
 
@@ -491,6 +498,9 @@ class WatchTogetherProvider with ChangeNotifier {
             final newState = message.bufferingState ?? false;
             if (_participants[index].isBuffering != newState) {
               _participants[index] = _participants[index].copyWith(isBuffering: newState);
+              if (newState) {
+                _emitActionEvent(message.peerId, ParticipantEventType.buffering);
+              }
               notifyListeners();
             }
           }
@@ -737,7 +747,7 @@ class WatchTogetherProvider with ChangeNotifier {
 }
 
 /// Type of participant event
-enum ParticipantEventType { joined, left, paused, resumed, seeked }
+enum ParticipantEventType { joined, left, paused, resumed, seeked, buffering }
 
 /// Event emitted when a participant joins or leaves
 class ParticipantEvent {

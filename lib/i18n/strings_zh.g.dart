@@ -1013,6 +1013,8 @@ class _TranslationsWatchTogetherZh implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} 暂停了';
 	@override String participantResumed({required Object name}) => '${name} 继续播放了';
 	@override String participantSeeked({required Object name}) => '${name} 跳转了';
+	@override String participantBuffering({required Object name}) => '${name} 正在缓冲';
+	@override String get waitingForParticipants => '等待其他人加载...';
 	@override String get recentRooms => '最近的房间';
 	@override String get renameRoom => '重命名房间';
 	@override String get removeRoom => '移除';
@@ -2046,6 +2048,8 @@ extension on TranslationsZh {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} 暂停了',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} 继续播放了',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} 跳转了',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} 正在缓冲',
+			'watchTogether.waitingForParticipants' => '等待其他人加载...',
 			'watchTogether.recentRooms' => '最近的房间',
 			'watchTogether.renameRoom' => '重命名房间',
 			'watchTogether.removeRoom' => '移除',

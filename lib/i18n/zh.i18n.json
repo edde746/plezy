@@ -753,6 +753,8 @@
     "participantPaused": "${name} 暂停了",
     "participantResumed": "${name} 继续播放了",
     "participantSeeked": "${name} 跳转了",
+    "participantBuffering": "${name} 正在缓冲",
+    "waitingForParticipants": "等待其他人加载...",
     "recentRooms": "最近的房间",
     "renameRoom": "重命名房间",
     "removeRoom": "移除"

@@ -726,6 +726,8 @@
     "participantPaused": "${name}님이 일시정지했습니다",
     "participantResumed": "${name}님이 재생했습니다",
     "participantSeeked": "${name}님이 탐색했습니다",
+    "participantBuffering": "${name}님이 버퍼링 중입니다",
+    "waitingForParticipants": "다른 참가자의 로딩을 기다리는 중...",
     "recentRooms": "최근 방",
     "renameRoom": "방 이름 변경",
     "removeRoom": "제거"

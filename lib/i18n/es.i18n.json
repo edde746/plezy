@@ -726,6 +726,8 @@
     "participantPaused": "${name} pausó",
     "participantResumed": "${name} reanudó",
     "participantSeeked": "${name} avanzó",
+    "participantBuffering": "${name} está cargando",
+    "waitingForParticipants": "Esperando a que otros carguen...",
     "recentRooms": "Salas recientes",
     "renameRoom": "Renombrar sala",
     "removeRoom": "Eliminar"

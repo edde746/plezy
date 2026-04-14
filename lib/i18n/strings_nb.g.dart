@@ -979,6 +979,8 @@ class _TranslationsWatchTogetherNb implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} pauset';
 	@override String participantResumed({required Object name}) => '${name} gjenopptok';
 	@override String participantSeeked({required Object name}) => '${name} spolet';
+	@override String participantBuffering({required Object name}) => '${name} buffrer';
+	@override String get waitingForParticipants => 'Venter på at andre laster inn...';
 	@override String get recentRooms => 'Nylige rom';
 	@override String get renameRoom => 'Gi nytt navn til rom';
 	@override String get removeRoom => 'Fjern';
@@ -2021,6 +2023,8 @@ extension on TranslationsNb {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} pauset',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} gjenopptok',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spolet',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} buffrer',
+			'watchTogether.waitingForParticipants' => 'Venter på at andre laster inn...',
 			'watchTogether.recentRooms' => 'Nylige rom',
 			'watchTogether.renameRoom' => 'Gi nytt navn til rom',
 			'watchTogether.removeRoom' => 'Fjern',

@@ -753,6 +753,8 @@
     "participantPaused": "${name} heeft gepauzeerd",
     "participantResumed": "${name} heeft hervat",
     "participantSeeked": "${name} heeft gespoeld",
+    "participantBuffering": "${name} is aan het bufferen",
+    "waitingForParticipants": "Wachten tot anderen geladen zijn...",
     "recentRooms": "Recente kamers",
     "renameRoom": "Kamer hernoemen",
     "removeRoom": "Verwijderen"

@@ -979,6 +979,8 @@ class _TranslationsWatchTogetherRu implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} поставил на паузу';
 	@override String participantResumed({required Object name}) => '${name} возобновил';
 	@override String participantSeeked({required Object name}) => '${name} перемотал';
+	@override String participantBuffering({required Object name}) => '${name} буферизует';
+	@override String get waitingForParticipants => 'Ожидание загрузки у других...';
 	@override String get recentRooms => 'Недавние комнаты';
 	@override String get renameRoom => 'Переименовать комнату';
 	@override String get removeRoom => 'Удалить';
@@ -2021,6 +2023,8 @@ extension on TranslationsRu {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} поставил на паузу',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} возобновил',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} перемотал',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферизует',
+			'watchTogether.waitingForParticipants' => 'Ожидание загрузки у других...',
 			'watchTogether.recentRooms' => 'Недавние комнаты',
 			'watchTogether.renameRoom' => 'Переименовать комнату',
 			'watchTogether.removeRoom' => 'Удалить',

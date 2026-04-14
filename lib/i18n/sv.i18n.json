@@ -753,6 +753,8 @@
     "participantPaused": "${name} pausade",
     "participantResumed": "${name} återupptog",
     "participantSeeked": "${name} spolade",
+    "participantBuffering": "${name} buffrar",
+    "waitingForParticipants": "Väntar på att andra laddar...",
     "recentRooms": "Senaste rum",
     "renameRoom": "Byt namn på rum",
     "removeRoom": "Ta bort"

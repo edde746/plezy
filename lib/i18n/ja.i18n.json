@@ -726,6 +726,8 @@
     "participantPaused": "${name}が一時停止しました",
     "participantResumed": "${name}が再開しました",
     "participantSeeked": "${name}がシークしました",
+    "participantBuffering": "${name}がバッファリング中",
+    "waitingForParticipants": "他の参加者の読み込みを待っています...",
     "recentRooms": "最近のルーム",
     "renameRoom": "ルーム名を変更",
     "removeRoom": "削除"

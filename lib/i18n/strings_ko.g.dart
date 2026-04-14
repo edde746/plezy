@@ -979,6 +979,8 @@ class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name}님이 일시정지했습니다';
 	@override String participantResumed({required Object name}) => '${name}님이 재생했습니다';
 	@override String participantSeeked({required Object name}) => '${name}님이 탐색했습니다';
+	@override String participantBuffering({required Object name}) => '${name}님이 버퍼링 중입니다';
+	@override String get waitingForParticipants => '다른 참가자의 로딩을 기다리는 중...';
 	@override String get recentRooms => '최근 방';
 	@override String get renameRoom => '방 이름 변경';
 	@override String get removeRoom => '제거';
@@ -2021,6 +2023,8 @@ extension on TranslationsKo {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name}님이 일시정지했습니다',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}님이 재생했습니다',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}님이 탐색했습니다',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name}님이 버퍼링 중입니다',
+			'watchTogether.waitingForParticipants' => '다른 참가자의 로딩을 기다리는 중...',
 			'watchTogether.recentRooms' => '최근 방',
 			'watchTogether.renameRoom' => '방 이름 변경',
 			'watchTogether.removeRoom' => '제거',
