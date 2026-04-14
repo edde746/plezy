@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/widgets.dart';
 import '../services/plex_client.dart';
+import 'platform_detector.dart';
 import 'plex_url_helper.dart';
 
 /// Image types for different transcoding strategies
@@ -22,6 +23,9 @@ class PlexImageHelper {
   static const int _minTranscodedWidth = 160;
   static const int _minTranscodedHeight = 240;
 
+  /// Minimum DPR for TV to ensure sharp artwork on large screens
+  static const double _tvMinDpr = 2.0;
+
   /// Rounds dimensions to cache-friendly values to increase cache hit rate
   static (int width, int height) roundDimensions(double width, double height) {
     final roundedWidth = (width / _widthRoundingFactor).ceil() * _widthRoundingFactor;
@@ -38,14 +42,17 @@ class PlexImageHelper {
   /// (common on Linux X11 with compositor scaling).
   static double effectiveDevicePixelRatio(BuildContext context) {
     final reportedDpr = MediaQuery.of(context).devicePixelRatio;
+    double dpr;
     try {
       final displayWidth = View.of(context).display.size.width;
       // Scale quality with display resolution: 1920px = baseline (1.0x)
       final displayBasedDpr = (displayWidth / 1920).clamp(1.0, 3.0);
-      return max(reportedDpr, displayBasedDpr);
+      dpr = max(reportedDpr, displayBasedDpr);
     } catch (_) {
-      return reportedDpr;
+      dpr = reportedDpr;
     }
+    if (PlatformDetector.isTV()) dpr = max(dpr, _tvMinDpr);
+    return dpr;
   }
 
   /// Calculates optimal image dimensions based on image type and constraints
