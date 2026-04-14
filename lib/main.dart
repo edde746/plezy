@@ -226,6 +226,10 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
       if (v != null && (v.contains('SQLITE_FULL') || v.contains('No space left on device'))) {
         return true;
       }
+      // Native HTTP errors from CFNetwork (server errors, not actionable)
+      if (e.type == 'HTTPClientError') return true;
+      // Discord RPC errors when Discord is not running
+      if (e.type == 'DiscordStateException') return true;
       return false;
     }
 
