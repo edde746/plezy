@@ -743,6 +743,7 @@
     "deleteDownload": "Delete download",
     "retryDownload": "Retry download",
     "downloadQueued": "Download queued",
+    "serverErrorBitrate": "Server error — the file may exceed the remote streaming bitrate limit",
     "episodesQueued": "${count} episodes queued for download",
     "downloadDeleted": "Download deleted",
     "deleteConfirm": "Are you sure you want to delete \"${title}\"? This will remove the downloaded file from your device.",

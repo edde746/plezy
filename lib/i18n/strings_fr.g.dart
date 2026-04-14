@@ -1003,6 +1003,7 @@ class _TranslationsDownloadsFr implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Supprimer le téléchargement';
 	@override String get retryDownload => 'Réessayer le téléchargement';
 	@override String get downloadQueued => 'Téléchargement en attente';
+	@override String get serverErrorBitrate => 'Erreur serveur — le fichier dépasse peut-être la limite de débit du streaming à distance';
 	@override String episodesQueued({required Object count}) => '${count} épisodes en attente de téléchargement';
 	@override String get downloadDeleted => 'Télécharger supprimé';
 	@override String deleteConfirm({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.';
@@ -2038,6 +2039,7 @@ extension on TranslationsFr {
 			'downloads.deleteDownload' => 'Supprimer le téléchargement',
 			'downloads.retryDownload' => 'Réessayer le téléchargement',
 			'downloads.downloadQueued' => 'Téléchargement en attente',
+			'downloads.serverErrorBitrate' => 'Erreur serveur — le fichier dépasse peut-être la limite de débit du streaming à distance',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} épisodes en attente de téléchargement',
 			'downloads.downloadDeleted' => 'Télécharger supprimé',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.',

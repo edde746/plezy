@@ -871,6 +871,7 @@ class _TranslationsDownloadsIt implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Elimina download';
 	@override String get retryDownload => 'Riprova download';
 	@override String get downloadQueued => 'Download in coda';
+	@override String get serverErrorBitrate => 'Errore del server — il file potrebbe superare il limite di bitrate dello streaming remoto';
 	@override String episodesQueued({required Object count}) => '${count} episodi in coda per il download';
 	@override String get downloadDeleted => 'Download eliminato';
 	@override String deleteConfirm({required Object title}) => 'Sei sicuro di voler eliminare "${title}"? Il file scaricato verrà rimosso dal tuo dispositivo.';
@@ -1933,6 +1934,7 @@ extension on TranslationsIt {
 			'downloads.deleteDownload' => 'Elimina download',
 			'downloads.retryDownload' => 'Riprova download',
 			'downloads.downloadQueued' => 'Download in coda',
+			'downloads.serverErrorBitrate' => 'Errore del server — il file potrebbe superare il limite di bitrate dello streaming remoto',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodi in coda per il download',
 			'downloads.downloadDeleted' => 'Download eliminato',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Sei sicuro di voler eliminare "${title}"? Il file scaricato verrà rimosso dal tuo dispositivo.',

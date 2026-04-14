@@ -1003,6 +1003,7 @@ class _TranslationsDownloadsJa implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'ダウンロードを削除';
 	@override String get retryDownload => 'ダウンロードを再試行';
 	@override String get downloadQueued => 'ダウンロードをキューに追加しました';
+	@override String get serverErrorBitrate => 'サーバーエラー — ファイルがリモートストリーミングのビットレート制限を超えている可能性があります';
 	@override String episodesQueued({required Object count}) => '${count}エピソードをダウンロードキューに追加しました';
 	@override String get downloadDeleted => 'ダウンロードを削除しました';
 	@override String deleteConfirm({required Object title}) => '"${title}"を削除してもよろしいですか？ダウンロードしたファイルがデバイスから削除されます。';
@@ -2038,6 +2039,7 @@ extension on TranslationsJa {
 			'downloads.deleteDownload' => 'ダウンロードを削除',
 			'downloads.retryDownload' => 'ダウンロードを再試行',
 			'downloads.downloadQueued' => 'ダウンロードをキューに追加しました',
+			'downloads.serverErrorBitrate' => 'サーバーエラー — ファイルがリモートストリーミングのビットレート制限を超えている可能性があります',
 			'downloads.episodesQueued' => ({required Object count}) => '${count}エピソードをダウンロードキューに追加しました',
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}"を削除してもよろしいですか？ダウンロードしたファイルがデバイスから削除されます。',

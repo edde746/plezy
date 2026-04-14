@@ -1003,6 +1003,7 @@ class _TranslationsDownloadsRu implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Удалить загрузку';
 	@override String get retryDownload => 'Повторить загрузку';
 	@override String get downloadQueued => 'Загрузка поставлена в очередь';
+	@override String get serverErrorBitrate => 'Ошибка сервера — файл может превышать лимит битрейта удалённого стриминга';
 	@override String episodesQueued({required Object count}) => '${count} эпизодов поставлено в очередь загрузки';
 	@override String get downloadDeleted => 'Загрузка удалена';
 	@override String deleteConfirm({required Object title}) => 'Вы уверены, что хотите удалить "${title}"? Загруженный файл будет удалён с устройства.';
@@ -2038,6 +2039,7 @@ extension on TranslationsRu {
 			'downloads.deleteDownload' => 'Удалить загрузку',
 			'downloads.retryDownload' => 'Повторить загрузку',
 			'downloads.downloadQueued' => 'Загрузка поставлена в очередь',
+			'downloads.serverErrorBitrate' => 'Ошибка сервера — файл может превышать лимит битрейта удалённого стриминга',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Вы уверены, что хотите удалить "${title}"? Загруженный файл будет удалён с устройства.',

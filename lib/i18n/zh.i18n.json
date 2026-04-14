@@ -632,6 +632,7 @@
     "deleteDownload": "删除下载",
     "retryDownload": "重试下载",
     "downloadQueued": "下载已排队",
+    "serverErrorBitrate": "服务器错误 — 文件可能超出远程流媒体比特率限制",
     "episodesQueued": "${count} 集已加入下载队列",
     "downloadDeleted": "下载已删除",
     "deleteConfirm": "确定要删除 \"${title}\" 吗？下载的文件将从您的设备中删除。",

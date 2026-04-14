@@ -743,6 +743,7 @@
     "deleteDownload": "Usuń pobranie",
     "retryDownload": "Ponów pobieranie",
     "downloadQueued": "Pobranie w kolejce",
+    "serverErrorBitrate": "Błąd serwera — plik może przekraczać limit bitrate zdalnego streamingu",
     "episodesQueued": "${count} odcinków w kolejce pobierania",
     "downloadDeleted": "Pobranie usunięte",
     "deleteConfirm": "Czy na pewno chcesz usunąć \"${title}\"? Spowoduje to usunięcie pobranego pliku z urządzenia.",

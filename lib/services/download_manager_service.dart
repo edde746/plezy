@@ -15,6 +15,7 @@ import '../models/plex_media_info.dart';
 import '../services/plex_client.dart';
 import '../services/download_storage_service.dart';
 import '../services/plex_api_cache.dart';
+import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/codec_utils.dart';
 import '../utils/global_key_utils.dart';
@@ -742,11 +743,12 @@ class DownloadManagerService {
         errorMessage.contains('No address associated with hostname') ||
         errorMessage.contains('Network is unreachable') ||
         errorMessage.contains('Connection refused');
+    final isServerError = errorMessage.contains('500 Internal Server Error');
 
     final client = _getClient(parseGlobalKey(globalKey)?.serverId);
     final hadProgress = (existing?.downloadedBytes ?? 0) > 0;
 
-    if (!isNetworkError && retryCount < _maxAppRetries && client != null) {
+    if (!isNetworkError && !isServerError && retryCount < _maxAppRetries && client != null) {
       // App-level auto-retry: schedule a fresh download after a delay.
       // Each new task gets 5 native retries with Range-based resume.
       appLogger.w(
@@ -768,7 +770,10 @@ class DownloadManagerService {
       if (isNetworkError) {
         appLogger.w('Network error for $globalKey, failing permanently (no auto-retry): $errorMessage');
       }
-      await _onDownloadPermanentlyFailed(globalKey, errorMessage);
+      final userMessage = isServerError
+          ? t.downloads.serverErrorBitrate
+          : errorMessage;
+      await _onDownloadPermanentlyFailed(globalKey, userMessage);
     }
   }
 

@@ -871,6 +871,7 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String get deleteDownload => '删除下载';
 	@override String get retryDownload => '重试下载';
 	@override String get downloadQueued => '下载已排队';
+	@override String get serverErrorBitrate => '服务器错误 — 文件可能超出远程流媒体比特率限制';
 	@override String episodesQueued({required Object count}) => '${count} 集已加入下载队列';
 	@override String get downloadDeleted => '下载已删除';
 	@override String deleteConfirm({required Object title}) => '确定要删除 "${title}" 吗？下载的文件将从您的设备中删除。';
@@ -1933,6 +1934,7 @@ extension on TranslationsZh {
 			'downloads.deleteDownload' => '删除下载',
 			'downloads.retryDownload' => '重试下载',
 			'downloads.downloadQueued' => '下载已排队',
+			'downloads.serverErrorBitrate' => '服务器错误 — 文件可能超出远程流媒体比特率限制',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',
 			'downloads.deleteConfirm' => ({required Object title}) => '确定要删除 "${title}" 吗？下载的文件将从您的设备中删除。',

@@ -1003,6 +1003,7 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String get deleteDownload => '다운로드 삭제';
 	@override String get retryDownload => '다운로드 재시도';
 	@override String get downloadQueued => '다운로드 대기 중';
+	@override String get serverErrorBitrate => '서버 오류 — 파일이 원격 스트리밍 비트레이트 제한을 초과할 수 있습니다';
 	@override String episodesQueued({required Object count}) => '${count} 에피소드가 다운로드 대기열에 추가 되었습니다';
 	@override String get downloadDeleted => '다운로드 삭제됨';
 	@override String deleteConfirm({required Object title}) => '"${title}"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.';
@@ -2038,6 +2039,7 @@ extension on TranslationsKo {
 			'downloads.deleteDownload' => '다운로드 삭제',
 			'downloads.retryDownload' => '다운로드 재시도',
 			'downloads.downloadQueued' => '다운로드 대기 중',
+			'downloads.serverErrorBitrate' => '서버 오류 — 파일이 원격 스트리밍 비트레이트 제한을 초과할 수 있습니다',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 에피소드가 다운로드 대기열에 추가 되었습니다',
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.',

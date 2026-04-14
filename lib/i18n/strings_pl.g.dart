@@ -1003,6 +1003,7 @@ class _TranslationsDownloadsPl implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Usuń pobranie';
 	@override String get retryDownload => 'Ponów pobieranie';
 	@override String get downloadQueued => 'Pobranie w kolejce';
+	@override String get serverErrorBitrate => 'Błąd serwera — plik może przekraczać limit bitrate zdalnego streamingu';
 	@override String episodesQueued({required Object count}) => '${count} odcinków w kolejce pobierania';
 	@override String get downloadDeleted => 'Pobranie usunięte';
 	@override String deleteConfirm({required Object title}) => 'Czy na pewno chcesz usunąć "${title}"? Spowoduje to usunięcie pobranego pliku z urządzenia.';
@@ -2038,6 +2039,7 @@ extension on TranslationsPl {
 			'downloads.deleteDownload' => 'Usuń pobranie',
 			'downloads.retryDownload' => 'Ponów pobieranie',
 			'downloads.downloadQueued' => 'Pobranie w kolejce',
+			'downloads.serverErrorBitrate' => 'Błąd serwera — plik może przekraczać limit bitrate zdalnego streamingu',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} odcinków w kolejce pobierania',
 			'downloads.downloadDeleted' => 'Pobranie usunięte',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Czy na pewno chcesz usunąć "${title}"? Spowoduje to usunięcie pobranego pliku z urządzenia.',

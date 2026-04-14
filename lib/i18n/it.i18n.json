@@ -632,6 +632,7 @@
     "deleteDownload": "Elimina download",
     "retryDownload": "Riprova download",
     "downloadQueued": "Download in coda",
+    "serverErrorBitrate": "Errore del server — il file potrebbe superare il limite di bitrate dello streaming remoto",
     "episodesQueued": "${count} episodi in coda per il download",
     "downloadDeleted": "Download eliminato",
     "deleteConfirm": "Sei sicuro di voler eliminare \"${title}\"? Il file scaricato verrà rimosso dal tuo dispositivo.",

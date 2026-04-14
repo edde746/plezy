@@ -1003,6 +1003,7 @@ class _TranslationsDownloadsDa implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Slet download';
 	@override String get retryDownload => 'Prøv download igen';
 	@override String get downloadQueued => 'Download i kø';
+	@override String get serverErrorBitrate => 'Serverfejl — filen overskrider muligvis grænsen for fjernstreaming-bitrate';
 	@override String episodesQueued({required Object count}) => '${count} episoder i downloadkø';
 	@override String get downloadDeleted => 'Download slettet';
 	@override String deleteConfirm({required Object title}) => 'Er du sikker på, at du vil slette "${title}"? Den downloadede fil fjernes fra din enhed.';
@@ -2038,6 +2039,7 @@ extension on TranslationsDa {
 			'downloads.deleteDownload' => 'Slet download',
 			'downloads.retryDownload' => 'Prøv download igen',
 			'downloads.downloadQueued' => 'Download i kø',
+			'downloads.serverErrorBitrate' => 'Serverfejl — filen overskrider muligvis grænsen for fjernstreaming-bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i downloadkø',
 			'downloads.downloadDeleted' => 'Download slettet',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Er du sikker på, at du vil slette "${title}"? Den downloadede fil fjernes fra din enhed.',

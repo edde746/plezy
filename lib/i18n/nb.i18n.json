@@ -743,6 +743,7 @@
     "deleteDownload": "Slett nedlasting",
     "retryDownload": "Prøv nedlasting på nytt",
     "downloadQueued": "Nedlasting i kø",
+    "serverErrorBitrate": "Serverfeil — filen overskrider muligens grensen for fjernstrømming-bitrate",
     "episodesQueued": "${count} episoder i nedlastingskø",
     "downloadDeleted": "Nedlasting slettet",
     "deleteConfirm": "Er du sikker på at du vil slette \"${title}\"? Dette vil fjerne den nedlastede filen fra enheten din.",

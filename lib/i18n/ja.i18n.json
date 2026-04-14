@@ -743,6 +743,7 @@
     "deleteDownload": "ダウンロードを削除",
     "retryDownload": "ダウンロードを再試行",
     "downloadQueued": "ダウンロードをキューに追加しました",
+    "serverErrorBitrate": "サーバーエラー — ファイルがリモートストリーミングのビットレート制限を超えている可能性があります",
     "episodesQueued": "${count}エピソードをダウンロードキューに追加しました",
     "downloadDeleted": "ダウンロードを削除しました",
     "deleteConfirm": "\"${title}\"を削除してもよろしいですか？ダウンロードしたファイルがデバイスから削除されます。",

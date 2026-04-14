@@ -632,6 +632,7 @@
     "deleteDownload": "Ta bort nedladdning",
     "retryDownload": "Försök igen",
     "downloadQueued": "Nedladdning köad",
+    "serverErrorBitrate": "Serverfel — filen överskrider möjligen gränsen för fjärrströmning-bitrate",
     "episodesQueued": "${count} avsnitt köade för nedladdning",
     "downloadDeleted": "Nedladdning borttagen",
     "deleteConfirm": "Är du säker på att du vill ta bort \"${title}\"? Den nedladdade filen kommer att tas bort från din enhet.",

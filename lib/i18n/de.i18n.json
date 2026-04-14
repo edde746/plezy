@@ -632,6 +632,7 @@
     "deleteDownload": "Download löschen",
     "retryDownload": "Download wiederholen",
     "downloadQueued": "Download in Warteschlange",
+    "serverErrorBitrate": "Serverfehler — die Datei überschreitet möglicherweise das Remote-Streaming-Bitratenlimit",
     "episodesQueued": "${count} Episoden zum Download hinzugefügt",
     "downloadDeleted": "Download gelöscht",
     "deleteConfirm": "Möchtest du \"${title}\" wirklich löschen? Die heruntergeladene Datei wird von deinem Gerät entfernt.",

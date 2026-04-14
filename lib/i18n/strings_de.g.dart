@@ -871,6 +871,7 @@ class _TranslationsDownloadsDe implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Download löschen';
 	@override String get retryDownload => 'Download wiederholen';
 	@override String get downloadQueued => 'Download in Warteschlange';
+	@override String get serverErrorBitrate => 'Serverfehler — die Datei überschreitet möglicherweise das Remote-Streaming-Bitratenlimit';
 	@override String episodesQueued({required Object count}) => '${count} Episoden zum Download hinzugefügt';
 	@override String get downloadDeleted => 'Download gelöscht';
 	@override String deleteConfirm({required Object title}) => 'Möchtest du "${title}" wirklich löschen? Die heruntergeladene Datei wird von deinem Gerät entfernt.';
@@ -1933,6 +1934,7 @@ extension on TranslationsDe {
 			'downloads.deleteDownload' => 'Download löschen',
 			'downloads.retryDownload' => 'Download wiederholen',
 			'downloads.downloadQueued' => 'Download in Warteschlange',
+			'downloads.serverErrorBitrate' => 'Serverfehler — die Datei überschreitet möglicherweise das Remote-Streaming-Bitratenlimit',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
 			'downloads.downloadDeleted' => 'Download gelöscht',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Möchtest du "${title}" wirklich löschen? Die heruntergeladene Datei wird von deinem Gerät entfernt.',

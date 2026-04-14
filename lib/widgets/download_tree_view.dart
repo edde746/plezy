@@ -689,6 +689,18 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                 ),
               ],
+
+              // Error message for failed downloads
+              if (_effectiveStatus == DownloadStatus.failed &&
+                  widget.node.downloadProgress?.errorMessage != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  widget.node.downloadProgress!.errorMessage!,
+                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.red.withValues(alpha: 0.8)),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ],
           ),
         ),

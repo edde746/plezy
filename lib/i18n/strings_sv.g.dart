@@ -871,6 +871,7 @@ class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Ta bort nedladdning';
 	@override String get retryDownload => 'Försök igen';
 	@override String get downloadQueued => 'Nedladdning köad';
+	@override String get serverErrorBitrate => 'Serverfel — filen överskrider möjligen gränsen för fjärrströmning-bitrate';
 	@override String episodesQueued({required Object count}) => '${count} avsnitt köade för nedladdning';
 	@override String get downloadDeleted => 'Nedladdning borttagen';
 	@override String deleteConfirm({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.';
@@ -1933,6 +1934,7 @@ extension on TranslationsSv {
 			'downloads.deleteDownload' => 'Ta bort nedladdning',
 			'downloads.retryDownload' => 'Försök igen',
 			'downloads.downloadQueued' => 'Nedladdning köad',
+			'downloads.serverErrorBitrate' => 'Serverfel — filen överskrider möjligen gränsen för fjärrströmning-bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.',

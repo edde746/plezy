@@ -743,6 +743,7 @@
     "deleteDownload": "Slet download",
     "retryDownload": "Prøv download igen",
     "downloadQueued": "Download i kø",
+    "serverErrorBitrate": "Serverfejl — filen overskrider muligvis grænsen for fjernstreaming-bitrate",
     "episodesQueued": "${count} episoder i downloadkø",
     "downloadDeleted": "Download slettet",
     "deleteConfirm": "Er du sikker på, at du vil slette \"${title}\"? Den downloadede fil fjernes fra din enhed.",

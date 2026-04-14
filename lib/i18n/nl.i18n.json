@@ -632,6 +632,7 @@
     "deleteDownload": "Download verwijderen",
     "retryDownload": "Download opnieuw proberen",
     "downloadQueued": "Download in wachtrij",
+    "serverErrorBitrate": "Serverfout — het bestand overschrijdt mogelijk de bitrate-limiet voor remote streaming",
     "episodesQueued": "${count} afleveringen in wachtrij voor download",
     "downloadDeleted": "Download verwijderd",
     "deleteConfirm": "Weet je zeker dat je \"${title}\" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.",
