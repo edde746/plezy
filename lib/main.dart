@@ -309,6 +309,7 @@ void _registerShaderLicenses() {
 
 // Global RouteObserver for tracking navigation
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -499,13 +500,21 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return TranslationProvider(
-            child: InputModeTracker(
-              child: MaterialApp(
+            child: Listener(
+              onPointerDown: (event) {
+                if ((event.buttons & kBackMouseButton) != 0) {
+                  rootNavigatorKey.currentState?.maybePop();
+                }
+              },
+              behavior: HitTestBehavior.translucent,
+              child: InputModeTracker(
+                child: MaterialApp(
                 title: t.app.title,
                 debugShowCheckedModeBanner: false,
                 theme: themeProvider.lightTheme,
                 darkTheme: themeProvider.darkTheme,
                 themeMode: themeProvider.materialThemeMode,
+                navigatorKey: rootNavigatorKey,
                 navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
                 home: const OrientationAwareSetup(),
                 builder: (context, child) => ScaffoldMessenger(
@@ -516,6 +525,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                   ),
                 ),
               ),
+            ),
             ),
           );
         },
