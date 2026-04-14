@@ -88,10 +88,11 @@ packages:
   background_downloader:
     dependency: "direct main"
     description:
-      name: background_downloader
-      sha256: "4cb23d9ad4f5060944f38164e7b90d4bf99b57b2472a3bd4676e59b2db4afd06"
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "2017dfd"
+      resolved-ref: "2017dfdb3c423d92eb78f48413c1f7dc7ecaf783"
+      url: "https://github.com/edde746/background_downloader"
+    source: git
     version: "9.5.4"
   boolean_selector:
     dependency: transitive

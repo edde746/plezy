@@ -52,7 +52,10 @@ dependencies:
   in_app_review: ^2.0.11
   dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
-  background_downloader: ^9.5.2
+  background_downloader:
+    git:
+      url: https://github.com/edde746/background_downloader
+      ref: 2017dfd
   sentry_flutter:
     git:
       url: https://github.com/edde746/sentry-dart
