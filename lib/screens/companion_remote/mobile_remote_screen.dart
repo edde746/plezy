@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,7 @@ import '../../models/companion_remote/remote_session.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../utils/platform_detector.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../widgets/companion_remote/discovery_view.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -417,114 +420,218 @@ class _DPad extends StatelessWidget {
 
   const _DPad({required this.onCommand});
 
+  static const _diameter = 220.0;
+  static const _centerSize = 80.0;
+  static const _gapWidth = 3.0;
+
   @override
   Widget build(BuildContext context) {
-    const size = 72.0;
-    const gap = 8.0;
-    const total = size * 3 + gap * 2;
+    final colors = Theme.of(context).colorScheme;
 
     return SizedBox(
-      width: total,
-      height: total,
-      child: Stack(
-        children: [
-          Positioned(
-            left: size + gap,
-            top: 0,
-            child: _DPadButton(
-              icon: Icons.arrow_drop_up,
-              onPressed: () => onCommand(RemoteCommandType.dpadUp),
-              size: size,
+      width: _diameter,
+      height: _diameter,
+      child: ClipOval(
+        child: Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colors.surface,
+              ),
             ),
-          ),
-          Positioned(
-            left: size + gap,
-            bottom: 0,
-            child: _DPadButton(
-              icon: Icons.arrow_drop_down,
-              onPressed: () => onCommand(RemoteCommandType.dpadDown),
-              size: size,
+            _DPadZone(
+              startAngle: -135,
+              icon: Icons.keyboard_arrow_up,
+              onTap: () => onCommand(RemoteCommandType.dpadUp),
             ),
-          ),
-          Positioned(
-            left: 0,
-            top: size + gap,
-            child: _DPadButton(
-              icon: Icons.arrow_left,
-              onPressed: () => onCommand(RemoteCommandType.dpadLeft),
-              size: size,
+            _DPadZone(
+              startAngle: -45,
+              icon: Icons.keyboard_arrow_right,
+              onTap: () => onCommand(RemoteCommandType.dpadRight),
             ),
-          ),
-          Positioned(
-            right: 0,
-            top: size + gap,
-            child: _DPadButton(
-              icon: Icons.arrow_right,
-              onPressed: () => onCommand(RemoteCommandType.dpadRight),
-              size: size,
+            _DPadZone(
+              startAngle: 45,
+              icon: Icons.keyboard_arrow_down,
+              onTap: () => onCommand(RemoteCommandType.dpadDown),
             ),
-          ),
-          Positioned(
-            left: size + gap,
-            top: size + gap,
-            child: _DPadButton(
-              icon: Icons.check,
-              label: t.common.ok,
-              onPressed: () => onCommand(RemoteCommandType.select),
-              size: size,
-              isPrimary: true,
+            _DPadZone(
+              startAngle: 135,
+              icon: Icons.keyboard_arrow_left,
+              onTap: () => onCommand(RemoteCommandType.dpadLeft),
             ),
-          ),
-        ],
+            Center(
+              child: _DPadCenter(
+                onTap: () => onCommand(RemoteCommandType.select),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _DPadButton extends StatelessWidget {
+class _DPadZone extends StatefulWidget {
+  final double startAngle;
   final IconData icon;
-  final String? label;
-  final VoidCallback onPressed;
-  final double size;
-  final bool isPrimary;
+  final VoidCallback onTap;
 
-  const _DPadButton({
+  const _DPadZone({
+    required this.startAngle,
     required this.icon,
-    this.label,
-    required this.onPressed,
-    required this.size,
-    this.isPrimary = false,
+    required this.onTap,
   });
+
+  Alignment get iconAlignment {
+    final midRad = (startAngle + 45) * pi / 180;
+    const r = 0.78;
+    return Alignment(r * cos(midRad), r * sin(midRad));
+  }
+
+  @override
+  State<_DPadZone> createState() => _DPadZoneState();
+}
+
+class _DPadZoneState extends State<_DPadZone> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: ElevatedButton(
-        onPressed: () {
-          HapticFeedback.lightImpact();
-          onPressed();
-        },
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          shape: const CircleBorder(),
-          backgroundColor: isPrimary ? Theme.of(context).colorScheme.primary : null,
-          foregroundColor: isPrimary ? Theme.of(context).colorScheme.onPrimary : null,
+    final colors = Theme.of(context).colorScheme;
+
+    return Positioned.fill(
+      child: ClipPath(
+        clipper: _SectorClipper(
+          startAngle: widget.startAngle,
+          innerRadius: _DPad._centerSize / 2 + _DPad._gapWidth,
+          gapWidth: _DPad._gapWidth,
         ),
-        child: label != null
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 24),
-                  const SizedBox(height: 2),
-                  Text(label!, style: const TextStyle(fontSize: 10)),
-                ],
-              )
-            : Icon(icon, size: 36),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            widget.onTap();
+          },
+          child: AnimatedContainer(
+            duration: tokens(context).fast,
+            color: _pressed
+                ? colors.primary.withValues(alpha: 0.8)
+                : colors.primary,
+            alignment: widget.iconAlignment,
+            child: Icon(widget.icon, size: 28, color: colors.onPrimary),
+          ),
+        ),
       ),
     );
   }
+}
+
+class _DPadCenter extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _DPadCenter({required this.onTap});
+
+  @override
+  State<_DPadCenter> createState() => _DPadCenterState();
+}
+
+class _DPadCenterState extends State<_DPadCenter> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        widget.onTap();
+      },
+      child: AnimatedContainer(
+        duration: tokens(context).fast,
+        width: _DPad._centerSize,
+        height: _DPad._centerSize,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: _pressed
+              ? colors.primary.withValues(alpha: 0.8)
+              : colors.primary,
+        ),
+        child: const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+class _SectorClipper extends CustomClipper<Path> {
+  final double startAngle;
+  final double innerRadius;
+  final double gapWidth;
+
+  const _SectorClipper({
+    required this.startAngle,
+    required this.innerRadius,
+    required this.gapWidth,
+  });
+
+  @override
+  Path getClip(Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final outerRadius = size.width / 2;
+    final halfGap = gapWidth / 2;
+    final startRad = startAngle * pi / 180;
+    final endRad = startRad + pi / 2;
+
+    // Use arcsin to compute angular offset at each radius for constant-width gap
+    final innerOffset = asin(halfGap / innerRadius);
+    final outerOffset = asin(halfGap / outerRadius);
+
+    final innerStart = startRad + innerOffset;
+    final outerStart = startRad + outerOffset;
+    final outerEnd = endRad - outerOffset;
+    final innerEnd = endRad - innerOffset;
+
+    return Path()
+      ..moveTo(
+        center.dx + innerRadius * cos(innerStart),
+        center.dy + innerRadius * sin(innerStart),
+      )
+      ..lineTo(
+        center.dx + outerRadius * cos(outerStart),
+        center.dy + outerRadius * sin(outerStart),
+      )
+      ..arcTo(
+        Rect.fromCircle(center: center, radius: outerRadius),
+        outerStart,
+        outerEnd - outerStart,
+        false,
+      )
+      ..lineTo(
+        center.dx + innerRadius * cos(innerEnd),
+        center.dy + innerRadius * sin(innerEnd),
+      )
+      ..arcTo(
+        Rect.fromCircle(center: center, radius: innerRadius),
+        innerEnd,
+        innerStart - innerEnd,
+        false,
+      )
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _SectorClipper oldClipper) =>
+      startAngle != oldClipper.startAngle ||
+      innerRadius != oldClipper.innerRadius ||
+      gapWidth != oldClipper.gapWidth;
 }
 
 class _RemoteButton extends StatelessWidget {
@@ -575,13 +682,13 @@ class _RemoteChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: Icon(icon, size: 18),
-      label: Text(label),
+    return FilledButton.icon(
       onPressed: () {
         HapticFeedback.lightImpact();
         onPressed();
       },
+      icon: Icon(icon, size: 18),
+      label: Text(label),
     );
   }
 }
