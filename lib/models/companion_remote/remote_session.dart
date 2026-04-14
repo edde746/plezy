@@ -56,8 +56,6 @@ class RemoteDevice {
 
 @JsonSerializable()
 class RemoteSession {
-  final String sessionId;
-  final String pin;
   @JsonKey(unknownEnumValue: RemoteSessionRole.remote)
   final RemoteSessionRole role;
   @JsonKey(unknownEnumValue: RemoteSessionStatus.disconnected)
@@ -67,8 +65,6 @@ class RemoteSession {
   final String? errorMessage;
 
   RemoteSession({
-    required this.sessionId,
-    required this.pin,
     required this.role,
     this.status = RemoteSessionStatus.disconnected,
     this.connectedDevice,
@@ -85,8 +81,6 @@ class RemoteSession {
   Map<String, dynamic> toJson() => _$RemoteSessionToJson(this);
 
   RemoteSession copyWith({
-    String? sessionId,
-    String? pin,
     RemoteSessionRole? role,
     RemoteSessionStatus? status,
     RemoteDevice? connectedDevice,
@@ -96,8 +90,6 @@ class RemoteSession {
     bool clearErrorMessage = false,
   }) {
     return RemoteSession(
-      sessionId: sessionId ?? this.sessionId,
-      pin: pin ?? this.pin,
       role: role ?? this.role,
       status: status ?? this.status,
       connectedDevice: clearConnectedDevice ? null : (connectedDevice ?? this.connectedDevice),

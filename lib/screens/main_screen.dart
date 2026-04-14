@@ -436,6 +436,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       }
     };
 
+    // Auto-start host server if setting enabled
+    _autoStartCompanionRemoteServer(companionRemote);
+
     final receiver = CompanionRemoteReceiver.instance;
 
     receiver.onTabNext = () {
@@ -464,6 +467,21 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         });
       }
     };
+  }
+
+  Future<void> _autoStartCompanionRemoteServer(CompanionRemoteProvider companionRemote) async {
+    try {
+      final settings = await SettingsService.getInstance();
+      if (!settings.getEnableCompanionRemoteServer()) return;
+      if (!mounted) return;
+
+      final home = context.read<UserProfileProvider>().home;
+      if (await companionRemote.ensureCryptoReady(home)) {
+        await companionRemote.startHostServer();
+      }
+    } catch (e) {
+      appLogger.e('CompanionRemote: Failed to auto-start server', error: e);
+    }
   }
 
   @override

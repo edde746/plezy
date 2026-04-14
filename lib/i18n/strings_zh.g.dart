@@ -358,6 +358,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
+	@override String get companionRemoteServer => '配套遥控服务器';
+	@override String get companionRemoteServerDescription => '允许网络上的移动设备控制此应用';
 }
 
 // Path: search
@@ -1274,20 +1276,17 @@ class _TranslationsCompanionRemoteSessionZh implements TranslationsCompanionRemo
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get creatingSession => '正在创建远程会话...';
-	@override String get failedToCreate => '创建远程会话失败：';
-	@override String get noSession => '没有可用的会话';
-	@override String get scanQrCode => '扫描 QR 码';
-	@override String get orEnterManually => '或手动输入';
+	@override String get startingServer => '正在启动远程服务器...';
+	@override String get failedToCreate => '启动远程服务器失败：';
 	@override String get hostAddress => '主机地址';
-	@override String get sessionId => '会话 ID';
-	@override String get pin => 'PIN';
 	@override String get connected => '已连接';
-	@override String get waitingForConnection => '等待连接中...';
+	@override String get serverRunning => '远程服务器已启动';
+	@override String get serverStopped => '远程服务器已停止';
+	@override String get serverRunningDescription => '网络上的移动设备可以发现并连接到此应用';
+	@override String get serverStoppedDescription => '启动服务器以允许移动设备连接';
 	@override String get usePhoneToControl => '使用移动设备控制此应用';
-	@override String copiedToClipboard({required Object label}) => '${label}已复制到剪贴板';
-	@override String get copyToClipboard => '复制到剪贴板';
-	@override String get newSession => '新建会话';
+	@override String get startServer => '启动服务器';
+	@override String get stopServer => '停止服务器';
 	@override String get minimize => '最小化';
 }
 
@@ -1298,30 +1297,21 @@ class _TranslationsCompanionRemotePairingZh implements TranslationsCompanionRemo
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get scan => '扫描';
-	@override String get manual => '手动';
-	@override String get pairWithDesktop => '与桌面配对';
-	@override String get enterSessionDetails => '输入桌面设备上显示的会话信息';
+	@override String get pairWithDesktop => '连接到桌面';
+	@override String get discoveryDescription => '网络上使用相同Plex账户运行Plezy的设备将自动显示';
 	@override String get hostAddressHint => '192.168.1.100:48632';
-	@override String get sessionIdHint => '输入8位会话 ID';
-	@override String get pinHint => '输入6位 PIN';
-	@override String get connecting => '连接中...';
-	@override String get tips => '提示';
-	@override String get tipDesktop => '在桌面上打开 Plezy，并从设置或菜单中启用 Companion Remote';
-	@override String get tipScan => '使用扫描选项卡扫描桌面上的 QR 码以快速配对';
-	@override String get tipWifi => '请确保两台设备连接到同一个 WiFi 网络';
-	@override String get cameraPermissionRequired => '扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。';
-	@override String cameraError({required Object error}) => '无法启动相机：${error}';
-	@override String get scanInstruction => '将相机对准桌面上显示的 QR 码';
-	@override String get invalidQrCode => '无效的 QR 码格式';
+	@override String get connecting => '正在连接...';
+	@override String get searchingForDevices => '正在搜索设备...';
+	@override String get noDevicesFound => '未在网络上找到设备';
+	@override String get noDevicesHint => '请确保桌面上已打开Plezy，且两台设备在同一WiFi网络上';
+	@override String get availableDevices => '可用设备';
+	@override String get manualConnection => '手动连接';
+	@override String get cryptoInitFailed => '无法初始化安全连接。请确保已登录Plex账户。';
 	@override String get validationHostRequired => '请输入主机地址';
-	@override String get validationHostFormat => '格式必须为 IP:端口（例如 192.168.1.100:48632）';
-	@override String get validationSessionIdRequired => '请输入会话 ID';
-	@override String get validationSessionIdLength => '会话 ID 必须为8个字符';
-	@override String get validationPinRequired => '请输入 PIN';
-	@override String get validationPinLength => 'PIN 必须为6位数字';
-	@override String get connectionTimedOut => '连接超时。请检查会话 ID 和 PIN。';
-	@override String get sessionNotFound => '找不到会话。请检查您的凭据。';
+	@override String get validationHostFormat => '格式必须为IP:端口（例如 192.168.1.100:48632）';
+	@override String get connectionTimedOut => '连接超时。请确保两台设备在同一网络上。';
+	@override String get sessionNotFound => '未找到设备。请确保Plezy正在主机上运行。';
+	@override String get authFailed => '认证失败。请确保两台设备使用相同的Plex账户。';
 	@override String failedToConnect({required Object error}) => '连接失败：${error}';
 }
 
@@ -1600,6 +1590,8 @@ extension on TranslationsZh {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.companionRemoteServer' => '配套遥控服务器',
+			'settings.companionRemoteServerDescription' => '允许网络上的移动设备控制此应用',
 			'search.hint' => '搜索电影、系列、音乐...',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -1881,10 +1873,10 @@ extension on TranslationsZh {
 			'libraries.groupings.seasons' => '季',
 			'libraries.groupings.episodes' => '集',
 			'libraries.groupings.folders' => '文件夹',
-			'about.title' => '关于',
-			'about.openSourceLicenses' => '开源许可证',
 			_ => null,
 		} ?? switch (path) {
+			'about.title' => '关于',
+			'about.openSourceLicenses' => '开源许可证',
 			'about.versionLabel' => ({required Object version}) => '版本 ${version}',
 			'about.appDescription' => '一款精美的 Flutter Plex 客户端',
 			'about.viewLicensesDescription' => '查看第三方库的许可证',
@@ -2076,45 +2068,33 @@ extension on TranslationsZh {
 			'companionRemote.remoteControl' => '远程控制',
 			'companionRemote.controlDesktop' => '控制桌面设备',
 			'companionRemote.connectedTo' => ({required Object name}) => '已连接到 ${name}',
-			'companionRemote.session.creatingSession' => '正在创建远程会话...',
-			'companionRemote.session.failedToCreate' => '创建远程会话失败：',
-			'companionRemote.session.noSession' => '没有可用的会话',
-			'companionRemote.session.scanQrCode' => '扫描 QR 码',
-			'companionRemote.session.orEnterManually' => '或手动输入',
+			'companionRemote.session.startingServer' => '正在启动远程服务器...',
+			'companionRemote.session.failedToCreate' => '启动远程服务器失败：',
 			'companionRemote.session.hostAddress' => '主机地址',
-			'companionRemote.session.sessionId' => '会话 ID',
-			'companionRemote.session.pin' => 'PIN',
 			'companionRemote.session.connected' => '已连接',
-			'companionRemote.session.waitingForConnection' => '等待连接中...',
+			'companionRemote.session.serverRunning' => '远程服务器已启动',
+			'companionRemote.session.serverStopped' => '远程服务器已停止',
+			'companionRemote.session.serverRunningDescription' => '网络上的移动设备可以发现并连接到此应用',
+			'companionRemote.session.serverStoppedDescription' => '启动服务器以允许移动设备连接',
 			'companionRemote.session.usePhoneToControl' => '使用移动设备控制此应用',
-			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label}已复制到剪贴板',
-			'companionRemote.session.copyToClipboard' => '复制到剪贴板',
-			'companionRemote.session.newSession' => '新建会话',
+			'companionRemote.session.startServer' => '启动服务器',
+			'companionRemote.session.stopServer' => '停止服务器',
 			'companionRemote.session.minimize' => '最小化',
-			'companionRemote.pairing.scan' => '扫描',
-			'companionRemote.pairing.manual' => '手动',
-			'companionRemote.pairing.pairWithDesktop' => '与桌面配对',
-			'companionRemote.pairing.enterSessionDetails' => '输入桌面设备上显示的会话信息',
+			'companionRemote.pairing.pairWithDesktop' => '连接到桌面',
+			'companionRemote.pairing.discoveryDescription' => '网络上使用相同Plex账户运行Plezy的设备将自动显示',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
-			'companionRemote.pairing.sessionIdHint' => '输入8位会话 ID',
-			'companionRemote.pairing.pinHint' => '输入6位 PIN',
-			'companionRemote.pairing.connecting' => '连接中...',
-			'companionRemote.pairing.tips' => '提示',
-			'companionRemote.pairing.tipDesktop' => '在桌面上打开 Plezy，并从设置或菜单中启用 Companion Remote',
-			'companionRemote.pairing.tipScan' => '使用扫描选项卡扫描桌面上的 QR 码以快速配对',
-			'companionRemote.pairing.tipWifi' => '请确保两台设备连接到同一个 WiFi 网络',
-			'companionRemote.pairing.cameraPermissionRequired' => '扫描 QR 码需要相机权限。\n请在设备设置中授予相机访问权限。',
-			'companionRemote.pairing.cameraError' => ({required Object error}) => '无法启动相机：${error}',
-			'companionRemote.pairing.scanInstruction' => '将相机对准桌面上显示的 QR 码',
-			'companionRemote.pairing.invalidQrCode' => '无效的 QR 码格式',
+			'companionRemote.pairing.connecting' => '正在连接...',
+			'companionRemote.pairing.searchingForDevices' => '正在搜索设备...',
+			'companionRemote.pairing.noDevicesFound' => '未在网络上找到设备',
+			'companionRemote.pairing.noDevicesHint' => '请确保桌面上已打开Plezy，且两台设备在同一WiFi网络上',
+			'companionRemote.pairing.availableDevices' => '可用设备',
+			'companionRemote.pairing.manualConnection' => '手动连接',
+			'companionRemote.pairing.cryptoInitFailed' => '无法初始化安全连接。请确保已登录Plex账户。',
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
-			'companionRemote.pairing.validationHostFormat' => '格式必须为 IP:端口（例如 192.168.1.100:48632）',
-			'companionRemote.pairing.validationSessionIdRequired' => '请输入会话 ID',
-			'companionRemote.pairing.validationSessionIdLength' => '会话 ID 必须为8个字符',
-			'companionRemote.pairing.validationPinRequired' => '请输入 PIN',
-			'companionRemote.pairing.validationPinLength' => 'PIN 必须为6位数字',
-			'companionRemote.pairing.connectionTimedOut' => '连接超时。请检查会话 ID 和 PIN。',
-			'companionRemote.pairing.sessionNotFound' => '找不到会话。请检查您的凭据。',
+			'companionRemote.pairing.validationHostFormat' => '格式必须为IP:端口（例如 192.168.1.100:48632）',
+			'companionRemote.pairing.connectionTimedOut' => '连接超时。请确保两台设备在同一网络上。',
+			'companionRemote.pairing.sessionNotFound' => '未找到设备。请确保Plezy正在主机上运行。',
+			'companionRemote.pairing.authFailed' => '认证失败。请确保两台设备使用相同的Plex账户。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
 			'companionRemote.remote.disconnectConfirm' => '是否要断开远程会话的连接？',
 			'companionRemote.remote.reconnecting' => '重新连接中...',

@@ -730,6 +730,12 @@ class TranslationsSettingsEn {
 	/// en: 'Show what you're watching on Discord'
 	String get discordRichPresenceDescription => 'Show what you\'re watching on Discord';
 
+	/// en: 'Companion Remote Server'
+	String get companionRemoteServer => 'Companion Remote Server';
+
+	/// en: 'Allow mobile devices on your network to control this app'
+	String get companionRemoteServerDescription => 'Allow mobile devices on your network to control this app';
+
 	/// en: 'Auto Picture-in-Picture'
 	String get autoPip => 'Auto Picture-in-Picture';
 
@@ -2892,47 +2898,38 @@ class TranslationsCompanionRemoteSessionEn {
 
 	// Translations
 
-	/// en: 'Creating remote session...'
-	String get creatingSession => 'Creating remote session...';
+	/// en: 'Starting remote server...'
+	String get startingServer => 'Starting remote server...';
 
-	/// en: 'Failed to create remote session:'
-	String get failedToCreate => 'Failed to create remote session:';
-
-	/// en: 'No session available'
-	String get noSession => 'No session available';
-
-	/// en: 'Scan QR Code'
-	String get scanQrCode => 'Scan QR Code';
-
-	/// en: 'Or enter manually'
-	String get orEnterManually => 'Or enter manually';
+	/// en: 'Failed to start remote server:'
+	String get failedToCreate => 'Failed to start remote server:';
 
 	/// en: 'Host Address'
 	String get hostAddress => 'Host Address';
 
-	/// en: 'Session ID'
-	String get sessionId => 'Session ID';
-
-	/// en: 'PIN'
-	String get pin => 'PIN';
-
 	/// en: 'Connected'
 	String get connected => 'Connected';
 
-	/// en: 'Waiting for connection...'
-	String get waitingForConnection => 'Waiting for connection...';
+	/// en: 'Remote server active'
+	String get serverRunning => 'Remote server active';
+
+	/// en: 'Remote server stopped'
+	String get serverStopped => 'Remote server stopped';
+
+	/// en: 'Mobile devices on your network can discover and connect to this app'
+	String get serverRunningDescription => 'Mobile devices on your network can discover and connect to this app';
+
+	/// en: 'Start the server to allow mobile devices to connect'
+	String get serverStoppedDescription => 'Start the server to allow mobile devices to connect';
 
 	/// en: 'Use your mobile device to control this app'
 	String get usePhoneToControl => 'Use your mobile device to control this app';
 
-	/// en: '${label} copied to clipboard'
-	String copiedToClipboard({required Object label}) => '${label} copied to clipboard';
+	/// en: 'Start Server'
+	String get startServer => 'Start Server';
 
-	/// en: 'Copy to clipboard'
-	String get copyToClipboard => 'Copy to clipboard';
-
-	/// en: 'New Session'
-	String get newSession => 'New Session';
+	/// en: 'Stop Server'
+	String get stopServer => 'Stop Server';
 
 	/// en: 'Minimize'
 	String get minimize => 'Minimize';
@@ -2946,53 +2943,35 @@ class TranslationsCompanionRemotePairingEn {
 
 	// Translations
 
-	/// en: 'Scan'
-	String get scan => 'Scan';
+	/// en: 'Connect to Desktop'
+	String get pairWithDesktop => 'Connect to Desktop';
 
-	/// en: 'Manual'
-	String get manual => 'Manual';
-
-	/// en: 'Pair with Desktop'
-	String get pairWithDesktop => 'Pair with Desktop';
-
-	/// en: 'Enter the session details shown on your desktop device'
-	String get enterSessionDetails => 'Enter the session details shown on your desktop device';
+	/// en: 'Devices on your network running Plezy with the same Plex account will appear automatically'
+	String get discoveryDescription => 'Devices on your network running Plezy with the same Plex account will appear automatically';
 
 	/// en: '192.168.1.100:48632'
 	String get hostAddressHint => '192.168.1.100:48632';
 
-	/// en: 'Enter 8-character session ID'
-	String get sessionIdHint => 'Enter 8-character session ID';
-
-	/// en: 'Enter 6-digit PIN'
-	String get pinHint => 'Enter 6-digit PIN';
-
 	/// en: 'Connecting...'
 	String get connecting => 'Connecting...';
 
-	/// en: 'Tips'
-	String get tips => 'Tips';
+	/// en: 'Looking for devices...'
+	String get searchingForDevices => 'Looking for devices...';
 
-	/// en: 'Open Plezy on your desktop and enable Companion Remote from settings or menu'
-	String get tipDesktop => 'Open Plezy on your desktop and enable Companion Remote from settings or menu';
+	/// en: 'No devices found on your network'
+	String get noDevicesFound => 'No devices found on your network';
 
-	/// en: 'Use the Scan tab to quickly pair by scanning the QR code on your desktop'
-	String get tipScan => 'Use the Scan tab to quickly pair by scanning the QR code on your desktop';
+	/// en: 'Make sure Plezy is open on your desktop and both devices are on the same WiFi network'
+	String get noDevicesHint => 'Make sure Plezy is open on your desktop and both devices are on the same WiFi network';
 
-	/// en: 'Make sure both devices are on the same WiFi network'
-	String get tipWifi => 'Make sure both devices are on the same WiFi network';
+	/// en: 'Available Devices'
+	String get availableDevices => 'Available Devices';
 
-	/// en: 'Camera permission is required to scan QR codes. Please grant camera access in your device settings.'
-	String get cameraPermissionRequired => 'Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.';
+	/// en: 'Manual Connection'
+	String get manualConnection => 'Manual Connection';
 
-	/// en: 'Could not start camera: ${error}'
-	String cameraError({required Object error}) => 'Could not start camera: ${error}';
-
-	/// en: 'Point your camera at the QR code shown on your desktop'
-	String get scanInstruction => 'Point your camera at the QR code shown on your desktop';
-
-	/// en: 'Invalid QR code format'
-	String get invalidQrCode => 'Invalid QR code format';
+	/// en: 'Could not initialize secure connection. Make sure you are signed in to a Plex account.'
+	String get cryptoInitFailed => 'Could not initialize secure connection. Make sure you are signed in to a Plex account.';
 
 	/// en: 'Please enter host address'
 	String get validationHostRequired => 'Please enter host address';
@@ -3000,23 +2979,14 @@ class TranslationsCompanionRemotePairingEn {
 	/// en: 'Format must be IP:port (e.g., 192.168.1.100:48632)'
 	String get validationHostFormat => 'Format must be IP:port (e.g., 192.168.1.100:48632)';
 
-	/// en: 'Please enter a session ID'
-	String get validationSessionIdRequired => 'Please enter a session ID';
+	/// en: 'Connection timed out. Make sure both devices are on the same network.'
+	String get connectionTimedOut => 'Connection timed out. Make sure both devices are on the same network.';
 
-	/// en: 'Session ID must be 8 characters'
-	String get validationSessionIdLength => 'Session ID must be 8 characters';
+	/// en: 'Could not find the device. Make sure Plezy is running on the host.'
+	String get sessionNotFound => 'Could not find the device. Make sure Plezy is running on the host.';
 
-	/// en: 'Please enter a PIN'
-	String get validationPinRequired => 'Please enter a PIN';
-
-	/// en: 'PIN must be 6 digits'
-	String get validationPinLength => 'PIN must be 6 digits';
-
-	/// en: 'Connection timed out. Please check the session ID and PIN.'
-	String get connectionTimedOut => 'Connection timed out. Please check the session ID and PIN.';
-
-	/// en: 'Could not find the session. Please check your credentials.'
-	String get sessionNotFound => 'Could not find the session. Please check your credentials.';
+	/// en: 'Authentication failed. Make sure both devices are on the same Plex account.'
+	String get authFailed => 'Authentication failed. Make sure both devices are on the same Plex account.';
 
 	/// en: 'Failed to connect: ${error}'
 	String failedToConnect({required Object error}) => 'Failed to connect: ${error}';
@@ -3325,6 +3295,8 @@ extension on Translations {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
+			'settings.companionRemoteServer' => 'Companion Remote Server',
+			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
 			'settings.autoPip' => 'Auto Picture-in-Picture',
 			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when leaving the app during playback',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
@@ -3636,10 +3608,10 @@ extension on Translations {
 			'libraries.groupings.seasons' => 'Seasons',
 			'libraries.groupings.episodes' => 'Episodes',
 			'libraries.groupings.folders' => 'Folders',
-			'about.title' => 'About',
-			'about.openSourceLicenses' => 'Open Source Licenses',
 			_ => null,
 		} ?? switch (path) {
+			'about.title' => 'About',
+			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'A beautiful Plex client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
@@ -3831,45 +3803,33 @@ extension on Translations {
 			'companionRemote.remoteControl' => 'Remote Control',
 			'companionRemote.controlDesktop' => 'Control a desktop device',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
-			'companionRemote.session.creatingSession' => 'Creating remote session...',
-			'companionRemote.session.failedToCreate' => 'Failed to create remote session:',
-			'companionRemote.session.noSession' => 'No session available',
-			'companionRemote.session.scanQrCode' => 'Scan QR Code',
-			'companionRemote.session.orEnterManually' => 'Or enter manually',
+			'companionRemote.session.startingServer' => 'Starting remote server...',
+			'companionRemote.session.failedToCreate' => 'Failed to start remote server:',
 			'companionRemote.session.hostAddress' => 'Host Address',
-			'companionRemote.session.sessionId' => 'Session ID',
-			'companionRemote.session.pin' => 'PIN',
 			'companionRemote.session.connected' => 'Connected',
-			'companionRemote.session.waitingForConnection' => 'Waiting for connection...',
+			'companionRemote.session.serverRunning' => 'Remote server active',
+			'companionRemote.session.serverStopped' => 'Remote server stopped',
+			'companionRemote.session.serverRunningDescription' => 'Mobile devices on your network can discover and connect to this app',
+			'companionRemote.session.serverStoppedDescription' => 'Start the server to allow mobile devices to connect',
 			'companionRemote.session.usePhoneToControl' => 'Use your mobile device to control this app',
-			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} copied to clipboard',
-			'companionRemote.session.copyToClipboard' => 'Copy to clipboard',
-			'companionRemote.session.newSession' => 'New Session',
+			'companionRemote.session.startServer' => 'Start Server',
+			'companionRemote.session.stopServer' => 'Stop Server',
 			'companionRemote.session.minimize' => 'Minimize',
-			'companionRemote.pairing.scan' => 'Scan',
-			'companionRemote.pairing.manual' => 'Manual',
-			'companionRemote.pairing.pairWithDesktop' => 'Pair with Desktop',
-			'companionRemote.pairing.enterSessionDetails' => 'Enter the session details shown on your desktop device',
+			'companionRemote.pairing.pairWithDesktop' => 'Connect to Desktop',
+			'companionRemote.pairing.discoveryDescription' => 'Devices on your network running Plezy with the same Plex account will appear automatically',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
-			'companionRemote.pairing.sessionIdHint' => 'Enter 8-character session ID',
-			'companionRemote.pairing.pinHint' => 'Enter 6-digit PIN',
 			'companionRemote.pairing.connecting' => 'Connecting...',
-			'companionRemote.pairing.tips' => 'Tips',
-			'companionRemote.pairing.tipDesktop' => 'Open Plezy on your desktop and enable Companion Remote from settings or menu',
-			'companionRemote.pairing.tipScan' => 'Use the Scan tab to quickly pair by scanning the QR code on your desktop',
-			'companionRemote.pairing.tipWifi' => 'Make sure both devices are on the same WiFi network',
-			'companionRemote.pairing.cameraPermissionRequired' => 'Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.',
-			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Could not start camera: ${error}',
-			'companionRemote.pairing.scanInstruction' => 'Point your camera at the QR code shown on your desktop',
-			'companionRemote.pairing.invalidQrCode' => 'Invalid QR code format',
+			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
+			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
+			'companionRemote.pairing.noDevicesHint' => 'Make sure Plezy is open on your desktop and both devices are on the same WiFi network',
+			'companionRemote.pairing.availableDevices' => 'Available Devices',
+			'companionRemote.pairing.manualConnection' => 'Manual Connection',
+			'companionRemote.pairing.cryptoInitFailed' => 'Could not initialize secure connection. Make sure you are signed in to a Plex account.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
-			'companionRemote.pairing.validationSessionIdRequired' => 'Please enter a session ID',
-			'companionRemote.pairing.validationSessionIdLength' => 'Session ID must be 8 characters',
-			'companionRemote.pairing.validationPinRequired' => 'Please enter a PIN',
-			'companionRemote.pairing.validationPinLength' => 'PIN must be 6 digits',
-			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Please check the session ID and PIN.',
-			'companionRemote.pairing.sessionNotFound' => 'Could not find the session. Please check your credentials.',
+			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Make sure both devices are on the same network.',
+			'companionRemote.pairing.sessionNotFound' => 'Could not find the device. Make sure Plezy is running on the host.',
+			'companionRemote.pairing.authFailed' => 'Authentication failed. Make sure both devices are on the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',

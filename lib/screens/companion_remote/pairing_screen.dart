@@ -1,12 +1,11 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../providers/companion_remote_provider.dart';
+import '../../providers/user_profile_provider.dart';
 import '../../utils/app_logger.dart';
 
 class PairingScreen extends StatefulWidget {
@@ -18,58 +17,97 @@ class PairingScreen extends StatefulWidget {
 
 class _PairingScreenState extends State<PairingScreen> {
   final _hostAddressController = TextEditingController();
-  final _sessionIdController = TextEditingController();
-  final _pinController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isConnecting = false;
   String? _errorMessage;
-  int _selectedTab = 0;
+  bool _showManualEntry = false;
+  bool _cryptoReady = false;
 
-  // QR scanner state
-  MobileScannerController? _scannerController;
-  String? _lastScannedCode;
-  bool _hasCamera = false;
-
-  bool get _canScan => (Platform.isAndroid || Platform.isIOS) && _hasCamera;
-
-  // Tab indices: scannable gets Scan (0) + Manual (1), otherwise Manual (0)
-  int get _scanTabIndex => _canScan ? 0 : -1;
-  int get _manualTabIndex => _canScan ? 1 : 0;
+  StreamSubscription<List<DiscoveredHost>>? _discoverySubscription;
+  List<DiscoveredHost> _hosts = [];
+  bool _isSearching = true;
+  Timer? _searchTimeout;
 
   @override
   void initState() {
     super.initState();
-    _checkCamera();
+    _initCryptoAndDiscover();
   }
 
-  Future<void> _checkCamera() async {
-    if (Platform.isIOS) {
-      setState(() => _hasCamera = true);
-      return;
+  Future<void> _initCryptoAndDiscover() async {
+    final provider = context.read<CompanionRemoteProvider>();
+    final home = context.read<UserProfileProvider>().home;
+    await provider.ensureCryptoReady(home);
+    if (!mounted) return;
+
+    if (provider.isCryptoReady) {
+      setState(() => _cryptoReady = true);
+      _startDiscovery();
+    } else {
+      setState(() {
+        _cryptoReady = false;
+        _isSearching = false;
+        _errorMessage = t.companionRemote.pairing.cryptoInitFailed;
+      });
     }
-    if (!Platform.isAndroid) return;
-    try {
-      const channel = MethodChannel('com.plezy/theme');
-      final result = await channel.invokeMethod<bool>('hasCamera');
-      if (mounted) setState(() => _hasCamera = result ?? false);
-    } catch (e) {
-      debugPrint('Camera check failed: $e');
-    }
+  }
+
+  void _startDiscovery() {
+    final provider = context.read<CompanionRemoteProvider>();
+    final stream = provider.discoverHosts();
+    if (stream == null) return;
+
+    _discoverySubscription = stream.listen((hosts) {
+      if (mounted) {
+        setState(() {
+          _hosts = hosts;
+          if (hosts.isNotEmpty) _isSearching = false;
+        });
+      }
+    });
+
+    // Show "no devices found" after 10 seconds of no results
+    _searchTimeout = Timer(const Duration(seconds: 10), () {
+      if (mounted && _hosts.isEmpty) {
+        setState(() => _isSearching = false);
+      }
+    });
   }
 
   @override
   void dispose() {
     _hostAddressController.dispose();
-    _sessionIdController.dispose();
-    _pinController.dispose();
-    _scannerController?.dispose();
+    _discoverySubscription?.cancel();
+    _searchTimeout?.cancel();
+    context.read<CompanionRemoteProvider>().stopDiscovery();
     super.dispose();
   }
 
-  Future<void> _connect() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  Future<void> _connectToHost(DiscoveredHost host) async {
+    setState(() {
+      _isConnecting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final provider = context.read<CompanionRemoteProvider>();
+      await provider.connectToDiscoveredHost(host);
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      appLogger.e('Failed to connect to host', error: e);
+      if (!mounted) return;
+      setState(() {
+        _isConnecting = false;
+        _errorMessage = _parseErrorMessage(e.toString());
+      });
     }
+  }
+
+  Future<void> _connectManual() async {
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isConnecting = true;
@@ -78,17 +116,13 @@ class _PairingScreenState extends State<PairingScreen> {
 
     try {
       final provider = context.read<CompanionRemoteProvider>();
-      await provider.joinSession(
-        _sessionIdController.text.trim().toUpperCase(),
-        _pinController.text.trim(),
-        _hostAddressController.text.trim(),
-      );
+      await provider.connectToManualHost(_hostAddressController.text.trim());
 
       if (mounted) {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      appLogger.e('Failed to join remote session', error: e);
+      appLogger.e('Failed to connect to manual host', error: e);
       if (!mounted) return;
       setState(() {
         _isConnecting = false;
@@ -102,73 +136,22 @@ class _PairingScreenState extends State<PairingScreen> {
       return t.companionRemote.pairing.connectionTimedOut;
     } else if (error.contains('Failed to connect')) {
       return t.companionRemote.pairing.sessionNotFound;
+    } else if (error.contains('Authentication failed')) {
+      return t.companionRemote.pairing.authFailed;
     }
     return t.companionRemote.pairing.failedToConnect(error: error.replaceAll('Exception: ', ''));
   }
 
-  void _handleQrCode(String data) {
-    // Debounce: don't process the same code twice
-    if (data == _lastScannedCode) return;
-    _lastScannedCode = data;
-
-    // Strip URL wrapper if present (e.g. "https://plezy.app/scan#ip1,ip2|port|sid|pin")
-    final payload = data.contains('#') ? data.split('#').last : data;
-    final parts = payload.split('|');
-    if (parts.length == 4) {
-      final ipsField = parts.first;
-      final port = parts[1];
-      final sessionId = parts[2];
-      final pin = parts[3];
-
-      // Support comma-separated IPs (multi-NIC) or single IP (legacy)
-      final ips = ipsField.split(',');
-      final hostAddresses = ips.map((ip) => '$ip:$port').toList();
-
-      _scannerController?.stop();
-      setState(() {
-        _errorMessage = null;
-        _isConnecting = true;
-      });
-
-      _connectWithCredentialsMulti(sessionId, pin, hostAddresses);
-    } else {
-      setState(() {
-        _errorMessage = t.companionRemote.pairing.invalidQrCode;
-      });
-    }
-  }
-
-  Future<void> _connectWithCredentialsMulti(String sessionId, String pin, List<String> hostAddresses) async {
-    try {
-      final provider = context.read<CompanionRemoteProvider>();
-      await provider.joinSessionMulti(
-        sessionId.trim().toUpperCase(),
-        pin.trim(),
-        hostAddresses.map((a) => a.trim()).toList(),
-      );
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      appLogger.e('Failed to join remote session', error: e);
-      if (!mounted) return;
-      _lastScannedCode = null; // Allow re-scanning
-      setState(() {
-        _isConnecting = false;
-        _errorMessage = _parseErrorMessage(e.toString());
-      });
-      _scannerController?.start();
-    }
-  }
-
-  Future<void> _pasteFromClipboard(TextEditingController controller) async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (!mounted) return;
-    if (data?.text != null) {
-      setState(() {
-        controller.text = data!.text!;
-      });
+  IconData _platformIcon(String platform) {
+    switch (platform.toLowerCase()) {
+      case 'macos':
+        return Icons.desktop_mac;
+      case 'windows':
+        return Icons.desktop_windows;
+      case 'linux':
+        return Icons.computer;
+      default:
+        return Icons.devices;
     }
   }
 
@@ -178,290 +161,218 @@ class _PairingScreenState extends State<PairingScreen> {
       appBar: AppBar(
         title: Text(t.companionRemote.connectToDevice),
       ),
-      body: Column(
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (_canScan)
-            SegmentedButton<int>(
-              segments: [
-                ButtonSegment(
-                  value: _scanTabIndex,
-                  label: Text(t.companionRemote.pairing.scan),
-                  icon: const Icon(Icons.qr_code_scanner),
+          Icon(Icons.devices, size: 64, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(height: 16),
+          Text(
+            t.companionRemote.pairing.pairWithDesktop,
+            style: Theme.of(context).textTheme.headlineMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            t.companionRemote.pairing.discoveryDescription,
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+
+          if (_errorMessage != null) ...[
+            Card(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onErrorContainer),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+                      ),
+                    ),
+                  ],
                 ),
-                ButtonSegment(
-                  value: _manualTabIndex,
-                  label: Text(t.companionRemote.pairing.manual),
-                  icon: const Icon(Icons.keyboard),
-                ),
-              ],
-              selected: {_selectedTab},
-              onSelectionChanged: (Set<int> selection) {
-                setState(() {
-                  _selectedTab = selection.first;
-                });
-              },
+              ),
             ),
-          Expanded(child: _buildTabContent()),
+            const SizedBox(height: 16),
+          ],
+
+          // Discovered hosts
+          _buildDiscoverySection(),
+
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 16),
+
+          // Manual entry fallback
+          _buildManualEntrySection(),
         ],
       ),
     );
   }
 
-  Widget _buildTabContent() {
-    if (_selectedTab == _scanTabIndex && _canScan) return _buildScanTab();
-    return _buildManualEntryTab();
-  }
-
-  Widget _buildScanTab() {
-    return Column(
-      children: [
-        Expanded(
-          child: ClipRRect(
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.all(Radius.circular(12)),
-                child: MobileScanner(
-                  controller: _scannerController ??= MobileScannerController(),
-                  onDetect: (capture) {
-                    final barcode = capture.barcodes.firstOrNull;
-                    if (barcode?.rawValue != null) {
-                      _handleQrCode(barcode!.rawValue!);
-                    }
-                  },
-                  errorBuilder: (context, error) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.no_photography, size: 64, color: Colors.grey),
-                            const SizedBox(height: 16),
-                            Text(
-                              error.errorCode == MobileScannerErrorCode.permissionDenied
-                                  ? t.companionRemote.pairing.cameraPermissionRequired
-                                  : t.companionRemote.pairing.cameraError(
-                                      error: error.errorDetails?.message ?? error.errorCode.name,
-                                    ),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+  Widget _buildDiscoverySection() {
+    if (!_cryptoReady) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
+              const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
+              const SizedBox(height: 12),
               Text(
-                t.companionRemote.pairing.scanInstruction,
-                style: Theme.of(context).textTheme.bodyMedium,
+                t.companionRemote.pairing.cryptoInitFailed,
                 textAlign: TextAlign.center,
               ),
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 12),
-                Card(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onErrorContainer),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
+      );
+    }
+
+    if (_isSearching && _hosts.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              const SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                t.companionRemote.pairing.searchingForDevices,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_hosts.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              const Icon(Icons.devices_other, size: 48, color: Colors.grey),
+              const SizedBox(height: 12),
+              Text(
+                t.companionRemote.pairing.noDevicesFound,
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                t.companionRemote.pairing.noDevicesHint,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          t.companionRemote.pairing.availableDevices,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        ..._hosts.map((host) => Card(
+              child: ListTile(
+                leading: Icon(_platformIcon(host.platform), size: 32),
+                title: Text(host.name),
+                subtitle: Text(host.platform),
+                trailing: _isConnecting
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.arrow_forward),
+                onTap: _isConnecting ? null : () => _connectToHost(host),
+              ),
+            )),
       ],
     );
   }
 
-  Widget _buildManualEntryTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Icon(Icons.keyboard, size: 64, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 24),
-            Text(
-              t.companionRemote.pairing.pairWithDesktop,
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              t.companionRemote.pairing.enterSessionDetails,
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            if (_errorMessage != null) ...[
-              Card(
-                color: Theme.of(context).colorScheme.errorContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onErrorContainer),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
-                        ),
-                      ),
-                    ],
+  Widget _buildManualEntrySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _showManualEntry = !_showManualEntry),
+          child: Row(
+            children: [
+              Icon(
+                _showManualEntry ? Icons.expand_less : Icons.expand_more,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                t.companionRemote.pairing.manualConnection,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        if (_showManualEntry) ...[
+          const SizedBox(height: 16),
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _hostAddressController,
+                  decoration: InputDecoration(
+                    labelText: t.companionRemote.session.hostAddress,
+                    hintText: t.companionRemote.pairing.hostAddressHint,
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.computer),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return t.companionRemote.pairing.validationHostRequired;
+                    }
+                    final parts = value.split(':');
+                    if (parts.length != 2) {
+                      return t.companionRemote.pairing.validationHostFormat;
+                    }
+                    return null;
+                  },
+                  enabled: !_isConnecting,
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            TextFormField(
-              controller: _hostAddressController,
-              decoration: InputDecoration(
-                labelText: t.companionRemote.session.hostAddress,
-                hintText: t.companionRemote.pairing.hostAddressHint,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.computer),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.paste),
-                  onPressed: () => _pasteFromClipboard(_hostAddressController),
-                  tooltip: t.common.paste,
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _isConnecting ? null : _connectManual,
+                  icon: _isConnecting
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.link),
+                  label: Text(_isConnecting ? t.companionRemote.pairing.connecting : t.common.connect),
                 ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return t.companionRemote.pairing.validationHostRequired;
-                }
-                // Validate IP:port format
-                final parts = value.split(':');
-                if (parts.length != 2) {
-                  return t.companionRemote.pairing.validationHostFormat;
-                }
-                return null;
-              },
-              enabled: !_isConnecting,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _sessionIdController,
-              decoration: InputDecoration(
-                labelText: t.companionRemote.session.sessionId,
-                hintText: t.companionRemote.pairing.sessionIdHint,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.vpn_key),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.paste),
-                  onPressed: () => _pasteFromClipboard(_sessionIdController),
-                  tooltip: t.common.paste,
-                ),
-              ),
-              textCapitalization: TextCapitalization.characters,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                LengthLimitingTextInputFormatter(8),
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  return newValue.copyWith(text: newValue.text.toUpperCase());
-                }),
               ],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return t.companionRemote.pairing.validationSessionIdRequired;
-                }
-                if (value.length != 8) {
-                  return t.companionRemote.pairing.validationSessionIdLength;
-                }
-                return null;
-              },
-              enabled: !_isConnecting,
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _pinController,
-              decoration: InputDecoration(
-                labelText: t.companionRemote.session.pin,
-                hintText: t.companionRemote.pairing.pinHint,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.lock),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.paste),
-                  onPressed: () => _pasteFromClipboard(_pinController),
-                  tooltip: t.common.paste,
-                ),
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return t.companionRemote.pairing.validationPinRequired;
-                }
-                if (value.length != 6) {
-                  return t.companionRemote.pairing.validationPinLength;
-                }
-                return null;
-              },
-              enabled: !_isConnecting,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _isConnecting ? null : _connect,
-              icon: _isConnecting
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.link),
-              label: Text(_isConnecting ? t.companionRemote.pairing.connecting : t.common.connect),
-            ),
-            const SizedBox(height: 32),
-            const Divider(),
-            const SizedBox(height: 16),
-            Text(t.companionRemote.pairing.tips, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _buildTipCard(context, Icons.computer, t.companionRemote.pairing.tipDesktop),
-            if (_canScan) ...[
-              const SizedBox(height: 8),
-              _buildTipCard(context, Icons.qr_code, t.companionRemote.pairing.tipScan),
-            ],
-            const SizedBox(height: 8),
-            _buildTipCard(context, Icons.wifi, t.companionRemote.pairing.tipWifi),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTipCard(BuildContext context, IconData icon, String text) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 12),
-            Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
-          ],
-        ),
-      ),
+          ),
+        ],
+      ],
     );
   }
 }

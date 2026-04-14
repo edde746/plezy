@@ -358,6 +358,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
+	@override String get companionRemoteServer => '컴패니언 리모트 서버';
+	@override String get companionRemoteServerDescription => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용';
 }
 
 // Path: search
@@ -1274,20 +1276,17 @@ class _TranslationsCompanionRemoteSessionKo implements TranslationsCompanionRemo
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get creatingSession => '원격 세션 생성 중...';
-	@override String get failedToCreate => '원격 세션 생성 실패:';
-	@override String get noSession => '사용 가능한 세션이 없습니다';
-	@override String get scanQrCode => 'QR 코드 스캔';
-	@override String get orEnterManually => '또는 수동으로 입력';
+	@override String get startingServer => '원격 서버 시작 중...';
+	@override String get failedToCreate => '원격 서버를 시작하지 못했습니다:';
 	@override String get hostAddress => '호스트 주소';
-	@override String get sessionId => '세션 ID';
-	@override String get pin => 'PIN';
 	@override String get connected => '연결됨';
-	@override String get waitingForConnection => '연결 대기 중...';
+	@override String get serverRunning => '원격 서버 활성';
+	@override String get serverStopped => '원격 서버 중지됨';
+	@override String get serverRunningDescription => '네트워크의 모바일 기기가 이 앱을 검색하고 연결할 수 있습니다';
+	@override String get serverStoppedDescription => '모바일 기기의 연결을 허용하려면 서버를 시작하세요';
 	@override String get usePhoneToControl => '모바일 기기로 이 앱을 제어하세요';
-	@override String copiedToClipboard({required Object label}) => '${label}이(가) 클립보드에 복사되었습니다';
-	@override String get copyToClipboard => '클립보드에 복사';
-	@override String get newSession => '새 세션';
+	@override String get startServer => '서버 시작';
+	@override String get stopServer => '서버 중지';
 	@override String get minimize => '최소화';
 }
 
@@ -1298,30 +1297,21 @@ class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemo
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get scan => '스캔';
-	@override String get manual => '수동';
-	@override String get pairWithDesktop => '데스크톱과 페어링';
-	@override String get enterSessionDetails => '데스크톱 기기에 표시된 세션 정보를 입력하세요';
+	@override String get pairWithDesktop => '데스크톱에 연결';
+	@override String get discoveryDescription => '같은 Plex 계정으로 Plezy를 실행 중인 네트워크의 기기가 자동으로 표시됩니다';
 	@override String get hostAddressHint => '192.168.1.100:48632';
-	@override String get sessionIdHint => '8자리 세션 ID 입력';
-	@override String get pinHint => '6자리 PIN 입력';
 	@override String get connecting => '연결 중...';
-	@override String get tips => '팁';
-	@override String get tipDesktop => '데스크톱에서 Plezy를 열고 설정 또는 메뉴에서 Companion Remote를 활성화하세요';
-	@override String get tipScan => '스캔 탭을 사용하여 데스크톱의 QR 코드를 스캔하면 빠르게 페어링할 수 있습니다';
-	@override String get tipWifi => '두 기기가 동일한 WiFi 네트워크에 연결되어 있는지 확인하세요';
-	@override String get cameraPermissionRequired => 'QR 코드를 스캔하려면 카메라 권한이 필요합니다.\n기기 설정에서 카메라 접근을 허용해 주세요.';
-	@override String cameraError({required Object error}) => '카메라를 시작할 수 없습니다: ${error}';
-	@override String get scanInstruction => '데스크톱에 표시된 QR 코드에 카메라를 향하세요';
-	@override String get invalidQrCode => '유효하지 않은 QR 코드 형식';
+	@override String get searchingForDevices => '기기 검색 중...';
+	@override String get noDevicesFound => '네트워크에서 기기를 찾을 수 없습니다';
+	@override String get noDevicesHint => '데스크톱에서 Plezy가 열려 있고 두 기기가 같은 WiFi 네트워크에 있는지 확인하세요';
+	@override String get availableDevices => '사용 가능한 기기';
+	@override String get manualConnection => '수동 연결';
+	@override String get cryptoInitFailed => '보안 연결을 초기화할 수 없습니다. Plex 계정에 로그인되어 있는지 확인하세요.';
 	@override String get validationHostRequired => '호스트 주소를 입력하세요';
-	@override String get validationHostFormat => 'IP:포트 형식이어야 합니다 (예: 192.168.1.100:48632)';
-	@override String get validationSessionIdRequired => '세션 ID를 입력하세요';
-	@override String get validationSessionIdLength => '세션 ID는 8자리여야 합니다';
-	@override String get validationPinRequired => 'PIN을 입력하세요';
-	@override String get validationPinLength => 'PIN은 6자리여야 합니다';
-	@override String get connectionTimedOut => '연결 시간이 초과되었습니다. 세션 ID와 PIN을 확인하세요.';
-	@override String get sessionNotFound => '세션을 찾을 수 없습니다. 자격 증명을 확인하세요.';
+	@override String get validationHostFormat => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)';
+	@override String get connectionTimedOut => '연결 시간이 초과되었습니다. 두 기기가 같은 네트워크에 있는지 확인하세요.';
+	@override String get sessionNotFound => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.';
+	@override String get authFailed => '인증에 실패했습니다. 두 기기가 같은 Plex 계정을 사용하는지 확인하세요.';
 	@override String failedToConnect({required Object error}) => '연결 실패: ${error}';
 }
 
@@ -1600,6 +1590,8 @@ extension on TranslationsKo {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.companionRemoteServer' => '컴패니언 리모트 서버',
+			'settings.companionRemoteServerDescription' => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -1881,10 +1873,10 @@ extension on TranslationsKo {
 			'libraries.groupings.seasons' => '시즌',
 			'libraries.groupings.episodes' => '화',
 			'libraries.groupings.folders' => '폴더',
-			'about.title' => '소개',
-			'about.openSourceLicenses' => '오픈소스 라이선스',
 			_ => null,
 		} ?? switch (path) {
+			'about.title' => '소개',
+			'about.openSourceLicenses' => '오픈소스 라이선스',
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
 			'about.appDescription' => '아름다운 Flutter Plex 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
@@ -2076,45 +2068,33 @@ extension on TranslationsKo {
 			'companionRemote.remoteControl' => '원격 제어',
 			'companionRemote.controlDesktop' => '데스크톱 기기 제어',
 			'companionRemote.connectedTo' => ({required Object name}) => '${name}에 연결됨',
-			'companionRemote.session.creatingSession' => '원격 세션 생성 중...',
-			'companionRemote.session.failedToCreate' => '원격 세션 생성 실패:',
-			'companionRemote.session.noSession' => '사용 가능한 세션이 없습니다',
-			'companionRemote.session.scanQrCode' => 'QR 코드 스캔',
-			'companionRemote.session.orEnterManually' => '또는 수동으로 입력',
+			'companionRemote.session.startingServer' => '원격 서버 시작 중...',
+			'companionRemote.session.failedToCreate' => '원격 서버를 시작하지 못했습니다:',
 			'companionRemote.session.hostAddress' => '호스트 주소',
-			'companionRemote.session.sessionId' => '세션 ID',
-			'companionRemote.session.pin' => 'PIN',
 			'companionRemote.session.connected' => '연결됨',
-			'companionRemote.session.waitingForConnection' => '연결 대기 중...',
+			'companionRemote.session.serverRunning' => '원격 서버 활성',
+			'companionRemote.session.serverStopped' => '원격 서버 중지됨',
+			'companionRemote.session.serverRunningDescription' => '네트워크의 모바일 기기가 이 앱을 검색하고 연결할 수 있습니다',
+			'companionRemote.session.serverStoppedDescription' => '모바일 기기의 연결을 허용하려면 서버를 시작하세요',
 			'companionRemote.session.usePhoneToControl' => '모바일 기기로 이 앱을 제어하세요',
-			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label}이(가) 클립보드에 복사되었습니다',
-			'companionRemote.session.copyToClipboard' => '클립보드에 복사',
-			'companionRemote.session.newSession' => '새 세션',
+			'companionRemote.session.startServer' => '서버 시작',
+			'companionRemote.session.stopServer' => '서버 중지',
 			'companionRemote.session.minimize' => '최소화',
-			'companionRemote.pairing.scan' => '스캔',
-			'companionRemote.pairing.manual' => '수동',
-			'companionRemote.pairing.pairWithDesktop' => '데스크톱과 페어링',
-			'companionRemote.pairing.enterSessionDetails' => '데스크톱 기기에 표시된 세션 정보를 입력하세요',
+			'companionRemote.pairing.pairWithDesktop' => '데스크톱에 연결',
+			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정으로 Plezy를 실행 중인 네트워크의 기기가 자동으로 표시됩니다',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
-			'companionRemote.pairing.sessionIdHint' => '8자리 세션 ID 입력',
-			'companionRemote.pairing.pinHint' => '6자리 PIN 입력',
 			'companionRemote.pairing.connecting' => '연결 중...',
-			'companionRemote.pairing.tips' => '팁',
-			'companionRemote.pairing.tipDesktop' => '데스크톱에서 Plezy를 열고 설정 또는 메뉴에서 Companion Remote를 활성화하세요',
-			'companionRemote.pairing.tipScan' => '스캔 탭을 사용하여 데스크톱의 QR 코드를 스캔하면 빠르게 페어링할 수 있습니다',
-			'companionRemote.pairing.tipWifi' => '두 기기가 동일한 WiFi 네트워크에 연결되어 있는지 확인하세요',
-			'companionRemote.pairing.cameraPermissionRequired' => 'QR 코드를 스캔하려면 카메라 권한이 필요합니다.\n기기 설정에서 카메라 접근을 허용해 주세요.',
-			'companionRemote.pairing.cameraError' => ({required Object error}) => '카메라를 시작할 수 없습니다: ${error}',
-			'companionRemote.pairing.scanInstruction' => '데스크톱에 표시된 QR 코드에 카메라를 향하세요',
-			'companionRemote.pairing.invalidQrCode' => '유효하지 않은 QR 코드 형식',
+			'companionRemote.pairing.searchingForDevices' => '기기 검색 중...',
+			'companionRemote.pairing.noDevicesFound' => '네트워크에서 기기를 찾을 수 없습니다',
+			'companionRemote.pairing.noDevicesHint' => '데스크톱에서 Plezy가 열려 있고 두 기기가 같은 WiFi 네트워크에 있는지 확인하세요',
+			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
+			'companionRemote.pairing.manualConnection' => '수동 연결',
+			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 초기화할 수 없습니다. Plex 계정에 로그인되어 있는지 확인하세요.',
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
-			'companionRemote.pairing.validationHostFormat' => 'IP:포트 형식이어야 합니다 (예: 192.168.1.100:48632)',
-			'companionRemote.pairing.validationSessionIdRequired' => '세션 ID를 입력하세요',
-			'companionRemote.pairing.validationSessionIdLength' => '세션 ID는 8자리여야 합니다',
-			'companionRemote.pairing.validationPinRequired' => 'PIN을 입력하세요',
-			'companionRemote.pairing.validationPinLength' => 'PIN은 6자리여야 합니다',
-			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 세션 ID와 PIN을 확인하세요.',
-			'companionRemote.pairing.sessionNotFound' => '세션을 찾을 수 없습니다. 자격 증명을 확인하세요.',
+			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
+			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기가 같은 네트워크에 있는지 확인하세요.',
+			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
+			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기가 같은 Plex 계정을 사용하는지 확인하세요.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',

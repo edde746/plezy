@@ -10,6 +10,7 @@ import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
 import '../base_peer_service.dart';
+import 'remote_auth_service.dart';
 
 // Re-export so callers that import from here get the types.
 export '../base_peer_service.dart' show PeerError, PeerErrorType;
@@ -27,11 +28,15 @@ class CompanionRemotePeerService with KeepaliveMixin {
   // Client-side (remote) fields
   IOWebSocketChannel? _channel;
 
-  String? _sessionId;
-  String? _pin;
   String? _myPeerId;
   String? _hostAddress; // Format: "ip:port"
   RemoteSessionRole? _role;
+
+  // Encrypted channel state
+  List<int>? _sessionEncKey;
+  int _sendCounter = 0;
+  int _recvCounter = 0;
+  bool _isAuthenticated = false;
 
   final _commandReceivedController = StreamController<RemoteCommand>.broadcast();
   final _deviceConnectedController = StreamController<RemoteDevice>.broadcast();
@@ -45,9 +50,9 @@ class CompanionRemotePeerService with KeepaliveMixin {
   @override
   Duration get pongTimeout => Duration.zero; // No pong timeout; host just replies inline
 
-  // Auth rate limiting
-  int _failedAuthAttempts = 0;
-  DateTime? _authLockoutUntil;
+  // Auth rate limiting (per source IP)
+  final Map<String, int> _failedAuthAttempts = {};
+  final Map<String, DateTime> _authLockouts = {};
   static const int _maxFailedAuthAttempts = 5;
   static const Duration _authLockoutDuration = Duration(seconds: 30);
 
@@ -57,24 +62,11 @@ class CompanionRemotePeerService with KeepaliveMixin {
   Stream<RemotePeerError> get onError => _errorController.stream;
   Stream<RemoteSessionStatus> get onConnectionStateChanged => _connectionStateController.stream;
 
-  String? get sessionId => _sessionId;
-  String? get pin => _pin;
   String? get myPeerId => _myPeerId;
   String? get hostAddress => _hostAddress;
   RemoteSessionRole? get role => _role;
   bool get isHost => _role == RemoteSessionRole.host;
   bool get isConnected => _clientSocket != null || (_channel != null && _channel?.closeCode == null);
-
-  String _generateSessionId() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = Random.secure();
-    return List.generate(8, (index) => chars[random.nextInt(chars.length)]).join();
-  }
-
-  String _generatePin() {
-    final random = Random.secure();
-    return List.generate(6, (index) => random.nextInt(10).toString()).join();
-  }
 
   Future<List<String>> _getAllLocalIpAddresses() async {
     try {
@@ -109,21 +101,22 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
   }
 
-  Future<({String sessionId, String pin, List<String> addresses})> createSession(
+  /// Create a host session — starts WebSocket server, returns local addresses and port.
+  Future<({List<String> addresses, int port})> createSession(
     String deviceName,
     String platform,
+    List<int> homeSecret,
+    String clientIdentifier,
+    List<String> homeUserUUIDs,
   ) async {
     if (_server != null) {
       await disconnect();
     }
 
     _role = RemoteSessionRole.host;
-    _sessionId = _generateSessionId();
-    _pin = _generatePin();
-    _myPeerId = 'host-$_sessionId';
+    _myPeerId = 'host';
 
     try {
-      // Try preferred port first, fallback to OS-assigned port
       const int preferredPort = 48632;
 
       try {
@@ -141,12 +134,20 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
       appLogger.d('CompanionRemote: Host server started, addresses: $addresses');
 
-      // Listen for WebSocket connections
       _server!.listen((HttpRequest request) async {
         if (request.uri.path == '/ws') {
           try {
             final socket = await WebSocketTransformer.upgrade(request);
-            _handleNewWebSocketConnection(socket, deviceName, platform);
+            final sourceIp = request.connectionInfo?.remoteAddress.address ?? 'unknown';
+            _handleNewWebSocketConnection(
+              socket,
+              deviceName,
+              platform,
+              homeSecret,
+              clientIdentifier,
+              homeUserUUIDs,
+              sourceIp,
+            );
           } catch (e) {
             appLogger.e('CompanionRemote: Failed to upgrade WebSocket', error: e);
           }
@@ -158,7 +159,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
       _connectionStateController.add(RemoteSessionStatus.connected);
 
-      return (sessionId: _sessionId!, pin: _pin!, addresses: addresses);
+      return (addresses: addresses, port: port);
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to create server', error: e);
       _errorController.add(
@@ -172,11 +173,36 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
   }
 
-  void _handleNewWebSocketConnection(WebSocket socket, String hostDeviceName, String hostPlatform) {
-    appLogger.d('CompanionRemote: New WebSocket connection');
+  void _handleNewWebSocketConnection(
+    WebSocket socket,
+    String hostDeviceName,
+    String hostPlatform,
+    List<int> homeSecret,
+    String hostClientId,
+    List<String> homeUserUUIDs,
+    String sourceIp,
+  ) {
+    appLogger.d('CompanionRemote: New WebSocket connection from $sourceIp');
 
     bool isAuthenticated = false;
     Timer? authTimeout;
+    final auth = RemoteAuthService.instance;
+    final hostNonce = auth.generateNonce();
+
+    // Check rate limiting
+    final lockout = _authLockouts[sourceIp];
+    if (lockout != null && DateTime.now().isBefore(lockout)) {
+      appLogger.w('CompanionRemote: Connection from $sourceIp rejected (rate limited)');
+      socket.close(4005, 'Rate limited');
+      return;
+    }
+
+    // Send challenge: hostNonce + hostClientId
+    socket.add(jsonEncode({
+      'type': 'challenge',
+      'nonce': base64Encode(hostNonce),
+      'hostClientId': hostClientId,
+    }));
 
     // Authentication timeout
     authTimeout = Timer(const Duration(seconds: 10), () {
@@ -187,77 +213,107 @@ class CompanionRemotePeerService with KeepaliveMixin {
     });
 
     socket.listen(
-      (data) {
+      (data) async {
         try {
-          final json = jsonDecode(data as String) as Map<String, dynamic>;
-
           if (!isAuthenticated) {
-            // First message must be authentication
-            if (json['type'] == 'auth') {
-              // Rate limiting: reject if locked out
-              if (_authLockoutUntil != null && DateTime.now().isBefore(_authLockoutUntil!)) {
-                appLogger.w('CompanionRemote: Auth attempt rejected (rate limited)');
-                socket.add(jsonEncode({'type': 'authFailed', 'message': 'Too many attempts. Try again later.'}));
-                socket.close(4005, 'Rate limited');
-                return;
-              }
+            final json = jsonDecode(data as String) as Map<String, dynamic>;
 
-              final sessionId = json['sessionId'] as String?;
-              final pin = json['pin'] as String?;
+            if (json['type'] == 'auth') {
+              final authTag = json['authTag'] as String?;
+              final clientNonceB64 = json['clientNonce'] as String?;
+              final userUUID = json['userUUID'] as String?;
+              final clientIdentifier = json['clientIdentifier'] as String?;
               final deviceName = json['deviceName'] as String?;
               final platform = json['platform'] as String?;
 
-              if (sessionId == _sessionId && pin == _pin) {
-                _failedAuthAttempts = 0;
-                isAuthenticated = true;
-                authTimeout?.cancel();
-
-                // Close existing client if present
-                if (_clientSocket != null) {
-                  appLogger.d('CompanionRemote: Replacing existing client connection');
-                  _clientSocket!.close(4004, 'Replaced by new connection');
-                }
-
-                _clientSocket = socket;
-
-                appLogger.d('CompanionRemote: Client authenticated: $deviceName ($platform)');
-
-                // Send auth success
-                socket.add(jsonEncode({'type': 'authSuccess'}));
-
-                // Notify connection
-                final device = RemoteDevice(
-                  id: 'remote-client',
-                  name: deviceName ?? 'Unknown Device',
-                  platform: platform ?? 'unknown',
-                );
-                _deviceConnectedController.add(device);
-                _connectionStateController.add(RemoteSessionStatus.connected);
-
-                // Send device info
-                sendDeviceInfo(hostDeviceName, hostPlatform);
-
-                // Note: Client sends keepalive pings, host only responds with pongs
-              } else {
-                _failedAuthAttempts++;
-                if (_failedAuthAttempts >= _maxFailedAuthAttempts) {
-                  _authLockoutUntil = DateTime.now().add(_authLockoutDuration);
-                  appLogger.w(
-                    'CompanionRemote: Too many failed auth attempts, locked out for ${_authLockoutDuration.inSeconds}s',
-                  );
-                }
-                appLogger.w(
-                  'CompanionRemote: Invalid credentials (attempt $_failedAuthAttempts/$_maxFailedAuthAttempts)',
-                );
-                socket.add(jsonEncode({'type': 'authFailed', 'message': 'Invalid session ID or PIN'}));
-                socket.close(4003, 'Invalid credentials');
+              if (authTag == null ||
+                  clientNonceB64 == null ||
+                  userUUID == null ||
+                  clientIdentifier == null ||
+                  deviceName == null ||
+                  platform == null) {
+                socket.add(jsonEncode({'type': 'authFailed'}));
+                socket.close(4003, 'Authentication failed');
+                return;
               }
+
+              final clientNonce = base64Decode(clientNonceB64);
+
+              // Verify userUUID is in home users list
+              if (!homeUserUUIDs.contains(userUUID)) {
+                _recordFailedAuth(sourceIp);
+                appLogger.w('CompanionRemote: Auth failed — unknown user');
+                socket.add(jsonEncode({'type': 'authFailed'}));
+                socket.close(4003, 'Authentication failed');
+                return;
+              }
+
+              // Verify auth tag
+              final valid = auth.verifyAuthTag(
+                authTag: authTag,
+                homeSecret: homeSecret,
+                hostNonce: hostNonce,
+                clientNonce: clientNonce,
+                hostClientId: hostClientId,
+                userUUID: userUUID,
+                clientIdentifier: clientIdentifier,
+                deviceName: deviceName,
+                platform: platform,
+              );
+
+              if (!valid) {
+                _recordFailedAuth(sourceIp);
+                appLogger.w('CompanionRemote: Auth failed — invalid auth tag');
+                socket.add(jsonEncode({'type': 'authFailed'}));
+                socket.close(4003, 'Authentication failed');
+                return;
+              }
+
+              // Auth success — derive per-session encryption key
+              _failedAuthAttempts.remove(sourceIp);
+              isAuthenticated = true;
+              authTimeout?.cancel();
+
+              final sessionEncKey = await auth.deriveSessionEncKey(homeSecret, hostNonce, clientNonce);
+
+              // Close existing client if present
+              if (_clientSocket != null) {
+                appLogger.d('CompanionRemote: Replacing existing client connection');
+                _clientSocket!.close(4004, 'Replaced by new connection');
+              }
+
+              _clientSocket = socket;
+              _sessionEncKey = sessionEncKey;
+              _sendCounter = 0;
+              _recvCounter = 0;
+              _isAuthenticated = true;
+
+              appLogger.d('CompanionRemote: Client authenticated: $deviceName ($platform)');
+
+              // Send encrypted authSuccess
+              await _sendEncryptedToSocket(socket, jsonEncode({'type': 'authSuccess'}));
+
+              // Notify connection
+              final device = RemoteDevice(
+                id: 'remote-client',
+                name: deviceName,
+                platform: platform,
+              );
+              _deviceConnectedController.add(device);
+              _connectionStateController.add(RemoteSessionStatus.connected);
+
+              // Send device info
+              sendDeviceInfo(hostDeviceName, hostPlatform);
             } else {
               appLogger.w('CompanionRemote: Expected auth, got ${json['type']}');
               socket.close(4002, 'Authentication required');
             }
           } else {
-            // Handle regular commands
+            // Encrypted command — data is binary
+            final decrypted = await _decryptIncoming(data);
+            if (decrypted == null) return;
+
+            final json = jsonDecode(decrypted) as Map<String, dynamic>;
             final command = RemoteCommand.fromJson(json);
             appLogger.d('CompanionRemote: Received command: ${command.type}');
 
@@ -280,6 +336,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
         appLogger.d('CompanionRemote: WebSocket connection closed');
         if (isAuthenticated) {
           _clientSocket = null;
+          _sessionEncKey = null;
+          _isAuthenticated = false;
           _deviceDisconnectedController.add(null);
           _connectionStateController.add(RemoteSessionStatus.disconnected);
           stopKeepalive();
@@ -299,18 +357,35 @@ class CompanionRemotePeerService with KeepaliveMixin {
     );
   }
 
-  Future<void> joinSession(String sessionId, String pin, String deviceName, String platform, String hostAddress) async {
+  void _recordFailedAuth(String sourceIp) {
+    final attempts = (_failedAuthAttempts[sourceIp] ?? 0) + 1;
+    _failedAuthAttempts[sourceIp] = attempts;
+    if (attempts >= _maxFailedAuthAttempts) {
+      _authLockouts[sourceIp] = DateTime.now().add(_authLockoutDuration);
+      appLogger.w('CompanionRemote: IP $sourceIp locked out for ${_authLockoutDuration.inSeconds}s');
+    }
+  }
+
+  /// Join a host session as a remote client.
+  Future<void> joinSession(
+    String deviceName,
+    String platform,
+    String hostAddress,
+    List<int> homeSecret,
+    String hostClientId,
+    String userUUID,
+    String clientIdentifier,
+  ) async {
     if (_channel != null) {
       await disconnect();
     }
 
     _role = RemoteSessionRole.remote;
-    _sessionId = sessionId.toUpperCase();
-    _pin = pin;
     _hostAddress = hostAddress;
     _myPeerId = 'remote-${Random.secure().nextInt(99999)}';
 
     final completer = Completer<void>();
+    final auth = RemoteAuthService.instance;
 
     try {
       final url = 'ws://$hostAddress/ws';
@@ -321,51 +396,19 @@ class CompanionRemotePeerService with KeepaliveMixin {
       _channel = IOWebSocketChannel.connect(Uri.parse(url));
       await _channel!.ready;
 
-      // Send authentication message
-      final authMessage = jsonEncode({
-        'type': 'auth',
-        'sessionId': _sessionId,
-        'pin': _pin,
-        'deviceName': deviceName,
-        'platform': platform,
-      });
-      _channel!.sink.add(authMessage);
+      List<int>? hostNonce;
+      List<int>? clientNonce;
+      String? receivedHostClientId;
 
-      // Listen for messages
       _channel!.stream.listen(
-        (data) {
+        (data) async {
           try {
-            final json = jsonDecode(data as String) as Map<String, dynamic>;
-            final messageType = json['type'] as String?;
+            if (_isAuthenticated) {
+              // Post-auth: all messages are encrypted binary
+              final decrypted = await _decryptIncoming(data);
+              if (decrypted == null) return;
 
-            if (messageType == 'authSuccess') {
-              appLogger.d('CompanionRemote: Authentication successful');
-
-              if (!completer.isCompleted) {
-                completer.complete();
-              }
-
-              final device = RemoteDevice(id: 'host', name: 'Desktop', platform: 'desktop');
-              _deviceConnectedController.add(device);
-              _connectionStateController.add(RemoteSessionStatus.connected);
-
-              // Send device info
-              sendDeviceInfo(deviceName, platform);
-
-              // Start ping timer
-              startKeepalive();
-            } else if (messageType == 'authFailed') {
-              final message = json['message'] as String? ?? 'Authentication failed';
-              appLogger.w('CompanionRemote: $message');
-
-              if (!completer.isCompleted) {
-                completer.completeError(RemotePeerError(type: RemotePeerErrorType.authFailed, message: message));
-              }
-
-              _errorController.add(RemotePeerError(type: RemotePeerErrorType.authFailed, message: message));
-              _connectionStateController.add(RemoteSessionStatus.error);
-            } else {
-              // Regular command
+              final json = jsonDecode(decrypted) as Map<String, dynamic>;
               final command = RemoteCommand.fromJson(json);
               appLogger.d('CompanionRemote: Received command: ${command.type}');
 
@@ -378,6 +421,89 @@ class CompanionRemotePeerService with KeepaliveMixin {
               if (command.type == RemoteCommandType.ping) {
                 _sendPong();
               }
+            } else if (_sessionEncKey != null) {
+              // Keys derived, waiting for encrypted authSuccess
+              final decrypted = await _decryptIncoming(data);
+              if (decrypted == null) return;
+
+              final json = jsonDecode(decrypted) as Map<String, dynamic>;
+              if (json['type'] == 'authSuccess') {
+                _isAuthenticated = true;
+                appLogger.d('CompanionRemote: Authentication successful');
+
+                if (!completer.isCompleted) {
+                  completer.complete();
+                }
+
+                final device = RemoteDevice(id: 'host', name: 'Desktop', platform: 'desktop');
+                _deviceConnectedController.add(device);
+                _connectionStateController.add(RemoteSessionStatus.connected);
+
+                sendDeviceInfo(deviceName, platform);
+                startKeepalive();
+              } else if (json['type'] == 'authFailed') {
+                if (!completer.isCompleted) {
+                  completer.completeError(
+                    const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Authentication failed'),
+                  );
+                }
+              }
+            } else {
+              // Pre-auth: plaintext handshake
+              final json = jsonDecode(data as String) as Map<String, dynamic>;
+              final messageType = json['type'] as String?;
+
+              if (messageType == 'challenge') {
+                hostNonce = base64Decode(json['nonce'] as String);
+                receivedHostClientId = json['hostClientId'] as String;
+                clientNonce = auth.generateNonce();
+
+                if (hostClientId.isNotEmpty && receivedHostClientId != hostClientId) {
+                  appLogger.w('CompanionRemote: Host client ID mismatch');
+                  if (!completer.isCompleted) {
+                    completer.completeError(
+                      const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Host identity mismatch'),
+                    );
+                  }
+                  return;
+                }
+
+                final authTag = auth.computeAuthTag(
+                  homeSecret: homeSecret,
+                  hostNonce: hostNonce!,
+                  clientNonce: clientNonce!,
+                  hostClientId: receivedHostClientId!,
+                  userUUID: userUUID,
+                  clientIdentifier: clientIdentifier,
+                  deviceName: deviceName,
+                  platform: platform,
+                );
+
+                _channel!.sink.add(jsonEncode({
+                  'type': 'auth',
+                  'clientNonce': base64Encode(clientNonce!),
+                  'userUUID': userUUID,
+                  'clientIdentifier': clientIdentifier,
+                  'deviceName': deviceName,
+                  'platform': platform,
+                  'authTag': authTag,
+                }));
+
+                _sessionEncKey = await auth.deriveSessionEncKey(homeSecret, hostNonce!, clientNonce!);
+                _sendCounter = 0;
+                _recvCounter = 0;
+              } else if (messageType == 'authFailed') {
+                appLogger.w('CompanionRemote: Authentication failed');
+                if (!completer.isCompleted) {
+                  completer.completeError(
+                    const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Authentication failed'),
+                  );
+                }
+                _errorController.add(
+                  const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Authentication failed'),
+                );
+                _connectionStateController.add(RemoteSessionStatus.error);
+              }
             }
           } catch (e) {
             appLogger.e('CompanionRemote: Failed to parse message', error: e);
@@ -387,8 +513,9 @@ class CompanionRemotePeerService with KeepaliveMixin {
           appLogger.d('CompanionRemote: Connection closed');
           _deviceDisconnectedController.add(null);
           _connectionStateController.add(RemoteSessionStatus.disconnected);
+          _isAuthenticated = false;
+          _sessionEncKey = null;
           stopKeepalive();
-          // Reconnection is handled by CompanionRemoteProvider
         },
         onError: (error) {
           appLogger.e('CompanionRemote: Connection error', error: error);
@@ -422,7 +549,6 @@ class CompanionRemotePeerService with KeepaliveMixin {
     return completer.future.timeout(
       const Duration(seconds: 15),
       onTimeout: () async {
-        // Clean up channel on timeout
         if (_channel != null) {
           try {
             await _channel!.sink.close();
@@ -435,21 +561,23 @@ class CompanionRemotePeerService with KeepaliveMixin {
   }
 
   /// Race WebSocket connections to multiple host addresses in parallel.
-  /// Returns the winning address and sets up a proper managed connection via [joinSession].
   Future<String> joinSessionRacing(
-    String sessionId,
-    String pin,
     String deviceName,
     String platform,
     List<String> hostAddresses,
+    List<int> homeSecret,
+    String hostClientId,
+    String userUUID,
+    String clientIdentifier,
   ) async {
     if (hostAddresses.length == 1) {
-      await joinSession(sessionId, pin, deviceName, platform, hostAddresses.first);
+      await joinSession(deviceName, platform, hostAddresses.first, homeSecret, hostClientId, userUUID, clientIdentifier);
       return hostAddresses.first;
     }
 
     appLogger.d('CompanionRemote: Racing connections to ${hostAddresses.length} addresses');
 
+    // Race: try to connect to all addresses, first one to get a challenge wins
     final completer = Completer<String>();
     final channels = <IOWebSocketChannel>[];
     final subs = <StreamSubscription>[];
@@ -471,20 +599,12 @@ class CompanionRemotePeerService with KeepaliveMixin {
         final channel = IOWebSocketChannel.connect(Uri.parse(url), connectTimeout: const Duration(seconds: 5));
         channels.add(channel);
 
-        // Send auth immediately
-        channel.sink.add(jsonEncode({
-          'type': 'auth',
-          'sessionId': sessionId.toUpperCase(),
-          'pin': pin,
-          'deviceName': deviceName,
-          'platform': platform,
-        }));
-
         final sub = channel.stream.listen(
           (data) {
             try {
               final json = jsonDecode(data as String) as Map<String, dynamic>;
-              if (json['type'] == 'authSuccess' && !completer.isCompleted) {
+              // First address to send us a challenge wins the race
+              if (json['type'] == 'challenge' && !completer.isCompleted) {
                 appLogger.d('CompanionRemote: Race winner: $address');
                 completer.complete(address);
               }
@@ -507,11 +627,12 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
 
     try {
-      final winner = await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'CompanionRemote race connect');
+      final winner =
+          await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'CompanionRemote race connect');
       cleanup();
 
-      // Now set up the proper managed connection on the winning address
-      await joinSession(sessionId, pin, deviceName, platform, winner);
+      // Set up the proper managed connection on the winning address
+      await joinSession(deviceName, platform, winner, homeSecret, hostClientId, userUUID, clientIdentifier);
       return winner;
     } on TimeoutException {
       cleanup();
@@ -521,6 +642,49 @@ class CompanionRemotePeerService with KeepaliveMixin {
       );
     }
   }
+
+  // ── Encrypted send/receive ──
+
+  // Serializes async sends to prevent counter interleaving
+  Future<void>? _sendChain;
+
+  Future<List<int>> _encryptOutgoing(String plaintext) async {
+    final encrypted = await RemoteAuthService.instance.encrypt(
+      _sessionEncKey!,
+      utf8.encode(plaintext),
+      isHost: _role == RemoteSessionRole.host,
+      counter: _sendCounter,
+    );
+    _sendCounter++;
+    return encrypted;
+  }
+
+  Future<void> _sendEncryptedToSocket(WebSocket socket, String plaintext) async {
+    if (_sessionEncKey == null) return;
+    final encrypted = await _encryptOutgoing(plaintext);
+    socket.add(encrypted);
+  }
+
+  Future<String?> _decryptIncoming(dynamic data) async {
+    if (_sessionEncKey == null) return null;
+    try {
+      final auth = RemoteAuthService.instance;
+      final bytes = data is List<int> ? data : utf8.encode(data as String);
+      final decrypted = await auth.decrypt(
+        bytes,
+        _sessionEncKey!,
+        fromHost: _role == RemoteSessionRole.remote, // If we're remote, incoming is from host
+        expectedCounter: _recvCounter,
+      );
+      _recvCounter++;
+      return utf8.decode(decrypted);
+    } catch (e) {
+      appLogger.e('CompanionRemote: Decryption failed (counter=$_recvCounter)', error: e);
+      return null;
+    }
+  }
+
+  // ── Commands ──
 
   @override
   void sendPing() {
@@ -559,28 +723,34 @@ class CompanionRemotePeerService with KeepaliveMixin {
   }
 
   void sendCommand(RemoteCommand command) {
-    try {
-      final json = jsonEncode(command.toJson());
-
-      if (_role == RemoteSessionRole.host && _clientSocket != null) {
-        _clientSocket!.add(json);
-        appLogger.d('CompanionRemote: Sent command (host): ${command.type}');
-      } else if (_role == RemoteSessionRole.remote && _channel != null) {
-        _channel!.sink.add(json);
-        appLogger.d('CompanionRemote: Sent command (remote): ${command.type}');
-      } else {
-        appLogger.w('CompanionRemote: No connection to send command');
-      }
-    } catch (e) {
-      appLogger.e('CompanionRemote: Failed to send command', error: e);
-      _errorController.add(
-        RemotePeerError(
-          type: RemotePeerErrorType.dataChannelError,
-          message: 'Failed to send command: $e',
-          originalError: e,
-        ),
-      );
+    if (_sessionEncKey == null || !_isAuthenticated) {
+      appLogger.w('CompanionRemote: No connection to send command');
+      return;
     }
+
+    // Chain sends to prevent counter interleaving from concurrent async encrypts
+    _sendChain = (_sendChain ?? Future.value()).then((_) async {
+      try {
+        final json = jsonEncode(command.toJson());
+        final encrypted = await _encryptOutgoing(json);
+
+        if (_role == RemoteSessionRole.host && _clientSocket != null) {
+          _clientSocket!.add(encrypted);
+        } else if (_role == RemoteSessionRole.remote && _channel != null) {
+          _channel!.sink.add(encrypted);
+        }
+        appLogger.d('CompanionRemote: Sent command: ${command.type}');
+      } catch (e) {
+        appLogger.e('CompanionRemote: Failed to send command', error: e);
+        _errorController.add(
+          RemotePeerError(
+            type: RemotePeerErrorType.dataChannelError,
+            message: 'Failed to send command: $e',
+            originalError: e,
+          ),
+        );
+      }
+    });
   }
 
   Future<void> disconnect() async {
@@ -607,14 +777,22 @@ class CompanionRemotePeerService with KeepaliveMixin {
       _server = null;
     }
 
-    _sessionId = null;
-    _pin = null;
     _myPeerId = null;
     _hostAddress = null;
     _role = null;
+    _sessionEncKey = null;
+    _sendCounter = 0;
+    _recvCounter = 0;
+    _isAuthenticated = false;
+    _sendChain = null;
+    _failedAuthAttempts.clear();
+    _authLockouts.clear();
 
     _connectionStateController.add(RemoteSessionStatus.disconnected);
   }
+
+  /// Whether the HTTP server is currently running.
+  bool get isServerRunning => _server != null;
 
   Future<void> dispose() async {
     await disconnect();

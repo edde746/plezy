@@ -92,6 +92,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
   static const String _keyMaxVolume = 'max_volume';
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
+  static const String _keyEnableCompanionRemoteServer = 'enable_companion_remote_server';
   static const String _keyAutoPip = 'auto_pip';
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
   static const String _keyTunneledPlayback = 'tunneled_playback';
@@ -1102,6 +1103,17 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getEnableDiscordRPC() {
     return prefs.getBool(_keyEnableDiscordRPC) ?? false; // Default disabled
+  }
+
+  // Companion Remote Server
+  Future<void> setEnableCompanionRemoteServer(bool enabled) async {
+    await prefs.setBool(_keyEnableCompanionRemoteServer, enabled);
+  }
+
+  bool getEnableCompanionRemoteServer() {
+    // Default enabled on desktop/TV, disabled on mobile
+    return prefs.getBool(_keyEnableCompanionRemoteServer) ??
+        (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
   }
 
   // Auto Picture-in-Picture (Android & iOS)

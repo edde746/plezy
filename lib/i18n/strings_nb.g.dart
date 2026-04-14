@@ -358,6 +358,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
+	@override String get companionRemoteServer => 'Companion Remote-server';
+	@override String get companionRemoteServerDescription => 'Tillat mobilenheter på nettverket ditt å styre denne appen';
 }
 
 // Path: search
@@ -1274,20 +1276,17 @@ class _TranslationsCompanionRemoteSessionNb implements TranslationsCompanionRemo
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
-	@override String get creatingSession => 'Oppretter fjernøkt...';
-	@override String get failedToCreate => 'Kunne ikke opprette fjernøkt:';
-	@override String get noSession => 'Ingen økt tilgjengelig';
-	@override String get scanQrCode => 'Skann QR-kode';
-	@override String get orEnterManually => 'Eller skriv inn manuelt';
+	@override String get startingServer => 'Starter fjernserver...';
+	@override String get failedToCreate => 'Kunne ikke starte fjernserver:';
 	@override String get hostAddress => 'Vertsadresse';
-	@override String get sessionId => 'Økt-ID';
-	@override String get pin => 'PIN';
 	@override String get connected => 'Tilkoblet';
-	@override String get waitingForConnection => 'Venter på tilkobling...';
-	@override String get usePhoneToControl => 'Bruk mobilenheten din til å kontrollere denne appen';
-	@override String copiedToClipboard({required Object label}) => '${label} kopiert til utklippstavle';
-	@override String get copyToClipboard => 'Kopier til utklippstavle';
-	@override String get newSession => 'Ny økt';
+	@override String get serverRunning => 'Fjernserver aktiv';
+	@override String get serverStopped => 'Fjernserver stoppet';
+	@override String get serverRunningDescription => 'Mobilenheter på nettverket ditt kan oppdage og koble til denne appen';
+	@override String get serverStoppedDescription => 'Start serveren for å la mobilenheter koble til';
+	@override String get usePhoneToControl => 'Bruk mobilenheten din til å styre denne appen';
+	@override String get startServer => 'Start server';
+	@override String get stopServer => 'Stopp server';
 	@override String get minimize => 'Minimer';
 }
 
@@ -1298,30 +1297,21 @@ class _TranslationsCompanionRemotePairingNb implements TranslationsCompanionRemo
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
-	@override String get scan => 'Skann';
-	@override String get manual => 'Manuell';
-	@override String get pairWithDesktop => 'Koble til stasjonær';
-	@override String get enterSessionDetails => 'Skriv inn øktdetaljene som vises på den stasjonære enheten din';
+	@override String get pairWithDesktop => 'Koble til datamaskin';
+	@override String get discoveryDescription => 'Enheter på nettverket ditt som kjører Plezy med samme Plex-konto vil vises automatisk';
 	@override String get hostAddressHint => '192.168.1.100:48632';
-	@override String get sessionIdHint => 'Skriv inn 8-tegns økt-ID';
-	@override String get pinHint => 'Skriv inn 6-sifret PIN';
 	@override String get connecting => 'Kobler til...';
-	@override String get tips => 'Tips';
-	@override String get tipDesktop => 'Åpne Plezy på datamaskinen din og aktiver Følgesvenn-fjernkontroll fra innstillinger eller meny';
-	@override String get tipScan => 'Bruk Skann-fanen for å raskt koble til ved å skanne QR-koden på datamaskinen din';
-	@override String get tipWifi => 'Sørg for at begge enhetene er på samme WiFi-nettverk';
-	@override String get cameraPermissionRequired => 'Kameratillatelse kreves for å skanne QR-koder.\nVennligst gi kameratilgang i enhetsinnstillingene.';
-	@override String cameraError({required Object error}) => 'Kunne ikke starte kamera: ${error}';
-	@override String get scanInstruction => 'Pek kameraet mot QR-koden som vises på datamaskinen din';
-	@override String get invalidQrCode => 'Ugyldig QR-kodeformat';
-	@override String get validationHostRequired => 'Vennligst skriv inn vertsadresse';
-	@override String get validationHostFormat => 'Formatet må være IP:port (f.eks. 192.168.1.100:48632)';
-	@override String get validationSessionIdRequired => 'Vennligst skriv inn en økt-ID';
-	@override String get validationSessionIdLength => 'Økt-ID må være 8 tegn';
-	@override String get validationPinRequired => 'Vennligst skriv inn en PIN';
-	@override String get validationPinLength => 'PIN må være 6 sifre';
-	@override String get connectionTimedOut => 'Tilkoblingen ble tidsavbrutt. Sjekk økt-ID og PIN.';
-	@override String get sessionNotFound => 'Kunne ikke finne økten. Sjekk legitimasjonen din.';
+	@override String get searchingForDevices => 'Søker etter enheter...';
+	@override String get noDevicesFound => 'Ingen enheter funnet på nettverket ditt';
+	@override String get noDevicesHint => 'Sørg for at Plezy er åpen på datamaskinen din og at begge enhetene er på samme WiFi-nettverk';
+	@override String get availableDevices => 'Tilgjengelige enheter';
+	@override String get manualConnection => 'Manuell tilkobling';
+	@override String get cryptoInitFailed => 'Kunne ikke initialisere sikker tilkobling. Sørg for at du er logget inn på en Plex-konto.';
+	@override String get validationHostRequired => 'Vennligst oppgi vertsadresse';
+	@override String get validationHostFormat => 'Format må være IP:port (f.eks. 192.168.1.100:48632)';
+	@override String get connectionTimedOut => 'Tilkoblingen ble tidsavbrutt. Sørg for at begge enhetene er på samme nettverk.';
+	@override String get sessionNotFound => 'Kunne ikke finne enheten. Sørg for at Plezy kjører på verten.';
+	@override String get authFailed => 'Autentisering mislyktes. Sørg for at begge enhetene bruker samme Plex-konto.';
 	@override String failedToConnect({required Object error}) => 'Kunne ikke koble til: ${error}';
 }
 
@@ -1600,6 +1590,8 @@ extension on TranslationsNb {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.companionRemoteServer' => 'Companion Remote-server',
+			'settings.companionRemoteServerDescription' => 'Tillat mobilenheter på nettverket ditt å styre denne appen',
 			'search.hint' => 'Søk i filmer, serier, musikk...',
 			'search.tryDifferentTerm' => 'Prøv et annet søkeord',
 			'search.searchYourMedia' => 'Søk i mediene dine',
@@ -1881,10 +1873,10 @@ extension on TranslationsNb {
 			'libraries.groupings.seasons' => 'Sesonger',
 			'libraries.groupings.episodes' => 'Episoder',
 			'libraries.groupings.folders' => 'Mapper',
-			'about.title' => 'Om',
-			'about.openSourceLicenses' => 'Åpen kildekode-lisenser',
 			_ => null,
 		} ?? switch (path) {
+			'about.title' => 'Om',
+			'about.openSourceLicenses' => 'Åpen kildekode-lisenser',
 			'about.versionLabel' => ({required Object version}) => 'Versjon ${version}',
 			'about.appDescription' => 'En vakker Plex-klient for Flutter',
 			'about.viewLicensesDescription' => 'Vis lisenser for tredjepartsbiblioteker',
@@ -2076,45 +2068,33 @@ extension on TranslationsNb {
 			'companionRemote.remoteControl' => 'Fjernkontroll',
 			'companionRemote.controlDesktop' => 'Kontroller en stasjonær enhet',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Tilkoblet ${name}',
-			'companionRemote.session.creatingSession' => 'Oppretter fjernøkt...',
-			'companionRemote.session.failedToCreate' => 'Kunne ikke opprette fjernøkt:',
-			'companionRemote.session.noSession' => 'Ingen økt tilgjengelig',
-			'companionRemote.session.scanQrCode' => 'Skann QR-kode',
-			'companionRemote.session.orEnterManually' => 'Eller skriv inn manuelt',
+			'companionRemote.session.startingServer' => 'Starter fjernserver...',
+			'companionRemote.session.failedToCreate' => 'Kunne ikke starte fjernserver:',
 			'companionRemote.session.hostAddress' => 'Vertsadresse',
-			'companionRemote.session.sessionId' => 'Økt-ID',
-			'companionRemote.session.pin' => 'PIN',
 			'companionRemote.session.connected' => 'Tilkoblet',
-			'companionRemote.session.waitingForConnection' => 'Venter på tilkobling...',
-			'companionRemote.session.usePhoneToControl' => 'Bruk mobilenheten din til å kontrollere denne appen',
-			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} kopiert til utklippstavle',
-			'companionRemote.session.copyToClipboard' => 'Kopier til utklippstavle',
-			'companionRemote.session.newSession' => 'Ny økt',
+			'companionRemote.session.serverRunning' => 'Fjernserver aktiv',
+			'companionRemote.session.serverStopped' => 'Fjernserver stoppet',
+			'companionRemote.session.serverRunningDescription' => 'Mobilenheter på nettverket ditt kan oppdage og koble til denne appen',
+			'companionRemote.session.serverStoppedDescription' => 'Start serveren for å la mobilenheter koble til',
+			'companionRemote.session.usePhoneToControl' => 'Bruk mobilenheten din til å styre denne appen',
+			'companionRemote.session.startServer' => 'Start server',
+			'companionRemote.session.stopServer' => 'Stopp server',
 			'companionRemote.session.minimize' => 'Minimer',
-			'companionRemote.pairing.scan' => 'Skann',
-			'companionRemote.pairing.manual' => 'Manuell',
-			'companionRemote.pairing.pairWithDesktop' => 'Koble til stasjonær',
-			'companionRemote.pairing.enterSessionDetails' => 'Skriv inn øktdetaljene som vises på den stasjonære enheten din',
+			'companionRemote.pairing.pairWithDesktop' => 'Koble til datamaskin',
+			'companionRemote.pairing.discoveryDescription' => 'Enheter på nettverket ditt som kjører Plezy med samme Plex-konto vil vises automatisk',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
-			'companionRemote.pairing.sessionIdHint' => 'Skriv inn 8-tegns økt-ID',
-			'companionRemote.pairing.pinHint' => 'Skriv inn 6-sifret PIN',
 			'companionRemote.pairing.connecting' => 'Kobler til...',
-			'companionRemote.pairing.tips' => 'Tips',
-			'companionRemote.pairing.tipDesktop' => 'Åpne Plezy på datamaskinen din og aktiver Følgesvenn-fjernkontroll fra innstillinger eller meny',
-			'companionRemote.pairing.tipScan' => 'Bruk Skann-fanen for å raskt koble til ved å skanne QR-koden på datamaskinen din',
-			'companionRemote.pairing.tipWifi' => 'Sørg for at begge enhetene er på samme WiFi-nettverk',
-			'companionRemote.pairing.cameraPermissionRequired' => 'Kameratillatelse kreves for å skanne QR-koder.\nVennligst gi kameratilgang i enhetsinnstillingene.',
-			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kunne ikke starte kamera: ${error}',
-			'companionRemote.pairing.scanInstruction' => 'Pek kameraet mot QR-koden som vises på datamaskinen din',
-			'companionRemote.pairing.invalidQrCode' => 'Ugyldig QR-kodeformat',
-			'companionRemote.pairing.validationHostRequired' => 'Vennligst skriv inn vertsadresse',
-			'companionRemote.pairing.validationHostFormat' => 'Formatet må være IP:port (f.eks. 192.168.1.100:48632)',
-			'companionRemote.pairing.validationSessionIdRequired' => 'Vennligst skriv inn en økt-ID',
-			'companionRemote.pairing.validationSessionIdLength' => 'Økt-ID må være 8 tegn',
-			'companionRemote.pairing.validationPinRequired' => 'Vennligst skriv inn en PIN',
-			'companionRemote.pairing.validationPinLength' => 'PIN må være 6 sifre',
-			'companionRemote.pairing.connectionTimedOut' => 'Tilkoblingen ble tidsavbrutt. Sjekk økt-ID og PIN.',
-			'companionRemote.pairing.sessionNotFound' => 'Kunne ikke finne økten. Sjekk legitimasjonen din.',
+			'companionRemote.pairing.searchingForDevices' => 'Søker etter enheter...',
+			'companionRemote.pairing.noDevicesFound' => 'Ingen enheter funnet på nettverket ditt',
+			'companionRemote.pairing.noDevicesHint' => 'Sørg for at Plezy er åpen på datamaskinen din og at begge enhetene er på samme WiFi-nettverk',
+			'companionRemote.pairing.availableDevices' => 'Tilgjengelige enheter',
+			'companionRemote.pairing.manualConnection' => 'Manuell tilkobling',
+			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke initialisere sikker tilkobling. Sørg for at du er logget inn på en Plex-konto.',
+			'companionRemote.pairing.validationHostRequired' => 'Vennligst oppgi vertsadresse',
+			'companionRemote.pairing.validationHostFormat' => 'Format må være IP:port (f.eks. 192.168.1.100:48632)',
+			'companionRemote.pairing.connectionTimedOut' => 'Tilkoblingen ble tidsavbrutt. Sørg for at begge enhetene er på samme nettverk.',
+			'companionRemote.pairing.sessionNotFound' => 'Kunne ikke finne enheten. Sørg for at Plezy kjører på verten.',
+			'companionRemote.pairing.authFailed' => 'Autentisering mislyktes. Sørg for at begge enhetene bruker samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke koble til: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du koble fra fjernøkten?',
 			'companionRemote.remote.reconnecting' => 'Kobler til på nytt...',
