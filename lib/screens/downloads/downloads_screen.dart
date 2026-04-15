@@ -132,6 +132,56 @@ class DownloadsScreenState extends State<DownloadsScreen> with TickerProviderSta
     return Text(t.downloads.title);
   }
 
+  // PlexSyncer: called when user taps the sync-folder scan button.
+  Future<void> _importFromManifest() async {
+    // Show a non-dismissible progress dialog while working.
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Expanded(child: Text('Scanning sync folder…')),
+          ],
+        ),
+      ),
+    );
+
+    final summary =
+        await context.read<DownloadProvider>().importFromManifest();
+
+    // Dismiss the progress dialog.
+    if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    if (!mounted) return;
+
+    if (summary.hasError) {
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Scan failed'),
+          content: Text(summary.error!),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(summary.toUserMessage()),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -146,6 +196,14 @@ class DownloadsScreenState extends State<DownloadsScreen> with TickerProviderSta
             surfaceTintColor: Colors.transparent,
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
+            // PlexSyncer: scan button — imports files via manifest.json
+            actions: [
+              IconButton(
+                icon: const Icon(Symbols.sync_rounded),
+                tooltip: 'Scan sync folder',
+                onPressed: _importFromManifest,
+              ),
+            ],
           ),
           SliverFillRemaining(
             child: Column(

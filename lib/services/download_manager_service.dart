@@ -1785,6 +1785,78 @@ class DownloadManagerService {
     await _cacheMetadataForOffline(metadata.serverId!, metadata.ratingKey, metadata);
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // PlexSyncer: register a file that was synced externally (not downloaded by
+  // Plezy itself) as a completed download, sourced from a manifest.json file.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Register an externally-synced file as a completed Plezy download.
+  ///
+  /// Called by [DownloadProvider.importFromManifest] for each item in the
+  /// PlexSyncer manifest that is not already in the database.
+  ///
+  /// [fileUri]   — SAF content:// URI for the video file on this device.
+  /// [metadata]  — PlexMetadata built from the manifest item.
+  /// [thumbPath] — Plex server-relative thumb path (e.g. /library/metadata/12345/thumb),
+  ///               stored for lazy artwork fetching when the server is reachable.
+  Future<void> registerSyncedDownload({
+    required PlexMetadata metadata,
+    required String       fileUri,
+    String?               thumbPath,
+  }) async {
+    final serverId  = metadata.serverId;
+    final ratingKey = metadata.ratingKey;
+    final globalKey = metadata.globalKey;
+
+    if (serverId == null) {
+      appLogger.w('PlexSyncer registerSyncedDownload: missing serverId for $ratingKey');
+      return;
+    }
+
+    // 1. Cache metadata so offline screens can display title/art without server.
+    await _cacheMetadataForOffline(serverId, ratingKey, metadata);
+
+    // 2. Insert a completed DownloadedMedia row.
+    await _database.insertDownload(
+      serverId:             serverId,
+      ratingKey:            ratingKey,
+      globalKey:            globalKey,
+      type:                 metadata.type ?? 'movie',
+      parentRatingKey:      metadata.parentRatingKey,
+      grandparentRatingKey: metadata.grandparentRatingKey,
+      status:               DownloadStatus.completed.index,
+      mediaIndex:           0,
+    );
+
+    // 3. Store the SAF file URI and mark downloadedAt.
+    await _database.updateVideoFilePath(globalKey, fileUri);
+
+    // 4. Store the Plex thumb path for lazy artwork fetching.
+    if (thumbPath != null) {
+      await _database.updateArtworkPaths(
+        globalKey: globalKey,
+        thumbPath: thumbPath,
+      );
+    }
+
+    appLogger.i('PlexSyncer: registered synced download $globalKey → $fileUri');
+  }
+
+  /// Cache a minimal show or season stub so the TV Shows grid can display a
+  /// card without needing a live server connection.
+  ///
+  /// Only writes to cache if no entry exists for [ratingKey] yet.
+  Future<void> registerSyncedParentStub(PlexMetadata stub) async {
+    final serverId  = stub.serverId;
+    final ratingKey = stub.ratingKey;
+    if (serverId == null) return;
+
+    final existing = await _apiCache.getMetadata(serverId, ratingKey);
+    if (existing != null) return; // already cached — don't overwrite richer data
+
+    await _cacheMetadataForOffline(serverId, ratingKey, stub);
+  }
+
   /// Cache metadata in the API response format for offline access
   /// This simulates what PlexClient would receive from the server
   /// Merges with existing cache to preserve Chapter/Marker/Media arrays

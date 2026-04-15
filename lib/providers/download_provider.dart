@@ -8,6 +8,8 @@ import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../utils/download_version_utils.dart';
 import '../services/download_manager_service.dart';
+// PlexSyncer
+import '../services/manifest_import_service.dart';
 import '../services/download_storage_service.dart';
 import '../services/storage_service.dart';
 import '../services/plex_api_cache.dart';
@@ -983,6 +985,120 @@ class DownloadProvider extends ChangeNotifier {
   /// Get all items currently being deleted
   UnmodifiableMapView<String, DeletionProgress> get deletionProgress => UnmodifiableMapView(_deletionProgress);
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // PlexSyncer: import externally-synced files from a manifest.json
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Read the PlexSyncer manifest from the SAF folder, then register every
+  /// resolved item as a completed download.
+  ///
+  /// Returns a brief summary string describing what happened, suitable for
+  /// display in a [SnackBar] or dialog.
+  Future<ImportSummary> importFromManifest() async {
+    // 1. Read + resolve the manifest (SAF/JSON only — no DB access here).
+    final readResult = await ManifestImportService.instance.readManifest();
+
+    if (readResult.hasError) {
+      return ImportSummary(error: readResult.error);
+    }
+
+    final serverId   = readResult.serverId;
+    final serverName = readResult.serverName;
+    int imported = 0;
+    int skipped  = 0;
+
+    for (final item in readResult.resolved) {
+      final globalKey = buildGlobalKey(serverId, item.ratingKey);
+
+      // Skip items already in the database.
+      final existing = await _downloadManager.getDownloadedMedia(globalKey);
+      if (existing != null) {
+        skipped++;
+        continue;
+      }
+
+      // Build a PlexMetadata from the resolved item.
+      final metadata = PlexMetadata(
+        ratingKey:            item.ratingKey,
+        key:                  '/library/metadata/${item.ratingKey}',
+        type:                 item.type,
+        title:                item.title,
+        summary:              item.summary,
+        thumb:                item.thumb,
+        duration:             item.duration,
+        year:                 item.type == 'movie' ? item.year : null,
+        grandparentTitle:     item.grandparentTitle,
+        grandparentThumb:     item.grandparentThumb,
+        grandparentRatingKey: item.grandparentRatingKey,
+        parentTitle:          item.parentTitle,
+        parentRatingKey:      item.parentRatingKey,
+        parentIndex:          item.seasonNumber,
+        index:                item.episodeNumber,
+        serverId:             serverId,
+        serverName:           serverName,
+      );
+
+      // For episodes, ensure a show stub and season stub exist in cache.
+      if (item.type == 'episode') {
+        // Show stub
+        if (item.grandparentRatingKey != null &&
+            item.grandparentRatingKey!.isNotEmpty) {
+          await _downloadManager.registerSyncedParentStub(PlexMetadata(
+            ratingKey:  item.grandparentRatingKey!,
+            key:        '/library/metadata/${item.grandparentRatingKey}',
+            type:       'show',
+            title:      item.grandparentTitle,
+            thumb:      item.grandparentThumb,
+            year:       item.grandparentYear,
+            serverId:   serverId,
+            serverName: serverName,
+          ));
+        }
+        // Season stub
+        if (item.parentRatingKey != null && item.parentRatingKey!.isNotEmpty) {
+          await _downloadManager.registerSyncedParentStub(PlexMetadata(
+            ratingKey:            item.parentRatingKey!,
+            key:                  '/library/metadata/${item.parentRatingKey}',
+            type:                 'season',
+            title:                item.parentTitle,
+            thumb:                item.grandparentThumb,
+            parentIndex:          item.seasonNumber,
+            grandparentTitle:     item.grandparentTitle,
+            grandparentRatingKey: item.grandparentRatingKey,
+            serverId:             serverId,
+            serverName:           serverName,
+          ));
+        }
+      }
+
+      // Register the file and write to DB.
+      await _downloadManager.registerSyncedDownload(
+        metadata:  metadata,
+        fileUri:   item.fileUri,
+        thumbPath: item.thumb,
+      );
+
+      // Update local provider state immediately (same pattern as queueDownload).
+      _downloads[globalKey] = DownloadProgress(
+        globalKey: globalKey,
+        status:    DownloadStatus.completed,
+        progress:  100,
+      );
+      _metadata[globalKey]   = metadata;
+      _artworkPaths[globalKey] = DownloadedArtwork(thumbPath: item.thumb);
+
+      imported++;
+    }
+
+    notifyListeners();
+
+    return ImportSummary(
+      imported: imported,
+      skipped:  skipped,
+      missing:  readResult.missing,
+    );
+  }
+
   /// Refresh the downloads list from database
   Future<void> refresh() async {
     await _loadPersistedDownloads();
@@ -1053,6 +1169,33 @@ class DownloadProvider extends ChangeNotifier {
     }
 
     return deletedTitles;
+  }
+}
+
+// PlexSyncer: summary returned by DownloadProvider.importFromManifest()
+class ImportSummary {
+  final int     imported;
+  final int     skipped;
+  final int     missing;
+  final String? error;
+
+  const ImportSummary({
+    this.imported = 0,
+    this.skipped  = 0,
+    this.missing  = 0,
+    this.error,
+  });
+
+  bool get hasError => error != null;
+
+  String toUserMessage() {
+    if (hasError) return error!;
+    final buf = StringBuffer();
+    if (imported > 0) buf.write('$imported item(s) imported.');
+    if (skipped  > 0) buf.write(' $skipped already present.');
+    if (missing  > 0) buf.write(' $missing file(s) not yet on device.');
+    if (buf.isEmpty) buf.write('Nothing new to import.');
+    return buf.toString();
   }
 }
 
