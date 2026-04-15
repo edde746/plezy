@@ -253,9 +253,6 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "getRenderer" -> result.success(if (usingSkia) "Skia" else "Impeller")
-                "hasCamera" -> result.success(
-                    packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_CAMERA_ANY)
-                )
                 "setSplashTheme" -> {
                     val mode = call.argument<String>("mode")
 
