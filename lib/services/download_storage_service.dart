@@ -52,6 +52,7 @@ class DownloadStorageService {
       _customPathType = _settingsService!.getCustomDownloadPathType();
       _baseDownloadsDir = null;
       _artworkDirectoryPath = null;
+      await getArtworkDirectory();
     }
   }
 
@@ -154,12 +155,10 @@ class DownloadStorageService {
   }
 
   /// Get artwork file path from Plex thumb path (synchronous, requires initialization)
-  /// Returns path to cached artwork file using hash of the thumb URL
+  /// Returns path to cached artwork file using hash of the thumb URL, or null if not initialized
   /// Example: artwork/a1b2c3d4e5f6.jpg
-  String getArtworkPathSync(String serverId, String thumbPath) {
-    if (_artworkDirectoryPath == null) {
-      throw StateError('Artwork directory not initialized. Call getArtworkDirectory() first.');
-    }
+  String? getArtworkPathSync(String serverId, String thumbPath) {
+    if (_artworkDirectoryPath == null) return null;
     // Create hash from serverId:thumbPath for deduplication
     final hash = _hashArtworkPath(serverId, thumbPath);
     return path.join(_artworkDirectoryPath!, '$hash.jpg');
