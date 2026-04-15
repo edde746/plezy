@@ -145,9 +145,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   Player? player;
   bool _isPlayerInitialized = false;
+  late PlexMetadata _currentMetadata;
   PlexMetadata? _nextEpisode;
   PlexMetadata? _previousEpisode;
   bool _isLoadingNext = false;
+  bool _isSwappingEpisode = false;
   bool _showPlayNextDialog = false;
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
@@ -256,7 +258,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata(BuildContext context) {
-    return context.getClientForServer(widget.metadata.serverId!);
+    return context.getClientForServer(_currentMetadata.serverId!);
   }
 
   Uint8List? _getThumbnailData(Duration time) => _bifService?.getThumbnail(time);
@@ -272,6 +274,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   void initState() {
     super.initState();
 
+    _currentMetadata = widget.metadata;
     _activeRatingKey = widget.metadata.ratingKey;
     _activeMediaIndex = widget.selectedMediaIndex;
 
@@ -949,7 +952,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final offlineWatchService = context.read<OfflineWatchSyncService>();
       _progressTracker = PlaybackProgressTracker(
         client: null,
-        metadata: widget.metadata,
+        metadata: _currentMetadata,
         player: player!,
         isOffline: true,
         offlineWatchService: offlineWatchService,
@@ -957,7 +960,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _progressTracker!.startTracking();
     } else if (client != null) {
       // Online mode: send progress to server
-      _progressTracker = PlaybackProgressTracker(client: client, metadata: widget.metadata, player: player!);
+      _progressTracker = PlaybackProgressTracker(client: client, metadata: _currentMetadata, player: player!);
       _progressTracker!.startTracking();
     }
 
@@ -1003,9 +1006,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Update media metadata (client can be null in offline mode - artwork won't be shown)
     await _mediaControlsManager!.updateMetadata(
-      metadata: widget.metadata,
+      metadata: _currentMetadata,
       client: client,
-      duration: widget.metadata.duration != null ? Duration(milliseconds: widget.metadata.duration!) : null,
+      duration: _currentMetadata.duration != null ? Duration(milliseconds: _currentMetadata.duration!) : null,
     );
 
     if (!mounted) return;
@@ -1038,7 +1041,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Start Discord Rich Presence for current media
     if (client != null) {
-      DiscordRPCService.instance.startPlayback(widget.metadata, client);
+      DiscordRPCService.instance.startPlayback(_currentMetadata, client);
     }
   }
 
@@ -1053,7 +1056,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (widget.isLive) return;
 
     // Only create play queues for episodes
-    if (!widget.metadata.isEpisode) {
+    if (!_currentMetadata.isEpisode) {
       return;
     }
 
@@ -1064,7 +1067,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Determine the show's rating key
       // For episodes, grandparentRatingKey points to the show
-      final showRatingKey = widget.metadata.grandparentRatingKey;
+      final showRatingKey = _currentMetadata.grandparentRatingKey;
       if (showRatingKey == null) {
         appLogger.d('Episode missing grandparentRatingKey, skipping play queue creation');
         return;
@@ -1077,7 +1080,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (isQueueActive) {
         // A queue already exists (could be shuffle, playlist, or sequential)
         // Just update the current item, don't create a new queue
-        playbackState.setCurrentItem(widget.metadata);
+        playbackState.setCurrentItem(_currentMetadata);
         appLogger.d('Using existing play queue (context: $existingContextKey)');
         return;
       }
@@ -1087,7 +1090,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final playQueue = await client.createShowPlayQueue(
         showRatingKey: showRatingKey,
         shuffle: 0, // Sequential order
-        startingEpisodeKey: widget.metadata.ratingKey,
+        startingEpisodeKey: _currentMetadata.ratingKey,
       );
 
       if (playQueue != null && playQueue.items != null && playQueue.items!.isNotEmpty) {
@@ -1118,7 +1121,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Load adjacent episodes using the service
       final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
         context: context,
-        metadata: widget.metadata,
+        metadata: _currentMetadata,
       );
 
       if (mounted) {
@@ -1135,9 +1138,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Load next/previous episodes from locally downloaded content
   void _loadAdjacentEpisodesOffline() {
-    if (!widget.metadata.isEpisode) return;
+    if (!_currentMetadata.isEpisode) return;
 
-    final showKey = widget.metadata.grandparentRatingKey;
+    final showKey = _currentMetadata.grandparentRatingKey;
     if (showKey == null) return;
 
     try {
@@ -1162,7 +1165,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         });
 
       // Find current episode in the sorted list
-      final currentIdx = sorted.indexWhere((ep) => ep.ratingKey == widget.metadata.ratingKey);
+      final currentIdx = sorted.indexWhere((ep) => ep.ratingKey == _currentMetadata.ratingKey);
 
       if (currentIdx == -1) return;
 
@@ -1299,7 +1302,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         plexHeaders = client.config.headers;
         final playbackService = PlaybackInitializationService(client: client, database: PlexApiCache.instance.database);
         result = await playbackService.getPlaybackData(
-          metadata: widget.metadata,
+          metadata: _currentMetadata,
           selectedMediaIndex: widget.selectedMediaIndex,
           preferOffline: true, // Use downloaded file if available
           playbackData: widget.playbackData,
@@ -1321,15 +1324,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // since the user may have watched further since downloading.
         Duration? resumePosition;
         if (widget.isOffline) {
-          final globalKey = widget.metadata.globalKey;
+          final globalKey = _currentMetadata.globalKey;
           final localOffset = await offlineWatchService!.getLocalViewOffset(globalKey);
           if (localOffset != null && localOffset > 0) {
             resumePosition = Duration(milliseconds: localOffset);
             appLogger.d('Resuming offline playback from local progress: ${localOffset}ms');
           }
         }
-        resumePosition ??= widget.metadata.viewOffset != null
-            ? Duration(milliseconds: widget.metadata.viewOffset!)
+        resumePosition ??= _currentMetadata.viewOffset != null
+            ? Duration(milliseconds: _currentMetadata.viewOffset!)
             : null;
 
         // Enable FFmpeg auto-reconnect for VOD streams (covers network drops up to 10 min)
@@ -1432,7 +1435,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           getClient: () => _getClientForMetadata(context),
           getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
           waitForProfileSettings: _waitForProfileSettingsIfNeeded,
-          metadata: widget.metadata,
+          metadata: _currentMetadata,
           mediaInfo: _currentMediaInfo,
           preferredAudioTrack: widget.preferredAudioTrack,
           preferredSubtitleTrack: widget.preferredSubtitleTrack,
@@ -1480,9 +1483,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final downloadProvider = context.read<DownloadProvider>();
 
     // Debug: log metadata info
-    appLogger.d('Offline playback - serverId: ${widget.metadata.serverId}, ratingKey: ${widget.metadata.ratingKey}');
+    appLogger.d('Offline playback - serverId: ${_currentMetadata.serverId}, ratingKey: ${_currentMetadata.ratingKey}');
 
-    final globalKey = widget.metadata.globalKey;
+    final globalKey = _currentMetadata.globalKey;
     appLogger.d('Looking up video with globalKey: $globalKey');
 
     final videoPath = await downloadProvider.getVideoFilePath(globalKey);
@@ -1496,9 +1499,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Load cached media info so track selection (audio language) works offline
     PlexMediaInfo? mediaInfo;
     try {
-      final serverId = widget.metadata.serverId;
+      final serverId = _currentMetadata.serverId;
       if (serverId != null) {
-        final cached = await PlexApiCache.instance.get(serverId, '/library/metadata/${widget.metadata.ratingKey}');
+        final cached = await PlexApiCache.instance.get(serverId, '/library/metadata/${_currentMetadata.ratingKey}');
         final metadataJson = PlexCacheParser.extractFirstMetadata(cached);
         if (metadataJson != null) {
           mediaInfo = PlexMediaInfo.fromMetadataJson(metadataJson);
@@ -1771,9 +1774,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   /// Notify watch together session of current media change (host only)
-  /// If [metadata] is provided, uses that instead of widget.metadata (for episode navigation)
+  /// If [metadata] is provided, uses that instead of _currentMetadata (for episode navigation)
   void _notifyWatchTogetherMediaChange({PlexMetadata? metadata}) {
-    final targetMetadata = metadata ?? widget.metadata;
+    final targetMetadata = metadata ?? _currentMetadata;
     try {
       final watchTogether = context.read<WatchTogetherProvider>();
       if (watchTogether.isHost && watchTogether.isInSession) {
@@ -2110,7 +2113,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
     player?.dispose();
-    if (_activeRatingKey == widget.metadata.ratingKey) {
+    if (_activeRatingKey == _currentMetadata.ratingKey) {
       _activeRatingKey = null;
       _activeMediaIndex = null;
     }
@@ -2168,6 +2171,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // inter-segment gaps in the chunked MKV transcode stream.
     if (widget.isLive) return;
     if (!completed) return;
+    // Ignore spurious EOF from the old file during in-place episode swap
+    if (_isSwappingEpisode) return;
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
@@ -2181,6 +2186,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionTriggered) {
       _completionTriggered = true;
+
+      // PiP: skip dialog (user can't interact), auto-play immediately
+      if (PipService().isPipActive.value) {
+        _playNext();
+        return;
+      }
 
       // Capture keyboard mode before async gap
       final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
@@ -2257,7 +2268,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (!mounted || manager == null || currentPlayer == null) return;
 
     final playbackState = context.read<PlaybackStateProvider>();
-    final canNavigateEpisodes = widget.metadata.isEpisode || playbackState.isPlaylistActive;
+    final canNavigateEpisodes = _currentMetadata.isEpisode || playbackState.isPlaylistActive;
     final canSeek = !widget.isLive && currentPlayer.state.seekable;
 
     if (!mounted || currentPlayer != player || manager != _mediaControlsManager) return;
@@ -2285,9 +2296,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (manager != null && currentPlayer != null) {
       final client = widget.isOffline ? null : _getClientForMetadata(context);
       await manager.updateMetadata(
-        metadata: widget.metadata,
+        metadata: _currentMetadata,
         client: client,
-        duration: widget.metadata.duration != null ? Duration(milliseconds: widget.metadata.duration!) : null,
+        duration: _currentMetadata.duration != null ? Duration(milliseconds: _currentMetadata.duration!) : null,
       );
       await _syncMediaControlsAvailability();
     }
@@ -2771,8 +2782,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _isReplacingWithVideo = true;
   }
 
-  /// Navigates to a new episode, preserving playback state and track selections
+  /// Navigates to a new episode, preserving playback state and track selections.
+  /// When PiP is active, swaps the media source in-place to keep the PiP window alive.
   Future<void> _navigateToEpisode(PlexMetadata episodeMetadata) async {
+    // PiP active: swap media in-place to keep PiP window alive
+    if (PipService().isPipActive.value && player != null) {
+      await _swapEpisodeInPip(episodeMetadata);
+      return;
+    }
+
     // Set flag to skip orientation restoration in dispose()
     _isReplacingWithVideo = true;
 
@@ -2830,6 +2848,159 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         usePushReplacement: true,
         isOffline: widget.isOffline,
       );
+    }
+  }
+
+  /// Swap to a new episode while keeping the player alive for PiP continuity.
+  /// Reuses the existing mpv instance (and its Metal layer in PiP) and only
+  /// reloads the media source + resets Dart-side services.
+  Future<void> _swapEpisodeInPip(PlexMetadata episodeMetadata) async {
+    _isSwappingEpisode = true;
+    final currentPlayer = player!;
+    final previousMetadata = _currentMetadata;
+
+    final currentAudioTrack = currentPlayer.state.track.audio;
+    final currentSubtitleTrack = currentPlayer.state.track.subtitle;
+    final currentSecondarySubtitleTrack = currentPlayer.state.track.secondarySubtitle;
+
+    // Capture context-dependent values before async gaps
+    final client = widget.isOffline ? null : _getClientForMetadata(context);
+    final plexHeaders = client?.config.headers;
+    final offlineWatchService = widget.isOffline ? context.read<OfflineWatchSyncService>() : null;
+    final userProfileProvider = context.read<UserProfileProvider>();
+    final playbackState = context.read<PlaybackStateProvider>();
+
+    await _progressTracker?.sendProgress('stopped');
+    _progressTracker?.stopTracking();
+    _progressTracker?.dispose();
+    _progressTracker = null;
+    DiscordRPCService.instance.stopPlayback();
+
+    _currentMetadata = episodeMetadata;
+    _activeRatingKey = episodeMetadata.ratingKey;
+    _showPlayNextDialog = false;
+    _autoPlayTimer?.cancel();
+    _hasFirstFrame.value = false;
+
+    try {
+      PlaybackInitializationResult result;
+
+      if (widget.isOffline) {
+        result = await _startOfflinePlayback();
+      } else {
+        final playbackService = PlaybackInitializationService(client: client!, database: PlexApiCache.instance.database);
+        result = await playbackService.getPlaybackData(
+          metadata: episodeMetadata,
+          selectedMediaIndex: widget.selectedMediaIndex,
+          preferOffline: true,
+        );
+      }
+
+      if (result.videoUrl == null) {
+        throw PlaybackException('No video URL available');
+      }
+
+      Duration? resumePosition;
+      if (widget.isOffline) {
+        final localOffset = await offlineWatchService!.getLocalViewOffset(episodeMetadata.globalKey);
+        if (localOffset != null && localOffset > 0) {
+          resumePosition = Duration(milliseconds: localOffset);
+        }
+      }
+      resumePosition ??= episodeMetadata.viewOffset != null
+          ? Duration(milliseconds: episodeMetadata.viewOffset!)
+          : null;
+
+      final hasExternalSubs = result.externalSubtitles.isNotEmpty;
+      final isExoPlayer = player is PlayerAndroid;
+      await currentPlayer.open(
+        Media(result.videoUrl!, start: resumePosition, headers: plexHeaders),
+        play: isExoPlayer || !hasExternalSubs,
+        externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
+      );
+
+      _completionTriggered = false;
+      _isSwappingEpisode = false;
+
+      if (!mounted) return;
+
+      _bifService?.dispose();
+      setState(() {
+        _availableVersions = result.availableVersions.cast();
+        _currentMediaInfo = result.mediaInfo;
+        _bifService = null;
+        _isLoadingNext = false;
+      });
+
+      _trackManager?.dispose();
+      _trackManager = TrackManager(
+        player: currentPlayer,
+        isActive: () => mounted && player != null,
+        getClient: () => client!,
+        getProfileSettings: () => userProfileProvider.profileSettings,
+        waitForProfileSettings: _waitForProfileSettingsIfNeeded,
+        metadata: episodeMetadata,
+        mediaInfo: _currentMediaInfo,
+        preferredAudioTrack: currentAudioTrack,
+        preferredSubtitleTrack: currentSubtitleTrack,
+        preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
+        showMessage: (message, {duration}) {
+          if (mounted) showAppSnackBar(context, message, duration: duration);
+        },
+      );
+      _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
+
+      if (player is! PlayerAndroid && hasExternalSubs) {
+        _trackManager!.waitingForExternalSubsTrackSelection = true;
+        try {
+          await _trackManager!.addExternalSubtitles(result.externalSubtitles);
+        } finally {
+          await _trackManager!.resumeAfterSubtitleLoad();
+        }
+      } else {
+        _trackManager!.applyTrackSelectionWhenReady();
+      }
+
+      if (widget.isOffline) {
+        _progressTracker = PlaybackProgressTracker(
+          client: null,
+          metadata: episodeMetadata,
+          player: currentPlayer,
+          isOffline: true,
+          offlineWatchService: offlineWatchService,
+        );
+      } else {
+        _progressTracker = PlaybackProgressTracker(client: client, metadata: episodeMetadata, player: currentPlayer);
+      }
+      _progressTracker!.startTracking();
+
+      if (_mediaControlsManager != null) {
+        await _mediaControlsManager!.updateMetadata(
+          metadata: episodeMetadata,
+          client: client,
+          duration: episodeMetadata.duration != null ? Duration(milliseconds: episodeMetadata.duration!) : null,
+        );
+      }
+
+      if (client != null) {
+        DiscordRPCService.instance.startPlayback(episodeMetadata, client);
+      }
+
+      try {
+        playbackState.setCurrentItem(episodeMetadata);
+      } catch (_) {}
+
+      await _loadAdjacentEpisodes();
+
+      if (_autoPipEnabled) {
+        _videoPIPManager?.updateAutoPipState(isPlaying: currentPlayer.state.playing);
+      }
+    } catch (e) {
+      _isSwappingEpisode = false;
+      _completionTriggered = false;
+      _currentMetadata = previousMetadata;
+      _activeRatingKey = previousMetadata.ratingKey;
+      appLogger.e('Failed to swap episode in PiP', error: e);
     }
   }
 
@@ -3040,7 +3211,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       player: player!,
                       controls: (context) => plexVideoControlsBuilder(
                         player!,
-                        widget.metadata,
+                        _currentMetadata,
                         onNext: onNext,
                         onPrevious: onPrevious,
                         availableVersions: _availableVersions,
