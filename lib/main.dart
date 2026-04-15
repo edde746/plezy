@@ -93,6 +93,7 @@ Future<void> main() async {
       options.attachStacktrace = true;
       options.enableAutoSessionTracking = false;
       options.recordHttpBreadcrumbs = false;
+      options.captureNativeFailedRequests = false;
       options.beforeSend = _beforeSend;
       options.beforeBreadcrumb = _beforeBreadcrumb;
     }, appRunner: _bootstrapApp);
