@@ -8,7 +8,6 @@ import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import 'settings_service.dart';
-import 'saf_storage_service.dart';
 
 class DownloadStorageService {
   static DownloadStorageService? _instance;
@@ -510,37 +509,6 @@ class DownloadStorageService {
   Future<String> getTempDownloadPath(String fileName) async {
     final cacheDir = await getCacheDownloadDirectory();
     return path.join(cacheDir.path, fileName);
-  }
-
-  /// Copy a file from temp cache to SAF and return the SAF URI
-  /// Returns null if SAF is not available or copy fails
-  /// Always cleans up temp file regardless of success/failure
-  Future<String?> copyToSaf(String tempFilePath, List<String> pathComponents, String fileName, String mimeType) async {
-    if (!isUsingSaf || _customDownloadPath == null) return null;
-
-    final safService = SafStorageService.instance;
-
-    try {
-      // Create nested directory structure in SAF
-      final targetDirUri = await safService.createNestedDirectories(_customDownloadPath!, pathComponents);
-
-      if (targetDirUri == null) {
-        return null;
-      }
-
-      // Copy the file to SAF using native copy
-      return await safService.copyFileToSaf(tempFilePath, targetDirUri, fileName, mimeType);
-    } finally {
-      // Always clean up temp file regardless of success/failure
-      try {
-        final tempFile = File(tempFilePath);
-        if (await tempFile.exists()) {
-          await tempFile.delete();
-        }
-      } catch (_) {
-        // Ignore cleanup errors
-      }
-    }
   }
 
   /// Get the MIME type for a file extension

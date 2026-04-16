@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:saf_util/saf_util.dart';
-import '../utils/future_extensions.dart';
 import '../utils/platform_detector.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
 import 'package:saf_stream/saf_stream.dart';
@@ -126,40 +125,6 @@ class SafStorageService {
       return result.uri;
     } catch (e) {
       debugPrint('SAF createNestedDirectories error: $e');
-      return null;
-    }
-  }
-
-  /// Copy a file from local storage to SAF directory using native copy
-  /// Returns the SAF URI of the copied file, or null on failure
-  Future<String?> copyFileToSaf(
-    String sourceFilePath,
-    String targetDirectoryUri,
-    String fileName,
-    String mimeType,
-  ) async {
-    if (!isAvailable) return null;
-
-    try {
-      final sourceFile = File(sourceFilePath);
-      if (!await sourceFile.exists()) {
-        debugPrint('SAF copyFileToSaf: source file does not exist');
-        return null;
-      }
-
-      // Use pasteLocalFile for native-side copy (no method channel streaming)
-      // This is much more efficient for large files and avoids hangs
-      final result = await _safStream
-          .pasteLocalFile(sourceFilePath, targetDirectoryUri, fileName, mimeType, overwrite: true)
-          .namedTimeout(const Duration(minutes: 30), operation: 'SAF copy');
-
-      debugPrint('SAF copyFileToSaf: successfully copied to ${result.uri}');
-      return result.uri.toString();
-    } on TimeoutException catch (e) {
-      debugPrint('SAF copyFileToSaf timeout: $e');
-      return null;
-    } catch (e) {
-      debugPrint('SAF copyFileToSaf error: $e');
       return null;
     }
   }
