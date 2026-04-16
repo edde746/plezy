@@ -32,9 +32,9 @@ No database schema changes. No extra `build_runner` steps.
 ### Setup
 
 1. Install the [PlexSyncer](https://github.com/crakerjac/PlexSyncer) server-side tools
-2. In Plezy → Settings → Downloads, set a custom SAF download folder (e.g. `/Plezy/`)
-3. Configure rclone / [Round Sync](https://github.com/roundsync/roundsync) to sync your
-   PlexSyncer slot to `{SAF root}/PlexSyncer/` on the phone
+2. In Plezy → Settings → Downloads, set a custom download folder (e.g. `/Plezy/`)
+3. Configure rclone / [Round Sync](https://github.com/roundsync/roundsync) to sync your PlexSyncer slot to:
+   `{custom download folder}/PlexSyncer/` (e.g. `/Plezy/PlexSyncer/`)
 4. After rclone completes a transfer, tap ↻ in the Downloads tab
 
 ### Building This Fork
@@ -43,6 +43,7 @@ No database schema changes. No extra `build_runner` steps.
 git clone https://github.com/crakerjac/plezy.git
 cd plezy
 flutter pub get
+dart run build_runner build --delete-conflicting-outputs
 flutter build apk --release
 ```
 
@@ -61,6 +62,9 @@ No `build_runner` step required — this fork makes no schema changes.
 ---
 
 ## Download
+
+> ⚠️ The builds below are the **official Plezy releases** and do **not include PlexSyncer integration from this fork**.
+> To use PlexSyncer features, build this fork from source (see above) or download the latest release from this repository.
 
 <a href='https://apps.apple.com/us/app/id6754315964'><img height='60' alt='Download on the App Store' src='./assets/app-store-badge.png'/></a>
 <a href='https://play.google.com/store/apps/details?id=com.edde746.plezy'><img height='60' alt='Get it on Google Play' src='./assets/play-store-badge.png'/></a>
