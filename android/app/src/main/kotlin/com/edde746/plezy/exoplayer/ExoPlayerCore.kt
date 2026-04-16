@@ -123,6 +123,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var lastSeekable: Boolean? = null
     @Volatile private var disposing: Boolean = false
     private var pendingStartPositionMs: Long = 0L
+    private var pendingPlayWhenReady: Boolean? = null
 
     // Frame watchdog: detects black screen (audio plays but 0 video frames rendered)
     private var frameWatchdogRunnable: Runnable? = null
@@ -600,6 +601,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
         Log.d(TAG, "onIsPlayingChanged: $isPlaying")
+        if (isPlaying) pendingPlayWhenReady = null
         delegate?.onPropertyChange("pause", !isPlaying)
     }
 
@@ -628,6 +630,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                         exoPlayer?.seekTo(pendingStartPositionMs)
                     }
                     pendingStartPositionMs = 0L
+                }
+                val pendingPlay = pendingPlayWhenReady
+                val currentPlayWhenReady = exoPlayer?.playWhenReady
+                if (pendingPlay != null && currentPlayWhenReady != pendingPlay) {
+                    emitLog("warn", "state", "playWhenReady lost (now $currentPlayWhenReady, expected $pendingPlay) — restoring")
+                    exoPlayer?.playWhenReady = pendingPlay
                 }
                 delegate?.onPropertyChange("paused-for-cache", false)
                 delegate?.onEvent("playback-restart", null)
@@ -1231,6 +1239,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         tunnelingDisabledForVideoCodec = false
         currentTunneledPlayback = tunnelingUserEnabled
         pendingStartPositionMs = startPositionMs
+        pendingPlayWhenReady = autoPlay
         trackSelector?.setParameters(
             trackSelector!!.buildUponParameters()
                 .setTunnelingEnabled(tunnelingUserEnabled)
@@ -1273,10 +1282,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     fun play() {
+        pendingPlayWhenReady = null
         exoPlayer?.play()
     }
 
     fun pause() {
+        pendingPlayWhenReady = null
         exoPlayer?.pause()
     }
 
@@ -1627,6 +1638,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         tunnelingDisabledForVideoCodec = false
         currentTunneledPlayback = false
         pendingStartPositionMs = 0L
+        pendingPlayWhenReady = null
         currentMediaIsLive = false
         currentVisible = false
         emitSeekable(false, force = true)
