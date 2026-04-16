@@ -838,6 +838,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Apply frame rate matching on Android by setting the display refresh rate
   /// to match the video content's frame rate.
   int _frameRateRetries = 0;
+  bool _suppressMediaPauseDuringFrameRateSwitch = false;
   Future<void> _applyFrameRateMatching() async {
     if (player == null || !Platform.isAndroid) return;
 
@@ -860,7 +861,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       _frameRateRetries = 0;
       final durationMs = player!.state.duration.inMilliseconds;
+
+      // Suppress spurious PauseEvent from MediaSession during HDMI renegotiation.
+      // Fire Stick (and similar Android TV devices) send onPause() through the
+      // MediaSession callback when the display mode changes for frame rate matching.
+      _suppressMediaPauseDuringFrameRateSwitch = true;
       await player!.setVideoFrameRate(fps, durationMs);
+      Future.delayed(const Duration(seconds: 2), () {
+        _suppressMediaPauseDuringFrameRateSwitch = false;
+      });
 
       // Set MPV video-sync mode for smoother playback when display is synced
       await player!.setProperty('video-sync', 'display-tempo');
@@ -979,6 +988,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _wasPlayingBeforeInactive = false;
         _updateMediaControlsPlaybackState();
       } else if (event is PauseEvent) {
+        if (_suppressMediaPauseDuringFrameRateSwitch) {
+          appLogger.d('Media control: Pause event suppressed (frame rate switch in progress)');
+          return;
+        }
         appLogger.d('Media control: Pause event received');
         currentPlayer!.pause();
         _updateMediaControlsPlaybackState();
