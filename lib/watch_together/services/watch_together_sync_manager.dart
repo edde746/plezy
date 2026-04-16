@@ -79,6 +79,9 @@ class WatchTogetherSyncManager {
   // Whether we've announced our player as ready (first buffering: false)
   bool _hasAnnouncedReady = false;
 
+  // Whether the app is backgrounded (suppress heartbeats to avoid stale positions)
+  bool _backgrounded = false;
+
   // Callbacks
   SessionConfigCallback? onSessionConfigReceived;
   SyncStateCallback? onSyncStateChanged;
@@ -204,6 +207,7 @@ class WatchTogetherSyncManager {
     }
     _positionSyncTimer?.cancel();
     _positionSyncTimer = null;
+    _backgrounded = false;
 
     appLogger.d('WatchTogether: Player detached');
   }
@@ -313,7 +317,7 @@ class WatchTogetherSyncManager {
   void _startPositionSync() {
     _positionSyncTimer?.cancel();
     _positionSyncTimer = Timer.periodic(positionSyncInterval, (_) {
-      if (_player != null && _session.isHost) {
+      if (_player != null && _session.isHost && !_backgrounded) {
         _peerService.broadcast(
           SyncMessage.positionSync(
             _player!.state.position,
@@ -954,6 +958,16 @@ class WatchTogetherSyncManager {
       _deferredPlay = value;
       onDeferredPlayChanged?.call(value);
     }
+  }
+
+  /// Suppress heartbeats while the app is backgrounded.
+  ///
+  /// macOS App Nap can throttle the event loop, causing stale position reads.
+  /// Guests would drift-correct to the stale position every heartbeat, making
+  /// playback loop. Pausing heartbeats avoids this; drift correction catches
+  /// up when the app returns to the foreground.
+  void setBackgrounded(bool value) {
+    _backgrounded = value;
   }
 
   /// Re-announce player readiness after reconnect.

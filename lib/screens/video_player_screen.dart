@@ -472,6 +472,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       return;
     }
 
+    // Suppress Watch Together heartbeats while backgrounded so App Nap
+    // doesn't cause stale position broadcasts that make guests loop.
+    _watchTogetherProvider?.setBackgrounded(true);
+
     final currentPlayer = player;
     if (currentPlayer == null || !_isPlayerInitialized) {
       _recordLifecycleState('hidden', action: 'skipped_no_player');
@@ -511,6 +515,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   Future<void> _handleAppResumed() async {
     _recordLifecycleState('resumed', action: 'begin');
+    _watchTogetherProvider?.setBackgrounded(false);
 
     if (Platform.isAndroid && _androidAutoPipTransitionInFlight && !PipService().isPipActive.value) {
       _setAndroidAutoPipTransitionInFlight(false, reason: 'resume_without_pip');

@@ -402,6 +402,11 @@ class WatchTogetherProvider with ChangeNotifier {
     appLogger.d('WatchTogether: Player detached from sync manager');
   }
 
+  /// Suppress position sync while the app is backgrounded.
+  void setBackgrounded(bool value) {
+    _syncManager?.setBackgrounded(value);
+  }
+
   /// Set up listeners for peer service events
   void _setupPeerServiceListeners() {
     _peerConnectedSubscription = _peerService!.onPeerConnected.listen((peerId) {
