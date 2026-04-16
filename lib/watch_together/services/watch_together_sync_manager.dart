@@ -14,6 +14,9 @@ typedef SessionConfigCallback = void Function(ControlMode controlMode);
 /// Callback type for when sync state changes
 typedef SyncStateCallback = void Function(bool isSyncing);
 
+/// Callback type for when deferred play state changes
+typedef DeferredPlayCallback = void Function(bool isDeferredPlay);
+
 /// Manages playback synchronization between peers
 ///
 /// This class:
@@ -79,6 +82,7 @@ class WatchTogetherSyncManager {
   // Callbacks
   SessionConfigCallback? onSessionConfigReceived;
   SyncStateCallback? onSyncStateChanged;
+  DeferredPlayCallback? onDeferredPlayChanged;
 
   WatchTogetherSyncManager({
     required WatchTogetherPeerService peerService,
@@ -169,7 +173,7 @@ class WatchTogetherSyncManager {
       _peerReady[_peerService.myPeerId!] = false;
     }
     _hasAnnouncedReady = false;
-    _deferredPlay = false;
+    _setDeferredPlay(false);
     _deferredPlayPosition = null;
     _firstPlayCompleted = false;
     _syncingTimer?.cancel();
@@ -208,7 +212,7 @@ class WatchTogetherSyncManager {
 
         if (isPlaying && !isAllReady && !_firstPlayCompleted) {
           // Defer until all peers have loaded video (initial sync only)
-          _deferredPlay = true;
+          _setDeferredPlay(true);
           _deferredPlayPosition = player.state.position;
           _isRemoteAction = true;
           try {
@@ -228,7 +232,7 @@ class WatchTogetherSyncManager {
           return;
         }
 
-        if (!isPlaying) _deferredPlay = false;
+        if (!isPlaying) _setDeferredPlay(false);
         _broadcastPlayPause(isPlaying);
       }),
     );
@@ -572,7 +576,7 @@ class WatchTogetherSyncManager {
 
       case SyncMessageType.pause:
         if (!_shouldApplyRemoteControl(message)) break;
-        _deferredPlay = false;
+        _setDeferredPlay(false);
         await _applyRemotePause(expectedAttachmentGeneration: queuedAttachmentGeneration);
         break;
 
@@ -663,7 +667,7 @@ class WatchTogetherSyncManager {
           appLogger.d('WatchTogether: Peer ${message.peerId} player ready: ${message.bufferingState}');
 
           if (_deferredPlay && isAllReady) {
-            _deferredPlay = false;
+            _setDeferredPlay(false);
             _firstPlayCompleted = true;
             await _applyRemotePlay(
               position: _deferredPlayPosition,
@@ -903,10 +907,10 @@ class WatchTogetherSyncManager {
         final hostIsPlaying = message.isPlaying ?? (message.bufferingState == false);
         if (hostIsPlaying) {
           // Host was playing — defer until our video is loaded
-          _deferredPlay = true;
+          _setDeferredPlay(true);
           _deferredPlayPosition = message.position;
           if (_hasAnnouncedReady) {
-            _deferredPlay = false;
+            _setDeferredPlay(false);
             _firstPlayCompleted = true;
             final didPlay = await _runGuardedPlayerCommand(
               actionName: 'session config play',
@@ -940,6 +944,14 @@ class WatchTogetherSyncManager {
     if (_isSyncing != isSyncing) {
       _isSyncing = isSyncing;
       onSyncStateChanged?.call(isSyncing);
+    }
+  }
+
+  /// Set deferred play state and notify listeners
+  void _setDeferredPlay(bool value) {
+    if (_deferredPlay != value) {
+      _deferredPlay = value;
+      onDeferredPlayChanged?.call(value);
     }
   }
 

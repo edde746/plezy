@@ -6,14 +6,21 @@ import 'package:device_info_plus/device_info_plus.dart';
 
 import '../models/companion_remote/remote_command.dart';
 import '../models/companion_remote/remote_session.dart';
+import '../models/plex_home.dart';
 import '../services/companion_remote/companion_remote_peer_service.dart';
+import '../services/companion_remote/lan_discovery_service.dart';
+import '../services/companion_remote/remote_auth_service.dart';
+import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
+
+export '../services/companion_remote/lan_discovery_service.dart' show DiscoveredHost;
 
 typedef CommandReceivedCallback = void Function(RemoteCommand command);
 
 class CompanionRemoteProvider with ChangeNotifier {
   RemoteSession? _session;
   CompanionRemotePeerService? _peerService;
+  LanDiscoveryService? _discoveryService;
   String _deviceName = 'Unknown Device';
   String _platform = 'unknown';
   bool _isPlayerActive = false;
@@ -23,9 +30,17 @@ class CompanionRemoteProvider with ChangeNotifier {
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   bool _intentionalDisconnect = false;
-  String? _lastSessionId;
-  String? _lastPin;
-  String? _lastHostAddress;
+
+  // Reconnection context (only hostAddresses and hostClientId are connection-specific)
+  List<String>? _lastHostAddresses;
+  String? _lastHostClientId;
+
+  // Crypto context (derived in memory, never persisted)
+  List<int>? _homeSecret;
+  List<int>? _discoveryKey;
+  String? _clientIdentifier;
+  String? _userUUID;
+  List<String>? _homeUserUUIDs;
 
   int get reconnectAttempts => _reconnectAttempts;
 
@@ -43,10 +58,9 @@ class CompanionRemoteProvider with ChangeNotifier {
   bool get isConnected => _session?.isConnected ?? false;
   RemoteSession? get session => _session;
   RemoteSessionStatus get status => _session?.status ?? RemoteSessionStatus.disconnected;
-  String? get sessionId => _session?.sessionId;
-  String? get pin => _session?.pin;
   RemoteDevice? get connectedDevice => _session?.connectedDevice;
   bool get isPlayerActive => _isPlayerActive;
+  bool get isHostServerRunning => _peerService?.isServerRunning ?? false;
 
   CompanionRemoteProvider() {
     _initializeDeviceInfo();
@@ -86,6 +100,219 @@ class CompanionRemoteProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Initialize crypto context from Plex home data.
+  /// Must be called before startHostServer or connectToDiscoveredHost.
+  Future<bool> initializeCrypto(PlexHome? home, StorageService storage) async {
+    if (home == null || home.adminUser == null) {
+      appLogger.w('CompanionRemote: Cannot init crypto — no home data');
+      return false;
+    }
+
+    try {
+      final auth = RemoteAuthService.instance;
+      _homeSecret = await auth.deriveHomeSecretFromHome(home);
+      _discoveryKey = await auth.deriveDiscoveryKey(_homeSecret!);
+      _clientIdentifier = storage.getClientIdentifier();
+      _userUUID = storage.getCurrentUserUUID();
+      _homeUserUUIDs = home.users.map((u) => u.uuid).toList();
+
+      appLogger.d('CompanionRemote: Crypto context initialized');
+      return true;
+    } catch (e) {
+      appLogger.e('CompanionRemote: Failed to init crypto', error: e);
+      return false;
+    }
+  }
+
+  bool get isCryptoReady => _homeSecret != null && _discoveryKey != null && _clientIdentifier != null;
+
+  /// Convenience: ensure crypto is initialized using providers from context.
+  /// Returns true if crypto is ready (already initialized or just initialized).
+  Future<bool> ensureCryptoReady(PlexHome? home) async {
+    if (isCryptoReady) return true;
+    final storage = await StorageService.getInstance();
+    return initializeCrypto(home, storage);
+  }
+
+  // ── Host Server ──
+
+  /// Start the host server and begin LAN broadcasting. Idempotent.
+  Future<void> startHostServer() async {
+    if (_peerService?.isServerRunning == true) return;
+    if (!isCryptoReady) {
+      appLogger.w('CompanionRemote: Cannot start host — crypto not initialized');
+      return;
+    }
+
+    appLogger.d('CompanionRemote: Starting host server');
+
+    _peerService ??= CompanionRemotePeerService();
+    _setupPeerServiceListeners();
+
+    try {
+      final result = await _peerService!.createSession(
+        _deviceName,
+        _platform,
+        _homeSecret!,
+        _clientIdentifier!,
+        _homeUserUUIDs!,
+      );
+
+      _session = RemoteSession(
+        role: RemoteSessionRole.host,
+        status: RemoteSessionStatus.connected,
+      );
+      notifyListeners();
+
+      // Start LAN discovery broadcasting
+      _discoveryService ??= LanDiscoveryService();
+      final localIps = result.addresses.map((a) => a.split(':').first).toList();
+      await _discoveryService!.startBroadcasting(
+        discoveryKey: _discoveryKey!,
+        deviceName: _deviceName,
+        platform: _platform,
+        clientId: _clientIdentifier!,
+        wsPort: result.port,
+        ips: localIps,
+      );
+
+      appLogger.d('CompanionRemote: Host server running, broadcasting on LAN');
+    } catch (e) {
+      appLogger.e('CompanionRemote: Failed to start host server', error: e);
+      _session = RemoteSession(
+        role: RemoteSessionRole.host,
+        status: RemoteSessionStatus.error,
+        errorMessage: e.toString(),
+      );
+      notifyListeners();
+    }
+  }
+
+  /// Stop the host server and LAN broadcasting.
+  Future<void> stopHostServer() async {
+    _intentionalDisconnect = true;
+    _discoveryService?.stopBroadcasting();
+
+    if (_peerService != null) {
+      await _peerService!.disconnect();
+      _peerService = null;
+    }
+    _cleanupSubscriptions();
+
+    _session = null;
+    _isPlayerActive = false;
+    _intentionalDisconnect = false;
+    notifyListeners();
+  }
+
+  // ── Client: Discovery ──
+
+  /// Start listening for host beacons. Returns a stream of discovered hosts.
+  Stream<List<DiscoveredHost>>? discoverHosts() {
+    if (!isCryptoReady) {
+      appLogger.w('CompanionRemote: Cannot discover — crypto not initialized');
+      return null;
+    }
+
+    _discoveryService ??= LanDiscoveryService();
+    return _discoveryService!.startListening(discoveryKey: _discoveryKey!);
+  }
+
+  /// Stop listening for host beacons.
+  void stopDiscovery() {
+    _discoveryService?.stopListening();
+  }
+
+  /// Connect to a discovered host as a remote client.
+  Future<void> connectToDiscoveredHost(DiscoveredHost host) async {
+    if (!isCryptoReady) {
+      throw StateError('Crypto not initialized');
+    }
+
+    await leaveSession();
+
+    _lastHostAddresses = host.addresses;
+    _lastHostClientId = host.clientId;
+
+    appLogger.d('CompanionRemote: Connecting to ${host.name} at ${host.addresses}');
+
+    _peerService = CompanionRemotePeerService();
+    _setupPeerServiceListeners();
+
+    _session = RemoteSession(
+      role: RemoteSessionRole.remote,
+      status: RemoteSessionStatus.connecting,
+    );
+    notifyListeners();
+
+    try {
+      final winner = await _peerService!.joinSessionRacing(
+        _deviceName,
+        _platform,
+        host.addresses,
+        _homeSecret!,
+        host.clientId,
+        _userUUID!,
+        _clientIdentifier!,
+      );
+      _lastHostAddresses = [winner];
+
+      _session = _session?.copyWith(status: RemoteSessionStatus.connected);
+      notifyListeners();
+      appLogger.d('CompanionRemote: Connected to ${host.name} via $winner');
+    } catch (e) {
+      appLogger.e('CompanionRemote: Failed to connect to host', error: e);
+      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: e.toString());
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Connect to a host by manual IP:port entry.
+  Future<void> connectToManualHost(String hostAddress) async {
+    if (!isCryptoReady) {
+      throw StateError('Crypto not initialized');
+    }
+
+    await leaveSession();
+
+    _lastHostAddresses = [hostAddress];
+    _lastHostClientId = '';
+
+    appLogger.d('CompanionRemote: Connecting to manual host $hostAddress');
+
+    _peerService = CompanionRemotePeerService();
+    _setupPeerServiceListeners();
+
+    _session = RemoteSession(
+      role: RemoteSessionRole.remote,
+      status: RemoteSessionStatus.connecting,
+    );
+    notifyListeners();
+
+    try {
+      await _peerService!.joinSession(
+        _deviceName,
+        _platform,
+        hostAddress,
+        _homeSecret!,
+        '', // Empty hostClientId — accept any host in same home
+        _userUUID!,
+        _clientIdentifier!,
+      );
+
+      _session = _session?.copyWith(status: RemoteSessionStatus.connected);
+      notifyListeners();
+    } catch (e) {
+      appLogger.e('CompanionRemote: Failed to connect to manual host', error: e);
+      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: e.toString());
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  // ── Peer service listeners ──
+
   void _setupPeerServiceListeners() {
     _commandSubscription = _peerService!.onCommandReceived.listen(
       (command) {
@@ -118,7 +345,6 @@ class CompanionRemoteProvider with ChangeNotifier {
         _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, clearConnectedDevice: true);
         notifyListeners();
       } else if (isHost) {
-        // Host keeps the server running — the client will reconnect on its own
         _session = _session?.copyWith(
           status: RemoteSessionStatus.reconnecting,
           clearConnectedDevice: true,
@@ -183,93 +409,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _statusSubscription = null;
   }
 
-  Future<({String sessionId, String pin, List<String> addresses})> createSession() async {
-    await leaveSession();
-
-    appLogger.d('CompanionRemote: Creating session as host');
-
-    _peerService = CompanionRemotePeerService();
-    _setupPeerServiceListeners();
-
-    try {
-      final result = await _peerService!.createSession(_deviceName, _platform);
-
-      _session = RemoteSession(
-        sessionId: result.sessionId,
-        pin: result.pin,
-        role: RemoteSessionRole.host,
-        status: RemoteSessionStatus.connected,
-      );
-
-      notifyListeners();
-      appLogger.d(
-        'CompanionRemote: Session created - ID: ${result.sessionId}, PIN: ${result.pin}, Addresses: ${result.addresses}',
-      );
-
-      return result;
-    } catch (e) {
-      appLogger.e('CompanionRemote: Failed to create session', error: e);
-      _session = RemoteSession(
-        sessionId: '',
-        pin: '',
-        role: RemoteSessionRole.host,
-        status: RemoteSessionStatus.error,
-        errorMessage: e.toString(),
-      );
-      notifyListeners();
-      rethrow;
-    }
-  }
-
-  Future<void> joinSession(String sessionId, String pin, String hostAddress) async {
-    await joinSessionMulti(sessionId, pin, [hostAddress]);
-  }
-
-  Future<void> joinSessionMulti(String sessionId, String pin, List<String> hostAddresses) async {
-    if (hostAddresses.isEmpty) {
-      throw ArgumentError('hostAddresses must not be empty');
-    }
-
-    await leaveSession();
-
-    _lastSessionId = sessionId;
-    _lastPin = pin;
-    // Store first address as fallback for reconnection; will be updated with winner
-    _lastHostAddress = hostAddresses.first;
-
-    appLogger.d('CompanionRemote: Joining session - ID: $sessionId, Hosts: $hostAddresses');
-
-    _peerService = CompanionRemotePeerService();
-    _setupPeerServiceListeners();
-
-    _session = RemoteSession(
-      sessionId: sessionId,
-      pin: pin,
-      role: RemoteSessionRole.remote,
-      status: RemoteSessionStatus.connecting,
-    );
-    notifyListeners();
-
-    try {
-      final winner = await _peerService!.joinSessionRacing(
-        sessionId,
-        pin,
-        _deviceName,
-        _platform,
-        hostAddresses,
-      );
-      _lastHostAddress = winner;
-
-      _session = _session?.copyWith(status: RemoteSessionStatus.connected);
-      notifyListeners();
-      appLogger.d('CompanionRemote: Successfully joined session via $winner');
-    } catch (e) {
-      appLogger.e('CompanionRemote: Failed to join session', error: e);
-      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: e.toString());
-      notifyListeners();
-      rethrow;
-    }
-  }
+  // ── Commands ──
 
   void sendCommand(RemoteCommandType type, {Map<String, dynamic>? data}) {
     if (_peerService == null || !isConnected) {
@@ -280,6 +420,8 @@ class CompanionRemoteProvider with ChangeNotifier {
     appLogger.d('CompanionRemote: Sending command $type');
     _peerService!.sendCommand(RemoteCommand(type: type, data: data));
   }
+
+  // ── Reconnection ──
 
   void _scheduleReconnect() {
     if (_reconnectAttempts >= _maxReconnectAttempts) {
@@ -293,7 +435,7 @@ class CompanionRemoteProvider with ChangeNotifier {
       return;
     }
 
-    final delay = Duration(seconds: 1 << _reconnectAttempts); // 1s, 2s, 4s, 8s, 16s
+    final delay = Duration(seconds: 1 << _reconnectAttempts);
     _reconnectAttempts++;
     appLogger.d('CompanionRemote: Reconnect attempt $_reconnectAttempts in ${delay.inSeconds}s');
 
@@ -302,8 +444,8 @@ class CompanionRemoteProvider with ChangeNotifier {
   }
 
   Future<void> _attemptReconnect() async {
-    if (_lastSessionId == null || _lastPin == null || _lastHostAddress == null) {
-      appLogger.w('CompanionRemote: No stored credentials for reconnect');
+    if (_lastHostAddresses == null || !isCryptoReady) {
+      appLogger.w('CompanionRemote: No stored context for reconnect');
       _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: 'Connection lost');
       notifyListeners();
       return;
@@ -311,7 +453,6 @@ class CompanionRemoteProvider with ChangeNotifier {
 
     try {
       appLogger.d('CompanionRemote: Attempting reconnect...');
-      // Clean up old peer service without triggering intentional disconnect
       _cleanupSubscriptions();
       try {
         await _peerService?.disconnect();
@@ -320,7 +461,15 @@ class CompanionRemoteProvider with ChangeNotifier {
         _setupPeerServiceListeners();
       }
 
-      await _peerService!.joinSession(_lastSessionId!, _lastPin!, _deviceName, _platform, _lastHostAddress!);
+      await _peerService!.joinSession(
+        _deviceName,
+        _platform,
+        _lastHostAddresses!.first,
+        _homeSecret!,
+        _lastHostClientId ?? '',
+        _userUUID!,
+        _clientIdentifier!,
+      );
 
       _session = _session?.copyWith(status: RemoteSessionStatus.connected, clearErrorMessage: true);
       _reconnectAttempts = 0;
@@ -334,14 +483,12 @@ class CompanionRemoteProvider with ChangeNotifier {
     }
   }
 
-  /// Immediately retry reconnection, skipping the backoff wait
   void retryReconnectNow() {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
     _attemptReconnect();
   }
 
-  /// Cancel ongoing reconnection attempts
   void cancelReconnect() {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
@@ -354,7 +501,8 @@ class CompanionRemoteProvider with ChangeNotifier {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
 
-    if (_peerService != null) {
+    // Don't stop the host server when leaving — only stop discovery listening
+    if (_peerService != null && !isHost) {
       appLogger.d('CompanionRemote: Leaving session');
       await _peerService!.disconnect();
       _peerService = null;
@@ -362,7 +510,9 @@ class CompanionRemoteProvider with ChangeNotifier {
 
     _cleanupSubscriptions();
 
-    _session = null;
+    if (!isHost) {
+      _session = null;
+    }
     _isPlayerActive = false;
     _intentionalDisconnect = false;
     notifyListeners();
@@ -371,7 +521,9 @@ class CompanionRemoteProvider with ChangeNotifier {
   @override
   void dispose() {
     _reconnectTimer?.cancel();
-    leaveSession();
+    _discoveryService?.dispose();
+    _peerService?.dispose();
+    RemoteAuthService.instance.clearCache();
     super.dispose();
   }
 }

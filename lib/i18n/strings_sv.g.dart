@@ -358,6 +358,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
+	@override String get companionRemoteServer => 'Companion Remote-server';
+	@override String get companionRemoteServerDescription => 'Tillåt mobila enheter i ditt nätverk att styra denna app';
 }
 
 // Path: search
@@ -869,6 +871,7 @@ class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Ta bort nedladdning';
 	@override String get retryDownload => 'Försök igen';
 	@override String get downloadQueued => 'Nedladdning köad';
+	@override String get serverErrorBitrate => 'Serverfel — filen överskrider möjligen gränsen för fjärrströmning-bitrate';
 	@override String episodesQueued({required Object count}) => '${count} avsnitt köade för nedladdning';
 	@override String get downloadDeleted => 'Nedladdning borttagen';
 	@override String deleteConfirm({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.';
@@ -1011,6 +1014,8 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} pausade';
 	@override String participantResumed({required Object name}) => '${name} återupptog';
 	@override String participantSeeked({required Object name}) => '${name} spolade';
+	@override String participantBuffering({required Object name}) => '${name} buffrar';
+	@override String get waitingForParticipants => 'Väntar på att andra laddar...';
 	@override String get recentRooms => 'Senaste rum';
 	@override String get renameRoom => 'Byt namn på rum';
 	@override String get removeRoom => 'Ta bort';
@@ -1274,20 +1279,17 @@ class _TranslationsCompanionRemoteSessionSv implements TranslationsCompanionRemo
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get creatingSession => 'Skapar fjärrsession...';
-	@override String get failedToCreate => 'Kunde inte skapa fjärrsession:';
-	@override String get noSession => 'Ingen session tillgänglig';
-	@override String get scanQrCode => 'Skanna QR-kod';
-	@override String get orEnterManually => 'Eller ange manuellt';
+	@override String get startingServer => 'Startar fjärrserver...';
+	@override String get failedToCreate => 'Kunde inte starta fjärrserver:';
 	@override String get hostAddress => 'Värdadress';
-	@override String get sessionId => 'Sessions-ID';
-	@override String get pin => 'PIN';
 	@override String get connected => 'Ansluten';
-	@override String get waitingForConnection => 'Väntar på anslutning...';
+	@override String get serverRunning => 'Fjärrserver aktiv';
+	@override String get serverStopped => 'Fjärrserver stoppad';
+	@override String get serverRunningDescription => 'Mobila enheter i ditt nätverk kan upptäcka och ansluta till denna app';
+	@override String get serverStoppedDescription => 'Starta servern för att tillåta mobila enheter att ansluta';
 	@override String get usePhoneToControl => 'Använd din mobila enhet för att styra denna app';
-	@override String copiedToClipboard({required Object label}) => '${label} kopierad till urklipp';
-	@override String get copyToClipboard => 'Kopiera till urklipp';
-	@override String get newSession => 'Ny session';
+	@override String get startServer => 'Starta server';
+	@override String get stopServer => 'Stoppa server';
 	@override String get minimize => 'Minimera';
 }
 
@@ -1298,30 +1300,21 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get scan => 'Skanna';
-	@override String get manual => 'Manuell';
-	@override String get pairWithDesktop => 'Parkoppla med dator';
-	@override String get enterSessionDetails => 'Ange sessionsuppgifterna som visas på din datorenhet';
+	@override String get pairWithDesktop => 'Anslut till dator';
+	@override String get discoveryDescription => 'Enheter i ditt nätverk som kör Plezy med samma Plex-konto visas automatiskt';
 	@override String get hostAddressHint => '192.168.1.100:48632';
-	@override String get sessionIdHint => 'Ange 8-teckens sessions-ID';
-	@override String get pinHint => 'Ange 6-siffrig PIN';
 	@override String get connecting => 'Ansluter...';
-	@override String get tips => 'Tips';
-	@override String get tipDesktop => 'Öppna Plezy på din dator och aktivera Companion Remote via inställningar eller meny';
-	@override String get tipScan => 'Använd fliken Skanna för att snabbt parkoppla genom att skanna QR-koden på din dator';
-	@override String get tipWifi => 'Se till att båda enheterna är på samma WiFi-nätverk';
-	@override String get cameraPermissionRequired => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.';
-	@override String cameraError({required Object error}) => 'Kunde inte starta kameran: ${error}';
-	@override String get scanInstruction => 'Rikta kameran mot QR-koden som visas på din dator';
-	@override String get invalidQrCode => 'Ogiltigt QR-kodformat';
-	@override String get validationHostRequired => 'Ange en värdadress';
+	@override String get searchingForDevices => 'Söker efter enheter...';
+	@override String get noDevicesFound => 'Inga enheter hittades i ditt nätverk';
+	@override String get noDevicesHint => 'Se till att Plezy är öppet på din dator och att båda enheterna är på samma WiFi-nätverk';
+	@override String get availableDevices => 'Tillgängliga enheter';
+	@override String get manualConnection => 'Manuell anslutning';
+	@override String get cryptoInitFailed => 'Kunde inte initiera säker anslutning. Se till att du är inloggad på ett Plex-konto.';
+	@override String get validationHostRequired => 'Ange värdadress';
 	@override String get validationHostFormat => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)';
-	@override String get validationSessionIdRequired => 'Ange ett sessions-ID';
-	@override String get validationSessionIdLength => 'Sessions-ID måste vara 8 tecken';
-	@override String get validationPinRequired => 'Ange en PIN';
-	@override String get validationPinLength => 'PIN måste vara 6 siffror';
-	@override String get connectionTimedOut => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.';
-	@override String get sessionNotFound => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.';
+	@override String get connectionTimedOut => 'Anslutningen tog för lång tid. Se till att båda enheterna är på samma nätverk.';
+	@override String get sessionNotFound => 'Kunde inte hitta enheten. Se till att Plezy körs på värden.';
+	@override String get authFailed => 'Autentisering misslyckades. Se till att båda enheterna använder samma Plex-konto.';
 	@override String failedToConnect({required Object error}) => 'Kunde inte ansluta: ${error}';
 }
 
@@ -1600,6 +1593,8 @@ extension on TranslationsSv {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.companionRemoteServer' => 'Companion Remote-server',
+			'settings.companionRemoteServerDescription' => 'Tillåt mobila enheter i ditt nätverk att styra denna app',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -1881,10 +1876,10 @@ extension on TranslationsSv {
 			'libraries.groupings.seasons' => 'Säsonger',
 			'libraries.groupings.episodes' => 'Avsnitt',
 			'libraries.groupings.folders' => 'Mappar',
-			'about.title' => 'Om',
-			'about.openSourceLicenses' => 'Öppen källkod-licenser',
 			_ => null,
 		} ?? switch (path) {
+			'about.title' => 'Om',
+			'about.openSourceLicenses' => 'Öppen källkod-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'En vacker Plex-klient för Flutter',
 			'about.viewLicensesDescription' => 'Visa licenser för tredjepartsbibliotek',
@@ -1939,6 +1934,7 @@ extension on TranslationsSv {
 			'downloads.deleteDownload' => 'Ta bort nedladdning',
 			'downloads.retryDownload' => 'Försök igen',
 			'downloads.downloadQueued' => 'Nedladdning köad',
+			'downloads.serverErrorBitrate' => 'Serverfel — filen överskrider möjligen gränsen för fjärrströmning-bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.',
@@ -2054,6 +2050,8 @@ extension on TranslationsSv {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} pausade',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} återupptog',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spolade',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} buffrar',
+			'watchTogether.waitingForParticipants' => 'Väntar på att andra laddar...',
 			'watchTogether.recentRooms' => 'Senaste rum',
 			'watchTogether.renameRoom' => 'Byt namn på rum',
 			'watchTogether.removeRoom' => 'Ta bort',
@@ -2076,45 +2074,33 @@ extension on TranslationsSv {
 			'companionRemote.remoteControl' => 'Fjärrkontroll',
 			'companionRemote.controlDesktop' => 'Styr en datorenhet',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Ansluten till ${name}',
-			'companionRemote.session.creatingSession' => 'Skapar fjärrsession...',
-			'companionRemote.session.failedToCreate' => 'Kunde inte skapa fjärrsession:',
-			'companionRemote.session.noSession' => 'Ingen session tillgänglig',
-			'companionRemote.session.scanQrCode' => 'Skanna QR-kod',
-			'companionRemote.session.orEnterManually' => 'Eller ange manuellt',
+			'companionRemote.session.startingServer' => 'Startar fjärrserver...',
+			'companionRemote.session.failedToCreate' => 'Kunde inte starta fjärrserver:',
 			'companionRemote.session.hostAddress' => 'Värdadress',
-			'companionRemote.session.sessionId' => 'Sessions-ID',
-			'companionRemote.session.pin' => 'PIN',
 			'companionRemote.session.connected' => 'Ansluten',
-			'companionRemote.session.waitingForConnection' => 'Väntar på anslutning...',
+			'companionRemote.session.serverRunning' => 'Fjärrserver aktiv',
+			'companionRemote.session.serverStopped' => 'Fjärrserver stoppad',
+			'companionRemote.session.serverRunningDescription' => 'Mobila enheter i ditt nätverk kan upptäcka och ansluta till denna app',
+			'companionRemote.session.serverStoppedDescription' => 'Starta servern för att tillåta mobila enheter att ansluta',
 			'companionRemote.session.usePhoneToControl' => 'Använd din mobila enhet för att styra denna app',
-			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} kopierad till urklipp',
-			'companionRemote.session.copyToClipboard' => 'Kopiera till urklipp',
-			'companionRemote.session.newSession' => 'Ny session',
+			'companionRemote.session.startServer' => 'Starta server',
+			'companionRemote.session.stopServer' => 'Stoppa server',
 			'companionRemote.session.minimize' => 'Minimera',
-			'companionRemote.pairing.scan' => 'Skanna',
-			'companionRemote.pairing.manual' => 'Manuell',
-			'companionRemote.pairing.pairWithDesktop' => 'Parkoppla med dator',
-			'companionRemote.pairing.enterSessionDetails' => 'Ange sessionsuppgifterna som visas på din datorenhet',
+			'companionRemote.pairing.pairWithDesktop' => 'Anslut till dator',
+			'companionRemote.pairing.discoveryDescription' => 'Enheter i ditt nätverk som kör Plezy med samma Plex-konto visas automatiskt',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
-			'companionRemote.pairing.sessionIdHint' => 'Ange 8-teckens sessions-ID',
-			'companionRemote.pairing.pinHint' => 'Ange 6-siffrig PIN',
 			'companionRemote.pairing.connecting' => 'Ansluter...',
-			'companionRemote.pairing.tips' => 'Tips',
-			'companionRemote.pairing.tipDesktop' => 'Öppna Plezy på din dator och aktivera Companion Remote via inställningar eller meny',
-			'companionRemote.pairing.tipScan' => 'Använd fliken Skanna för att snabbt parkoppla genom att skanna QR-koden på din dator',
-			'companionRemote.pairing.tipWifi' => 'Se till att båda enheterna är på samma WiFi-nätverk',
-			'companionRemote.pairing.cameraPermissionRequired' => 'Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.',
-			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kunde inte starta kameran: ${error}',
-			'companionRemote.pairing.scanInstruction' => 'Rikta kameran mot QR-koden som visas på din dator',
-			'companionRemote.pairing.invalidQrCode' => 'Ogiltigt QR-kodformat',
-			'companionRemote.pairing.validationHostRequired' => 'Ange en värdadress',
+			'companionRemote.pairing.searchingForDevices' => 'Söker efter enheter...',
+			'companionRemote.pairing.noDevicesFound' => 'Inga enheter hittades i ditt nätverk',
+			'companionRemote.pairing.noDevicesHint' => 'Se till att Plezy är öppet på din dator och att båda enheterna är på samma WiFi-nätverk',
+			'companionRemote.pairing.availableDevices' => 'Tillgängliga enheter',
+			'companionRemote.pairing.manualConnection' => 'Manuell anslutning',
+			'companionRemote.pairing.cryptoInitFailed' => 'Kunde inte initiera säker anslutning. Se till att du är inloggad på ett Plex-konto.',
+			'companionRemote.pairing.validationHostRequired' => 'Ange värdadress',
 			'companionRemote.pairing.validationHostFormat' => 'Format måste vara IP:port (t.ex. 192.168.1.100:48632)',
-			'companionRemote.pairing.validationSessionIdRequired' => 'Ange ett sessions-ID',
-			'companionRemote.pairing.validationSessionIdLength' => 'Sessions-ID måste vara 8 tecken',
-			'companionRemote.pairing.validationPinRequired' => 'Ange en PIN',
-			'companionRemote.pairing.validationPinLength' => 'PIN måste vara 6 siffror',
-			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.',
-			'companionRemote.pairing.sessionNotFound' => 'Kunde inte hitta sessionen. Kontrollera dina uppgifter.',
+			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Se till att båda enheterna är på samma nätverk.',
+			'companionRemote.pairing.sessionNotFound' => 'Kunde inte hitta enheten. Se till att Plezy körs på värden.',
+			'companionRemote.pairing.authFailed' => 'Autentisering misslyckades. Se till att båda enheterna använder samma Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
 			'companionRemote.remote.reconnecting' => 'Återansluter...',

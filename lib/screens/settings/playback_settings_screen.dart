@@ -45,6 +45,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   String _creditsPattern = settings.SettingsService.defaultCreditsPattern;
   int _maxVolume = 100;
   bool _enableDiscordRPC = false;
+  bool _enableCompanionRemoteServer = false;
   bool _autoPip = true;
   bool _matchContentFrameRate = false;
   bool _matchRefreshRate = false;
@@ -84,6 +85,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       _creditsPattern = _settingsService.getCreditsPattern();
       _maxVolume = _settingsService.getMaxVolume();
       _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
+      _enableCompanionRemoteServer = _settingsService.getEnableCompanionRemoteServer();
       _autoPip = _settingsService.getAutoPip();
       _matchContentFrameRate = _settingsService.getMatchContentFrameRate();
       _matchRefreshRate = _settingsService.getMatchRefreshRate();
@@ -142,6 +144,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             // --- Behavior ---
             SettingsSectionHeader(t.settings.behavior),
             if (DiscordRPCService.isAvailable) _buildDiscordRPC(),
+            if (PlatformDetector.shouldActAsRemoteHost(context)) _buildCompanionRemoteServer(),
             _buildRememberTrackSelections(),
             if (!isMobile) _buildClickVideoTogglesPlayback(),
 
@@ -490,6 +493,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         setState(() => _enableDiscordRPC = value);
         await _settingsService.setEnableDiscordRPC(value);
         await DiscordRPCService.instance.setEnabled(value);
+      },
+    );
+  }
+
+  Widget _buildCompanionRemoteServer() {
+    return SwitchListTile(
+      secondary: const AppIcon(Symbols.phone_android_rounded, fill: 1),
+      title: Text(t.settings.companionRemoteServer),
+      subtitle: Text(t.settings.companionRemoteServerDescription),
+      value: _enableCompanionRemoteServer,
+      onChanged: (value) async {
+        setState(() => _enableCompanionRemoteServer = value);
+        await _settingsService.setEnableCompanionRemoteServer(value);
       },
     );
   }

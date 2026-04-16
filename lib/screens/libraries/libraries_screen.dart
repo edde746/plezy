@@ -522,6 +522,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Future<void> _toggleLibraryVisibility(PlexLibrary library) async {
+    if (!mounted) return;
     final librariesProvider = context.read<LibrariesProvider>();
     final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
     final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(library.globalKey);

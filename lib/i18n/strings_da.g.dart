@@ -358,6 +358,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
+	@override String get companionRemoteServer => 'Companion Remote Server';
+	@override String get companionRemoteServerDescription => 'Tillad mobilenheder på dit netværk at styre denne app';
 }
 
 // Path: search
@@ -977,6 +979,8 @@ class _TranslationsWatchTogetherDa implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} satte på pause';
 	@override String participantResumed({required Object name}) => '${name} genoptog';
 	@override String participantSeeked({required Object name}) => '${name} spoled';
+	@override String participantBuffering({required Object name}) => '${name} bufferer';
+	@override String get waitingForParticipants => 'Venter på at andre indlæser...';
 	@override String get recentRooms => 'Seneste rum';
 	@override String get renameRoom => 'Omdøb rum';
 	@override String get removeRoom => 'Fjern';
@@ -999,6 +1003,7 @@ class _TranslationsDownloadsDa implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Slet download';
 	@override String get retryDownload => 'Prøv download igen';
 	@override String get downloadQueued => 'Download i kø';
+	@override String get serverErrorBitrate => 'Serverfejl — filen overskrider muligvis grænsen for fjernstreaming-bitrate';
 	@override String episodesQueued({required Object count}) => '${count} episoder i downloadkø';
 	@override String get downloadDeleted => 'Download slettet';
 	@override String deleteConfirm({required Object title}) => 'Er du sikker på, at du vil slette "${title}"? Den downloadede fil fjernes fra din enhed.';
@@ -1274,20 +1279,17 @@ class _TranslationsCompanionRemoteSessionDa implements TranslationsCompanionRemo
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get creatingSession => 'Opretter fjernsession...';
-	@override String get failedToCreate => 'Kunne ikke oprette fjernsession:';
-	@override String get noSession => 'Ingen session tilgængelig';
-	@override String get scanQrCode => 'Scan QR-kode';
-	@override String get orEnterManually => 'Eller indtast manuelt';
-	@override String get hostAddress => 'Værtadresse';
-	@override String get sessionId => 'Sessions-ID';
-	@override String get pin => 'PIN';
+	@override String get startingServer => 'Starter fjernserver...';
+	@override String get failedToCreate => 'Kunne ikke starte fjernserver:';
+	@override String get hostAddress => 'Værtsadresse';
 	@override String get connected => 'Forbundet';
-	@override String get waitingForConnection => 'Venter på forbindelse...';
+	@override String get serverRunning => 'Fjernserver aktiv';
+	@override String get serverStopped => 'Fjernserver stoppet';
+	@override String get serverRunningDescription => 'Mobilenheder på dit netværk kan finde og oprette forbindelse til denne app';
+	@override String get serverStoppedDescription => 'Start serveren for at tillade mobilenheder at oprette forbindelse';
 	@override String get usePhoneToControl => 'Brug din mobilenhed til at styre denne app';
-	@override String copiedToClipboard({required Object label}) => '${label} kopieret til udklipsholder';
-	@override String get copyToClipboard => 'Kopiér til udklipsholder';
-	@override String get newSession => 'Ny session';
+	@override String get startServer => 'Start server';
+	@override String get stopServer => 'Stop server';
 	@override String get minimize => 'Minimér';
 }
 
@@ -1298,31 +1300,22 @@ class _TranslationsCompanionRemotePairingDa implements TranslationsCompanionRemo
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get scan => 'Scan';
-	@override String get manual => 'Manuel';
-	@override String get pairWithDesktop => 'Par med desktop';
-	@override String get enterSessionDetails => 'Indtast sessionsdetaljerne vist på din desktopenhed';
+	@override String get pairWithDesktop => 'Opret forbindelse til computer';
+	@override String get discoveryDescription => 'Enheder på dit netværk, der kører Plezy med den samme Plex-konto, vises automatisk';
 	@override String get hostAddressHint => '192.168.1.100:48632';
-	@override String get sessionIdHint => 'Indtast 8-tegns sessions-ID';
-	@override String get pinHint => 'Indtast 6-cifret PIN';
-	@override String get connecting => 'Forbinder...';
-	@override String get tips => 'Tips';
-	@override String get tipDesktop => 'Åbn Plezy på din desktop og aktivér fjernbetjening fra indstillinger eller menu';
-	@override String get tipScan => 'Brug fanen Scan til hurtigt at parre ved at scanne QR-koden på din desktop';
-	@override String get tipWifi => 'Sørg for, at begge enheder er på det samme WiFi-netværk';
-	@override String get cameraPermissionRequired => 'Kameratilladelse er påkrævet for at scanne QR-koder.\nGiv kameraadgang i enhedsindstillinger.';
-	@override String cameraError({required Object error}) => 'Kunne ikke starte kamera: ${error}';
-	@override String get scanInstruction => 'Ret kameraet mod QR-koden vist på din desktop';
-	@override String get invalidQrCode => 'Ugyldigt QR-kodeformat';
-	@override String get validationHostRequired => 'Indtast værtadresse';
+	@override String get connecting => 'Opretter forbindelse...';
+	@override String get searchingForDevices => 'Søger efter enheder...';
+	@override String get noDevicesFound => 'Ingen enheder fundet på dit netværk';
+	@override String get noDevicesHint => 'Sørg for, at Plezy er åben på din computer, og at begge enheder er på det samme WiFi-netværk';
+	@override String get availableDevices => 'Tilgængelige enheder';
+	@override String get manualConnection => 'Manuel forbindelse';
+	@override String get cryptoInitFailed => 'Kunne ikke initialisere sikker forbindelse. Sørg for, at du er logget ind på en Plex-konto.';
+	@override String get validationHostRequired => 'Angiv venligst værtsadresse';
 	@override String get validationHostFormat => 'Format skal være IP:port (f.eks. 192.168.1.100:48632)';
-	@override String get validationSessionIdRequired => 'Indtast et sessions-ID';
-	@override String get validationSessionIdLength => 'Sessions-ID skal være 8 tegn';
-	@override String get validationPinRequired => 'Indtast en PIN';
-	@override String get validationPinLength => 'PIN skal være 6 cifre';
-	@override String get connectionTimedOut => 'Forbindelsen fik timeout. Tjek sessions-ID og PIN.';
-	@override String get sessionNotFound => 'Kunne ikke finde sessionen. Tjek dine oplysninger.';
-	@override String failedToConnect({required Object error}) => 'Kunne ikke forbinde: ${error}';
+	@override String get connectionTimedOut => 'Forbindelsen udløb. Sørg for, at begge enheder er på det samme netværk.';
+	@override String get sessionNotFound => 'Kunne ikke finde enheden. Sørg for, at Plezy kører på værten.';
+	@override String get authFailed => 'Godkendelse mislykkedes. Sørg for, at begge enheder bruger den samme Plex-konto.';
+	@override String failedToConnect({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1600,6 +1593,8 @@ extension on TranslationsDa {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.companionRemoteServer' => 'Companion Remote Server',
+			'settings.companionRemoteServerDescription' => 'Tillad mobilenheder på dit netværk at styre denne app',
 			'search.hint' => 'Søg film, serier, musik...',
 			'search.tryDifferentTerm' => 'Prøv en anden søgning',
 			'search.searchYourMedia' => 'Søg i dine medier',
@@ -1881,10 +1876,10 @@ extension on TranslationsDa {
 			'libraries.groupings.seasons' => 'Sæsoner',
 			'libraries.groupings.episodes' => 'Episoder',
 			'libraries.groupings.folders' => 'Mapper',
-			'about.title' => 'Om',
-			'about.openSourceLicenses' => 'Open source-licenser',
 			_ => null,
 		} ?? switch (path) {
+			'about.title' => 'Om',
+			'about.openSourceLicenses' => 'Open source-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'En smuk Plex-klient til Flutter',
 			'about.viewLicensesDescription' => 'Se licenser for tredjepartsbiblioteker',
@@ -2029,6 +2024,8 @@ extension on TranslationsDa {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} satte på pause',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} genoptog',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spoled',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} bufferer',
+			'watchTogether.waitingForParticipants' => 'Venter på at andre indlæser...',
 			'watchTogether.recentRooms' => 'Seneste rum',
 			'watchTogether.renameRoom' => 'Omdøb rum',
 			'watchTogether.removeRoom' => 'Fjern',
@@ -2042,6 +2039,7 @@ extension on TranslationsDa {
 			'downloads.deleteDownload' => 'Slet download',
 			'downloads.retryDownload' => 'Prøv download igen',
 			'downloads.downloadQueued' => 'Download i kø',
+			'downloads.serverErrorBitrate' => 'Serverfejl — filen overskrider muligvis grænsen for fjernstreaming-bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i downloadkø',
 			'downloads.downloadDeleted' => 'Download slettet',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Er du sikker på, at du vil slette "${title}"? Den downloadede fil fjernes fra din enhed.',
@@ -2076,46 +2074,34 @@ extension on TranslationsDa {
 			'companionRemote.remoteControl' => 'Fjernbetjening',
 			'companionRemote.controlDesktop' => 'Styr en desktopenhed',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Forbundet til ${name}',
-			'companionRemote.session.creatingSession' => 'Opretter fjernsession...',
-			'companionRemote.session.failedToCreate' => 'Kunne ikke oprette fjernsession:',
-			'companionRemote.session.noSession' => 'Ingen session tilgængelig',
-			'companionRemote.session.scanQrCode' => 'Scan QR-kode',
-			'companionRemote.session.orEnterManually' => 'Eller indtast manuelt',
-			'companionRemote.session.hostAddress' => 'Værtadresse',
-			'companionRemote.session.sessionId' => 'Sessions-ID',
-			'companionRemote.session.pin' => 'PIN',
+			'companionRemote.session.startingServer' => 'Starter fjernserver...',
+			'companionRemote.session.failedToCreate' => 'Kunne ikke starte fjernserver:',
+			'companionRemote.session.hostAddress' => 'Værtsadresse',
 			'companionRemote.session.connected' => 'Forbundet',
-			'companionRemote.session.waitingForConnection' => 'Venter på forbindelse...',
+			'companionRemote.session.serverRunning' => 'Fjernserver aktiv',
+			'companionRemote.session.serverStopped' => 'Fjernserver stoppet',
+			'companionRemote.session.serverRunningDescription' => 'Mobilenheder på dit netværk kan finde og oprette forbindelse til denne app',
+			'companionRemote.session.serverStoppedDescription' => 'Start serveren for at tillade mobilenheder at oprette forbindelse',
 			'companionRemote.session.usePhoneToControl' => 'Brug din mobilenhed til at styre denne app',
-			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} kopieret til udklipsholder',
-			'companionRemote.session.copyToClipboard' => 'Kopiér til udklipsholder',
-			'companionRemote.session.newSession' => 'Ny session',
+			'companionRemote.session.startServer' => 'Start server',
+			'companionRemote.session.stopServer' => 'Stop server',
 			'companionRemote.session.minimize' => 'Minimér',
-			'companionRemote.pairing.scan' => 'Scan',
-			'companionRemote.pairing.manual' => 'Manuel',
-			'companionRemote.pairing.pairWithDesktop' => 'Par med desktop',
-			'companionRemote.pairing.enterSessionDetails' => 'Indtast sessionsdetaljerne vist på din desktopenhed',
+			'companionRemote.pairing.pairWithDesktop' => 'Opret forbindelse til computer',
+			'companionRemote.pairing.discoveryDescription' => 'Enheder på dit netværk, der kører Plezy med den samme Plex-konto, vises automatisk',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
-			'companionRemote.pairing.sessionIdHint' => 'Indtast 8-tegns sessions-ID',
-			'companionRemote.pairing.pinHint' => 'Indtast 6-cifret PIN',
-			'companionRemote.pairing.connecting' => 'Forbinder...',
-			'companionRemote.pairing.tips' => 'Tips',
-			'companionRemote.pairing.tipDesktop' => 'Åbn Plezy på din desktop og aktivér fjernbetjening fra indstillinger eller menu',
-			'companionRemote.pairing.tipScan' => 'Brug fanen Scan til hurtigt at parre ved at scanne QR-koden på din desktop',
-			'companionRemote.pairing.tipWifi' => 'Sørg for, at begge enheder er på det samme WiFi-netværk',
-			'companionRemote.pairing.cameraPermissionRequired' => 'Kameratilladelse er påkrævet for at scanne QR-koder.\nGiv kameraadgang i enhedsindstillinger.',
-			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Kunne ikke starte kamera: ${error}',
-			'companionRemote.pairing.scanInstruction' => 'Ret kameraet mod QR-koden vist på din desktop',
-			'companionRemote.pairing.invalidQrCode' => 'Ugyldigt QR-kodeformat',
-			'companionRemote.pairing.validationHostRequired' => 'Indtast værtadresse',
+			'companionRemote.pairing.connecting' => 'Opretter forbindelse...',
+			'companionRemote.pairing.searchingForDevices' => 'Søger efter enheder...',
+			'companionRemote.pairing.noDevicesFound' => 'Ingen enheder fundet på dit netværk',
+			'companionRemote.pairing.noDevicesHint' => 'Sørg for, at Plezy er åben på din computer, og at begge enheder er på det samme WiFi-netværk',
+			'companionRemote.pairing.availableDevices' => 'Tilgængelige enheder',
+			'companionRemote.pairing.manualConnection' => 'Manuel forbindelse',
+			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke initialisere sikker forbindelse. Sørg for, at du er logget ind på en Plex-konto.',
+			'companionRemote.pairing.validationHostRequired' => 'Angiv venligst værtsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format skal være IP:port (f.eks. 192.168.1.100:48632)',
-			'companionRemote.pairing.validationSessionIdRequired' => 'Indtast et sessions-ID',
-			'companionRemote.pairing.validationSessionIdLength' => 'Sessions-ID skal være 8 tegn',
-			'companionRemote.pairing.validationPinRequired' => 'Indtast en PIN',
-			'companionRemote.pairing.validationPinLength' => 'PIN skal være 6 cifre',
-			'companionRemote.pairing.connectionTimedOut' => 'Forbindelsen fik timeout. Tjek sessions-ID og PIN.',
-			'companionRemote.pairing.sessionNotFound' => 'Kunne ikke finde sessionen. Tjek dine oplysninger.',
-			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke forbinde: ${error}',
+			'companionRemote.pairing.connectionTimedOut' => 'Forbindelsen udløb. Sørg for, at begge enheder er på det samme netværk.',
+			'companionRemote.pairing.sessionNotFound' => 'Kunne ikke finde enheden. Sørg for, at Plezy kører på værten.',
+			'companionRemote.pairing.authFailed' => 'Godkendelse mislykkedes. Sørg for, at begge enheder bruger den samme Plex-konto.',
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du afbryde fra fjernsessionen?',
 			'companionRemote.remote.reconnecting' => 'Genopretter forbindelse...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Forsøg ${current} af 5',

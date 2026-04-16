@@ -3413,8 +3413,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         );
                       },
                     ),
-                    // Watch Together: participant join/leave notifications
+                    // Watch Together: participant join/leave/buffering notifications
                     const ParticipantNotificationOverlay(),
+                    // Watch Together: waiting for participants to load
+                    const WaitingForParticipantsIndicator(),
+                    // Watch Together: syncing indicator during drift correction
+                    const SyncingIndicator(),
                   ],
                 ),
               ),

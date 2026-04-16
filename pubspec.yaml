@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex client for Flutter"
 publish_to: "none"
-version: 1.32.0-PlexSyncer+68
+version: 1.33.1-PlexSyncer+70
 
 environment:
   sdk: ^3.8.1
@@ -43,6 +43,7 @@ dependencies:
   drift: ^2.31.0
   sqlite3_flutter_libs: ^0.5.42
   crypto: ^3.0.7
+  cryptography: ^2.9.0
   file_picker: ^10.3.10
   saf_util: ^2.0.0
   saf_stream: ^2.0.0
@@ -51,8 +52,10 @@ dependencies:
   in_app_review: ^2.0.11
   dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
-  mobile_scanner: ^7.2.0
-  background_downloader: ^9.5.2
+  background_downloader:
+    git:
+      url: https://github.com/edde746/background_downloader
+      ref: 1f42690
   sentry_flutter:
     git:
       url: https://github.com/edde746/sentry-dart

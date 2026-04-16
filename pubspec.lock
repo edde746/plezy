@@ -88,10 +88,11 @@ packages:
   background_downloader:
     dependency: "direct main"
     description:
-      name: background_downloader
-      sha256: "4cb23d9ad4f5060944f38164e7b90d4bf99b57b2472a3bd4676e59b2db4afd06"
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "1f42690"
+      resolved-ref: "1f426908b0d9e1083de35b3dd353c3434ad32ef2"
+      url: "https://github.com/edde746/background_downloader"
+    source: git
     version: "9.5.4"
   boolean_selector:
     dependency: transitive
@@ -286,7 +287,7 @@ packages:
     source: hosted
     version: "3.0.7"
   cryptography:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: cryptography
       sha256: "3eda3029d34ec9095a27a198ac9785630fe525c0eb6a49f3d575272f8e792ef0"
@@ -698,14 +699,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
-  mobile_scanner:
-    dependency: "direct main"
-    description:
-      name: mobile_scanner
-      sha256: c92c26bf2231695b6d3477c8dcf435f51e28f87b1745966b1fe4c47a286171ce
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.2.0"
   native_toolchain_c:
     dependency: transitive
     description:

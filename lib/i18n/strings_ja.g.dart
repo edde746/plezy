@@ -358,6 +358,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
+	@override String get companionRemoteServer => 'コンパニオンリモートサーバー';
+	@override String get companionRemoteServerDescription => 'ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする';
 }
 
 // Path: search
@@ -977,6 +979,8 @@ class _TranslationsWatchTogetherJa implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name}が一時停止しました';
 	@override String participantResumed({required Object name}) => '${name}が再開しました';
 	@override String participantSeeked({required Object name}) => '${name}がシークしました';
+	@override String participantBuffering({required Object name}) => '${name}がバッファリング中';
+	@override String get waitingForParticipants => '他の参加者の読み込みを待っています...';
 	@override String get recentRooms => '最近のルーム';
 	@override String get renameRoom => 'ルーム名を変更';
 	@override String get removeRoom => '削除';
@@ -999,6 +1003,7 @@ class _TranslationsDownloadsJa implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'ダウンロードを削除';
 	@override String get retryDownload => 'ダウンロードを再試行';
 	@override String get downloadQueued => 'ダウンロードをキューに追加しました';
+	@override String get serverErrorBitrate => 'サーバーエラー — ファイルがリモートストリーミングのビットレート制限を超えている可能性があります';
 	@override String episodesQueued({required Object count}) => '${count}エピソードをダウンロードキューに追加しました';
 	@override String get downloadDeleted => 'ダウンロードを削除しました';
 	@override String deleteConfirm({required Object title}) => '"${title}"を削除してもよろしいですか？ダウンロードしたファイルがデバイスから削除されます。';
@@ -1274,20 +1279,17 @@ class _TranslationsCompanionRemoteSessionJa implements TranslationsCompanionRemo
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get creatingSession => 'リモートセッションを作成中...';
-	@override String get failedToCreate => 'リモートセッションの作成に失敗しました:';
-	@override String get noSession => '利用可能なセッションがありません';
-	@override String get scanQrCode => 'QRコードをスキャン';
-	@override String get orEnterManually => 'または手動で入力';
+	@override String get startingServer => 'リモートサーバーを起動中...';
+	@override String get failedToCreate => 'リモートサーバーの起動に失敗しました:';
 	@override String get hostAddress => 'ホストアドレス';
-	@override String get sessionId => 'セッションID';
-	@override String get pin => 'PIN';
 	@override String get connected => '接続済み';
-	@override String get waitingForConnection => '接続を待機中...';
-	@override String get usePhoneToControl => 'モバイルデバイスでこのアプリを操作';
-	@override String copiedToClipboard({required Object label}) => '${label}をクリップボードにコピーしました';
-	@override String get copyToClipboard => 'クリップボードにコピー';
-	@override String get newSession => '新しいセッション';
+	@override String get serverRunning => 'リモートサーバー稼働中';
+	@override String get serverStopped => 'リモートサーバー停止中';
+	@override String get serverRunningDescription => 'ネットワーク上のモバイルデバイスがこのアプリを検出して接続できます';
+	@override String get serverStoppedDescription => 'モバイルデバイスの接続を許可するにはサーバーを起動してください';
+	@override String get usePhoneToControl => 'モバイルデバイスでこのアプリを操作できます';
+	@override String get startServer => 'サーバーを起動';
+	@override String get stopServer => 'サーバーを停止';
 	@override String get minimize => '最小化';
 }
 
@@ -1298,30 +1300,21 @@ class _TranslationsCompanionRemotePairingJa implements TranslationsCompanionRemo
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get scan => 'スキャン';
-	@override String get manual => '手動';
-	@override String get pairWithDesktop => 'デスクトップとペアリング';
-	@override String get enterSessionDetails => 'デスクトップデバイスに表示されたセッション情報を入力';
+	@override String get pairWithDesktop => 'デスクトップに接続';
+	@override String get discoveryDescription => '同じPlexアカウントでPlezyを実行しているネットワーク上のデバイスが自動的に表示されます';
 	@override String get hostAddressHint => '192.168.1.100:48632';
-	@override String get sessionIdHint => '8文字のセッションIDを入力';
-	@override String get pinHint => '6桁のPINを入力';
 	@override String get connecting => '接続中...';
-	@override String get tips => 'ヒント';
-	@override String get tipDesktop => 'デスクトップでPlezyを開き、設定またはメニューからコンパニオンリモートを有効にしてください';
-	@override String get tipScan => 'スキャンタブを使用して、デスクトップのQRコードをスキャンして素早くペアリング';
-	@override String get tipWifi => '両方のデバイスが同じWiFiネットワークに接続されていることを確認';
-	@override String get cameraPermissionRequired => 'QRコードをスキャンするにはカメラの権限が必要です。\nデバイスの設定でカメラへのアクセスを許可してください。';
-	@override String cameraError({required Object error}) => 'カメラを起動できませんでした: ${error}';
-	@override String get scanInstruction => 'デスクトップに表示されたQRコードにカメラを向けてください';
-	@override String get invalidQrCode => '無効なQRコード形式';
+	@override String get searchingForDevices => 'デバイスを検索中...';
+	@override String get noDevicesFound => 'ネットワーク上にデバイスが見つかりません';
+	@override String get noDevicesHint => 'デスクトップでPlezyが開いていること、両方のデバイスが同じWiFiネットワーク上にあることを確認してください';
+	@override String get availableDevices => '利用可能なデバイス';
+	@override String get manualConnection => '手動接続';
+	@override String get cryptoInitFailed => '安全な接続を初期化できませんでした。Plexアカウントにサインインしていることを確認してください。';
 	@override String get validationHostRequired => 'ホストアドレスを入力してください';
 	@override String get validationHostFormat => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）';
-	@override String get validationSessionIdRequired => 'セッションIDを入力してください';
-	@override String get validationSessionIdLength => 'セッションIDは8文字である必要があります';
-	@override String get validationPinRequired => 'PINを入力してください';
-	@override String get validationPinLength => 'PINは6桁である必要があります';
-	@override String get connectionTimedOut => '接続がタイムアウトしました。セッションIDとPINを確認してください。';
-	@override String get sessionNotFound => 'セッションが見つかりませんでした。認証情報を確認してください。';
+	@override String get connectionTimedOut => '接続がタイムアウトしました。両方のデバイスが同じネットワーク上にあることを確認してください。';
+	@override String get sessionNotFound => 'デバイスが見つかりません。ホストでPlezyが実行されていることを確認してください。';
+	@override String get authFailed => '認証に失敗しました。両方のデバイスが同じPlexアカウントを使用していることを確認してください。';
 	@override String failedToConnect({required Object error}) => '接続に失敗しました: ${error}';
 }
 
@@ -1600,6 +1593,8 @@ extension on TranslationsJa {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.companionRemoteServer' => 'コンパニオンリモートサーバー',
+			'settings.companionRemoteServerDescription' => 'ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする',
 			'search.hint' => '映画、番組、音楽を検索...',
 			'search.tryDifferentTerm' => '別の検索語をお試しください',
 			'search.searchYourMedia' => 'メディアを検索',
@@ -1881,10 +1876,10 @@ extension on TranslationsJa {
 			'libraries.groupings.seasons' => 'シーズン',
 			'libraries.groupings.episodes' => 'エピソード',
 			'libraries.groupings.folders' => 'フォルダ',
-			'about.title' => 'アプリについて',
-			'about.openSourceLicenses' => 'オープンソースライセンス',
 			_ => null,
 		} ?? switch (path) {
+			'about.title' => 'アプリについて',
+			'about.openSourceLicenses' => 'オープンソースライセンス',
 			'about.versionLabel' => ({required Object version}) => 'バージョン ${version}',
 			'about.appDescription' => 'Flutter製の美しいPlexクライアント',
 			'about.viewLicensesDescription' => 'サードパーティライブラリのライセンスを表示',
@@ -2029,6 +2024,8 @@ extension on TranslationsJa {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name}が一時停止しました',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}が再開しました',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}がシークしました',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name}がバッファリング中',
+			'watchTogether.waitingForParticipants' => '他の参加者の読み込みを待っています...',
 			'watchTogether.recentRooms' => '最近のルーム',
 			'watchTogether.renameRoom' => 'ルーム名を変更',
 			'watchTogether.removeRoom' => '削除',
@@ -2042,6 +2039,7 @@ extension on TranslationsJa {
 			'downloads.deleteDownload' => 'ダウンロードを削除',
 			'downloads.retryDownload' => 'ダウンロードを再試行',
 			'downloads.downloadQueued' => 'ダウンロードをキューに追加しました',
+			'downloads.serverErrorBitrate' => 'サーバーエラー — ファイルがリモートストリーミングのビットレート制限を超えている可能性があります',
 			'downloads.episodesQueued' => ({required Object count}) => '${count}エピソードをダウンロードキューに追加しました',
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}"を削除してもよろしいですか？ダウンロードしたファイルがデバイスから削除されます。',
@@ -2076,45 +2074,33 @@ extension on TranslationsJa {
 			'companionRemote.remoteControl' => 'リモコン',
 			'companionRemote.controlDesktop' => 'デスクトップデバイスを操作',
 			'companionRemote.connectedTo' => ({required Object name}) => '${name}に接続中',
-			'companionRemote.session.creatingSession' => 'リモートセッションを作成中...',
-			'companionRemote.session.failedToCreate' => 'リモートセッションの作成に失敗しました:',
-			'companionRemote.session.noSession' => '利用可能なセッションがありません',
-			'companionRemote.session.scanQrCode' => 'QRコードをスキャン',
-			'companionRemote.session.orEnterManually' => 'または手動で入力',
+			'companionRemote.session.startingServer' => 'リモートサーバーを起動中...',
+			'companionRemote.session.failedToCreate' => 'リモートサーバーの起動に失敗しました:',
 			'companionRemote.session.hostAddress' => 'ホストアドレス',
-			'companionRemote.session.sessionId' => 'セッションID',
-			'companionRemote.session.pin' => 'PIN',
 			'companionRemote.session.connected' => '接続済み',
-			'companionRemote.session.waitingForConnection' => '接続を待機中...',
-			'companionRemote.session.usePhoneToControl' => 'モバイルデバイスでこのアプリを操作',
-			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label}をクリップボードにコピーしました',
-			'companionRemote.session.copyToClipboard' => 'クリップボードにコピー',
-			'companionRemote.session.newSession' => '新しいセッション',
+			'companionRemote.session.serverRunning' => 'リモートサーバー稼働中',
+			'companionRemote.session.serverStopped' => 'リモートサーバー停止中',
+			'companionRemote.session.serverRunningDescription' => 'ネットワーク上のモバイルデバイスがこのアプリを検出して接続できます',
+			'companionRemote.session.serverStoppedDescription' => 'モバイルデバイスの接続を許可するにはサーバーを起動してください',
+			'companionRemote.session.usePhoneToControl' => 'モバイルデバイスでこのアプリを操作できます',
+			'companionRemote.session.startServer' => 'サーバーを起動',
+			'companionRemote.session.stopServer' => 'サーバーを停止',
 			'companionRemote.session.minimize' => '最小化',
-			'companionRemote.pairing.scan' => 'スキャン',
-			'companionRemote.pairing.manual' => '手動',
-			'companionRemote.pairing.pairWithDesktop' => 'デスクトップとペアリング',
-			'companionRemote.pairing.enterSessionDetails' => 'デスクトップデバイスに表示されたセッション情報を入力',
+			'companionRemote.pairing.pairWithDesktop' => 'デスクトップに接続',
+			'companionRemote.pairing.discoveryDescription' => '同じPlexアカウントでPlezyを実行しているネットワーク上のデバイスが自動的に表示されます',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
-			'companionRemote.pairing.sessionIdHint' => '8文字のセッションIDを入力',
-			'companionRemote.pairing.pinHint' => '6桁のPINを入力',
 			'companionRemote.pairing.connecting' => '接続中...',
-			'companionRemote.pairing.tips' => 'ヒント',
-			'companionRemote.pairing.tipDesktop' => 'デスクトップでPlezyを開き、設定またはメニューからコンパニオンリモートを有効にしてください',
-			'companionRemote.pairing.tipScan' => 'スキャンタブを使用して、デスクトップのQRコードをスキャンして素早くペアリング',
-			'companionRemote.pairing.tipWifi' => '両方のデバイスが同じWiFiネットワークに接続されていることを確認',
-			'companionRemote.pairing.cameraPermissionRequired' => 'QRコードをスキャンするにはカメラの権限が必要です。\nデバイスの設定でカメラへのアクセスを許可してください。',
-			'companionRemote.pairing.cameraError' => ({required Object error}) => 'カメラを起動できませんでした: ${error}',
-			'companionRemote.pairing.scanInstruction' => 'デスクトップに表示されたQRコードにカメラを向けてください',
-			'companionRemote.pairing.invalidQrCode' => '無効なQRコード形式',
+			'companionRemote.pairing.searchingForDevices' => 'デバイスを検索中...',
+			'companionRemote.pairing.noDevicesFound' => 'ネットワーク上にデバイスが見つかりません',
+			'companionRemote.pairing.noDevicesHint' => 'デスクトップでPlezyが開いていること、両方のデバイスが同じWiFiネットワーク上にあることを確認してください',
+			'companionRemote.pairing.availableDevices' => '利用可能なデバイス',
+			'companionRemote.pairing.manualConnection' => '手動接続',
+			'companionRemote.pairing.cryptoInitFailed' => '安全な接続を初期化できませんでした。Plexアカウントにサインインしていることを確認してください。',
 			'companionRemote.pairing.validationHostRequired' => 'ホストアドレスを入力してください',
 			'companionRemote.pairing.validationHostFormat' => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）',
-			'companionRemote.pairing.validationSessionIdRequired' => 'セッションIDを入力してください',
-			'companionRemote.pairing.validationSessionIdLength' => 'セッションIDは8文字である必要があります',
-			'companionRemote.pairing.validationPinRequired' => 'PINを入力してください',
-			'companionRemote.pairing.validationPinLength' => 'PINは6桁である必要があります',
-			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。セッションIDとPINを確認してください。',
-			'companionRemote.pairing.sessionNotFound' => 'セッションが見つかりませんでした。認証情報を確認してください。',
+			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。両方のデバイスが同じネットワーク上にあることを確認してください。',
+			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでPlezyが実行されていることを確認してください。',
+			'companionRemote.pairing.authFailed' => '認証に失敗しました。両方のデバイスが同じPlexアカウントを使用していることを確認してください。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションから切断しますか？',
 			'companionRemote.remote.reconnecting' => '再接続中...',

@@ -108,6 +108,7 @@ class DownloadProvider extends ChangeNotifier {
           progress: item.progress,
           downloadedBytes: item.downloadedBytes,
           totalBytes: item.totalBytes ?? 0,
+          errorMessage: item.errorMessage,
         );
 
         // Store Plex thumb path reference (file path computed from hash when needed)

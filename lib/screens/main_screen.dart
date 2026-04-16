@@ -169,6 +169,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         // Set up data invalidation callback for profile switching
         userProfileProvider.setDataInvalidationCallback(_invalidateAllScreens);
 
+        // Auto-start companion remote server now that home data is available
+        if (_companionRemoteSetup && mounted) {
+          _autoStartCompanionRemoteServer(context.read<CompanionRemoteProvider>());
+        }
+
         // Ensure first login (or any unset profile state) requires explicit selection.
         await _promptForInitialProfileSelection(userProfileProvider);
       }
@@ -464,6 +469,21 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         });
       }
     };
+  }
+
+  Future<void> _autoStartCompanionRemoteServer(CompanionRemoteProvider companionRemote) async {
+    try {
+      final settings = await SettingsService.getInstance();
+      if (!settings.getEnableCompanionRemoteServer()) return;
+      if (!mounted) return;
+
+      final home = context.read<UserProfileProvider>().home;
+      if (await companionRemote.ensureCryptoReady(home)) {
+        await companionRemote.startHostServer();
+      }
+    } catch (e) {
+      appLogger.e('CompanionRemote: Failed to auto-start server', error: e);
+    }
   }
 
   @override

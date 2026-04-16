@@ -358,6 +358,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
+	@override String get companionRemoteServer => 'Сервер удалённого управления';
+	@override String get companionRemoteServerDescription => 'Разрешить мобильным устройствам в сети управлять этим приложением';
 }
 
 // Path: search
@@ -977,6 +979,8 @@ class _TranslationsWatchTogetherRu implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} поставил на паузу';
 	@override String participantResumed({required Object name}) => '${name} возобновил';
 	@override String participantSeeked({required Object name}) => '${name} перемотал';
+	@override String participantBuffering({required Object name}) => '${name} буферизует';
+	@override String get waitingForParticipants => 'Ожидание загрузки у других...';
 	@override String get recentRooms => 'Недавние комнаты';
 	@override String get renameRoom => 'Переименовать комнату';
 	@override String get removeRoom => 'Удалить';
@@ -999,6 +1003,7 @@ class _TranslationsDownloadsRu implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Удалить загрузку';
 	@override String get retryDownload => 'Повторить загрузку';
 	@override String get downloadQueued => 'Загрузка поставлена в очередь';
+	@override String get serverErrorBitrate => 'Ошибка сервера — файл может превышать лимит битрейта удалённого стриминга';
 	@override String episodesQueued({required Object count}) => '${count} эпизодов поставлено в очередь загрузки';
 	@override String get downloadDeleted => 'Загрузка удалена';
 	@override String deleteConfirm({required Object title}) => 'Вы уверены, что хотите удалить "${title}"? Загруженный файл будет удалён с устройства.';
@@ -1274,20 +1279,17 @@ class _TranslationsCompanionRemoteSessionRu implements TranslationsCompanionRemo
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
-	@override String get creatingSession => 'Создание удалённой сессии...';
-	@override String get failedToCreate => 'Не удалось создать удалённую сессию:';
-	@override String get noSession => 'Нет доступных сессий';
-	@override String get scanQrCode => 'Сканировать QR-код';
-	@override String get orEnterManually => 'Или введите вручную';
+	@override String get startingServer => 'Запуск удалённого сервера...';
+	@override String get failedToCreate => 'Не удалось запустить удалённый сервер:';
 	@override String get hostAddress => 'Адрес хоста';
-	@override String get sessionId => 'ID сессии';
-	@override String get pin => 'PIN';
 	@override String get connected => 'Подключено';
-	@override String get waitingForConnection => 'Ожидание подключения...';
+	@override String get serverRunning => 'Удалённый сервер активен';
+	@override String get serverStopped => 'Удалённый сервер остановлен';
+	@override String get serverRunningDescription => 'Мобильные устройства в вашей сети могут обнаруживать это приложение и подключаться к нему';
+	@override String get serverStoppedDescription => 'Запустите сервер, чтобы разрешить подключение мобильных устройств';
 	@override String get usePhoneToControl => 'Используйте мобильное устройство для управления этим приложением';
-	@override String copiedToClipboard({required Object label}) => '${label} скопировано в буфер обмена';
-	@override String get copyToClipboard => 'Скопировать в буфер обмена';
-	@override String get newSession => 'Новая сессия';
+	@override String get startServer => 'Запустить сервер';
+	@override String get stopServer => 'Остановить сервер';
 	@override String get minimize => 'Свернуть';
 }
 
@@ -1298,30 +1300,21 @@ class _TranslationsCompanionRemotePairingRu implements TranslationsCompanionRemo
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
-	@override String get scan => 'Сканировать';
-	@override String get manual => 'Вручную';
-	@override String get pairWithDesktop => 'Сопряжение с ПК';
-	@override String get enterSessionDetails => 'Введите данные сессии, показанные на десктопном устройстве';
+	@override String get pairWithDesktop => 'Подключиться к компьютеру';
+	@override String get discoveryDescription => 'Устройства в вашей сети с Plezy на том же аккаунте Plex появятся автоматически';
 	@override String get hostAddressHint => '192.168.1.100:48632';
-	@override String get sessionIdHint => 'Введите 8-символьный ID сессии';
-	@override String get pinHint => 'Введите 6-значный PIN';
 	@override String get connecting => 'Подключение...';
-	@override String get tips => 'Советы';
-	@override String get tipDesktop => 'Откройте Plezy на десктопе и включите пульт управления в настройках или меню';
-	@override String get tipScan => 'Используйте вкладку «Сканировать» для быстрого сопряжения через QR-код на десктопе';
-	@override String get tipWifi => 'Убедитесь, что оба устройства находятся в одной WiFi-сети';
-	@override String get cameraPermissionRequired => 'Для сканирования QR-кодов требуется разрешение на камеру.\nПредоставьте доступ к камере в настройках устройства.';
-	@override String cameraError({required Object error}) => 'Не удалось запустить камеру: ${error}';
-	@override String get scanInstruction => 'Наведите камеру на QR-код, показанный на десктопе';
-	@override String get invalidQrCode => 'Недопустимый формат QR-кода';
+	@override String get searchingForDevices => 'Поиск устройств...';
+	@override String get noDevicesFound => 'Устройства в вашей сети не найдены';
+	@override String get noDevicesHint => 'Убедитесь, что Plezy открыт на вашем компьютере и оба устройства находятся в одной сети WiFi';
+	@override String get availableDevices => 'Доступные устройства';
+	@override String get manualConnection => 'Ручное подключение';
+	@override String get cryptoInitFailed => 'Не удалось инициализировать безопасное соединение. Убедитесь, что вы вошли в аккаунт Plex.';
 	@override String get validationHostRequired => 'Введите адрес хоста';
 	@override String get validationHostFormat => 'Формат должен быть IP:порт (например, 192.168.1.100:48632)';
-	@override String get validationSessionIdRequired => 'Введите ID сессии';
-	@override String get validationSessionIdLength => 'ID сессии должен содержать 8 символов';
-	@override String get validationPinRequired => 'Введите PIN';
-	@override String get validationPinLength => 'PIN должен содержать 6 цифр';
-	@override String get connectionTimedOut => 'Время подключения истекло. Проверьте ID сессии и PIN.';
-	@override String get sessionNotFound => 'Сессия не найдена. Проверьте ваши учётные данные.';
+	@override String get connectionTimedOut => 'Время подключения истекло. Убедитесь, что оба устройства находятся в одной сети.';
+	@override String get sessionNotFound => 'Устройство не найдено. Убедитесь, что Plezy запущен на хосте.';
+	@override String get authFailed => 'Ошибка аутентификации. Убедитесь, что оба устройства используют один и тот же аккаунт Plex.';
 	@override String failedToConnect({required Object error}) => 'Не удалось подключиться: ${error}';
 }
 
@@ -1600,6 +1593,8 @@ extension on TranslationsRu {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.companionRemoteServer' => 'Сервер удалённого управления',
+			'settings.companionRemoteServerDescription' => 'Разрешить мобильным устройствам в сети управлять этим приложением',
 			'search.hint' => 'Поиск фильмов, сериалов, музыки...',
 			'search.tryDifferentTerm' => 'Попробуйте другой запрос',
 			'search.searchYourMedia' => 'Поиск в вашей медиатеке',
@@ -1881,10 +1876,10 @@ extension on TranslationsRu {
 			'libraries.groupings.seasons' => 'Сезоны',
 			'libraries.groupings.episodes' => 'Эпизоды',
 			'libraries.groupings.folders' => 'Папки',
-			'about.title' => 'О приложении',
-			'about.openSourceLicenses' => 'Лицензии открытого ПО',
 			_ => null,
 		} ?? switch (path) {
+			'about.title' => 'О приложении',
+			'about.openSourceLicenses' => 'Лицензии открытого ПО',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
 			'about.appDescription' => 'Красивый клиент Plex на Flutter',
 			'about.viewLicensesDescription' => 'Просмотр лицензий сторонних библиотек',
@@ -2029,6 +2024,8 @@ extension on TranslationsRu {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} поставил на паузу',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} возобновил',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} перемотал',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферизует',
+			'watchTogether.waitingForParticipants' => 'Ожидание загрузки у других...',
 			'watchTogether.recentRooms' => 'Недавние комнаты',
 			'watchTogether.renameRoom' => 'Переименовать комнату',
 			'watchTogether.removeRoom' => 'Удалить',
@@ -2042,6 +2039,7 @@ extension on TranslationsRu {
 			'downloads.deleteDownload' => 'Удалить загрузку',
 			'downloads.retryDownload' => 'Повторить загрузку',
 			'downloads.downloadQueued' => 'Загрузка поставлена в очередь',
+			'downloads.serverErrorBitrate' => 'Ошибка сервера — файл может превышать лимит битрейта удалённого стриминга',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Вы уверены, что хотите удалить "${title}"? Загруженный файл будет удалён с устройства.',
@@ -2076,45 +2074,33 @@ extension on TranslationsRu {
 			'companionRemote.remoteControl' => 'Пульт управления',
 			'companionRemote.controlDesktop' => 'Управлять десктопным устройством',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Подключено к ${name}',
-			'companionRemote.session.creatingSession' => 'Создание удалённой сессии...',
-			'companionRemote.session.failedToCreate' => 'Не удалось создать удалённую сессию:',
-			'companionRemote.session.noSession' => 'Нет доступных сессий',
-			'companionRemote.session.scanQrCode' => 'Сканировать QR-код',
-			'companionRemote.session.orEnterManually' => 'Или введите вручную',
+			'companionRemote.session.startingServer' => 'Запуск удалённого сервера...',
+			'companionRemote.session.failedToCreate' => 'Не удалось запустить удалённый сервер:',
 			'companionRemote.session.hostAddress' => 'Адрес хоста',
-			'companionRemote.session.sessionId' => 'ID сессии',
-			'companionRemote.session.pin' => 'PIN',
 			'companionRemote.session.connected' => 'Подключено',
-			'companionRemote.session.waitingForConnection' => 'Ожидание подключения...',
+			'companionRemote.session.serverRunning' => 'Удалённый сервер активен',
+			'companionRemote.session.serverStopped' => 'Удалённый сервер остановлен',
+			'companionRemote.session.serverRunningDescription' => 'Мобильные устройства в вашей сети могут обнаруживать это приложение и подключаться к нему',
+			'companionRemote.session.serverStoppedDescription' => 'Запустите сервер, чтобы разрешить подключение мобильных устройств',
 			'companionRemote.session.usePhoneToControl' => 'Используйте мобильное устройство для управления этим приложением',
-			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} скопировано в буфер обмена',
-			'companionRemote.session.copyToClipboard' => 'Скопировать в буфер обмена',
-			'companionRemote.session.newSession' => 'Новая сессия',
+			'companionRemote.session.startServer' => 'Запустить сервер',
+			'companionRemote.session.stopServer' => 'Остановить сервер',
 			'companionRemote.session.minimize' => 'Свернуть',
-			'companionRemote.pairing.scan' => 'Сканировать',
-			'companionRemote.pairing.manual' => 'Вручную',
-			'companionRemote.pairing.pairWithDesktop' => 'Сопряжение с ПК',
-			'companionRemote.pairing.enterSessionDetails' => 'Введите данные сессии, показанные на десктопном устройстве',
+			'companionRemote.pairing.pairWithDesktop' => 'Подключиться к компьютеру',
+			'companionRemote.pairing.discoveryDescription' => 'Устройства в вашей сети с Plezy на том же аккаунте Plex появятся автоматически',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
-			'companionRemote.pairing.sessionIdHint' => 'Введите 8-символьный ID сессии',
-			'companionRemote.pairing.pinHint' => 'Введите 6-значный PIN',
 			'companionRemote.pairing.connecting' => 'Подключение...',
-			'companionRemote.pairing.tips' => 'Советы',
-			'companionRemote.pairing.tipDesktop' => 'Откройте Plezy на десктопе и включите пульт управления в настройках или меню',
-			'companionRemote.pairing.tipScan' => 'Используйте вкладку «Сканировать» для быстрого сопряжения через QR-код на десктопе',
-			'companionRemote.pairing.tipWifi' => 'Убедитесь, что оба устройства находятся в одной WiFi-сети',
-			'companionRemote.pairing.cameraPermissionRequired' => 'Для сканирования QR-кодов требуется разрешение на камеру.\nПредоставьте доступ к камере в настройках устройства.',
-			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Не удалось запустить камеру: ${error}',
-			'companionRemote.pairing.scanInstruction' => 'Наведите камеру на QR-код, показанный на десктопе',
-			'companionRemote.pairing.invalidQrCode' => 'Недопустимый формат QR-кода',
+			'companionRemote.pairing.searchingForDevices' => 'Поиск устройств...',
+			'companionRemote.pairing.noDevicesFound' => 'Устройства в вашей сети не найдены',
+			'companionRemote.pairing.noDevicesHint' => 'Убедитесь, что Plezy открыт на вашем компьютере и оба устройства находятся в одной сети WiFi',
+			'companionRemote.pairing.availableDevices' => 'Доступные устройства',
+			'companionRemote.pairing.manualConnection' => 'Ручное подключение',
+			'companionRemote.pairing.cryptoInitFailed' => 'Не удалось инициализировать безопасное соединение. Убедитесь, что вы вошли в аккаунт Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Введите адрес хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Формат должен быть IP:порт (например, 192.168.1.100:48632)',
-			'companionRemote.pairing.validationSessionIdRequired' => 'Введите ID сессии',
-			'companionRemote.pairing.validationSessionIdLength' => 'ID сессии должен содержать 8 символов',
-			'companionRemote.pairing.validationPinRequired' => 'Введите PIN',
-			'companionRemote.pairing.validationPinLength' => 'PIN должен содержать 6 цифр',
-			'companionRemote.pairing.connectionTimedOut' => 'Время подключения истекло. Проверьте ID сессии и PIN.',
-			'companionRemote.pairing.sessionNotFound' => 'Сессия не найдена. Проверьте ваши учётные данные.',
+			'companionRemote.pairing.connectionTimedOut' => 'Время подключения истекло. Убедитесь, что оба устройства находятся в одной сети.',
+			'companionRemote.pairing.sessionNotFound' => 'Устройство не найдено. Убедитесь, что Plezy запущен на хосте.',
+			'companionRemote.pairing.authFailed' => 'Ошибка аутентификации. Убедитесь, что оба устройства используют один и тот же аккаунт Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Не удалось подключиться: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Отключиться от удалённой сессии?',
 			'companionRemote.remote.reconnecting' => 'Переподключение...',

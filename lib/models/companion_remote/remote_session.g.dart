@@ -29,8 +29,6 @@ Map<String, dynamic> _$RemoteDeviceToJson(RemoteDevice instance) =>
 
 RemoteSession _$RemoteSessionFromJson(Map<String, dynamic> json) =>
     RemoteSession(
-      sessionId: json['sessionId'] as String,
-      pin: json['pin'] as String,
       role: $enumDecode(
         _$RemoteSessionRoleEnumMap,
         json['role'],
@@ -56,8 +54,6 @@ RemoteSession _$RemoteSessionFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$RemoteSessionToJson(RemoteSession instance) =>
     <String, dynamic>{
-      'sessionId': instance.sessionId,
-      'pin': instance.pin,
       'role': _$RemoteSessionRoleEnumMap[instance.role]!,
       'status': _$RemoteSessionStatusEnumMap[instance.status]!,
       'connectedDevice': instance.connectedDevice,

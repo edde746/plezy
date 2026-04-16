@@ -15,6 +15,7 @@ import '../models/plex_media_info.dart';
 import '../services/plex_client.dart';
 import '../services/download_storage_service.dart';
 import '../services/plex_api_cache.dart';
+import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/codec_utils.dart';
 import '../utils/global_key_utils.dart';
@@ -96,6 +97,11 @@ class DownloadManagerService {
   // App-level auto-retry timers for downloads that exhausted native retries.
   // Keyed by globalKey; each timer fires a fresh re-enqueue after a delay.
   final Map<String, Timer> _autoRetryTimers = {};
+
+  // Circuit breaker: consecutive instant failures in _processQueue.
+  // Stops the queue when all items fail with the same error (e.g. DNS).
+  int _consecutiveQueueFailures = 0;
+  static const _maxConsecutiveFailures = 3;
 
   /// Public method to check if downloads should be blocked due to cellular-only setting
   /// Can be used by DownloadProvider to show user-friendly error
@@ -411,6 +417,11 @@ class DownloadManagerService {
       await _initializeFileDownloader();
 
       while (true) {
+        if (_consecutiveQueueFailures >= _maxConsecutiveFailures) {
+          appLogger.w('Circuit breaker: $_consecutiveQueueFailures consecutive failures, pausing queue');
+          break;
+        }
+
         final nextItem = await _database.getNextQueueItem();
         if (nextItem == null) break;
 
@@ -421,25 +432,43 @@ class DownloadManagerService {
           appLogger.d('Skipping queued download ${nextItem.mediaGlobalKey}: server offline');
           continue;
         }
-        await _prepareAndEnqueueDownload(nextItem.mediaGlobalKey, itemClient, nextItem);
+        final enqueued = await _prepareAndEnqueueDownload(nextItem.mediaGlobalKey, itemClient, nextItem);
+        if (enqueued) {
+          _consecutiveQueueFailures = 0;
+        } else {
+          _consecutiveQueueFailures++;
+        }
       }
     } finally {
       _isProcessingQueue = false;
     }
   }
 
+  /// Cancel any lingering background task and reset progress before re-enqueuing.
+  Future<void> _cleanupStaleDownload(String globalKey) async {
+    final existingTaskId = await _database.getBgTaskId(globalKey);
+    if (existingTaskId != null) {
+      await FileDownloader().cancelTaskWithId(existingTaskId);
+      await _database.updateBgTaskId(globalKey, null);
+      appLogger.d('Cancelled stale bg task $existingTaskId for $globalKey');
+    }
+    await _database.updateDownloadProgress(globalKey, 0, 0, 0);
+  }
+
   /// Resolve metadata, video URL, and file path, then enqueue a background download task.
-  Future<void> _prepareAndEnqueueDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
+  /// Returns true if successfully enqueued, false if it failed immediately.
+  Future<bool> _prepareAndEnqueueDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
     try {
       // Guard: don't re-enqueue an item that's already completed or was deleted
       final existing = await _database.getDownloadedMedia(globalKey);
       if (existing == null || existing.status == DownloadStatus.completed.index) {
         appLogger.d('Skipping enqueue for $globalKey: already completed or deleted');
         await _database.removeFromQueue(globalKey);
-        return;
+        return true;
       }
 
       appLogger.i('Preparing download for $globalKey');
+      if (existing.bgTaskId != null) await _cleanupStaleDownload(globalKey);
       await _transitionStatus(globalKey, DownloadStatus.downloading);
 
       final parsed = parseGlobalKey(globalKey);
@@ -519,6 +548,7 @@ class DownloadManagerService {
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
           retries: _nativeRetries,
+          allowPause: true,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -548,6 +578,13 @@ class DownloadManagerService {
         } else {
           downloadFilePath = await _storageService.getVideoFilePath(serverId, metadata.ratingKey, ext);
         }
+
+        // Clean up partial files from previous attempts to prevent
+        // background_downloader from creating numbered copies (File (1).mp4)
+        await Future.wait([
+          _deleteFileIfExists(File(downloadFilePath), 'stale video before re-download'),
+          _deleteFileIfExists(File('$downloadFilePath.part'), 'stale .part before re-download'),
+        ]);
 
         await File(downloadFilePath).parent.create(recursive: true);
 
@@ -580,11 +617,13 @@ class DownloadManagerService {
         if (!success) throw Exception('Failed to enqueue download task');
         appLogger.i('Enqueued download task ${task.taskId} for $globalKey');
       }
+      return true;
     } catch (e) {
       appLogger.e('Failed to prepare download for $globalKey', error: e);
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: e.toString());
       await _database.removeFromQueue(globalKey);
       _pendingDownloadContext.remove(globalKey);
+      return false;
     }
   }
 
@@ -698,8 +737,18 @@ class DownloadManagerService {
     }
     final retryCount = existing?.retryCount ?? 0;
 
+    // DNS/connection errors fail instantly and exhaust native retries in milliseconds,
+    // creating a retry storm. Treat them as permanent failures.
+    final isNetworkError = errorMessage.contains('Unable to resolve host') ||
+        errorMessage.contains('No address associated with hostname') ||
+        errorMessage.contains('Network is unreachable') ||
+        errorMessage.contains('Connection refused');
+    final isServerError = errorMessage.contains('500 Internal Server Error');
+
     final client = _getClient(parseGlobalKey(globalKey)?.serverId);
-    if (retryCount < _maxAppRetries && client != null) {
+    final hadProgress = (existing?.downloadedBytes ?? 0) > 0;
+
+    if (!isNetworkError && !isServerError && retryCount < _maxAppRetries && client != null) {
       // App-level auto-retry: schedule a fresh download after a delay.
       // Each new task gets 5 native retries with Range-based resume.
       appLogger.w(
@@ -714,10 +763,17 @@ class DownloadManagerService {
         _performAutoRetry(globalKey);
       });
 
-      // Advance the queue while we wait for the retry timer
-      _processQueue(client);
+      // Only advance the queue if the download actually started transferring.
+      // Instant failures (DNS, connection) would just cause the next item to fail too.
+      if (hadProgress) _processQueue(client);
     } else {
-      await _onDownloadPermanentlyFailed(globalKey, errorMessage);
+      if (isNetworkError) {
+        appLogger.w('Network error for $globalKey, failing permanently (no auto-retry): $errorMessage');
+      }
+      final userMessage = isServerError
+          ? t.downloads.serverErrorBitrate
+          : errorMessage;
+      await _onDownloadPermanentlyFailed(globalKey, userMessage);
     }
   }
 
@@ -768,6 +824,7 @@ class DownloadManagerService {
 
   /// Handle a completed video download — store path, download supplementary content, mark done.
   Future<void> _onDownloadComplete(String globalKey, Task task) async {
+    _consecutiveQueueFailures = 0;
     // Prevent duplicate concurrent completions (e.g. trackTasks replaying events)
     if (_completingKeys.contains(globalKey)) {
       appLogger.d('Already processing completion for $globalKey, skipping');
@@ -1216,6 +1273,7 @@ class DownloadManagerService {
 
     // Native resume failed or not supported (SAF mode) — re-enqueue from scratch
     await _database.updateBgTaskId(globalKey, null);
+    await _database.updateDownloadProgress(globalKey, 0, 0, 0);
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
     final resolvedClient = _getClient(parseGlobalKey(globalKey)?.serverId) ?? client;
@@ -1227,6 +1285,7 @@ class DownloadManagerService {
     _autoRetryTimers.remove(globalKey)?.cancel();
     await _database.clearDownloadError(globalKey);
     await _database.updateBgTaskId(globalKey, null);
+    await _database.updateDownloadProgress(globalKey, 0, 0, 0);
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
     final resolvedClient = _getClient(parseGlobalKey(globalKey)?.serverId) ?? client;

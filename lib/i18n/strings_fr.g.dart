@@ -358,6 +358,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
+	@override String get companionRemoteServer => 'Serveur de télécommande';
+	@override String get companionRemoteServerDescription => 'Autoriser les appareils mobiles de votre réseau à contrôler cette application';
 }
 
 // Path: search
@@ -977,6 +979,8 @@ class _TranslationsWatchTogetherFr implements TranslationsWatchTogetherEn {
 	@override String participantPaused({required Object name}) => '${name} a mis en pause';
 	@override String participantResumed({required Object name}) => '${name} a repris';
 	@override String participantSeeked({required Object name}) => '${name} a avancé';
+	@override String participantBuffering({required Object name}) => '${name} met en mémoire tampon';
+	@override String get waitingForParticipants => 'En attente du chargement des autres...';
 	@override String get recentRooms => 'Salons récents';
 	@override String get renameRoom => 'Renommer le salon';
 	@override String get removeRoom => 'Supprimer';
@@ -999,6 +1003,7 @@ class _TranslationsDownloadsFr implements TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Supprimer le téléchargement';
 	@override String get retryDownload => 'Réessayer le téléchargement';
 	@override String get downloadQueued => 'Téléchargement en attente';
+	@override String get serverErrorBitrate => 'Erreur serveur — le fichier dépasse peut-être la limite de débit du streaming à distance';
 	@override String episodesQueued({required Object count}) => '${count} épisodes en attente de téléchargement';
 	@override String get downloadDeleted => 'Télécharger supprimé';
 	@override String deleteConfirm({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.';
@@ -1274,20 +1279,17 @@ class _TranslationsCompanionRemoteSessionFr implements TranslationsCompanionRemo
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String get creatingSession => 'Création de la session distante...';
-	@override String get failedToCreate => 'Échec de la création de la session distante :';
-	@override String get noSession => 'Aucune session disponible';
-	@override String get scanQrCode => 'Scanner le QR Code';
-	@override String get orEnterManually => 'Ou saisir manuellement';
+	@override String get startingServer => 'Démarrage du serveur distant...';
+	@override String get failedToCreate => 'Échec du démarrage du serveur distant :';
 	@override String get hostAddress => 'Adresse de l\'hôte';
-	@override String get sessionId => 'ID de session';
-	@override String get pin => 'PIN';
 	@override String get connected => 'Connecté';
-	@override String get waitingForConnection => 'En attente de connexion...';
+	@override String get serverRunning => 'Serveur distant actif';
+	@override String get serverStopped => 'Serveur distant arrêté';
+	@override String get serverRunningDescription => 'Les appareils mobiles de votre réseau peuvent découvrir et se connecter à cette application';
+	@override String get serverStoppedDescription => 'Démarrez le serveur pour permettre aux appareils mobiles de se connecter';
 	@override String get usePhoneToControl => 'Utilisez votre appareil mobile pour contrôler cette application';
-	@override String copiedToClipboard({required Object label}) => '${label} copié dans le presse-papiers';
-	@override String get copyToClipboard => 'Copier dans le presse-papiers';
-	@override String get newSession => 'Nouvelle session';
+	@override String get startServer => 'Démarrer le serveur';
+	@override String get stopServer => 'Arrêter le serveur';
 	@override String get minimize => 'Réduire';
 }
 
@@ -1298,30 +1300,21 @@ class _TranslationsCompanionRemotePairingFr implements TranslationsCompanionRemo
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String get scan => 'Scanner';
-	@override String get manual => 'Manuel';
-	@override String get pairWithDesktop => 'Jumeler avec un bureau';
-	@override String get enterSessionDetails => 'Saisissez les détails de la session affichés sur votre appareil de bureau';
+	@override String get pairWithDesktop => 'Se connecter au bureau';
+	@override String get discoveryDescription => 'Les appareils de votre réseau exécutant Plezy avec le même compte Plex apparaîtront automatiquement';
 	@override String get hostAddressHint => '192.168.1.100:48632';
-	@override String get sessionIdHint => 'Saisissez l\'ID de session à 8 caractères';
-	@override String get pinHint => 'Saisissez le PIN à 6 chiffres';
 	@override String get connecting => 'Connexion...';
-	@override String get tips => 'Conseils';
-	@override String get tipDesktop => 'Ouvrez Plezy sur votre bureau et activez Companion Remote depuis les paramètres ou le menu';
-	@override String get tipScan => 'Utilisez l\'onglet Scanner pour jumeler rapidement en scannant le QR code sur votre bureau';
-	@override String get tipWifi => 'Assurez-vous que les deux appareils sont sur le même réseau WiFi';
-	@override String get cameraPermissionRequired => 'L\'autorisation de la caméra est requise pour scanner les QR codes.\nVeuillez accorder l\'accès à la caméra dans les paramètres de votre appareil.';
-	@override String cameraError({required Object error}) => 'Impossible de démarrer la caméra : ${error}';
-	@override String get scanInstruction => 'Pointez votre caméra vers le QR code affiché sur votre bureau';
-	@override String get invalidQrCode => 'Format de QR code invalide';
-	@override String get validationHostRequired => 'Veuillez saisir l\'adresse de l\'hôte';
-	@override String get validationHostFormat => 'Le format doit être IP:port (ex : 192.168.1.100:48632)';
-	@override String get validationSessionIdRequired => 'Veuillez saisir un ID de session';
-	@override String get validationSessionIdLength => 'L\'ID de session doit contenir 8 caractères';
-	@override String get validationPinRequired => 'Veuillez saisir un PIN';
-	@override String get validationPinLength => 'Le PIN doit contenir 6 chiffres';
-	@override String get connectionTimedOut => 'Délai de connexion expiré. Veuillez vérifier l\'ID de session et le PIN.';
-	@override String get sessionNotFound => 'Session introuvable. Veuillez vérifier vos identifiants.';
+	@override String get searchingForDevices => 'Recherche d\'appareils...';
+	@override String get noDevicesFound => 'Aucun appareil trouvé sur votre réseau';
+	@override String get noDevicesHint => 'Assurez-vous que Plezy est ouvert sur votre bureau et que les deux appareils sont sur le même réseau WiFi';
+	@override String get availableDevices => 'Appareils disponibles';
+	@override String get manualConnection => 'Connexion manuelle';
+	@override String get cryptoInitFailed => 'Impossible d\'initialiser la connexion sécurisée. Assurez-vous d\'être connecté à un compte Plex.';
+	@override String get validationHostRequired => 'Veuillez entrer l\'adresse de l\'hôte';
+	@override String get validationHostFormat => 'Le format doit être IP:port (ex. 192.168.1.100:48632)';
+	@override String get connectionTimedOut => 'Délai de connexion dépassé. Assurez-vous que les deux appareils sont sur le même réseau.';
+	@override String get sessionNotFound => 'Appareil introuvable. Assurez-vous que Plezy est en cours d\'exécution sur l\'hôte.';
+	@override String get authFailed => 'Échec de l\'authentification. Assurez-vous que les deux appareils utilisent le même compte Plex.';
 	@override String failedToConnect({required Object error}) => 'Échec de la connexion : ${error}';
 }
 
@@ -1600,6 +1593,8 @@ extension on TranslationsFr {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.companionRemoteServer' => 'Serveur de télécommande',
+			'settings.companionRemoteServerDescription' => 'Autoriser les appareils mobiles de votre réseau à contrôler cette application',
 			'search.hint' => 'Rechercher des films, des séries, de la musique...',
 			'search.tryDifferentTerm' => 'Essayez un autre terme de recherche',
 			'search.searchYourMedia' => 'Rechercher dans vos médias',
@@ -1881,10 +1876,10 @@ extension on TranslationsFr {
 			'libraries.groupings.seasons' => 'Saisons',
 			'libraries.groupings.episodes' => 'Épisodes',
 			'libraries.groupings.folders' => 'Dossiers',
-			'about.title' => 'À propos',
-			'about.openSourceLicenses' => 'Licences Open Source',
 			_ => null,
 		} ?? switch (path) {
+			'about.title' => 'À propos',
+			'about.openSourceLicenses' => 'Licences Open Source',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'Un magnifique client Plex pour Flutter',
 			'about.viewLicensesDescription' => 'Afficher les licences des bibliothèques tierces',
@@ -2029,6 +2024,8 @@ extension on TranslationsFr {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} a mis en pause',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} a repris',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} a avancé',
+			'watchTogether.participantBuffering' => ({required Object name}) => '${name} met en mémoire tampon',
+			'watchTogether.waitingForParticipants' => 'En attente du chargement des autres...',
 			'watchTogether.recentRooms' => 'Salons récents',
 			'watchTogether.renameRoom' => 'Renommer le salon',
 			'watchTogether.removeRoom' => 'Supprimer',
@@ -2042,6 +2039,7 @@ extension on TranslationsFr {
 			'downloads.deleteDownload' => 'Supprimer le téléchargement',
 			'downloads.retryDownload' => 'Réessayer le téléchargement',
 			'downloads.downloadQueued' => 'Téléchargement en attente',
+			'downloads.serverErrorBitrate' => 'Erreur serveur — le fichier dépasse peut-être la limite de débit du streaming à distance',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} épisodes en attente de téléchargement',
 			'downloads.downloadDeleted' => 'Télécharger supprimé',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.',
@@ -2076,45 +2074,33 @@ extension on TranslationsFr {
 			'companionRemote.remoteControl' => 'Télécommande',
 			'companionRemote.controlDesktop' => 'Contrôler un appareil de bureau',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connecté à ${name}',
-			'companionRemote.session.creatingSession' => 'Création de la session distante...',
-			'companionRemote.session.failedToCreate' => 'Échec de la création de la session distante :',
-			'companionRemote.session.noSession' => 'Aucune session disponible',
-			'companionRemote.session.scanQrCode' => 'Scanner le QR Code',
-			'companionRemote.session.orEnterManually' => 'Ou saisir manuellement',
+			'companionRemote.session.startingServer' => 'Démarrage du serveur distant...',
+			'companionRemote.session.failedToCreate' => 'Échec du démarrage du serveur distant :',
 			'companionRemote.session.hostAddress' => 'Adresse de l\'hôte',
-			'companionRemote.session.sessionId' => 'ID de session',
-			'companionRemote.session.pin' => 'PIN',
 			'companionRemote.session.connected' => 'Connecté',
-			'companionRemote.session.waitingForConnection' => 'En attente de connexion...',
+			'companionRemote.session.serverRunning' => 'Serveur distant actif',
+			'companionRemote.session.serverStopped' => 'Serveur distant arrêté',
+			'companionRemote.session.serverRunningDescription' => 'Les appareils mobiles de votre réseau peuvent découvrir et se connecter à cette application',
+			'companionRemote.session.serverStoppedDescription' => 'Démarrez le serveur pour permettre aux appareils mobiles de se connecter',
 			'companionRemote.session.usePhoneToControl' => 'Utilisez votre appareil mobile pour contrôler cette application',
-			'companionRemote.session.copiedToClipboard' => ({required Object label}) => '${label} copié dans le presse-papiers',
-			'companionRemote.session.copyToClipboard' => 'Copier dans le presse-papiers',
-			'companionRemote.session.newSession' => 'Nouvelle session',
+			'companionRemote.session.startServer' => 'Démarrer le serveur',
+			'companionRemote.session.stopServer' => 'Arrêter le serveur',
 			'companionRemote.session.minimize' => 'Réduire',
-			'companionRemote.pairing.scan' => 'Scanner',
-			'companionRemote.pairing.manual' => 'Manuel',
-			'companionRemote.pairing.pairWithDesktop' => 'Jumeler avec un bureau',
-			'companionRemote.pairing.enterSessionDetails' => 'Saisissez les détails de la session affichés sur votre appareil de bureau',
+			'companionRemote.pairing.pairWithDesktop' => 'Se connecter au bureau',
+			'companionRemote.pairing.discoveryDescription' => 'Les appareils de votre réseau exécutant Plezy avec le même compte Plex apparaîtront automatiquement',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
-			'companionRemote.pairing.sessionIdHint' => 'Saisissez l\'ID de session à 8 caractères',
-			'companionRemote.pairing.pinHint' => 'Saisissez le PIN à 6 chiffres',
 			'companionRemote.pairing.connecting' => 'Connexion...',
-			'companionRemote.pairing.tips' => 'Conseils',
-			'companionRemote.pairing.tipDesktop' => 'Ouvrez Plezy sur votre bureau et activez Companion Remote depuis les paramètres ou le menu',
-			'companionRemote.pairing.tipScan' => 'Utilisez l\'onglet Scanner pour jumeler rapidement en scannant le QR code sur votre bureau',
-			'companionRemote.pairing.tipWifi' => 'Assurez-vous que les deux appareils sont sur le même réseau WiFi',
-			'companionRemote.pairing.cameraPermissionRequired' => 'L\'autorisation de la caméra est requise pour scanner les QR codes.\nVeuillez accorder l\'accès à la caméra dans les paramètres de votre appareil.',
-			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Impossible de démarrer la caméra : ${error}',
-			'companionRemote.pairing.scanInstruction' => 'Pointez votre caméra vers le QR code affiché sur votre bureau',
-			'companionRemote.pairing.invalidQrCode' => 'Format de QR code invalide',
-			'companionRemote.pairing.validationHostRequired' => 'Veuillez saisir l\'adresse de l\'hôte',
-			'companionRemote.pairing.validationHostFormat' => 'Le format doit être IP:port (ex : 192.168.1.100:48632)',
-			'companionRemote.pairing.validationSessionIdRequired' => 'Veuillez saisir un ID de session',
-			'companionRemote.pairing.validationSessionIdLength' => 'L\'ID de session doit contenir 8 caractères',
-			'companionRemote.pairing.validationPinRequired' => 'Veuillez saisir un PIN',
-			'companionRemote.pairing.validationPinLength' => 'Le PIN doit contenir 6 chiffres',
-			'companionRemote.pairing.connectionTimedOut' => 'Délai de connexion expiré. Veuillez vérifier l\'ID de session et le PIN.',
-			'companionRemote.pairing.sessionNotFound' => 'Session introuvable. Veuillez vérifier vos identifiants.',
+			'companionRemote.pairing.searchingForDevices' => 'Recherche d\'appareils...',
+			'companionRemote.pairing.noDevicesFound' => 'Aucun appareil trouvé sur votre réseau',
+			'companionRemote.pairing.noDevicesHint' => 'Assurez-vous que Plezy est ouvert sur votre bureau et que les deux appareils sont sur le même réseau WiFi',
+			'companionRemote.pairing.availableDevices' => 'Appareils disponibles',
+			'companionRemote.pairing.manualConnection' => 'Connexion manuelle',
+			'companionRemote.pairing.cryptoInitFailed' => 'Impossible d\'initialiser la connexion sécurisée. Assurez-vous d\'être connecté à un compte Plex.',
+			'companionRemote.pairing.validationHostRequired' => 'Veuillez entrer l\'adresse de l\'hôte',
+			'companionRemote.pairing.validationHostFormat' => 'Le format doit être IP:port (ex. 192.168.1.100:48632)',
+			'companionRemote.pairing.connectionTimedOut' => 'Délai de connexion dépassé. Assurez-vous que les deux appareils sont sur le même réseau.',
+			'companionRemote.pairing.sessionNotFound' => 'Appareil introuvable. Assurez-vous que Plezy est en cours d\'exécution sur l\'hôte.',
+			'companionRemote.pairing.authFailed' => 'Échec de l\'authentification. Assurez-vous que les deux appareils utilisent le même compte Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Échec de la connexion : ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Voulez-vous vous déconnecter de la session distante ?',
 			'companionRemote.remote.reconnecting' => 'Reconnexion...',
