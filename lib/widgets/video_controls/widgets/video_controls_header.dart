@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:plezy/utils/formatters.dart';
 
 import '../../../models/plex_metadata.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../watch_together/widgets/watch_together_overlay.dart';
+import '../../../watch_together/providers/watch_together_provider.dart';
 import '../../app_bar_back_button.dart';
 
 /// Header layout style for video controls
@@ -47,6 +50,16 @@ class VideoControlsHeader extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         Expanded(child: style == VideoHeaderStyle.singleLine ? _buildSingleLineTitle() : _buildMultiLineTitle()),
+        Selector<WatchTogetherProvider, bool>(
+          selector: (_, p) => p.isInSession,
+          builder: (context, inSession, child) {
+            if (!inSession) return const SizedBox.shrink();
+            return const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: WatchTogetherSessionIndicator(),
+            );
+          },
+        ),
         ?trailing,
       ],
     );

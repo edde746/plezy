@@ -3557,6 +3557,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               // Watch Together overlays (isolated from video surface repaints)
               RepaintBoundary(
                 child: Stack(
+                  fit: StackFit.expand,
                   children: [
                     // Watch Together: reconnecting to host overlay
                     Selector<WatchTogetherProvider, bool>(
@@ -3597,8 +3598,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         );
                       },
                     ),
-                    // Watch Together: session indicator and menu
-                    WatchTogetherOverlay(onLeaveSession: _handleBackButton),
                     // Watch Together: participant join/leave/buffering notifications
                     const ParticipantNotificationOverlay(),
                     // Watch Together: waiting for participants to load

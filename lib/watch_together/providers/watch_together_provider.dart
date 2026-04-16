@@ -175,10 +175,11 @@ class WatchTogetherProvider with ChangeNotifier {
     }
   }
 
-  /// Wire up reconnection handler to re-announce join after reconnect
+  /// Wire up reconnection handler to re-announce join and readiness after reconnect
   void _wireReconnectHandler() {
     _peerService!.onReconnected = () {
       _syncManager?.announceJoin(_displayName);
+      _syncManager?.reannounceReadyIfNeeded();
     };
   }
 
@@ -308,17 +309,33 @@ class WatchTogetherProvider with ChangeNotifier {
   ///
   /// Returns `true` if the user became the host.
   Future<bool> enterRoom(String sessionId, {ControlMode controlMode = ControlMode.anyone, String? displayName}) async {
+    // Probe the relay with a lightweight peer service to check room occupancy,
+    // then do a single createSession or joinSession. This avoids the crash-prone
+    // join→teardown→create cycle on the provider.
+    final customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
+    final probe = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
+    bool shouldBeHost;
     try {
-      await joinSession(sessionId, displayName: displayName);
-      return false; // joined as guest
+      await probe.joinSession(sessionId);
+      shouldBeHost = probe.connectedPeers.isEmpty;
     } on PeerError catch (e) {
-      // Room doesn't exist — create it as host
       if (e.serverCode == 'room_not_found') {
-        await createSession(controlMode: controlMode, displayName: displayName, sessionId: sessionId);
-        return true;
+        shouldBeHost = true;
+      } else {
+        await probe.disconnect();
+        probe.dispose();
+        rethrow;
       }
-      rethrow;
     }
+    await probe.disconnect();
+    probe.dispose();
+
+    if (shouldBeHost) {
+      await createSession(controlMode: controlMode, displayName: displayName, sessionId: sessionId);
+    } else {
+      await joinSession(sessionId, displayName: displayName);
+    }
+    return shouldBeHost;
   }
 
   /// Leave the current session
@@ -490,11 +507,11 @@ class WatchTogetherProvider with ChangeNotifier {
             );
           }
 
-          // If the host deliberately left, end the session immediately
-          // instead of waiting for the 15s reconnect grace period.
+          // If the host deliberately left, end the session for everyone.
           if (!isHost && message.peerId == _session?.hostPeerId) {
             _hostIntentionallyLeft = true;
             _handleHostExitedPlayer(message);
+            leaveSession();
           }
 
           notifyListeners();

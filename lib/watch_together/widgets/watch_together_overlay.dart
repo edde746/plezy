@@ -14,31 +14,24 @@ import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 
 /// Overlay shown on the video player when in a watch together session
-class WatchTogetherOverlay extends StatelessWidget {
-  /// Callback when the user wants to leave the session
+/// Session indicator badge for embedding in the video controls header.
+/// Shows participant count, host badge, and opens the session menu on tap.
+class WatchTogetherSessionIndicator extends StatelessWidget {
   final VoidCallback? onLeaveSession;
 
-  const WatchTogetherOverlay({super.key, this.onLeaveSession});
+  const WatchTogetherSessionIndicator({super.key, this.onLeaveSession});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<WatchTogetherProvider>(
       builder: (context, provider, child) {
-        if (!provider.isInSession) {
-          return const SizedBox.shrink();
-        }
-
-        return Positioned(
-          top: 16,
-          right: 16,
-          child: _SessionIndicator(
-            participantCount: provider.participantCount,
-            isHost: provider.isHost,
-            isSyncing: provider.isSyncing,
-            controlMode: provider.controlMode,
-            sessionId: provider.sessionId,
-            onTap: () => _showSessionMenu(context, provider),
-          ),
+        return _SessionIndicator(
+          participantCount: provider.participantCount,
+          isHost: provider.isHost,
+          isSyncing: provider.isSyncing,
+          controlMode: provider.controlMode,
+          sessionId: provider.sessionId,
+          onTap: () => _showSessionMenu(context, provider),
         );
       },
     );
@@ -71,8 +64,6 @@ class _SessionIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Material(
       color: Colors.black54,
       borderRadius: const BorderRadius.all(Radius.circular(20)),
@@ -94,7 +85,7 @@ class _SessionIndicator extends StatelessWidget {
                       : const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
               else
-                Icon(Symbols.group, size: 18, color: isHost ? theme.colorScheme.primary : Colors.white),
+                Icon(Symbols.group, size: 18, color: isHost ? Colors.amber : Colors.white),
 
               const SizedBox(width: 6),
 
@@ -109,13 +100,13 @@ class _SessionIndicator extends StatelessWidget {
                 const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: const BorderRadius.all(Radius.circular(4)),
+                  decoration: const BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.all(Radius.circular(4)),
                   ),
                   child: Text(
                     t.watchTogether.hostBadge,
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

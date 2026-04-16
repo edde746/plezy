@@ -202,10 +202,11 @@ type serverMsg struct {
 type Client struct {
 	conn *websocket.Conn
 	send chan []byte
+	done chan struct{}
 }
 
 func newClient(conn *websocket.Conn) *Client {
-	c := &Client{conn: conn, send: make(chan []byte, 64)}
+	c := &Client{conn: conn, send: make(chan []byte, 64), done: make(chan struct{})}
 	go c.writePump()
 	return c
 }
@@ -215,13 +216,12 @@ func (c *Client) writePump() {
 	defer ticker.Stop()
 	for {
 		select {
-		case data, ok := <-c.send:
-			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, nil)
-				return
-			}
+		case data := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			c.conn.WriteMessage(websocket.TextMessage, data)
+		case <-c.done:
+			c.conn.WriteMessage(websocket.CloseMessage, nil)
+			return
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
@@ -231,20 +231,24 @@ func (c *Client) writePump() {
 	}
 }
 
+func (c *Client) trySend(data []byte) {
+	select {
+	case c.send <- data:
+	case <-c.done:
+	default:
+	}
+}
+
 func (c *Client) sendJSON(msg serverMsg) {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return
 	}
-	select {
-	case c.send <- data:
-	default:
-		// Drop if buffer full (slow client)
-	}
+	c.trySend(data)
 }
 
 func (c *Client) close() {
-	close(c.send)
+	close(c.done)
 }
 
 // --- Room ---
@@ -281,10 +285,7 @@ func (r *Room) broadcastExcept(senderID string, msg serverMsg) {
 	r.mu.RUnlock()
 
 	for _, client := range targets {
-		select {
-		case client.send <- data:
-		default:
-		}
+		client.trySend(data)
 	}
 }
 
@@ -299,12 +300,8 @@ func (r *Room) sendTo(targetID string, msg serverMsg) bool {
 	if !ok {
 		return false
 	}
-	select {
-	case client.send <- data:
-		return true
-	default:
-		return false
-	}
+	client.trySend(data)
+	return true
 }
 
 // --- Log store ---
@@ -556,20 +553,27 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	var currentPeerID string
 	var isHost bool
 
-	// Cleanup on disconnect
+	// Cleanup on disconnect — only if our Client is still the one in the room.
+	// A reconnecting peer reuses the same peerId, so the map entry may have
+	// been overwritten by a newer Client before this defer runs.
 	defer func() {
 		if currentRoom != nil && currentPeerID != "" {
 			currentRoom.mu.Lock()
-			delete(currentRoom.Peers, currentPeerID)
+			stale := currentRoom.Peers[currentPeerID] != client
+			if !stale {
+				delete(currentRoom.Peers, currentPeerID)
+			}
 			currentRoom.mu.Unlock()
-			currentRoom.broadcastExcept(currentPeerID, serverMsg{
-				Type:   "peerLeft",
-				PeerID: currentPeerID,
-			})
+			if !stale {
+				currentRoom.broadcastExcept(currentPeerID, serverMsg{
+					Type:   "peerLeft",
+					PeerID: currentPeerID,
+				})
+			}
 			if isHost {
 				s.conns.releaseRoom(ip)
 			}
-			log.Printf("peer %s left room %s", currentPeerID, currentRoom.SessionID)
+			log.Printf("peer %s left room %s (stale=%v)", currentPeerID, currentRoom.SessionID, stale)
 		}
 	}()
 
