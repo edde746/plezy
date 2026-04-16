@@ -231,7 +231,11 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
         return true;
       }
       // Device out of disk space
-      if (v != null && (v.contains('SQLITE_FULL') || v.contains('No space left on device'))) {
+      if (v != null &&
+          (v.contains('SQLITE_FULL') ||
+           v.contains('No space left on device') ||
+           v.contains('errno = 112') ||
+           v.contains('database or disk is full'))) {
         return true;
       }
       // Native HTTP errors from CFNetwork (server errors, not actionable)
