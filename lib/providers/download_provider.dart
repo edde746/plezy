@@ -1007,8 +1007,11 @@ class DownloadProvider extends ChangeNotifier {
     final serverName = readResult.serverName;
     int imported = 0;
     int skipped  = 0;
-    // Track shows we've already fetched artwork for to avoid redundant requests.
-    final fetchedShowKeys = <String>{};
+    // Track shows/seasons we've already stubbed and fetched artwork for.
+    // Both use the first episode's artwork paths — subsequent episodes of the
+    // same show/season may report different thumb URL timestamps from Plex.
+    final fetchedShowKeys  = <String>{};
+    final stubbedParentKeys = <String>{};
 
     for (final item in readResult.resolved) {
       final globalKey = buildGlobalKey(serverId, item.ratingKey);
@@ -1042,11 +1045,14 @@ class DownloadProvider extends ChangeNotifier {
         serverName:           serverName,
       );
 
-      // For episodes, ensure a show stub and season stub exist in cache.
+      // For episodes, register show and season stubs once per unique key.
+      // stubbedParentKeys ensures the first episode's thumb URL is used
+      // consistently — Plex may return different timestamp variants per episode.
       if (item.type == 'episode') {
-        // Show stub
+        // Show stub — only on first episode for this show
         if (item.grandparentRatingKey != null &&
-            item.grandparentRatingKey!.isNotEmpty) {
+            item.grandparentRatingKey!.isNotEmpty &&
+            stubbedParentKeys.add(item.grandparentRatingKey!)) {
           await _downloadManager.registerSyncedParentStub(PlexMetadata(
             ratingKey:  item.grandparentRatingKey!,
             key:        '/library/metadata/${item.grandparentRatingKey}',
@@ -1059,8 +1065,10 @@ class DownloadProvider extends ChangeNotifier {
             serverName: serverName,
           ));
         }
-        // Season stub
-        if (item.parentRatingKey != null && item.parentRatingKey!.isNotEmpty) {
+        // Season stub — only on first episode for this season
+        if (item.parentRatingKey != null &&
+            item.parentRatingKey!.isNotEmpty &&
+            stubbedParentKeys.add(item.parentRatingKey!)) {
           await _downloadManager.registerSyncedParentStub(PlexMetadata(
             ratingKey:            item.parentRatingKey!,
             key:                  '/library/metadata/${item.parentRatingKey}',
