@@ -221,7 +221,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
         controlMode: controlMode,
         displayName: _plexDisplayName,
       );
-      await RecentRoomsService.addOrUpdateRoom(sessionId);
+      await RecentRoomsService.addOrUpdateRoom(sessionId, controlMode: controlMode);
       if (mounted) setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
     } catch (e) {
       appLogger.e('Failed to create session', error: e);
@@ -299,7 +299,11 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     setState(() => _enteringRoomCode = room.code);
 
     try {
-      await widget.watchTogether.enterRoom(room.code, displayName: _plexDisplayName);
+      await widget.watchTogether.enterRoom(
+        room.code,
+        controlMode: room.controlMode ?? ControlMode.anyone,
+        displayName: _plexDisplayName,
+      );
       await RecentRoomsService.addOrUpdateRoom(room.code);
       if (mounted) setState(() => _recentRooms = RecentRoomsService.getRecentRooms());
     } catch (e) {

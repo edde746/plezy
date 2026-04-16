@@ -304,15 +304,16 @@ class WatchTogetherProvider with ChangeNotifier {
     final probe = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
     try {
       final becameHost = await probe.joinOrCreateSession(sessionId);
+      final shouldBeHost = becameHost || probe.connectedPeers.isEmpty;
       await probe.disconnect();
       probe.dispose();
 
-      if (becameHost) {
+      if (shouldBeHost) {
         await createSession(controlMode: controlMode, displayName: displayName, sessionId: sessionId);
       } else {
         await joinSession(sessionId, displayName: displayName);
       }
-      return becameHost;
+      return shouldBeHost;
     } catch (e) {
       await probe.disconnect();
       probe.dispose();
@@ -460,14 +461,13 @@ class WatchTogetherProvider with ChangeNotifier {
             );
           }
 
-          // If we're the host, send our join info back so the new peer
-          // adds us to their participant list. This is done at provider
-          // level (in addition to sync manager) so it works even when
-          // no player is attached yet.
-          if (isHost && _peerService != null) {
+          // Send our join info back so the new peer adds us to their
+          // participant list. Every peer does this (not just the host)
+          // so that late joiners learn about all existing participants.
+          if (_peerService != null) {
             _peerService!.sendTo(
               message.peerId!,
-              SyncMessage.join(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: true),
+              SyncMessage.join(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: isHost),
             );
           }
 

@@ -563,11 +563,18 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			s.mu.Lock()
-			if _, exists := s.rooms[msg.SessionID]; exists {
-				s.mu.Unlock()
-				s.conns.releaseRoom(ip)
-				s.sendError(conn, "room_exists", "Room already exists")
-				continue
+			if existing, exists := s.rooms[msg.SessionID]; exists {
+				existing.mu.RLock()
+				empty := len(existing.Peers) == 0
+				existing.mu.RUnlock()
+				if !empty {
+					s.mu.Unlock()
+					s.conns.releaseRoom(ip)
+					s.sendError(conn, "room_exists", "Room already exists")
+					continue
+				}
+				// Empty stale room — reclaim the ID
+				delete(s.rooms, msg.SessionID)
 			}
 			room := &Room{
 				SessionID:  msg.SessionID,

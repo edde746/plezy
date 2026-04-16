@@ -1,30 +1,39 @@
 import 'dart:convert';
 
 import '../../services/settings_service.dart';
+import '../models/watch_session.dart';
 
 class RecentRoom {
   final String code;
   final String? name;
   final DateTime lastUsed;
+  final ControlMode? controlMode;
 
-  const RecentRoom({required this.code, this.name, required this.lastUsed});
+  const RecentRoom({required this.code, this.name, required this.lastUsed, this.controlMode});
 
   Map<String, dynamic> toJson() => {
         'code': code,
         if (name != null) 'name': name,
         'lastUsed': lastUsed.millisecondsSinceEpoch,
+        if (controlMode != null) 'controlMode': controlMode!.index,
       };
 
-  factory RecentRoom.fromJson(Map<String, dynamic> json) => RecentRoom(
-        code: json['code'] as String,
-        name: json['name'] as String?,
-        lastUsed: DateTime.fromMillisecondsSinceEpoch(json['lastUsed'] as int),
-      );
+  factory RecentRoom.fromJson(Map<String, dynamic> json) {
+    final modeIndex = json['controlMode'] as int?;
+    return RecentRoom(
+      code: json['code'] as String,
+      name: json['name'] as String?,
+      lastUsed: DateTime.fromMillisecondsSinceEpoch(json['lastUsed'] as int),
+      controlMode: modeIndex != null ? ControlMode.values[modeIndex] : null,
+    );
+  }
 
-  RecentRoom copyWith({String? code, String? name, DateTime? lastUsed, bool clearName = false}) => RecentRoom(
+  RecentRoom copyWith({String? code, String? name, DateTime? lastUsed, ControlMode? controlMode, bool clearName = false}) =>
+      RecentRoom(
         code: code ?? this.code,
         name: clearName ? null : (name ?? this.name),
         lastUsed: lastUsed ?? this.lastUsed,
+        controlMode: controlMode ?? this.controlMode,
       );
 }
 
@@ -50,13 +59,17 @@ class RecentRoomsService {
     await SettingsService.instanceOrNull?.setRecentRooms(jsonEncode(rooms.map((r) => r.toJson()).toList()));
   }
 
-  static Future<void> addOrUpdateRoom(String code, {String? name}) async {
+  static Future<void> addOrUpdateRoom(String code, {String? name, ControlMode? controlMode}) async {
     final rooms = getRecentRooms();
     final index = rooms.indexWhere((r) => r.code == code);
     if (index >= 0) {
-      rooms[index] = rooms[index].copyWith(lastUsed: DateTime.now(), name: name ?? rooms[index].name);
+      rooms[index] = rooms[index].copyWith(
+        lastUsed: DateTime.now(),
+        name: name ?? rooms[index].name,
+        controlMode: controlMode,
+      );
     } else {
-      rooms.add(RecentRoom(code: code, name: name, lastUsed: DateTime.now()));
+      rooms.add(RecentRoom(code: code, name: name, lastUsed: DateTime.now(), controlMode: controlMode));
     }
     await _save(rooms);
   }
