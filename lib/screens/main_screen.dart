@@ -567,7 +567,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     return [
       for (final tab in _getVisibleTabs(offline))
         switch (tab.id) {
-          NavigationTabId.discover => DiscoverScreen(key: _discoverKey, onBecameVisible: _onDiscoverBecameVisible),
+          NavigationTabId.discover => DiscoverScreen(key: _discoverKey),
           NavigationTabId.libraries => LibrariesScreen(key: _librariesKey, onLibraryOrderChanged: _onLibraryOrderChanged),
           NavigationTabId.liveTv => LiveTvScreen(key: _liveTvKey),
           NavigationTabId.search => SearchScreen(key: _searchKey),

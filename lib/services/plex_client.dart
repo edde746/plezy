@@ -1327,7 +1327,6 @@ class PlexClient {
           colorSpace: videoStream?['colorSpace'] as String?,
           colorRange: videoStream?['colorRange'] as String?,
           colorPrimaries: videoStream?['colorPrimaries'] as String?,
-          colorTrc: videoStream?['colorTrc'] as String?,
           chromaSubsampling: videoStream?['chromaSubsampling'] as String?,
           frameRate: (videoStream?['frameRate'] as num?)?.toDouble(),
           bitDepth: videoStream?['bitDepth'] as int?,
@@ -1804,31 +1803,6 @@ class PlexClient {
     return result;
   }
 
-  /// Clear all items from a playlist
-  Future<bool> clearPlaylist(String playlistId) {
-    return _wrapBoolApiCall(() => _http.delete('/playlists/$playlistId/items'), 'Failed to clear playlist');
-  }
-
-  /// Update playlist metadata (e.g., title, summary)
-  /// Uses the same metadata editing mechanism as other items
-  Future<bool> updatePlaylist({required String playlistId, String? title, String? summary}) {
-    final queryParams = <String, dynamic>{'type': 'playlist', 'id': playlistId};
-
-    if (title != null) {
-      queryParams['title.value'] = title;
-      queryParams['title.locked'] = '1';
-    }
-    if (summary != null) {
-      queryParams['summary.value'] = summary;
-      queryParams['summary.locked'] = '1';
-    }
-
-    return _wrapBoolApiCall(
-      () => _http.put('/library/metadata/$playlistId', queryParameters: queryParams),
-      'Failed to update playlist',
-    );
-  }
-
   // ============================================================================
   // Metadata Editing Methods
   // ============================================================================
@@ -2122,23 +2096,6 @@ class PlexClient {
     }
   }
 
-  /// Shuffle a play queue
-  /// The currently selected item is maintained
-  Future<PlayQueueResponse?> shufflePlayQueue(int playQueueId) async {
-    try {
-      final response = await _http.put('/playQueues/$playQueueId/shuffle');
-      return PlayQueueResponse.fromJson(response.data);
-    } catch (e) {
-      appLogger.e('Failed to shuffle play queue: $e');
-      return null;
-    }
-  }
-
-  /// Clear all items from a play queue
-  Future<bool> clearPlayQueue(int playQueueId) {
-    return _wrapBoolApiCall(() => _http.delete('/playQueues/$playQueueId/items'), 'Failed to clear play queue');
-  }
-
   /// Create a play queue for a TV show (all episodes)
   ///
   /// This is a convenience method that creates a play queue from a show's URI.
@@ -2303,62 +2260,6 @@ class PlexClient {
   /// Analyze library section
   Future<void> analyzeLibrary(String sectionId) async {
     await _getWithFailover('/library/sections/$sectionId/analyze');
-  }
-
-  // ============================================================================
-  // Library Statistics Methods
-  // ============================================================================
-
-  /// Get total item count for a library section efficiently.
-  /// Uses X-Plex-Container-Size: 1 to get totalSize with minimal data transfer.
-  Future<int> getLibraryTotalCount(String sectionId) async {
-    try {
-      final response = await _getWithFailover(
-        '/library/sections/$sectionId/all',
-        queryParameters: {'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 1},
-      );
-      final container = _getMediaContainer(response);
-      // Try totalSize first, fall back to size if not available
-      return container?['totalSize'] as int? ?? container?['size'] as int? ?? 0;
-    } catch (e) {
-      appLogger.e('Failed to get library total count: $e');
-      return 0;
-    }
-  }
-
-  /// Get total episode count for a TV show library.
-  /// Uses the allLeaves endpoint to count all episodes.
-  Future<int> getLibraryEpisodeCount(String sectionId) async {
-    try {
-      final response = await _getWithFailover(
-        '/library/sections/$sectionId/allLeaves',
-        queryParameters: {'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 1},
-      );
-      final container = _getMediaContainer(response);
-      return container?['totalSize'] as int? ?? container?['size'] as int? ?? 0;
-    } catch (e) {
-      appLogger.e('Failed to get library episode count: $e');
-      return 0;
-    }
-  }
-
-  /// Get watch history count for a time period.
-  /// [since] - Optional DateTime to filter history from this date onwards.
-  /// Returns the total count of items watched.
-  Future<int> getWatchHistoryCount({DateTime? since}) async {
-    try {
-      final queryParams = <String, dynamic>{'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 1};
-      if (since != null) {
-        final epochSeconds = since.millisecondsSinceEpoch ~/ 1000;
-        queryParams['viewedAt>'] = epochSeconds;
-      }
-      final response = await _getWithFailover('/status/sessions/history/all', queryParameters: queryParams);
-      final container = _getMediaContainer(response);
-      return container?['totalSize'] as int? ?? container?['size'] as int? ?? 0;
-    } catch (e) {
-      appLogger.e('Failed to get watch history count: $e');
-      return 0;
-    }
   }
 
   // ============================================================================

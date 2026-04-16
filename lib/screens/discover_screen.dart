@@ -49,9 +49,7 @@ import '../widgets/companion_remote/remote_session_dialog.dart';
 import 'companion_remote/mobile_remote_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
-  final VoidCallback? onBecameVisible;
-
-  const DiscoverScreen({super.key, this.onBecameVisible});
+  const DiscoverScreen({super.key});
 
   @override
   State<DiscoverScreen> createState() => _DiscoverScreenState();

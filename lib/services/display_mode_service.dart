@@ -17,7 +17,6 @@ class DisplayModeService {
   bool _displayModeChanged = false;
   bool _hdrStateChanged = false;
 
-  bool get displayModeChanged => _displayModeChanged;
   bool get hdrStateChanged => _hdrStateChanged;
   bool get anyChangeApplied => _displayModeChanged || _hdrStateChanged;
 

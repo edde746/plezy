@@ -54,22 +54,6 @@ class ByteFormatter {
     return '${(kbps / 1000).toStringAsFixed(1)} Mbps';
   }
 
-  /// Format bitrate in bps to human-readable string
-  ///
-  /// [bps] The bitrate in bits per second
-  /// Returns formatted string like "8.5 Mbps", "256 Kbps", or "128 bps"
-  static String formatBitrateBps(int bps) {
-    const kbps = 1000;
-    const mbps = kbps * 1000;
-
-    if (bps >= mbps) {
-      return '${(bps / mbps).toStringAsFixed(2)} Mbps';
-    } else if (bps >= kbps) {
-      return '${(bps / kbps).toStringAsFixed(2)} Kbps';
-    } else {
-      return '$bps bps';
-    }
-  }
 }
 
 /// Formats a duration in human-readable textual format (e.g., "1h 23m" or "1 hour 23 minutes").

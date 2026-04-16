@@ -27,7 +27,6 @@ class PlexFileInfo {
   final String? colorSpace;
   final String? colorRange;
   final String? colorPrimaries;
-  final String? colorTrc;
   final String? chromaSubsampling;
   final double? frameRate;
   final int? bitDepth;
@@ -59,7 +58,6 @@ class PlexFileInfo {
     this.colorSpace,
     this.colorRange,
     this.colorPrimaries,
-    this.colorTrc,
     this.chromaSubsampling,
     this.frameRate,
     this.bitDepth,

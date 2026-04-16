@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:plezy/utils/content_utils.dart';
 import '../models/download_models.dart';
@@ -449,13 +448,6 @@ class DownloadProvider extends ChangeNotifier {
       currentFile: '$completedCount/$totalEpisodes episodes',
     );
   }
-
-  /// Whether there are any downloads (active or completed)
-  bool get hasDownloads => _downloads.isNotEmpty;
-
-  /// Whether there are any active downloads
-  bool get hasActiveDownloads =>
-      _downloads.values.any((p) => p.status == DownloadStatus.downloading || p.status == DownloadStatus.queued);
 
   /// Get download progress for a specific item
   /// For shows/seasons, returns aggregate progress of all child episodes
@@ -947,14 +939,8 @@ class DownloadProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Check if an item is being deleted
-  bool isDeleting(String globalKey) => _deletionProgress.containsKey(globalKey);
-
   /// Get deletion progress for an item
   DeletionProgress? getDeletionProgress(String globalKey) => _deletionProgress[globalKey];
-
-  /// Get all items currently being deleted
-  UnmodifiableMapView<String, DeletionProgress> get deletionProgress => UnmodifiableMapView(_deletionProgress);
 
   /// Refresh the downloads list from database
   Future<void> refresh() async {

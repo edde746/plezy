@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../i18n/strings.g.dart';
 import '../services/settings_service.dart';
 
 class SettingsProvider extends ChangeNotifier {
@@ -162,14 +161,4 @@ class SettingsProvider extends ChangeNotifier {
     persist: _settingsService!.setAutoHidePerformanceOverlay,
   );
 
-  String get episodePosterModeDisplayName {
-    switch (_episodePosterMode) {
-      case EpisodePosterMode.seriesPoster:
-        return t.settings.seriesPoster;
-      case EpisodePosterMode.seasonPoster:
-        return t.settings.seasonPoster;
-      case EpisodePosterMode.episodeThumbnail:
-        return t.settings.episodeThumbnail;
-    }
-  }
 }
