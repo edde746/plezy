@@ -3,6 +3,7 @@ import 'dart:async';
 import '../mpv/mpv.dart';
 
 import '../models/plex_media_info.dart';
+import '../utils/future_extensions.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../utils/app_logger.dart';
@@ -686,7 +687,7 @@ class TrackSelectionService {
         await player.streams.tracks
             .where((t) => t.audio.isNotEmpty || t.subtitle.isNotEmpty)
             .first
-            .timeout(const Duration(seconds: 10));
+            .namedTimeout(const Duration(seconds: 10), operation: 'track loading');
       } catch (_) {
         // Timeout or stream closed — proceed with whatever state we have
       }

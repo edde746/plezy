@@ -5,8 +5,9 @@ import 'package:dart_discord_presence/dart_discord_presence.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/plex_metadata.dart';
-import '../utils/plex_http_client.dart';
 import '../utils/app_logger.dart';
+import '../utils/future_extensions.dart';
+import '../utils/plex_http_client.dart';
 import 'plex_client.dart';
 import 'settings_service.dart';
 
@@ -317,7 +318,7 @@ class DiscordRPCService {
 
       final uploadStreamed = await httpClient.inner
           .send(uploadRequest)
-          .timeout(const Duration(seconds: 15));
+          .namedTimeout(const Duration(seconds: 15), operation: 'Litterbox upload');
       final uploadedUrl = (await uploadStreamed.stream.bytesToString()).trim();
 
       if (uploadedUrl.startsWith('http')) {

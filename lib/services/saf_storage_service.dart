@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:saf_util/saf_util.dart';
+import '../utils/future_extensions.dart';
 import '../utils/platform_detector.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
 import 'package:saf_stream/saf_stream.dart';
@@ -150,7 +151,7 @@ class SafStorageService {
       // This is much more efficient for large files and avoids hangs
       final result = await _safStream
           .pasteLocalFile(sourceFilePath, targetDirectoryUri, fileName, mimeType, overwrite: true)
-          .timeout(const Duration(minutes: 30), onTimeout: () => throw TimeoutException('SAF copy timed out'));
+          .namedTimeout(const Duration(minutes: 30), operation: 'SAF copy');
 
       debugPrint('SAF copyFileToSaf: successfully copied to ${result.uri}');
       return result.uri.toString();

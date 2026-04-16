@@ -256,6 +256,26 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
     }
   }
 
+  // Enrich TimeoutException with operation name + duration as tags/fingerprint.
+  // value format: "TimeoutException after 0:00:05.000000: <operation> timed out"
+  if (exceptions != null) {
+    final timeoutException = exceptions.where((e) => e.type == 'TimeoutException').firstOrNull;
+    if (timeoutException != null) {
+      final value = timeoutException.value ?? '';
+      final colonIdx = value.indexOf(': ');
+      final message = colonIdx >= 0 ? value.substring(colonIdx + 2) : value;
+      final operation = message.endsWith(' timed out')
+          ? message.substring(0, message.length - ' timed out'.length)
+          : null;
+      final durationMatch = RegExp(r'after (\d+:\d{2}:\d{2}\.\d+)').firstMatch(value);
+
+      final tags = event.tags ??= {};
+      if (operation != null) tags['timeout.operation'] = operation;
+      if (durationMatch != null) tags['timeout.duration'] = durationMatch.group(1)!;
+      event.fingerprint = ['TimeoutException', ?operation];
+    }
+  }
+
   // Scrub breadcrumb messages and data
   final breadcrumbs = event.breadcrumbs;
   if (breadcrumbs != null) {

@@ -6,6 +6,7 @@ import 'plex_client.dart';
 import '../models/plex_config.dart';
 import '../utils/app_logger.dart';
 import '../utils/connection_constants.dart';
+import '../utils/future_extensions.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'plex_auth_service.dart';
 import 'settings_service.dart';
@@ -207,7 +208,7 @@ class MultiServerManager {
       try {
         appLogger.d('Attempting connection to server: ${server.name}');
 
-        final client = await _createClientForServer(server: server, clientIdentifier: effectiveClientId).timeout(timeout);
+        final client = await _createClientForServer(server: server, clientIdentifier: effectiveClientId).namedTimeout(timeout, operation: 'connect to ${server.name}');
 
         // Store the client and server info
         _clients[serverId]?.close();

@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import 'app_logger.dart';
+import 'future_extensions.dart';
 import 'isolate_helper.dart';
 import 'log_redaction_manager.dart';
 import 'plex_http_exception.dart';
@@ -145,11 +146,11 @@ class PlexHttpClient {
     try {
       final streamed = await _client
           .send(request)
-          .timeout(timeout ?? connectTimeout);
+          .namedTimeout(timeout ?? connectTimeout, operation: 'GET ${uri.path} connect');
 
       final bytes = await streamed.stream
           .toBytes()
-          .timeout(timeout ?? receiveTimeout);
+          .namedTimeout(timeout ?? receiveTimeout, operation: 'GET ${uri.path} receive');
 
       sw.stop();
       _logResponse('GET', uri, streamed.statusCode, sw.elapsedMilliseconds);
@@ -174,7 +175,7 @@ class PlexHttpClient {
     try {
       final streamed = await _client
           .send(request)
-          .timeout(timeout ?? connectTimeout);
+          .namedTimeout(timeout ?? connectTimeout, operation: 'download ${uri.path} connect');
 
       final file = File(filePath);
       final sink = file.openWrite();
@@ -231,12 +232,12 @@ class PlexHttpClient {
       // Phase 1: send + receive headers (connect timeout)
       final streamed = await _client
           .send(request)
-          .timeout(timeout ?? connectTimeout);
+          .namedTimeout(timeout ?? connectTimeout, operation: '$method ${uri.path} connect');
 
       // Phase 2: consume body (receive timeout)
       final bytes = await streamed.stream
           .toBytes()
-          .timeout(timeout ?? receiveTimeout);
+          .namedTimeout(timeout ?? receiveTimeout, operation: '$method ${uri.path} receive');
 
       sw.stop();
       _logResponse(method, uri, streamed.statusCode, sw.elapsedMilliseconds);
