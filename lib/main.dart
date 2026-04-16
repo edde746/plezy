@@ -13,6 +13,7 @@ import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
 import 'services/macos_window_service.dart';
+import 'services/native_window_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/settings_service.dart';
 import 'utils/platform_detector.dart';
@@ -142,6 +143,9 @@ Future<void> _bootstrapApp() async {
 
   // Configure macOS window with custom titlebar (depends on window manager)
   futures.add(MacOSWindowService.setupCustomTitlebar());
+
+  // Hook Windows native fullscreen callback (no-op elsewhere).
+  NativeWindowService.initialize();
 
   // Initialize storage service
   futures.add(StorageService.getInstance());

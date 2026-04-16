@@ -12,6 +12,10 @@ static constexpr wchar_t kWindowPlacementValue[] = L"WindowPlacement";
 // Debounce timer for saving window placement
 static UINT_PTR g_saveTimerId = 0;
 static HWND g_mainHwnd = nullptr;
+// When true, WM_WINDOWPOSCHANGED should not persist placement. Used while a
+// native fullscreen toggle is in flux so we don't record the fullscreen rect
+// as the user's last "normal" placement.
+static bool g_suppressPlacementSave = false;
 
 // Forward declaration
 static void SaveWindowPlacement(HWND hwnd);
@@ -23,12 +27,8 @@ static void CALLBACK SaveTimerProc(HWND, UINT, UINT_PTR, DWORD) {
   g_saveTimerId = 0;
 }
 
-// Save WINDOWPLACEMENT to registry
-static void SaveWindowPlacement(HWND hwnd) {
-  WINDOWPLACEMENT wp{};
-  wp.length = sizeof(wp);
-  if (!GetWindowPlacement(hwnd, &wp)) return;
-
+// Write a WINDOWPLACEMENT struct directly to the registry.
+static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   HKEY hKey;
   if (RegCreateKeyExW(HKEY_CURRENT_USER, kWindowPlacementKey, 0, nullptr,
                       REG_OPTION_NON_VOLATILE, KEY_WRITE, nullptr, &hKey,
@@ -37,6 +37,14 @@ static void SaveWindowPlacement(HWND hwnd) {
                    reinterpret_cast<const BYTE*>(&wp), sizeof(wp));
     RegCloseKey(hKey);
   }
+}
+
+// Save the window's current WINDOWPLACEMENT to registry.
+static void SaveWindowPlacement(HWND hwnd) {
+  WINDOWPLACEMENT wp{};
+  wp.length = sizeof(wp);
+  if (!GetWindowPlacement(hwnd, &wp)) return;
+  WriteWindowPlacement(wp);
 }
 
 // Load and apply WINDOWPLACEMENT from registry
@@ -100,6 +108,8 @@ bool FlutterWindow::OnCreate() {
       flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
   OutputDebugStringA("FlutterWindow: MpvPlayerPlugin registered\n");
 
+  RegisterWindowChannel();
+
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   // Load saved window placement before showing
@@ -124,7 +134,15 @@ void FlutterWindow::OnDestroy() {
     KillTimer(nullptr, g_saveTimerId);
     g_saveTimerId = 0;
   }
-  SaveWindowPlacement(GetHandle());
+  // If still fullscreen at shutdown, persist the pre-fullscreen placement
+  // rather than the fullscreen rect so the next launch restores correctly.
+  if (is_fullscreen_ && placement_before_fullscreen_.length != 0) {
+    WriteWindowPlacement(placement_before_fullscreen_);
+  } else {
+    SaveWindowPlacement(GetHandle());
+  }
+
+  window_channel_ = nullptr;
 
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
@@ -152,9 +170,144 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
       flutter_controller_->engine()->ReloadSystemFonts();
       break;
     case WM_WINDOWPOSCHANGED:
-      DebounceSaveWindowPlacement(hwnd);
+      // Don't persist placement while in fullscreen or mid-toggle — the rect
+      // would overwrite the user's real window position.
+      if (!is_fullscreen_ && !g_suppressPlacementSave) {
+        DebounceSaveWindowPlacement(hwnd);
+      }
       break;
   }
 
   return Win32Window::MessageHandler(hwnd, message, wparam, lparam);
+}
+
+// ---------------------------------------------------------------------------
+// Native fullscreen (plezy/window method channel)
+//
+// Works around window_manager 0.5.1's multi-monitor fullscreen bug where the
+// window ends up on the wrong monitor and renders only a fragment of the
+// Flutter surface. We:
+//   1) Resolve the target monitor by the current window's center point
+//      (robust across DPI and restore transitions).
+//   2) Save WINDOWPLACEMENT + styles once.
+//   3) Strip WS_OVERLAPPEDWINDOW and move+size in a single SetWindowPos so
+//      Flutter only relayouts once, at the final DPI/size.
+//   4) On exit, restore styles and WINDOWPLACEMENT, re-maximizing if needed.
+// ---------------------------------------------------------------------------
+void FlutterWindow::RegisterWindowChannel() {
+  auto messenger = flutter_controller_->engine()->messenger();
+  window_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          messenger, "plezy/window",
+          &flutter::StandardMethodCodec::GetInstance());
+
+  window_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        const std::string& name = call.method_name();
+        if (name == "setFullScreen") {
+          bool value = false;
+          if (const auto* args =
+                  std::get_if<flutter::EncodableMap>(call.arguments())) {
+            auto it = args->find(flutter::EncodableValue("isFullScreen"));
+            if (it != args->end()) {
+              if (const bool* b = std::get_if<bool>(&it->second)) value = *b;
+            }
+          }
+          SetNativeFullScreen(value);
+          result->Success();
+        } else if (name == "isFullScreen") {
+          result->Success(flutter::EncodableValue(is_fullscreen_));
+        } else {
+          result->NotImplemented();
+        }
+      });
+}
+
+void FlutterWindow::NotifyFullScreenChanged() {
+  if (!window_channel_) return;
+  window_channel_->InvokeMethod(
+      "onFullScreenChanged",
+      std::make_unique<flutter::EncodableValue>(is_fullscreen_));
+}
+
+void FlutterWindow::SetNativeFullScreen(bool fullscreen) {
+  HWND hwnd = GetHandle();
+  if (!hwnd) return;
+  if (fullscreen == is_fullscreen_) return;
+
+  g_suppressPlacementSave = true;
+  // Also cancel any pending save so a WM_WINDOWPOSCHANGED just before the
+  // toggle doesn't fire SaveTimerProc mid-transition.
+  if (g_saveTimerId) {
+    KillTimer(nullptr, g_saveTimerId);
+    g_saveTimerId = 0;
+  }
+
+  if (fullscreen) {
+    // Resolve target monitor first — if this fails we bail before mutating
+    // any saved state, so a subsequent exit call has nothing stale to act on.
+    RECT wr{};
+    ::GetWindowRect(hwnd, &wr);
+    // Center point is stable across maximize/straddle cases where
+    // MonitorFromWindow would resolve to the neighbor monitor.
+    POINT center{(wr.left + wr.right) / 2, (wr.top + wr.bottom) / 2};
+    MONITORINFO mi{};
+    mi.cbSize = sizeof(mi);
+    if (!::GetMonitorInfoW(::MonitorFromPoint(center, MONITOR_DEFAULTTONEAREST),
+                           &mi)) {
+      g_suppressPlacementSave = false;
+      return;
+    }
+
+    // Save pre-fullscreen state (showCmd inside the placement carries the
+    // maximize bit, so no separate flag is needed).
+    placement_before_fullscreen_.length = sizeof(WINDOWPLACEMENT);
+    ::GetWindowPlacement(hwnd, &placement_before_fullscreen_);
+    style_before_fullscreen_ = ::GetWindowLongPtr(hwnd, GWL_STYLE);
+    ex_style_before_fullscreen_ = ::GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+
+    // Strip frame/caption. Stripping WS_OVERLAPPEDWINDOW alone is enough to
+    // make the following SetWindowPos use the given rect exactly — no need
+    // to ShowWindow(SW_SHOWNORMAL) first (would cause a second relayout).
+    ::SetWindowLongPtr(
+        hwnd, GWL_STYLE, style_before_fullscreen_ & ~WS_OVERLAPPEDWINDOW);
+    ::SetWindowLongPtr(
+        hwnd, GWL_EXSTYLE,
+        ex_style_before_fullscreen_ &
+            ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE |
+              WS_EX_STATICEDGE));
+
+    const RECT& r = mi.rcMonitor;
+    ::SetWindowPos(hwnd, HWND_TOP, r.left, r.top, r.right - r.left,
+                   r.bottom - r.top,
+                   SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
+
+    is_fullscreen_ = true;
+  } else {
+    if (style_before_fullscreen_ != 0) {
+      ::SetWindowLongPtr(hwnd, GWL_STYLE, style_before_fullscreen_);
+      ::SetWindowLongPtr(hwnd, GWL_EXSTYLE, ex_style_before_fullscreen_);
+    }
+
+    if (placement_before_fullscreen_.length == sizeof(WINDOWPLACEMENT)) {
+      WINDOWPLACEMENT wp = placement_before_fullscreen_;
+      if (wp.showCmd == SW_SHOWMINIMIZED) wp.showCmd = SW_SHOWNORMAL;
+      ::SetWindowPlacement(hwnd, &wp);
+    }
+
+    // Force a frame refresh so restored chrome paints.
+    ::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+                   SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE |
+                       SWP_FRAMECHANGED);
+
+    is_fullscreen_ = false;
+    placement_before_fullscreen_ = {};
+    style_before_fullscreen_ = 0;
+    ex_style_before_fullscreen_ = 0;
+  }
+
+  g_suppressPlacementSave = false;
+  NotifyFullScreenChanged();
 }

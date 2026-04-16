@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
 import 'macos_window_service.dart';
+import 'native_window_service.dart';
 
 /// Global manager for tracking fullscreen state across the app
 class FullscreenStateManager extends ChangeNotifier with WindowListener {
@@ -27,15 +28,22 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
 
   /// Toggle fullscreen state, handling maximized-to-fullscreen transition on Windows/Linux
   Future<void> toggleFullscreen() async {
-    final isCurrentlyFullscreen = await windowManager.isFullScreen();
-
     if (Platform.isMacOS) {
+      final isCurrentlyFullscreen = await windowManager.isFullScreen();
       if (isCurrentlyFullscreen) {
         await MacOSWindowService.exitFullscreen();
       } else {
         await MacOSWindowService.enterFullscreen();
       }
+    } else if (Platform.isWindows) {
+      // Route through the native Win32 runner, which restores to the monitor
+      // the window is currently on (window_manager 0.5.1 picks the wrong one
+      // on multi-monitor setups — see issue #880). The native code also
+      // preserves maximized state internally, so no unmaximize dance here.
+      final isCurrentlyFullscreen = await NativeWindowService.isFullScreen();
+      await NativeWindowService.setFullScreen(!isCurrentlyFullscreen);
     } else {
+      final isCurrentlyFullscreen = await windowManager.isFullScreen();
       if (isCurrentlyFullscreen) {
         await windowManager.setFullScreen(false);
         if (_wasMaximized) {
@@ -56,6 +64,8 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   Future<void> exitFullscreen() async {
     if (Platform.isMacOS) {
       await MacOSWindowService.exitFullscreen();
+    } else if (Platform.isWindows) {
+      await NativeWindowService.setFullScreen(false);
     } else {
       await windowManager.setFullScreen(false);
       if (_wasMaximized) {
