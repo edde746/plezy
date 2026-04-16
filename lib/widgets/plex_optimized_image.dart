@@ -261,32 +261,21 @@ class PlexOptimizedImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Check for local file first
-    if (localFilePath != null) {
-      final file = File(localFilePath!);
-      if (file.existsSync()) {
-        return blurArtwork(
-          Image.file(
-            file,
-            width: width,
-            height: height,
-            fit: fit,
-            filterQuality: filterQuality,
-            alignment: alignment,
-            errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context, error),
-          ),
-        );
-      }
-    }
+    final localFile = localFilePath != null ? File(localFilePath!) : null;
+    final hasLocal = localFile != null && localFile.existsSync();
 
-    // Return empty container if no image path
-    if (imagePath == null || imagePath!.isEmpty) {
+    // No local file and no network path → fallback
+    if (!hasLocal && (imagePath == null || imagePath!.isEmpty)) {
       return _buildFallback(context);
     }
 
     // Fast path: skip LayoutBuilder when both dimensions are explicitly known
     if (_hasKnownDimensions) {
-      return blurArtwork(_buildCachedImage(context, width!, height!));
+      return blurArtwork(
+        hasLocal
+            ? _buildLocalFileImage(context, localFile, width!, height!)
+            : _buildCachedImage(context, width!, height!),
+      );
     }
 
     return blurArtwork(
@@ -294,9 +283,46 @@ class PlexOptimizedImage extends StatelessWidget {
         builder: (context, constraints) {
           final effectiveWidth = _resolvedDimension(width, constraints.maxWidth, 300.0);
           final effectiveHeight = _resolvedDimension(height, constraints.maxHeight, 450.0);
-          return _buildCachedImage(context, effectiveWidth, effectiveHeight);
+          return hasLocal
+              ? _buildLocalFileImage(context, localFile, effectiveWidth, effectiveHeight)
+              : _buildCachedImage(context, effectiveWidth, effectiveHeight);
         },
       ),
+    );
+  }
+
+  Widget _buildLocalFileImage(
+    BuildContext context,
+    File file,
+    double effectiveWidth,
+    double effectiveHeight,
+  ) {
+    final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
+    final scaledWidth = effectiveWidth * dpr;
+    final scaledHeight = effectiveHeight * dpr;
+    final (_, memHeight) = PlexImageHelper.getMemCacheDimensions(
+      displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
+      displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
+      imageType: imageType,
+    );
+
+    return Image.file(
+      file,
+      width: width,
+      height: height,
+      // Only cacheHeight: leaving cacheWidth null preserves decode aspect
+      // ratio, mirroring the network branch which only passes maxHeight to
+      // CachedNetworkImageProvider.
+      cacheHeight: memHeight > 0 ? memHeight : null,
+      fit: fit,
+      filterQuality: filterQuality,
+      alignment: alignment,
+      errorBuilder: (context, error, stackTrace) {
+        if (errorWidget != null) {
+          return errorWidget!(context, file.path, error);
+        }
+        return _buildErrorWidget(context, error);
+      },
     );
   }
 

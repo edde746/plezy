@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -408,10 +407,12 @@ class _EpisodeCardState extends State<EpisodeCard> {
 
   Widget _buildEpisodeThumbnail() {
     if (widget.isOffline && widget.localPosterPath != null) {
-      return Image.file(
-        File(widget.localPosterPath!),
+      return PlexOptimizedImage.thumb(
+        client: null,
+        imagePath: null,
+        localFilePath: widget.localPosterPath,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
+        errorWidget: (context, url, error) =>
             const PlaceholderContainer(child: AppIcon(Symbols.movie_rounded, fill: 1, size: 32)),
       );
     }
