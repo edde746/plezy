@@ -36,10 +36,12 @@ import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cronet.CronetDataSource
 import org.chromium.net.CronetEngine
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.RenderersFactory
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -111,6 +113,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
     private var lastVideoSize: VideoSize? = null
     private var exoPlayer: ExoPlayer? = null
+    private var renderersFactory: PlezyRenderersFactory? = null
+    private val subtitleDelayUs = AtomicLong(0L)
     private var httpDataSourceFactory: HttpDataSource.Factory? = null
     private var dataSourceFactory: DefaultDataSource.Factory? = null
     private var trackSelector: DefaultTrackSelector? = null
@@ -363,6 +367,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     }
                 }
             }
+            this.renderersFactory = renderersFactory
 
             // Cronet DataSource for HTTP/2 multiplexing — all range requests share one connection
             httpDataSourceFactory = CronetDataSource.Factory(getCronetEngine(activity), cronetExecutor)
@@ -416,7 +421,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
                 .setSubtitleParserFactory(assParserFactory)
 
-            val wrappedRenderersFactory = AssRenderersFactory(handler, renderersFactory)
+            val assRenderersFactory = AssRenderersFactory(handler, renderersFactory)
+
+            // Wrap text renderers with subtitle delay support
+            val wrappedRenderersFactory = RenderersFactory {
+                eventHandler, videoListener, audioListener, textOutput, metadataOutput ->
+                assRenderersFactory.createRenderers(eventHandler, videoListener, audioListener, textOutput, metadataOutput)
+                    .map { if (it.trackType == C.TRACK_TYPE_TEXT) SubtitleDelayRenderer(it, subtitleDelayUs) else it }
+                    .toTypedArray()
+            }
 
             // Compute memory-aware buffer limits to prevent CCodec OOM crashes
             val activityManager = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -1010,10 +1023,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private fun updateTunnelingState(reason: String) {
         val selector = trackSelector ?: return
         val player = exoPlayer ?: return
-        val shouldTunnel = tunnelingUserEnabled && (player.playbackParameters.speed == 1f) && !tunnelingDisabledForCodec
+        val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
+        val shouldTunnel = tunnelingUserEnabled && (player.playbackParameters.speed == 1f) && !tunnelingDisabledForCodec && !audioDelayActive
         if (shouldTunnel == currentTunneledPlayback) return
         currentTunneledPlayback = shouldTunnel
-        emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=${player.playbackParameters.speed}, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec)")
+        emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=${player.playbackParameters.speed}, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, audioDelay=$audioDelayActive)")
         selector.setParameters(
             selector.buildUponParameters().setTunnelingEnabled(shouldTunnel)
         )
@@ -1279,6 +1293,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
 
         emitLog("info", "media", "Opened: ${redactUri(uri)}, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay, sessionTunneling=$currentTunneledPlayback, userTunneling=$tunnelingUserEnabled")
+    }
+
+    fun setAudioDelay(seconds: Double) {
+        renderersFactory?.audioDelayUs?.set((seconds * 1_000_000).toLong())
+        updateTunnelingState("audio-delay")
+    }
+
+    fun setSubtitleDelay(seconds: Double) {
+        subtitleDelayUs.set((seconds * 1_000_000).toLong())
     }
 
     fun play() {
@@ -1650,6 +1673,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         exoPlayer?.removeListener(this)
         exoPlayer?.release()
         exoPlayer = null
+        renderersFactory = null
         trackSelector = null
         httpDataSourceFactory = null
         dataSourceFactory = null

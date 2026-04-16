@@ -514,6 +514,14 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
+        // Apply sync offsets to ExoPlayer when active
+        if (!usingMpvFallback) {
+            when (name) {
+                "audio-delay" -> playerCore?.setAudioDelay(value.toDoubleOrNull() ?: 0.0)
+                "sub-delay" -> playerCore?.setSubtitleDelay(value.toDoubleOrNull() ?: 0.0)
+            }
+        }
+
         if (usingMpvFallback) {
             mpvCore?.setProperty(name, value)
         } else {

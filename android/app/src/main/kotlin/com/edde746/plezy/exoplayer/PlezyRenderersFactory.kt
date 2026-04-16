@@ -16,11 +16,16 @@ import androidx.media3.exoplayer.audio.AudioTrackAudioOutputProvider
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioTrackBufferSizeProvider
 import androidx.media3.exoplayer.audio.ForwardingAudioSink
+import androidx.media3.exoplayer.Renderer
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.abs
 
 @OptIn(UnstableApi::class)
 class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context) {
+
+    /** Audio delay in microseconds. Shared with PositionFixAudioSink for live updates. */
+    val audioDelayUs = AtomicLong(0L)
 
     override fun buildAudioSink(
         context: Context,
@@ -49,7 +54,7 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
             .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs))
             .build()
 
-        return PositionFixAudioSink(defaultSink, rawPositionUs)
+        return PositionFixAudioSink(defaultSink, rawPositionUs, audioDelayUs)
     }
 }
 
@@ -77,7 +82,8 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
 @OptIn(UnstableApi::class)
 private class PositionFixAudioSink(
     sink: AudioSink,
-    private val rawPositionUs: AtomicLong
+    private val rawPositionUs: AtomicLong,
+    private val audioDelayUs: AtomicLong
 ) : ForwardingAudioSink(sink) {
 
     private var startMediaTimeUs = Long.MIN_VALUE
@@ -88,6 +94,10 @@ private class PositionFixAudioSink(
     private var refMediaTimeUs = Long.MIN_VALUE
     private var refRawPositionUs = 0L
 
+    // Transient counter-offset: after seek/flush, ramp offset from 0 to full
+    // over recoveryDurationUs to prevent video frame drops.
+    private var recoveryDurationUs = 0L
+
     override fun handleBuffer(
         buffer: ByteBuffer,
         presentationTimeUs: Long,
@@ -97,6 +107,8 @@ private class PositionFixAudioSink(
             startMediaTimeUs = presentationTimeUs
             refMediaTimeUs = presentationTimeUs
             refRawPositionUs = 0
+            val delayUs = audioDelayUs.get()
+            recoveryDurationUs = if (delayUs == 0L) 0L else maxOf(200_000L, 2L * abs(delayUs))
         }
         return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
     }
@@ -119,10 +131,25 @@ private class PositionFixAudioSink(
         }
 
         val rawPos = rawPositionUs.get()
-        if (rawPos <= 0) return delegatePos
+        val basePos = if (rawPos <= 0) {
+            delegatePos
+        } else {
+            val expectedPos = refMediaTimeUs + ((rawPos - refRawPositionUs) * currentSpeed).toLong()
+            if (expectedPos > delegatePos + 30_000) expectedPos else delegatePos
+        }
 
-        val expectedPos = refMediaTimeUs + ((rawPos - refRawPositionUs) * currentSpeed).toLong()
-        return if (expectedPos > delegatePos + 30_000) expectedPos else delegatePos
+        // Audio delay with transient counter-offset to prevent frame drops after seeks.
+        // After flush, offset ramps linearly from 0 to full over recoveryDurationUs.
+        val delayUs = audioDelayUs.get()
+        if (delayUs == 0L) return basePos
+
+        val elapsedUs = basePos - startMediaTimeUs
+        val netOffsetUs = if (recoveryDurationUs <= 0L || elapsedUs >= recoveryDurationUs) {
+            delayUs
+        } else {
+            (delayUs * elapsedUs) / recoveryDurationUs
+        }
+        return basePos + netOffsetUs
     }
 
     // --- Suppress timestamp discontinuity errors ---
@@ -155,6 +182,7 @@ private class PositionFixAudioSink(
         startMediaTimeUs = Long.MIN_VALUE
         refMediaTimeUs = Long.MIN_VALUE
         refRawPositionUs = 0
+        recoveryDurationUs = 0L
         rawPositionUs.set(Long.MIN_VALUE)
         super.flush()
     }
@@ -163,6 +191,7 @@ private class PositionFixAudioSink(
         startMediaTimeUs = Long.MIN_VALUE
         refMediaTimeUs = Long.MIN_VALUE
         refRawPositionUs = 0
+        recoveryDurationUs = 0L
         currentSpeed = 1.0f
         rawPositionUs.set(Long.MIN_VALUE)
         suppressedErrorCount = 0
@@ -175,6 +204,22 @@ private class PositionFixAudioSink(
         return name == "InvalidAudioTrackTimestampException" ||
                 name == "UnexpectedDiscontinuityException" ||
                 msg.contains("timestamp discontinuity", ignoreCase = true)
+    }
+}
+
+/**
+ * Wraps a text renderer to shift subtitle timing by [delayUs] microseconds.
+ * Positive delay → subtitles appear later, negative → earlier.
+ * Only render() needs the offset — the text renderer uses positionUs to decide
+ * which cues are active; other Renderer methods are timing-independent.
+ */
+@OptIn(UnstableApi::class)
+internal class SubtitleDelayRenderer(
+    private val delegate: Renderer,
+    private val delayUs: AtomicLong
+) : Renderer by delegate {
+    override fun render(positionUs: Long, elapsedRealtimeUs: Long) {
+        delegate.render(positionUs - delayUs.get(), elapsedRealtimeUs)
     }
 }
 
