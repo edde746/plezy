@@ -186,6 +186,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
           isFolder: isFolder,
           isExpanded: isExpanded,
           isLoading: isLoading,
+          serverId: widget.serverId,
           onExpand: isFolder ? () => _toggleFolder(item) : null,
           onTap: !isFolder ? () => _handleItemTap(item) : null,
           onPlayAll: isFolder ? () => _handleFolderPlay(item) : null,
