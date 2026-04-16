@@ -186,6 +186,13 @@ Future<void> _bootstrapApp() async {
   // Register bundled shader licenses
   _registerShaderLicenses();
 
+  // In release mode, show a colored placeholder instead of a blank/white screen
+  // when a widget build() throws an unhandled exception.
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    if (kDebugMode) return ErrorWidget(details.exception);
+    return const ColoredBox(color: Color(0xFF000000));
+  };
+
   runApp(const MainApp());
 }
 

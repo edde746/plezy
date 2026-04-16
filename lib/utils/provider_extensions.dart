@@ -84,6 +84,14 @@ extension ProviderExtensions on BuildContext {
     return getClientForServer(serverId);
   }
 
+  /// Get the first available client, or null if no servers are connected
+  PlexClient? tryGetFirstAvailableClient() {
+    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
+    final serverId = multiServerProvider.onlineServerIds.firstOrNull;
+    if (serverId == null) return null;
+    return multiServerProvider.getClientForServer(serverId);
+  }
+
   /// Get client for a serverId with fallback to first available server
   /// Useful for items that might not have a serverId
   PlexClient getClientWithFallback(String? serverId) {

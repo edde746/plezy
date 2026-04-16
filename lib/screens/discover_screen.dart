@@ -139,19 +139,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
-  /// Get the correct PlexClient for an item's server
-  PlexClient _getClientForItem(PlexMetadata? item) {
-    // Items should always have a serverId, but if not, fall back to first available server
+  PlexClient? _getClientForItem(PlexMetadata? item) {
     final serverId = item?.serverId;
-    if (serverId == null) {
-      final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-      final fallbackId = multiServerProvider.onlineServerIds.firstOrNull;
-      if (fallbackId == null) {
-        throw Exception('No servers available');
-      }
-      return context.getClientForServer(fallbackId);
-    }
-    return context.getClientForServer(serverId);
+    if (serverId == null) return context.tryGetFirstAvailableClient();
+    return context.tryGetClientForServer(serverId);
   }
 
   /// Update hub keys when hubs list changes — reuse existing keys to avoid
@@ -1320,6 +1311,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildHeroItem(PlexMetadata heroItem, double heroHeight) {
+    final heroClient = _getClientForItem(heroItem);
     final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1369,12 +1361,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     },
                     child: Builder(
                       builder: (context) {
-                        final client = _getClientForItem(heroItem);
+                        if (heroClient == null) {
+                          return Container(color: Theme.of(context).colorScheme.surfaceContainerHighest);
+                        }
                         final mediaQuery = MediaQuery.of(context);
                         final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
                         final containerAspect = screenWidth / heroHeight;
                         final imageUrl = PlexImageHelper.getOptimizedImageUrl(
-                          client: client,
+                          client: heroClient,
                           thumbPath: heroItem.heroArt(containerAspectRatio: containerAspect) ?? heroItem.grandparentArt,
                           maxWidth: mediaQuery.size.width,
                           maxHeight: mediaQuery.size.height * 0.7,
@@ -1443,10 +1437,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         width: 400,
                         child: Builder(
                           builder: (context) {
-                            final client = _getClientForItem(heroItem);
+                            if (heroClient == null) return const SizedBox.shrink();
                             final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
                             final logoUrl = PlexImageHelper.getOptimizedImageUrl(
-                              client: client,
+                              client: heroClient,
                               thumbPath: heroItem.clearLogo,
                               maxWidth: 400,
                               maxHeight: 120,
