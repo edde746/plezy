@@ -23,7 +23,11 @@ http.Client createPlatformClient() {
     return CupertinoClient.defaultSessionConfiguration();
   }
   if (Platform.isWindows) {
-    return WinHttpClient.defaultConfiguration();
+    try {
+      return WinHttpClient.defaultConfiguration();
+    } catch (_) {
+      return IOClient();
+    }
   }
   return IOClient();
 }
