@@ -2407,10 +2407,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                         heroArtPath,
                                       );
                                       if (localPath != null && File(localPath).existsSync()) {
-                                        return Image.file(
-                                          File(localPath),
+                                        return PlexOptimizedImage(
+                                          client: null,
+                                          imagePath: null,
+                                          localFilePath: localPath,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
+                                          imageType: ImageType.art,
+                                          errorWidget: (context, url, error) => const PlaceholderContainer(),
                                         );
                                       }
                                       // Offline but no local file - show placeholder
@@ -2492,11 +2495,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                               metadata.clearLogo,
                                             );
                                             if (localPath != null && File(localPath).existsSync()) {
-                                              return Image.file(
-                                                File(localPath),
+                                              return PlexOptimizedImage(
+                                                client: null,
+                                                imagePath: null,
+                                                localFilePath: localPath,
                                                 fit: BoxFit.contain,
                                                 alignment: Alignment.centerLeft,
-                                                errorBuilder: (context, error, stackTrace) =>
+                                                imageType: ImageType.logo,
+                                                errorWidget: (context, url, error) =>
                                                     _buildTitleText(context, metadata.displayTitle),
                                               );
                                             }
