@@ -2329,6 +2329,51 @@ class TranslationsDownloadsEn {
 
 	/// en: '${count} items queued for download'
 	String itemsQueued({required Object count}) => '${count} items queued for download';
+
+	/// en: 'Keep synced'
+	String get keepSynced => 'Keep synced';
+
+	/// en: 'Download once'
+	String get downloadOnce => 'Download once';
+
+	/// en: 'Keep ${count} unwatched'
+	String keepNUnwatched({required Object count}) => 'Keep ${count} unwatched';
+
+	/// en: 'Edit sync rule'
+	String get editSyncRule => 'Edit sync rule';
+
+	/// en: 'Remove sync rule'
+	String get removeSyncRule => 'Remove sync rule';
+
+	/// en: 'Stop syncing "${title}"? Downloaded episodes will be kept.'
+	String removeSyncRuleConfirm({required Object title}) => 'Stop syncing "${title}"? Downloaded episodes will be kept.';
+
+	/// en: 'Sync rule created — keeping ${count} unwatched episodes'
+	String syncRuleCreated({required Object count}) => 'Sync rule created — keeping ${count} unwatched episodes';
+
+	/// en: 'Sync rule updated'
+	String get syncRuleUpdated => 'Sync rule updated';
+
+	/// en: 'Sync rule removed'
+	String get syncRuleRemoved => 'Sync rule removed';
+
+	/// en: 'Synced ${count} new episodes for ${title}'
+	String syncedNewEpisodes({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}';
+
+	/// en: 'Sync rules'
+	String get activeSyncRules => 'Sync rules';
+
+	/// en: 'No sync rules'
+	String get noSyncRules => 'No sync rules';
+
+	/// en: 'Last synced ${time}'
+	String lastSynced({required Object time}) => 'Last synced ${time}';
+
+	/// en: 'Manage sync'
+	String get manageSyncRule => 'Manage sync';
+
+	/// en: 'Episode count'
+	String get editEpisodeCount => 'Episode count';
 }
 
 // Path: shaders
@@ -3796,6 +3841,21 @@ extension on Translations {
 			'downloads.customAmount' => 'Custom amount...',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
+			'downloads.keepSynced' => 'Keep synced',
+			'downloads.downloadOnce' => 'Download once',
+			'downloads.keepNUnwatched' => ({required Object count}) => 'Keep ${count} unwatched',
+			'downloads.editSyncRule' => 'Edit sync rule',
+			'downloads.removeSyncRule' => 'Remove sync rule',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Stop syncing "${title}"? Downloaded episodes will be kept.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Sync rule created — keeping ${count} unwatched episodes',
+			'downloads.syncRuleUpdated' => 'Sync rule updated',
+			'downloads.syncRuleRemoved' => 'Sync rule removed',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}',
+			'downloads.activeSyncRules' => 'Sync rules',
+			'downloads.noSyncRules' => 'No sync rules',
+			'downloads.lastSynced' => ({required Object time}) => 'Last synced ${time}',
+			'downloads.manageSyncRule' => 'Manage sync',
+			'downloads.editEpisodeCount' => 'Episode count',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',

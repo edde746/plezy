@@ -647,7 +647,22 @@
     "nextNUnwatched": "Nächste ${count} ungesehene",
     "customAmount": "Eigene Anzahl...",
     "howManyEpisodes": "Wie viele Episoden?",
-    "itemsQueued": "${count} Elemente zum Download eingereiht"
+    "itemsQueued": "${count} Elemente zum Download eingereiht",
+    "keepSynced": "Synchronisiert halten",
+    "downloadOnce": "Einmal herunterladen",
+    "keepNUnwatched": "${count} ungesehene behalten",
+    "editSyncRule": "Sync-Regel bearbeiten",
+    "removeSyncRule": "Sync-Regel entfernen",
+    "removeSyncRuleConfirm": "Synchronisierung von \"${title}\" beenden? Heruntergeladene Episoden werden behalten.",
+    "syncRuleCreated": "Sync-Regel erstellt — ${count} ungesehene Episoden werden behalten",
+    "syncRuleUpdated": "Sync-Regel aktualisiert",
+    "syncRuleRemoved": "Sync-Regel entfernt",
+    "syncedNewEpisodes": "${count} neue Episoden für ${title} synchronisiert",
+    "activeSyncRules": "Sync-Regeln",
+    "noSyncRules": "Keine Sync-Regeln",
+    "lastSynced": "Zuletzt synchronisiert ${time}",
+    "manageSyncRule": "Synchronisierung verwalten",
+    "editEpisodeCount": "Episodenanzahl"
   },
   "playlists": {
     "title": "Wiedergabelisten",

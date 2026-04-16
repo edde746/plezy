@@ -79,23 +79,11 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
       DeletionEvent(
         ratingKey: metadata.ratingKey,
         serverId: metadata.serverId ?? '',
-        parentChain: _buildParentChain(metadata),
+        parentChain: metadata.parentChain,
         mediaType: metadata.type ?? '',
         leafCount: metadata.leafCount ?? 1,
         isDownloadOnly: isDownloadOnly,
       ),
     );
-  }
-
-  /// Build parent chain from metadata's parent keys
-  List<String> _buildParentChain(PlexMetadata metadata) {
-    final chain = <String>[];
-    if (metadata.parentRatingKey != null) {
-      chain.add(metadata.parentRatingKey!);
-    }
-    if (metadata.grandparentRatingKey != null) {
-      chain.add(metadata.grandparentRatingKey!);
-    }
-    return chain;
   }
 }

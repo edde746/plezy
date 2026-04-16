@@ -1019,6 +1019,21 @@ class _TranslationsDownloadsPt implements TranslationsDownloadsEn {
 	@override String get customAmount => 'Quantidade personalizada...';
 	@override String get howManyEpisodes => 'Quantos episódios?';
 	@override String itemsQueued({required Object count}) => '${count} itens na fila de download';
+	@override String get keepSynced => 'Manter sincronizado';
+	@override String get downloadOnce => 'Baixar uma vez';
+	@override String keepNUnwatched({required Object count}) => 'Manter ${count} não assistidos';
+	@override String get editSyncRule => 'Editar regra de sincronização';
+	@override String get removeSyncRule => 'Remover regra de sincronização';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Parar de sincronizar "${title}"? Os episódios baixados serão mantidos.';
+	@override String syncRuleCreated({required Object count}) => 'Regra de sincronização criada — mantendo ${count} episódios não assistidos';
+	@override String get syncRuleUpdated => 'Regra de sincronização atualizada';
+	@override String get syncRuleRemoved => 'Regra de sincronização removida';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} novos episódios sincronizados para ${title}';
+	@override String get activeSyncRules => 'Regras de sincronização';
+	@override String get noSyncRules => 'Nenhuma regra de sincronização';
+	@override String lastSynced({required Object time}) => 'Última sincronização ${time}';
+	@override String get manageSyncRule => 'Gerenciar sincronização';
+	@override String get editEpisodeCount => 'Número de episódios';
 }
 
 // Path: shaders
@@ -2055,6 +2070,21 @@ extension on TranslationsPt {
 			'downloads.customAmount' => 'Quantidade personalizada...',
 			'downloads.howManyEpisodes' => 'Quantos episódios?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} itens na fila de download',
+			'downloads.keepSynced' => 'Manter sincronizado',
+			'downloads.downloadOnce' => 'Baixar uma vez',
+			'downloads.keepNUnwatched' => ({required Object count}) => 'Manter ${count} não assistidos',
+			'downloads.editSyncRule' => 'Editar regra de sincronização',
+			'downloads.removeSyncRule' => 'Remover regra de sincronização',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Parar de sincronizar "${title}"? Os episódios baixados serão mantidos.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Regra de sincronização criada — mantendo ${count} episódios não assistidos',
+			'downloads.syncRuleUpdated' => 'Regra de sincronização atualizada',
+			'downloads.syncRuleRemoved' => 'Regra de sincronização removida',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} novos episódios sincronizados para ${title}',
+			'downloads.activeSyncRules' => 'Regras de sincronização',
+			'downloads.noSyncRules' => 'Nenhuma regra de sincronização',
+			'downloads.lastSynced' => ({required Object time}) => 'Última sincronização ${time}',
+			'downloads.manageSyncRule' => 'Gerenciar sincronização',
+			'downloads.editEpisodeCount' => 'Número de episódios',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Sem aprimoramento de vídeo',
 			'shaders.nvscalerDescription' => 'Escalonamento de imagem NVIDIA para vídeo mais nítido',

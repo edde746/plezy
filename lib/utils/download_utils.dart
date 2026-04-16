@@ -5,16 +5,36 @@ import '../i18n/strings.g.dart';
 import '../models/plex_metadata.dart';
 import '../providers/download_provider.dart';
 import '../services/plex_client.dart';
+import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
+import 'global_key_utils.dart';
 
 /// Dialog option for the download picker. Typed to avoid stringly-typed values.
 enum _DownloadChoice { all, unwatched, next5, next10, custom }
 
+/// Whether the user chose a one-time download or a persistent sync rule.
+enum _SyncChoice { downloadOnce, keepSynced }
+
+/// Result of the download dialog + queue operation.
+class DownloadResult {
+  final int count;
+  final bool syncRuleCreated;
+  final bool syncRuleUpdated;
+  const DownloadResult({required this.count, this.syncRuleCreated = false, this.syncRuleUpdated = false});
+
+  String toSnackBarMessage() {
+    if (syncRuleUpdated) return t.downloads.syncRuleUpdated;
+    if (syncRuleCreated) return t.downloads.syncRuleCreated(count: count.toString());
+    if (count > 1) return t.downloads.episodesQueued(count: count);
+    return t.downloads.downloadQueued;
+  }
+}
+
 /// Shows download options dialog for shows/seasons, then queues the download.
 /// For movies/episodes, queues directly without a dialog.
-/// Returns the number of items queued, or null if cancelled.
-Future<int?> showDownloadOptionsAndQueue(
+/// Returns a [DownloadResult], or null if cancelled.
+Future<DownloadResult?> showDownloadOptionsAndQueue(
   BuildContext context, {
   required PlexMetadata metadata,
   required PlexClient client,
@@ -24,6 +44,7 @@ Future<int?> showDownloadOptionsAndQueue(
 
   var filter = DownloadFilter.all;
   int? maxCount;
+  bool keepSynced = false;
 
   if (mt == PlexMediaType.show || mt == PlexMediaType.season) {
     int? customCount;
@@ -61,6 +82,20 @@ Future<int?> showDownloadOptionsAndQueue(
         filter = DownloadFilter.unwatched;
         maxCount = customCount;
     }
+
+    // For unwatched-based options on shows, offer sync vs one-time download
+    if (filter == DownloadFilter.unwatched && mt == PlexMediaType.show && context.mounted) {
+      final syncChoice = await showOptionPickerDialog<_SyncChoice>(
+        context,
+        title: t.downloads.downloadNow,
+        options: [
+          (icon: Symbols.download_rounded, label: t.downloads.downloadOnce, value: _SyncChoice.downloadOnce),
+          (icon: Symbols.sync_rounded, label: t.downloads.keepSynced, value: _SyncChoice.keepSynced),
+        ],
+      );
+      if (syncChoice == null || !context.mounted) return null;
+      keepSynced = syncChoice == _SyncChoice.keepSynced;
+    }
   }
 
   if (!context.mounted) return null;
@@ -68,12 +103,34 @@ Future<int?> showDownloadOptionsAndQueue(
   final versionConfig = await resolveDownloadVersion(context, metadata, client);
   if (versionConfig == null || !context.mounted) return null;
 
-  return await downloadProvider.queueDownload(
+  // Create or update sync rule before queueing (so the rule exists even if queue fails)
+  bool syncRuleUpdated = false;
+  if (keepSynced) {
+    final globalKey = buildGlobalKey(metadata.serverId ?? client.serverId, metadata.ratingKey);
+    syncRuleUpdated = downloadProvider.hasSyncRule(globalKey);
+
+    final syncCount = maxCount ?? 0; // 0 means "all unwatched" for the rule
+    await downloadProvider.createSyncRule(
+      serverId: metadata.serverId ?? client.serverId,
+      ratingKey: metadata.ratingKey,
+      targetType: metadata.type ?? ContentTypes.show,
+      episodeCount: syncCount,
+      mediaIndex: versionConfig.mediaIndex,
+    );
+  }
+
+  final count = await downloadProvider.queueDownload(
     metadata,
     client,
     versionConfig: versionConfig,
     filter: filter,
     maxCount: maxCount,
+  );
+
+  return DownloadResult(
+    count: count,
+    syncRuleCreated: keepSynced && !syncRuleUpdated,
+    syncRuleUpdated: syncRuleUpdated,
   );
 }
 
@@ -103,12 +160,12 @@ Future<int?> showPlaylistDownloadOptionsAndQueue(
   );
 }
 
-Future<int?> _showEpisodeCountDialog(BuildContext context) async {
+Future<int?> _showEpisodeCountDialog(BuildContext context, {String? title, String? hintText}) async {
   final result = await showTextInputDialog(
     context,
-    title: t.downloads.howManyEpisodes,
+    title: title ?? t.downloads.howManyEpisodes,
     labelText: '',
-    hintText: '',
+    hintText: hintText ?? '',
     confirmText: t.common.ok,
     keyboardType: TextInputType.number,
     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -120,4 +177,41 @@ Future<int?> _showEpisodeCountDialog(BuildContext context) async {
   );
   if (result == null) return null;
   return int.tryParse(result);
+}
+
+/// Shows a dialog to edit a sync rule's episode count. Returns true if updated.
+Future<bool> editSyncRuleCount(
+  BuildContext context, {
+  required DownloadProvider downloadProvider,
+  required String globalKey,
+  required int currentCount,
+}) async {
+  final count = await _showEpisodeCountDialog(
+    context,
+    title: t.downloads.editEpisodeCount,
+    hintText: currentCount.toString(),
+  );
+  if (count == null || !context.mounted) return false;
+
+  await downloadProvider.updateSyncRuleCount(globalKey, count);
+  return true;
+}
+
+/// Shows a confirmation dialog to remove a sync rule. Returns true if removed.
+Future<bool> confirmAndRemoveSyncRule(
+  BuildContext context, {
+  required DownloadProvider downloadProvider,
+  required String globalKey,
+  required String displayTitle,
+}) async {
+  final confirmed = await showConfirmDialog(
+    context,
+    title: t.downloads.removeSyncRule,
+    message: t.downloads.removeSyncRuleConfirm(title: displayTitle),
+    confirmText: t.downloads.removeSyncRule,
+  );
+  if (!confirmed || !context.mounted) return false;
+
+  await downloadProvider.deleteSyncRule(globalKey);
+  return true;
 }

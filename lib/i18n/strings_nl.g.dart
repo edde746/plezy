@@ -887,6 +887,21 @@ class _TranslationsDownloadsNl implements TranslationsDownloadsEn {
 	@override String get customAmount => 'Aangepast aantal...';
 	@override String get howManyEpisodes => 'Hoeveel afleveringen?';
 	@override String itemsQueued({required Object count}) => '${count} items in downloadwachtrij';
+	@override String get keepSynced => 'Gesynchroniseerd houden';
+	@override String get downloadOnce => 'Eenmalig downloaden';
+	@override String keepNUnwatched({required Object count}) => '${count} onbekeken behouden';
+	@override String get editSyncRule => 'Synchronisatieregel bewerken';
+	@override String get removeSyncRule => 'Synchronisatieregel verwijderen';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Synchronisatie van "${title}" stoppen? Gedownloade afleveringen worden behouden.';
+	@override String syncRuleCreated({required Object count}) => 'Synchronisatieregel aangemaakt — ${count} onbekeken afleveringen behouden';
+	@override String get syncRuleUpdated => 'Synchronisatieregel bijgewerkt';
+	@override String get syncRuleRemoved => 'Synchronisatieregel verwijderd';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}';
+	@override String get activeSyncRules => 'Synchronisatieregels';
+	@override String get noSyncRules => 'Geen synchronisatieregels';
+	@override String lastSynced({required Object time}) => 'Laatst gesynchroniseerd ${time}';
+	@override String get manageSyncRule => 'Synchronisatie beheren';
+	@override String get editEpisodeCount => 'Aantal afleveringen';
 }
 
 // Path: playlists
@@ -1950,6 +1965,21 @@ extension on TranslationsNl {
 			'downloads.customAmount' => 'Aangepast aantal...',
 			'downloads.howManyEpisodes' => 'Hoeveel afleveringen?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items in downloadwachtrij',
+			'downloads.keepSynced' => 'Gesynchroniseerd houden',
+			'downloads.downloadOnce' => 'Eenmalig downloaden',
+			'downloads.keepNUnwatched' => ({required Object count}) => '${count} onbekeken behouden',
+			'downloads.editSyncRule' => 'Synchronisatieregel bewerken',
+			'downloads.removeSyncRule' => 'Synchronisatieregel verwijderen',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Synchronisatie van "${title}" stoppen? Gedownloade afleveringen worden behouden.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Synchronisatieregel aangemaakt — ${count} onbekeken afleveringen behouden',
+			'downloads.syncRuleUpdated' => 'Synchronisatieregel bijgewerkt',
+			'downloads.syncRuleRemoved' => 'Synchronisatieregel verwijderd',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}',
+			'downloads.activeSyncRules' => 'Synchronisatieregels',
+			'downloads.noSyncRules' => 'Geen synchronisatieregels',
+			'downloads.lastSynced' => ({required Object time}) => 'Laatst gesynchroniseerd ${time}',
+			'downloads.manageSyncRule' => 'Synchronisatie beheren',
+			'downloads.editEpisodeCount' => 'Aantal afleveringen',
 			'playlists.title' => 'Afspeellijsten',
 			'playlists.noPlaylists' => 'Geen afspeellijsten gevonden',
 			'playlists.create' => 'Afspeellijst maken',

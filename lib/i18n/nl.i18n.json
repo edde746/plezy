@@ -647,7 +647,22 @@
     "nextNUnwatched": "Volgende ${count} onbekeken",
     "customAmount": "Aangepast aantal...",
     "howManyEpisodes": "Hoeveel afleveringen?",
-    "itemsQueued": "${count} items in downloadwachtrij"
+    "itemsQueued": "${count} items in downloadwachtrij",
+    "keepSynced": "Gesynchroniseerd houden",
+    "downloadOnce": "Eenmalig downloaden",
+    "keepNUnwatched": "${count} onbekeken behouden",
+    "editSyncRule": "Synchronisatieregel bewerken",
+    "removeSyncRule": "Synchronisatieregel verwijderen",
+    "removeSyncRuleConfirm": "Synchronisatie van \"${title}\" stoppen? Gedownloade afleveringen worden behouden.",
+    "syncRuleCreated": "Synchronisatieregel aangemaakt — ${count} onbekeken afleveringen behouden",
+    "syncRuleUpdated": "Synchronisatieregel bijgewerkt",
+    "syncRuleRemoved": "Synchronisatieregel verwijderd",
+    "syncedNewEpisodes": "${count} nieuwe afleveringen gesynchroniseerd voor ${title}",
+    "activeSyncRules": "Synchronisatieregels",
+    "noSyncRules": "Geen synchronisatieregels",
+    "lastSynced": "Laatst gesynchroniseerd ${time}",
+    "manageSyncRule": "Synchronisatie beheren",
+    "editEpisodeCount": "Aantal afleveringen"
   },
   "playlists": {
     "title": "Afspeellijsten",

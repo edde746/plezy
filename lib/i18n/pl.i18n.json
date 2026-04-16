@@ -758,7 +758,22 @@
     "nextNUnwatched": "Następne ${count} nieobejrzanych",
     "customAmount": "Własna ilość...",
     "howManyEpisodes": "Ile odcinków?",
-    "itemsQueued": "${count} elementów dodanych do kolejki pobierania"
+    "itemsQueued": "${count} elementów dodanych do kolejki pobierania",
+    "keepSynced": "Synchronizuj na bieżąco",
+    "downloadOnce": "Pobierz raz",
+    "keepNUnwatched": "Zachowaj ${count} nieobejrzanych",
+    "editSyncRule": "Edytuj regułę synchronizacji",
+    "removeSyncRule": "Usuń regułę synchronizacji",
+    "removeSyncRuleConfirm": "Zatrzymać synchronizację \"${title}\"? Pobrane odcinki zostaną zachowane.",
+    "syncRuleCreated": "Reguła synchronizacji utworzona — zachowywanie ${count} nieobejrzanych odcinków",
+    "syncRuleUpdated": "Reguła synchronizacji zaktualizowana",
+    "syncRuleRemoved": "Reguła synchronizacji usunięta",
+    "syncedNewEpisodes": "Zsynchronizowano ${count} nowych odcinków dla ${title}",
+    "activeSyncRules": "Reguły synchronizacji",
+    "noSyncRules": "Brak reguł synchronizacji",
+    "lastSynced": "Ostatnia synchronizacja ${time}",
+    "manageSyncRule": "Zarządzaj synchronizacją",
+    "editEpisodeCount": "Liczba odcinków"
   },
   "shaders": {
     "title": "Shadery",

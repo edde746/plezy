@@ -758,7 +758,22 @@
     "nextNUnwatched": "次の${count}件の未視聴",
     "customAmount": "数を指定...",
     "howManyEpisodes": "何エピソード？",
-    "itemsQueued": "${count}件をダウンロードキューに追加"
+    "itemsQueued": "${count}件をダウンロードキューに追加",
+    "keepSynced": "同期を維持",
+    "downloadOnce": "一度だけダウンロード",
+    "keepNUnwatched": "未視聴を${count}件保持",
+    "editSyncRule": "同期ルールを編集",
+    "removeSyncRule": "同期ルールを削除",
+    "removeSyncRuleConfirm": "「${title}」の同期を停止しますか？ダウンロード済みのエピソードは保持されます。",
+    "syncRuleCreated": "同期ルールを作成しました — 未視聴のエピソードを${count}件保持",
+    "syncRuleUpdated": "同期ルールを更新しました",
+    "syncRuleRemoved": "同期ルールを削除しました",
+    "syncedNewEpisodes": "${title}の新しいエピソードを${count}件同期しました",
+    "activeSyncRules": "同期ルール",
+    "noSyncRules": "同期ルールなし",
+    "lastSynced": "最終同期 ${time}",
+    "manageSyncRule": "同期を管理",
+    "editEpisodeCount": "エピソード数"
   },
   "shaders": {
     "title": "シェーダー",

@@ -887,6 +887,21 @@ class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
 	@override String get customAmount => 'Ange antal...';
 	@override String get howManyEpisodes => 'Hur många avsnitt?';
 	@override String itemsQueued({required Object count}) => '${count} objekt köade för nedladdning';
+	@override String get keepSynced => 'Håll synkroniserad';
+	@override String get downloadOnce => 'Ladda ner en gång';
+	@override String keepNUnwatched({required Object count}) => 'Behåll ${count} osedda';
+	@override String get editSyncRule => 'Redigera synkregel';
+	@override String get removeSyncRule => 'Ta bort synkregel';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Sluta synkronisera "${title}"? Nedladdade avsnitt behålls.';
+	@override String syncRuleCreated({required Object count}) => 'Synkregel skapad — behåller ${count} osedda avsnitt';
+	@override String get syncRuleUpdated => 'Synkregel uppdaterad';
+	@override String get syncRuleRemoved => 'Synkregel borttagen';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}';
+	@override String get activeSyncRules => 'Synkregler';
+	@override String get noSyncRules => 'Inga synkregler';
+	@override String lastSynced({required Object time}) => 'Senast synkroniserad ${time}';
+	@override String get manageSyncRule => 'Hantera synkronisering';
+	@override String get editEpisodeCount => 'Antal avsnitt';
 }
 
 // Path: playlists
@@ -1950,6 +1965,21 @@ extension on TranslationsSv {
 			'downloads.customAmount' => 'Ange antal...',
 			'downloads.howManyEpisodes' => 'Hur många avsnitt?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} objekt köade för nedladdning',
+			'downloads.keepSynced' => 'Håll synkroniserad',
+			'downloads.downloadOnce' => 'Ladda ner en gång',
+			'downloads.keepNUnwatched' => ({required Object count}) => 'Behåll ${count} osedda',
+			'downloads.editSyncRule' => 'Redigera synkregel',
+			'downloads.removeSyncRule' => 'Ta bort synkregel',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Sluta synkronisera "${title}"? Nedladdade avsnitt behålls.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Synkregel skapad — behåller ${count} osedda avsnitt',
+			'downloads.syncRuleUpdated' => 'Synkregel uppdaterad',
+			'downloads.syncRuleRemoved' => 'Synkregel borttagen',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}',
+			'downloads.activeSyncRules' => 'Synkregler',
+			'downloads.noSyncRules' => 'Inga synkregler',
+			'downloads.lastSynced' => ({required Object time}) => 'Senast synkroniserad ${time}',
+			'downloads.manageSyncRule' => 'Hantera synkronisering',
+			'downloads.editEpisodeCount' => 'Antal avsnitt',
 			'playlists.title' => 'Spellistor',
 			'playlists.noPlaylists' => 'Inga spellistor hittades',
 			'playlists.create' => 'Skapa spellista',

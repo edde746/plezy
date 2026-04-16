@@ -1019,6 +1019,21 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String get customAmount => '직접 입력...';
 	@override String get howManyEpisodes => '몇 개의 에피소드?';
 	@override String itemsQueued({required Object count}) => '${count}개 항목이 다운로드 대기열에 추가됨';
+	@override String get keepSynced => '동기화 유지';
+	@override String get downloadOnce => '한 번만 다운로드';
+	@override String keepNUnwatched({required Object count}) => '미시청 ${count}개 유지';
+	@override String get editSyncRule => '동기화 규칙 편집';
+	@override String get removeSyncRule => '동기화 규칙 제거';
+	@override String removeSyncRuleConfirm({required Object title}) => '"${title}" 동기화를 중단하시겠습니까? 다운로드된 에피소드는 유지됩니다.';
+	@override String syncRuleCreated({required Object count}) => '동기화 규칙 생성됨 — 미시청 에피소드 ${count}개 유지';
+	@override String get syncRuleUpdated => '동기화 규칙 업데이트됨';
+	@override String get syncRuleRemoved => '동기화 규칙 제거됨';
+	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title}의 새 에피소드 ${count}개 동기화됨';
+	@override String get activeSyncRules => '동기화 규칙';
+	@override String get noSyncRules => '동기화 규칙 없음';
+	@override String lastSynced({required Object time}) => '마지막 동기화 ${time}';
+	@override String get manageSyncRule => '동기화 관리';
+	@override String get editEpisodeCount => '에피소드 수';
 }
 
 // Path: shaders
@@ -2055,6 +2070,21 @@ extension on TranslationsKo {
 			'downloads.customAmount' => '직접 입력...',
 			'downloads.howManyEpisodes' => '몇 개의 에피소드?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count}개 항목이 다운로드 대기열에 추가됨',
+			'downloads.keepSynced' => '동기화 유지',
+			'downloads.downloadOnce' => '한 번만 다운로드',
+			'downloads.keepNUnwatched' => ({required Object count}) => '미시청 ${count}개 유지',
+			'downloads.editSyncRule' => '동기화 규칙 편집',
+			'downloads.removeSyncRule' => '동기화 규칙 제거',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => '"${title}" 동기화를 중단하시겠습니까? 다운로드된 에피소드는 유지됩니다.',
+			'downloads.syncRuleCreated' => ({required Object count}) => '동기화 규칙 생성됨 — 미시청 에피소드 ${count}개 유지',
+			'downloads.syncRuleUpdated' => '동기화 규칙 업데이트됨',
+			'downloads.syncRuleRemoved' => '동기화 규칙 제거됨',
+			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}의 새 에피소드 ${count}개 동기화됨',
+			'downloads.activeSyncRules' => '동기화 규칙',
+			'downloads.noSyncRules' => '동기화 규칙 없음',
+			'downloads.lastSynced' => ({required Object time}) => '마지막 동기화 ${time}',
+			'downloads.manageSyncRule' => '동기화 관리',
+			'downloads.editEpisodeCount' => '에피소드 수',
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
 			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',

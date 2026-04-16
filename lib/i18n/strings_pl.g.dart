@@ -1019,6 +1019,21 @@ class _TranslationsDownloadsPl implements TranslationsDownloadsEn {
 	@override String get customAmount => 'Własna ilość...';
 	@override String get howManyEpisodes => 'Ile odcinków?';
 	@override String itemsQueued({required Object count}) => '${count} elementów dodanych do kolejki pobierania';
+	@override String get keepSynced => 'Synchronizuj na bieżąco';
+	@override String get downloadOnce => 'Pobierz raz';
+	@override String keepNUnwatched({required Object count}) => 'Zachowaj ${count} nieobejrzanych';
+	@override String get editSyncRule => 'Edytuj regułę synchronizacji';
+	@override String get removeSyncRule => 'Usuń regułę synchronizacji';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Zatrzymać synchronizację "${title}"? Pobrane odcinki zostaną zachowane.';
+	@override String syncRuleCreated({required Object count}) => 'Reguła synchronizacji utworzona — zachowywanie ${count} nieobejrzanych odcinków';
+	@override String get syncRuleUpdated => 'Reguła synchronizacji zaktualizowana';
+	@override String get syncRuleRemoved => 'Reguła synchronizacji usunięta';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Zsynchronizowano ${count} nowych odcinków dla ${title}';
+	@override String get activeSyncRules => 'Reguły synchronizacji';
+	@override String get noSyncRules => 'Brak reguł synchronizacji';
+	@override String lastSynced({required Object time}) => 'Ostatnia synchronizacja ${time}';
+	@override String get manageSyncRule => 'Zarządzaj synchronizacją';
+	@override String get editEpisodeCount => 'Liczba odcinków';
 }
 
 // Path: shaders
@@ -2055,6 +2070,21 @@ extension on TranslationsPl {
 			'downloads.customAmount' => 'Własna ilość...',
 			'downloads.howManyEpisodes' => 'Ile odcinków?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} elementów dodanych do kolejki pobierania',
+			'downloads.keepSynced' => 'Synchronizuj na bieżąco',
+			'downloads.downloadOnce' => 'Pobierz raz',
+			'downloads.keepNUnwatched' => ({required Object count}) => 'Zachowaj ${count} nieobejrzanych',
+			'downloads.editSyncRule' => 'Edytuj regułę synchronizacji',
+			'downloads.removeSyncRule' => 'Usuń regułę synchronizacji',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Zatrzymać synchronizację "${title}"? Pobrane odcinki zostaną zachowane.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Reguła synchronizacji utworzona — zachowywanie ${count} nieobejrzanych odcinków',
+			'downloads.syncRuleUpdated' => 'Reguła synchronizacji zaktualizowana',
+			'downloads.syncRuleRemoved' => 'Reguła synchronizacji usunięta',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Zsynchronizowano ${count} nowych odcinków dla ${title}',
+			'downloads.activeSyncRules' => 'Reguły synchronizacji',
+			'downloads.noSyncRules' => 'Brak reguł synchronizacji',
+			'downloads.lastSynced' => ({required Object time}) => 'Ostatnia synchronizacja ${time}',
+			'downloads.manageSyncRule' => 'Zarządzaj synchronizacją',
+			'downloads.editEpisodeCount' => 'Liczba odcinków',
 			'shaders.title' => 'Shadery',
 			'shaders.noShaderDescription' => 'Bez ulepszenia wideo',
 			'shaders.nvscalerDescription' => 'Skalowanie obrazu NVIDIA dla ostrzejszego wideo',

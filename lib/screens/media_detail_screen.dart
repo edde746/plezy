@@ -23,6 +23,8 @@ import '../widgets/plex_optimized_image.dart';
 import '../utils/plex_image_helper.dart';
 import '../../services/plex_client.dart';
 import '../services/plex_api_cache.dart';
+import '../services/offline_watch_sync_service.dart';
+import '../utils/plex_cache_parser.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_role.dart';
 import '../models/plex_video_playback_data.dart';
@@ -61,6 +63,8 @@ import 'actor_media_screen.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
 import '../models/plex_hub.dart';
+
+enum _SyncRuleAction { edit, remove, delete }
 
 class MediaDetailScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -720,7 +724,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
                 // State 7: Partial Download (some episodes downloaded, not all)
                 if (progress?.status == DownloadStatus.partial) {
+                  final hasSyncRule = downloadProvider.hasSyncRule(globalKey);
                   final currentFile = progress?.currentFile;
+
+                  if (hasSyncRule) {
+                    // Synced partial — this is the normal state for sync rules
+                    final syncRule = downloadProvider.getSyncRule(globalKey);
+                    final isEnabled = syncRule?.enabled ?? true;
+                    final tooltip = currentFile != null
+                        ? '$currentFile (syncing ${t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?')})'
+                        : t.downloads.keepSynced;
+
+                    return IconButton.filledTonal(
+                      onPressed: () => _showSyncRuleActions(context, downloadProvider, metadata, globalKey),
+                      tooltip: tooltip,
+                      icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
+                      iconSize: 20,
+                      style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey),
+                    );
+                  }
+
                   final tooltip = currentFile != null
                       ? 'Downloaded $currentFile - Click to complete'
                       : 'Partially downloaded - Click to complete';
@@ -755,6 +778,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
                 // State 8: Downloaded/Completed (can delete)
                 if (downloadProvider.isDownloaded(globalKey)) {
+                  final hasSyncRule = downloadProvider.hasSyncRule(globalKey);
+
+                  if (hasSyncRule) {
+                    // Synced + complete — show sync icon
+                    final syncRule = downloadProvider.getSyncRule(globalKey);
+                    final isEnabled = syncRule?.enabled ?? true;
+                    return IconButton.filledTonal(
+                      onPressed: () => _showSyncRuleActions(context, downloadProvider, metadata, globalKey),
+                      icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
+                      tooltip: t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?'),
+                      iconSize: 20,
+                      style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey),
+                    );
+                  }
+
                   return IconButton.filledTonal(
                     onPressed: () async {
                       // Show delete download confirmation
@@ -785,18 +823,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     if (client == null) return;
 
                     try {
-                      final count = await showDownloadOptionsAndQueue(
+                      final result = await showDownloadOptionsAndQueue(
                         context,
                         metadata: metadata,
                         client: client,
                         downloadProvider: downloadProvider,
                       );
-                      if (count == null || !context.mounted) return;
+                      if (result == null || !context.mounted) return;
 
-                      final message = count > 1
-                          ? t.downloads.episodesQueued(count: count)
-                          : t.downloads.downloadQueued;
-                      showSuccessSnackBar(context, message);
+                      showSuccessSnackBar(context, result.toSnackBarMessage());
                     } on CellularDownloadBlockedException {
                       if (context.mounted) {
                         showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
@@ -829,7 +864,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       context,
                       isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline,
                     );
-                    // Refresh offline OnDeck
+                    _updateWatchStateOffline();
                     _loadOfflineOnDeckEpisode();
                   }
                 } else {
@@ -838,15 +873,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   if (client == null) return;
 
                   if (isWatched) {
-                    await client.markAsUnwatched(metadata.ratingKey);
+                    await client.markAsUnwatched(metadata.ratingKey, metadata: metadata);
                   } else {
-                    await client.markAsWatched(metadata.ratingKey);
+                    await client.markAsWatched(metadata.ratingKey, metadata: metadata);
                   }
                   if (mounted) {
                     _watchStateChanged = true;
                     showSuccessSnackBar(context, isWatched ? t.messages.markedAsUnwatched : t.messages.markedAsWatched);
-                    // Update watch state without full rebuild
-                    _updateWatchState();
                   }
                 }
               } catch (e) {
@@ -1039,13 +1072,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           if (client == null) return;
           final plexRating = stars * 2.0; // Convert 0-5 stars to 0-10 scale
           final success = await client.rateItem(metadata.ratingKey, plexRating);
-          if (success) _updateWatchState();
+          if (success) {
+            setStateIfMounted(() {
+              _fullMetadata = _fullMetadata?.copyWith(userRating: plexRating);
+            });
+          }
         },
         onClear: () async {
           final client = _getClientForMetadata(this.context);
           if (client == null) return;
           final success = await client.rateItem(metadata.ratingKey, -1);
-          if (success) _updateWatchState();
+          if (success) {
+            setStateIfMounted(() {
+              _fullMetadata = _fullMetadata?.copyWith(userRating: 0);
+            });
+          }
         },
       ),
     );
@@ -1117,6 +1158,67 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       client,
       fallbackVersions: _fullMetadata?.mediaVersions,
     );
+  }
+
+  /// Shows actions for a synced item: edit count, remove rule, delete downloads.
+  Future<void> _showSyncRuleActions(
+    BuildContext context,
+    DownloadProvider downloadProvider,
+    PlexMetadata metadata,
+    String globalKey,
+  ) async {
+    final syncRule = downloadProvider.getSyncRule(globalKey);
+    if (syncRule == null) return;
+
+    final selected = await showOptionPickerDialog<_SyncRuleAction>(
+      context,
+      title: t.downloads.manageSyncRule,
+      options: [
+        (icon: Symbols.edit_rounded, label: t.downloads.editSyncRule, value: _SyncRuleAction.edit),
+        (icon: Symbols.sync_disabled_rounded, label: t.downloads.removeSyncRule, value: _SyncRuleAction.remove),
+        (icon: Symbols.delete_rounded, label: t.downloads.deleteDownload, value: _SyncRuleAction.delete),
+      ],
+    );
+
+    if (selected == null || !context.mounted) return;
+
+    switch (selected) {
+      case _SyncRuleAction.edit:
+        final updated = await editSyncRuleCount(
+          context,
+          downloadProvider: downloadProvider,
+          globalKey: globalKey,
+          currentCount: syncRule.episodeCount,
+        );
+        if (updated && context.mounted) {
+          showSuccessSnackBar(context, t.downloads.syncRuleUpdated);
+        }
+
+      case _SyncRuleAction.remove:
+        final removed = await confirmAndRemoveSyncRule(
+          context,
+          downloadProvider: downloadProvider,
+          globalKey: globalKey,
+          displayTitle: metadata.displayTitle,
+        );
+        if (removed && context.mounted) {
+          showSuccessSnackBar(context, t.downloads.syncRuleRemoved);
+        }
+
+      case _SyncRuleAction.delete:
+        final confirmed = await showDeleteConfirmation(
+          context,
+          title: t.downloads.deleteDownload,
+          message: t.downloads.deleteConfirm(title: metadata.displayTitle),
+        );
+        if (confirmed && context.mounted) {
+          await downloadProvider.deleteSyncRule(globalKey);
+          await downloadProvider.deleteDownload(globalKey);
+          if (context.mounted) {
+            showSuccessSnackBar(context, t.downloads.downloadDeleted);
+          }
+        }
+    }
   }
 
   Future<void> _loadFullMetadata() async {
@@ -1691,7 +1793,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 item: season,
                 onRefresh: (_) {
                   _watchStateChanged = true;
-                  _updateWatchState();
                 },
                 onListRefresh: () {
                   if (widget.isOffline) {
@@ -2046,50 +2147,39 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Update watch state without full screen rebuild
-  /// This preserves scroll position and only updates watch-related data
-  Future<void> _updateWatchState() async {
-    // Skip in offline mode
-    if (widget.isOffline) return;
 
-    try {
-      // Use server-specific client for this metadata
-      final client = _getClientForMetadata(context);
-      if (client == null) return;
+  /// Offline: update viewCount in the API cache and re-read metadata from it.
+  Future<void> _updateWatchStateOffline() async {
+    final serverId = widget.metadata.serverId;
+    if (serverId == null) return;
 
-      final metadata = await client.getMetadataWithImages(widget.metadata.ratingKey);
+    final ratingKey = widget.metadata.ratingKey;
+    final cache = PlexApiCache.instance;
+    final syncService = context.read<OfflineWatchSyncService>();
 
-      if (metadata != null) {
-        // Preserve serverId from original metadata
-        final metadataWithServerId = metadata.copyWith(
-          serverId: widget.metadata.serverId,
-          serverName: widget.metadata.serverName,
-        );
+    final endpoint = '/library/metadata/$ratingKey';
+    final cached = await cache.get(serverId, endpoint);
+    final json = PlexCacheParser.extractFirstMetadata(cached);
+    if (json == null) return;
 
-        // For shows, also refetch seasons to update their watch counts
-        List<PlexMetadata>? updatedSeasons;
-        if (metadata.isShow) {
-          final seasons = await client.getChildren(widget.metadata.ratingKey);
-          // Preserve serverId for each season
-          updatedSeasons = seasons
-              .map(
-                (season) => season.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName),
-              )
-              .toList();
-        }
-
-        // Single setState to minimize rebuilds - scroll position is preserved by controller
-        setStateIfMounted(() {
-          _fullMetadata = metadataWithServerId;
-          if (updatedSeasons != null) {
-            _seasons = updatedSeasons;
-          }
-        });
-      }
-    } catch (e) {
-      appLogger.e('Failed to update watch state', error: e);
-      // Silently fail - user can manually refresh if needed
+    final localStatus = await syncService.getLocalWatchStatus('$serverId:$ratingKey');
+    if (localStatus == true) {
+      json['viewCount'] = 1;
+    } else if (localStatus == false) {
+      json['viewCount'] = 0;
+      json['viewOffset'] = 0;
     }
+
+    await cache.put(serverId, endpoint, {
+      'MediaContainer': {'Metadata': [json]},
+    });
+
+    setStateIfMounted(() {
+      _fullMetadata = PlexMetadata.fromJsonWithImages(json).copyWith(
+        serverId: widget.metadata.serverId,
+        serverName: widget.metadata.serverName,
+      );
+    });
   }
 
   Future<void> _playFirstEpisode() async {

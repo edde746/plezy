@@ -758,7 +758,22 @@
     "nextNUnwatched": "Next ${count} unwatched",
     "customAmount": "Custom amount...",
     "howManyEpisodes": "How many episodes?",
-    "itemsQueued": "${count} items queued for download"
+    "itemsQueued": "${count} items queued for download",
+    "keepSynced": "Keep synced",
+    "downloadOnce": "Download once",
+    "keepNUnwatched": "Keep ${count} unwatched",
+    "editSyncRule": "Edit sync rule",
+    "removeSyncRule": "Remove sync rule",
+    "removeSyncRuleConfirm": "Stop syncing \"${title}\"? Downloaded episodes will be kept.",
+    "syncRuleCreated": "Sync rule created — keeping ${count} unwatched episodes",
+    "syncRuleUpdated": "Sync rule updated",
+    "syncRuleRemoved": "Sync rule removed",
+    "syncedNewEpisodes": "Synced ${count} new episodes for ${title}",
+    "activeSyncRules": "Sync rules",
+    "noSyncRules": "No sync rules",
+    "lastSynced": "Last synced ${time}",
+    "manageSyncRule": "Manage sync",
+    "editEpisodeCount": "Episode count"
   },
   "shaders": {
     "title": "Shaders",

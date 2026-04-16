@@ -758,7 +758,22 @@
     "nextNUnwatched": "다음 ${count}개 미시청",
     "customAmount": "직접 입력...",
     "howManyEpisodes": "몇 개의 에피소드?",
-    "itemsQueued": "${count}개 항목이 다운로드 대기열에 추가됨"
+    "itemsQueued": "${count}개 항목이 다운로드 대기열에 추가됨",
+    "keepSynced": "동기화 유지",
+    "downloadOnce": "한 번만 다운로드",
+    "keepNUnwatched": "미시청 ${count}개 유지",
+    "editSyncRule": "동기화 규칙 편집",
+    "removeSyncRule": "동기화 규칙 제거",
+    "removeSyncRuleConfirm": "\"${title}\" 동기화를 중단하시겠습니까? 다운로드된 에피소드는 유지됩니다.",
+    "syncRuleCreated": "동기화 규칙 생성됨 — 미시청 에피소드 ${count}개 유지",
+    "syncRuleUpdated": "동기화 규칙 업데이트됨",
+    "syncRuleRemoved": "동기화 규칙 제거됨",
+    "syncedNewEpisodes": "${title}의 새 에피소드 ${count}개 동기화됨",
+    "activeSyncRules": "동기화 규칙",
+    "noSyncRules": "동기화 규칙 없음",
+    "lastSynced": "마지막 동기화 ${time}",
+    "manageSyncRule": "동기화 관리",
+    "editEpisodeCount": "에피소드 수"
   },
   "shaders": {
     "title": "셰이더",

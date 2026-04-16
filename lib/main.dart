@@ -44,8 +44,10 @@ import 'services/download_storage_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
+import 'screens/video_player_screen.dart';
 import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
+import 'utils/watch_state_notifier.dart';
 import 'i18n/strings.g.dart';
 import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
@@ -362,6 +364,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final DownloadManagerService _downloadManager;
   late final OfflineWatchSyncService _offlineWatchSyncService;
   late final AppLifecycleListener _appLifecycleListener;
+  StreamSubscription<WatchStateEvent>? _watchStateSubscription;
+  Timer? _syncDebounce;
+  bool _isAutoDeleteRunning = false;
 
   /// Last time server health probes ran from a resume event (cooldown for desktop)
   DateTime _lastResumeProbe = DateTime(0);
@@ -411,6 +416,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _syncDebounce?.cancel();
+    _watchStateSubscription?.cancel();
     _memoryCheckTimer?.cancel();
     _appLifecycleListener.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -427,6 +434,34 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void _evictImageCaches() {
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
+  }
+
+  /// Auto-delete watched downloads and execute sync rules.
+  /// Shared by onWatchStatesRefreshed and the WatchStateNotifier listener.
+  Future<void> _autoDeleteAndSync(DownloadProvider downloadProvider) async {
+    if (_isAutoDeleteRunning) return;
+    _isAutoDeleteRunning = true;
+    try {
+    await downloadProvider.refreshMetadataFromCache();
+    final activeKey = VideoPlayerScreenState.activeRatingKey;
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null && settings.getAutoRemoveWatchedDownloads()) {
+      final deleted = await downloadProvider.autoDeleteWatchedDownloads(activeRatingKey: activeKey);
+      if (deleted.isNotEmpty) {
+        final msg = deleted.length == 1
+            ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
+            : t.messages.autoRemovedWatchedDownload(title: '${deleted.length} items');
+        showGlobalSnackBar(msg);
+      }
+    }
+
+    final synced = await downloadProvider.executeSyncRules(_serverManager);
+    if (synced.isNotEmpty) {
+      showGlobalSnackBar(t.downloads.syncedNewEpisodes(count: synced.length.toString(), title: synced.first));
+    }
+    } finally {
+      _isAutoDeleteRunning = false;
+    }
   }
 
   @override
@@ -486,27 +521,29 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
         ),
         // Download provider
-        ChangeNotifierProvider(create: (context) => DownloadProvider(downloadManager: _downloadManager)),
+        ChangeNotifierProvider(
+            create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase)),
         // Offline watch sync service
         ChangeNotifierProvider<OfflineWatchSyncService>(
           create: (context) {
             final offlineModeProvider = context.read<OfflineModeProvider>();
             final downloadProvider = context.read<DownloadProvider>();
 
-            // Wire up callback to refresh download provider after watch state sync
             _offlineWatchSyncService.onWatchStatesRefreshed = () async {
-              await downloadProvider.refreshMetadataFromCache();
-              final settings = SettingsService.instanceOrNull;
-              if (settings != null && settings.getAutoRemoveWatchedDownloads()) {
-                final deleted = await downloadProvider.autoDeleteWatchedDownloads();
-                if (deleted.isNotEmpty) {
-                  final msg = deleted.length == 1
-                      ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
-                      : t.messages.autoRemovedWatchedDownload(title: '${deleted.length} items');
-                  showGlobalSnackBar(msg);
-                }
-              }
+              await _autoDeleteAndSync(downloadProvider);
             };
+
+            // Also trigger sync rules when watch state changes during a session.
+            // Debounced to batch rapid changes (binge watching, bulk mark-watched).
+            _watchStateSubscription = WatchStateNotifier().stream.listen((event) {
+              if (event.changeType != WatchStateChangeType.watched) return;
+              if (VideoPlayerScreenState.activeRatingKey == event.ratingKey) return;
+
+              _syncDebounce?.cancel();
+              _syncDebounce = Timer(const Duration(seconds: 5), () {
+                _autoDeleteAndSync(downloadProvider);
+              });
+            });
 
             _offlineWatchSyncService.startConnectivityMonitoring(offlineModeProvider);
             return _offlineWatchSyncService;

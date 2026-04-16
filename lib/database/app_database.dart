@@ -12,12 +12,12 @@ import '../utils/global_key_utils.dart';
 part 'app_database.g.dart';
 
 // Simplified database with API cache for offline support
-@DriftDatabase(tables: [DownloadedMedia, DownloadQueue, ApiCache, OfflineWatchProgress])
+@DriftDatabase(tables: [DownloadedMedia, DownloadQueue, ApiCache, OfflineWatchProgress, SyncRules])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 9; // Added mediaIndex column to DownloadedMedia
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration {
@@ -44,6 +44,18 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(downloadedMedia, downloadedMedia.mediaIndex);
           } catch (e) {
             appLogger.w('mediaIndex column may already exist: $e');
+          }
+        }
+        if (from < 10) {
+          appLogger.i('Adding SyncRules table (v10 migration)');
+          await m.createTable(syncRules);
+        }
+        if (from < 11) {
+          appLogger.i('Adding enabled column to SyncRules (v11 migration)');
+          try {
+            await m.addColumn(syncRules, syncRules.enabled);
+          } catch (e) {
+            appLogger.w('enabled column may already exist: $e');
           }
         }
       },
@@ -199,6 +211,61 @@ class AppDatabase extends _$AppDatabase {
   /// Clear all pending watch actions (e.g., after logout)
   Future<void> clearAllWatchActions() {
     return delete(offlineWatchProgress).go();
+  }
+
+  // ============================================================
+  // Sync Rules Operations
+  // ============================================================
+
+  Future<List<SyncRuleItem>> getSyncRules() {
+    return select(syncRules).get();
+  }
+
+  Future<SyncRuleItem?> getSyncRule(String globalKey) {
+    return (select(syncRules)..where((t) => t.globalKey.equals(globalKey))).getSingleOrNull();
+  }
+
+  Future<void> insertSyncRule({
+    required String serverId,
+    required String ratingKey,
+    required String globalKey,
+    required String targetType,
+    required int episodeCount,
+    int mediaIndex = 0,
+  }) async {
+    await into(syncRules).insertOnConflictUpdate(
+      SyncRulesCompanion.insert(
+        serverId: serverId,
+        ratingKey: ratingKey,
+        globalKey: globalKey,
+        targetType: targetType,
+        episodeCount: episodeCount,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+        mediaIndex: Value(mediaIndex),
+      ),
+    );
+  }
+
+  Future<void> updateSyncRuleCount(String globalKey, int episodeCount) async {
+    await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
+      SyncRulesCompanion(episodeCount: Value(episodeCount)),
+    );
+  }
+
+  Future<void> updateSyncRuleEnabled(String globalKey, bool enabled) async {
+    await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
+      SyncRulesCompanion(enabled: Value(enabled)),
+    );
+  }
+
+  Future<void> updateSyncRuleLastExecuted(String globalKey) async {
+    await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
+      SyncRulesCompanion(lastExecutedAt: Value(DateTime.now().millisecondsSinceEpoch)),
+    );
+  }
+
+  Future<void> deleteSyncRule(String globalKey) async {
+    await (delete(syncRules)..where((t) => t.globalKey.equals(globalKey))).go();
   }
 
   // ============================================================

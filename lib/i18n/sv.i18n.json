@@ -647,7 +647,22 @@
     "nextNUnwatched": "Nästa ${count} osedda",
     "customAmount": "Ange antal...",
     "howManyEpisodes": "Hur många avsnitt?",
-    "itemsQueued": "${count} objekt köade för nedladdning"
+    "itemsQueued": "${count} objekt köade för nedladdning",
+    "keepSynced": "Håll synkroniserad",
+    "downloadOnce": "Ladda ner en gång",
+    "keepNUnwatched": "Behåll ${count} osedda",
+    "editSyncRule": "Redigera synkregel",
+    "removeSyncRule": "Ta bort synkregel",
+    "removeSyncRuleConfirm": "Sluta synkronisera \"${title}\"? Nedladdade avsnitt behålls.",
+    "syncRuleCreated": "Synkregel skapad — behåller ${count} osedda avsnitt",
+    "syncRuleUpdated": "Synkregel uppdaterad",
+    "syncRuleRemoved": "Synkregel borttagen",
+    "syncedNewEpisodes": "Synkroniserade ${count} nya avsnitt för ${title}",
+    "activeSyncRules": "Synkregler",
+    "noSyncRules": "Inga synkregler",
+    "lastSynced": "Senast synkroniserad ${time}",
+    "manageSyncRule": "Hantera synkronisering",
+    "editEpisodeCount": "Antal avsnitt"
   },
   "playlists": {
     "title": "Spellistor",

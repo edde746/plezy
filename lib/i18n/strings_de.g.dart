@@ -887,6 +887,21 @@ class _TranslationsDownloadsDe implements TranslationsDownloadsEn {
 	@override String get customAmount => 'Eigene Anzahl...';
 	@override String get howManyEpisodes => 'Wie viele Episoden?';
 	@override String itemsQueued({required Object count}) => '${count} Elemente zum Download eingereiht';
+	@override String get keepSynced => 'Synchronisiert halten';
+	@override String get downloadOnce => 'Einmal herunterladen';
+	@override String keepNUnwatched({required Object count}) => '${count} ungesehene behalten';
+	@override String get editSyncRule => 'Sync-Regel bearbeiten';
+	@override String get removeSyncRule => 'Sync-Regel entfernen';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Synchronisierung von "${title}" beenden? Heruntergeladene Episoden werden behalten.';
+	@override String syncRuleCreated({required Object count}) => 'Sync-Regel erstellt — ${count} ungesehene Episoden werden behalten';
+	@override String get syncRuleUpdated => 'Sync-Regel aktualisiert';
+	@override String get syncRuleRemoved => 'Sync-Regel entfernt';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert';
+	@override String get activeSyncRules => 'Sync-Regeln';
+	@override String get noSyncRules => 'Keine Sync-Regeln';
+	@override String lastSynced({required Object time}) => 'Zuletzt synchronisiert ${time}';
+	@override String get manageSyncRule => 'Synchronisierung verwalten';
+	@override String get editEpisodeCount => 'Episodenanzahl';
 }
 
 // Path: playlists
@@ -1950,6 +1965,21 @@ extension on TranslationsDe {
 			'downloads.customAmount' => 'Eigene Anzahl...',
 			'downloads.howManyEpisodes' => 'Wie viele Episoden?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} Elemente zum Download eingereiht',
+			'downloads.keepSynced' => 'Synchronisiert halten',
+			'downloads.downloadOnce' => 'Einmal herunterladen',
+			'downloads.keepNUnwatched' => ({required Object count}) => '${count} ungesehene behalten',
+			'downloads.editSyncRule' => 'Sync-Regel bearbeiten',
+			'downloads.removeSyncRule' => 'Sync-Regel entfernen',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Synchronisierung von "${title}" beenden? Heruntergeladene Episoden werden behalten.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Sync-Regel erstellt — ${count} ungesehene Episoden werden behalten',
+			'downloads.syncRuleUpdated' => 'Sync-Regel aktualisiert',
+			'downloads.syncRuleRemoved' => 'Sync-Regel entfernt',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert',
+			'downloads.activeSyncRules' => 'Sync-Regeln',
+			'downloads.noSyncRules' => 'Keine Sync-Regeln',
+			'downloads.lastSynced' => ({required Object time}) => 'Zuletzt synchronisiert ${time}',
+			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
+			'downloads.editEpisodeCount' => 'Episodenanzahl',
 			'playlists.title' => 'Wiedergabelisten',
 			'playlists.noPlaylists' => 'Keine Wiedergabelisten gefunden',
 			'playlists.create' => 'Wiedergabeliste erstellen',

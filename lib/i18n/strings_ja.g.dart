@@ -1019,6 +1019,21 @@ class _TranslationsDownloadsJa implements TranslationsDownloadsEn {
 	@override String get customAmount => '数を指定...';
 	@override String get howManyEpisodes => '何エピソード？';
 	@override String itemsQueued({required Object count}) => '${count}件をダウンロードキューに追加';
+	@override String get keepSynced => '同期を維持';
+	@override String get downloadOnce => '一度だけダウンロード';
+	@override String keepNUnwatched({required Object count}) => '未視聴を${count}件保持';
+	@override String get editSyncRule => '同期ルールを編集';
+	@override String get removeSyncRule => '同期ルールを削除';
+	@override String removeSyncRuleConfirm({required Object title}) => '「${title}」の同期を停止しますか？ダウンロード済みのエピソードは保持されます。';
+	@override String syncRuleCreated({required Object count}) => '同期ルールを作成しました — 未視聴のエピソードを${count}件保持';
+	@override String get syncRuleUpdated => '同期ルールを更新しました';
+	@override String get syncRuleRemoved => '同期ルールを削除しました';
+	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title}の新しいエピソードを${count}件同期しました';
+	@override String get activeSyncRules => '同期ルール';
+	@override String get noSyncRules => '同期ルールなし';
+	@override String lastSynced({required Object time}) => '最終同期 ${time}';
+	@override String get manageSyncRule => '同期を管理';
+	@override String get editEpisodeCount => 'エピソード数';
 }
 
 // Path: shaders
@@ -2055,6 +2070,21 @@ extension on TranslationsJa {
 			'downloads.customAmount' => '数を指定...',
 			'downloads.howManyEpisodes' => '何エピソード？',
 			'downloads.itemsQueued' => ({required Object count}) => '${count}件をダウンロードキューに追加',
+			'downloads.keepSynced' => '同期を維持',
+			'downloads.downloadOnce' => '一度だけダウンロード',
+			'downloads.keepNUnwatched' => ({required Object count}) => '未視聴を${count}件保持',
+			'downloads.editSyncRule' => '同期ルールを編集',
+			'downloads.removeSyncRule' => '同期ルールを削除',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => '「${title}」の同期を停止しますか？ダウンロード済みのエピソードは保持されます。',
+			'downloads.syncRuleCreated' => ({required Object count}) => '同期ルールを作成しました — 未視聴のエピソードを${count}件保持',
+			'downloads.syncRuleUpdated' => '同期ルールを更新しました',
+			'downloads.syncRuleRemoved' => '同期ルールを削除しました',
+			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}の新しいエピソードを${count}件同期しました',
+			'downloads.activeSyncRules' => '同期ルール',
+			'downloads.noSyncRules' => '同期ルールなし',
+			'downloads.lastSynced' => ({required Object time}) => '最終同期 ${time}',
+			'downloads.manageSyncRule' => '同期を管理',
+			'downloads.editEpisodeCount' => 'エピソード数',
 			'shaders.title' => 'シェーダー',
 			'shaders.noShaderDescription' => '映像補正なし',
 			'shaders.nvscalerDescription' => 'よりシャープな映像のためのNVIDIA画像スケーリング',

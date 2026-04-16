@@ -1019,6 +1019,21 @@ class _TranslationsDownloadsDa implements TranslationsDownloadsEn {
 	@override String get customAmount => 'Angiv antal...';
 	@override String get howManyEpisodes => 'Hvor mange episoder?';
 	@override String itemsQueued({required Object count}) => '${count} elementer sat i kø til download';
+	@override String get keepSynced => 'Hold synkroniseret';
+	@override String get downloadOnce => 'Download én gang';
+	@override String keepNUnwatched({required Object count}) => 'Behold ${count} usete';
+	@override String get editSyncRule => 'Rediger synkroniseringsregel';
+	@override String get removeSyncRule => 'Fjern synkroniseringsregel';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Stop synkronisering af "${title}"? Downloadede episoder beholdes.';
+	@override String syncRuleCreated({required Object count}) => 'Synkroniseringsregel oprettet — beholder ${count} usete episoder';
+	@override String get syncRuleUpdated => 'Synkroniseringsregel opdateret';
+	@override String get syncRuleRemoved => 'Synkroniseringsregel fjernet';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Synkroniserede ${count} nye episoder for ${title}';
+	@override String get activeSyncRules => 'Synkroniseringsregler';
+	@override String get noSyncRules => 'Ingen synkroniseringsregler';
+	@override String lastSynced({required Object time}) => 'Sidst synkroniseret ${time}';
+	@override String get manageSyncRule => 'Administrer synkronisering';
+	@override String get editEpisodeCount => 'Antal episoder';
 }
 
 // Path: shaders
@@ -2055,6 +2070,21 @@ extension on TranslationsDa {
 			'downloads.customAmount' => 'Angiv antal...',
 			'downloads.howManyEpisodes' => 'Hvor mange episoder?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} elementer sat i kø til download',
+			'downloads.keepSynced' => 'Hold synkroniseret',
+			'downloads.downloadOnce' => 'Download én gang',
+			'downloads.keepNUnwatched' => ({required Object count}) => 'Behold ${count} usete',
+			'downloads.editSyncRule' => 'Rediger synkroniseringsregel',
+			'downloads.removeSyncRule' => 'Fjern synkroniseringsregel',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Stop synkronisering af "${title}"? Downloadede episoder beholdes.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Synkroniseringsregel oprettet — beholder ${count} usete episoder',
+			'downloads.syncRuleUpdated' => 'Synkroniseringsregel opdateret',
+			'downloads.syncRuleRemoved' => 'Synkroniseringsregel fjernet',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserede ${count} nye episoder for ${title}',
+			'downloads.activeSyncRules' => 'Synkroniseringsregler',
+			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
+			'downloads.lastSynced' => ({required Object time}) => 'Sidst synkroniseret ${time}',
+			'downloads.manageSyncRule' => 'Administrer synkronisering',
+			'downloads.editEpisodeCount' => 'Antal episoder',
 			'shaders.title' => 'Shadere',
 			'shaders.noShaderDescription' => 'Ingen videoforbedring',
 			'shaders.nvscalerDescription' => 'NVIDIA-billedskalering for skarpere video',

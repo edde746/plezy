@@ -126,12 +126,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final mediaType = isPlaylist ? null : metadata!.mediaType;
     final isCollection = mediaType == PlexMediaType.collection;
 
-    final isPartiallyWatched =
-        !isPlaylist &&
-        metadata!.viewedLeafCount != null &&
-        metadata.leafCount != null &&
-        metadata.viewedLeafCount! > 0 &&
-        metadata.viewedLeafCount! < metadata.leafCount!;
+    final isPartiallyWatched = !isPlaylist && metadata!.isPartiallyWatched;
 
     final hasActiveProgress =
         mediaType != null &&
@@ -302,8 +297,23 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
         final globalKey = metadata.globalKey;
         final isDownloaded = downloadProvider.isDownloaded(globalKey);
+        final hasSyncRule = downloadProvider.hasSyncRule(globalKey);
+        final hasAnyDownload = downloadProvider.getProgress(globalKey) != null;
 
-        if (isDownloaded) {
+        if (hasSyncRule) {
+          // Synced item: manage sync + delete options
+          menuActions.add(
+            _MenuAction(value: 'manage_sync', icon: Symbols.sync_rounded, label: t.downloads.manageSyncRule),
+          );
+          menuActions.add(
+            _MenuAction(value: 'remove_sync', icon: Symbols.sync_disabled_rounded, label: t.downloads.removeSyncRule),
+          );
+          if (hasAnyDownload) {
+            menuActions.add(
+              _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
+            );
+          }
+        } else if (isDownloaded) {
           // Show delete download option
           menuActions.add(
             _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
@@ -549,6 +559,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'delete_download':
           await _handleDeleteDownload(context);
+          break;
+
+        case 'manage_sync':
+          await _handleManageSyncRule(context);
+          break;
+
+        case 'remove_sync':
+          await _handleRemoveSyncRule(context);
           break;
 
         case 'delete_media':
@@ -1157,16 +1175,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final client = _getClientForItem();
 
     try {
-      final count = await showDownloadOptionsAndQueue(
+      final result = await showDownloadOptionsAndQueue(
         context,
         metadata: metadata,
         client: client,
         downloadProvider: downloadProvider,
       );
-      if (count == null || !context.mounted) return;
+      if (result == null || !context.mounted) return;
 
-      final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
-      showSuccessSnackBar(context, message);
+      showSuccessSnackBar(context, result.toSnackBarMessage());
     } on CellularDownloadBlockedException {
       if (context.mounted) {
         showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
@@ -1210,6 +1227,38 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
+    }
+  }
+
+  Future<void> _handleManageSyncRule(BuildContext context) async {
+    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+    final metadata = widget.item as PlexMetadata;
+    final syncRule = downloadProvider.getSyncRule(metadata.globalKey);
+    if (syncRule == null) return;
+
+    final updated = await editSyncRuleCount(
+      context,
+      downloadProvider: downloadProvider,
+      globalKey: metadata.globalKey,
+      currentCount: syncRule.episodeCount,
+    );
+    if (updated && context.mounted) {
+      showSuccessSnackBar(context, t.downloads.syncRuleUpdated);
+    }
+  }
+
+  Future<void> _handleRemoveSyncRule(BuildContext context) async {
+    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+    final metadata = widget.item as PlexMetadata;
+
+    final removed = await confirmAndRemoveSyncRule(
+      context,
+      downloadProvider: downloadProvider,
+      globalKey: metadata.globalKey,
+      displayTitle: metadata.displayTitle,
+    );
+    if (removed && context.mounted) {
+      showSuccessSnackBar(context, t.downloads.syncRuleRemoved);
     }
   }
 

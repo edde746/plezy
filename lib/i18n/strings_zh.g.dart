@@ -887,6 +887,21 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String get customAmount => '自定义数量...';
 	@override String get howManyEpisodes => '下载几集？';
 	@override String itemsQueued({required Object count}) => '${count} 个项目已加入下载队列';
+	@override String get keepSynced => '保持同步';
+	@override String get downloadOnce => '下载一次';
+	@override String keepNUnwatched({required Object count}) => '保留${count}个未观看';
+	@override String get editSyncRule => '编辑同步规则';
+	@override String get removeSyncRule => '删除同步规则';
+	@override String removeSyncRuleConfirm({required Object title}) => '停止同步“${title}”？已下载的剧集将被保留。';
+	@override String syncRuleCreated({required Object count}) => '同步规则已创建 — 保留${count}个未观看的剧集';
+	@override String get syncRuleUpdated => '同步规则已更新';
+	@override String get syncRuleRemoved => '同步规则已删除';
+	@override String syncedNewEpisodes({required Object title, required Object count}) => '已为${title}同步${count}个新剧集';
+	@override String get activeSyncRules => '同步规则';
+	@override String get noSyncRules => '没有同步规则';
+	@override String lastSynced({required Object time}) => '上次同步 ${time}';
+	@override String get manageSyncRule => '管理同步';
+	@override String get editEpisodeCount => '剧集数量';
 }
 
 // Path: playlists
@@ -1950,6 +1965,21 @@ extension on TranslationsZh {
 			'downloads.customAmount' => '自定义数量...',
 			'downloads.howManyEpisodes' => '下载几集？',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} 个项目已加入下载队列',
+			'downloads.keepSynced' => '保持同步',
+			'downloads.downloadOnce' => '下载一次',
+			'downloads.keepNUnwatched' => ({required Object count}) => '保留${count}个未观看',
+			'downloads.editSyncRule' => '编辑同步规则',
+			'downloads.removeSyncRule' => '删除同步规则',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => '停止同步“${title}”？已下载的剧集将被保留。',
+			'downloads.syncRuleCreated' => ({required Object count}) => '同步规则已创建 — 保留${count}个未观看的剧集',
+			'downloads.syncRuleUpdated' => '同步规则已更新',
+			'downloads.syncRuleRemoved' => '同步规则已删除',
+			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '已为${title}同步${count}个新剧集',
+			'downloads.activeSyncRules' => '同步规则',
+			'downloads.noSyncRules' => '没有同步规则',
+			'downloads.lastSynced' => ({required Object time}) => '上次同步 ${time}',
+			'downloads.manageSyncRule' => '管理同步',
+			'downloads.editEpisodeCount' => '剧集数量',
 			'playlists.title' => '播放列表',
 			'playlists.noPlaylists' => '未找到播放列表',
 			'playlists.create' => '创建播放列表',

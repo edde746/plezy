@@ -152,6 +152,15 @@ class PlexMetadata with MultiServerFields {
   /// Global unique identifier across all servers (serverId:ratingKey)
   String get globalKey => serverId != null ? buildGlobalKey(serverId!, ratingKey) : ratingKey;
 
+  /// Parent rating keys for hierarchical invalidation.
+  /// For an episode: [seasonRatingKey, showRatingKey]
+  /// For a season: [showRatingKey]
+  /// For a movie: []
+  List<String> get parentChain => [
+        ?parentRatingKey,
+        ?grandparentRatingKey,
+      ];
+
   /// Whether this item represents a library section (shared whole-library, not a media item).
   /// These have keys like `/library/sections/5/all` instead of `/library/metadata/12345`.
   bool get isLibrarySection => key != null && key!.startsWith('/library/sections/');
@@ -519,6 +528,10 @@ class PlexMetadata with MultiServerFields {
     if (duration == null || viewOffset == null) return false;
     return viewOffset! > 0 && viewOffset! < duration!;
   }
+
+  /// Returns true if this container (show/season) has some but not all episodes watched
+  bool get isPartiallyWatched =>
+      viewedLeafCount != null && leafCount != null && viewedLeafCount! > 0 && viewedLeafCount! < leafCount!;
 
   // Helper to determine if content is watched
   bool get isWatched {

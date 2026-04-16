@@ -858,12 +858,7 @@ class _MediaCardHelpers {
             ),
           ),
         // Progress bar for seasons (viewedLeafCount / leafCount)
-        if (metadata.isSeason &&
-            metadata.viewedLeafCount != null &&
-            metadata.leafCount != null &&
-            metadata.leafCount! > 0 &&
-            metadata.viewedLeafCount! > 0 &&
-            metadata.viewedLeafCount! < metadata.leafCount!)
+        if (metadata.isSeason && metadata.isPartiallyWatched)
           Positioned(
             bottom: 0,
             left: 0,

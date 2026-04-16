@@ -758,7 +758,22 @@
     "nextNUnwatched": "Следующие ${count} непросмотренных",
     "customAmount": "Указать количество...",
     "howManyEpisodes": "Сколько эпизодов?",
-    "itemsQueued": "${count} элементов добавлено в очередь загрузки"
+    "itemsQueued": "${count} элементов добавлено в очередь загрузки",
+    "keepSynced": "Синхронизировать",
+    "downloadOnce": "Скачать один раз",
+    "keepNUnwatched": "Хранить ${count} непросмотренных",
+    "editSyncRule": "Редактировать правило синхронизации",
+    "removeSyncRule": "Удалить правило синхронизации",
+    "removeSyncRuleConfirm": "Прекратить синхронизацию «${title}»? Скачанные эпизоды будут сохранены.",
+    "syncRuleCreated": "Правило синхронизации создано — хранится ${count} непросмотренных эпизодов",
+    "syncRuleUpdated": "Правило синхронизации обновлено",
+    "syncRuleRemoved": "Правило синхронизации удалено",
+    "syncedNewEpisodes": "Синхронизировано ${count} новых эпизодов для ${title}",
+    "activeSyncRules": "Правила синхронизации",
+    "noSyncRules": "Нет правил синхронизации",
+    "lastSynced": "Последняя синхронизация ${time}",
+    "manageSyncRule": "Управление синхронизацией",
+    "editEpisodeCount": "Количество эпизодов"
   },
   "shaders": {
     "title": "Шейдеры",

@@ -1019,6 +1019,21 @@ class _TranslationsDownloadsRu implements TranslationsDownloadsEn {
 	@override String get customAmount => 'Указать количество...';
 	@override String get howManyEpisodes => 'Сколько эпизодов?';
 	@override String itemsQueued({required Object count}) => '${count} элементов добавлено в очередь загрузки';
+	@override String get keepSynced => 'Синхронизировать';
+	@override String get downloadOnce => 'Скачать один раз';
+	@override String keepNUnwatched({required Object count}) => 'Хранить ${count} непросмотренных';
+	@override String get editSyncRule => 'Редактировать правило синхронизации';
+	@override String get removeSyncRule => 'Удалить правило синхронизации';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Прекратить синхронизацию «${title}»? Скачанные эпизоды будут сохранены.';
+	@override String syncRuleCreated({required Object count}) => 'Правило синхронизации создано — хранится ${count} непросмотренных эпизодов';
+	@override String get syncRuleUpdated => 'Правило синхронизации обновлено';
+	@override String get syncRuleRemoved => 'Правило синхронизации удалено';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Синхронизировано ${count} новых эпизодов для ${title}';
+	@override String get activeSyncRules => 'Правила синхронизации';
+	@override String get noSyncRules => 'Нет правил синхронизации';
+	@override String lastSynced({required Object time}) => 'Последняя синхронизация ${time}';
+	@override String get manageSyncRule => 'Управление синхронизацией';
+	@override String get editEpisodeCount => 'Количество эпизодов';
 }
 
 // Path: shaders
@@ -2055,6 +2070,21 @@ extension on TranslationsRu {
 			'downloads.customAmount' => 'Указать количество...',
 			'downloads.howManyEpisodes' => 'Сколько эпизодов?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} элементов добавлено в очередь загрузки',
+			'downloads.keepSynced' => 'Синхронизировать',
+			'downloads.downloadOnce' => 'Скачать один раз',
+			'downloads.keepNUnwatched' => ({required Object count}) => 'Хранить ${count} непросмотренных',
+			'downloads.editSyncRule' => 'Редактировать правило синхронизации',
+			'downloads.removeSyncRule' => 'Удалить правило синхронизации',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Прекратить синхронизацию «${title}»? Скачанные эпизоды будут сохранены.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Правило синхронизации создано — хранится ${count} непросмотренных эпизодов',
+			'downloads.syncRuleUpdated' => 'Правило синхронизации обновлено',
+			'downloads.syncRuleRemoved' => 'Правило синхронизации удалено',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Синхронизировано ${count} новых эпизодов для ${title}',
+			'downloads.activeSyncRules' => 'Правила синхронизации',
+			'downloads.noSyncRules' => 'Нет правил синхронизации',
+			'downloads.lastSynced' => ({required Object time}) => 'Последняя синхронизация ${time}',
+			'downloads.manageSyncRule' => 'Управление синхронизацией',
+			'downloads.editEpisodeCount' => 'Количество эпизодов',
 			'shaders.title' => 'Шейдеры',
 			'shaders.noShaderDescription' => 'Без улучшения видео',
 			'shaders.nvscalerDescription' => 'Масштабирование NVIDIA для более чёткого видео',

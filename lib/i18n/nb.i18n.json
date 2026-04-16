@@ -758,7 +758,22 @@
     "nextNUnwatched": "Neste ${count} usette",
     "customAmount": "Egendefinert antall...",
     "howManyEpisodes": "Hvor mange episoder?",
-    "itemsQueued": "${count} elementer i nedlastingskø"
+    "itemsQueued": "${count} elementer i nedlastingskø",
+    "keepSynced": "Hold synkronisert",
+    "downloadOnce": "Last ned én gang",
+    "keepNUnwatched": "Behold ${count} usette",
+    "editSyncRule": "Rediger synkroniseringsregel",
+    "removeSyncRule": "Fjern synkroniseringsregel",
+    "removeSyncRuleConfirm": "Slutte å synkronisere \"${title}\"? Nedlastede episoder beholdes.",
+    "syncRuleCreated": "Synkroniseringsregel opprettet — beholder ${count} usette episoder",
+    "syncRuleUpdated": "Synkroniseringsregel oppdatert",
+    "syncRuleRemoved": "Synkroniseringsregel fjernet",
+    "syncedNewEpisodes": "Synkroniserte ${count} nye episoder for ${title}",
+    "activeSyncRules": "Synkroniseringsregler",
+    "noSyncRules": "Ingen synkroniseringsregler",
+    "lastSynced": "Sist synkronisert ${time}",
+    "manageSyncRule": "Administrer synkronisering",
+    "editEpisodeCount": "Antall episoder"
   },
   "shaders": {
     "title": "Shadere",

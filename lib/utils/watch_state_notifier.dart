@@ -85,40 +85,34 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         ratingKey: metadata.ratingKey,
         serverId: metadata.serverId ?? '',
         changeType: isNowWatched ? WatchStateChangeType.watched : WatchStateChangeType.unwatched,
-        parentChain: _buildParentChain(metadata),
+        parentChain: metadata.parentChain,
         mediaType: metadata.type ?? '',
         isNowWatched: isNowWatched,
       ),
     );
   }
 
-  /// Helper to emit a progress update event
-  void notifyProgress({required PlexMetadata metadata, required int viewOffset, required int duration}) {
-    const threshold = 0.9;
-    final isNowWatched = duration > 0 && (viewOffset / duration) >= threshold;
+  /// Helper to emit a progress update event.
+  /// [watchedThreshold] defaults to 0.9 — pass the server's configured value
+  /// (`client.watchedThresholdPercent / 100.0`) when available.
+  void notifyProgress({
+    required PlexMetadata metadata,
+    required int viewOffset,
+    required int duration,
+    double watchedThreshold = 0.9,
+  }) {
+    final isNowWatched = duration > 0 && (viewOffset / duration) >= watchedThreshold;
 
     notify(
       WatchStateEvent(
         ratingKey: metadata.ratingKey,
         serverId: metadata.serverId ?? '',
         changeType: WatchStateChangeType.progressUpdate,
-        parentChain: _buildParentChain(metadata),
+        parentChain: metadata.parentChain,
         mediaType: metadata.type ?? '',
         viewOffset: viewOffset,
         isNowWatched: isNowWatched,
       ),
     );
-  }
-
-  /// Build parent chain from metadata's parent keys
-  List<String> _buildParentChain(PlexMetadata metadata) {
-    final chain = <String>[];
-    if (metadata.parentRatingKey != null) {
-      chain.add(metadata.parentRatingKey!);
-    }
-    if (metadata.grandparentRatingKey != null) {
-      chain.add(metadata.grandparentRatingKey!);
-    }
-    return chain;
   }
 }

@@ -647,7 +647,22 @@
     "nextNUnwatched": "接下来 ${count} 集未观看",
     "customAmount": "自定义数量...",
     "howManyEpisodes": "下载几集？",
-    "itemsQueued": "${count} 个项目已加入下载队列"
+    "itemsQueued": "${count} 个项目已加入下载队列",
+    "keepSynced": "保持同步",
+    "downloadOnce": "下载一次",
+    "keepNUnwatched": "保留${count}个未观看",
+    "editSyncRule": "编辑同步规则",
+    "removeSyncRule": "删除同步规则",
+    "removeSyncRuleConfirm": "停止同步“${title}”？已下载的剧集将被保留。",
+    "syncRuleCreated": "同步规则已创建 — 保留${count}个未观看的剧集",
+    "syncRuleUpdated": "同步规则已更新",
+    "syncRuleRemoved": "同步规则已删除",
+    "syncedNewEpisodes": "已为${title}同步${count}个新剧集",
+    "activeSyncRules": "同步规则",
+    "noSyncRules": "没有同步规则",
+    "lastSynced": "上次同步 ${time}",
+    "manageSyncRule": "管理同步",
+    "editEpisodeCount": "剧集数量"
   },
   "playlists": {
     "title": "播放列表",

@@ -2511,6 +2511,621 @@ class OfflineWatchProgressCompanion
   }
 }
 
+class $SyncRulesTable extends SyncRules
+    with TableInfo<$SyncRulesTable, SyncRuleItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncRulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+    'server_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ratingKeyMeta = const VerificationMeta(
+    'ratingKey',
+  );
+  @override
+  late final GeneratedColumn<String> ratingKey = GeneratedColumn<String>(
+    'rating_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _globalKeyMeta = const VerificationMeta(
+    'globalKey',
+  );
+  @override
+  late final GeneratedColumn<String> globalKey = GeneratedColumn<String>(
+    'global_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _targetTypeMeta = const VerificationMeta(
+    'targetType',
+  );
+  @override
+  late final GeneratedColumn<String> targetType = GeneratedColumn<String>(
+    'target_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _episodeCountMeta = const VerificationMeta(
+    'episodeCount',
+  );
+  @override
+  late final GeneratedColumn<int> episodeCount = GeneratedColumn<int>(
+    'episode_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastExecutedAtMeta = const VerificationMeta(
+    'lastExecutedAt',
+  );
+  @override
+  late final GeneratedColumn<int> lastExecutedAt = GeneratedColumn<int>(
+    'last_executed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mediaIndexMeta = const VerificationMeta(
+    'mediaIndex',
+  );
+  @override
+  late final GeneratedColumn<int> mediaIndex = GeneratedColumn<int>(
+    'media_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    serverId,
+    ratingKey,
+    globalKey,
+    targetType,
+    episodeCount,
+    enabled,
+    createdAt,
+    lastExecutedAt,
+    mediaIndex,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_rules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncRuleItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('rating_key')) {
+      context.handle(
+        _ratingKeyMeta,
+        ratingKey.isAcceptableOrUnknown(data['rating_key']!, _ratingKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ratingKeyMeta);
+    }
+    if (data.containsKey('global_key')) {
+      context.handle(
+        _globalKeyMeta,
+        globalKey.isAcceptableOrUnknown(data['global_key']!, _globalKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_globalKeyMeta);
+    }
+    if (data.containsKey('target_type')) {
+      context.handle(
+        _targetTypeMeta,
+        targetType.isAcceptableOrUnknown(data['target_type']!, _targetTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetTypeMeta);
+    }
+    if (data.containsKey('episode_count')) {
+      context.handle(
+        _episodeCountMeta,
+        episodeCount.isAcceptableOrUnknown(
+          data['episode_count']!,
+          _episodeCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_episodeCountMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('last_executed_at')) {
+      context.handle(
+        _lastExecutedAtMeta,
+        lastExecutedAt.isAcceptableOrUnknown(
+          data['last_executed_at']!,
+          _lastExecutedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('media_index')) {
+      context.handle(
+        _mediaIndexMeta,
+        mediaIndex.isAcceptableOrUnknown(data['media_index']!, _mediaIndexMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SyncRuleItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncRuleItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_id'],
+      )!,
+      ratingKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rating_key'],
+      )!,
+      globalKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_key'],
+      )!,
+      targetType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_type'],
+      )!,
+      episodeCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}episode_count'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastExecutedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_executed_at'],
+      ),
+      mediaIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}media_index'],
+      )!,
+    );
+  }
+
+  @override
+  $SyncRulesTable createAlias(String alias) {
+    return $SyncRulesTable(attachedDatabase, alias);
+  }
+}
+
+class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
+  final int id;
+  final String serverId;
+  final String ratingKey;
+  final String globalKey;
+  final String targetType;
+  final int episodeCount;
+  final bool enabled;
+  final int createdAt;
+  final int? lastExecutedAt;
+  final int mediaIndex;
+  const SyncRuleItem({
+    required this.id,
+    required this.serverId,
+    required this.ratingKey,
+    required this.globalKey,
+    required this.targetType,
+    required this.episodeCount,
+    required this.enabled,
+    required this.createdAt,
+    this.lastExecutedAt,
+    required this.mediaIndex,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['server_id'] = Variable<String>(serverId);
+    map['rating_key'] = Variable<String>(ratingKey);
+    map['global_key'] = Variable<String>(globalKey);
+    map['target_type'] = Variable<String>(targetType);
+    map['episode_count'] = Variable<int>(episodeCount);
+    map['enabled'] = Variable<bool>(enabled);
+    map['created_at'] = Variable<int>(createdAt);
+    if (!nullToAbsent || lastExecutedAt != null) {
+      map['last_executed_at'] = Variable<int>(lastExecutedAt);
+    }
+    map['media_index'] = Variable<int>(mediaIndex);
+    return map;
+  }
+
+  SyncRulesCompanion toCompanion(bool nullToAbsent) {
+    return SyncRulesCompanion(
+      id: Value(id),
+      serverId: Value(serverId),
+      ratingKey: Value(ratingKey),
+      globalKey: Value(globalKey),
+      targetType: Value(targetType),
+      episodeCount: Value(episodeCount),
+      enabled: Value(enabled),
+      createdAt: Value(createdAt),
+      lastExecutedAt: lastExecutedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastExecutedAt),
+      mediaIndex: Value(mediaIndex),
+    );
+  }
+
+  factory SyncRuleItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncRuleItem(
+      id: serializer.fromJson<int>(json['id']),
+      serverId: serializer.fromJson<String>(json['serverId']),
+      ratingKey: serializer.fromJson<String>(json['ratingKey']),
+      globalKey: serializer.fromJson<String>(json['globalKey']),
+      targetType: serializer.fromJson<String>(json['targetType']),
+      episodeCount: serializer.fromJson<int>(json['episodeCount']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      lastExecutedAt: serializer.fromJson<int?>(json['lastExecutedAt']),
+      mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'serverId': serializer.toJson<String>(serverId),
+      'ratingKey': serializer.toJson<String>(ratingKey),
+      'globalKey': serializer.toJson<String>(globalKey),
+      'targetType': serializer.toJson<String>(targetType),
+      'episodeCount': serializer.toJson<int>(episodeCount),
+      'enabled': serializer.toJson<bool>(enabled),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'lastExecutedAt': serializer.toJson<int?>(lastExecutedAt),
+      'mediaIndex': serializer.toJson<int>(mediaIndex),
+    };
+  }
+
+  SyncRuleItem copyWith({
+    int? id,
+    String? serverId,
+    String? ratingKey,
+    String? globalKey,
+    String? targetType,
+    int? episodeCount,
+    bool? enabled,
+    int? createdAt,
+    Value<int?> lastExecutedAt = const Value.absent(),
+    int? mediaIndex,
+  }) => SyncRuleItem(
+    id: id ?? this.id,
+    serverId: serverId ?? this.serverId,
+    ratingKey: ratingKey ?? this.ratingKey,
+    globalKey: globalKey ?? this.globalKey,
+    targetType: targetType ?? this.targetType,
+    episodeCount: episodeCount ?? this.episodeCount,
+    enabled: enabled ?? this.enabled,
+    createdAt: createdAt ?? this.createdAt,
+    lastExecutedAt: lastExecutedAt.present
+        ? lastExecutedAt.value
+        : this.lastExecutedAt,
+    mediaIndex: mediaIndex ?? this.mediaIndex,
+  );
+  SyncRuleItem copyWithCompanion(SyncRulesCompanion data) {
+    return SyncRuleItem(
+      id: data.id.present ? data.id.value : this.id,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      ratingKey: data.ratingKey.present ? data.ratingKey.value : this.ratingKey,
+      globalKey: data.globalKey.present ? data.globalKey.value : this.globalKey,
+      targetType: data.targetType.present
+          ? data.targetType.value
+          : this.targetType,
+      episodeCount: data.episodeCount.present
+          ? data.episodeCount.value
+          : this.episodeCount,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastExecutedAt: data.lastExecutedAt.present
+          ? data.lastExecutedAt.value
+          : this.lastExecutedAt,
+      mediaIndex: data.mediaIndex.present
+          ? data.mediaIndex.value
+          : this.mediaIndex,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncRuleItem(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('ratingKey: $ratingKey, ')
+          ..write('globalKey: $globalKey, ')
+          ..write('targetType: $targetType, ')
+          ..write('episodeCount: $episodeCount, ')
+          ..write('enabled: $enabled, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastExecutedAt: $lastExecutedAt, ')
+          ..write('mediaIndex: $mediaIndex')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    serverId,
+    ratingKey,
+    globalKey,
+    targetType,
+    episodeCount,
+    enabled,
+    createdAt,
+    lastExecutedAt,
+    mediaIndex,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncRuleItem &&
+          other.id == this.id &&
+          other.serverId == this.serverId &&
+          other.ratingKey == this.ratingKey &&
+          other.globalKey == this.globalKey &&
+          other.targetType == this.targetType &&
+          other.episodeCount == this.episodeCount &&
+          other.enabled == this.enabled &&
+          other.createdAt == this.createdAt &&
+          other.lastExecutedAt == this.lastExecutedAt &&
+          other.mediaIndex == this.mediaIndex);
+}
+
+class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
+  final Value<int> id;
+  final Value<String> serverId;
+  final Value<String> ratingKey;
+  final Value<String> globalKey;
+  final Value<String> targetType;
+  final Value<int> episodeCount;
+  final Value<bool> enabled;
+  final Value<int> createdAt;
+  final Value<int?> lastExecutedAt;
+  final Value<int> mediaIndex;
+  const SyncRulesCompanion({
+    this.id = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.ratingKey = const Value.absent(),
+    this.globalKey = const Value.absent(),
+    this.targetType = const Value.absent(),
+    this.episodeCount = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastExecutedAt = const Value.absent(),
+    this.mediaIndex = const Value.absent(),
+  });
+  SyncRulesCompanion.insert({
+    this.id = const Value.absent(),
+    required String serverId,
+    required String ratingKey,
+    required String globalKey,
+    required String targetType,
+    required int episodeCount,
+    this.enabled = const Value.absent(),
+    required int createdAt,
+    this.lastExecutedAt = const Value.absent(),
+    this.mediaIndex = const Value.absent(),
+  }) : serverId = Value(serverId),
+       ratingKey = Value(ratingKey),
+       globalKey = Value(globalKey),
+       targetType = Value(targetType),
+       episodeCount = Value(episodeCount),
+       createdAt = Value(createdAt);
+  static Insertable<SyncRuleItem> custom({
+    Expression<int>? id,
+    Expression<String>? serverId,
+    Expression<String>? ratingKey,
+    Expression<String>? globalKey,
+    Expression<String>? targetType,
+    Expression<int>? episodeCount,
+    Expression<bool>? enabled,
+    Expression<int>? createdAt,
+    Expression<int>? lastExecutedAt,
+    Expression<int>? mediaIndex,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (serverId != null) 'server_id': serverId,
+      if (ratingKey != null) 'rating_key': ratingKey,
+      if (globalKey != null) 'global_key': globalKey,
+      if (targetType != null) 'target_type': targetType,
+      if (episodeCount != null) 'episode_count': episodeCount,
+      if (enabled != null) 'enabled': enabled,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastExecutedAt != null) 'last_executed_at': lastExecutedAt,
+      if (mediaIndex != null) 'media_index': mediaIndex,
+    });
+  }
+
+  SyncRulesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? serverId,
+    Value<String>? ratingKey,
+    Value<String>? globalKey,
+    Value<String>? targetType,
+    Value<int>? episodeCount,
+    Value<bool>? enabled,
+    Value<int>? createdAt,
+    Value<int?>? lastExecutedAt,
+    Value<int>? mediaIndex,
+  }) {
+    return SyncRulesCompanion(
+      id: id ?? this.id,
+      serverId: serverId ?? this.serverId,
+      ratingKey: ratingKey ?? this.ratingKey,
+      globalKey: globalKey ?? this.globalKey,
+      targetType: targetType ?? this.targetType,
+      episodeCount: episodeCount ?? this.episodeCount,
+      enabled: enabled ?? this.enabled,
+      createdAt: createdAt ?? this.createdAt,
+      lastExecutedAt: lastExecutedAt ?? this.lastExecutedAt,
+      mediaIndex: mediaIndex ?? this.mediaIndex,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (ratingKey.present) {
+      map['rating_key'] = Variable<String>(ratingKey.value);
+    }
+    if (globalKey.present) {
+      map['global_key'] = Variable<String>(globalKey.value);
+    }
+    if (targetType.present) {
+      map['target_type'] = Variable<String>(targetType.value);
+    }
+    if (episodeCount.present) {
+      map['episode_count'] = Variable<int>(episodeCount.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (lastExecutedAt.present) {
+      map['last_executed_at'] = Variable<int>(lastExecutedAt.value);
+    }
+    if (mediaIndex.present) {
+      map['media_index'] = Variable<int>(mediaIndex.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncRulesCompanion(')
+          ..write('id: $id, ')
+          ..write('serverId: $serverId, ')
+          ..write('ratingKey: $ratingKey, ')
+          ..write('globalKey: $globalKey, ')
+          ..write('targetType: $targetType, ')
+          ..write('episodeCount: $episodeCount, ')
+          ..write('enabled: $enabled, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastExecutedAt: $lastExecutedAt, ')
+          ..write('mediaIndex: $mediaIndex')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2521,6 +3136,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ApiCacheTable apiCache = $ApiCacheTable(this);
   late final $OfflineWatchProgressTable offlineWatchProgress =
       $OfflineWatchProgressTable(this);
+  late final $SyncRulesTable syncRules = $SyncRulesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2530,6 +3146,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     downloadQueue,
     apiCache,
     offlineWatchProgress,
+    syncRules,
   ];
 }
 
@@ -3757,6 +4374,303 @@ typedef $$OfflineWatchProgressTableProcessedTableManager =
       OfflineWatchProgressItem,
       PrefetchHooks Function()
     >;
+typedef $$SyncRulesTableCreateCompanionBuilder =
+    SyncRulesCompanion Function({
+      Value<int> id,
+      required String serverId,
+      required String ratingKey,
+      required String globalKey,
+      required String targetType,
+      required int episodeCount,
+      Value<bool> enabled,
+      required int createdAt,
+      Value<int?> lastExecutedAt,
+      Value<int> mediaIndex,
+    });
+typedef $$SyncRulesTableUpdateCompanionBuilder =
+    SyncRulesCompanion Function({
+      Value<int> id,
+      Value<String> serverId,
+      Value<String> ratingKey,
+      Value<String> globalKey,
+      Value<String> targetType,
+      Value<int> episodeCount,
+      Value<bool> enabled,
+      Value<int> createdAt,
+      Value<int?> lastExecutedAt,
+      Value<int> mediaIndex,
+    });
+
+class $$SyncRulesTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncRulesTable> {
+  $$SyncRulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetType => $composableBuilder(
+    column: $table.targetType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get episodeCount => $composableBuilder(
+    column: $table.episodeCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastExecutedAt => $composableBuilder(
+    column: $table.lastExecutedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mediaIndex => $composableBuilder(
+    column: $table.mediaIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SyncRulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncRulesTable> {
+  $$SyncRulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetType => $composableBuilder(
+    column: $table.targetType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get episodeCount => $composableBuilder(
+    column: $table.episodeCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastExecutedAt => $composableBuilder(
+    column: $table.lastExecutedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mediaIndex => $composableBuilder(
+    column: $table.mediaIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SyncRulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncRulesTable> {
+  $$SyncRulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
+
+  GeneratedColumn<String> get ratingKey =>
+      $composableBuilder(column: $table.ratingKey, builder: (column) => column);
+
+  GeneratedColumn<String> get globalKey =>
+      $composableBuilder(column: $table.globalKey, builder: (column) => column);
+
+  GeneratedColumn<String> get targetType => $composableBuilder(
+    column: $table.targetType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get episodeCount => $composableBuilder(
+    column: $table.episodeCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get lastExecutedAt => $composableBuilder(
+    column: $table.lastExecutedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get mediaIndex => $composableBuilder(
+    column: $table.mediaIndex,
+    builder: (column) => column,
+  );
+}
+
+class $$SyncRulesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SyncRulesTable,
+          SyncRuleItem,
+          $$SyncRulesTableFilterComposer,
+          $$SyncRulesTableOrderingComposer,
+          $$SyncRulesTableAnnotationComposer,
+          $$SyncRulesTableCreateCompanionBuilder,
+          $$SyncRulesTableUpdateCompanionBuilder,
+          (
+            SyncRuleItem,
+            BaseReferences<_$AppDatabase, $SyncRulesTable, SyncRuleItem>,
+          ),
+          SyncRuleItem,
+          PrefetchHooks Function()
+        > {
+  $$SyncRulesTableTableManager(_$AppDatabase db, $SyncRulesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncRulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncRulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncRulesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> serverId = const Value.absent(),
+                Value<String> ratingKey = const Value.absent(),
+                Value<String> globalKey = const Value.absent(),
+                Value<String> targetType = const Value.absent(),
+                Value<int> episodeCount = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int?> lastExecutedAt = const Value.absent(),
+                Value<int> mediaIndex = const Value.absent(),
+              }) => SyncRulesCompanion(
+                id: id,
+                serverId: serverId,
+                ratingKey: ratingKey,
+                globalKey: globalKey,
+                targetType: targetType,
+                episodeCount: episodeCount,
+                enabled: enabled,
+                createdAt: createdAt,
+                lastExecutedAt: lastExecutedAt,
+                mediaIndex: mediaIndex,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String serverId,
+                required String ratingKey,
+                required String globalKey,
+                required String targetType,
+                required int episodeCount,
+                Value<bool> enabled = const Value.absent(),
+                required int createdAt,
+                Value<int?> lastExecutedAt = const Value.absent(),
+                Value<int> mediaIndex = const Value.absent(),
+              }) => SyncRulesCompanion.insert(
+                id: id,
+                serverId: serverId,
+                ratingKey: ratingKey,
+                globalKey: globalKey,
+                targetType: targetType,
+                episodeCount: episodeCount,
+                enabled: enabled,
+                createdAt: createdAt,
+                lastExecutedAt: lastExecutedAt,
+                mediaIndex: mediaIndex,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SyncRulesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SyncRulesTable,
+      SyncRuleItem,
+      $$SyncRulesTableFilterComposer,
+      $$SyncRulesTableOrderingComposer,
+      $$SyncRulesTableAnnotationComposer,
+      $$SyncRulesTableCreateCompanionBuilder,
+      $$SyncRulesTableUpdateCompanionBuilder,
+      (
+        SyncRuleItem,
+        BaseReferences<_$AppDatabase, $SyncRulesTable, SyncRuleItem>,
+      ),
+      SyncRuleItem,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3769,4 +4683,6 @@ class $AppDatabaseManager {
       $$ApiCacheTableTableManager(_db, _db.apiCache);
   $$OfflineWatchProgressTableTableManager get offlineWatchProgress =>
       $$OfflineWatchProgressTableTableManager(_db, _db.offlineWatchProgress);
+  $$SyncRulesTableTableManager get syncRules =>
+      $$SyncRulesTableTableManager(_db, _db.syncRules);
 }

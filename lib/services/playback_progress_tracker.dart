@@ -46,6 +46,9 @@ class PlaybackProgressTracker {
   /// Counts timer ticks while paused to send periodic "paused" heartbeats.
   int _pausedTickCounter = 0;
 
+  /// Whether we've already scrobbled (marked as watched) for this playback session.
+  bool _scrobbled = false;
+
   PlaybackProgressTracker({
     required this.client,
     required this.metadata,
@@ -56,10 +59,6 @@ class PlaybackProgressTracker {
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
        assert(isOffline || client != null, 'client is required when isOffline is false');
 
-  /// Start tracking playback progress
-  ///
-  /// Begins periodic timeline updates to the Plex server (online)
-  /// or queuing progress updates locally (offline).
   void startTracking() {
     if (_progressTimer != null) {
       appLogger.w('Progress tracking already started');
@@ -99,17 +98,12 @@ class PlaybackProgressTracker {
     appLogger.d('Started progress tracking (interval: ${updateInterval.inSeconds}s, offline: $isOffline)');
   }
 
-  /// Stop tracking playback progress
-  ///
-  /// Cancels the periodic timer.
   void stopTracking() {
     _progressTimer?.cancel();
     _progressTimer = null;
     appLogger.d('Stopped progress tracking');
   }
 
-  /// Send progress update to Plex server or queue locally
-  ///
   /// [state] can be 'playing', 'paused', or 'stopped'
   Future<void> sendProgress(String state) async {
     await _sendProgress(state);
@@ -150,12 +144,14 @@ class PlaybackProgressTracker {
             });
       }
 
-      // Emit watch state event on stop for UI updates across screens
-      if (state == 'stopped' && position.inMilliseconds > 0) {
+      // Emit watch state event on stop for UI updates across screens.
+      // Skip if already scrobbled — markAsWatched already emitted a watched event.
+      if (state == 'stopped' && position.inMilliseconds > 0 && !_scrobbled) {
         WatchStateNotifier().notifyProgress(
           metadata: metadata,
           viewOffset: position.inMilliseconds,
           duration: duration.inMilliseconds,
+          watchedThreshold: client != null ? client!.watchedThresholdPercent / 100.0 : 0.9,
         );
       }
     } catch (e) {
@@ -188,6 +184,24 @@ class PlaybackProgressTracker {
       state: state,
       duration: duration.inMilliseconds,
     );
+
+    // Explicitly scrobble once progress crosses the watched threshold.
+    // The Plex server may not auto-mark from timeline updates alone
+    // (e.g. when playing a local file without an active play session).
+    if (!_scrobbled && duration.inMilliseconds > 0) {
+      final percent = position.inMilliseconds / duration.inMilliseconds;
+      final threshold = client!.watchedThresholdPercent / 100.0;
+      if (percent >= threshold) {
+        _scrobbled = true;
+        try {
+          await client!.markAsWatched(metadata.ratingKey, metadata: metadata);
+          appLogger.d('Scrobbled ${metadata.ratingKey} (${(percent * 100).toStringAsFixed(0)}% >= ${client!.watchedThresholdPercent}%)');
+        } catch (e) {
+          appLogger.w('Failed to scrobble ${metadata.ratingKey}', error: e);
+          _scrobbled = false; // Retry on next tick
+        }
+      }
+    }
   }
 
   /// Queue progress update locally (offline mode)
@@ -211,7 +225,6 @@ class PlaybackProgressTracker {
     );
   }
 
-  /// Dispose resources
   void dispose() {
     stopTracking();
   }

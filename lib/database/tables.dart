@@ -51,6 +51,24 @@ class DownloadedMedia extends Table {
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
 }
 
+/// Persistent sync rules for auto-downloading unwatched episodes.
+///
+/// Each rule keeps a rolling window of N unwatched episodes for a show/season.
+/// When watched episodes are removed, new unwatched ones are queued.
+@DataClassName('SyncRuleItem')
+class SyncRules extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get serverId => text()();
+  TextColumn get ratingKey => text()();
+  TextColumn get globalKey => text().unique()();
+  TextColumn get targetType => text()(); // 'show' or 'season'
+  IntColumn get episodeCount => integer()();
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  IntColumn get createdAt => integer()();
+  IntColumn get lastExecutedAt => integer().nullable()();
+  IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
+}
+
 /// Queue for offline watch progress and manual watch actions.
 ///
 /// Stores watch progress updates and manual watch/unwatch actions
