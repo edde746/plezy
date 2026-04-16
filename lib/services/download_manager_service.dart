@@ -1817,11 +1817,6 @@ class DownloadManagerService {
     }
   }
 
-  /// Get all downloads with a specific status
-  Stream<List<DownloadedMediaItem>> watchDownloadsByStatus(DownloadStatus status) {
-    return (_database.select(_database.downloadedMedia)..where((t) => t.status.equals(status.index))).watch();
-  }
-
   /// Get all downloaded media items (for loading persisted data)
   Future<List<DownloadedMediaItem>> getAllDownloads() {
     return _database.select(_database.downloadedMedia).get();
@@ -1877,18 +1872,6 @@ class DownloadManagerService {
 
     await _apiCache.put(serverId, endpoint, cachedResponse);
     await _apiCache.pinForOffline(serverId, ratingKey);
-  }
-
-  /// Cache children (seasons or episodes) in the API response format
-  Future<void> cacheChildrenForOffline(String serverId, String parentRatingKey, List<PlexMetadata> children) async {
-    final endpoint = '/library/metadata/$parentRatingKey/children';
-
-    // Build a response structure that matches the Plex API format
-    final cachedResponse = {
-      'MediaContainer': {'Metadata': children.map((c) => c.toJson()).toList()},
-    };
-
-    await _apiCache.put(serverId, endpoint, cachedResponse);
   }
 
   void dispose() {

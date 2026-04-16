@@ -84,12 +84,6 @@ class DownloadStorageService {
     return dir.path;
   }
 
-  /// Get default download path (for "Reset to Default" functionality)
-  Future<String> getDefaultDownloadPath() async {
-    final baseDir = await _getBaseAppDir();
-    return path.join(baseDir.path, 'downloads');
-  }
-
   /// Check if a directory is writable
   Future<bool> isDirectoryWritable(Directory dir) async {
     try {
@@ -194,12 +188,6 @@ class DownloadStorageService {
     return path.join(mediaDir.path, 'video.$extension');
   }
 
-  /// Get artwork file path (poster, art, thumb)
-  Future<String> getArtworkPath(String serverId, String ratingKey, String artworkType) async {
-    final mediaDir = await getMediaDirectory(serverId, ratingKey);
-    return path.join(mediaDir.path, '$artworkType.jpg');
-  }
-
   /// Get subtitles directory
   Future<Directory> getSubtitlesDirectory(String serverId, String ratingKey) async {
     final mediaDir = await getMediaDirectory(serverId, ratingKey);
@@ -272,12 +260,6 @@ class DownloadStorageService {
     return path.join(movieDir.path, '$fileName.$extension');
   }
 
-  /// Get movie artwork path: .../Movie Name (YYYY)/{artworkType}.jpg
-  Future<String> getMovieArtworkPath(PlexMetadata movie, String artworkType) async {
-    final movieDir = await getMovieDirectory(movie);
-    return path.join(movieDir.path, '$artworkType.jpg');
-  }
-
   /// Get show directory: downloads/TV Shows/{Show Name} ({Year})/
   /// [showYear]: Pass the show's premiere year explicitly (for episodes, the episode's
   /// year may differ from the show's year). If not provided, uses metadata.year.
@@ -287,24 +269,12 @@ class DownloadStorageService {
     return _ensureDirectoryExists(Directory(path.join(baseDir.path, 'TV Shows', showFolder)));
   }
 
-  /// Get show artwork path: downloads/TV Shows/{Show}/poster.jpg
-  Future<String> getShowArtworkPath(PlexMetadata metadata, String artworkType, {int? showYear}) async {
-    final showDir = await getShowDirectory(metadata, showYear: showYear);
-    return path.join(showDir.path, '$artworkType.jpg');
-  }
-
   /// Get season directory: .../TV Shows/{Show}/Season {XX}/
   /// [showYear]: Pass the show's premiere year (not episode or season year)
   Future<Directory> getSeasonDirectory(PlexMetadata metadata, {int? showYear}) async {
     final showDir = await getShowDirectory(metadata, showYear: showYear);
     final seasonNum = padNumber(metadata.parentIndex ?? 0, 2);
     return _ensureDirectoryExists(Directory(path.join(showDir.path, 'Season $seasonNum')));
-  }
-
-  /// Get season artwork path: .../Season XX/poster.jpg
-  Future<String> getSeasonArtworkPath(PlexMetadata metadata, String artworkType, {int? showYear}) async {
-    final seasonDir = await getSeasonDirectory(metadata, showYear: showYear);
-    return path.join(seasonDir.path, '$artworkType.jpg');
   }
 
   /// Get base path info for episode files (season directory path and formatted filename).
@@ -354,14 +324,6 @@ class DownloadStorageService {
   Future<String> getMovieSubtitlePath(PlexMetadata movie, int trackId, String extension) async {
     final subsDir = await getMovieSubtitlesDirectory(movie);
     return path.join(subsDir.path, '$trackId.$extension');
-  }
-
-  /// Delete all files for a media item
-  Future<void> deleteMediaFiles(String serverId, String ratingKey) async {
-    final mediaDir = await getMediaDirectory(serverId, ratingKey);
-    if (await mediaDir.exists()) {
-      await mediaDir.delete(recursive: true);
-    }
   }
 
   /// Convert an absolute file path to a relative path (for database storage)
@@ -467,80 +429,6 @@ class DownloadStorageService {
     final fallback = normalizedCandidates.isNotEmpty ? normalizedCandidates.first : await toAbsolutePath(storedPath);
     appLogger.d('ensureAbsolutePath: resolved="$fallback" (fallback)');
     return fallback;
-  }
-
-  /// Calculate total storage used by downloads
-  Future<int> getTotalStorageUsed() async {
-    final baseDir = await getDownloadsDirectory();
-    return _calculateDirectorySize(baseDir);
-  }
-
-  Future<int> _calculateDirectorySize(Directory dir) async {
-    int size = 0;
-    if (!await dir.exists()) return size;
-
-    await for (var entity in dir.list(recursive: true, followLinks: false)) {
-      if (entity is File) {
-        try {
-          size += await entity.length();
-        } catch (_) {
-          // Ignore errors reading file size
-        }
-      }
-    }
-    return size;
-  }
-
-  /// Format bytes to human readable string
-  static String formatBytes(int bytes) => ByteFormatter.formatBytes(bytes);
-
-  // ============================================================
-  // SAF (Storage Access Framework) SUPPORT FOR ANDROID
-  // ============================================================
-
-  /// Get temporary cache directory for initial downloads
-  /// Files are downloaded here first, then copied to SAF if using SAF mode
-  Future<Directory> getCacheDownloadDirectory() async {
-    final cacheDir = await getApplicationDocumentsDirectory();
-    return _ensureDirectoryExists(Directory(path.join(cacheDir.path, '.download_cache')));
-  }
-
-  /// Get temporary file path for downloading (before copying to SAF)
-  Future<String> getTempDownloadPath(String fileName) async {
-    final cacheDir = await getCacheDownloadDirectory();
-    return path.join(cacheDir.path, fileName);
-  }
-
-  /// Get the MIME type for a file extension
-  String getMimeType(String extension) {
-    switch (extension.toLowerCase()) {
-      case 'mp4':
-        return 'video/mp4';
-      case 'mkv':
-        return 'video/x-matroska';
-      case 'm4v':
-        return 'video/x-m4v';
-      case 'avi':
-        return 'video/x-msvideo';
-      case 'ogv':
-        return 'video/ogg';
-      case 'webm':
-        return 'video/webm';
-      case 'srt':
-        return 'application/x-subrip';
-      case 'vtt':
-        return 'text/vtt';
-      case 'ass':
-      case 'ssa':
-        return 'text/x-ssa';
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'png':
-        return 'image/png';
-      default:
-        return 'application/octet-stream';
-    }
   }
 
   /// Get path components for SAF based on media type

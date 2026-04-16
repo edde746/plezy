@@ -41,13 +41,6 @@ class DownloadProgress {
   String get downloadedFormatted => ByteFormatter.formatBytes(downloadedBytes);
   String get totalFormatted => ByteFormatter.formatBytes(totalBytes);
 
-  Duration? get estimatedTimeRemaining {
-    if (speed <= 0 || totalBytes <= 0) return null;
-    final remainingBytes = totalBytes - downloadedBytes;
-    if (remainingBytes <= 0) return Duration.zero;
-    return Duration(seconds: (remainingBytes / speed).round());
-  }
-
   /// Check if this progress update includes artwork paths
   bool get hasArtworkPaths => thumbPath != null;
 

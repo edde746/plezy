@@ -230,34 +230,6 @@ class DownloadProvider extends ChangeNotifier {
   /// All metadata for downloads
   Map<String, PlexMetadata> get metadata => Map.unmodifiable(_metadata);
 
-  /// Get all queued/downloading items (for Queue tab)
-  List<DownloadProgress> get queuedDownloads {
-    return _downloads.values
-        .where(
-          (p) =>
-              p.status == DownloadStatus.queued ||
-              p.status == DownloadStatus.downloading ||
-              p.status == DownloadStatus.paused,
-        )
-        .toList();
-  }
-
-  /// Get all completed downloads
-  List<DownloadProgress> get completedDownloads {
-    return _downloads.values.where((p) => p.status == DownloadStatus.completed).toList();
-  }
-
-  /// Get completed TV episode downloads (individual episodes)
-  List<PlexMetadata> get downloadedEpisodes {
-    return _metadata.entries
-        .where((entry) {
-          final progress = _downloads[entry.key];
-          return progress?.status == DownloadStatus.completed && entry.value.type == 'episode';
-        })
-        .map((entry) => entry.value)
-        .toList();
-  }
-
   /// Get unique TV shows that have downloaded episodes
   /// Returns stored show metadata, or synthesizes from episode metadata as fallback
   List<PlexMetadata> get downloadedShows {
