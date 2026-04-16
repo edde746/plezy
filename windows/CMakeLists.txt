@@ -41,7 +41,7 @@ else()
   include(FetchContent)
   FetchContent_Declare(
     mpv_dev
-    URL https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-v3-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z/download
+    URL https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z/download
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   )
   FetchContent_MakeAvailable(mpv_dev)
