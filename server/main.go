@@ -197,12 +197,62 @@ type serverMsg struct {
 	Payload   json.RawMessage `json:"payload,omitempty"`
 }
 
+// --- Client (serializes writes to a single goroutine) ---
+
+type Client struct {
+	conn *websocket.Conn
+	send chan []byte
+}
+
+func newClient(conn *websocket.Conn) *Client {
+	c := &Client{conn: conn, send: make(chan []byte, 64)}
+	go c.writePump()
+	return c
+}
+
+func (c *Client) writePump() {
+	ticker := time.NewTicker(pingInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case data, ok := <-c.send:
+			if !ok {
+				c.conn.WriteMessage(websocket.CloseMessage, nil)
+				return
+			}
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			c.conn.WriteMessage(websocket.TextMessage, data)
+		case <-ticker.C:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}
+}
+
+func (c *Client) sendJSON(msg serverMsg) {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return
+	}
+	select {
+	case c.send <- data:
+	default:
+		// Drop if buffer full (slow client)
+	}
+}
+
+func (c *Client) close() {
+	close(c.send)
+}
+
 // --- Room ---
 
 type Room struct {
 	SessionID  string
 	HostPeerID string
-	Peers      map[string]*websocket.Conn
+	Peers      map[string]*Client
 	mu         sync.RWMutex
 	CreatedAt  time.Time
 }
@@ -220,12 +270,20 @@ func (r *Room) broadcastExcept(senderID string, msg serverMsg) {
 	if err != nil {
 		return
 	}
+	// Copy peers under lock, then send without holding it
 	r.mu.RLock()
-	defer r.mu.RUnlock()
-	for id, conn := range r.Peers {
+	targets := make([]*Client, 0, len(r.Peers))
+	for id, client := range r.Peers {
 		if id != senderID {
-			conn.SetWriteDeadline(time.Now().Add(writeWait))
-			conn.WriteMessage(websocket.TextMessage, data)
+			targets = append(targets, client)
+		}
+	}
+	r.mu.RUnlock()
+
+	for _, client := range targets {
+		select {
+		case client.send <- data:
+		default:
 		}
 	}
 }
@@ -236,14 +294,17 @@ func (r *Room) sendTo(targetID string, msg serverMsg) bool {
 		return false
 	}
 	r.mu.RLock()
-	defer r.mu.RUnlock()
-	conn, ok := r.Peers[targetID]
+	client, ok := r.Peers[targetID]
+	r.mu.RUnlock()
 	if !ok {
 		return false
 	}
-	conn.SetWriteDeadline(time.Now().Add(writeWait))
-	conn.WriteMessage(websocket.TextMessage, data)
-	return true
+	select {
+	case client.send <- data:
+		return true
+	default:
+		return false
+	}
 }
 
 // --- Log store ---
@@ -463,18 +524,6 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func (s *Server) sendError(conn *websocket.Conn, code, message string) {
-	data, _ := json.Marshal(serverMsg{Type: "error", Code: code, Message: message})
-	conn.SetWriteDeadline(time.Now().Add(writeWait))
-	conn.WriteMessage(websocket.TextMessage, data)
-}
-
-func (s *Server) sendJSON(conn *websocket.Conn, msg serverMsg) {
-	data, _ := json.Marshal(msg)
-	conn.SetWriteDeadline(time.Now().Add(writeWait))
-	conn.WriteMessage(websocket.TextMessage, data)
-}
-
 func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	ip := clientIP(r)
 
@@ -498,17 +547,9 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 
-	// Ping ticker
-	ticker := time.NewTicker(pingInterval)
-	defer ticker.Stop()
-	go func() {
-		for range ticker.C {
-			conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
-		}
-	}()
+	// Client wraps the conn with a serialized write channel + ping ticker
+	client := newClient(conn)
+	defer client.close()
 
 	rl := newRateLimiter(rateBurst, rateSustained)
 	var currentRoom *Room
@@ -542,24 +583,24 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !rl.allow() {
-			s.sendError(conn, "rate_limited", "Too many messages")
+			client.sendJSON(serverMsg{Type: "error", Code: "rate_limited", Message: "Too many messages"})
 			continue
 		}
 
 		var msg clientMsg
 		if err := json.Unmarshal(raw, &msg); err != nil {
-			s.sendError(conn, "invalid_message", "Invalid JSON")
+			client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "Invalid JSON"})
 			continue
 		}
 
 		switch msg.Type {
 		case "create":
 			if msg.SessionID == "" || msg.PeerID == "" {
-				s.sendError(conn, "invalid_message", "sessionId and peerId required")
+				client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "sessionId and peerId required"})
 				continue
 			}
 			if !s.conns.tryCreateRoom(ip) {
-				s.sendError(conn, "rate_limited", "Too many rooms created")
+				client.sendJSON(serverMsg{Type: "error", Code: "rate_limited", Message: "Too many rooms created"})
 				continue
 			}
 			s.mu.Lock()
@@ -570,7 +611,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				if !empty {
 					s.mu.Unlock()
 					s.conns.releaseRoom(ip)
-					s.sendError(conn, "room_exists", "Room already exists")
+					client.sendJSON(serverMsg{Type: "error", Code: "room_exists", Message: "Room already exists"})
 					continue
 				}
 				// Empty stale room — reclaim the ID
@@ -579,7 +620,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			room := &Room{
 				SessionID:  msg.SessionID,
 				HostPeerID: msg.PeerID,
-				Peers:      map[string]*websocket.Conn{msg.PeerID: conn},
+				Peers:      map[string]*Client{msg.PeerID: client},
 				CreatedAt:  time.Now(),
 			}
 			s.rooms[msg.SessionID] = room
@@ -588,27 +629,27 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			currentPeerID = msg.PeerID
 			isHost = true
 			log.Printf("room %s created by %s", msg.SessionID, msg.PeerID)
-			s.sendJSON(conn, serverMsg{Type: "created", SessionID: msg.SessionID})
+			client.sendJSON(serverMsg{Type: "created", SessionID: msg.SessionID})
 
 		case "join":
 			if msg.SessionID == "" || msg.PeerID == "" {
-				s.sendError(conn, "invalid_message", "sessionId and peerId required")
+				client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "sessionId and peerId required"})
 				continue
 			}
 			s.mu.RLock()
 			room, exists := s.rooms[msg.SessionID]
 			s.mu.RUnlock()
 			if !exists {
-				s.sendError(conn, "room_not_found", "Room does not exist")
+				client.sendJSON(serverMsg{Type: "error", Code: "room_not_found", Message: "Room does not exist"})
 				continue
 			}
 			room.mu.Lock()
 			if len(room.Peers) >= maxRoomSize {
 				room.mu.Unlock()
-				s.sendError(conn, "room_full", "Room is full")
+				client.sendJSON(serverMsg{Type: "error", Code: "room_full", Message: "Room is full"})
 				continue
 			}
-			room.Peers[msg.PeerID] = conn
+			room.Peers[msg.PeerID] = client
 			peers := room.peerIDs()
 			room.mu.Unlock()
 			currentRoom = room
@@ -622,12 +663,12 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 					existingPeers = append(existingPeers, p)
 				}
 			}
-			s.sendJSON(conn, serverMsg{Type: "joined", SessionID: msg.SessionID, Peers: existingPeers})
+			client.sendJSON(serverMsg{Type: "joined", SessionID: msg.SessionID, Peers: existingPeers})
 			room.broadcastExcept(msg.PeerID, serverMsg{Type: "peerJoined", PeerID: msg.PeerID})
 
 		case "broadcast":
 			if currentRoom == nil {
-				s.sendError(conn, "not_in_room", "Not in a room")
+				client.sendJSON(serverMsg{Type: "error", Code: "not_in_room", Message: "Not in a room"})
 				continue
 			}
 			currentRoom.broadcastExcept(currentPeerID, serverMsg{
@@ -638,11 +679,11 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 
 		case "sendTo":
 			if currentRoom == nil {
-				s.sendError(conn, "not_in_room", "Not in a room")
+				client.sendJSON(serverMsg{Type: "error", Code: "not_in_room", Message: "Not in a room"})
 				continue
 			}
 			if msg.To == "" {
-				s.sendError(conn, "invalid_message", "to field required")
+				client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "to field required"})
 				continue
 			}
 			if !currentRoom.sendTo(msg.To, serverMsg{
@@ -650,14 +691,14 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				From:    currentPeerID,
 				Payload: msg.Payload,
 			}) {
-				s.sendError(conn, "not_in_room", "Target peer not found")
+				client.sendJSON(serverMsg{Type: "error", Code: "not_in_room", Message: "Target peer not found"})
 			}
 
 		case "ping":
-			s.sendJSON(conn, serverMsg{Type: "pong"})
+			client.sendJSON(serverMsg{Type: "pong"})
 
 		default:
-			s.sendError(conn, "invalid_message", "Unknown message type")
+			client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "Unknown message type"})
 		}
 	}
 }

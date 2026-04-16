@@ -228,7 +228,7 @@ class WatchTogetherSyncManager {
           } finally {
             _isRemoteAction = false;
           }
-          _broadcastPlayPause(true);
+          // Don't broadcast play — deferred play will broadcast when all peers are ready.
           return;
         }
 
@@ -539,20 +539,6 @@ class WatchTogetherSyncManager {
       return;
     }
 
-    // HOST RELAY: In "anyone" mode, host rebroadcasts control commands from guests
-    // This is needed because guests only connect to host (star topology), not to each other
-    if (_session.isHost && _session.controlMode == ControlMode.anyone) {
-      final isControlMessage =
-          message.type == SyncMessageType.play ||
-          message.type == SyncMessageType.pause ||
-          message.type == SyncMessageType.seek ||
-          message.type == SyncMessageType.rate;
-
-      if (isControlMessage) {
-        _peerService.broadcast(message);
-      }
-    }
-
     // In hostOnly mode, only process messages from host (unless it's join/leave/sessionConfig)
     if (_session.controlMode == ControlMode.hostOnly && !_session.isHost) {
       final isHostMessage = message.peerId == _session.hostPeerId;
@@ -669,11 +655,14 @@ class WatchTogetherSyncManager {
           if (_deferredPlay && isAllReady) {
             _setDeferredPlay(false);
             _firstPlayCompleted = true;
+            final pos = _deferredPlayPosition;
+            _deferredPlayPosition = null;
             await _applyRemotePlay(
-              position: _deferredPlayPosition,
+              position: pos,
               expectedAttachmentGeneration: queuedAttachmentGeneration,
             );
-            _deferredPlayPosition = null;
+            // Broadcast play to all peers now that everyone is ready
+            _broadcastPlayPause(true);
           }
         }
         break;

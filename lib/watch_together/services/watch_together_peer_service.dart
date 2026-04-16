@@ -59,6 +59,9 @@ class WatchTogetherPeerService with KeepaliveMixin {
   static const int _maxReconnectAttempts = 3;
   Timer? _reconnectTimer;
 
+  /// Called after a successful reconnection so the provider can re-announce join.
+  void Function()? onReconnected;
+
   // Keepalive (via KeepaliveMixin)
   @override
   Duration get pingInterval => const Duration(seconds: 15);
@@ -192,10 +195,16 @@ class WatchTogetherPeerService with KeepaliveMixin {
 
         case 'message':
           final payload = msg['payload'];
+          final serverFrom = msg['from'] as String?;
           if (payload != null) {
             try {
               final payloadStr = payload is String ? payload : jsonEncode(payload);
-              final syncMsg = SyncMessage.fromJson(payloadStr);
+              var syncMsg = SyncMessage.fromJson(payloadStr);
+              // Use the server-authenticated sender ID instead of the
+              // self-reported peerId in the payload to prevent spoofing.
+              if (serverFrom != null && syncMsg.peerId != serverFrom) {
+                syncMsg = syncMsg.copyWith(peerId: serverFrom);
+              }
               _safeAdd(_messageReceivedController, syncMsg);
             } catch (e) {
               appLogger.e('WatchTogether: Failed to parse sync message payload', error: e);
@@ -206,7 +215,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
           final code = msg['code'] as String? ?? 'unknown';
           final message = msg['message'] as String? ?? 'Unknown error';
           appLogger.e('WatchTogether: Server error: $code - $message');
-          final error = PeerError(type: PeerErrorType.serverError, message: '$code: $message');
+          final error = PeerError(type: PeerErrorType.serverError, message: '$code: $message', serverCode: code);
           _safeAdd(_errorController, error);
           if (setupCompleter != null && !setupCompleter.isCompleted) {
             setupCompleter.completeError(error);
@@ -292,15 +301,27 @@ class WatchTogetherPeerService with KeepaliveMixin {
         _listenToChannel(channel, setupCompleter: completer);
         startKeepalive();
 
-        // Re-send create or join
-        if (_isHost) {
-          _sendRaw({'type': 'create', 'sessionId': _sessionId, 'peerId': _myPeerId});
-        } else {
-          _sendRaw({'type': 'join', 'sessionId': _sessionId, 'peerId': _myPeerId});
+        // Always try join first — the room may still have peers (e.g. host
+        // reconnecting while guests remain). Fall back to create only if
+        // the room no longer exists and we were the host.
+        _sendRaw({'type': 'join', 'sessionId': _sessionId, 'peerId': _myPeerId});
+
+        try {
+          await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'WatchTogether reconnect');
+        } on PeerError catch (e) {
+          if (_isHost && e.serverCode == 'room_not_found') {
+            appLogger.d('WatchTogether: Room gone, re-creating as host');
+            final createCompleter = Completer<void>();
+            _listenToChannel(channel, setupCompleter: createCompleter);
+            _sendRaw({'type': 'create', 'sessionId': _sessionId, 'peerId': _myPeerId});
+            await createCompleter.future.namedTimeout(const Duration(seconds: 10), operation: 'WatchTogether reconnect create');
+          } else {
+            rethrow;
+          }
         }
 
-        await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'WatchTogether reconnect');
         appLogger.d('WatchTogether: Reconnected successfully');
+        onReconnected?.call();
       } catch (e) {
         appLogger.e('WatchTogether: Reconnect failed', error: e);
         _handleWebSocketClosed();
@@ -381,20 +402,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
       appLogger.e('WatchTogether: Failed to join session', error: e);
       await disconnect();
       rethrow;
-    }
-  }
-
-  /// Try to join a session; if it doesn't exist, create it as host.
-  ///
-  /// Returns `true` if the user became the host (room was empty).
-  Future<bool> joinOrCreateSession(String sessionId) async {
-    try {
-      await joinSession(sessionId);
-      return false; // joined as guest
-    } on PeerError catch (e) {
-      if (e.type != PeerErrorType.serverError) rethrow;
-      await createSession(sessionId: sessionId);
-      return true; // created as host
     }
   }
 

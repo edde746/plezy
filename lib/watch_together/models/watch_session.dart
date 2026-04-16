@@ -79,9 +79,6 @@ class WatchSession {
   /// Current connection state
   final SessionState state;
 
-  /// List of participants in the session
-  final List<Participant> participants;
-
   /// Error message if state is error
   final String? errorMessage;
 
@@ -102,7 +99,6 @@ class WatchSession {
     required this.role,
     required this.controlMode,
     required this.state,
-    this.participants = const [],
     this.errorMessage,
     this.mediaRatingKey,
     this.mediaServerId,
@@ -116,15 +112,11 @@ class WatchSession {
   /// Whether the session is currently connected
   bool get isConnected => state == SessionState.connected;
 
-  /// Number of participants (including self)
-  int get participantCount => participants.length;
-
   WatchSession copyWith({
     String? sessionId,
     SessionRole? role,
     ControlMode? controlMode,
     SessionState? state,
-    List<Participant>? participants,
     String? errorMessage,
     String? mediaRatingKey,
     String? mediaServerId,
@@ -136,7 +128,6 @@ class WatchSession {
       role: role ?? this.role,
       controlMode: controlMode ?? this.controlMode,
       state: state ?? this.state,
-      participants: participants ?? this.participants,
       errorMessage: errorMessage ?? this.errorMessage,
       mediaRatingKey: mediaRatingKey ?? this.mediaRatingKey,
       mediaServerId: mediaServerId ?? this.mediaServerId,
@@ -163,7 +154,6 @@ class WatchSession {
       mediaRatingKey: mediaRatingKey,
       mediaServerId: mediaServerId,
       mediaTitle: mediaTitle,
-      participants: [],
     );
   }
 
@@ -174,7 +164,6 @@ class WatchSession {
       role: SessionRole.guest,
       controlMode: ControlMode.hostOnly, // Will be updated when connected
       state: SessionState.connecting,
-      participants: [],
     );
   }
 }

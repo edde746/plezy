@@ -280,6 +280,25 @@ class SyncMessage {
   /// Position as Duration (convenience getter)
   Duration? get position => positionMs != null ? Duration(milliseconds: positionMs!) : null;
 
+  SyncMessage copyWith({String? peerId}) {
+    return SyncMessage(
+      type: type,
+      timestamp: timestamp,
+      positionMs: positionMs,
+      bufferingState: bufferingState,
+      rate: rate,
+      peerId: peerId ?? this.peerId,
+      displayName: displayName,
+      isHost: isHost,
+      controlMode: controlMode,
+      pingId: pingId,
+      ratingKey: ratingKey,
+      serverId: serverId,
+      mediaTitle: mediaTitle,
+      isPlaying: isPlaying,
+    );
+  }
+
   /// Serialize to JSON string for sending over data channel
   String toJson() {
     final map = <String, dynamic>{'t': type.name, 'ts': timestamp};

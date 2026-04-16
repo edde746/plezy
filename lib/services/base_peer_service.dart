@@ -22,7 +22,10 @@ class PeerError {
   final String message;
   final dynamic originalError;
 
-  const PeerError({required this.type, required this.message, this.originalError});
+  /// Server-provided error code (e.g. 'room_not_found', 'room_full').
+  final String? serverCode;
+
+  const PeerError({required this.type, required this.message, this.originalError, this.serverCode});
 
   @override
   String toString() => 'PeerError($type): $message';
