@@ -77,7 +77,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
     final tooltipTop = -(tooltipHeight + 2.0);
 
     // Center tooltip on cursor, clamped so it stays within the slider bounds
-    final left = (pixelX - tooltipWidth / 2).clamp(0.0, sliderWidth - tooltipWidth);
+    final left = (pixelX - tooltipWidth / 2).clamp(0.0, (sliderWidth - tooltipWidth).clamp(0.0, double.infinity));
 
     final timeLabel = Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
