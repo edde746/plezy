@@ -344,6 +344,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Profilauswahl bei jedem Öffnen der App anzeigen';
 	@override String get confirmExitOnBack => 'Vor dem Beenden bestätigen';
 	@override String get confirmExitOnBackDescription => 'Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird';
+	@override String get forceTvMode => 'TV-Modus erzwingen';
+	@override String get forceTvModeDescription => 'TV-Layout unabhängig von der automatischen Erkennung verwenden. Nützlich für Android-TV-Geräte, die das Leanback-Feature nicht melden. Startet die App bei Änderung neu.';
 	@override String get autoHidePerformanceOverlay => 'Leistungsoverlay automatisch ausblenden';
 	@override String get autoHidePerformanceOverlayDescription => 'Leistungsoverlay mit den Wiedergabesteuerungen ein-/ausblenden';
 	@override String get showNavBarLabels => 'Navigationsleisten-Beschriftungen anzeigen';
@@ -1598,6 +1600,8 @@ extension on TranslationsDe {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Profilauswahl bei jedem Öffnen der App anzeigen',
 			'settings.confirmExitOnBack' => 'Vor dem Beenden bestätigen',
 			'settings.confirmExitOnBackDescription' => 'Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird',
+			'settings.forceTvMode' => 'TV-Modus erzwingen',
+			'settings.forceTvModeDescription' => 'TV-Layout unabhängig von der automatischen Erkennung verwenden. Nützlich für Android-TV-Geräte, die das Leanback-Feature nicht melden. Startet die App bei Änderung neu.',
 			'settings.autoHidePerformanceOverlay' => 'Leistungsoverlay automatisch ausblenden',
 			'settings.autoHidePerformanceOverlayDescription' => 'Leistungsoverlay mit den Wiedergabesteuerungen ein-/ausblenden',
 			'settings.showNavBarLabels' => 'Navigationsleisten-Beschriftungen anzeigen',
@@ -1893,10 +1897,10 @@ extension on TranslationsDe {
 			'libraries.tabs.collections' => 'Sammlungen',
 			'libraries.tabs.playlists' => 'Wiedergabelisten',
 			'libraries.groupings.title' => 'Gruppierung',
-			'libraries.groupings.all' => 'Alle',
-			'libraries.groupings.movies' => 'Filme',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => 'Alle',
+			'libraries.groupings.movies' => 'Filme',
 			'libraries.groupings.shows' => 'Serien',
 			'libraries.groupings.seasons' => 'Staffeln',
 			'libraries.groupings.episodes' => 'Episoden',

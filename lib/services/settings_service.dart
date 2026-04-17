@@ -112,6 +112,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySelectedExternalPlayer = 'selected_external_player';
   static const String _keyCustomExternalPlayers = 'custom_external_players';
   static const String _keyConfirmExitOnBack = 'confirm_exit_on_back';
+  static const String _keyForceTvMode = 'force_tv_mode';
   static const String _keyAmbientLighting = 'ambient_lighting';
   static const String _keyAudioPassthrough = 'audio_passthrough';
   static const String _keyAudioNormalization = 'audio_normalization';
@@ -1374,6 +1375,13 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyConfirmExitOnBack) ?? true; // Default: enabled
   }
 
+  // Force TV Mode (Android)
+  Future<void> setForceTvMode(bool value) async {
+    await prefs.setBool(_keyForceTvMode, value);
+  }
+
+  bool getForceTvMode() => prefs.getBool(_keyForceTvMode) ?? false;
+
   // Ambient Lighting
   Future<void> setAmbientLighting(bool enabled) async {
     await prefs.setBool(_keyAmbientLighting, enabled);
@@ -1463,6 +1471,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keySelectedExternalPlayer),
       prefs.remove(_keyCustomExternalPlayers),
       prefs.remove(_keyConfirmExitOnBack),
+      prefs.remove(_keyForceTvMode),
       prefs.remove(_keyAmbientLighting),
       prefs.remove(_keyAudioPassthrough),
       prefs.remove(_keyAudioNormalization),

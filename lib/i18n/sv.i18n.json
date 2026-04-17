@@ -225,6 +225,8 @@
     "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas",
     "confirmExitOnBack": "Bekräfta innan avslut",
     "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen",
+    "forceTvMode": "Tvinga TV-läge",
+    "forceTvModeDescription": "Använd TV-layouten oavsett automatisk identifiering. Användbart på Android TV-enheter som inte rapporterar leanback-funktionen. Startar om appen vid ändring.",
     "autoHidePerformanceOverlay": "Dölj prestandaöverlagring automatiskt",
     "autoHidePerformanceOverlayDescription": "Tona prestandaöverlagringen med uppspelningskontrollerna",
     "showNavBarLabels": "Visa navigeringsfältets etiketter",

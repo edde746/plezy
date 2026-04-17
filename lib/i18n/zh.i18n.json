@@ -225,6 +225,8 @@
     "requireProfileSelectionOnOpenDescription": "每次打开应用时显示配置文件选择",
     "confirmExitOnBack": "退出前确认",
     "confirmExitOnBackDescription": "按返回键退出应用时显示确认对话框",
+    "forceTvMode": "强制 TV 模式",
+    "forceTvModeDescription": "无论自动检测结果如何都使用 TV 布局。适用于未报告 leanback 功能的 Android TV 设备。更改后将重启应用。",
     "autoHidePerformanceOverlay": "自动隐藏性能叠加层",
     "autoHidePerformanceOverlayDescription": "性能叠加层随播放控件一起淡入淡出",
     "showNavBarLabels": "显示导航栏标签",

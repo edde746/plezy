@@ -344,6 +344,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
 	@override String get confirmExitOnBack => '退出前确认';
 	@override String get confirmExitOnBackDescription => '按返回键退出应用时显示确认对话框';
+	@override String get forceTvMode => '强制 TV 模式';
+	@override String get forceTvModeDescription => '无论自动检测结果如何都使用 TV 布局。适用于未报告 leanback 功能的 Android TV 设备。更改后将重启应用。';
 	@override String get autoHidePerformanceOverlay => '自动隐藏性能叠加层';
 	@override String get autoHidePerformanceOverlayDescription => '性能叠加层随播放控件一起淡入淡出';
 	@override String get showNavBarLabels => '显示导航栏标签';
@@ -1598,6 +1600,8 @@ extension on TranslationsZh {
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
 			'settings.confirmExitOnBack' => '退出前确认',
 			'settings.confirmExitOnBackDescription' => '按返回键退出应用时显示确认对话框',
+			'settings.forceTvMode' => '强制 TV 模式',
+			'settings.forceTvModeDescription' => '无论自动检测结果如何都使用 TV 布局。适用于未报告 leanback 功能的 Android TV 设备。更改后将重启应用。',
 			'settings.autoHidePerformanceOverlay' => '自动隐藏性能叠加层',
 			'settings.autoHidePerformanceOverlayDescription' => '性能叠加层随播放控件一起淡入淡出',
 			'settings.showNavBarLabels' => '显示导航栏标签',
@@ -1893,10 +1897,10 @@ extension on TranslationsZh {
 			'libraries.tabs.collections' => '合集',
 			'libraries.tabs.playlists' => '播放列表',
 			'libraries.groupings.title' => '分组',
-			'libraries.groupings.all' => '全部',
-			'libraries.groupings.movies' => '电影',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => '全部',
+			'libraries.groupings.movies' => '电影',
 			'libraries.groupings.shows' => '剧集',
 			'libraries.groupings.seasons' => '季',
 			'libraries.groupings.episodes' => '集',

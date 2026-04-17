@@ -7,36 +7,50 @@ import 'package:flutter/material.dart';
 /// Service for detecting if the app is running on Android TV
 class TvDetectionService {
   static TvDetectionService? _instance;
+  bool _detected = false;
+  bool _forceTv = false;
   bool _isTV = false;
   bool _initialized = false;
 
   TvDetectionService._();
 
-  /// Get the singleton instance, initializing if needed
-  static Future<TvDetectionService> getInstance() async {
+  /// Get the singleton instance, initializing if needed.
+  /// Pass [forceTv] to combine a user override with the system-feature check.
+  static Future<TvDetectionService> getInstance({bool forceTv = false}) async {
     if (_instance == null) {
       _instance = TvDetectionService._();
-      await _instance!._detect();
+      await _instance!._detect(forceTv);
     }
     return _instance!;
   }
 
-  Future<void> _detect() async {
+  Future<void> _detect(bool forceTv) async {
     if (_initialized) return;
 
     if (Platform.isAndroid) {
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
       // Check for android.software.leanback feature (standard Android TV detection)
-      _isTV = androidInfo.systemFeatures.contains('android.software.leanback');
+      _detected = androidInfo.systemFeatures.contains('android.software.leanback');
     }
+    _forceTv = forceTv;
+    _isTV = _detected || _forceTv;
     _initialized = true;
   }
 
   bool get isTV => _isTV;
 
+  /// Update the user force-TV override and recompute the effective flag.
+  void setForceTv(bool value) {
+    _forceTv = value;
+    _isTV = _detected || _forceTv;
+  }
+
   /// Synchronous access after initialization (returns false if not initialized)
   static bool isTVSync() => _instance?._isTV ?? false;
+
+  /// Convenience setter that forwards to the singleton if available.
+  static void setForceTVSync(bool value) => _instance?.setForceTv(value);
 }
 
 /// Utility class for platform detection

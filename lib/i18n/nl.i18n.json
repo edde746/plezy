@@ -225,6 +225,8 @@
     "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
     "confirmExitOnBack": "Bevestigen voor afsluiten",
     "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten",
+    "forceTvMode": "TV-modus forceren",
+    "forceTvModeDescription": "Gebruik de TV-indeling ongeacht automatische detectie. Handig op Android TV-apparaten die de leanback-functie niet melden. Start de app opnieuw bij wijziging.",
     "autoHidePerformanceOverlay": "Prestatie-overlay automatisch verbergen",
     "autoHidePerformanceOverlayDescription": "Laat de prestatie-overlay meevervagen met de afspeelknoppen",
     "showNavBarLabels": "Navigatiebalk labels tonen",

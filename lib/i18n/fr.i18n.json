@@ -225,6 +225,8 @@
     "requireProfileSelectionOnOpenDescription": "Afficher la sélection de profil à chaque ouverture de l'application",
     "confirmExitOnBack": "Confirmer avant de quitter",
     "confirmExitOnBackDescription": "Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter",
+    "forceTvMode": "Forcer le mode TV",
+    "forceTvModeDescription": "Utiliser la mise en page TV quelle que soit la détection automatique. Utile sur les appareils Android TV qui ne signalent pas la fonctionnalité leanback. Redémarre l'application lors du changement.",
     "autoHidePerformanceOverlay": "Masquer auto. superposition performances",
     "autoHidePerformanceOverlayDescription": "Faire apparaître/disparaître la superposition avec les contrôles de lecture",
     "showNavBarLabels": "Afficher les libellés de la barre de navigation",

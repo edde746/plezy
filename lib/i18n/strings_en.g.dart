@@ -784,6 +784,12 @@ class TranslationsSettingsEn {
 	/// en: 'Show a confirmation dialog when pressing back to exit the app'
 	String get confirmExitOnBackDescription => 'Show a confirmation dialog when pressing back to exit the app';
 
+	/// en: 'Force TV mode'
+	String get forceTvMode => 'Force TV mode';
+
+	/// en: 'Use the TV layout regardless of auto-detection. Useful on Android TV devices that don't report the leanback feature. Restarts the app on change.'
+	String get forceTvModeDescription => 'Use the TV layout regardless of auto-detection. Useful on Android TV devices that don\'t report the leanback feature. Restarts the app on change.';
+
 	/// en: 'Auto-Hide Performance Overlay'
 	String get autoHidePerformanceOverlay => 'Auto-Hide Performance Overlay';
 
@@ -3379,6 +3385,8 @@ extension on Translations {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.confirmExitOnBack' => 'Confirm before exiting',
 			'settings.confirmExitOnBackDescription' => 'Show a confirmation dialog when pressing back to exit the app',
+			'settings.forceTvMode' => 'Force TV mode',
+			'settings.forceTvModeDescription' => 'Use the TV layout regardless of auto-detection. Useful on Android TV devices that don\'t report the leanback feature. Restarts the app on change.',
 			'settings.autoHidePerformanceOverlay' => 'Auto-Hide Performance Overlay',
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade the performance overlay with the playback controls',
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
@@ -3672,10 +3680,10 @@ extension on Translations {
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Grouping',
-			'libraries.groupings.all' => 'All',
-			'libraries.groupings.movies' => 'Movies',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => 'All',
+			'libraries.groupings.movies' => 'Movies',
 			'libraries.groupings.shows' => 'TV Shows',
 			'libraries.groupings.seasons' => 'Seasons',
 			'libraries.groupings.episodes' => 'Episodes',

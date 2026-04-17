@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +28,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   bool _isLoading = true;
   bool _requireProfileSelectionOnOpen = false;
   bool _confirmExitOnBack = true;
+  bool _forceTvMode = false;
 
   @override
   void initState() {
@@ -39,6 +42,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     setState(() {
       _requireProfileSelectionOnOpen = _settingsService.getRequireProfileSelectionOnOpen();
       _confirmExitOnBack = _settingsService.getConfirmExitOnBack();
+      _forceTvMode = _settingsService.getForceTvMode();
       _isLoading = false;
     });
   }
@@ -73,6 +77,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
 
             // --- Navigation ---
             SettingsSectionHeader(t.settings.navigation),
+            if (Platform.isAndroid) _buildForceTvMode(),
             if (PlatformDetector.shouldUseSideNavigation(context)) _buildAlwaysKeepSidebarOpen(),
             if (!PlatformDetector.shouldUseSideNavigation(context)) _buildShowNavBarLabels(),
             _buildShowUnwatchedCount(),
@@ -364,6 +369,21 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
       onChanged: (value) async {
         setState(() => _confirmExitOnBack = value);
         await _settingsService.setConfirmExitOnBack(value);
+      },
+    );
+  }
+
+  Widget _buildForceTvMode() {
+    return SwitchListTile(
+      secondary: const AppIcon(Symbols.tv_rounded, fill: 1),
+      title: Text(t.settings.forceTvMode),
+      subtitle: Text(t.settings.forceTvModeDescription),
+      value: _forceTvMode,
+      onChanged: (value) async {
+        setState(() => _forceTvMode = value);
+        await _settingsService.setForceTvMode(value);
+        TvDetectionService.setForceTVSync(value);
+        if (mounted) _restartApp();
       },
     );
   }

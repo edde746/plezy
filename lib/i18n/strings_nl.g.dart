@@ -344,6 +344,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
 	@override String get confirmExitOnBack => 'Bevestigen voor afsluiten';
 	@override String get confirmExitOnBackDescription => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten';
+	@override String get forceTvMode => 'TV-modus forceren';
+	@override String get forceTvModeDescription => 'Gebruik de TV-indeling ongeacht automatische detectie. Handig op Android TV-apparaten die de leanback-functie niet melden. Start de app opnieuw bij wijziging.';
 	@override String get autoHidePerformanceOverlay => 'Prestatie-overlay automatisch verbergen';
 	@override String get autoHidePerformanceOverlayDescription => 'Laat de prestatie-overlay meevervagen met de afspeelknoppen';
 	@override String get showNavBarLabels => 'Navigatiebalk labels tonen';
@@ -1598,6 +1600,8 @@ extension on TranslationsNl {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
 			'settings.confirmExitOnBack' => 'Bevestigen voor afsluiten',
 			'settings.confirmExitOnBackDescription' => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten',
+			'settings.forceTvMode' => 'TV-modus forceren',
+			'settings.forceTvModeDescription' => 'Gebruik de TV-indeling ongeacht automatische detectie. Handig op Android TV-apparaten die de leanback-functie niet melden. Start de app opnieuw bij wijziging.',
 			'settings.autoHidePerformanceOverlay' => 'Prestatie-overlay automatisch verbergen',
 			'settings.autoHidePerformanceOverlayDescription' => 'Laat de prestatie-overlay meevervagen met de afspeelknoppen',
 			'settings.showNavBarLabels' => 'Navigatiebalk labels tonen',
@@ -1893,10 +1897,10 @@ extension on TranslationsNl {
 			'libraries.tabs.collections' => 'Collecties',
 			'libraries.tabs.playlists' => 'Afspeellijsten',
 			'libraries.groupings.title' => 'Groepering',
-			'libraries.groupings.all' => 'Alles',
-			'libraries.groupings.movies' => 'Films',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => 'Alles',
+			'libraries.groupings.movies' => 'Films',
 			'libraries.groupings.shows' => 'Series',
 			'libraries.groupings.seasons' => 'Seizoenen',
 			'libraries.groupings.episodes' => 'Afleveringen',

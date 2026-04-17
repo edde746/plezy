@@ -136,7 +136,7 @@ Future<void> _bootstrapApp() async {
 
   // Initialize TV detection and PiP service for Android
   if (Platform.isAndroid) {
-    futures.add(TvDetectionService.getInstance());
+    futures.add(TvDetectionService.getInstance(forceTv: settings.getForceTvMode()));
     // Initialize PiP service to listen for PiP state changes
     PipService();
   }

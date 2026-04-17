@@ -344,6 +344,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Vis profilvalg hver gang appen åbnes';
 	@override String get confirmExitOnBack => 'Bekræft før lukning';
 	@override String get confirmExitOnBackDescription => 'Vis bekræftelsesdialog ved tryk på tilbage for at lukke appen';
+	@override String get forceTvMode => 'Gennemtving TV-tilstand';
+	@override String get forceTvModeDescription => 'Brug TV-layoutet uanset automatisk registrering. Nyttigt på Android TV-enheder, der ikke rapporterer leanback-funktionen. Genstarter appen ved ændring.';
 	@override String get autoHidePerformanceOverlay => 'Skjul ydelses-overlay automatisk';
 	@override String get autoHidePerformanceOverlayDescription => 'Fade ydelses-overlayet med afspilningskontrollerne';
 	@override String get showNavBarLabels => 'Vis navigationsbarlabels';
@@ -1598,6 +1600,8 @@ extension on TranslationsDa {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Vis profilvalg hver gang appen åbnes',
 			'settings.confirmExitOnBack' => 'Bekræft før lukning',
 			'settings.confirmExitOnBackDescription' => 'Vis bekræftelsesdialog ved tryk på tilbage for at lukke appen',
+			'settings.forceTvMode' => 'Gennemtving TV-tilstand',
+			'settings.forceTvModeDescription' => 'Brug TV-layoutet uanset automatisk registrering. Nyttigt på Android TV-enheder, der ikke rapporterer leanback-funktionen. Genstarter appen ved ændring.',
 			'settings.autoHidePerformanceOverlay' => 'Skjul ydelses-overlay automatisk',
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade ydelses-overlayet med afspilningskontrollerne',
 			'settings.showNavBarLabels' => 'Vis navigationsbarlabels',
@@ -1893,10 +1897,10 @@ extension on TranslationsDa {
 			'libraries.tabs.collections' => 'Samlinger',
 			'libraries.tabs.playlists' => 'Playlister',
 			'libraries.groupings.title' => 'Gruppering',
-			'libraries.groupings.all' => 'Alle',
-			'libraries.groupings.movies' => 'Film',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => 'Alle',
+			'libraries.groupings.movies' => 'Film',
 			'libraries.groupings.shows' => 'TV-serier',
 			'libraries.groupings.seasons' => 'Sæsoner',
 			'libraries.groupings.episodes' => 'Episoder',

@@ -225,6 +225,8 @@
     "requireProfileSelectionOnOpenDescription": "Mostra la selezione del profilo ogni volta che l'app viene aperta",
     "confirmExitOnBack": "Conferma prima di uscire",
     "confirmExitOnBackDescription": "Mostra una finestra di conferma quando si preme indietro per uscire dall'app",
+    "forceTvMode": "Forza modalità TV",
+    "forceTvModeDescription": "Usa il layout TV indipendentemente dal rilevamento automatico. Utile sui dispositivi Android TV che non segnalano la funzionalità leanback. Riavvia l'app al cambiamento.",
     "autoHidePerformanceOverlay": "Nascondi automaticamente overlay prestazioni",
     "autoHidePerformanceOverlayDescription": "Dissolvi l'overlay prestazioni con i controlli di riproduzione",
     "showNavBarLabels": "Mostra etichette barra di navigazione",

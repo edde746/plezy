@@ -344,6 +344,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get confirmExitOnBack => '종료 전 확인';
 	@override String get confirmExitOnBackDescription => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다';
+	@override String get forceTvMode => 'TV 모드 강제 사용';
+	@override String get forceTvModeDescription => '자동 감지와 관계없이 TV 레이아웃을 사용합니다. leanback 기능을 보고하지 않는 Android TV 기기에 유용합니다. 변경 시 앱이 다시 시작됩니다.';
 	@override String get autoHidePerformanceOverlay => '성능 오버레이 자동 숨기기';
 	@override String get autoHidePerformanceOverlayDescription => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리';
 	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
@@ -1598,6 +1600,8 @@ extension on TranslationsKo {
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.confirmExitOnBack' => '종료 전 확인',
 			'settings.confirmExitOnBackDescription' => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다',
+			'settings.forceTvMode' => 'TV 모드 강제 사용',
+			'settings.forceTvModeDescription' => '자동 감지와 관계없이 TV 레이아웃을 사용합니다. leanback 기능을 보고하지 않는 Android TV 기기에 유용합니다. 변경 시 앱이 다시 시작됩니다.',
 			'settings.autoHidePerformanceOverlay' => '성능 오버레이 자동 숨기기',
 			'settings.autoHidePerformanceOverlayDescription' => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리',
 			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
@@ -1893,10 +1897,10 @@ extension on TranslationsKo {
 			'libraries.tabs.collections' => '컬렉션',
 			'libraries.tabs.playlists' => '재생 목록',
 			'libraries.groupings.title' => '그룹',
-			'libraries.groupings.all' => '전체',
-			'libraries.groupings.movies' => '영화',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => '전체',
+			'libraries.groupings.movies' => '영화',
 			'libraries.groupings.shows' => 'TV 프로그램',
 			'libraries.groupings.seasons' => '시즌',
 			'libraries.groupings.episodes' => '화',

@@ -344,6 +344,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Pokaż wybór profilu za każdym razem, gdy aplikacja jest otwierana';
 	@override String get confirmExitOnBack => 'Potwierdź przed wyjściem';
 	@override String get confirmExitOnBackDescription => 'Pokaż dialog potwierdzenia przy naciśnięciu wstecz, aby wyjść z aplikacji';
+	@override String get forceTvMode => 'Wymuś tryb TV';
+	@override String get forceTvModeDescription => 'Użyj układu TV niezależnie od automatycznego wykrywania. Przydatne na urządzeniach Android TV, które nie zgłaszają funkcji leanback. Po zmianie aplikacja zostanie zrestartowana.';
 	@override String get autoHidePerformanceOverlay => 'Automatycznie ukrywaj nakładkę wydajności';
 	@override String get autoHidePerformanceOverlayDescription => 'Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania';
 	@override String get showNavBarLabels => 'Pokaż etykiety paska nawigacji';
@@ -1598,6 +1600,8 @@ extension on TranslationsPl {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Pokaż wybór profilu za każdym razem, gdy aplikacja jest otwierana',
 			'settings.confirmExitOnBack' => 'Potwierdź przed wyjściem',
 			'settings.confirmExitOnBackDescription' => 'Pokaż dialog potwierdzenia przy naciśnięciu wstecz, aby wyjść z aplikacji',
+			'settings.forceTvMode' => 'Wymuś tryb TV',
+			'settings.forceTvModeDescription' => 'Użyj układu TV niezależnie od automatycznego wykrywania. Przydatne na urządzeniach Android TV, które nie zgłaszają funkcji leanback. Po zmianie aplikacja zostanie zrestartowana.',
 			'settings.autoHidePerformanceOverlay' => 'Automatycznie ukrywaj nakładkę wydajności',
 			'settings.autoHidePerformanceOverlayDescription' => 'Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania',
 			'settings.showNavBarLabels' => 'Pokaż etykiety paska nawigacji',
@@ -1893,10 +1897,10 @@ extension on TranslationsPl {
 			'libraries.tabs.collections' => 'Kolekcje',
 			'libraries.tabs.playlists' => 'Playlisty',
 			'libraries.groupings.title' => 'Grupowanie',
-			'libraries.groupings.all' => 'Wszystkie',
-			'libraries.groupings.movies' => 'Filmy',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => 'Wszystkie',
+			'libraries.groupings.movies' => 'Filmy',
 			'libraries.groupings.shows' => 'Seriale TV',
 			'libraries.groupings.seasons' => 'Sezony',
 			'libraries.groupings.episodes' => 'Odcinki',

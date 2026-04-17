@@ -344,6 +344,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Показывать выбор профиля при каждом открытии приложения';
 	@override String get confirmExitOnBack => 'Подтверждать выход';
 	@override String get confirmExitOnBackDescription => 'Показывать диалог подтверждения при нажатии «назад» для выхода из приложения';
+	@override String get forceTvMode => 'Принудительный режим ТВ';
+	@override String get forceTvModeDescription => 'Использовать макет ТВ независимо от автоматического определения. Полезно на устройствах Android TV, которые не сообщают о функции leanback. Приложение перезапустится при изменении.';
 	@override String get autoHidePerformanceOverlay => 'Автоскрытие оверлея производительности';
 	@override String get autoHidePerformanceOverlayDescription => 'Скрывать оверлей производительности вместе с элементами управления воспроизведением';
 	@override String get showNavBarLabels => 'Показывать подписи панели навигации';
@@ -1598,6 +1600,8 @@ extension on TranslationsRu {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Показывать выбор профиля при каждом открытии приложения',
 			'settings.confirmExitOnBack' => 'Подтверждать выход',
 			'settings.confirmExitOnBackDescription' => 'Показывать диалог подтверждения при нажатии «назад» для выхода из приложения',
+			'settings.forceTvMode' => 'Принудительный режим ТВ',
+			'settings.forceTvModeDescription' => 'Использовать макет ТВ независимо от автоматического определения. Полезно на устройствах Android TV, которые не сообщают о функции leanback. Приложение перезапустится при изменении.',
 			'settings.autoHidePerformanceOverlay' => 'Автоскрытие оверлея производительности',
 			'settings.autoHidePerformanceOverlayDescription' => 'Скрывать оверлей производительности вместе с элементами управления воспроизведением',
 			'settings.showNavBarLabels' => 'Показывать подписи панели навигации',
@@ -1893,10 +1897,10 @@ extension on TranslationsRu {
 			'libraries.tabs.collections' => 'Коллекции',
 			'libraries.tabs.playlists' => 'Плейлисты',
 			'libraries.groupings.title' => 'Группировка',
-			'libraries.groupings.all' => 'Все',
-			'libraries.groupings.movies' => 'Фильмы',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => 'Все',
+			'libraries.groupings.movies' => 'Фильмы',
 			'libraries.groupings.shows' => 'Сериалы',
 			'libraries.groupings.seasons' => 'Сезоны',
 			'libraries.groupings.episodes' => 'Эпизоды',

@@ -344,6 +344,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Afficher la sélection de profil à chaque ouverture de l\'application';
 	@override String get confirmExitOnBack => 'Confirmer avant de quitter';
 	@override String get confirmExitOnBackDescription => 'Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter';
+	@override String get forceTvMode => 'Forcer le mode TV';
+	@override String get forceTvModeDescription => 'Utiliser la mise en page TV quelle que soit la détection automatique. Utile sur les appareils Android TV qui ne signalent pas la fonctionnalité leanback. Redémarre l\'application lors du changement.';
 	@override String get autoHidePerformanceOverlay => 'Masquer auto. superposition performances';
 	@override String get autoHidePerformanceOverlayDescription => 'Faire apparaître/disparaître la superposition avec les contrôles de lecture';
 	@override String get showNavBarLabels => 'Afficher les libellés de la barre de navigation';
@@ -1598,6 +1600,8 @@ extension on TranslationsFr {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Afficher la sélection de profil à chaque ouverture de l\'application',
 			'settings.confirmExitOnBack' => 'Confirmer avant de quitter',
 			'settings.confirmExitOnBackDescription' => 'Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter',
+			'settings.forceTvMode' => 'Forcer le mode TV',
+			'settings.forceTvModeDescription' => 'Utiliser la mise en page TV quelle que soit la détection automatique. Utile sur les appareils Android TV qui ne signalent pas la fonctionnalité leanback. Redémarre l\'application lors du changement.',
 			'settings.autoHidePerformanceOverlay' => 'Masquer auto. superposition performances',
 			'settings.autoHidePerformanceOverlayDescription' => 'Faire apparaître/disparaître la superposition avec les contrôles de lecture',
 			'settings.showNavBarLabels' => 'Afficher les libellés de la barre de navigation',
@@ -1893,10 +1897,10 @@ extension on TranslationsFr {
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Regroupement',
-			'libraries.groupings.all' => 'Tous',
-			'libraries.groupings.movies' => 'Films',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => 'Tous',
+			'libraries.groupings.movies' => 'Films',
 			'libraries.groupings.shows' => 'Show TV',
 			'libraries.groupings.seasons' => 'Saisons',
 			'libraries.groupings.episodes' => 'Épisodes',

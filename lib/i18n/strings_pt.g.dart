@@ -344,6 +344,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostrar seleção de perfil toda vez que o app for aberto';
 	@override String get confirmExitOnBack => 'Confirmar antes de sair';
 	@override String get confirmExitOnBackDescription => 'Mostrar diálogo de confirmação ao pressionar voltar para sair do app';
+	@override String get forceTvMode => 'Forçar modo TV';
+	@override String get forceTvModeDescription => 'Usar o layout de TV independentemente da detecção automática. Útil em dispositivos Android TV que não reportam o recurso leanback. Reinicia o app ao alterar.';
 	@override String get autoHidePerformanceOverlay => 'Ocultar overlay de desempenho automaticamente';
 	@override String get autoHidePerformanceOverlayDescription => 'Desvanecer o overlay de desempenho com os controles de reprodução';
 	@override String get showNavBarLabels => 'Mostrar Rótulos da Barra de Navegação';
@@ -1598,6 +1600,8 @@ extension on TranslationsPt {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostrar seleção de perfil toda vez que o app for aberto',
 			'settings.confirmExitOnBack' => 'Confirmar antes de sair',
 			'settings.confirmExitOnBackDescription' => 'Mostrar diálogo de confirmação ao pressionar voltar para sair do app',
+			'settings.forceTvMode' => 'Forçar modo TV',
+			'settings.forceTvModeDescription' => 'Usar o layout de TV independentemente da detecção automática. Útil em dispositivos Android TV que não reportam o recurso leanback. Reinicia o app ao alterar.',
 			'settings.autoHidePerformanceOverlay' => 'Ocultar overlay de desempenho automaticamente',
 			'settings.autoHidePerformanceOverlayDescription' => 'Desvanecer o overlay de desempenho com os controles de reprodução',
 			'settings.showNavBarLabels' => 'Mostrar Rótulos da Barra de Navegação',
@@ -1893,10 +1897,10 @@ extension on TranslationsPt {
 			'libraries.tabs.collections' => 'Coleções',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Agrupamento',
-			'libraries.groupings.all' => 'Todos',
-			'libraries.groupings.movies' => 'Filmes',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => 'Todos',
+			'libraries.groupings.movies' => 'Filmes',
 			'libraries.groupings.shows' => 'Séries de TV',
 			'libraries.groupings.seasons' => 'Temporadas',
 			'libraries.groupings.episodes' => 'Episódios',

@@ -344,6 +344,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get requireProfileSelectionOnOpenDescription => 'アプリを開くたびにプロフィール選択を表示';
 	@override String get confirmExitOnBack => '終了前に確認';
 	@override String get confirmExitOnBackDescription => '戻るボタンでアプリを終了する際に確認ダイアログを表示';
+	@override String get forceTvMode => 'TVモードを強制';
+	@override String get forceTvModeDescription => '自動検出に関係なくTVレイアウトを使用します。leanback機能を報告しないAndroid TVデバイスで便利です。変更するとアプリが再起動されます。';
 	@override String get autoHidePerformanceOverlay => 'パフォーマンスオーバーレイを自動非表示';
 	@override String get autoHidePerformanceOverlayDescription => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする';
 	@override String get showNavBarLabels => 'ナビゲーションバーラベルを表示';
@@ -1598,6 +1600,8 @@ extension on TranslationsJa {
 			'settings.requireProfileSelectionOnOpenDescription' => 'アプリを開くたびにプロフィール選択を表示',
 			'settings.confirmExitOnBack' => '終了前に確認',
 			'settings.confirmExitOnBackDescription' => '戻るボタンでアプリを終了する際に確認ダイアログを表示',
+			'settings.forceTvMode' => 'TVモードを強制',
+			'settings.forceTvModeDescription' => '自動検出に関係なくTVレイアウトを使用します。leanback機能を報告しないAndroid TVデバイスで便利です。変更するとアプリが再起動されます。',
 			'settings.autoHidePerformanceOverlay' => 'パフォーマンスオーバーレイを自動非表示',
 			'settings.autoHidePerformanceOverlayDescription' => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする',
 			'settings.showNavBarLabels' => 'ナビゲーションバーラベルを表示',
@@ -1893,10 +1897,10 @@ extension on TranslationsJa {
 			'libraries.tabs.collections' => 'コレクション',
 			'libraries.tabs.playlists' => 'プレイリスト',
 			'libraries.groupings.title' => 'グループ',
-			'libraries.groupings.all' => 'すべて',
-			'libraries.groupings.movies' => '映画',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.all' => 'すべて',
+			'libraries.groupings.movies' => '映画',
 			'libraries.groupings.shows' => 'テレビ番組',
 			'libraries.groupings.seasons' => 'シーズン',
 			'libraries.groupings.episodes' => 'エピソード',
