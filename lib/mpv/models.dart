@@ -5,6 +5,24 @@ class BufferRange {
   const BufferRange({required this.start, required this.end});
 }
 
+/// A playback error emitted by the player.
+///
+/// [cause] is an optional machine-readable tag (e.g. `server-http-500`) set by
+/// the native layer when it can classify the failure, letting the UI branch
+/// without parsing [message].
+class PlayerError {
+  /// Cause tag for a server-side HTTP 500 — shared-user bandwidth or
+  /// transcoding limit rejection set by the server owner.
+  static const String serverHttp500 = 'server-http-500';
+
+  final String message;
+  final String? cause;
+  const PlayerError(this.message, {this.cause});
+
+  @override
+  String toString() => message;
+}
+
 /// Log level for player messages.
 enum PlayerLogLevel {
   /// No logging.

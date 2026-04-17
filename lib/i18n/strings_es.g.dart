@@ -596,6 +596,8 @@ class _TranslationsMessagesEs implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Error al crear la cola de reproducción - no hay elementos';
 	@override String failedPlayback({required Object action, required Object error}) => 'Error al ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Cambiando a reproductor compatible...';
+	@override String get serverLimitTitle => 'Error de reproducción';
+	@override String get serverLimitBody => 'El servidor devolvió un error (HTTP 500). Normalmente esto significa que el propietario del servidor ha establecido un límite de ancho de banda o transcodificación que está rechazando tu sesión. No hay nada que puedas hacer desde el cliente — el propietario del servidor debe ajustar su configuración.';
 	@override String get logsUploaded => 'Registros subidos';
 	@override String get logsUploadFailed => 'Error al subir registros';
 	@override String get logId => 'ID de registro';
@@ -1789,6 +1791,8 @@ extension on TranslationsEs {
 			'messages.failedToCreatePlayQueueNoItems' => 'Error al crear la cola de reproducción - no hay elementos',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Error al ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Cambiando a reproductor compatible...',
+			'messages.serverLimitTitle' => 'Error de reproducción',
+			'messages.serverLimitBody' => 'El servidor devolvió un error (HTTP 500). Normalmente esto significa que el propietario del servidor ha establecido un límite de ancho de banda o transcodificación que está rechazando tu sesión. No hay nada que puedas hacer desde el cliente — el propietario del servidor debe ajustar su configuración.',
 			'messages.logsUploaded' => 'Registros subidos',
 			'messages.logsUploadFailed' => 'Error al subir registros',
 			'messages.logId' => 'ID de registro',
@@ -1889,10 +1893,10 @@ extension on TranslationsEs {
 			'libraries.groupings.movies' => 'Películas',
 			'libraries.groupings.shows' => 'Series',
 			'libraries.groupings.seasons' => 'Temporadas',
-			'libraries.groupings.episodes' => 'Episodios',
-			'libraries.groupings.folders' => 'Carpetas',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Episodios',
+			'libraries.groupings.folders' => 'Carpetas',
 			'about.title' => 'Acerca de',
 			'about.openSourceLicenses' => 'Licencias de Código Abierto',
 			'about.versionLabel' => ({required Object version}) => 'Versión ${version}',

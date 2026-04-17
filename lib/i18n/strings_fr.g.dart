@@ -596,6 +596,8 @@ class _TranslationsMessagesFr implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Échec de la création de la file d\'attente de lecture - aucun élément';
 	@override String failedPlayback({required Object action, required Object error}) => 'Echec de ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Passage au lecteur compatible...';
+	@override String get serverLimitTitle => 'Échec de la lecture';
+	@override String get serverLimitBody => 'Le serveur a renvoyé une erreur (HTTP 500). Cela signifie généralement que le propriétaire du serveur a défini une limite de bande passante ou de transcodage qui rejette ta session. Rien à faire côté client — le propriétaire du serveur doit ajuster ses paramètres.';
 	@override String get logsUploaded => 'Logs envoyés';
 	@override String get logsUploadFailed => 'Échec de l\'envoi des logs';
 	@override String get logId => 'ID du log';
@@ -1789,6 +1791,8 @@ extension on TranslationsFr {
 			'messages.failedToCreatePlayQueueNoItems' => 'Échec de la création de la file d\'attente de lecture - aucun élément',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Echec de ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Passage au lecteur compatible...',
+			'messages.serverLimitTitle' => 'Échec de la lecture',
+			'messages.serverLimitBody' => 'Le serveur a renvoyé une erreur (HTTP 500). Cela signifie généralement que le propriétaire du serveur a défini une limite de bande passante ou de transcodage qui rejette ta session. Rien à faire côté client — le propriétaire du serveur doit ajuster ses paramètres.',
 			'messages.logsUploaded' => 'Logs envoyés',
 			'messages.logsUploadFailed' => 'Échec de l\'envoi des logs',
 			'messages.logId' => 'ID du log',
@@ -1889,10 +1893,10 @@ extension on TranslationsFr {
 			'libraries.groupings.movies' => 'Films',
 			'libraries.groupings.shows' => 'Show TV',
 			'libraries.groupings.seasons' => 'Saisons',
-			'libraries.groupings.episodes' => 'Épisodes',
-			'libraries.groupings.folders' => 'Dossiers',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Épisodes',
+			'libraries.groupings.folders' => 'Dossiers',
 			'about.title' => 'À propos',
 			'about.openSourceLicenses' => 'Licences Open Source',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',

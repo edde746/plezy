@@ -596,6 +596,8 @@ class _TranslationsMessagesRu implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Не удалось создать очередь воспроизведения — нет элементов';
 	@override String failedPlayback({required Object action, required Object error}) => 'Не удалось ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Переключение на совместимый плеер...';
+	@override String get serverLimitTitle => 'Ошибка воспроизведения';
+	@override String get serverLimitBody => 'Сервер вернул ошибку (HTTP 500). Обычно это означает, что владелец сервера установил лимит пропускной способности или транскодирования, из-за которого ваш сеанс отклоняется. Со стороны клиента сделать ничего нельзя — владельцу сервера нужно изменить настройки.';
 	@override String get logsUploaded => 'Логи загружены';
 	@override String get logsUploadFailed => 'Не удалось загрузить логи';
 	@override String get logId => 'ID лога';
@@ -1789,6 +1791,8 @@ extension on TranslationsRu {
 			'messages.failedToCreatePlayQueueNoItems' => 'Не удалось создать очередь воспроизведения — нет элементов',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Не удалось ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Переключение на совместимый плеер...',
+			'messages.serverLimitTitle' => 'Ошибка воспроизведения',
+			'messages.serverLimitBody' => 'Сервер вернул ошибку (HTTP 500). Обычно это означает, что владелец сервера установил лимит пропускной способности или транскодирования, из-за которого ваш сеанс отклоняется. Со стороны клиента сделать ничего нельзя — владельцу сервера нужно изменить настройки.',
 			'messages.logsUploaded' => 'Логи загружены',
 			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
 			'messages.logId' => 'ID лога',
@@ -1889,10 +1893,10 @@ extension on TranslationsRu {
 			'libraries.groupings.movies' => 'Фильмы',
 			'libraries.groupings.shows' => 'Сериалы',
 			'libraries.groupings.seasons' => 'Сезоны',
-			'libraries.groupings.episodes' => 'Эпизоды',
-			'libraries.groupings.folders' => 'Папки',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Эпизоды',
+			'libraries.groupings.folders' => 'Папки',
 			'about.title' => 'О приложении',
 			'about.openSourceLicenses' => 'Лицензии открытого ПО',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',

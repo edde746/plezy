@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Kan afspeelwachtrij niet maken - geen items",
     "failedPlayback": "Afspelen van ${action} mislukt: ${error}",
     "switchingToCompatiblePlayer": "Overschakelen naar compatibele speler...",
+    "serverLimitTitle": "Afspelen mislukt",
+    "serverLimitBody": "De server gaf een fout terug (HTTP 500). Dit betekent meestal dat de servereigenaar een bandbreedte- of transcoderingslimiet heeft ingesteld die jouw sessie weigert. Er valt vanaf de client niets te doen — de servereigenaar moet de instellingen aanpassen.",
     "logsUploaded": "Logs geüpload",
     "logsUploadFailed": "Uploaden van logs mislukt",
     "logId": "Log-ID"

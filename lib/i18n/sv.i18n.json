@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Det gick inte att skapa uppspelningskö – inga objekt",
     "failedPlayback": "Kunde inte ${action}: ${error}",
     "switchingToCompatiblePlayer": "Byter till kompatibel spelare...",
+    "serverLimitTitle": "Uppspelningen misslyckades",
+    "serverLimitBody": "Servern returnerade ett fel (HTTP 500). Det betyder oftast att serverägaren har satt en gräns för bandbredd eller transkodning som avvisar din session. Det finns inget du kan göra från klienten — serverägaren behöver justera sina inställningar.",
     "logsUploaded": "Loggar uppladdade",
     "logsUploadFailed": "Uppladdning av loggar misslyckades",
     "logId": "Logg-ID"

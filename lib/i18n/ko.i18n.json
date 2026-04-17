@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "재생 대기열 생성 실패 - 항목 없음",
     "failedPlayback": "${action}을(를) 수행할 수 없습니다: ${error}",
     "switchingToCompatiblePlayer": "호환되는 플레이어로 전환 중...",
+    "serverLimitTitle": "재생 실패",
+    "serverLimitBody": "서버에서 오류를 반환했습니다 (HTTP 500). 일반적으로 이는 서버 소유자가 대역폭 또는 트랜스코딩 제한을 설정하여 세션을 거부하고 있다는 의미입니다. 클라이언트에서 할 수 있는 일은 없습니다 — 서버 소유자가 설정을 조정해야 합니다.",
     "logsUploaded": "로그 업로드 완료",
     "logsUploadFailed": "로그 업로드 실패",
     "logId": "로그 ID"

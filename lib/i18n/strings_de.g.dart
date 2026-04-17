@@ -596,6 +596,8 @@ class _TranslationsMessagesDe implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente';
 	@override String failedPlayback({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Wechsle zu kompatiblem Player...';
+	@override String get serverLimitTitle => 'Wiedergabe fehlgeschlagen';
+	@override String get serverLimitBody => 'Der Server hat einen Fehler zurückgegeben (HTTP 500). Das bedeutet meist, dass der Serverbesitzer ein Bandbreiten- oder Transcoding-Limit festgelegt hat, das deine Sitzung ablehnt. Vom Client aus lässt sich nichts machen — der Serverbesitzer muss seine Einstellungen anpassen.';
 	@override String get logsUploaded => 'Protokolle hochgeladen';
 	@override String get logsUploadFailed => 'Protokolle konnten nicht hochgeladen werden';
 	@override String get logId => 'Protokoll-ID';
@@ -1789,6 +1791,8 @@ extension on TranslationsDe {
 			'messages.failedToCreatePlayQueueNoItems' => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Wechsle zu kompatiblem Player...',
+			'messages.serverLimitTitle' => 'Wiedergabe fehlgeschlagen',
+			'messages.serverLimitBody' => 'Der Server hat einen Fehler zurückgegeben (HTTP 500). Das bedeutet meist, dass der Serverbesitzer ein Bandbreiten- oder Transcoding-Limit festgelegt hat, das deine Sitzung ablehnt. Vom Client aus lässt sich nichts machen — der Serverbesitzer muss seine Einstellungen anpassen.',
 			'messages.logsUploaded' => 'Protokolle hochgeladen',
 			'messages.logsUploadFailed' => 'Protokolle konnten nicht hochgeladen werden',
 			'messages.logId' => 'Protokoll-ID',
@@ -1889,10 +1893,10 @@ extension on TranslationsDe {
 			'libraries.groupings.movies' => 'Filme',
 			'libraries.groupings.shows' => 'Serien',
 			'libraries.groupings.seasons' => 'Staffeln',
-			'libraries.groupings.episodes' => 'Episoden',
-			'libraries.groupings.folders' => 'Ordner',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Episoden',
+			'libraries.groupings.folders' => 'Ordner',
 			'about.title' => 'Über',
 			'about.openSourceLicenses' => 'Open-Source-Lizenzen',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',

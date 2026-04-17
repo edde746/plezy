@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "再生キューの作成に失敗しました - アイテムがありません",
     "failedPlayback": "${action}に失敗しました: ${error}",
     "switchingToCompatiblePlayer": "互換プレーヤーに切替中...",
+    "serverLimitTitle": "再生に失敗しました",
+    "serverLimitBody": "サーバーからエラーが返されました (HTTP 500)。通常、これはサーバーの所有者が帯域幅またはトランスコードの制限を設定しており、セッションが拒否されていることを意味します。クライアント側でできることはありません — サーバーの所有者が設定を調整する必要があります。",
     "logsUploaded": "ログをアップロードしました",
     "logsUploadFailed": "ログのアップロードに失敗しました",
     "logId": "ログID"

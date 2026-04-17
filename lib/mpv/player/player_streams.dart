@@ -41,8 +41,8 @@ class PlayerStreams {
   /// Stream of log messages from the player.
   final Stream<PlayerLog> log;
 
-  /// Stream of error messages.
-  final Stream<String> error;
+  /// Stream of player errors.
+  final Stream<PlayerError> error;
 
   /// Stream of audio device changes.
   final Stream<AudioDevice> audioDevice;

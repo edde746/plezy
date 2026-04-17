@@ -1370,6 +1370,12 @@ class TranslationsMessagesEn {
 	/// en: 'Switching to compatible player...'
 	String get switchingToCompatiblePlayer => 'Switching to compatible player...';
 
+	/// en: 'Playback failed'
+	String get serverLimitTitle => 'Playback failed';
+
+	/// en: 'The server returned an error (HTTP 500). This usually means the server owner has set a bandwidth or transcoding limit that's rejecting your session. There's nothing to do from the client — the server owner needs to adjust their settings.'
+	String get serverLimitBody => 'The server returned an error (HTTP 500). This usually means the server owner has set a bandwidth or transcoding limit that\'s rejecting your session. There\'s nothing to do from the client — the server owner needs to adjust their settings.';
+
 	/// en: 'Logs uploaded'
 	String get logsUploaded => 'Logs uploaded';
 
@@ -3560,6 +3566,8 @@ extension on Translations {
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
+			'messages.serverLimitTitle' => 'Playback failed',
+			'messages.serverLimitBody' => 'The server returned an error (HTTP 500). This usually means the server owner has set a bandwidth or transcoding limit that\'s rejecting your session. There\'s nothing to do from the client — the server owner needs to adjust their settings.',
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
@@ -3660,10 +3668,10 @@ extension on Translations {
 			'libraries.groupings.movies' => 'Movies',
 			'libraries.groupings.shows' => 'TV Shows',
 			'libraries.groupings.seasons' => 'Seasons',
-			'libraries.groupings.episodes' => 'Episodes',
-			'libraries.groupings.folders' => 'Folders',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Episodes',
+			'libraries.groupings.folders' => 'Folders',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',

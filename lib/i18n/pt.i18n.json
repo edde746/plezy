@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Falha ao criar fila de reprodução - sem itens",
     "failedPlayback": "Falha ao ${action}: ${error}",
     "switchingToCompatiblePlayer": "Alternando para player compatível...",
+    "serverLimitTitle": "Falha na reprodução",
+    "serverLimitBody": "O servidor retornou um erro (HTTP 500). Isso geralmente significa que o proprietário do servidor definiu um limite de largura de banda ou transcodificação que está rejeitando sua sessão. Não há nada a ser feito pelo cliente — o proprietário do servidor precisa ajustar as configurações.",
     "logsUploaded": "Logs enviados",
     "logsUploadFailed": "Falha ao enviar logs",
     "logId": "ID do Log"

@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Échec de la création de la file d'attente de lecture - aucun élément",
     "failedPlayback": "Echec de ${action}: ${error}",
     "switchingToCompatiblePlayer": "Passage au lecteur compatible...",
+    "serverLimitTitle": "Échec de la lecture",
+    "serverLimitBody": "Le serveur a renvoyé une erreur (HTTP 500). Cela signifie généralement que le propriétaire du serveur a défini une limite de bande passante ou de transcodage qui rejette ta session. Rien à faire côté client — le propriétaire du serveur doit ajuster ses paramètres.",
     "logsUploaded": "Logs envoyés",
     "logsUploadFailed": "Échec de l'envoi des logs",
     "logId": "ID du log"

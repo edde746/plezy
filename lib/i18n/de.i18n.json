@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente",
     "failedPlayback": "Wiedergabe für ${action} fehlgeschlagen: ${error}",
     "switchingToCompatiblePlayer": "Wechsle zu kompatiblem Player...",
+    "serverLimitTitle": "Wiedergabe fehlgeschlagen",
+    "serverLimitBody": "Der Server hat einen Fehler zurückgegeben (HTTP 500). Das bedeutet meist, dass der Serverbesitzer ein Bandbreiten- oder Transcoding-Limit festgelegt hat, das deine Sitzung ablehnt. Vom Client aus lässt sich nichts machen — der Serverbesitzer muss seine Einstellungen anpassen.",
     "logsUploaded": "Protokolle hochgeladen",
     "logsUploadFailed": "Protokolle konnten nicht hochgeladen werden",
     "logId": "Protokoll-ID"

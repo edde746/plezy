@@ -596,6 +596,8 @@ class _TranslationsMessagesJa implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => '再生キューの作成に失敗しました - アイテムがありません';
 	@override String failedPlayback({required Object action, required Object error}) => '${action}に失敗しました: ${error}';
 	@override String get switchingToCompatiblePlayer => '互換プレーヤーに切替中...';
+	@override String get serverLimitTitle => '再生に失敗しました';
+	@override String get serverLimitBody => 'サーバーからエラーが返されました (HTTP 500)。通常、これはサーバーの所有者が帯域幅またはトランスコードの制限を設定しており、セッションが拒否されていることを意味します。クライアント側でできることはありません — サーバーの所有者が設定を調整する必要があります。';
 	@override String get logsUploaded => 'ログをアップロードしました';
 	@override String get logsUploadFailed => 'ログのアップロードに失敗しました';
 	@override String get logId => 'ログID';
@@ -1789,6 +1791,8 @@ extension on TranslationsJa {
 			'messages.failedToCreatePlayQueueNoItems' => '再生キューの作成に失敗しました - アイテムがありません',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action}に失敗しました: ${error}',
 			'messages.switchingToCompatiblePlayer' => '互換プレーヤーに切替中...',
+			'messages.serverLimitTitle' => '再生に失敗しました',
+			'messages.serverLimitBody' => 'サーバーからエラーが返されました (HTTP 500)。通常、これはサーバーの所有者が帯域幅またはトランスコードの制限を設定しており、セッションが拒否されていることを意味します。クライアント側でできることはありません — サーバーの所有者が設定を調整する必要があります。',
 			'messages.logsUploaded' => 'ログをアップロードしました',
 			'messages.logsUploadFailed' => 'ログのアップロードに失敗しました',
 			'messages.logId' => 'ログID',
@@ -1889,10 +1893,10 @@ extension on TranslationsJa {
 			'libraries.groupings.movies' => '映画',
 			'libraries.groupings.shows' => 'テレビ番組',
 			'libraries.groupings.seasons' => 'シーズン',
-			'libraries.groupings.episodes' => 'エピソード',
-			'libraries.groupings.folders' => 'フォルダ',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'エピソード',
+			'libraries.groupings.folders' => 'フォルダ',
 			'about.title' => 'アプリについて',
 			'about.openSourceLicenses' => 'オープンソースライセンス',
 			'about.versionLabel' => ({required Object version}) => 'バージョン ${version}',

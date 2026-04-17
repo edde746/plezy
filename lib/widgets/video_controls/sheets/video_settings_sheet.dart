@@ -522,6 +522,19 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               OverlaySheetController.of(context).close();
             },
           ),
+
+        if (kDebugMode)
+          FocusableListTile(
+            leading: AppIcon(Symbols.bug_report_rounded, fill: 1, color: tokens(context).textMuted),
+            title: const Text('Simulate HTTP 500 from server'),
+            onTap: () {
+              final player = widget.player;
+              OverlaySheetController.of(context).close();
+              if (player is PlayerBase) {
+                player.debugSimulateServer500();
+              }
+            },
+          ),
       ],
     );
   }

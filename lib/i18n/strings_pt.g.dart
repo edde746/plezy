@@ -596,6 +596,8 @@ class _TranslationsMessagesPt implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Falha ao criar fila de reprodução - sem itens';
 	@override String failedPlayback({required Object action, required Object error}) => 'Falha ao ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Alternando para player compatível...';
+	@override String get serverLimitTitle => 'Falha na reprodução';
+	@override String get serverLimitBody => 'O servidor retornou um erro (HTTP 500). Isso geralmente significa que o proprietário do servidor definiu um limite de largura de banda ou transcodificação que está rejeitando sua sessão. Não há nada a ser feito pelo cliente — o proprietário do servidor precisa ajustar as configurações.';
 	@override String get logsUploaded => 'Logs enviados';
 	@override String get logsUploadFailed => 'Falha ao enviar logs';
 	@override String get logId => 'ID do Log';
@@ -1789,6 +1791,8 @@ extension on TranslationsPt {
 			'messages.failedToCreatePlayQueueNoItems' => 'Falha ao criar fila de reprodução - sem itens',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Falha ao ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Alternando para player compatível...',
+			'messages.serverLimitTitle' => 'Falha na reprodução',
+			'messages.serverLimitBody' => 'O servidor retornou um erro (HTTP 500). Isso geralmente significa que o proprietário do servidor definiu um limite de largura de banda ou transcodificação que está rejeitando sua sessão. Não há nada a ser feito pelo cliente — o proprietário do servidor precisa ajustar as configurações.',
 			'messages.logsUploaded' => 'Logs enviados',
 			'messages.logsUploadFailed' => 'Falha ao enviar logs',
 			'messages.logId' => 'ID do Log',
@@ -1889,10 +1893,10 @@ extension on TranslationsPt {
 			'libraries.groupings.movies' => 'Filmes',
 			'libraries.groupings.shows' => 'Séries de TV',
 			'libraries.groupings.seasons' => 'Temporadas',
-			'libraries.groupings.episodes' => 'Episódios',
-			'libraries.groupings.folders' => 'Pastas',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Episódios',
+			'libraries.groupings.folders' => 'Pastas',
 			'about.title' => 'Sobre',
 			'about.openSourceLicenses' => 'Licenças Open Source',
 			'about.versionLabel' => ({required Object version}) => 'Versão ${version}',

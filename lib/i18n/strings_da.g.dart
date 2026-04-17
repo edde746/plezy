@@ -596,6 +596,8 @@ class _TranslationsMessagesDa implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Kunne ikke oprette afspilningskø — ingen elementer';
 	@override String failedPlayback({required Object action, required Object error}) => 'Kunne ikke ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Skifter til kompatibel afspiller...';
+	@override String get serverLimitTitle => 'Afspilning mislykkedes';
+	@override String get serverLimitBody => 'Serveren returnerede en fejl (HTTP 500). Det betyder som regel, at serverejeren har sat en båndbredde- eller transkodningsgrænse, der afviser din session. Der er intet at gøre fra klienten — serverejeren skal justere sine indstillinger.';
 	@override String get logsUploaded => 'Logs uploadet';
 	@override String get logsUploadFailed => 'Kunne ikke uploade logs';
 	@override String get logId => 'Log-ID';
@@ -1789,6 +1791,8 @@ extension on TranslationsDa {
 			'messages.failedToCreatePlayQueueNoItems' => 'Kunne ikke oprette afspilningskø — ingen elementer',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Kunne ikke ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Skifter til kompatibel afspiller...',
+			'messages.serverLimitTitle' => 'Afspilning mislykkedes',
+			'messages.serverLimitBody' => 'Serveren returnerede en fejl (HTTP 500). Det betyder som regel, at serverejeren har sat en båndbredde- eller transkodningsgrænse, der afviser din session. Der er intet at gøre fra klienten — serverejeren skal justere sine indstillinger.',
 			'messages.logsUploaded' => 'Logs uploadet',
 			'messages.logsUploadFailed' => 'Kunne ikke uploade logs',
 			'messages.logId' => 'Log-ID',
@@ -1889,10 +1893,10 @@ extension on TranslationsDa {
 			'libraries.groupings.movies' => 'Film',
 			'libraries.groupings.shows' => 'TV-serier',
 			'libraries.groupings.seasons' => 'Sæsoner',
-			'libraries.groupings.episodes' => 'Episoder',
-			'libraries.groupings.folders' => 'Mapper',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Episoder',
+			'libraries.groupings.folders' => 'Mapper',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Open source-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',

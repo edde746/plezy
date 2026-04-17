@@ -82,7 +82,7 @@ class PlayerAndroid extends PlayerBase {
       await observeProperty('sid', 'string');
       await observeProperty('demuxer-cache-time', 'double');
     } catch (e) {
-      errorController.add('Initialization failed: $e');
+      errorController.add(PlayerError('Initialization failed: $e'));
       rethrow;
     }
   }

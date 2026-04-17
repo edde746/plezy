@@ -596,6 +596,8 @@ class _TranslationsMessagesIt implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Impossibile creare la coda di riproduzione - nessun elemento';
 	@override String failedPlayback({required Object action, required Object error}) => 'Impossibile ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Passaggio al lettore compatibile...';
+	@override String get serverLimitTitle => 'Riproduzione non riuscita';
+	@override String get serverLimitBody => 'Il server ha restituito un errore (HTTP 500). Di solito significa che il proprietario del server ha impostato un limite di banda o di transcodifica che sta rifiutando la tua sessione. Non c\'è nulla da fare dal client — il proprietario del server deve modificare le sue impostazioni.';
 	@override String get logsUploaded => 'Log caricati';
 	@override String get logsUploadFailed => 'Caricamento log fallito';
 	@override String get logId => 'ID log';
@@ -1789,6 +1791,8 @@ extension on TranslationsIt {
 			'messages.failedToCreatePlayQueueNoItems' => 'Impossibile creare la coda di riproduzione - nessun elemento',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Impossibile ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Passaggio al lettore compatibile...',
+			'messages.serverLimitTitle' => 'Riproduzione non riuscita',
+			'messages.serverLimitBody' => 'Il server ha restituito un errore (HTTP 500). Di solito significa che il proprietario del server ha impostato un limite di banda o di transcodifica che sta rifiutando la tua sessione. Non c\'è nulla da fare dal client — il proprietario del server deve modificare le sue impostazioni.',
 			'messages.logsUploaded' => 'Log caricati',
 			'messages.logsUploadFailed' => 'Caricamento log fallito',
 			'messages.logId' => 'ID log',
@@ -1889,10 +1893,10 @@ extension on TranslationsIt {
 			'libraries.groupings.movies' => 'Film',
 			'libraries.groupings.shows' => 'Serie TV',
 			'libraries.groupings.seasons' => 'Stagioni',
-			'libraries.groupings.episodes' => 'Episodi',
-			'libraries.groupings.folders' => 'Cartelle',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Episodi',
+			'libraries.groupings.folders' => 'Cartelle',
 			'about.title' => 'Informazioni',
 			'about.openSourceLicenses' => 'Licenze Open Source',
 			'about.versionLabel' => ({required Object version}) => 'Versione ${version}',

@@ -57,6 +57,29 @@ Future<bool> showConfirmDialog(
   return confirmed ?? false;
 }
 
+/// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
+Future<void> showServerLimitDialog(BuildContext context) async {
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: Text(t.messages.serverLimitTitle),
+      content: Text(t.messages.serverLimitBody),
+      actions: [
+        FocusableButton(
+          autofocus: true,
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+            child: Text(t.common.close),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Shows a confirmation dialog with an optional checkbox (e.g. "Don't ask again").
 /// Returns a record with [confirmed] and [checked] booleans.
 Future<({bool confirmed, bool checked})> showConfirmDialogWithCheckbox(

@@ -71,7 +71,7 @@ class PlayerNative extends PlayerBase {
       await observeProperty('audio-device-list', _nodeFormat);
       await observeProperty('audio-device', 'string');
     } catch (e) {
-      errorController.add('Initialization failed: $e');
+      errorController.add(PlayerError('Initialization failed: $e'));
       rethrow;
     }
   }

@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Error al crear la cola de reproducción - no hay elementos",
     "failedPlayback": "Error al ${action}: ${error}",
     "switchingToCompatiblePlayer": "Cambiando a reproductor compatible...",
+    "serverLimitTitle": "Error de reproducción",
+    "serverLimitBody": "El servidor devolvió un error (HTTP 500). Normalmente esto significa que el propietario del servidor ha establecido un límite de ancho de banda o transcodificación que está rechazando tu sesión. No hay nada que puedas hacer desde el cliente — el propietario del servidor debe ajustar su configuración.",
     "logsUploaded": "Registros subidos",
     "logsUploadFailed": "Error al subir registros",
     "logId": "ID de registro"

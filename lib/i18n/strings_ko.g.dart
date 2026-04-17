@@ -596,6 +596,8 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => '재생 대기열 생성 실패 - 항목 없음';
 	@override String failedPlayback({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}';
 	@override String get switchingToCompatiblePlayer => '호환되는 플레이어로 전환 중...';
+	@override String get serverLimitTitle => '재생 실패';
+	@override String get serverLimitBody => '서버에서 오류를 반환했습니다 (HTTP 500). 일반적으로 이는 서버 소유자가 대역폭 또는 트랜스코딩 제한을 설정하여 세션을 거부하고 있다는 의미입니다. 클라이언트에서 할 수 있는 일은 없습니다 — 서버 소유자가 설정을 조정해야 합니다.';
 	@override String get logsUploaded => '로그 업로드 완료';
 	@override String get logsUploadFailed => '로그 업로드 실패';
 	@override String get logId => '로그 ID';
@@ -1789,6 +1791,8 @@ extension on TranslationsKo {
 			'messages.failedToCreatePlayQueueNoItems' => '재생 대기열 생성 실패 - 항목 없음',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}',
 			'messages.switchingToCompatiblePlayer' => '호환되는 플레이어로 전환 중...',
+			'messages.serverLimitTitle' => '재생 실패',
+			'messages.serverLimitBody' => '서버에서 오류를 반환했습니다 (HTTP 500). 일반적으로 이는 서버 소유자가 대역폭 또는 트랜스코딩 제한을 설정하여 세션을 거부하고 있다는 의미입니다. 클라이언트에서 할 수 있는 일은 없습니다 — 서버 소유자가 설정을 조정해야 합니다.',
 			'messages.logsUploaded' => '로그 업로드 완료',
 			'messages.logsUploadFailed' => '로그 업로드 실패',
 			'messages.logId' => '로그 ID',
@@ -1889,10 +1893,10 @@ extension on TranslationsKo {
 			'libraries.groupings.movies' => '영화',
 			'libraries.groupings.shows' => 'TV 프로그램',
 			'libraries.groupings.seasons' => '시즌',
-			'libraries.groupings.episodes' => '화',
-			'libraries.groupings.folders' => '폴더',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => '화',
+			'libraries.groupings.folders' => '폴더',
 			'about.title' => '소개',
 			'about.openSourceLicenses' => '오픈소스 라이선스',
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',

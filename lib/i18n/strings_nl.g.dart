@@ -596,6 +596,8 @@ class _TranslationsMessagesNl implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Kan afspeelwachtrij niet maken - geen items';
 	@override String failedPlayback({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Overschakelen naar compatibele speler...';
+	@override String get serverLimitTitle => 'Afspelen mislukt';
+	@override String get serverLimitBody => 'De server gaf een fout terug (HTTP 500). Dit betekent meestal dat de servereigenaar een bandbreedte- of transcoderingslimiet heeft ingesteld die jouw sessie weigert. Er valt vanaf de client niets te doen — de servereigenaar moet de instellingen aanpassen.';
 	@override String get logsUploaded => 'Logs geüpload';
 	@override String get logsUploadFailed => 'Uploaden van logs mislukt';
 	@override String get logId => 'Log-ID';
@@ -1789,6 +1791,8 @@ extension on TranslationsNl {
 			'messages.failedToCreatePlayQueueNoItems' => 'Kan afspeelwachtrij niet maken - geen items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Overschakelen naar compatibele speler...',
+			'messages.serverLimitTitle' => 'Afspelen mislukt',
+			'messages.serverLimitBody' => 'De server gaf een fout terug (HTTP 500). Dit betekent meestal dat de servereigenaar een bandbreedte- of transcoderingslimiet heeft ingesteld die jouw sessie weigert. Er valt vanaf de client niets te doen — de servereigenaar moet de instellingen aanpassen.',
 			'messages.logsUploaded' => 'Logs geüpload',
 			'messages.logsUploadFailed' => 'Uploaden van logs mislukt',
 			'messages.logId' => 'Log-ID',
@@ -1889,10 +1893,10 @@ extension on TranslationsNl {
 			'libraries.groupings.movies' => 'Films',
 			'libraries.groupings.shows' => 'Series',
 			'libraries.groupings.seasons' => 'Seizoenen',
-			'libraries.groupings.episodes' => 'Afleveringen',
-			'libraries.groupings.folders' => 'Mappen',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Afleveringen',
+			'libraries.groupings.folders' => 'Mappen',
 			'about.title' => 'Over',
 			'about.openSourceLicenses' => 'Open Source licenties',
 			'about.versionLabel' => ({required Object version}) => 'Versie ${version}',

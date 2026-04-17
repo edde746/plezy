@@ -722,6 +722,22 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         // If native DV7 failed, retry with conversion before falling to MPV
         if (error.errorCode in 4001..4005 && retryWithDvConversion("decoder error ${error.errorCode}")) return
 
+        // Server returned HTTP 500 — typically a shared-user bandwidth/transcoding limit
+        // set by the server owner. MPV will hit the same rejection, so skip the fallback.
+        // Keep the "server-http-500" tag in sync with PlayerError.serverHttp500 in Dart.
+        val isHttp500 =
+            causeChain.contains("Response code: 500") ||
+            (error.message?.contains("Response code: 500") == true)
+        if (isHttp500) {
+            Log.w(TAG, "Server returned HTTP 500 - skipping MPV fallback (unrecoverable until server-side change)")
+            delegate?.onEvent("end-file", mapOf(
+                "reason" to "error",
+                "message" to (error.message ?: "HTTP 500"),
+                "cause" to "server-http-500"
+            ))
+            return
+        }
+
         if (currentMediaUri != null) {
             Log.w(TAG, "ExoPlayer error (code ${error.errorCode}) - attempting fallback to MPV")
             val handled = delegate?.onFormatUnsupported(

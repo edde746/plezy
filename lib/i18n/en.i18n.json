@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Failed to create play queue - no items",
     "failedPlayback": "Failed to ${action}: ${error}",
     "switchingToCompatiblePlayer": "Switching to compatible player...",
+    "serverLimitTitle": "Playback failed",
+    "serverLimitBody": "The server returned an error (HTTP 500). This usually means the server owner has set a bandwidth or transcoding limit that's rejecting your session. There's nothing to do from the client — the server owner needs to adjust their settings.",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
     "logId": "Log ID"

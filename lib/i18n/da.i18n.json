@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Kunne ikke oprette afspilningskø — ingen elementer",
     "failedPlayback": "Kunne ikke ${action}: ${error}",
     "switchingToCompatiblePlayer": "Skifter til kompatibel afspiller...",
+    "serverLimitTitle": "Afspilning mislykkedes",
+    "serverLimitBody": "Serveren returnerede en fejl (HTTP 500). Det betyder som regel, at serverejeren har sat en båndbredde- eller transkodningsgrænse, der afviser din session. Der er intet at gøre fra klienten — serverejeren skal justere sine indstillinger.",
     "logsUploaded": "Logs uploadet",
     "logsUploadFailed": "Kunne ikke uploade logs",
     "logId": "Log-ID"

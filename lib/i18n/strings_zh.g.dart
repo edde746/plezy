@@ -596,6 +596,8 @@ class _TranslationsMessagesZh implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => '创建播放队列失败 - 没有项目';
 	@override String failedPlayback({required Object action, required Object error}) => '无法${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => '正在切换到兼容的播放器...';
+	@override String get serverLimitTitle => '播放失败';
+	@override String get serverLimitBody => '服务器返回了错误 (HTTP 500)。这通常意味着服务器所有者设置了带宽或转码限制，正在拒绝你的会话。客户端无法解决此问题 — 需要服务器所有者调整其设置。';
 	@override String get logsUploaded => '日志已上传';
 	@override String get logsUploadFailed => '上传日志失败';
 	@override String get logId => '日志 ID';
@@ -1789,6 +1791,8 @@ extension on TranslationsZh {
 			'messages.failedToCreatePlayQueueNoItems' => '创建播放队列失败 - 没有项目',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '无法${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => '正在切换到兼容的播放器...',
+			'messages.serverLimitTitle' => '播放失败',
+			'messages.serverLimitBody' => '服务器返回了错误 (HTTP 500)。这通常意味着服务器所有者设置了带宽或转码限制，正在拒绝你的会话。客户端无法解决此问题 — 需要服务器所有者调整其设置。',
 			'messages.logsUploaded' => '日志已上传',
 			'messages.logsUploadFailed' => '上传日志失败',
 			'messages.logId' => '日志 ID',
@@ -1889,10 +1893,10 @@ extension on TranslationsZh {
 			'libraries.groupings.movies' => '电影',
 			'libraries.groupings.shows' => '剧集',
 			'libraries.groupings.seasons' => '季',
-			'libraries.groupings.episodes' => '集',
-			'libraries.groupings.folders' => '文件夹',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => '集',
+			'libraries.groupings.folders' => '文件夹',
 			'about.title' => '关于',
 			'about.openSourceLicenses' => '开源许可证',
 			'about.versionLabel' => ({required Object version}) => '版本 ${version}',

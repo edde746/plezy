@@ -94,7 +94,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       _handleEvent,
       onError: (error) {
         if (_disposed) return;
-        errorController.add(error.toString());
+        errorController.add(PlayerError(error.toString()));
       },
     );
   }
@@ -356,7 +356,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           _state = _state.copyWith(completed: true);
           completedController.add(true);
         } else if (reason == 'error') {
-          errorController.add(data?['message'] as String? ?? 'Playback error');
+          errorController.add(PlayerError(
+            data?['message'] as String? ?? 'Playback error',
+            cause: data?['cause'] as String?,
+          ));
         }
         break;
 
@@ -528,7 +531,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       await invoke('setVisible', {'visible': visible});
       return true;
     } catch (e) {
-      errorController.add('Failed to set visibility: $e');
+      errorController.add(PlayerError('Failed to set visibility: $e'));
       return false;
     }
   }
@@ -594,6 +597,27 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         text: 'Failed to configure subtitle fonts: $e',
       ));
     }
+  }
+
+  // ============================================
+  // Debug helpers
+  // ============================================
+
+  /// Injects the log + error events that would fire when the server rejects the
+  /// stream with HTTP 500 (shared-user bandwidth / transcoding limit). Used by
+  /// the in-player debug button to preview the end-to-end detection path
+  /// without needing a real misbehaving server.
+  void debugSimulateServer500() {
+    if (_disposed) return;
+    logController.add(const PlayerLog(
+      level: PlayerLogLevel.warn,
+      prefix: 'ffmpeg',
+      text: 'https: HTTP error 500 Internal Server Error',
+    ));
+    errorController.add(const PlayerError(
+      'HTTP 500',
+      cause: PlayerError.serverHttp500,
+    ));
   }
 
   // ============================================

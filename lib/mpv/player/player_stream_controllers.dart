@@ -21,7 +21,7 @@ mixin PlayerStreamControllersMixin {
   final tracksController = StreamController<Tracks>.broadcast();
   final trackController = StreamController<TrackSelection>.broadcast();
   final logController = StreamController<PlayerLog>.broadcast();
-  final errorController = StreamController<String>.broadcast();
+  final errorController = StreamController<PlayerError>.broadcast();
   final audioDeviceController = StreamController<AudioDevice>.broadcast();
   final audioDevicesController = StreamController<List<AudioDevice>>.broadcast();
   final bufferRangesController = StreamController<List<BufferRange>>.broadcast();

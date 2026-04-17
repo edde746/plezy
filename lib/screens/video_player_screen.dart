@@ -154,7 +154,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
   PlexMediaInfo? _currentMediaInfo;
-  StreamSubscription<String>? _errorSubscription;
+  StreamSubscription<PlayerError>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
   StreamSubscription<dynamic>? _mediaControlSubscription;
@@ -740,10 +740,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Listen to MPV errors
       _errorSubscription = player!.streams.error.listen(_onPlayerError);
 
-      // Listen to error-level log messages for user-visible snackbars
+      // warn is included so we can catch ffmpeg's "HTTP error 500" line in
+      // _onPlayerLog — the error-level log that follows omits the status code.
       _logSubscription = player!.streams.log
-          .where((log) => log.level == PlayerLogLevel.error || log.level == PlayerLogLevel.fatal)
-          .listen(_onPlayerLogError);
+          .where((log) => const {
+                PlayerLogLevel.fatal,
+                PlayerLogLevel.error,
+                PlayerLogLevel.warn,
+              }.contains(log.level))
+          .listen(_onPlayerLog);
 
       // Listen for backend switched event (ExoPlayer -> MPV fallback on Android)
       if (Platform.isAndroid && useExoPlayer) {
@@ -778,6 +783,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Listen to playback restart to detect first frame ready
       _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
         _lastLogError = null;
+        _sawServer500 = false;
         _liveStreamFallbackLevel = 0;
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
@@ -2241,9 +2247,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  void _onPlayerError(String error) {
-    appLogger.e('[Player ERROR] $error');
+  void _onPlayerError(PlayerError err) {
+    appLogger.e('[Player ERROR] ${err.message}');
     if (!mounted || _isExiting.value) return;
+
+    // Fatal, unrecoverable until server-side fix — show modal instead of a snackbar.
+    if (err.cause == PlayerError.serverHttp500 || _sawServer500) {
+      _showServerLimitDialog();
+      return;
+    }
 
     // Live TV: retry with progressively degraded stream settings
     // (mirrors Plex web client fallback chain).
@@ -2255,15 +2267,30 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       return;
     }
 
-    showGlobalErrorSnackBar(_lastLogError ?? error);
+    showGlobalErrorSnackBar(_lastLogError ?? err.message);
     _handleBackButton();
   }
 
   String? _lastLogError;
+  bool _sawServer500 = false;
 
-  void _onPlayerLogError(PlayerLog log) {
-    appLogger.e('[Player LOG ERROR] [${log.prefix}] ${log.text}');
-    _lastLogError = log.text.trim();
+  static final RegExp _server500Pattern =
+      RegExp(r'\b(?:HTTP error |Response code: )500\b');
+
+  void _onPlayerLog(PlayerLog log) {
+    if (!_sawServer500 && _server500Pattern.hasMatch(log.text)) {
+      _sawServer500 = true;
+    }
+    if (log.level == PlayerLogLevel.error || log.level == PlayerLogLevel.fatal) {
+      appLogger.e('[Player LOG ERROR] [${log.prefix}] ${log.text}');
+      _lastLogError = log.text.trim();
+    }
+  }
+
+  Future<void> _showServerLimitDialog() async {
+    if (!mounted) return;
+    await showServerLimitDialog(context);
+    if (mounted) _handleBackButton();
   }
 
   /// Handle notification when native player switched from ExoPlayer to MPV

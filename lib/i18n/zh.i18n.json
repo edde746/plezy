@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "创建播放队列失败 - 没有项目",
     "failedPlayback": "无法${action}: ${error}",
     "switchingToCompatiblePlayer": "正在切换到兼容的播放器...",
+    "serverLimitTitle": "播放失败",
+    "serverLimitBody": "服务器返回了错误 (HTTP 500)。这通常意味着服务器所有者设置了带宽或转码限制，正在拒绝你的会话。客户端无法解决此问题 — 需要服务器所有者调整其设置。",
     "logsUploaded": "日志已上传",
     "logsUploadFailed": "上传日志失败",
     "logId": "日志 ID"

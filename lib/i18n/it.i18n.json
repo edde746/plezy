@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Impossibile creare la coda di riproduzione - nessun elemento",
     "failedPlayback": "Impossibile ${action}: ${error}",
     "switchingToCompatiblePlayer": "Passaggio al lettore compatibile...",
+    "serverLimitTitle": "Riproduzione non riuscita",
+    "serverLimitBody": "Il server ha restituito un errore (HTTP 500). Di solito significa che il proprietario del server ha impostato un limite di banda o di transcodifica che sta rifiutando la tua sessione. Non c'è nulla da fare dal client — il proprietario del server deve modificare le sue impostazioni.",
     "logsUploaded": "Log caricati",
     "logsUploadFailed": "Caricamento log fallito",
     "logId": "ID log"

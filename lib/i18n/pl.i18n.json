@@ -442,6 +442,8 @@
     "failedToCreatePlayQueueNoItems": "Nie udało się utworzyć kolejki odtwarzania — brak elementów",
     "failedPlayback": "Nie udało się ${action}: ${error}",
     "switchingToCompatiblePlayer": "Przełączanie na kompatybilny odtwarzacz...",
+    "serverLimitTitle": "Odtwarzanie nie powiodło się",
+    "serverLimitBody": "Serwer zwrócił błąd (HTTP 500). Zwykle oznacza to, że właściciel serwera ustawił limit przepustowości lub transkodowania, który odrzuca Twoją sesję. Z poziomu klienta nie da się nic zrobić — właściciel serwera musi dostosować swoje ustawienia.",
     "logsUploaded": "Logi przesłane",
     "logsUploadFailed": "Nie udało się przesłać logów",
     "logId": "ID logu"

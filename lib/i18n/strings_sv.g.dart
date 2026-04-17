@@ -596,6 +596,8 @@ class _TranslationsMessagesSv implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Det gick inte att skapa uppspelningskö – inga objekt';
 	@override String failedPlayback({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Byter till kompatibel spelare...';
+	@override String get serverLimitTitle => 'Uppspelningen misslyckades';
+	@override String get serverLimitBody => 'Servern returnerade ett fel (HTTP 500). Det betyder oftast att serverägaren har satt en gräns för bandbredd eller transkodning som avvisar din session. Det finns inget du kan göra från klienten — serverägaren behöver justera sina inställningar.';
 	@override String get logsUploaded => 'Loggar uppladdade';
 	@override String get logsUploadFailed => 'Uppladdning av loggar misslyckades';
 	@override String get logId => 'Logg-ID';
@@ -1789,6 +1791,8 @@ extension on TranslationsSv {
 			'messages.failedToCreatePlayQueueNoItems' => 'Det gick inte att skapa uppspelningskö – inga objekt',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Byter till kompatibel spelare...',
+			'messages.serverLimitTitle' => 'Uppspelningen misslyckades',
+			'messages.serverLimitBody' => 'Servern returnerade ett fel (HTTP 500). Det betyder oftast att serverägaren har satt en gräns för bandbredd eller transkodning som avvisar din session. Det finns inget du kan göra från klienten — serverägaren behöver justera sina inställningar.',
 			'messages.logsUploaded' => 'Loggar uppladdade',
 			'messages.logsUploadFailed' => 'Uppladdning av loggar misslyckades',
 			'messages.logId' => 'Logg-ID',
@@ -1889,10 +1893,10 @@ extension on TranslationsSv {
 			'libraries.groupings.movies' => 'Filmer',
 			'libraries.groupings.shows' => 'Serier',
 			'libraries.groupings.seasons' => 'Säsonger',
-			'libraries.groupings.episodes' => 'Avsnitt',
-			'libraries.groupings.folders' => 'Mappar',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Avsnitt',
+			'libraries.groupings.folders' => 'Mappar',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Öppen källkod-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',

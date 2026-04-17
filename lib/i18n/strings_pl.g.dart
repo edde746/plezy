@@ -596,6 +596,8 @@ class _TranslationsMessagesPl implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Nie udało się utworzyć kolejki odtwarzania — brak elementów';
 	@override String failedPlayback({required Object action, required Object error}) => 'Nie udało się ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Przełączanie na kompatybilny odtwarzacz...';
+	@override String get serverLimitTitle => 'Odtwarzanie nie powiodło się';
+	@override String get serverLimitBody => 'Serwer zwrócił błąd (HTTP 500). Zwykle oznacza to, że właściciel serwera ustawił limit przepustowości lub transkodowania, który odrzuca Twoją sesję. Z poziomu klienta nie da się nic zrobić — właściciel serwera musi dostosować swoje ustawienia.';
 	@override String get logsUploaded => 'Logi przesłane';
 	@override String get logsUploadFailed => 'Nie udało się przesłać logów';
 	@override String get logId => 'ID logu';
@@ -1789,6 +1791,8 @@ extension on TranslationsPl {
 			'messages.failedToCreatePlayQueueNoItems' => 'Nie udało się utworzyć kolejki odtwarzania — brak elementów',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Nie udało się ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Przełączanie na kompatybilny odtwarzacz...',
+			'messages.serverLimitTitle' => 'Odtwarzanie nie powiodło się',
+			'messages.serverLimitBody' => 'Serwer zwrócił błąd (HTTP 500). Zwykle oznacza to, że właściciel serwera ustawił limit przepustowości lub transkodowania, który odrzuca Twoją sesję. Z poziomu klienta nie da się nic zrobić — właściciel serwera musi dostosować swoje ustawienia.',
 			'messages.logsUploaded' => 'Logi przesłane',
 			'messages.logsUploadFailed' => 'Nie udało się przesłać logów',
 			'messages.logId' => 'ID logu',
@@ -1889,10 +1893,10 @@ extension on TranslationsPl {
 			'libraries.groupings.movies' => 'Filmy',
 			'libraries.groupings.shows' => 'Seriale TV',
 			'libraries.groupings.seasons' => 'Sezony',
-			'libraries.groupings.episodes' => 'Odcinki',
-			'libraries.groupings.folders' => 'Foldery',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.episodes' => 'Odcinki',
+			'libraries.groupings.folders' => 'Foldery',
 			'about.title' => 'O aplikacji',
 			'about.openSourceLicenses' => 'Licencje open source',
 			'about.versionLabel' => ({required Object version}) => 'Wersja ${version}',
