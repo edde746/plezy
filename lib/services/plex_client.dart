@@ -2316,11 +2316,23 @@ class PlexClient {
 
     final allChannels = <LiveTvChannel>[];
     for (final provider in _providerEpg) {
+      final isCloudGuide = provider.identifier.startsWith('tv.plex.providers.epg');
+      final primaryEndpoint = isCloudGuide
+          ? '/lineups/plex/channels'
+          : '/${provider.identifier}/lineups/dvr/channels';
       try {
-        final response = await _getWithFailover('/${provider.identifier}/lineups/dvr/channels');
-        allChannels.addAll(parseChannels(response));
+        final response = await _getWithFailover(primaryEndpoint);
+        final parsed = parseChannels(response);
+        if (parsed.isEmpty && isCloudGuide) {
+          // Fallback: the prefix matched but this server doesn't expose the
+          // cloud endpoint. Retry with the legacy DVR endpoint.
+          final fallback = await _getWithFailover('/${provider.identifier}/lineups/dvr/channels');
+          allChannels.addAll(parseChannels(fallback));
+        } else {
+          allChannels.addAll(parsed);
+        }
       } catch (e) {
-        appLogger.e('Failed to get EPG channels from ${provider.identifier}', error: e);
+        appLogger.e('Failed to get EPG channels from ${provider.identifier} via $primaryEndpoint', error: e);
       }
     }
     return allChannels;

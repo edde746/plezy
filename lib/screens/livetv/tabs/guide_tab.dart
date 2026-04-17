@@ -977,11 +977,12 @@ class GuideTabState extends State<GuideTab> {
       final duration = progEnd - progStart;
       final left = (startOffset / (_minutesPerSlot * 60)) * _slotWidth;
       final width = (duration / (_minutesPerSlot * 60)) * _slotWidth;
+      final clampedWidth = width.clamp(2.0, double.infinity);
 
       blocks.add(
         Positioned(
           left: left,
-          width: width.clamp(2.0, double.infinity),
+          width: clampedWidth,
           top: 0,
           bottom: 0,
           child: _buildProgramBlock(
@@ -991,6 +992,8 @@ class GuideTabState extends State<GuideTab> {
             isFirst: progStart == gridStartEpoch,
             isLast: program == programs.last && progEnd != gridEndEpoch,
             isFocused: identical(program, focusProg),
+            tileLeft: left,
+            tileWidth: clampedWidth,
           ),
         ),
       );
@@ -1012,6 +1015,8 @@ class GuideTabState extends State<GuideTab> {
     bool isFirst = false,
     bool isLast = false,
     bool isFocused = false,
+    double tileLeft = 0,
+    double tileWidth = 0,
   }) {
     final isCurrentlyAiring = program.isCurrentlyAiring;
     final isPast = program.endsAt != null && program.endsAt! < DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -1060,37 +1065,49 @@ class GuideTabState extends State<GuideTab> {
                 right: isLast ? BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)) : BorderSide.none,
               ),
             ),
-            child: Container(
-              color: isFocused ? null : materialColor,
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    program.grandparentTitle ?? program.title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: titleColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            child: ListenableBuilder(
+              listenable: _gridHorizontalController,
+              builder: (context, _) {
+                const basePadding = 6.0;
+                final scrollOffset = _gridHorizontalController.hasClients
+                    ? _gridHorizontalController.offset
+                    : 0.0;
+                final maxInset = (tileWidth - 2 * basePadding - 20).clamp(0.0, double.infinity);
+                final leftInset = (scrollOffset - tileLeft).clamp(0.0, maxInset);
+                return Container(
+                  color: isFocused ? null : materialColor,
+                  padding: EdgeInsets.fromLTRB(basePadding + leftInset, 4, basePadding, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        program.grandparentTitle ?? program.title,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: titleColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (program.grandparentTitle != null)
+                        Text(
+                          '${program.parentIndex != null && program.index != null ? 'S${program.parentIndex}E${program.index} · ' : ''}${program.title}',
+                          style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      if (program.startTime != null)
+                        Text(
+                          '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60000)}',
+                          style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
                   ),
-                  if (program.grandparentTitle != null)
-                    Text(
-                      '${program.parentIndex != null && program.index != null ? 'S${program.parentIndex}E${program.index} · ' : ''}${program.title}',
-                      style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  if (program.startTime != null)
-                    Text(
-                      '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60000)}',
-                      style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
-                      maxLines: 1,
-                    ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ),
