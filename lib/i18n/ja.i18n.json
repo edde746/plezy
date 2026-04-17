@@ -460,7 +460,9 @@
     "backgroundOpacity": "背景の不透明度",
     "backgroundColor": "背景色",
     "position": "位置",
-    "assOverride": "ASSオーバーライド"
+    "assOverride": "ASSオーバーライド",
+    "bold": "太字",
+    "italic": "斜体"
   },
   "mpvConfig": {
     "title": "mpv.conf",

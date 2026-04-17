@@ -460,7 +460,9 @@
     "backgroundOpacity": "背景不透明度",
     "backgroundColor": "背景颜色",
     "position": "位置",
-    "assOverride": "ASS 样式覆盖"
+    "assOverride": "ASS 样式覆盖",
+    "bold": "粗体",
+    "italic": "斜体"
   },
   "mpvConfig": {
     "title": "mpv 配置",

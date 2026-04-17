@@ -622,6 +622,8 @@ class _TranslationsSubtitlingStylingJa implements TranslationsSubtitlingStylingE
 	@override String get backgroundColor => '背景色';
 	@override String get position => '位置';
 	@override String get assOverride => 'ASSオーバーライド';
+	@override String get bold => '太字';
+	@override String get italic => '斜体';
 }
 
 // Path: mpvConfig
@@ -1808,6 +1810,8 @@ extension on TranslationsJa {
 			'subtitlingStyling.backgroundColor' => '背景色',
 			'subtitlingStyling.position' => '位置',
 			'subtitlingStyling.assOverride' => 'ASSオーバーライド',
+			'subtitlingStyling.bold' => '太字',
+			'subtitlingStyling.italic' => '斜体',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => '高度な動画プレーヤー設定',
 			'mpvConfig.presets' => 'プリセット',
@@ -1891,10 +1895,10 @@ extension on TranslationsJa {
 			'libraries.groupings.title' => 'グループ',
 			'libraries.groupings.all' => 'すべて',
 			'libraries.groupings.movies' => '映画',
-			'libraries.groupings.shows' => 'テレビ番組',
-			'libraries.groupings.seasons' => 'シーズン',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.shows' => 'テレビ番組',
+			'libraries.groupings.seasons' => 'シーズン',
 			'libraries.groupings.episodes' => 'エピソード',
 			'libraries.groupings.folders' => 'フォルダ',
 			'about.title' => 'アプリについて',

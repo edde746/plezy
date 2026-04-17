@@ -622,6 +622,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await player!.setProperty('sub-color', settingsService.getSubtitleTextColor());
       await player!.setProperty('sub-border-size', settingsService.getSubtitleBorderSize().toString());
       await player!.setProperty('sub-border-color', settingsService.getSubtitleBorderColor());
+      await player!.setProperty('sub-bold', settingsService.getSubtitleBold() ? 'yes' : 'no');
+      await player!.setProperty('sub-italic', settingsService.getSubtitleItalic() ? 'yes' : 'no');
       final bgOpacity = (settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt();
       final bgColor = settingsService.getSubtitleBackgroundColor().replaceFirst('#', '');
       await player!.setProperty(
@@ -1391,6 +1393,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             bgColor: settingsService.getSubtitleBackgroundColor(),
             bgOpacity: settingsService.getSubtitleBackgroundOpacity(),
             subtitlePosition: settingsService.getSubtitlePosition(),
+            bold: settingsService.getSubtitleBold(),
+            italic: settingsService.getSubtitleItalic(),
           );
         }
 

@@ -460,7 +460,9 @@
     "backgroundOpacity": "Opacidad de Fondo",
     "backgroundColor": "Color de Fondo",
     "position": "Posición",
-    "assOverride": "Sobreescritura ASS"
+    "assOverride": "Sobreescritura ASS",
+    "bold": "Negrita",
+    "italic": "Cursiva"
   },
   "mpvConfig": {
     "title": "Configuración de mpv",

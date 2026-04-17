@@ -460,7 +460,9 @@
     "backgroundOpacity": "Achtergrond transparantie",
     "backgroundColor": "Achtergrondkleur",
     "position": "Positie",
-    "assOverride": "ASS-overschrijving"
+    "assOverride": "ASS-overschrijving",
+    "bold": "Vet",
+    "italic": "Cursief"
   },
   "mpvConfig": {
     "title": "mpv-configuratie",

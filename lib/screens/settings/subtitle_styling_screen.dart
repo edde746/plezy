@@ -30,6 +30,8 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   int _backgroundOpacity = 0;
   int _subtitlePosition = 100;
   SubAssOverride _assOverride = SubAssOverride.no;
+  bool _bold = false;
+  bool _italic = false;
 
   @override
   void initState() {
@@ -50,6 +52,8 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
       _backgroundOpacity = _settingsService.getSubtitleBackgroundOpacity();
       _subtitlePosition = _settingsService.getSubtitlePosition();
       _assOverride = _settingsService.getSubAssOverride();
+      _bold = _settingsService.getSubtitleBold();
+      _italic = _settingsService.getSubtitleItalic();
       _isLoading = false;
     });
   }
@@ -255,6 +259,24 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                   await _settingsService.setSubtitlePosition(value);
                 },
               ),
+            ),
+            SwitchListTile(
+              secondary: const AppIcon(Symbols.format_bold_rounded, fill: 1),
+              title: Text(t.subtitlingStyling.bold),
+              value: _bold,
+              onChanged: (value) async {
+                setState(() => _bold = value);
+                await _settingsService.setSubtitleBold(value);
+              },
+            ),
+            SwitchListTile(
+              secondary: const AppIcon(Symbols.format_italic_rounded, fill: 1),
+              title: Text(t.subtitlingStyling.italic),
+              value: _italic,
+              onChanged: (value) async {
+                setState(() => _italic = value);
+                await _settingsService.setSubtitleItalic(value);
+              },
             ),
 
             // --- Border ---

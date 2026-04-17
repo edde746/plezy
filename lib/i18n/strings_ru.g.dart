@@ -622,6 +622,8 @@ class _TranslationsSubtitlingStylingRu implements TranslationsSubtitlingStylingE
 	@override String get backgroundColor => 'Цвет фона';
 	@override String get position => 'Позиция';
 	@override String get assOverride => 'Переопределение ASS';
+	@override String get bold => 'Жирный';
+	@override String get italic => 'Курсив';
 }
 
 // Path: mpvConfig
@@ -1808,6 +1810,8 @@ extension on TranslationsRu {
 			'subtitlingStyling.backgroundColor' => 'Цвет фона',
 			'subtitlingStyling.position' => 'Позиция',
 			'subtitlingStyling.assOverride' => 'Переопределение ASS',
+			'subtitlingStyling.bold' => 'Жирный',
+			'subtitlingStyling.italic' => 'Курсив',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Расширенные настройки видеоплеера',
 			'mpvConfig.presets' => 'Пресеты',
@@ -1891,10 +1895,10 @@ extension on TranslationsRu {
 			'libraries.groupings.title' => 'Группировка',
 			'libraries.groupings.all' => 'Все',
 			'libraries.groupings.movies' => 'Фильмы',
-			'libraries.groupings.shows' => 'Сериалы',
-			'libraries.groupings.seasons' => 'Сезоны',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.shows' => 'Сериалы',
+			'libraries.groupings.seasons' => 'Сезоны',
 			'libraries.groupings.episodes' => 'Эпизоды',
 			'libraries.groupings.folders' => 'Папки',
 			'about.title' => 'О приложении',

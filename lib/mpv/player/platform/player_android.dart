@@ -358,6 +358,8 @@ class PlayerAndroid extends PlayerBase {
     required String bgColor,
     required int bgOpacity,
     int subtitlePosition = 100,
+    bool bold = false,
+    bool italic = false,
   }) async {
     if (disposed || !initialized) return;
     await invoke('setSubtitleStyle', {
@@ -368,6 +370,8 @@ class PlayerAndroid extends PlayerBase {
       'bgColor': bgColor,
       'bgOpacity': bgOpacity,
       'subtitlePosition': subtitlePosition,
+      'bold': bold,
+      'italic': italic,
     });
   }
 

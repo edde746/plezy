@@ -66,6 +66,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySubtitleBackgroundOpacity = 'subtitle_background_opacity';
   static const String _keySubtitlePosition = 'subtitle_position';
   static const String _keySubAssOverride = 'sub_ass_override';
+  static const String _keySubtitleBold = 'subtitle_bold';
+  static const String _keySubtitleItalic = 'subtitle_italic';
   static const String _keyAppLocale = 'app_locale';
   static const String _keyRememberTrackSelections = 'remember_track_selections';
   static const String _keyClickVideoTogglesPlayback = 'click_video_toggles_playback';
@@ -463,6 +465,24 @@ class SettingsService extends BaseSharedPreferencesService {
 
   SubAssOverride getSubAssOverride() {
     return _getEnumValue(_keySubAssOverride, SubAssOverride.values, SubAssOverride.no);
+  }
+
+  // Bold subtitles
+  Future<void> setSubtitleBold(bool bold) async {
+    await prefs.setBool(_keySubtitleBold, bold);
+  }
+
+  bool getSubtitleBold() {
+    return prefs.getBool(_keySubtitleBold) ?? false;
+  }
+
+  // Italic subtitles
+  Future<void> setSubtitleItalic(bool italic) async {
+    await prefs.setBool(_keySubtitleItalic, italic);
+  }
+
+  bool getSubtitleItalic() {
+    return prefs.getBool(_keySubtitleItalic) ?? false;
   }
 
   // Keyboard Shortcuts (Legacy String-based)

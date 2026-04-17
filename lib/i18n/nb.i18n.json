@@ -460,7 +460,9 @@
     "backgroundOpacity": "Bakgrunnsopasitet",
     "backgroundColor": "Bakgrunnsfarge",
     "position": "Posisjon",
-    "assOverride": "ASS-overstyring"
+    "assOverride": "ASS-overstyring",
+    "bold": "Fet",
+    "italic": "Kursiv"
   },
   "mpvConfig": {
     "title": "mpv.conf",

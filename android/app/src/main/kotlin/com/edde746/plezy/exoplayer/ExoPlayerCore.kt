@@ -5,6 +5,7 @@ import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -1437,7 +1438,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         borderColor: String,
         bgColor: String,
         bgOpacity: Int,
-        subtitlePosition: Int = 100
+        subtitlePosition: Int = 100,
+        bold: Boolean = false,
+        italic: Boolean = false
     ) {
         activity.runOnUiThread {
             // 1. Non-ASS subtitles: CaptionStyleCompat on SubtitleView
@@ -1450,13 +1453,22 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val edgeType = if (borderSize > 0) CaptionStyleCompat.EDGE_TYPE_OUTLINE
                            else CaptionStyleCompat.EDGE_TYPE_NONE
 
+            val typefaceStyle = when {
+                bold && italic -> Typeface.BOLD_ITALIC
+                bold -> Typeface.BOLD
+                italic -> Typeface.ITALIC
+                else -> Typeface.NORMAL
+            }
+            val typeface = if (typefaceStyle != Typeface.NORMAL)
+                Typeface.create(Typeface.DEFAULT, typefaceStyle) else null
+
             val style = CaptionStyleCompat(
                 fgColor,
                 bgColorInt,
                 Color.TRANSPARENT,
                 edgeType,
                 edgeColor,
-                null
+                typeface
             )
             subtitleView?.setStyle(style)
             // Font size: MPV sub-font-size is scaled pixels at 720p height
@@ -1493,7 +1505,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 Log.w(TAG, "Failed to set ASS font scale: ${e.message}")
             }
 
-            Log.d(TAG, "setSubtitleStyle: fontSize=$fontSize, textColor=$textColor, borderSize=$borderSize, bgOpacity=$bgOpacity, position=$subtitlePosition, assScale=$scale")
+            Log.d(TAG, "setSubtitleStyle: fontSize=$fontSize, textColor=$textColor, borderSize=$borderSize, bgOpacity=$bgOpacity, position=$subtitlePosition, bold=$bold, italic=$italic, assScale=$scale")
         }
     }
 

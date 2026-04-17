@@ -622,6 +622,8 @@ class _TranslationsSubtitlingStylingKo implements TranslationsSubtitlingStylingE
 	@override String get backgroundColor => '배경색';
 	@override String get position => '위치';
 	@override String get assOverride => 'ASS 오버라이드';
+	@override String get bold => '굵게';
+	@override String get italic => '기울임꼴';
 }
 
 // Path: mpvConfig
@@ -1808,6 +1810,8 @@ extension on TranslationsKo {
 			'subtitlingStyling.backgroundColor' => '배경색',
 			'subtitlingStyling.position' => '위치',
 			'subtitlingStyling.assOverride' => 'ASS 오버라이드',
+			'subtitlingStyling.bold' => '굵게',
+			'subtitlingStyling.italic' => '기울임꼴',
 			'mpvConfig.title' => 'mpv 설정',
 			'mpvConfig.description' => '고급 비디오 플레이어 설정',
 			'mpvConfig.presets' => '사전 설정',
@@ -1891,10 +1895,10 @@ extension on TranslationsKo {
 			'libraries.groupings.title' => '그룹',
 			'libraries.groupings.all' => '전체',
 			'libraries.groupings.movies' => '영화',
-			'libraries.groupings.shows' => 'TV 프로그램',
-			'libraries.groupings.seasons' => '시즌',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.shows' => 'TV 프로그램',
+			'libraries.groupings.seasons' => '시즌',
 			'libraries.groupings.episodes' => '화',
 			'libraries.groupings.folders' => '폴더',
 			'about.title' => '소개',

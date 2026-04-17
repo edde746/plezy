@@ -460,7 +460,9 @@
     "backgroundOpacity": "Baggrundsgennemsigtighed",
     "backgroundColor": "Baggrundsfarve",
     "position": "Position",
-    "assOverride": "ASS-tilsidesættelse"
+    "assOverride": "ASS-tilsidesættelse",
+    "bold": "Fed",
+    "italic": "Kursiv"
   },
   "mpvConfig": {
     "title": "mpv.conf",

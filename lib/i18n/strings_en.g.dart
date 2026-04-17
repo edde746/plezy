@@ -1429,6 +1429,12 @@ class TranslationsSubtitlingStylingEn {
 
 	/// en: 'ASS Override'
 	String get assOverride => 'ASS Override';
+
+	/// en: 'Bold'
+	String get bold => 'Bold';
+
+	/// en: 'Italic'
+	String get italic => 'Italic';
 }
 
 // Path: mpvConfig
@@ -3583,6 +3589,8 @@ extension on Translations {
 			'subtitlingStyling.backgroundColor' => 'Background Color',
 			'subtitlingStyling.position' => 'Position',
 			'subtitlingStyling.assOverride' => 'ASS Override',
+			'subtitlingStyling.bold' => 'Bold',
+			'subtitlingStyling.italic' => 'Italic',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
 			'mpvConfig.presets' => 'Presets',
@@ -3666,10 +3674,10 @@ extension on Translations {
 			'libraries.groupings.title' => 'Grouping',
 			'libraries.groupings.all' => 'All',
 			'libraries.groupings.movies' => 'Movies',
-			'libraries.groupings.shows' => 'TV Shows',
-			'libraries.groupings.seasons' => 'Seasons',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.shows' => 'TV Shows',
+			'libraries.groupings.seasons' => 'Seasons',
 			'libraries.groupings.episodes' => 'Episodes',
 			'libraries.groupings.folders' => 'Folders',
 			'about.title' => 'About',

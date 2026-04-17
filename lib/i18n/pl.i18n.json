@@ -460,7 +460,9 @@
     "backgroundOpacity": "Przezroczystość tła",
     "backgroundColor": "Kolor tła",
     "position": "Pozycja",
-    "assOverride": "Nadpisywanie ASS"
+    "assOverride": "Nadpisywanie ASS",
+    "bold": "Pogrubienie",
+    "italic": "Kursywa"
   },
   "mpvConfig": {
     "title": "mpv.conf",

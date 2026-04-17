@@ -460,7 +460,9 @@
     "backgroundOpacity": "Прозрачность фона",
     "backgroundColor": "Цвет фона",
     "position": "Позиция",
-    "assOverride": "Переопределение ASS"
+    "assOverride": "Переопределение ASS",
+    "bold": "Жирный",
+    "italic": "Курсив"
   },
   "mpvConfig": {
     "title": "mpv.conf",

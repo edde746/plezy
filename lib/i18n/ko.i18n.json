@@ -460,7 +460,9 @@
     "backgroundOpacity": "배경 불투명도",
     "backgroundColor": "배경색",
     "position": "위치",
-    "assOverride": "ASS 오버라이드"
+    "assOverride": "ASS 오버라이드",
+    "bold": "굵게",
+    "italic": "기울임꼴"
   },
   "mpvConfig": {
     "title": "mpv 설정",

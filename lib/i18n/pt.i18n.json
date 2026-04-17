@@ -460,7 +460,9 @@
     "backgroundOpacity": "Opacidade do Fundo",
     "backgroundColor": "Cor de Fundo",
     "position": "Posição",
-    "assOverride": "Substituição ASS"
+    "assOverride": "Substituição ASS",
+    "bold": "Negrito",
+    "italic": "Itálico"
   },
   "mpvConfig": {
     "title": "mpv.conf",

@@ -622,6 +622,8 @@ class _TranslationsSubtitlingStylingZh implements TranslationsSubtitlingStylingE
 	@override String get backgroundColor => '背景颜色';
 	@override String get position => '位置';
 	@override String get assOverride => 'ASS 样式覆盖';
+	@override String get bold => '粗体';
+	@override String get italic => '斜体';
 }
 
 // Path: mpvConfig
@@ -1808,6 +1810,8 @@ extension on TranslationsZh {
 			'subtitlingStyling.backgroundColor' => '背景颜色',
 			'subtitlingStyling.position' => '位置',
 			'subtitlingStyling.assOverride' => 'ASS 样式覆盖',
+			'subtitlingStyling.bold' => '粗体',
+			'subtitlingStyling.italic' => '斜体',
 			'mpvConfig.title' => 'mpv 配置',
 			'mpvConfig.description' => '高级视频播放器设置',
 			'mpvConfig.presets' => '预设',
@@ -1891,10 +1895,10 @@ extension on TranslationsZh {
 			'libraries.groupings.title' => '分组',
 			'libraries.groupings.all' => '全部',
 			'libraries.groupings.movies' => '电影',
-			'libraries.groupings.shows' => '剧集',
-			'libraries.groupings.seasons' => '季',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.shows' => '剧集',
+			'libraries.groupings.seasons' => '季',
 			'libraries.groupings.episodes' => '集',
 			'libraries.groupings.folders' => '文件夹',
 			'about.title' => '关于',

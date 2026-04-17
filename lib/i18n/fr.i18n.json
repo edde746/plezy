@@ -460,7 +460,9 @@
     "backgroundOpacity": "Opacité d'arrière-plan",
     "backgroundColor": "Couleur d'arrière-plan",
     "position": "Position",
-    "assOverride": "Remplacement ASS"
+    "assOverride": "Remplacement ASS",
+    "bold": "Gras",
+    "italic": "Italique"
   },
   "mpvConfig": {
     "title": "Configuration mpv",
