@@ -29,7 +29,10 @@ class DisplayModeService {
     required double? sigPeak,
   }) async {
     if (!Platform.isWindows) return Duration.zero;
-    if (!_fullscreen.isFullscreen) return Duration.zero;
+    if (!_fullscreen.isFullscreen) {
+      appLogger.d('Display matching skipped: not in fullscreen');
+      return Duration.zero;
+    }
 
     bool anyChange = false;
 

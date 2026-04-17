@@ -929,11 +929,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  /// Called when fullscreen state changes — restore display mode if exiting fullscreen.
+  /// Called when fullscreen state changes — apply or restore Windows display
+  /// matching. On Windows the player opens windowed by default, so the initial
+  /// attempt during `playbackRestart` is skipped by DisplayModeService's
+  /// fullscreen gate. Catching the enter-fullscreen transition here lets the
+  /// switch happen at the natural moment the user starts watching.
   void _onFullscreenChanged() {
-    if (!FullscreenStateManager().isFullscreen &&
-        _displayModeService != null &&
-        _displayModeService!.anyChangeApplied) {
+    if (_displayModeService == null) return;
+    if (FullscreenStateManager().isFullscreen) {
+      if (_hasFirstFrame.value && !_displayModeService!.anyChangeApplied) {
+        _applyWindowsDisplayMatching();
+      }
+    } else if (_displayModeService!.anyChangeApplied) {
       _restoreWindowsDisplayMode();
     }
   }
