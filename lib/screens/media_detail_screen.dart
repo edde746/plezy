@@ -138,6 +138,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   final _castSectionKey = GlobalKey();
   final _seasonsSectionKey = GlobalKey();
 
+  // Focus target for the trailing info rows (studio / contentRating)
+  late final FocusNode _infoRowsFocusNode;
+  final _infoRowsSectionKey = GlobalKey();
+
   @override
   PlexMetadata get serverBoundMetadata => widget.metadata;
 
@@ -358,6 +362,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _ratingChipFocusNode = FocusNode(debugLabel: 'rating_chip');
     _overviewFocusNode = FocusNode(debugLabel: 'overview');
     _castFocusNode = FocusNode(debugLabel: 'cast_row');
+    _infoRowsFocusNode = FocusNode(debugLabel: 'info_rows');
     _loadFullMetadata();
   }
 
@@ -375,6 +380,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _ratingChipFocusNode.dispose();
     _overviewFocusNode.dispose();
     _castFocusNode.dispose();
+    _infoRowsFocusNode.dispose();
     _castScrollController.dispose();
     _selectKeyTimer?.cancel();
     for (final node in _seasonTabFocusNodes) {
@@ -1639,6 +1645,29 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
+  bool get _hasInfoRows {
+    final metadata = _fullMetadata ?? widget.metadata;
+    return metadata.studio != null || metadata.contentRating != null;
+  }
+
+  /// Focus the trailing info rows (studio / contentRating) and scroll them into view.
+  void _focusInfoRows() {
+    _infoRowsFocusNode.requestFocus();
+    _scrollSectionIntoView(_infoRowsSectionKey);
+  }
+
+  /// Focus the first visible focusable section above info rows: related hubs → extras → cast → …
+  void _focusSectionAboveInfoRows() {
+    if (_relatedHubs.isNotEmpty) {
+      _relatedHubKeys.last.currentState?.requestFocusFromMemory();
+    } else if (_extras != null && _extras!.isNotEmpty) {
+      _extrasFocusNode.requestFocus();
+      _scrollSectionIntoView(_extrasSectionKey);
+    } else {
+      _focusSectionAboveExtras();
+    }
+  }
+
   /// Scroll the main scroll view so the section with the given key is centered
   void _scrollSectionIntoView(GlobalKey key) {
     scrollContextToCenter(key.currentContext);
@@ -1740,6 +1769,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _scrollSectionIntoView(_extrasSectionKey);
       } else if (_relatedHubs.isNotEmpty) {
         _relatedHubKeys.first.currentState?.requestFocusFromMemory();
+      } else if (_hasInfoRows) {
+        _focusInfoRows();
       }
       return KeyEventResult.handled;
     }
@@ -1913,10 +1944,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
-    // DOWN: related hubs → consume
+    // DOWN: related hubs → info rows → consume
     if (key.isDownKey) {
       if (_relatedHubs.isNotEmpty) {
         _relatedHubKeys.first.currentState?.requestFocusFromMemory();
+      } else if (_hasInfoRows) {
+        _focusInfoRows();
       }
       return KeyEventResult.handled;
     }
@@ -1962,13 +1995,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
-    // DOWN: extras → related hubs → consume
+    // DOWN: extras → related hubs → info rows → consume
     if (key.isDownKey) {
       if (_extras != null && _extras!.isNotEmpty) {
         _extrasFocusNode.requestFocus();
         _scrollSectionIntoView(_extrasSectionKey);
       } else if (_relatedHubs.isNotEmpty) {
         _relatedHubKeys.first.currentState?.requestFocusFromMemory();
+      } else if (_hasInfoRows) {
+        _focusInfoRows();
       }
       return KeyEventResult.handled;
     }
@@ -2001,11 +2036,28 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
     if (targetIndex < 0 || targetIndex >= _relatedHubKeys.length) {
+      if (!isUp && _hasInfoRows) _focusInfoRows();
       return true; // at boundary, consume
     }
 
     _relatedHubKeys[targetIndex].currentState?.requestFocusFromMemory();
     return true;
+  }
+
+  /// Handle key events for the trailing info rows (studio / contentRating).
+  /// UP returns to the previous focusable section; all other directions consume.
+  KeyEventResult _handleInfoRowsKeyEvent(FocusNode _, KeyEvent event) {
+    final key = event.logicalKey;
+    if (key.isBackKey) return KeyEventResult.ignored;
+    if (!event.isActionable) return KeyEventResult.ignored;
+
+    if (key.isUpKey) {
+      _focusSectionAboveInfoRows();
+      return KeyEventResult.handled;
+    }
+
+    // DOWN / LEFT / RIGHT / SELECT: consume — info rows are the terminal row.
+    return KeyEventResult.handled;
   }
 
   IconData _getRelatedHubIcon(PlexHub hub) {
@@ -2753,15 +2805,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             const SizedBox(height: 8),
                           ],
 
-                          // Additional info
-                          if (metadata.studio != null) ...[
-                            _buildInfoRow(t.discover.studio, metadata.studio!),
-                            const SizedBox(height: 12),
-                          ],
-                          if (metadata.contentRating != null) ...[
-                            _buildInfoRow(t.discover.rating, formatContentRating(metadata.contentRating!)),
-                            const SizedBox(height: 12),
-                          ],
+                          // Additional info — wrapped in Focus so DPAD DOWN from the
+                          // last focusable section lands here and scrolls it into view.
+                          if (_hasInfoRows)
+                            Focus(
+                              focusNode: _infoRowsFocusNode,
+                              onKeyEvent: _handleInfoRowsKeyEvent,
+                              child: Column(
+                                key: _infoRowsSectionKey,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (metadata.studio != null) ...[
+                                    _buildInfoRow(t.discover.studio, metadata.studio!),
+                                    const SizedBox(height: 12),
+                                  ],
+                                  if (metadata.contentRating != null) ...[
+                                    _buildInfoRow(t.discover.rating, formatContentRating(metadata.contentRating!)),
+                                    const SizedBox(height: 12),
+                                  ],
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                     ),
