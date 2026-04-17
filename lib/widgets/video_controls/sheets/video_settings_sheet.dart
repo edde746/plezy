@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import '../../../models/shader_preset.dart';
 import '../../../mpv/mpv.dart';
 import '../../../providers/shader_provider.dart';
+import '../../../services/file_picker_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/shader_service.dart';
 import '../../../services/sleep_timer_service.dart';
@@ -744,7 +745,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Future<void> _importCustomShader(ShaderProvider shaderProvider) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePickerService.instance.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['glsl'],
     );

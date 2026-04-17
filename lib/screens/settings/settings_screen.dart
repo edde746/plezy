@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +14,7 @@ import '../../i18n/strings.g.dart';
 import '../main_screen.dart';
 import '../../mixins/refreshable.dart';
 import '../../services/download_storage_service.dart';
+import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -506,7 +506,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           return;
         }
       } else {
-        final result = await FilePicker.platform.getDirectoryPath(dialogTitle: t.settings.selectFolder);
+        final result = await FilePickerService.instance.getDirectoryPath(dialogTitle: t.settings.selectFolder);
         selectedPath = result;
       }
 

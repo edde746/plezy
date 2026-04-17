@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../focus/focusable_button.dart';
 import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
+import '../services/file_picker_service.dart';
 import '../services/plex_client.dart';
 import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
@@ -105,7 +106,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
   }
 
   Future<void> _uploadFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePickerService.instance.pickFiles(
       type: FileType.image,
       withData: true,
     );
