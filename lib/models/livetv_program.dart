@@ -44,10 +44,29 @@ class LiveTvProgram {
     this.premiere,
   });
 
-  factory LiveTvProgram.fromJson(Map<String, dynamic> json) {
-    // Grid endpoint nests timing/channel info inside Media[0] and Channel[0]
-    final media = (json['Media'] as List?)?.firstOrNull as Map<String, dynamic>?;
+  factory LiveTvProgram.fromJson(
+    Map<String, dynamic> json, {
+    Map<String, dynamic>? mediaOverride,
+  }) {
+    // Grid endpoint nests timing/channel info inside Media[] and Channel[].
+    // When mediaOverride is supplied, the caller is pinning this parse to a
+    // specific airing (one Media entry); treat it as authoritative for
+    // begin/end/channel fields.
+    final hasOverride = mediaOverride != null;
+    final media = mediaOverride ?? (json['Media'] as List?)?.firstOrNull as Map<String, dynamic>?;
     final channel = (json['Channel'] as List?)?.firstOrNull as Map<String, dynamic>?;
+
+    int? pickInt(String key) {
+      final fromMedia = (media?[key] as num?)?.toInt();
+      final fromJson = (json[key] as num?)?.toInt();
+      return hasOverride ? (fromMedia ?? fromJson) : (fromJson ?? fromMedia);
+    }
+
+    String? pickString(String key) {
+      final fromMedia = media?[key]?.toString();
+      final fromJson = json[key] as String?;
+      return hasOverride ? (fromMedia ?? fromJson) : (fromJson ?? fromMedia);
+    }
 
     return LiveTvProgram(
       key: json['key'] as String?,
@@ -57,17 +76,16 @@ class LiveTvProgram {
       summary: json['summary'] as String?,
       type: json['type'] as String?,
       year: (json['year'] as num?)?.toInt(),
-      beginsAt: (json['beginsAt'] as num?)?.toInt() ?? (media?['beginsAt'] as num?)?.toInt(),
-      endsAt: (json['endsAt'] as num?)?.toInt() ?? (media?['endsAt'] as num?)?.toInt(),
+      beginsAt: pickInt('beginsAt'),
+      endsAt: pickInt('endsAt'),
       grandparentTitle: json['grandparentTitle'] as String?,
       parentTitle: json['parentTitle'] as String?,
       index: (json['index'] as num?)?.toInt(),
       parentIndex: (json['parentIndex'] as num?)?.toInt(),
       thumb: json['thumb'] as String? ?? json['grandparentThumb'] as String?,
       art: json['art'] as String?,
-      channelIdentifier:
-          json['channelIdentifier'] as String? ?? media?['channelIdentifier']?.toString() ?? channel?['id']?.toString(),
-      channelCallSign: json['channelCallSign'] as String? ?? media?['channelCallSign'] as String?,
+      channelIdentifier: pickString('channelIdentifier') ?? channel?['id']?.toString(),
+      channelCallSign: pickString('channelCallSign'),
       live: flexibleBool(json['live']),
       premiere: flexibleBool(json['premiere']),
     );

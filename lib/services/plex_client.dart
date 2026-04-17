@@ -2332,11 +2332,21 @@ class PlexClient {
   }
 
   /// Parse a list of JSON items into [LiveTvProgram] objects, skipping any that fail.
+  /// A single Metadata entry may carry multiple Media entries representing back-to-back
+  /// airings of the same program on the same channel; emit one program per airing.
   List<LiveTvProgram> _parseLiveTvPrograms(List items) {
     final programs = <LiveTvProgram>[];
     for (final item in items) {
       try {
-        programs.add(LiveTvProgram.fromJson(item as Map<String, dynamic>));
+        final map = item as Map<String, dynamic>;
+        final mediaList = (map['Media'] as List?)?.whereType<Map<String, dynamic>>().toList();
+        if (mediaList != null && mediaList.length > 1) {
+          for (final media in mediaList) {
+            programs.add(LiveTvProgram.fromJson(map, mediaOverride: media));
+          }
+        } else {
+          programs.add(LiveTvProgram.fromJson(map));
+        }
       } catch (_) {}
     }
     return programs;
