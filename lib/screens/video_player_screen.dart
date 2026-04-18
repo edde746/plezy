@@ -1990,8 +1990,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           if (mounted) {
             await _exitFullscreenIfNeeded();
             if (!mounted) return;
-            _isExiting.value = true;
-            Navigator.of(context).pop(true);
+            final navigator = Navigator.of(context);
+            if (navigator.canPop()) {
+              _isExiting.value = true;
+              navigator.pop(true);
+            }
           }
         }
         return;
@@ -2001,8 +2004,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Default behavior for hosts or non-session users
       if (!mounted) return;
-      _isExiting.value = true;
-      Navigator.of(context).pop(true);
+      final navigator = Navigator.of(context);
+      if (navigator.canPop()) {
+        _isExiting.value = true;
+        navigator.pop(true);
+      }
     } finally {
       _isHandlingBack = false;
     }
