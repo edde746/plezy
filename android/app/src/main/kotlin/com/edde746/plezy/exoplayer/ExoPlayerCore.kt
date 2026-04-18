@@ -341,6 +341,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 setParameters(
                     buildUponParameters()
                         .setTunnelingEnabled(tunnelingUserEnabled)
+                        // Recover passthrough when HDMI capabilities flap (Shield refresh-rate / AVR link drop):
+                        // the sink temporarily falls back to PCM, and this flag lets the selector re-pick the
+                        // encoded audio track when capabilities come back. See androidx/media#2258.
+                        .setAllowInvalidateSelectionsOnRendererCapabilitiesChange(true)
                         .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
                         .setPreferredTextLanguage("en")
                 )
