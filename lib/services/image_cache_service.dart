@@ -17,14 +17,14 @@ class PlexImageCacheManager extends CacheManager with ImageCacheManager {
   static final PlexImageCacheManager instance = PlexImageCacheManager._();
 
   PlexImageCacheManager._()
-      : super(
-          Config(
-            _key,
-            stalePeriod: const Duration(days: 14),
-            maxNrOfCacheObjects: 3000,
-            fileService: _HttpFileService(httpClient.inner),
-          ),
-        );
+    : super(
+        Config(
+          _key,
+          stalePeriod: const Duration(days: 14),
+          maxNrOfCacheObjects: 3000,
+          fileService: _HttpFileService(httpClient.inner),
+        ),
+      );
 }
 
 class _HttpFileService extends FileService {
@@ -33,10 +33,7 @@ class _HttpFileService extends FileService {
   _HttpFileService(this._client);
 
   @override
-  Future<FileServiceResponse> get(
-    String url, {
-    Map<String, String>? headers,
-  }) async {
+  Future<FileServiceResponse> get(String url, {Map<String, String>? headers}) async {
     final request = http.Request('GET', Uri.parse(url));
     if (headers != null) request.headers.addAll(headers);
     final response = await _client.send(request);

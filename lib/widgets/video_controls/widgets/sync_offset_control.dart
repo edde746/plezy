@@ -171,7 +171,10 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
       child: Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: const BorderRadius.all(Radius.circular(8))),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
+        ),
         child: Icon(icon, color: tokens(context).text, size: iconSize),
       ),
     );
@@ -200,7 +203,10 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
         child: Container(
           width: 36,
           height: 36,
-          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: const BorderRadius.all(Radius.circular(8))),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
+          ),
           child: Icon(icon, color: tokens(context).text, size: 22),
         ),
       ),
@@ -300,10 +306,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Current offset display
-          Text(
-            formatSyncOffset(_currentOffset),
-            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-          ),
+          Text(formatSyncOffset(_currentOffset), style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(_getDescriptionText(), style: TextStyle(color: tokens(context).textMuted, fontSize: 16)),
           const SizedBox(height: 48),
@@ -359,9 +362,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             onPressed: _currentOffset != 0 ? _resetOffset : null,
             icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),
             label: Text(t.videoControls.resetToZero),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
+            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
           ),
         ],
       ),

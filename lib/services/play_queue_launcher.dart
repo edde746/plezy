@@ -189,11 +189,7 @@ class PlayQueueLauncher {
       execute: (dismissLoading) async {
         final folderUri = await client.buildFolderUri(folderKey);
 
-        var playQueue = await client.createPlayQueue(
-          uri: folderUri,
-          type: 'video',
-          shuffle: shuffle ? 1 : 0,
-        );
+        var playQueue = await client.createPlayQueue(uri: folderUri, type: 'video', shuffle: shuffle ? 1 : 0);
 
         if (playQueue != null && (playQueue.items == null || playQueue.items!.isEmpty)) {
           final fetchedQueue = await client.getPlayQueue(playQueue.playQueueID);
@@ -204,12 +200,7 @@ class PlayQueueLauncher {
 
         await dismissLoading();
 
-        return _launchFromQueue(
-          playQueue: playQueue,
-          ratingKey: folderKey,
-          serverId: serverId,
-          serverName: serverName,
-        );
+        return _launchFromQueue(playQueue: playQueue, ratingKey: folderKey, serverId: serverId, serverName: serverName);
       },
     );
   }

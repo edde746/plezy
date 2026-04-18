@@ -102,20 +102,28 @@ mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderSt
         if (isSelected) {
           onSelectWhenActive();
         } else {
-          setState(() { tabController.index = index; });
+          setState(() {
+            tabController.index = index;
+          });
         }
       },
       onNavigateLeft: index > 0
           ? () {
               final newIndex = index - 1;
-              setState(() { suppressAutoFocus = true; tabController.index = newIndex; });
+              setState(() {
+                suppressAutoFocus = true;
+                tabController.index = newIndex;
+              });
               getTabChipFocusNode(newIndex).requestFocus();
             }
           : onTabBarBack,
       onNavigateRight: index < tabCount - 1
           ? () {
               final newIndex = index + 1;
-              setState(() { suppressAutoFocus = true; tabController.index = newIndex; });
+              setState(() {
+                suppressAutoFocus = true;
+                tabController.index = newIndex;
+              });
               getTabChipFocusNode(newIndex).requestFocus();
             }
           : onNavigateRightFromLast,

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+if [ "${SKIP_HOOKS:-}" = "1" ]; then
+  echo "[pre-commit] skipped (SKIP_HOOKS=1)"
+  exit 0
+fi
+
+GIT_DIR="$(git rev-parse --git-dir)"
+if [ -f "$GIT_DIR/MERGE_MSG" ] || [ -f "$GIT_DIR/MERGE_HEAD" ] || [ -f "$GIT_DIR/REVERT_HEAD" ]; then
+  echo "[pre-commit] skipped (merge/revert in progress)"
+  exit 0
+fi
+
+if git diff --cached --quiet; then
+  echo "[pre-commit] nothing staged — skipping checks"
+  exit 0
+fi
+
+ROOT="$(git rev-parse --show-toplevel)"
+exec "$ROOT/scripts/ci_checks.sh"

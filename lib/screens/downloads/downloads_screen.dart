@@ -158,7 +158,8 @@ class DownloadsScreenState extends State<DownloadsScreen> with TickerProviderSta
                   FocusableAction(
                     icon: Symbols.sync_rounded,
                     tooltip: t.downloads.activeSyncRules,
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
+                    onPressed: () =>
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
                   ),
                 ],
               ),
@@ -344,4 +345,3 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
     );
   }
 }
-

@@ -34,7 +34,6 @@ class NavigationTab {
       return true;
     }).toList();
   }
-
 }
 
 // Label getters (must be top-level for const constructor)

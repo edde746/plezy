@@ -185,9 +185,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
     if (provider.isHostServerRunning) {
       return Text(
         t.companionRemote.session.serverRunning,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).textTheme.bodySmall?.color,
-            ),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
       );
     }
     return Text(
@@ -207,10 +205,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
             Container(
               width: 12,
               height: 12,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isRunning ? Colors.green : Colors.grey,
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: isRunning ? Colors.green : Colors.grey),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -218,9 +213,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isRunning
-                        ? t.companionRemote.session.serverRunning
-                        : t.companionRemote.session.serverStopped,
+                    isRunning ? t.companionRemote.session.serverRunning : t.companionRemote.session.serverStopped,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 4),

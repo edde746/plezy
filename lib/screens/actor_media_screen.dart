@@ -40,11 +40,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
         GridFocusNodeMixin<ActorMediaScreen>,
         FocusableDetailScreenMixin<ActorMediaScreen> {
   @override
-  PlexMetadata get mediaItem => PlexMetadata(
-        ratingKey: '',
-        serverId: widget.serverId,
-        serverName: widget.serverName,
-      );
+  PlexMetadata get mediaItem => PlexMetadata(ratingKey: '', serverId: widget.serverId, serverName: widget.serverName);
 
   @override
   String get title => widget.actorName;
@@ -111,9 +107,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
                     const SizedBox(height: 4),
                     Text(
                       widget.characterName!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -122,9 +116,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
                     const SizedBox(height: 4),
                     Text(
                       '${items.length} ${items.length == 1 ? 'title' : 'titles'}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ],
@@ -155,11 +147,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
             CustomAppBar(title: Text(widget.actorName), pinned: true, actions: buildFocusableAppBarActions()),
             _buildActorHeader(),
             ...buildStateSlivers(),
-            if (items.isNotEmpty)
-              buildFocusableGrid(
-                items: items,
-                onRefresh: updateItem,
-              ),
+            if (items.isNotEmpty) buildFocusableGrid(items: items, onRefresh: updateItem),
           ],
         ),
       ),

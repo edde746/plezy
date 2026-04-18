@@ -146,24 +146,27 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                     title: Text(sort.title),
                     value: sort,
                     secondary: isSelected
-                      ? SegmentedButton<bool>(
-                          showSelectedIcon: false,
-                          segments: const [
-                            ButtonSegment(value: false, icon: AppIcon(Symbols.arrow_upward_rounded, fill: 1, size: 16)),
-                            ButtonSegment(
-                              value: true,
-                              icon: AppIcon(Symbols.arrow_downward_rounded, fill: 1, size: 16),
-                            ),
-                          ],
-                          selected: {_currentDescending},
-                          onSelectionChanged: (Set<bool> newSelection) {
-                            _handleDirectionChange(sort, newSelection.first);
-                          },
-                        )
-                      : null,
-                ),
-              );
-            },
+                        ? SegmentedButton<bool>(
+                            showSelectedIcon: false,
+                            segments: const [
+                              ButtonSegment(
+                                value: false,
+                                icon: AppIcon(Symbols.arrow_upward_rounded, fill: 1, size: 16),
+                              ),
+                              ButtonSegment(
+                                value: true,
+                                icon: AppIcon(Symbols.arrow_downward_rounded, fill: 1, size: 16),
+                              ),
+                            ],
+                            selected: {_currentDescending},
+                            onSelectionChanged: (Set<bool> newSelection) {
+                              _handleDirectionChange(sort, newSelection.first);
+                            },
+                          )
+                        : null,
+                  ),
+                );
+              },
             ),
           ),
         ),

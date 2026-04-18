@@ -75,7 +75,9 @@ class GappedTrackShape extends SliderTrackShape with BaseSliderTrackShape {
       bottomLeft: innerRadius,
     );
 
-    final canvas = context.canvas..save()..clipRRect(trackRRect);
+    final canvas = context.canvas
+      ..save()
+      ..clipRRect(trackRRect);
 
     if (thumbCenter.dx > leftRRect.left + sliderTheme.trackHeight! / 2) {
       canvas.drawRRect(leftRRect, leftPaint);

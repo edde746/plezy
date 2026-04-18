@@ -159,7 +159,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   bool _isFolder(PlexMetadata item) {
     // Folders typically don't have a specific type or might have special indicators
     // Check for common folder indicators
-    return item.key?.contains('/folder') == true || item.type == null || item.type!.isEmpty || item.mediaType == PlexMediaType.unknown;
+    return item.key?.contains('/folder') == true ||
+        item.type == null ||
+        item.type!.isEmpty ||
+        item.mediaType == PlexMediaType.unknown;
   }
 
   List<Widget> _buildTreeItems(List<PlexMetadata> items, int depth, [String parentPath = '']) {
@@ -227,10 +230,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
     return RefreshIndicator(
       onRefresh: _loadRootFolders,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        children: _buildTreeItems(_rootFolders, 0),
-      ),
+      child: ListView(padding: const EdgeInsets.symmetric(horizontal: 8), children: _buildTreeItems(_rootFolders, 0)),
     );
   }
 }

@@ -25,11 +25,7 @@ class _ServerResult {
   final String serverName;
   final List<PlexActivity> activities;
 
-  _ServerResult({
-    required this.serverId,
-    required this.serverName,
-    required this.activities,
-  });
+  _ServerResult({required this.serverId, required this.serverName, required this.activities});
 }
 
 class _PanelData {
@@ -98,11 +94,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       final client = multiServer.getClientForServer(serverId);
       if (client == null) return null;
       final activities = await client.getActivities();
-      return _ServerResult(
-        serverId: serverId,
-        serverName: client.serverName ?? serverId,
-        activities: activities,
-      );
+      return _ServerResult(serverId: serverId, serverName: client.serverName ?? serverId, activities: activities);
     });
 
     final rawResults = await Future.wait(futures);
@@ -158,10 +150,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     return Stack(
       children: [
         Positioned.fill(
-          child: GestureDetector(
-            onTap: _removeOverlay,
-            behavior: HitTestBehavior.opaque,
-          ),
+          child: GestureDetector(onTap: _removeOverlay, behavior: HitTestBehavior.opaque),
         ),
         Positioned(
           right: right,
@@ -196,9 +185,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
             Divider(height: 1, color: theme.dividerColor),
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 360),
-              child: SingleChildScrollView(
-                child: _buildPanelBody(context, data),
-              ),
+              child: SingleChildScrollView(child: _buildPanelBody(context, data)),
             ),
           ],
         ),
@@ -214,10 +201,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
         children: [
           AppIcon(Symbols.monitor_heart_rounded, size: 18, color: theme.colorScheme.onSurface),
           const SizedBox(width: 8),
-          Text(
-            t.serverTasks.title,
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
+          Text(t.serverTasks.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -232,9 +216,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
         child: Center(
           child: Text(
             t.common.loading,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
           ),
         ),
       );
@@ -261,9 +243,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
         child: Center(
           child: Text(
             t.serverTasks.noTasks,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
           ),
         ),
       );
@@ -288,10 +268,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: tokens(context).text,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    decoration: BoxDecoration(color: tokens(context).text, borderRadius: BorderRadius.circular(10)),
                     child: Text(
                       '${result.activities.length}',
                       style: theme.textTheme.labelSmall?.copyWith(
@@ -304,8 +281,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
                 ],
               ),
             ),
-            for (final activity in result.activities)
-              _buildActivityTile(context, result.serverId, activity),
+            for (final activity in result.activities) _buildActivityTile(context, result.serverId, activity),
           ],
         const SizedBox(height: 8),
       ],

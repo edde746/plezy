@@ -673,10 +673,7 @@ class WatchTogetherSyncManager {
             _firstPlayCompleted = true;
             final pos = _deferredPlayPosition;
             _deferredPlayPosition = null;
-            await _applyRemotePlay(
-              position: pos,
-              expectedAttachmentGeneration: queuedAttachmentGeneration,
-            );
+            await _applyRemotePlay(position: pos, expectedAttachmentGeneration: queuedAttachmentGeneration);
             // Broadcast play to all peers now that everyone is ready
             _broadcastPlayPause(true);
           }

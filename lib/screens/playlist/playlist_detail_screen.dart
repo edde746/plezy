@@ -64,7 +64,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       if (items.isNotEmpty && widget.playlist.playlistType == 'video')
         FocusableAction(icon: Symbols.download_rounded, tooltip: t.downloads.downloadNow, onPressed: _downloadPlaylist),
       if (!widget.playlist.smart)
-        FocusableAction(icon: Symbols.delete_rounded, tooltip: t.playlists.delete, onPressed: _deletePlaylist, iconColor: Colors.red),
+        FocusableAction(
+          icon: Symbols.delete_rounded,
+          tooltip: t.playlists.delete,
+          onPressed: _deletePlaylist,
+          iconColor: Colors.red,
+        ),
     ];
   }
 
@@ -572,11 +577,20 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Theme.of(context).colorScheme.primary),
+                    AppIcon(
+                      Symbols.auto_awesome_rounded,
+                      fill: 1,
+                      size: 12,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       t.playlists.smartPlaylist,
-                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.normal),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.normal,
+                      ),
                     ),
                   ],
                 ),

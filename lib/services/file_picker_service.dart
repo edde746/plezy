@@ -31,16 +31,13 @@ class FilePickerService {
     List<String>? allowedExtensions,
     bool withData = false,
   }) {
-    return _guard('pickFiles', () => FilePicker.platform.pickFiles(
-      type: type,
-      allowedExtensions: allowedExtensions,
-      withData: withData,
-    ));
+    return _guard(
+      'pickFiles',
+      () => FilePicker.platform.pickFiles(type: type, allowedExtensions: allowedExtensions, withData: withData),
+    );
   }
 
   Future<String?> getDirectoryPath({String? dialogTitle}) {
-    return _guard('getDirectoryPath', () => FilePicker.platform.getDirectoryPath(
-      dialogTitle: dialogTitle,
-    ));
+    return _guard('getDirectoryPath', () => FilePicker.platform.getDirectoryPath(dialogTitle: dialogTitle));
   }
 }

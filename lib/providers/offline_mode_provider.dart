@@ -29,9 +29,10 @@ class OfflineModeProvider extends ChangeNotifier {
   /// Updates network and server connection flags
   Future<void> _updateConnectionFlags() async {
     try {
-      final connectivityResult = await Connectivity()
-          .checkConnectivity()
-          .timeout(const Duration(seconds: 3), onTimeout: () => [ConnectivityResult.other]);
+      final connectivityResult = await Connectivity().checkConnectivity().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => [ConnectivityResult.other],
+      );
       _hasNetworkConnection = !connectivityResult.contains(ConnectivityResult.none);
     } catch (e) {
       // connectivity_plus can throw PlatformException on Windows (NetworkManager::StartListen)
@@ -50,24 +51,27 @@ class OfflineModeProvider extends ChangeNotifier {
 
     // Monitor connectivity changes — runZonedGuarded catches async errors from
     // connectivity_plus (e.g. DBusServiceUnknownException on Linux without NetworkManager)
-    runZonedGuarded(() {
-      _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
-        (results) {
-          final wasOffline = isOffline;
-          _hasNetworkConnection = !results.contains(ConnectivityResult.none);
+    runZonedGuarded(
+      () {
+        _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+          (results) {
+            final wasOffline = isOffline;
+            _hasNetworkConnection = !results.contains(ConnectivityResult.none);
 
-          if (wasOffline != isOffline) {
-            notifyListeners();
-          }
-        },
-        onError: (e) {
-          _hasNetworkConnection = true;
-        },
-      );
-    }, (error, stack) {
-      // connectivity_plus throws DBusServiceUnknownException on Linux without NetworkManager
-      _hasNetworkConnection = true;
-    });
+            if (wasOffline != isOffline) {
+              notifyListeners();
+            }
+          },
+          onError: (e) {
+            _hasNetworkConnection = true;
+          },
+        );
+      },
+      (error, stack) {
+        // connectivity_plus throws DBusServiceUnknownException on Linux without NetworkManager
+        _hasNetworkConnection = true;
+      },
+    );
 
     // Monitor server status from MultiServerManager
     _serverStatusSubscription = _serverManager.statusStream.listen((statusMap) {

@@ -46,8 +46,10 @@ class PlaybackInitializationService {
 
       // Skip offline file if a different version was requested
       if (downloadedItem.mediaIndex != mediaIndex) {
-        appLogger.d('[VersionTrace] Offline video is version ${downloadedItem.mediaIndex}, '
-            'but requested version $mediaIndex — skipping offline');
+        appLogger.d(
+          '[VersionTrace] Offline video is version ${downloadedItem.mediaIndex}, '
+          'but requested version $mediaIndex — skipping offline',
+        );
         return null;
       }
 
@@ -94,7 +96,11 @@ class PlaybackInitializationService {
       // Check for offline content first if preferOffline is enabled
       String? offlineVideoPath;
       if (preferOffline && database != null) {
-        offlineVideoPath = await getOfflineVideoPath(client.serverId, metadata.ratingKey, mediaIndex: selectedMediaIndex);
+        offlineVideoPath = await getOfflineVideoPath(
+          client.serverId,
+          metadata.ratingKey,
+          mediaIndex: selectedMediaIndex,
+        );
       }
 
       // If offline video is available, use it

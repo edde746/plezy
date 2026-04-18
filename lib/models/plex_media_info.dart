@@ -37,30 +37,34 @@ class PlexMediaInfo {
         try {
           final streamType = s['streamType'] as int?;
           if (streamType == 2) {
-            audioTracks.add(PlexAudioTrack(
-              id: s['id'] as int,
-              index: s['index'] as int?,
-              codec: s['codec'] as String?,
-              language: s['language'] as String?,
-              languageCode: s['languageCode'] as String?,
-              title: s['title'] as String?,
-              displayTitle: s['displayTitle'] as String?,
-              channels: s['channels'] as int?,
-              selected: flexibleBool(s['selected']),
-            ));
+            audioTracks.add(
+              PlexAudioTrack(
+                id: s['id'] as int,
+                index: s['index'] as int?,
+                codec: s['codec'] as String?,
+                language: s['language'] as String?,
+                languageCode: s['languageCode'] as String?,
+                title: s['title'] as String?,
+                displayTitle: s['displayTitle'] as String?,
+                channels: s['channels'] as int?,
+                selected: flexibleBool(s['selected']),
+              ),
+            );
           } else if (streamType == 3) {
-            subtitleTracks.add(PlexSubtitleTrack(
-              id: s['id'] as int,
-              index: s['index'] as int?,
-              codec: s['codec'] as String?,
-              language: s['language'] as String?,
-              languageCode: s['languageCode'] as String?,
-              title: s['title'] as String?,
-              displayTitle: s['displayTitle'] as String?,
-              selected: flexibleBool(s['selected']),
-              forced: flexibleBool(s['forced']),
-              key: s['key'] as String?,
-            ));
+            subtitleTracks.add(
+              PlexSubtitleTrack(
+                id: s['id'] as int,
+                index: s['index'] as int?,
+                codec: s['codec'] as String?,
+                language: s['language'] as String?,
+                languageCode: s['languageCode'] as String?,
+                title: s['title'] as String?,
+                displayTitle: s['displayTitle'] as String?,
+                selected: flexibleBool(s['selected']),
+                forced: flexibleBool(s['forced']),
+                key: s['key'] as String?,
+              ),
+            );
           }
         } catch (e) {
           appLogger.d('Skipping malformed stream in cached metadata', error: e);
@@ -68,12 +72,7 @@ class PlexMediaInfo {
       }
     }
 
-    return PlexMediaInfo(
-      videoUrl: '',
-      audioTracks: audioTracks,
-      subtitleTracks: subtitleTracks,
-      chapters: const [],
-    );
+    return PlexMediaInfo(videoUrl: '', audioTracks: audioTracks, subtitleTracks: subtitleTracks, chapters: const []);
   }
 }
 
@@ -259,7 +258,12 @@ class PlaybackExtras {
         if (m.type == 'intro' || m.type == 'credits') return m;
         final newType = _classifyChapterTitle(m.type, introPattern, creditsPattern);
         if (newType != null) {
-          return PlexMarker(id: m.id, type: newType, startTimeOffset: m.startTimeOffset, endTimeOffset: m.endTimeOffset);
+          return PlexMarker(
+            id: m.id,
+            type: newType,
+            startTimeOffset: m.startTimeOffset,
+            endTimeOffset: m.endTimeOffset,
+          );
         }
         return m;
       }).toList();
@@ -278,8 +282,7 @@ class PlaybackExtras {
       final start = ch.startTimeOffset;
       if (start == null) continue;
 
-      final end = ch.endTimeOffset ??
-          (i + 1 < chapters.length ? chapters[i + 1].startTimeOffset : null);
+      final end = ch.endTimeOffset ?? (i + 1 < chapters.length ? chapters[i + 1].startTimeOffset : null);
       if (end == null) continue;
 
       synthetic.add(PlexMarker(id: ch.id, type: type, startTimeOffset: start, endTimeOffset: end));

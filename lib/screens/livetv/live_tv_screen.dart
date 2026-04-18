@@ -47,6 +47,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   bool _showFavoritesOnly = false;
   Set<String> _favoriteChannelIds = {};
   List<FavoriteChannel> _favoriteChannels = [];
+
   /// Source URI per server, built from machineIdentifier + EPG provider identifier.
   final Map<String, String> _favoriteSourceByServer = {};
 
@@ -78,7 +79,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     disposeTabNavigation();
     super.dispose();
   }
-
 
   @override
   void onTabChanged() {
@@ -306,7 +306,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   @override
   void focusActiveTabIfReady() => _focusCurrentTab();
 
-
   // ---------------------------------------------------------------------------
   // Tab chips
   // ---------------------------------------------------------------------------
@@ -363,11 +362,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                   tooltip: t.liveTv.reorderFavorites,
                   onPressed: _showReorderFavorites,
                 ),
-              FocusableAction(
-                icon: Symbols.refresh_rounded,
-                tooltip: t.liveTv.reloadGuide,
-                onPressed: _loadChannels,
-              ),
+              FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.liveTv.reloadGuide, onPressed: _loadChannels),
             ],
           ),
         ]),

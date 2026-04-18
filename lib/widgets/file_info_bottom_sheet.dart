@@ -35,11 +35,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
     return Column(
       children: [
         // Header
-        BottomSheetHeader(
-          title: t.fileInfo.title,
-          icon: Symbols.info_rounded,
-          closeFocusNode: _initialFocusNode,
-        ),
+        BottomSheetHeader(title: t.fileInfo.title, icon: Symbols.info_rounded, closeFocusNode: _initialFocusNode),
         // Content
         Expanded(
           child: ListView(
@@ -47,10 +43,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
             children: [
               // Title
               if (widget.title.isNotEmpty) ...[
-                Text(
-                  widget.title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
+                Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                 const SizedBox(height: 20),
               ],
 
@@ -128,10 +121,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-    );
+    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
   }
 
   Widget _buildInfoRow(String label, String value, {bool isMonospace = false}) {
@@ -184,7 +174,10 @@ class _FocusableInfoRowState extends State<_FocusableInfoRow> {
           children: [
             SizedBox(
               width: 140,
-              child: Text(widget.label, style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 14)),
+              child: Text(
+                widget.label,
+                style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 14),
+              ),
             ),
             Expanded(
               child: Text(

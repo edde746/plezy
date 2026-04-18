@@ -356,10 +356,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           _state = _state.copyWith(completed: true);
           completedController.add(true);
         } else if (reason == 'error') {
-          errorController.add(PlayerError(
-            data?['message'] as String? ?? 'Playback error',
-            cause: data?['cause'] as String?,
-          ));
+          errorController.add(
+            PlayerError(data?['message'] as String? ?? 'Playback error', cause: data?['cause'] as String?),
+          );
         }
         break;
 
@@ -440,7 +439,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       }
     }
 
-    return (tracks: Tracks(audio: audioTracks, subtitle: subtitleTracks), selectedAudioId: selectedAudioId, selectedSubtitleId: selectedSubtitleId);
+    return (
+      tracks: Tracks(audio: audioTracks, subtitle: subtitleTracks),
+      selectedAudioId: selectedAudioId,
+      selectedSubtitleId: selectedSubtitleId,
+    );
   }
 
   /// Update the selected audio track.
@@ -591,11 +594,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       }
     } catch (e) {
       // Font configuration is not critical - continue without it
-      logController.add(PlayerLog(
-        prefix: 'fonts',
-        level: PlayerLogLevel.warn,
-        text: 'Failed to configure subtitle fonts: $e',
-      ));
+      logController.add(
+        PlayerLog(prefix: 'fonts', level: PlayerLogLevel.warn, text: 'Failed to configure subtitle fonts: $e'),
+      );
     }
   }
 
@@ -609,15 +610,14 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// without needing a real misbehaving server.
   void debugSimulateServer500() {
     if (_disposed) return;
-    logController.add(const PlayerLog(
-      level: PlayerLogLevel.warn,
-      prefix: 'ffmpeg',
-      text: 'https: HTTP error 500 Internal Server Error',
-    ));
-    errorController.add(const PlayerError(
-      'HTTP 500',
-      cause: PlayerError.serverHttp500,
-    ));
+    logController.add(
+      const PlayerLog(
+        level: PlayerLogLevel.warn,
+        prefix: 'ffmpeg',
+        text: 'https: HTTP error 500 Internal Server Error',
+      ),
+    );
+    errorController.add(const PlayerError('HTTP 500', cause: PlayerError.serverHttp500));
   }
 
   // ============================================

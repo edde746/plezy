@@ -85,11 +85,7 @@ class _FocusableButtonState extends State<FocusableButton> {
       onNavigateLeft: widget.onNavigateLeft,
       onNavigateRight: widget.onNavigateRight,
       onBack: widget.onBack,
-      child: AnimatedOpacity(
-        opacity: showFocus ? 1.0 : opacity,
-        duration: duration,
-        child: widget.child,
-      ),
+      child: AnimatedOpacity(opacity: showFocus ? 1.0 : opacity, duration: duration, child: widget.child),
     );
   }
 }

@@ -169,10 +169,7 @@ class _LogsScreenState extends State<LogsScreen> {
             FocusableButton(
               autofocus: true,
               onPressed: () => Navigator.of(ctx).pop(),
-              child: TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(t.common.close),
-              ),
+              child: TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(t.common.close)),
             ),
           ],
         ),
@@ -213,39 +210,51 @@ class _LogsScreenState extends State<LogsScreen> {
   List<TextSpan> _buildLogSpans() {
     final spans = <TextSpan>[];
     if (_deviceInfo.isNotEmpty) {
-      spans.add(TextSpan(
-        text: '$_deviceInfo\n',
-        style: TextStyle(color: Colors.grey.withValues(alpha: 0.6)),
-      ));
-      spans.add(TextSpan(
-        text: '---\n',
-        style: TextStyle(color: Colors.grey.withValues(alpha: 0.3)),
-      ));
+      spans.add(
+        TextSpan(
+          text: '$_deviceInfo\n',
+          style: TextStyle(color: Colors.grey.withValues(alpha: 0.6)),
+        ),
+      );
+      spans.add(
+        TextSpan(
+          text: '---\n',
+          style: TextStyle(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+      );
     }
     for (var i = 0; i < _logs.length; i++) {
       if (i > 0) spans.add(const TextSpan(text: '\n'));
       final log = _logs[i];
       final color = _getLevelColor(log.level);
-      spans.add(TextSpan(
-        text: '[${_formatTime(log.timestamp)}] ',
-        style: TextStyle(color: color.withValues(alpha: 0.6)),
-      ));
-      spans.add(TextSpan(
-        text: '[${log.level.name.toUpperCase()}] ',
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-      ));
+      spans.add(
+        TextSpan(
+          text: '[${_formatTime(log.timestamp)}] ',
+          style: TextStyle(color: color.withValues(alpha: 0.6)),
+        ),
+      );
+      spans.add(
+        TextSpan(
+          text: '[${log.level.name.toUpperCase()}] ',
+          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+        ),
+      );
       spans.add(TextSpan(text: log.message));
       if (log.error != null) {
-        spans.add(TextSpan(
-          text: '\n  Error: ${log.error}',
-          style: TextStyle(color: color),
-        ));
+        spans.add(
+          TextSpan(
+            text: '\n  Error: ${log.error}',
+            style: TextStyle(color: color),
+          ),
+        );
       }
       if (log.stackTrace != null) {
-        spans.add(TextSpan(
-          text: '\n  ${log.stackTrace.toString().replaceAll('\n', '\n  ')}',
-          style: TextStyle(color: Colors.grey.withValues(alpha: 0.7)),
-        ));
+        spans.add(
+          TextSpan(
+            text: '\n  ${log.stackTrace.toString().replaceAll('\n', '\n  ')}',
+            style: TextStyle(color: Colors.grey.withValues(alpha: 0.7)),
+          ),
+        );
       }
     }
     return spans;
@@ -282,11 +291,7 @@ class _LogsScreenState extends State<LogsScreen> {
               actions: [
                 FocusableActionBar(
                   actions: [
-                    FocusableAction(
-                      icon: Symbols.refresh_rounded,
-                      tooltip: t.common.refresh,
-                      onPressed: _loadLogs,
-                    ),
+                    FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: _loadLogs),
                     FocusableAction(
                       icon: Symbols.upload_rounded,
                       tooltip: t.logs.uploadLogs,
@@ -314,11 +319,7 @@ class _LogsScreenState extends State<LogsScreen> {
                 sliver: SliverToBoxAdapter(
                   child: SelectableText.rich(
                     TextSpan(
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        height: 1.5,
-                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontSize: 12, height: 1.5),
                       children: _buildLogSpans(),
                     ),
                   ),

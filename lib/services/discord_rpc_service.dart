@@ -300,21 +300,14 @@ class DiscordRPCService {
       if (imageUrl.isEmpty) return null;
 
       // Fetch image data
-      final imageBytes = await httpClient.getBytes(
-        imageUrl,
-        timeout: const Duration(seconds: 10),
-      );
+      final imageBytes = await httpClient.getBytes(imageUrl, timeout: const Duration(seconds: 10));
       if (imageBytes.isEmpty) return null;
 
       // Upload to Litterbox
       final uploadRequest = http.MultipartRequest('POST', Uri.parse(_litterboxUrl))
         ..fields['reqtype'] = 'fileupload'
         ..fields['time'] = '1h'
-        ..files.add(http.MultipartFile.fromBytes(
-          'fileToUpload',
-          imageBytes,
-          filename: 'thumbnail.jpg',
-        ));
+        ..files.add(http.MultipartFile.fromBytes('fileToUpload', imageBytes, filename: 'thumbnail.jpg'));
 
       final uploadStreamed = await httpClient.inner
           .send(uploadRequest)

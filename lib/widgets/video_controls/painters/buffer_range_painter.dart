@@ -70,7 +70,10 @@ class BufferRangePainter extends CustomPainter {
         final clippedRight = bufRight.clamp(segLeft, segRight);
         if (clippedRight <= clippedLeft) continue;
         canvas.drawRRect(
-          RRect.fromRectAndRadius(Rect.fromLTWH(clippedLeft, y, clippedRight - clippedLeft, trackHeight), Radius.circular(radius)),
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(clippedLeft, y, clippedRight - clippedLeft, trackHeight),
+            Radius.circular(radius),
+          ),
           bufPaint,
         );
       }

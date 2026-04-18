@@ -291,12 +291,7 @@ class PlexOptimizedImage extends StatelessWidget {
     );
   }
 
-  Widget _buildLocalFileImage(
-    BuildContext context,
-    File file,
-    double effectiveWidth,
-    double effectiveHeight,
-  ) {
+  Widget _buildLocalFileImage(BuildContext context, File file, double effectiveWidth, double effectiveHeight) {
     final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
     final scaledWidth = effectiveWidth * dpr;
     final scaledHeight = effectiveHeight * dpr;
@@ -396,9 +391,7 @@ class PlexOptimizedImage extends StatelessWidget {
         if (wasSynchronouslyLoaded) return child;
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
-          child: frame != null
-              ? child
-              : _buildPlaceholder(context),
+          child: frame != null ? child : _buildPlaceholder(context),
         );
       },
     );

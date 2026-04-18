@@ -158,10 +158,7 @@ class CompanionRemoteProvider with ChangeNotifier {
         _homeUserUUIDs!,
       );
 
-      _session = RemoteSession(
-        role: RemoteSessionRole.host,
-        status: RemoteSessionStatus.connected,
-      );
+      _session = RemoteSession(role: RemoteSessionRole.host, status: RemoteSessionStatus.connected);
       notifyListeners();
 
       // Start LAN discovery broadcasting
@@ -239,10 +236,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _peerService = CompanionRemotePeerService();
     _setupPeerServiceListeners();
 
-    _session = RemoteSession(
-      role: RemoteSessionRole.remote,
-      status: RemoteSessionStatus.connecting,
-    );
+    _session = RemoteSession(role: RemoteSessionRole.remote, status: RemoteSessionStatus.connecting);
     notifyListeners();
 
     try {
@@ -284,10 +278,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _peerService = CompanionRemotePeerService();
     _setupPeerServiceListeners();
 
-    _session = RemoteSession(
-      role: RemoteSessionRole.remote,
-      status: RemoteSessionStatus.connecting,
-    );
+    _session = RemoteSession(role: RemoteSessionRole.remote, status: RemoteSessionStatus.connecting);
     notifyListeners();
 
     try {

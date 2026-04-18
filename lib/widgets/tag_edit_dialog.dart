@@ -79,10 +79,7 @@ class _TagEditDialogState extends State<TagEditDialog> {
                 labelText: t.metadataEdit.addTag,
                 suffixIcon: FocusableButton(
                   onPressed: _addTag,
-                  child: IconButton(
-                    icon: const AppIcon(Symbols.add_rounded),
-                    onPressed: _addTag,
-                  ),
+                  child: IconButton(icon: const AppIcon(Symbols.add_rounded), onPressed: _addTag),
                 ),
               ),
               textInputAction: TextInputAction.done,
@@ -114,10 +111,7 @@ class _TagEditDialogState extends State<TagEditDialog> {
         FocusableButton(
           focusNode: _saveFocusNode,
           onPressed: () => Navigator.pop(context, _tags),
-          child: TextButton(
-            onPressed: () => Navigator.pop(context, _tags),
-            child: Text(t.common.save),
-          ),
+          child: TextButton(onPressed: () => Navigator.pop(context, _tags), child: Text(t.common.save)),
         ),
       ],
     );

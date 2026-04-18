@@ -53,7 +53,9 @@ class PlexApiCache {
     final encoded = await tryIsolateRun(() => jsonEncode(data));
     await _db
         .into(_db.apiCache)
-        .insertOnConflictUpdate(ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded), cachedAt: Value(DateTime.now())));
+        .insertOnConflictUpdate(
+          ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded), cachedAt: Value(DateTime.now())),
+        );
   }
 
   /// Delete all cached data for a server

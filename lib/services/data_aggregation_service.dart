@@ -302,10 +302,7 @@ class DataAggregationService {
 
   /// Split "Recently Added" hubs that contain items from multiple libraries
   /// into separate per-library hubs, matching the official Plex client behavior.
-  List<PlexHub> _splitRecentlyAddedHubs(
-    List<PlexHub> hubs,
-    Map<String, List<PlexLibrary>>? librariesByServer,
-  ) {
+  List<PlexHub> _splitRecentlyAddedHubs(List<PlexHub> hubs, Map<String, List<PlexLibrary>>? librariesByServer) {
     final result = <PlexHub>[];
 
     for (final hub in hubs) {
@@ -340,33 +337,37 @@ class DataAggregationService {
         final libraryName = _resolveLibraryName(items.first, librariesByServer);
         final title = libraryName != null ? 'Recently Added in $libraryName' : hub.title;
 
-        result.add(PlexHub(
-          hubKey: hub.hubKey,
-          title: title,
-          type: hub.type,
-          hubIdentifier: '${hub.hubIdentifier}_${entry.key}',
-          size: items.length,
-          more: hub.more,
-          items: items,
-          serverId: hub.serverId,
-          serverName: hub.serverName,
-          librarySectionID: entry.key,
-        ));
+        result.add(
+          PlexHub(
+            hubKey: hub.hubKey,
+            title: title,
+            type: hub.type,
+            hubIdentifier: '${hub.hubIdentifier}_${entry.key}',
+            size: items.length,
+            more: hub.more,
+            items: items,
+            serverId: hub.serverId,
+            serverName: hub.serverName,
+            librarySectionID: entry.key,
+          ),
+        );
       }
 
       // Keep ungrouped items in a hub with the original title
       if (ungrouped.isNotEmpty) {
-        result.add(PlexHub(
-          hubKey: hub.hubKey,
-          title: hub.title,
-          type: hub.type,
-          hubIdentifier: hub.hubIdentifier,
-          size: ungrouped.length,
-          more: hub.more,
-          items: ungrouped,
-          serverId: hub.serverId,
-          serverName: hub.serverName,
-        ));
+        result.add(
+          PlexHub(
+            hubKey: hub.hubKey,
+            title: hub.title,
+            type: hub.type,
+            hubIdentifier: hub.hubIdentifier,
+            size: ungrouped.length,
+            more: hub.more,
+            items: ungrouped,
+            serverId: hub.serverId,
+            serverName: hub.serverName,
+          ),
+        );
       }
     }
 
@@ -374,10 +375,7 @@ class DataAggregationService {
   }
 
   /// Resolve library name from item metadata or library lookup map.
-  String? _resolveLibraryName(
-    PlexMetadata item,
-    Map<String, List<PlexLibrary>>? librariesByServer,
-  ) {
+  String? _resolveLibraryName(PlexMetadata item, Map<String, List<PlexLibrary>>? librariesByServer) {
     // Try librarySectionTitle from the item itself (Plex API often includes it)
     if (item.librarySectionTitle != null && item.librarySectionTitle!.isNotEmpty) {
       return item.librarySectionTitle;

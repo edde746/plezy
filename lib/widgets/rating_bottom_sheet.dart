@@ -12,12 +12,7 @@ class RatingBottomSheet extends StatefulWidget {
   final Future<void> Function(double stars) onRate;
   final Future<void> Function() onClear;
 
-  const RatingBottomSheet({
-    super.key,
-    required this.currentRating,
-    required this.onRate,
-    required this.onClear,
-  });
+  const RatingBottomSheet({super.key, required this.currentRating, required this.onRate, required this.onClear});
 
   @override
   State<RatingBottomSheet> createState() => _RatingBottomSheetState();
@@ -52,9 +47,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            _selectedRating > 0
-                ? '${formatRating(_selectedRating)} / 5'
-                : t.mediaMenu.rate,
+            _selectedRating > 0 ? '${formatRating(_selectedRating)} / 5' : t.mediaMenu.rate,
             style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 16),
@@ -76,9 +69,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          color: hasFocus
-                              ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                              : null,
+                          color: hasFocus ? theme.colorScheme.primary.withValues(alpha: 0.12) : null,
                         ),
                         child: child,
                       );

@@ -12,11 +12,11 @@ class RecentRoom {
   const RecentRoom({required this.code, this.name, required this.lastUsed, this.controlMode});
 
   Map<String, dynamic> toJson() => {
-        'code': code,
-        if (name != null) 'name': name,
-        'lastUsed': lastUsed.millisecondsSinceEpoch,
-        if (controlMode != null) 'controlMode': controlMode!.index,
-      };
+    'code': code,
+    if (name != null) 'name': name,
+    'lastUsed': lastUsed.millisecondsSinceEpoch,
+    if (controlMode != null) 'controlMode': controlMode!.index,
+  };
 
   factory RecentRoom.fromJson(Map<String, dynamic> json) {
     final modeIndex = json['controlMode'] as int?;
@@ -28,13 +28,18 @@ class RecentRoom {
     );
   }
 
-  RecentRoom copyWith({String? code, String? name, DateTime? lastUsed, ControlMode? controlMode, bool clearName = false}) =>
-      RecentRoom(
-        code: code ?? this.code,
-        name: clearName ? null : (name ?? this.name),
-        lastUsed: lastUsed ?? this.lastUsed,
-        controlMode: controlMode ?? this.controlMode,
-      );
+  RecentRoom copyWith({
+    String? code,
+    String? name,
+    DateTime? lastUsed,
+    ControlMode? controlMode,
+    bool clearName = false,
+  }) => RecentRoom(
+    code: code ?? this.code,
+    name: clearName ? null : (name ?? this.name),
+    lastUsed: lastUsed ?? this.lastUsed,
+    controlMode: controlMode ?? this.controlMode,
+  );
 }
 
 class RecentRoomsService {

@@ -14,9 +14,5 @@ class MpvPreset {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'text': text,
-    'createdAt': createdAt.toIso8601String(),
-  };
+  Map<String, dynamic> toJson() => {'name': name, 'text': text, 'createdAt': createdAt.toIso8601String()};
 }

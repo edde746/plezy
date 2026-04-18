@@ -46,11 +46,7 @@ class PipService {
   /// Tell the native side whether auto-PiP is ready and the current video dimensions
   static Future<void> setAutoPipReady({required bool ready, int? width, int? height}) async {
     if (!_isAvailable) return;
-    await _channel.invokeMethod('setAutoPipReady', {
-      'ready': ready,
-      'width': width,
-      'height': height,
-    });
+    await _channel.invokeMethod('setAutoPipReady', {'ready': ready, 'width': width, 'height': height});
   }
 
   static Future<void> exit() async {

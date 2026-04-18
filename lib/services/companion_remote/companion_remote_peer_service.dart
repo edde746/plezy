@@ -198,11 +198,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
 
     // Send challenge: hostNonce + hostClientId
-    socket.add(jsonEncode({
-      'type': 'challenge',
-      'nonce': base64Encode(hostNonce),
-      'hostClientId': hostClientId,
-    }));
+    socket.add(jsonEncode({'type': 'challenge', 'nonce': base64Encode(hostNonce), 'hostClientId': hostClientId}));
 
     // Authentication timeout
     authTimeout = Timer(const Duration(seconds: 10), () {
@@ -294,11 +290,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
               await _sendEncryptedToSocket(socket, jsonEncode({'type': 'authSuccess'}));
 
               // Notify connection
-              final device = RemoteDevice(
-                id: 'remote-client',
-                name: deviceName,
-                platform: platform,
-              );
+              final device = RemoteDevice(id: 'remote-client', name: deviceName, platform: platform);
               _deviceConnectedController.add(device);
               _connectionStateController.add(RemoteSessionStatus.connected);
 
@@ -479,15 +471,17 @@ class CompanionRemotePeerService with KeepaliveMixin {
                   platform: platform,
                 );
 
-                _channel!.sink.add(jsonEncode({
-                  'type': 'auth',
-                  'clientNonce': base64Encode(clientNonce!),
-                  'userUUID': userUUID,
-                  'clientIdentifier': clientIdentifier,
-                  'deviceName': deviceName,
-                  'platform': platform,
-                  'authTag': authTag,
-                }));
+                _channel!.sink.add(
+                  jsonEncode({
+                    'type': 'auth',
+                    'clientNonce': base64Encode(clientNonce!),
+                    'userUUID': userUUID,
+                    'clientIdentifier': clientIdentifier,
+                    'deviceName': deviceName,
+                    'platform': platform,
+                    'authTag': authTag,
+                  }),
+                );
 
                 _sessionEncKey = await auth.deriveSessionEncKey(homeSecret, hostNonce!, clientNonce!);
                 _sendCounter = 0;
@@ -571,7 +565,15 @@ class CompanionRemotePeerService with KeepaliveMixin {
     String clientIdentifier,
   ) async {
     if (hostAddresses.length == 1) {
-      await joinSession(deviceName, platform, hostAddresses.first, homeSecret, hostClientId, userUUID, clientIdentifier);
+      await joinSession(
+        deviceName,
+        platform,
+        hostAddresses.first,
+        homeSecret,
+        hostClientId,
+        userUUID,
+        clientIdentifier,
+      );
       return hostAddresses.first;
     }
 
@@ -627,8 +629,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
 
     try {
-      final winner =
-          await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'CompanionRemote race connect');
+      final winner = await completer.future.namedTimeout(
+        const Duration(seconds: 10),
+        operation: 'CompanionRemote race connect',
+      );
       cleanup();
 
       // Set up the proper managed connection on the winning address
@@ -636,10 +640,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
       return winner;
     } on TimeoutException {
       cleanup();
-      throw const RemotePeerError(
-        type: RemotePeerErrorType.timeout,
-        message: 'Timed out connecting to all addresses',
-      );
+      throw const RemotePeerError(type: RemotePeerErrorType.timeout, message: 'Timed out connecting to all addresses');
     }
   }
 

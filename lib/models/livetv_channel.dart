@@ -36,13 +36,23 @@ class LiveTvChannel {
 
   factory LiveTvChannel.fromJson(Map<String, dynamic> json) {
     return LiveTvChannel(
-      key: json['key'] as String? ?? json['ratingKey'] as String? ?? json['identifier'] as String? ?? json['id'] as String? ?? json['channelIdentifier'] as String? ?? '',
+      key:
+          json['key'] as String? ??
+          json['ratingKey'] as String? ??
+          json['identifier'] as String? ??
+          json['id'] as String? ??
+          json['channelIdentifier'] as String? ??
+          '',
       identifier: json['identifier'] as String? ?? json['id'] as String? ?? json['channelIdentifier'] as String?,
       callSign: json['callSign'] as String?,
       title: json['title'] as String? ?? json['callSign'] as String?,
       thumb: json['thumb'] as String?,
       art: json['art'] as String?,
-      number: json['number'] as String? ?? json['channelNumber'] as String? ?? json['channelVcn']?.toString() ?? json['vcn']?.toString(),
+      number:
+          json['number'] as String? ??
+          json['channelNumber'] as String? ??
+          json['channelVcn']?.toString() ??
+          json['vcn']?.toString(),
       hd: flexibleBool(json['hd']),
       lineup: json['lineup'] as String?,
       slug: json['slug'] as String?,
@@ -81,13 +91,7 @@ class FavoriteChannel {
   final String? thumb;
   final String? vcn;
 
-  FavoriteChannel({
-    required this.source,
-    required this.id,
-    this.title,
-    this.thumb,
-    this.vcn,
-  });
+  FavoriteChannel({required this.source, required this.id, this.title, this.thumb, this.vcn});
 
   factory FavoriteChannel.fromJson(Map<String, dynamic> json) {
     return FavoriteChannel(

@@ -234,17 +234,19 @@ class _DiscoveryViewState extends State<DiscoveryView> {
       children: [
         Text(t.companionRemote.pairing.availableDevices, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
-        ..._hosts.map((host) => Card(
-              child: ListTile(
-                leading: Icon(_platformIcon(host.platform), size: 32),
-                title: Text(host.name),
-                subtitle: Text(host.platform),
-                trailing: _isConnecting
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.arrow_forward),
-                onTap: _isConnecting ? null : () => _connect(() => _provider.connectToDiscoveredHost(host)),
-              ),
-            )),
+        ..._hosts.map(
+          (host) => Card(
+            child: ListTile(
+              leading: Icon(_platformIcon(host.platform), size: 32),
+              title: Text(host.name),
+              subtitle: Text(host.platform),
+              trailing: _isConnecting
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.arrow_forward),
+              onTap: _isConnecting ? null : () => _connect(() => _provider.connectToDiscoveredHost(host)),
+            ),
+          ),
+        ),
       ],
     );
   }

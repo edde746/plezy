@@ -123,14 +123,16 @@ class OverlaySheetController {
     }
     // Apply the same default constraints the overlay system uses so sheets
     // shown without an OverlaySheetHost still have sensible sizing on desktop.
-    final effectiveConstraints = constraints ?? () {
-      final size = MediaQuery.of(context).size;
-      final isDesktop = size.width > 600;
-      return BoxConstraints(
-        maxWidth: isDesktop ? 700 : double.infinity,
-        maxHeight: isDesktop ? 400 : size.height * 0.75,
-      );
-    }();
+    final effectiveConstraints =
+        constraints ??
+        () {
+          final size = MediaQuery.of(context).size;
+          final isDesktop = size.width > 600;
+          return BoxConstraints(
+            maxWidth: isDesktop ? 700 : double.infinity,
+            maxHeight: isDesktop ? 400 : size.height * 0.75,
+          );
+        }();
     return showModalBottomSheet<T>(
       context: context,
       builder: builder,
@@ -588,10 +590,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
             animation: _slideCurve,
             builder: (context, child) {
               final slideOffset = Offset.lerp(slideBegin, Offset.zero, _slideCurve.value)!;
-              return FractionalTranslation(
-                translation: slideOffset,
-                child: child,
-              );
+              return FractionalTranslation(translation: slideOffset, child: child);
             },
             child: Transform.translate(
               offset: Offset(0, _dragOffset.clamp(0, double.infinity)),
@@ -610,10 +609,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
                     bottom: !isTop,
                     left: false,
                     right: false,
-                    child: ConstrainedBox(
-                      constraints: effectiveConstraints,
-                      child: sheetContent,
-                    ),
+                    child: ConstrainedBox(constraints: effectiveConstraints, child: sheetContent),
                   ),
                 ),
               ),

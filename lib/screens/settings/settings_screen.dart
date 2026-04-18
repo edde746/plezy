@@ -155,17 +155,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 _buildDownloadsSection(),
 
                 // --- Keyboard Shortcuts (inline, conditional) ---
-                if (_keyboardShortcutsSupported) ...[
-                  _buildKeyboardShortcutsSection(),
-                  ],
+                if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection()],
 
                 // --- Advanced (inline) ---
                 _buildAdvancedSection(),
 
                 // --- Updates (conditional) ---
-                if (UpdateService.isUpdateCheckEnabled) ...[
-                  _buildUpdateSection(),
-                  ],
+                if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
 
                 // --- About ---
                 ListTile(
@@ -190,7 +186,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   Widget _buildAppearanceTile() {
     return Consumer2<ThemeProvider, SettingsProvider>(
       builder: (context, themeProvider, settingsProvider, child) {
-        final summary = '${themeProvider.themeModeDisplayName} · ${t.settings.libraryDensity} ${settingsProvider.libraryDensity}';
+        final summary =
+            '${themeProvider.themeModeDisplayName} · ${t.settings.libraryDensity} ${settingsProvider.libraryDensity}';
         return ListTile(
           focusNode: _focusTracker.get(_kAppearance),
           leading: const AppIcon(Symbols.palette_rounded, fill: 1),
@@ -301,8 +298,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       ],
     );
   }
-
-
 
   Widget _buildAdvancedSection() {
     return Column(
@@ -560,10 +555,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(t.settings.watchTogetherRelay),
           content: TextField(
             controller: controller,
-            decoration: InputDecoration(
-              labelText: 'URL',
-              hintText: t.settings.watchTogetherRelayHint,
-            ),
+            decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
             autofocus: true,
             textInputAction: TextInputAction.done,
             onEditingComplete: () => saveFocusNode.requestFocus(),

@@ -90,75 +90,86 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setLibraryDensity(int density) => _updateSetting(
-    current: _libraryDensity, value: density.clamp(LibraryDensity.min, LibraryDensity.max),
+    current: _libraryDensity,
+    value: density.clamp(LibraryDensity.min, LibraryDensity.max),
     setLocal: (v) => _libraryDensity = v,
     persist: _settingsService!.setLibraryDensity,
   );
 
   Future<void> setViewMode(ViewMode mode) => _updateSetting(
-    current: _viewMode, value: mode,
+    current: _viewMode,
+    value: mode,
     setLocal: (v) => _viewMode = v,
     persist: _settingsService!.setViewMode,
   );
 
   Future<void> setEpisodePosterMode(EpisodePosterMode mode) => _updateSetting(
-    current: _episodePosterMode, value: mode,
+    current: _episodePosterMode,
+    value: mode,
     setLocal: (v) => _episodePosterMode = v,
     persist: _settingsService!.setEpisodePosterMode,
   );
 
   Future<void> setShowHeroSection(bool value) => _updateSetting(
-    current: _showHeroSection, value: value,
+    current: _showHeroSection,
+    value: value,
     setLocal: (v) => _showHeroSection = v,
     persist: _settingsService!.setShowHeroSection,
   );
 
   Future<void> setUseGlobalHubs(bool value) => _updateSetting(
-    current: _useGlobalHubs, value: value,
+    current: _useGlobalHubs,
+    value: value,
     setLocal: (v) => _useGlobalHubs = v,
     persist: _settingsService!.setUseGlobalHubs,
   );
 
   Future<void> setShowServerNameOnHubs(bool value) => _updateSetting(
-    current: _showServerNameOnHubs, value: value,
+    current: _showServerNameOnHubs,
+    value: value,
     setLocal: (v) => _showServerNameOnHubs = v,
     persist: _settingsService!.setShowServerNameOnHubs,
   );
 
   Future<void> setAlwaysKeepSidebarOpen(bool value) => _updateSetting(
-    current: _alwaysKeepSidebarOpen, value: value,
+    current: _alwaysKeepSidebarOpen,
+    value: value,
     setLocal: (v) => _alwaysKeepSidebarOpen = v,
     persist: _settingsService!.setAlwaysKeepSidebarOpen,
   );
 
   Future<void> setShowUnwatchedCount(bool value) => _updateSetting(
-    current: _showUnwatchedCount, value: value,
+    current: _showUnwatchedCount,
+    value: value,
     setLocal: (v) => _showUnwatchedCount = v,
     persist: _settingsService!.setShowUnwatchedCount,
   );
 
   Future<void> setHideSpoilers(bool value) => _updateSetting(
-    current: _hideSpoilers, value: value,
+    current: _hideSpoilers,
+    value: value,
     setLocal: (v) => _hideSpoilers = v,
     persist: _settingsService!.setHideSpoilers,
   );
 
   Future<void> setShowNavBarLabels(bool value) => _updateSetting(
-    current: _showNavBarLabels, value: value,
+    current: _showNavBarLabels,
+    value: value,
     setLocal: (v) => _showNavBarLabels = v,
     persist: _settingsService!.setShowNavBarLabels,
   );
 
   Future<void> setLiveTvDefaultFavorites(bool value) => _updateSetting(
-    current: _liveTvDefaultFavorites, value: value,
+    current: _liveTvDefaultFavorites,
+    value: value,
     setLocal: (v) => _liveTvDefaultFavorites = v,
     persist: _settingsService!.setLiveTvDefaultFavorites,
   );
 
   Future<void> setAutoHidePerformanceOverlay(bool value) => _updateSetting(
-    current: _autoHidePerformanceOverlay, value: value,
+    current: _autoHidePerformanceOverlay,
+    value: value,
     setLocal: (v) => _autoHidePerformanceOverlay = v,
     persist: _settingsService!.setAutoHidePerformanceOverlay,
   );
-
 }

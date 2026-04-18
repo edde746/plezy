@@ -73,7 +73,12 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
-      FocusableAction(icon: Symbols.delete_rounded, tooltip: t.common.delete, onPressed: _deleteCollection, iconColor: Colors.red),
+      FocusableAction(
+        icon: Symbols.delete_rounded,
+        tooltip: t.common.delete,
+        onPressed: _deleteCollection,
+        iconColor: Colors.red,
+      ),
     ];
   }
 

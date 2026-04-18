@@ -204,8 +204,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
         // We must consume Enter to prevent parent handlers from unfocusing,
         // but that also blocks Flutter's text editing shortcuts (which are
         // higher in the focus tree). So we manually insert newlines here.
-        if (event.logicalKey == LogicalKeyboardKey.enter ||
-            event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+        if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
           if (event is KeyDownEvent || event is KeyRepeatEvent) {
             final sel = _textController.selection;
             if (sel.isValid) {
@@ -224,8 +223,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
         }
         if (event.logicalKey.isDownKey && event.isActionable) {
           final sel = _textController.selection;
-          if (sel.isValid &&
-              _textController.text.indexOf('\n', sel.extentOffset) == -1) {
+          if (sel.isValid && _textController.text.indexOf('\n', sel.extentOffset) == -1) {
             _savePresetFocusNode.requestFocus();
             return KeyEventResult.handled;
           }

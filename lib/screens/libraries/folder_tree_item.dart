@@ -123,12 +123,7 @@ class FolderTreeItem extends StatelessWidget {
                 : AppIcon(expandIcon, fill: 1, size: 20),
           ),
           const SizedBox(width: 8),
-          AppIcon(
-            _getIcon(),
-            fill: 1,
-            size: 20,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          AppIcon(_getIcon(), fill: 1, size: 20, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -234,7 +229,8 @@ class FolderTreeItem extends StatelessWidget {
   ) {
     final posterUrl = item.posterThumb(mode: episodePosterMode);
     final client = serverId != null ? context.getClientForServer(serverId!) : null;
-    final shouldBlur = hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
+    final shouldBlur =
+        hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
 
     Widget image;
     if (item.usesWideAspectRatio(episodePosterMode)) {
@@ -265,10 +261,7 @@ class FolderTreeItem extends StatelessWidget {
 
   Widget _buildWatchOverlay(BuildContext context, bool showUnwatchedCount) {
     final hasActiveProgress =
-        item.viewOffset != null &&
-        item.duration != null &&
-        item.viewOffset! > 0 &&
-        item.viewOffset! < item.duration!;
+        item.viewOffset != null && item.duration != null && item.viewOffset! > 0 && item.viewOffset! < item.duration!;
 
     return Stack(
       children: [
@@ -356,11 +349,7 @@ class FolderTreeItem extends StatelessWidget {
             useBackgroundFocus: true,
             disableScale: true,
             descendantsAreFocusable: false,
-            child: GestureDetector(
-              onTap: _handleTap,
-              behavior: HitTestBehavior.opaque,
-              child: rowContent,
-            ),
+            child: GestureDetector(onTap: _handleTap, behavior: HitTestBehavior.opaque, child: rowContent),
           ),
         ),
 

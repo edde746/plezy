@@ -54,11 +54,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   List<FocusableAction> getAppBarActions() {
     return [
-      FocusableAction(
-        icon: Symbols.swap_vert_rounded,
-        tooltip: t.libraries.sort,
-        onPressed: _showSortBottomSheet,
-      ),
+      FocusableAction(icon: Symbols.swap_vert_rounded, tooltip: t.libraries.sort, onPressed: _showSortBottomSheet),
     ];
   }
 
@@ -67,8 +63,9 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   void navigateToGrid() {
     if (!hasItems) return;
 
-    final targetIndex =
-        shouldRestoreGridFocus && lastFocusedGridIndex! < _filteredItems.length ? lastFocusedGridIndex! : 0;
+    final targetIndex = shouldRestoreGridFocus && lastFocusedGridIndex! < _filteredItems.length
+        ? lastFocusedGridIndex!
+        : 0;
 
     setState(() {
       isAppBarFocused = false;
@@ -304,11 +301,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
             controller: scrollController,
             clipBehavior: Clip.none,
             slivers: [
-              CustomAppBar(
-                title: Text(widget.hub.title),
-                pinned: true,
-                actions: buildFocusableAppBarActions(),
-              ),
+              CustomAppBar(title: Text(widget.hub.title), pinned: true, actions: buildFocusableAppBarActions()),
               if (_errorMessage != null)
                 SliverFillRemaining(
                   child: ErrorStateWidget(
@@ -390,28 +383,25 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                               horizontalPadding: 16,
                               useWideAspectRatio: useWideLayout,
                             ),
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final item = _filteredItems[index];
-                                final focusNode = index == 0
-                                    ? firstItemFocusNode
-                                    : getGridItemFocusNode(index, prefix: 'hub_detail_item');
-                                final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
-                                final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
+                            delegate: SliverChildBuilderDelegate((context, index) {
+                              final item = _filteredItems[index];
+                              final focusNode = index == 0
+                                  ? firstItemFocusNode
+                                  : getGridItemFocusNode(index, prefix: 'hub_detail_item');
+                              final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
+                              final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
 
-                                return FocusableMediaCard(
-                                  focusNode: focusNode,
-                                  item: item,
-                                  onRefresh: _handleItemRefresh,
-                                  onNavigateUp: isFirstRow ? navigateToAppBar : null,
-                                  onNavigateLeft: isFirstColumn ? () {} : null,
-                                  onBack: handleBackFromContent,
-                                  onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
-                                  mixedHubContext: isMixedHub,
-                                );
-                              },
-                              childCount: _filteredItems.length,
-                            ),
+                              return FocusableMediaCard(
+                                focusNode: focusNode,
+                                item: item,
+                                onRefresh: _handleItemRefresh,
+                                onNavigateUp: isFirstRow ? navigateToAppBar : null,
+                                onNavigateLeft: isFirstColumn ? () {} : null,
+                                onBack: handleBackFromContent,
+                                onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                                mixedHubContext: isMixedHub,
+                              );
+                            }, childCount: _filteredItems.length),
                           );
                         },
                       ),

@@ -45,12 +45,8 @@ class ServerConnectionOrchestrator {
       servers,
       clientIdentifier: clientIdentifier,
       timeout: timeout,
-      onServerConnected: onServerStatus != null
-          ? (serverId, _) => onServerStatus(serverId, true)
-          : null,
-      onServerFailed: onServerStatus != null
-          ? (serverId, _) => onServerStatus(serverId, false)
-          : null,
+      onServerConnected: onServerStatus != null ? (serverId, _) => onServerStatus(serverId, true) : null,
+      onServerFailed: onServerStatus != null ? (serverId, _) => onServerStatus(serverId, false) : null,
     );
 
     PlexClient? firstClient;

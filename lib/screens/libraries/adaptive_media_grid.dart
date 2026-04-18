@@ -20,7 +20,12 @@ class GridItemContext {
   /// Callback to navigate to the sidebar (for first-column items).
   final VoidCallback? navigateToSidebar;
 
-  const GridItemContext({required this.isFirstRow, required this.isFirstColumn, this.isListMode = false, this.navigateToSidebar});
+  const GridItemContext({
+    required this.isFirstRow,
+    required this.isFirstColumn,
+    this.isListMode = false,
+    this.navigateToSidebar,
+  });
 }
 
 /// A widget that automatically switches between grid and list view

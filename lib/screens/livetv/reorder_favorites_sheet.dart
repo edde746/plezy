@@ -225,10 +225,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        BottomSheetHeader(
-          title: t.liveTv.reorderFavorites,
-          icon: Symbols.swap_vert_rounded,
-        ),
+        BottomSheetHeader(title: t.liveTv.reorderFavorites, icon: Symbols.swap_vert_rounded),
         Expanded(
           child: Focus(
             focusNode: _listFocusNode,
@@ -314,9 +311,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
                       height: 40,
                       fit: BoxFit.contain,
                     )
-                  : Center(
-                      child: AppIcon(Symbols.live_tv_rounded, fill: 1, color: colorScheme.onSurfaceVariant),
-                    ),
+                  : Center(child: AppIcon(Symbols.live_tv_rounded, fill: 1, color: colorScheme.onSurfaceVariant)),
             ),
           ],
         ),
@@ -331,10 +326,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
               )
             : null,
         trailing: Container(
-          decoration: FocusTheme.focusBackgroundDecoration(
-            isFocused: isRemoveButtonFocused,
-            borderRadius: 20,
-          ),
+          decoration: FocusTheme.focusBackgroundDecoration(isFocused: isRemoveButtonFocused, borderRadius: 20),
           child: IconButton(
             icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
             onPressed: () => _removeItem(index),

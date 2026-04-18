@@ -44,7 +44,13 @@ class VideoFilterManager {
   /// Callback invoked when boxFitMode changes, for external persistence
   final void Function(int mode)? onBoxFitModeChanged;
 
-  VideoFilterManager({required this.player, required this.availableVersions, required this.selectedMediaIndex, int initialBoxFitMode = 0, this.onBoxFitModeChanged}) : _boxFitMode = initialBoxFitMode {
+  VideoFilterManager({
+    required this.player,
+    required this.availableVersions,
+    required this.selectedMediaIndex,
+    int initialBoxFitMode = 0,
+    this.onBoxFitModeChanged,
+  }) : _boxFitMode = initialBoxFitMode {
     _debouncedUpdateVideoFilter = debounce(
       updateVideoFilter,
       const Duration(milliseconds: 50),

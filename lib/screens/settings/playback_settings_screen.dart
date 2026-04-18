@@ -324,10 +324,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
           if (Platform.isAndroid && value > 0) {
             final heapMB = await PlayerAndroid.getHeapSize();
             if (heapMB > 0 && value > heapMB ~/ 4 && mounted) {
-              showAppSnackBar(
-                context,
-                t.settings.bufferSizeWarning(heap: heapMB.toString(), size: value.toString()),
-              );
+              showAppSnackBar(context, t.settings.bufferSizeWarning(heap: heapMB.toString(), size: value.toString()));
             }
           }
         }

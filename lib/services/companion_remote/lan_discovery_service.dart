@@ -138,9 +138,7 @@ class LanDiscoveryService {
 
   /// Start listening for host beacons.
   /// Returns a stream of currently-visible hosts, updated on each beacon or stale cleanup.
-  Stream<List<DiscoveredHost>> startListening({
-    required List<int> discoveryKey,
-  }) {
+  Stream<List<DiscoveredHost>> startListening({required List<int> discoveryKey}) {
     _stopListeningInternal();
     _discoveredHosts.clear();
 

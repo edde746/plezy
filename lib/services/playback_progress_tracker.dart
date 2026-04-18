@@ -195,7 +195,9 @@ class PlaybackProgressTracker {
         _scrobbled = true;
         try {
           await client!.markAsWatched(metadata.ratingKey, metadata: metadata);
-          appLogger.d('Scrobbled ${metadata.ratingKey} (${(percent * 100).toStringAsFixed(0)}% >= ${client!.watchedThresholdPercent}%)');
+          appLogger.d(
+            'Scrobbled ${metadata.ratingKey} (${(percent * 100).toStringAsFixed(0)}% >= ${client!.watchedThresholdPercent}%)',
+          );
         } catch (e) {
           appLogger.w('Failed to scrobble ${metadata.ratingKey}', error: e);
           _scrobbled = false; // Retry on next tick

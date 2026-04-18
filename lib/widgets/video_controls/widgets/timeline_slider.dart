@@ -119,12 +119,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
                       gaplessPlayback: true,
                       errorBuilder: (_, _, _) => const SizedBox.shrink(),
                     ),
-                    Positioned(
-                      bottom: 4,
-                      left: 0,
-                      right: 0,
-                      child: Center(child: timeLabel),
-                    ),
+                    Positioned(bottom: 4, left: 0, right: 0, child: Center(child: timeLabel)),
                   ],
                 ),
               )
@@ -191,9 +186,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
                   tickMarkShape: SliderTickMarkShape.noTickMark,
                   thumbSize: WidgetStatePropertyAll(
-                    (!InputModeTracker.isKeyboardMode(context) || _isFocused)
-                        ? const Size(4, 20)
-                        : Size.zero,
+                    (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
                   ),
                 ),
                 child: Semantics(

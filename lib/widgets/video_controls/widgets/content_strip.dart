@@ -560,9 +560,7 @@ class ContentStripState extends State<ContentStrip> {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: const BorderRadius.all(Radius.circular(6)),
-                          border: Border.fromBorderSide(
-                            BorderSide(color: Colors.white, width: 2),
-                          ),
+                          border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                         ),
                       ),
                     ),

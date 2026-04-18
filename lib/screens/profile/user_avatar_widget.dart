@@ -142,14 +142,16 @@ class UserAvatarWidget extends StatelessWidget {
         children: [
           // Avatar image
           ClipOval(
-            child: blurArtwork(CachedNetworkImage(
-              imageUrl: user.thumb,
-              width: size,
-              height: size,
-              fit: BoxFit.cover,
-              placeholder: (ctx, url) => _buildPlaceholderAvatar(theme),
-              errorWidget: (ctx, url, error) => _buildPlaceholderAvatar(theme),
-            )),
+            child: blurArtwork(
+              CachedNetworkImage(
+                imageUrl: user.thumb,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                placeholder: (ctx, url) => _buildPlaceholderAvatar(theme),
+                errorWidget: (ctx, url, error) => _buildPlaceholderAvatar(theme),
+              ),
+            ),
           ),
 
           // Indicators (only show icon indicators when not using text labels)

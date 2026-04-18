@@ -55,7 +55,11 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
         (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: _DownloadChoice.all),
         (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: _DownloadChoice.unwatched),
         (icon: Symbols.filter_5_rounded, label: t.downloads.nextNUnwatched(count: 5), value: _DownloadChoice.next5),
-        (icon: Symbols.filter_9_plus_rounded, label: t.downloads.nextNUnwatched(count: 10), value: _DownloadChoice.next10),
+        (
+          icon: Symbols.filter_9_plus_rounded,
+          label: t.downloads.nextNUnwatched(count: 10),
+          value: _DownloadChoice.next10,
+        ),
         (icon: Symbols.tune_rounded, label: t.downloads.customAmount, value: _DownloadChoice.custom),
       ],
       onBeforeClose: (value) async {
@@ -153,11 +157,7 @@ Future<int?> showPlaylistDownloadOptionsAndQueue(
 
   if (selected == null || !context.mounted) return null;
 
-  return await downloadProvider.queuePlaylistDownload(
-    items,
-    client,
-    filter: selected,
-  );
+  return await downloadProvider.queuePlaylistDownload(items, client, filter: selected);
 }
 
 Future<int?> _showEpisodeCountDialog(BuildContext context, {String? title, String? hintText}) async {

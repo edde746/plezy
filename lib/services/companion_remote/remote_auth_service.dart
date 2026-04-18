@@ -75,11 +75,7 @@ class RemoteAuthService {
   }
 
   /// Derive per-session encryption key from homeSecret + both nonces.
-  Future<List<int>> deriveSessionEncKey(
-    List<int> homeSecret,
-    List<int> hostNonce,
-    List<int> clientNonce,
-  ) async {
+  Future<List<int>> deriveSessionEncKey(List<int> homeSecret, List<int> hostNonce, List<int> clientNonce) async {
     final hkdf = _hkdf;
 
     final salt = Uint8List(hostNonce.length + clientNonce.length);
@@ -306,11 +302,7 @@ class RemoteAuthService {
     final algo = _aesGcm;
     final nonce = buildNonce(isHost ? _directionHost : _directionClient, counter);
 
-    final secretBox = await algo.encrypt(
-      plaintext,
-      secretKey: SecretKey(sessionEncKey),
-      nonce: nonce,
-    );
+    final secretBox = await algo.encrypt(plaintext, secretKey: SecretKey(sessionEncKey), nonce: nonce);
 
     // Return ciphertext + mac (nonce is implicit)
     return [...secretBox.cipherText, ...secretBox.mac.bytes];

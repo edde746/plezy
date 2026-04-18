@@ -68,5 +68,4 @@ class SafStorageService {
       return null;
     }
   }
-
 }

@@ -58,8 +58,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         if (!isMpv) _metric('Tunneling', _stats.tunneledPlaybackFormatted),
         if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty) _metric('Aspect', _stats.aspectName!),
         if (_stats.rotate != null && _stats.rotate != 0) _metric('Rotation', _stats.rotateFormatted),
-        if (_stats.dvConversionActive)
-          _metric('DV', _stats.dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC'),
+        if (_stats.dvConversionActive) _metric('DV', _stats.dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC'),
       ]),
       _buildSection(Symbols.volume_up_rounded, 'Audio', [
         if (_stats.audioCodec != null) _metric('Codec', _stats.audioCodec!),
@@ -110,11 +109,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         borderRadius: const BorderRadius.all(Radius.circular(8)),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
       ),
-      child: Wrap(
-        spacing: 24,
-        runSpacing: 12,
-        children: sections,
-      ),
+      child: Wrap(spacing: 24, runSpacing: 12, children: sections),
     );
   }
 

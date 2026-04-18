@@ -248,7 +248,8 @@ class TrackManager {
     onAudioTrackChanged(next);
 
     if (isActive()) {
-      final label = 'Audio: ${TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
+      final label =
+          'Audio: ${TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
   }
@@ -315,7 +316,11 @@ class TrackManager {
       if (streamID != null) {
         appLogger.d('Matched subtitle by lang/title: streamID $streamID');
       } else {
-        final matchedPlex = findPlexTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle);
+        final matchedPlex = findPlexTrackForMpvSubtitle(
+          track,
+          info.subtitleTracks,
+          allMpvTracks: player.state.tracks.subtitle,
+        );
         streamID = matchedPlex?.id;
         if (streamID != null) {
           appLogger.d('Matched subtitle by properties: streamID $streamID');
@@ -338,9 +343,7 @@ class TrackManager {
 
   /// Rating key used for series/movie level language preferences.
   String get _preferenceRatingKey {
-    return metadata.isEpisode
-        ? (metadata.grandparentRatingKey ?? metadata.ratingKey)
-        : metadata.ratingKey;
+    return metadata.isEpisode ? (metadata.grandparentRatingKey ?? metadata.ratingKey) : metadata.ratingKey;
   }
 
   /// Common guard checks for track change handlers.

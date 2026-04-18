@@ -54,7 +54,8 @@ class ShaderProvider extends ChangeNotifier {
 
   /// Find a preset by its ID, searching both built-in and custom presets.
   ShaderPreset? findPresetById(String id) {
-    return ShaderPreset.fromId(id) ?? _customPresets.cast<ShaderPreset?>().firstWhere((p) => p!.id == id, orElse: () => null);
+    return ShaderPreset.fromId(id) ??
+        _customPresets.cast<ShaderPreset?>().firstWhere((p) => p!.id == id, orElse: () => null);
   }
 
   /// Apply and persist a shader preset
@@ -79,12 +80,7 @@ class ShaderProvider extends ChangeNotifier {
     final storedFileName = await ShaderAssetLoader.importCustomShader(filePath);
     final id = 'custom_$storedFileName';
 
-    final preset = ShaderPreset(
-      id: id,
-      name: displayName,
-      type: ShaderPresetType.custom,
-      fileName: storedFileName,
-    );
+    final preset = ShaderPreset(id: id, name: displayName, type: ShaderPresetType.custom, fileName: storedFileName);
 
     _customPresets.add(preset);
     await _saveCustomPresets();

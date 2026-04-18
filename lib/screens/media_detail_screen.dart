@@ -120,7 +120,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // Context menu key for the three-dots button
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
 
-
   // Locked focus pattern for extras
   int _focusedExtraIndex = 0;
   late final FocusNode _extrasFocusNode;
@@ -1039,10 +1038,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: const BorderRadius.all(Radius.circular(100)),
-          ),
+          decoration: BoxDecoration(color: bgColor, borderRadius: const BorderRadius.all(Radius.circular(100))),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1055,11 +1051,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               const SizedBox(width: 4),
               Text(
                 hasRating ? formatRating(starValue) : t.mediaMenu.rate,
-                style: TextStyle(
-                  color: fgColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(color: fgColor, fontSize: 13, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -1158,12 +1150,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     PlexMetadata metadata,
     PlexClient client,
   ) {
-    return resolveDownloadVersion(
-      context,
-      metadata,
-      client,
-      fallbackVersions: _fullMetadata?.mediaVersions,
-    );
+    return resolveDownloadVersion(context, metadata, client, fallbackVersions: _fullMetadata?.mediaVersions);
   }
 
   /// Shows actions for a synced item: edit count, remove rule, delete downloads.
@@ -1484,10 +1471,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       for (final node in _seasonTabFocusNodes) {
         node.dispose();
       }
-      _seasonTabFocusNodes = List.generate(
-        count,
-        (i) => FocusNode(debugLabel: 'season_tab_$i'),
-      );
+      _seasonTabFocusNodes = List.generate(count, (i) => FocusNode(debugLabel: 'season_tab_$i'));
       _seasonContextMenuKeys.clear();
     }
   }
@@ -1812,10 +1796,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         child: Row(
           children: List.generate(_seasons.length, (index) {
             final season = _seasons[index];
-            final contextMenuKey = _seasonContextMenuKeys.putIfAbsent(
-              index,
-              () => GlobalKey<MediaContextMenuState>(),
-            );
+            final contextMenuKey = _seasonContextMenuKeys.putIfAbsent(index, () => GlobalKey<MediaContextMenuState>());
             Offset? tapPosition;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -1925,7 +1906,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isLeftKey) {
       if (_focusedExtraIndex > 0) {
         setState(() => _focusedExtraIndex--);
-        scrollListToIndex(_extrasScrollController, _focusedExtraIndex, itemExtent: _getResponsiveCardWidth() + 4, leadingPadding: 0);
+        scrollListToIndex(
+          _extrasScrollController,
+          _focusedExtraIndex,
+          itemExtent: _getResponsiveCardWidth() + 4,
+          leadingPadding: 0,
+        );
       }
       return KeyEventResult.handled;
     }
@@ -1934,7 +1920,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isRightKey) {
       if (_focusedExtraIndex < _extras!.length - 1) {
         setState(() => _focusedExtraIndex++);
-        scrollListToIndex(_extrasScrollController, _focusedExtraIndex, itemExtent: _getResponsiveCardWidth() + 4, leadingPadding: 0);
+        scrollListToIndex(
+          _extrasScrollController,
+          _focusedExtraIndex,
+          itemExtent: _getResponsiveCardWidth() + 4,
+          leadingPadding: 0,
+        );
       }
       return KeyEventResult.handled;
     }
@@ -1970,7 +1961,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isLeftKey) {
       if (_focusedCastIndex > 0) {
         setState(() => _focusedCastIndex--);
-        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: _getResponsiveCardWidth() + 6 + 4, leadingPadding: 0);
+        scrollListToIndex(
+          _castScrollController,
+          _focusedCastIndex,
+          itemExtent: _getResponsiveCardWidth() + 6 + 4,
+          leadingPadding: 0,
+        );
       }
       return KeyEventResult.handled;
     }
@@ -1979,7 +1975,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isRightKey) {
       if (_focusedCastIndex < roleCount - 1) {
         setState(() => _focusedCastIndex++);
-        scrollListToIndex(_castScrollController, _focusedCastIndex, itemExtent: _getResponsiveCardWidth() + 6 + 4, leadingPadding: 0);
+        scrollListToIndex(
+          _castScrollController,
+          _focusedCastIndex,
+          itemExtent: _getResponsiveCardWidth() + 6 + 4,
+          leadingPadding: 0,
+        );
       }
       return KeyEventResult.handled;
     }
@@ -2092,8 +2093,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           focusNode: index == 0
               ? _firstEpisodeFocusNode
               : index == _episodes.length - 1 && _episodes.length > 1
-                  ? _lastEpisodeFocusNode
-                  : null,
+              ? _lastEpisodeFocusNode
+              : null,
           onNavigateUp: index == 0
               ? () {
                   if (!_showEpisodesDirectly) {
@@ -2102,8 +2103,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     _overviewFocusNode.requestFocus();
                     _scrollSectionIntoView(_overviewSectionKey);
                   } else {
-                    _scrollController.animateTo(0,
-                        duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+                    _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
                     _playButtonFocusNode.requestFocus();
                   }
                 }
@@ -2174,9 +2174,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (client == null) return;
     setStateIfMounted(() => _isLoadingEpisodes = true);
     try {
-      final episodeLists = await Future.wait(
-        _seasons.map((season) => client.getChildren(season.ratingKey)),
-      );
+      final episodeLists = await Future.wait(_seasons.map((season) => client.getChildren(season.ratingKey)));
       setStateIfMounted(() {
         _episodes = episodeLists.expand((e) => e).toList();
         _isLoadingEpisodes = false;
@@ -2198,7 +2196,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       appLogger.d('Offline OnDeck: S${nextEpisode.parentIndex}E${nextEpisode.index} - ${nextEpisode.title}');
     }
   }
-
 
   /// Offline: update viewCount in the API cache and re-read metadata from it.
   Future<void> _updateWatchStateOffline() async {
@@ -2223,14 +2220,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     await cache.put(serverId, endpoint, {
-      'MediaContainer': {'Metadata': [json]},
+      'MediaContainer': {
+        'Metadata': [json],
+      },
     });
 
     setStateIfMounted(() {
-      _fullMetadata = PlexMetadata.fromJsonWithImages(json).copyWith(
-        serverId: widget.metadata.serverId,
-        serverName: widget.metadata.serverName,
-      );
+      _fullMetadata = PlexMetadata.fromJsonWithImages(
+        json,
+      ).copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName);
     });
   }
 
@@ -3119,4 +3117,3 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return Symbols.play_arrow_rounded; // Default play icon
   }
 }
-

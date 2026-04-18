@@ -65,13 +65,6 @@ void showGlobalErrorSnackBar(String message) {
   );
 }
 
-/// Shows an info snackbar using the root ScaffoldMessenger (survives navigation).
-void showGlobalSnackBar(String message, {Duration duration = const Duration(seconds: 2)}) {
-  rootScaffoldMessengerKey.currentState
-    ?..removeCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message), duration: duration));
-}
-
 /// Shows an info snackbar through the main-screen messenger when available
 /// (so it floats above the mobile NavigationBar), falling back to the root
 /// messenger when the main screen is not mounted.

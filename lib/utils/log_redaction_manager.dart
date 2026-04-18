@@ -13,10 +13,7 @@ class LogRedactionManager {
   static final RegExp _ipv4HostPattern = RegExp(r'^\d{1,3}([.-]\d{1,3}){3}$');
 
   /// Pattern-based catch-all for Plex tokens in query strings/headers.
-  static final RegExp _plexTokenQueryParam = RegExp(
-    r'X-Plex-Token=[^&#\s]+',
-    caseSensitive: false,
-  );
+  static final RegExp _plexTokenQueryParam = RegExp(r'X-Plex-Token=[^&#\s]+', caseSensitive: false);
 
   // Combined regex for single-pass redaction (rebuilt on set changes)
   static RegExp? _combinedPattern;

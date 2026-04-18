@@ -24,27 +24,20 @@ class SyncRulesScreen extends StatelessWidget {
           slivers: [
             if (syncRules.isEmpty)
               SliverFillRemaining(
-                child: EmptyStateWidget(
-                  message: t.downloads.noSyncRules,
-                  icon: Symbols.sync_rounded,
-                  iconSize: 80,
-                ),
+                child: EmptyStateWidget(message: t.downloads.noSyncRules, icon: Symbols.sync_rounded, iconSize: 80),
               )
             else
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final entry = syncRules.entries.elementAt(index);
-                    final rule = entry.value;
-                    return _SyncRuleTile(
-                      rule: rule,
-                      metadata: downloadProvider.metadata,
-                      downloadProvider: downloadProvider,
-                      autofocus: index == 0,
-                    );
-                  },
-                  childCount: syncRules.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final entry = syncRules.entries.elementAt(index);
+                  final rule = entry.value;
+                  return _SyncRuleTile(
+                    rule: rule,
+                    metadata: downloadProvider.metadata,
+                    downloadProvider: downloadProvider,
+                    autofocus: index == 0,
+                  );
+                }, childCount: syncRules.length),
               ),
           ],
         );

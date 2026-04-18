@@ -9,11 +9,7 @@ class CaptureBuffer {
   final double seekStartSeconds;
   final double seekEndSeconds;
 
-  const CaptureBuffer({
-    required this.startedAt,
-    required this.seekStartSeconds,
-    required this.seekEndSeconds,
-  });
+  const CaptureBuffer({required this.startedAt, required this.seekStartSeconds, required this.seekEndSeconds});
 
   /// Absolute epoch second of the earliest seekable point.
   int get seekableStartEpoch => (startedAt + seekStartSeconds).round();
@@ -31,11 +27,7 @@ class CaptureBuffer {
     final minOffset = _parseDouble(session['minOffsetAvailable']);
     final maxOffset = _parseDouble(session['maxOffsetAvailable']);
     if (timeStamp == null || minOffset == null || maxOffset == null) return null;
-    return CaptureBuffer(
-      startedAt: timeStamp,
-      seekStartSeconds: minOffset,
-      seekEndSeconds: maxOffset,
-    );
+    return CaptureBuffer(startedAt: timeStamp, seekStartSeconds: minOffset, seekEndSeconds: maxOffset);
   }
 
   static double? _parseDouble(dynamic value) {

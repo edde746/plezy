@@ -37,7 +37,6 @@ class DownloadTreeNode {
   int get completedChildrenCount {
     return children.where((child) => child.status == DownloadStatus.completed).length;
   }
-
 }
 
 /// Type of node in the download tree
@@ -691,8 +690,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               ],
 
               // Error message for failed downloads
-              if (_effectiveStatus == DownloadStatus.failed &&
-                  widget.node.downloadProgress?.errorMessage != null) ...[
+              if (_effectiveStatus == DownloadStatus.failed && widget.node.downloadProgress?.errorMessage != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   widget.node.downloadProgress!.errorMessage!,

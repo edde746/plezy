@@ -43,6 +43,7 @@ class MobileVideoControls extends StatefulWidget {
   final VoidCallback? onBack;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
 
@@ -116,8 +117,7 @@ class MobileVideoControls extends StatefulWidget {
   State<MobileVideoControls> createState() => _MobileVideoControlsState();
 }
 
-class _MobileVideoControlsState extends State<MobileVideoControls>
-    with SingleTickerProviderStateMixin {
+class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTickerProviderStateMixin {
   late final AnimationController _stripAnim;
   bool _stripVisible = false;
 
@@ -130,10 +130,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls>
   @override
   void initState() {
     super.initState();
-    _stripAnim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
+    _stripAnim = AnimationController(vsync: this, duration: const Duration(milliseconds: 250));
     _stripAnim.addListener(_onStripAnimChanged);
     widget.controlsVisible?.addListener(_onControlsVisibilityChanged);
   }
@@ -325,7 +322,10 @@ class _MobileVideoControlsState extends State<MobileVideoControls>
       return const SizedBox.shrink();
     }
 
-    return FirstFrameGuard(hasFirstFrame: widget.hasFirstFrame, builder: (context) => _buildPlaybackControlsContent(context));
+    return FirstFrameGuard(
+      hasFirstFrame: widget.hasFirstFrame,
+      builder: (context) => _buildPlaybackControlsContent(context),
+    );
   }
 
   Widget _buildPlaybackControlsContent(BuildContext _) {

@@ -643,52 +643,54 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     final options = _getGroupingOptions();
     final controller = OverlaySheetController.of(context);
-    controller.show<String>(
-      showDragHandle: true,
-      builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: Text(
-              t.libraries.groupings.title,
-              style: Theme.of(sheetContext).textTheme.titleMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: options.map((grouping) {
-                  final isSelected = _selectedGrouping == grouping;
-                  return FocusableListTile(
-                    dense: true,
-                    leading: AppIcon(
-                      isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
-                      fill: 1,
-                    ),
-                    title: Text(_getGroupingLabel(grouping)),
-                    onTap: () => controller.close(grouping),
-                  );
-                }).toList(),
+    controller
+        .show<String>(
+          showDragHandle: true,
+          builder: (sheetContext) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Text(
+                  t.libraries.groupings.title,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: options.map((grouping) {
+                      final isSelected = _selectedGrouping == grouping;
+                      return FocusableListTile(
+                        dense: true,
+                        leading: AppIcon(
+                          isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
+                          fill: 1,
+                        ),
+                        title: Text(_getGroupingLabel(grouping)),
+                        onTap: () => controller.close(grouping),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ).then((value) {
-      if (!mounted || value == null || value == _selectedGrouping) return;
-      setState(() {
-        _selectedGrouping = value;
-      });
-      StorageService.getInstance().then((storage) {
-        storage.saveLibraryGrouping(widget.library.globalKey, value);
-      });
-      _loadItems();
-      _loadFirstCharacters();
-    });
+        )
+        .then((value) {
+          if (!mounted || value == null || value == _selectedGrouping) return;
+          setState(() {
+            _selectedGrouping = value;
+          });
+          StorageService.getInstance().then((storage) {
+            storage.saveLibraryGrouping(widget.library.globalKey, value);
+          });
+          _loadItems();
+          _loadFirstCharacters();
+        });
   }
 
   void _showFiltersBottomSheet() {
@@ -776,7 +778,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     if (_totalSize == 0) return;
 
-    final targetIndex = shouldRestoreGridFocus && lastFocusedGridIndex! < _totalSize && _loadedItems.containsKey(lastFocusedGridIndex!) ? lastFocusedGridIndex! : 0;
+    final targetIndex =
+        shouldRestoreGridFocus && lastFocusedGridIndex! < _totalSize && _loadedItems.containsKey(lastFocusedGridIndex!)
+        ? lastFocusedGridIndex!
+        : 0;
 
     // Use firstItemFocusNode for index 0 (matches _buildMediaCardItem)
     if (targetIndex == 0) {
@@ -1227,8 +1232,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       final settingsProvider = context.read<SettingsProvider>();
       final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
       final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
-      final columnCount =
-          ((screenSize.width + crossAxisSpacing) / (maxExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+      final columnCount = ((screenSize.width + crossAxisSpacing) / (maxExtent + crossAxisSpacing)).ceil().clamp(1, 100);
       final itemWidth = screenSize.width / columnCount;
       final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
       final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
@@ -1551,10 +1555,7 @@ class _SkeletonCard extends StatelessWidget {
           FractionallySizedBox(
             alignment: Alignment.centerLeft,
             widthFactor: 0.6,
-            child: SkeletonLoader(
-              borderRadius: BorderRadius.all(Radius.circular(4)),
-              child: SizedBox(height: 11),
-            ),
+            child: SkeletonLoader(borderRadius: BorderRadius.all(Radius.circular(4)), child: SizedBox(height: 11)),
           ),
         ],
       ),

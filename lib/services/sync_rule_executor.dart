@@ -152,7 +152,9 @@ class SyncRuleExecutor {
 
   static bool _isActiveDownload(DownloadProgress? p) =>
       p != null &&
-      (p.status == DownloadStatus.completed || p.status == DownloadStatus.downloading || p.status == DownloadStatus.queued);
+      (p.status == DownloadStatus.completed ||
+          p.status == DownloadStatus.downloading ||
+          p.status == DownloadStatus.queued);
 
   Future<void> _collectUnwatchedForShow(
     PlexClient client,

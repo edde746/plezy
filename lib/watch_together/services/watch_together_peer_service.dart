@@ -38,7 +38,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   }
 
   WatchTogetherPeerService({String? customBaseUrl})
-      : _baseUrl = (customBaseUrl != null && customBaseUrl.trim().isNotEmpty) ? customBaseUrl.trim() : defaultBaseUrl;
+    : _baseUrl = (customBaseUrl != null && customBaseUrl.trim().isNotEmpty) ? customBaseUrl.trim() : defaultBaseUrl;
 
   WebSocketChannel? _channel;
   StreamSubscription? _channelSubscription;
@@ -131,7 +131,8 @@ class WatchTogetherPeerService with KeepaliveMixin {
       },
       onError: (error) {
         appLogger.e('WatchTogether: WebSocket error', error: error);
-        _safeAdd(_errorController,
+        _safeAdd(
+          _errorController,
           PeerError(type: PeerErrorType.serverError, message: 'WebSocket error: $error', originalError: error),
         );
         if (setupCompleter != null && !setupCompleter.isCompleted) {
@@ -277,7 +278,8 @@ class WatchTogetherPeerService with KeepaliveMixin {
   void _attemptReconnect() {
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       appLogger.e('WatchTogether: Max reconnect attempts reached');
-      _safeAdd(_errorController,
+      _safeAdd(
+        _errorController,
         const PeerError(
           type: PeerErrorType.connectionFailed,
           message: 'Lost connection to relay after multiple reconnect attempts',
@@ -314,7 +316,10 @@ class WatchTogetherPeerService with KeepaliveMixin {
             final createCompleter = Completer<void>();
             _listenToChannel(channel, setupCompleter: createCompleter);
             _sendRaw({'type': 'create', 'sessionId': _sessionId, 'peerId': _myPeerId});
-            await createCompleter.future.namedTimeout(const Duration(seconds: 10), operation: 'WatchTogether reconnect create');
+            await createCompleter.future.namedTimeout(
+              const Duration(seconds: 10),
+              operation: 'WatchTogether reconnect create',
+            );
           } else {
             rethrow;
           }

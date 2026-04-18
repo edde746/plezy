@@ -77,10 +77,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyIntroPattern = 'intro_pattern';
   static const String _keyCreditsPattern = 'credits_pattern';
 
-  static const String defaultIntroPattern =
-      r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
-  static const String defaultCreditsPattern =
-      r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
+  static const String defaultIntroPattern = r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
+  static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
   static const String _keyCustomDownloadPath = 'custom_download_path';
   static const String _keyCustomDownloadPathType = 'custom_download_path_type';
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';

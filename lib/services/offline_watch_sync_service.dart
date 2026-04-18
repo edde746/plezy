@@ -450,7 +450,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
           existingMeta['lastViewedAt'] = episode.lastViewedAt;
           existingMeta['viewedLeafCount'] = episode.viewedLeafCount;
           await PlexApiCache.instance.put(serverId, cacheKey, {
-            'MediaContainer': {'Metadata': [existingMeta]},
+            'MediaContainer': {
+              'Metadata': [existingMeta],
+            },
           });
 
           // Repair corrupted entries (missing Media/Chapter from previous overwrites)
@@ -462,7 +464,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
         } else {
           // No existing entry — write what we have
           await PlexApiCache.instance.put(serverId, cacheKey, {
-            'MediaContainer': {'Metadata': [episode.toJson()]},
+            'MediaContainer': {
+              'Metadata': [episode.toJson()],
+            },
           });
         }
         synced++;

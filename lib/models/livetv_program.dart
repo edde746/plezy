@@ -44,10 +44,7 @@ class LiveTvProgram {
     this.premiere,
   });
 
-  factory LiveTvProgram.fromJson(
-    Map<String, dynamic> json, {
-    Map<String, dynamic>? mediaOverride,
-  }) {
+  factory LiveTvProgram.fromJson(Map<String, dynamic> json, {Map<String, dynamic>? mediaOverride}) {
     // Grid endpoint nests timing/channel info inside Media[] and Channel[].
     // When mediaOverride is supplied, the caller is pinning this parse to a
     // specific airing (one Media entry); treat it as authoritative for

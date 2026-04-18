@@ -21,11 +21,7 @@ class GridSizeCalculator {
 
   /// Calculates the max cross-axis extent accounting for outer padding.
   /// [density] is an int 1–5.
-  static double getMaxCrossAxisExtentWithPadding(
-    BuildContext context,
-    int density,
-    double horizontalPadding,
-  ) {
+  static double getMaxCrossAxisExtentWithPadding(BuildContext context, int density, double horizontalPadding) {
     final screenWidth = MediaQuery.of(context).size.width;
     final availableWidth = screenWidth - horizontalPadding;
     final f = LibraryDensity.factor(density);

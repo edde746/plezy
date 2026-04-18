@@ -141,8 +141,8 @@ class AmbientLightingService {
 
     // Pass 3-5: Three Kawase blur passes at 1/8 resolution.
     const blur8Steps = [
-      ('SMALL',  'BLUR8A', '2.0',  'Blur1'),
-      ('BLUR8A', 'BLUR8B', '6.0',  'Blur2'),
+      ('SMALL', 'BLUR8A', '2.0', 'Blur1'),
+      ('BLUR8A', 'BLUR8B', '6.0', 'Blur2'),
       ('BLUR8B', 'BLUR8C', '12.0', 'Blur3'),
     ];
     for (final (input, output, offset, desc) in blur8Steps) {
@@ -176,10 +176,7 @@ class AmbientLightingService {
     buf.writeln();
 
     // Pass 7-8: Two more Kawase blur passes at 1/64 for maximum diffusion.
-    const blur64Steps = [
-      ('TINY',  'GLOW1', '3.0', 'Blur4'),
-      ('GLOW1', 'GLOW',  '6.0', 'Blur5'),
-    ];
+    const blur64Steps = [('TINY', 'GLOW1', '3.0', 'Blur4'), ('GLOW1', 'GLOW', '6.0', 'Blur5')];
     for (final (input, output, offset, desc) in blur64Steps) {
       buf.writeln('//!HOOK MAIN');
       buf.writeln('//!BIND $input');

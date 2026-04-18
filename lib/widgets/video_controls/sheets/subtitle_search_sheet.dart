@@ -248,39 +248,27 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
 
         Widget? trailing;
         if (isDownloading) {
-          trailing = const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          );
+          trailing = const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
         } else {
           final trailingChildren = <Widget>[];
           if (result.perfectMatch) {
-            trailingChildren.add(
-              const AppIcon(Symbols.star_rounded, fill: 1, color: Color(0xFFCC7B19), size: 16),
-            );
+            trailingChildren.add(const AppIcon(Symbols.star_rounded, fill: 1, color: Color(0xFFCC7B19), size: 16));
           }
           if (result.score != null) {
-            trailingChildren.add(Text(
-              result.score!.toInt().toString(),
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
-            ));
+            trailingChildren.add(
+              Text(
+                result.score!.toInt().toString(),
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              ),
+            );
           }
           if (trailingChildren.isNotEmpty) {
-            trailing = Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 4,
-              children: trailingChildren,
-            );
+            trailing = Row(mainAxisSize: MainAxisSize.min, spacing: 4, children: trailingChildren);
           }
         }
 
         return FocusableListTile(
-          title: Text(
-            result.title ?? result.displayTitle ?? 'Unknown',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          title: Text(result.title ?? result.displayTitle ?? 'Unknown', maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(
             result.displayTitle ?? '',
             maxLines: 1,
@@ -300,11 +288,7 @@ class _LanguagePickerView extends StatefulWidget {
   final void Function(String code, String name) onSelected;
   final VoidCallback onBack;
 
-  const _LanguagePickerView({
-    required this.currentCode,
-    required this.onSelected,
-    required this.onBack,
-  });
+  const _LanguagePickerView({required this.currentCode, required this.onSelected, required this.onBack});
 
   @override
   State<_LanguagePickerView> createState() => _LanguagePickerViewState();

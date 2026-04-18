@@ -33,11 +33,13 @@ Future<T?> showSelectionDialog<T>({
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: options
-                .map((option) => RadioListTile<T>(
-                      title: Text(option.title),
-                      subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
-                      value: option.value,
-                    ))
+                .map(
+                  (option) => RadioListTile<T>(
+                    title: Text(option.title),
+                    subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
+                    value: option.value,
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -124,10 +126,9 @@ void _showNumericInputDialogTV({
                 const SizedBox(height: 8),
                 Text(
                   t.settings.durationHint(min: min, max: max),
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -246,10 +247,7 @@ void showTextInputDialog({
             title: Text(title),
             content: TextField(
               controller: controller,
-              decoration: InputDecoration(
-                labelText: 'Regex',
-                errorText: errorText,
-              ),
+              decoration: InputDecoration(labelText: 'Regex', errorText: errorText),
               autofocus: true,
               textInputAction: TextInputAction.done,
               onEditingComplete: () => saveFocusNode.requestFocus(),

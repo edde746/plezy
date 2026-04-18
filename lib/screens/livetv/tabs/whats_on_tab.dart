@@ -500,7 +500,11 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
             onKeyEvent: _handleKeyEvent,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final cardWidth = GridSizeCalculator.getCellWidth(constraints.maxWidth, context, settings.libraryDensity);
+                final cardWidth = GridSizeCalculator.getCellWidth(
+                  constraints.maxWidth,
+                  context,
+                  settings.libraryDensity,
+                );
                 final posterWidth = cardWidth - 16;
                 final posterHeight = posterWidth * 1.5; // 2:3 aspect
                 final containerHeight = posterHeight + 66;

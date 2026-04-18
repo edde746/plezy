@@ -435,10 +435,7 @@ class _DPad extends StatelessWidget {
         child: Stack(
           children: [
             Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.surface,
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: colors.surface),
             ),
             _DPadZone(
               startAngle: -135,
@@ -460,11 +457,7 @@ class _DPad extends StatelessWidget {
               icon: Icons.keyboard_arrow_left,
               onTap: () => onCommand(RemoteCommandType.dpadLeft),
             ),
-            Center(
-              child: _DPadCenter(
-                onTap: () => onCommand(RemoteCommandType.select),
-              ),
-            ),
+            Center(child: _DPadCenter(onTap: () => onCommand(RemoteCommandType.select))),
           ],
         ),
       ),
@@ -477,11 +470,7 @@ class _DPadZone extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _DPadZone({
-    required this.startAngle,
-    required this.icon,
-    required this.onTap,
-  });
+  const _DPadZone({required this.startAngle, required this.icon, required this.onTap});
 
   Alignment get iconAlignment {
     final midRad = (startAngle + 45) * pi / 180;
@@ -518,9 +507,7 @@ class _DPadZoneState extends State<_DPadZone> {
           },
           child: AnimatedContainer(
             duration: tokens(context).fast,
-            color: _pressed
-                ? colors.primary.withValues(alpha: 0.8)
-                : colors.primary,
+            color: _pressed ? colors.primary.withValues(alpha: 0.8) : colors.primary,
             alignment: widget.iconAlignment,
             child: Icon(widget.icon, size: 28, color: colors.onPrimary),
           ),
@@ -561,9 +548,7 @@ class _DPadCenterState extends State<_DPadCenter> {
         height: _DPad._centerSize,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _pressed
-              ? colors.primary.withValues(alpha: 0.8)
-              : colors.primary,
+          color: _pressed ? colors.primary.withValues(alpha: 0.8) : colors.primary,
         ),
         child: const SizedBox.shrink(),
       ),
@@ -576,11 +561,7 @@ class _SectorClipper extends CustomClipper<Path> {
   final double innerRadius;
   final double gapWidth;
 
-  const _SectorClipper({
-    required this.startAngle,
-    required this.innerRadius,
-    required this.gapWidth,
-  });
+  const _SectorClipper({required this.startAngle, required this.innerRadius, required this.gapWidth});
 
   @override
   Path getClip(Size size) {
@@ -600,38 +581,17 @@ class _SectorClipper extends CustomClipper<Path> {
     final innerEnd = endRad - innerOffset;
 
     return Path()
-      ..moveTo(
-        center.dx + innerRadius * cos(innerStart),
-        center.dy + innerRadius * sin(innerStart),
-      )
-      ..lineTo(
-        center.dx + outerRadius * cos(outerStart),
-        center.dy + outerRadius * sin(outerStart),
-      )
-      ..arcTo(
-        Rect.fromCircle(center: center, radius: outerRadius),
-        outerStart,
-        outerEnd - outerStart,
-        false,
-      )
-      ..lineTo(
-        center.dx + innerRadius * cos(innerEnd),
-        center.dy + innerRadius * sin(innerEnd),
-      )
-      ..arcTo(
-        Rect.fromCircle(center: center, radius: innerRadius),
-        innerEnd,
-        innerStart - innerEnd,
-        false,
-      )
+      ..moveTo(center.dx + innerRadius * cos(innerStart), center.dy + innerRadius * sin(innerStart))
+      ..lineTo(center.dx + outerRadius * cos(outerStart), center.dy + outerRadius * sin(outerStart))
+      ..arcTo(Rect.fromCircle(center: center, radius: outerRadius), outerStart, outerEnd - outerStart, false)
+      ..lineTo(center.dx + innerRadius * cos(innerEnd), center.dy + innerRadius * sin(innerEnd))
+      ..arcTo(Rect.fromCircle(center: center, radius: innerRadius), innerEnd, innerStart - innerEnd, false)
       ..close();
   }
 
   @override
   bool shouldReclip(covariant _SectorClipper oldClipper) =>
-      startAngle != oldClipper.startAngle ||
-      innerRadius != oldClipper.innerRadius ||
-      gapWidth != oldClipper.gapWidth;
+      startAngle != oldClipper.startAngle || innerRadius != oldClipper.innerRadius || gapWidth != oldClipper.gapWidth;
 }
 
 class _RemoteButton extends StatelessWidget {

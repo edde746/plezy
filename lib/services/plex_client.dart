@@ -213,11 +213,7 @@ class PlexClient {
   }) async {
     final gen = _endpointManager?.generation;
     try {
-      return await _http.get(path,
-          queryParameters: queryParameters,
-          headers: headers,
-          timeout: timeout,
-          abort: abort);
+      return await _http.get(path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
     } on PlexHttpException catch (e) {
       if (!_shouldAttemptFailover(e) ||
           _failoverSwitching ||
@@ -243,13 +239,14 @@ class PlexClient {
           error: {'from': failedEndpoint, 'to': nextBaseUrl, 'path': path},
         );
         await _handleEndpointSwitch(nextBaseUrl);
-        final response = await _http.get(path,
-            queryParameters: queryParameters,
-            headers: headers,
-            timeout: timeout,
-            abort: abort);
-        appLogger.i('Endpoint failover retry succeeded',
-            error: {'newEndpoint': nextBaseUrl});
+        final response = await _http.get(
+          path,
+          queryParameters: queryParameters,
+          headers: headers,
+          timeout: timeout,
+          abort: abort,
+        );
+        appLogger.i('Endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
         return response;
       } finally {
         _failoverSwitching = false;
@@ -313,8 +310,7 @@ class PlexClient {
                 if (dir['type'] == 'playlist') continue;
 
                 final isNumericId = int.tryParse(id) != null;
-                final isSharedLibrary = !isNumericId &&
-                    dir['key']?.toString().startsWith('/library/shared') == true;
+                final isSharedLibrary = !isNumericId && dir['key']?.toString().startsWith('/library/shared') == true;
 
                 // Skip non-numeric IDs unless it's a shared library
                 if (!isNumericId && !isSharedLibrary) continue;
@@ -324,11 +320,9 @@ class PlexClient {
                 json['key'] = id;
 
                 libraries.add(
-                  PlexLibrary.fromJson(json).copyWith(
-                    serverId: serverId,
-                    serverName: serverName,
-                    isShared: isSharedLibrary,
-                  ),
+                  PlexLibrary.fromJson(
+                    json,
+                  ).copyWith(serverId: serverId, serverName: serverName, isShared: isSharedLibrary),
                 );
               } catch (e) {
                 appLogger.w('Failed to parse media provider directory entry', error: e);
@@ -387,11 +381,7 @@ class PlexClient {
     final stopwatch = Stopwatch()..start();
 
     try {
-      final client = PlexHttpClient(
-        baseUrl: baseUrl,
-        connectTimeout: timeout,
-        receiveTimeout: timeout,
-      );
+      final client = PlexHttpClient(baseUrl: baseUrl, connectTimeout: timeout, receiveTimeout: timeout);
 
       final headers = <String, String>{'X-Plex-Token': token};
       if (clientIdentifier != null) {
@@ -424,7 +414,11 @@ class PlexClient {
       return ConnectionTestResult(success: false, latencyMs: stopwatch.elapsedMilliseconds, error: error);
     } catch (e) {
       stopwatch.stop();
-      return ConnectionTestResult(success: false, latencyMs: stopwatch.elapsedMilliseconds, error: e.runtimeType.toString());
+      return ConnectionTestResult(
+        success: false,
+        latencyMs: stopwatch.elapsedMilliseconds,
+        error: e.runtimeType.toString(),
+      );
     }
   }
 
@@ -604,15 +598,9 @@ class PlexClient {
       queryParams.addAll(filters);
     }
 
-    final endpoint = sectionId == 'shared'
-        ? '/library/shared/all'
-        : '/library/sections/$sectionId/all';
+    final endpoint = sectionId == 'shared' ? '/library/shared/all' : '/library/sections/$sectionId/all';
 
-    final response = await _getWithFailover(
-      endpoint,
-      queryParameters: queryParams,
-      abort: abort,
-    );
+    final response = await _getWithFailover(endpoint, queryParameters: queryParams, abort: abort);
 
     final items = _extractMetadataList(response);
     final container = _getMediaContainer(response);
@@ -981,12 +969,15 @@ class PlexClient {
     int forced = 0,
   }) async {
     return _wrapListApiCall<PlexSubtitleSearchResult>(
-      () => _http.get('/library/metadata/$ratingKey/subtitles', queryParameters: {
-        'language': language,
-        if (title != null && title.isNotEmpty) 'title': title,
-        'hearingImpaired': hearingImpaired,
-        'forced': forced,
-      }),
+      () => _http.get(
+        '/library/metadata/$ratingKey/subtitles',
+        queryParameters: {
+          'language': language,
+          if (title != null && title.isNotEmpty) 'title': title,
+          'hearingImpaired': hearingImpaired,
+          'forced': forced,
+        },
+      ),
       (response) {
         final container = _getMediaContainer(response);
         final streams = container?['Stream'] as List? ?? [];
@@ -1008,14 +999,17 @@ class PlexClient {
     required String providerTitle,
   }) async {
     return _wrapBoolApiCall(
-      () => _http.put('/library/metadata/$ratingKey/subtitles', queryParameters: {
-        'key': key,
-        'codec': codec,
-        'language': language,
-        'hearingImpaired': hearingImpaired ? 1 : 0,
-        'forced': forced ? 1 : 0,
-        'providerTitle': providerTitle,
-      }),
+      () => _http.put(
+        '/library/metadata/$ratingKey/subtitles',
+        queryParameters: {
+          'key': key,
+          'codec': codec,
+          'language': language,
+          'hearingImpaired': hearingImpaired ? 1 : 0,
+          'forced': forced ? 1 : 0,
+          'providerTitle': providerTitle,
+        },
+      ),
       'Failed to download subtitle',
     );
   }
@@ -1077,16 +1071,13 @@ class PlexClient {
   /// Uses /hubs?identifier=home.continue,home.ondeck which respects the
   /// server's OnDeckWindow preference (unlike /library/onDeck).
   Future<List<PlexMetadata>> getContinueWatching({int count = 20}) async {
-    final response = await _getWithFailover('/hubs', queryParameters: {
-      'identifier': 'home.continue,home.ondeck',
-      'count': count,
-      'includeGuids': 1,
-    });
+    final response = await _getWithFailover(
+      '/hubs',
+      queryParameters: {'identifier': 'home.continue,home.ondeck', 'count': count, 'includeGuids': 1},
+    );
     final sid = serverId;
     final sname = serverName;
-    final hubs = await tryIsolateRun(
-      () => _processHubResponse(response.data as Map<String, dynamic>, sid, sname),
-    );
+    final hubs = await tryIsolateRun(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     // Deduplicate across home.continue and home.ondeck hubs.
     // Like plex-web, episodes from the same show (same grandparentRatingKey)
     // are deduplicated, preferring the in-progress item (has viewOffset).
@@ -1096,9 +1087,7 @@ class PlexClient {
       final isEpisode = item.type?.toLowerCase() == 'episode';
       final gpKey = item.grandparentRatingKey;
       if (isEpisode && gpKey != null) {
-        final idx = result.indexWhere((e) =>
-            e.type?.toLowerCase() == 'episode' &&
-            e.grandparentRatingKey == gpKey);
+        final idx = result.indexWhere((e) => e.type?.toLowerCase() == 'episode' && e.grandparentRatingKey == gpKey);
         if (idx != -1) {
           if (result[idx].viewOffset == null && item.viewOffset != null) {
             result[idx] = item;
@@ -1166,7 +1155,12 @@ class PlexClient {
 
   /// Get chapters and markers from cached metadata or fetch if needed
   /// Uses same cache key as other metadata methods for consistency
-  Future<PlaybackExtras> getPlaybackExtras(String ratingKey, {String? introPattern, String? creditsPattern, bool forceRefresh = false}) async {
+  Future<PlaybackExtras> getPlaybackExtras(
+    String ratingKey, {
+    String? introPattern,
+    String? creditsPattern,
+    bool forceRefresh = false,
+  }) async {
     try {
       final fetch = forceRefresh ? _fetchWithCacheFallback : _fetchWithCacheFirst;
       final data = await fetch<Map<String, dynamic>>(
@@ -1177,7 +1171,11 @@ class PlexClient {
         parseResponse: (response) => response.data as Map<String, dynamic>?,
       );
       final metadataJson = _getFirstMetadataJsonFromData(data);
-      return _parsePlaybackExtrasFromMetadataJson(metadataJson, introPattern: introPattern, creditsPattern: creditsPattern);
+      return _parsePlaybackExtrasFromMetadataJson(
+        metadataJson,
+        introPattern: introPattern,
+        creditsPattern: creditsPattern,
+      );
     } catch (e) {
       appLogger.w('Failed to get playback extras', error: e);
       return PlaybackExtras(chapters: [], markers: []);
@@ -1185,7 +1183,11 @@ class PlexClient {
   }
 
   /// Parse PlaybackExtras from metadata JSON
-  PlaybackExtras _parsePlaybackExtrasFromMetadataJson(Map<String, dynamic>? metadataJson, {String? introPattern, String? creditsPattern}) {
+  PlaybackExtras _parsePlaybackExtrasFromMetadataJson(
+    Map<String, dynamic>? metadataJson, {
+    String? introPattern,
+    String? creditsPattern,
+  }) {
     return PlaybackExtras.withChapterFallback(
       chapters: _parseChapters(metadataJson),
       markers: _parseMarkers(metadataJson),
@@ -1350,7 +1352,10 @@ class PlexClient {
   ///
   /// If [metadata] is provided, emits a [WatchStateEvent] for UI updates.
   Future<void> markAsWatched(String ratingKey, {PlexMetadata? metadata}) async {
-    await _getWithFailover('/:/scrobble', queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'});
+    await _getWithFailover(
+      '/:/scrobble',
+      queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'},
+    );
     if (metadata != null) {
       WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: true);
     }
@@ -1360,7 +1365,10 @@ class PlexClient {
   ///
   /// If [metadata] is provided, emits a [WatchStateEvent] for UI updates.
   Future<void> markAsUnwatched(String ratingKey, {PlexMetadata? metadata}) async {
-    await _getWithFailover('/:/unscrobble', queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'});
+    await _getWithFailover(
+      '/:/unscrobble',
+      queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'},
+    );
     if (metadata != null) {
       WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: false);
     }
@@ -1431,18 +1439,14 @@ class PlexClient {
             : captureBufferWrapper as Map<String, dynamic>?;
         if (cbMap != null) {
           final ts = cbMap['TranscodeSession'];
-          final tsMap = ts is List
-              ? ts.firstOrNull as Map<String, dynamic>?
-              : ts as Map<String, dynamic>?;
+          final tsMap = ts is List ? ts.firstOrNull as Map<String, dynamic>? : ts as Map<String, dynamic>?;
           if (tsMap != null) return CaptureBuffer.fromTranscodeSession(tsMap);
         }
       }
 
       final transcodeSessions = container['TranscodeSession'];
       if (transcodeSessions is List && transcodeSessions.isNotEmpty) {
-        return CaptureBuffer.fromTranscodeSession(
-          transcodeSessions.first as Map<String, dynamic>,
-        );
+        return CaptureBuffer.fromTranscodeSession(transcodeSessions.first as Map<String, dynamic>);
       } else if (transcodeSessions is Map<String, dynamic>) {
         return CaptureBuffer.fromTranscodeSession(transcodeSessions);
       }
@@ -1524,7 +1528,10 @@ class PlexClient {
     if (type != null) queryParams['type'] = type;
     if (filters != null) queryParams.addAll(filters);
 
-    final response = await _getWithFailover('/library/sections/$sectionId/firstCharacter', queryParameters: queryParams);
+    final response = await _getWithFailover(
+      '/library/sections/$sectionId/firstCharacter',
+      queryParameters: queryParams,
+    );
     return _extractDirectoryList(response, PlexFirstCharacter.fromJson);
   }
 
@@ -1542,7 +1549,12 @@ class PlexClient {
     if (sectionId == 'shared') {
       return [
         PlexSort(key: 'titleSort', descKey: 'titleSort:desc', title: 'Title', defaultDirection: 'asc'),
-        PlexSort(key: 'taggingCreatedAt', descKey: 'taggingCreatedAt:desc', title: 'Date Shared', defaultDirection: 'desc'),
+        PlexSort(
+          key: 'taggingCreatedAt',
+          descKey: 'taggingCreatedAt:desc',
+          title: 'Date Shared',
+          defaultDirection: 'desc',
+        ),
       ];
     }
     try {
@@ -1634,16 +1646,17 @@ class PlexClient {
   /// Get related hubs for a specific metadata item (collections, similar, "more from" director/actor)
   Future<List<PlexHub>> getRelatedHubs(String ratingKey, {int count = 10}) async {
     try {
-      final response = await _getWithFailover(
-        '/hubs/metadata/$ratingKey/related',
-        queryParameters: {'count': count},
-      );
+      final response = await _getWithFailover('/hubs/metadata/$ratingKey/related', queryParameters: {'count': count});
       final sid = serverId;
       final sname = serverName;
-      return await tryIsolateRun(() => _processHubResponse(
-        response.data as Map<String, dynamic>, sid, sname,
-        filter: (item) => item.isVideoContent || item.isCollection,
-      ));
+      return await tryIsolateRun(
+        () => _processHubResponse(
+          response.data as Map<String, dynamic>,
+          sid,
+          sname,
+          filter: (item) => item.isVideoContent || item.isCollection,
+        ),
+      );
     } catch (e) {
       appLogger.e('Failed to get related hubs: $e');
     }
@@ -1850,8 +1863,7 @@ class PlexClient {
         }
         final removed = original.where((t) => !current.contains(t)).toList();
         if (removed.isNotEmpty) {
-          queryParams['$field[].tag.tag-'] =
-              removed.map(Uri.encodeComponent).join(',');
+          queryParams['$field[].tag.tag-'] = removed.map(Uri.encodeComponent).join(',');
         }
         queryParams['$field.locked'] = '1';
       }
@@ -2317,9 +2329,7 @@ class PlexClient {
     final allChannels = <LiveTvChannel>[];
     for (final provider in _providerEpg) {
       final isCloudGuide = provider.identifier.startsWith('tv.plex.providers.epg');
-      final primaryEndpoint = isCloudGuide
-          ? '/lineups/plex/channels'
-          : '/${provider.identifier}/lineups/dvr/channels';
+      final primaryEndpoint = isCloudGuide ? '/lineups/plex/channels' : '/${provider.identifier}/lineups/dvr/channels';
       try {
         final response = await _getWithFailover(primaryEndpoint);
         final parsed = parseChannels(response);
@@ -2526,10 +2536,24 @@ class PlexClient {
   /// Plex tune responses use XML-to-JSON conversion where all values are strings.
   static void _coerceNumericFields(Map<String, dynamic> json) {
     const numericKeys = [
-      'duration', 'year', 'addedAt', 'updatedAt', 'lastViewedAt',
-      'parentIndex', 'index', 'viewOffset', 'viewCount', 'leafCount',
-      'viewedLeafCount', 'childCount', 'rating', 'audienceRating',
-      'userRating', 'ratingCount', 'skipCount', 'lastRatedAt',
+      'duration',
+      'year',
+      'addedAt',
+      'updatedAt',
+      'lastViewedAt',
+      'parentIndex',
+      'index',
+      'viewOffset',
+      'viewCount',
+      'leafCount',
+      'viewedLeafCount',
+      'childCount',
+      'rating',
+      'audienceRating',
+      'userRating',
+      'ratingCount',
+      'skipCount',
+      'lastRatedAt',
     ];
     for (final key in numericKeys) {
       final val = json[key];
@@ -2544,16 +2568,16 @@ class PlexClient {
   /// POSTs to the tune endpoint and extracts metadata, session info, and
   /// capture buffer data from the response. Call [buildLiveStreamPath] after
   /// to build the actual stream URL (with optional offset for time-shift).
-  Future<({
-    PlexMetadata metadata,
-    String sessionPath,
-    String sessionIdentifier,
-    CaptureBuffer? captureBuffer,
-    int? beginsAt,
-  })?> tuneChannel(
-    String dvrKey,
-    String channelIdentifier,
-  ) async {
+  Future<
+    ({
+      PlexMetadata metadata,
+      String sessionPath,
+      String sessionIdentifier,
+      CaptureBuffer? captureBuffer,
+      int? beginsAt,
+    })?
+  >
+  tuneChannel(String dvrKey, String channelIdentifier) async {
     try {
       final sessionIdentifier = generateSessionIdentifier();
 
@@ -2571,7 +2595,11 @@ class PlexClient {
       if (container == null) return null;
 
       final containerStatus = container['status'];
-      final statusInt = containerStatus is num ? containerStatus.toInt() : containerStatus is String ? int.tryParse(containerStatus) : null;
+      final statusInt = containerStatus is num
+          ? containerStatus.toInt()
+          : containerStatus is String
+          ? int.tryParse(containerStatus)
+          : null;
       if (statusInt != null && statusInt != 0 && statusInt != 200) {
         final msg = container['message'] ?? 'Unknown error';
         appLogger.w('Tune channel error: $msg (status: $containerStatus)');
@@ -2583,7 +2611,11 @@ class PlexClient {
       Map<String, dynamic>? metadataJson;
       int? beginsAt;
       final subscriptions = container['MediaSubscription'];
-      final subList = subscriptions is List ? subscriptions : subscriptions is Map ? [subscriptions] : null;
+      final subList = subscriptions is List
+          ? subscriptions
+          : subscriptions is Map
+          ? [subscriptions]
+          : null;
       if (subList != null && subList.isNotEmpty) {
         final sub = subList.first as Map<String, dynamic>;
 
@@ -2611,7 +2643,11 @@ class PlexClient {
         }
 
         final ops = sub['MediaGrabOperation'];
-        final opList = ops is List ? ops : ops is Map ? [ops] : null;
+        final opList = ops is List
+            ? ops
+            : ops is Map
+            ? [ops]
+            : null;
         if (opList != null && opList.isNotEmpty) {
           final op = opList.first as Map<String, dynamic>;
           final nested = op['Metadata'];
@@ -2632,7 +2668,9 @@ class PlexClient {
       }
 
       if (metadataJson == null) {
-        appLogger.w('Tune channel failed: ${container['message'] ?? 'no metadata'} (status: ${container['status']}, keys: ${container.keys.toList()})');
+        appLogger.w(
+          'Tune channel failed: ${container['message'] ?? 'no metadata'} (status: ${container['status']}, keys: ${container.keys.toList()})',
+        );
         return null;
       }
 
@@ -2652,9 +2690,7 @@ class PlexClient {
       CaptureBuffer? captureBuffer;
       final tsSource = container['TranscodeSession'] ?? metadataJson['TranscodeSession'];
       if (tsSource is List && tsSource.isNotEmpty) {
-        captureBuffer = CaptureBuffer.fromTranscodeSession(
-          tsSource.first as Map<String, dynamic>,
-        );
+        captureBuffer = CaptureBuffer.fromTranscodeSession(tsSource.first as Map<String, dynamic>);
       } else if (tsSource is Map<String, dynamic>) {
         captureBuffer = CaptureBuffer.fromTranscodeSession(tsSource);
       }
@@ -2761,7 +2797,9 @@ class PlexClient {
       // to extract generalDecisionCode, mdeDecisionCode, transcodeDecisionCode).
       final decisionBody = decisionResponse.data?.toString() ?? '';
       if (decisionBody.isNotEmpty) {
-        appLogger.d('Decision response: ${decisionBody.length > 500 ? '${decisionBody.substring(0, 500)}...' : decisionBody}');
+        appLogger.d(
+          'Decision response: ${decisionBody.length > 500 ? '${decisionBody.substring(0, 500)}...' : decisionBody}',
+        );
       }
 
       // Token is added by the caller via .withPlexToken()
@@ -2800,10 +2838,7 @@ class PlexClient {
   /// Get favorite channels from the Plex cloud.
   Future<List<FavoriteChannel>> getFavoriteChannels() async {
     try {
-      final response = await _http.get(
-        _favoriteChannelsUrl,
-        headers: _providerVersionHeader,
-      );
+      final response = await _http.get(_favoriteChannelsUrl, headers: _providerVersionHeader);
       final container = _getMediaContainer(response);
       if (container != null && container['FavoriteChannel'] != null) {
         return (container['FavoriteChannel'] as List)

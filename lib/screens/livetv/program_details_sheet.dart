@@ -158,13 +158,15 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
               if (widget.posterUrl != null) ...[
                 ClipRRect(
                   borderRadius: const BorderRadius.all(Radius.circular(6)),
-                  child: blurArtwork(Image.network(
-                    widget.posterUrl!,
-                    width: 80,
-                    height: 120,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                  )),
+                  child: blurArtwork(
+                    Image.network(
+                      widget.posterUrl!,
+                      width: 80,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 14),
               ],

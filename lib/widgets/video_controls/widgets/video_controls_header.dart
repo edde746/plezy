@@ -54,10 +54,7 @@ class VideoControlsHeader extends StatelessWidget {
           selector: (_, p) => p.isInSession,
           builder: (context, inSession, child) {
             if (!inSession) return const SizedBox.shrink();
-            return const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: WatchTogetherSessionIndicator(),
-            );
+            return const Padding(padding: EdgeInsets.only(right: 8), child: WatchTogetherSessionIndicator());
           },
         ),
         ?trailing,

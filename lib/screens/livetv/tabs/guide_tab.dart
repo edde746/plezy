@@ -1069,9 +1069,7 @@ class GuideTabState extends State<GuideTab> {
               listenable: _gridHorizontalController,
               builder: (context, _) {
                 const basePadding = 6.0;
-                final scrollOffset = _gridHorizontalController.hasClients
-                    ? _gridHorizontalController.offset
-                    : 0.0;
+                final scrollOffset = _gridHorizontalController.hasClients ? _gridHorizontalController.offset : 0.0;
                 final maxInset = (tileWidth - 2 * basePadding - 20).clamp(0.0, double.infinity);
                 final leftInset = (scrollOffset - tileLeft).clamp(0.0, maxInset);
                 return Container(
@@ -1083,10 +1081,7 @@ class GuideTabState extends State<GuideTab> {
                     children: [
                       Text(
                         program.grandparentTitle ?? program.title,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: titleColor,
-                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: titleColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1191,42 +1186,42 @@ class _ChannelCellState extends State<_ChannelCell> {
             onTap: widget.onTap,
             onLongPress: widget.onLongPress,
             child: Container(
-            height: widget.rowHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
-                right: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
-              ),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                AnimatedOpacity(
-                  opacity: showAction ? 0.3 : 1.0,
-                  duration: const Duration(milliseconds: 150),
-                  child: widget.channelThumb != null && widget.client != null
-                      ? PlexOptimizedImage.thumb(
-                          client: widget.client!,
-                          imagePath: widget.channelThumb,
-                          width: widget.channelColumnWidth - 16,
-                          height: widget.rowHeight - 16,
-                          fit: BoxFit.contain,
-                        )
-                      : widget.fallbackBuilder(),
+              height: widget.rowHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
+                  right: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
                 ),
-                if (showAction) AppIcon(Symbols.play_arrow_rounded, size: 32, color: theme.colorScheme.onSurface),
-                if (widget.isFavorite)
-                  Positioned(
-                    top: 2,
-                    right: 0,
-                    child: AppIcon(Symbols.star_rounded, size: 14, color: theme.colorScheme.primary),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedOpacity(
+                    opacity: showAction ? 0.3 : 1.0,
+                    duration: const Duration(milliseconds: 150),
+                    child: widget.channelThumb != null && widget.client != null
+                        ? PlexOptimizedImage.thumb(
+                            client: widget.client!,
+                            imagePath: widget.channelThumb,
+                            width: widget.channelColumnWidth - 16,
+                            height: widget.rowHeight - 16,
+                            fit: BoxFit.contain,
+                          )
+                        : widget.fallbackBuilder(),
                   ),
-              ],
+                  if (showAction) AppIcon(Symbols.play_arrow_rounded, size: 32, color: theme.colorScheme.onSurface),
+                  if (widget.isFavorite)
+                    Positioned(
+                      top: 2,
+                      right: 0,
+                      child: AppIcon(Symbols.star_rounded, size: 14, color: theme.colorScheme.primary),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

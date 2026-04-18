@@ -247,15 +247,15 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> updateSyncRuleCount(String globalKey, int episodeCount) async {
-    await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
-      SyncRulesCompanion(episodeCount: Value(episodeCount)),
-    );
+    await (update(
+      syncRules,
+    )..where((t) => t.globalKey.equals(globalKey))).write(SyncRulesCompanion(episodeCount: Value(episodeCount)));
   }
 
   Future<void> updateSyncRuleEnabled(String globalKey, bool enabled) async {
-    await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
-      SyncRulesCompanion(enabled: Value(enabled)),
-    );
+    await (update(
+      syncRules,
+    )..where((t) => t.globalKey.equals(globalKey))).write(SyncRulesCompanion(enabled: Value(enabled)));
   }
 
   Future<void> updateSyncRuleLastExecuted(String globalKey) async {
@@ -300,9 +300,12 @@ LazyDatabase _openConnection() {
       }
     }
 
-    return NativeDatabase.createInBackground(file, setup: (db) {
-      db.execute('PRAGMA journal_mode=WAL');
-      db.execute('PRAGMA synchronous=NORMAL');
-    });
+    return NativeDatabase.createInBackground(
+      file,
+      setup: (db) {
+        db.execute('PRAGMA journal_mode=WAL');
+        db.execute('PRAGMA synchronous=NORMAL');
+      },
+    );
   });
 }

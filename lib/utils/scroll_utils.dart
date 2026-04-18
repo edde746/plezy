@@ -8,7 +8,12 @@ void scrollContextToCenter(BuildContext? context) {
   if (context == null) return;
   WidgetsBinding.instance.addPostFrameCallback((_) {
     if (!context.mounted) return;
-    Scrollable.ensureVisible(context, alignment: 0.5, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+    Scrollable.ensureVisible(
+      context,
+      alignment: 0.5,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
   });
 }
 

@@ -25,7 +25,8 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab {
+class _SearchScreenState extends State<SearchScreen>
+    with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
   final _firstResultFocusNode = FocusNode(debugLabel: 'SearchFirstResult');

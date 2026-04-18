@@ -113,5 +113,4 @@ class ThemeProvider extends ChangeNotifier {
         return Symbols.brightness_auto_rounded;
     }
   }
-
 }

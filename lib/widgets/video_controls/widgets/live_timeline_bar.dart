@@ -47,11 +47,9 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   int get _rangeStart => widget.captureBuffer.seekableStartEpoch;
   int get _rangeEnd => widget.captureBuffer.seekableEndEpoch;
 
-  int _currentEpoch(Duration playerPosition) =>
-      (widget.streamStartEpoch + playerPosition.inSeconds).round();
+  int _currentEpoch(Duration playerPosition) => (widget.streamStartEpoch + playerPosition.inSeconds).round();
 
-  int _displayPosition(Duration playerPosition) =>
-      _isDragging ? _dragPositionEpoch : _currentEpoch(playerPosition);
+  int _displayPosition(Duration playerPosition) => _isDragging ? _dragPositionEpoch : _currentEpoch(playerPosition);
 
   String _formatEpochTime(int epochSeconds) {
     final dt = DateTime.fromMillisecondsSinceEpoch(epochSeconds * 1000);
@@ -134,18 +132,14 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
           final width = constraints.maxWidth;
           return GestureDetector(
             onHorizontalDragStart: widget.enabled ? _onDragStart : null,
-            onHorizontalDragUpdate: widget.enabled
-                ? (details) => _onDragUpdate(details, width)
-                : null,
+            onHorizontalDragUpdate: widget.enabled ? (details) => _onDragUpdate(details, width) : null,
             onHorizontalDragEnd: widget.enabled ? _onDragEnd : null,
             onTapUp: widget.enabled ? (details) => _onTap(details, width) : null,
             child: SizedBox(
               height: 24,
               child: CustomPaint(
                 size: Size(width, 24),
-                painter: _LiveTimelinePainter(
-                  positionFraction: positionFraction,
-                ),
+                painter: _LiveTimelinePainter(positionFraction: positionFraction),
               ),
             ),
           );
@@ -229,6 +223,5 @@ class _LiveTimelinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _LiveTimelinePainter oldDelegate) =>
-      positionFraction != oldDelegate.positionFraction;
+  bool shouldRepaint(covariant _LiveTimelinePainter oldDelegate) => positionFraction != oldDelegate.positionFraction;
 }

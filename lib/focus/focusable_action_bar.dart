@@ -88,8 +88,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
   late List<FocusNode> _focusNodes;
   late List<bool> _focusStates;
 
-  FocusNode? getFocusNode(int index) =>
-      index >= 0 && index < _focusNodes.length ? _focusNodes[index] : null;
+  FocusNode? getFocusNode(int index) => index >= 0 && index < _focusNodes.length ? _focusNodes[index] : null;
 
   void requestFocusOnFirst() {
     if (_focusNodes.isNotEmpty) _focusNodes.first.requestFocus();
@@ -143,9 +142,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
 
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < widget.actions.length; i++) _buildButton(i, isKeyboard, duration),
-      ],
+      children: [for (var i = 0; i < widget.actions.length; i++) _buildButton(i, isKeyboard, duration)],
     );
   }
 
@@ -164,9 +161,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
         }
         return dpadKeyHandler(
           onSelect: action.onPressed,
-          onLeft: index > 0
-              ? () => _focusNodes[index - 1].requestFocus()
-              : widget.onNavigateLeft,
+          onLeft: index > 0 ? () => _focusNodes[index - 1].requestFocus() : widget.onNavigateLeft,
           onRight: index < _focusNodes.length - 1
               ? () => _focusNodes[index + 1].requestFocus()
               : widget.onNavigateRight,
@@ -179,7 +174,8 @@ class FocusableActionBarState extends State<FocusableActionBar> {
         duration: duration,
         child: Container(
           decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: 20),
-          child: action.child ??
+          child:
+              action.child ??
               IconButton(
                 icon: AppIcon(action.icon, fill: action.iconFill, color: action.iconColor),
                 tooltip: action.tooltip,

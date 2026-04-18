@@ -95,7 +95,9 @@ class MultiServerManager {
     final cachedEndpoint = storage.getServerEndpoint(serverId);
 
     // Find best working connection, passing cached endpoint for fast-path
-    final streamIterator = StreamIterator(server.findBestWorkingConnection(preferredUri: cachedEndpoint, clientIdentifier: clientIdentifier));
+    final streamIterator = StreamIterator(
+      server.findBestWorkingConnection(preferredUri: cachedEndpoint, clientIdentifier: clientIdentifier),
+    );
 
     if (!await streamIterator.moveNext()) {
       throw Exception('No working connection found');
@@ -208,7 +210,10 @@ class MultiServerManager {
       try {
         appLogger.d('Attempting connection to server: ${server.name}');
 
-        final client = await _createClientForServer(server: server, clientIdentifier: effectiveClientId).namedTimeout(timeout, operation: 'connect to ${server.name}');
+        final client = await _createClientForServer(
+          server: server,
+          clientIdentifier: effectiveClientId,
+        ).namedTimeout(timeout, operation: 'connect to ${server.name}');
 
         // Store the client and server info
         _clients[serverId]?.close();
@@ -353,43 +358,46 @@ class MultiServerManager {
     }
 
     appLogger.i('Starting network monitoring for all servers');
-    runZonedGuarded(() {
-      final connectivity = Connectivity();
-      _connectivitySubscription = connectivity.onConnectivityChanged.listen(
-        (results) {
-          final status = results.isNotEmpty ? results.first : ConnectivityResult.none;
+    runZonedGuarded(
+      () {
+        final connectivity = Connectivity();
+        _connectivitySubscription = connectivity.onConnectivityChanged.listen(
+          (results) {
+            final status = results.isNotEmpty ? results.first : ConnectivityResult.none;
 
-          if (status == ConnectivityResult.none) {
-            appLogger.w('Connectivity lost, pausing optimization until network returns');
-            return;
-          }
+            if (status == ConnectivityResult.none) {
+              appLogger.w('Connectivity lost, pausing optimization until network returns');
+              return;
+            }
 
-          // Debounce rapid connectivity events (e.g. WiFi flapping) into a single trigger
-          _connectivityDebounce?.cancel();
-          _connectivityDebounce = Timer(const Duration(seconds: 2), () {
-            _connectivityDebounce = null;
+            // Debounce rapid connectivity events (e.g. WiFi flapping) into a single trigger
+            _connectivityDebounce?.cancel();
+            _connectivityDebounce = Timer(const Duration(seconds: 2), () {
+              _connectivityDebounce = null;
 
-            appLogger.d(
-              'Connectivity change detected, re-optimizing all servers',
-              error: {
-                'status': status.name,
-                'interfaces': results.map((r) => r.name).toList(),
-                'serverCount': _servers.length,
-              },
-            );
+              appLogger.d(
+                'Connectivity change detected, re-optimizing all servers',
+                error: {
+                  'status': status.name,
+                  'interfaces': results.map((r) => r.name).toList(),
+                  'serverCount': _servers.length,
+                },
+              );
 
-            // Re-optimize all servers and re-probe offline ones
-            _reoptimizeAllServers(reason: 'connectivity:${status.name}');
-            checkServerHealth();
-          });
-        },
-        onError: (error, stackTrace) {
-          appLogger.w('Connectivity listener error', error: error, stackTrace: stackTrace);
-        },
-      );
-    }, (error, stack) {
-      appLogger.w('Connectivity monitoring unavailable', error: error);
-    });
+              // Re-optimize all servers and re-probe offline ones
+              _reoptimizeAllServers(reason: 'connectivity:${status.name}');
+              checkServerHealth();
+            });
+          },
+          onError: (error, stackTrace) {
+            appLogger.w('Connectivity listener error', error: error, stackTrace: stackTrace);
+          },
+        );
+      },
+      (error, stack) {
+        appLogger.w('Connectivity monitoring unavailable', error: error);
+      },
+    );
   }
 
   /// Stop monitoring network connectivity
@@ -437,7 +445,10 @@ class MultiServerManager {
     try {
       appLogger.d('Starting connection optimization for ${server.name}', error: {'reason': reason});
 
-      await for (final connection in server.findBestWorkingConnection(preferredUri: cachedEndpoint, clientIdentifier: _clientIdentifier)) {
+      await for (final connection in server.findBestWorkingConnection(
+        preferredUri: cachedEndpoint,
+        clientIdentifier: _clientIdentifier,
+      )) {
         final newUrl = connection.uri;
 
         // Check if this is actually a better connection than current

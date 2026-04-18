@@ -57,11 +57,9 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
   // Advanced prefs (loaded from metadata JSON)
   final Map<String, String> _currentPrefs = {};
 
-  static bool _tagsEqual(List<String> a, List<String> b) =>
-      a.length == b.length && a.every((e) => b.contains(e));
+  static bool _tagsEqual(List<String> a, List<String> b) => a.length == b.length && a.every((e) => b.contains(e));
 
-  bool get _hasTagChanges => _tags.keys.any(
-      (k) => !_tagsEqual(_tags[k] ?? [], _origTags[k] ?? []));
+  bool get _hasTagChanges => _tags.keys.any((k) => !_tagsEqual(_tags[k] ?? [], _origTags[k] ?? []));
 
   bool get _hasChanges =>
       _title != _origTitle ||
@@ -202,12 +200,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
   }) async {
     final String? result;
     if (multiline) {
-      result = await showMultilineTextInputDialog(
-        context,
-        title: title,
-        labelText: label,
-        initialValue: currentValue,
-      );
+      result = await showMultilineTextInputDialog(context, title: title, labelText: label, initialValue: currentValue);
     } else {
       result = await showTextInputDialog(
         context,
@@ -249,11 +242,8 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
   Future<void> _openArtworkPicker(String element) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => ArtworkPickerDialog(
-        client: _client,
-        ratingKey: widget.metadata.ratingKey,
-        element: element,
-      ),
+      builder: (context) =>
+          ArtworkPickerDialog(client: _client, ratingKey: widget.metadata.ratingKey, element: element),
     );
 
     if (result == true && mounted) {
@@ -303,10 +293,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
                   child: ListView(
                     shrinkWrap: true,
                     children: options.map((option) {
-                      return FocusableRadioListTile<String>(
-                        title: Text(option.label),
-                        value: option.value,
-                      );
+                      return FocusableRadioListTile<String>(title: Text(option.label), value: option.value);
                     }).toList(),
                   ),
                 ),
@@ -315,10 +302,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
                 FocusableButton(
                   autofocus: true,
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    child: Text(t.common.cancel),
-                  ),
+                  child: TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
                 ),
               ],
             );
@@ -385,10 +369,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
           (key: 'label', label: t.metadataEdit.label),
         ];
       case PlexMediaType.episode:
-        return [
-          (key: 'director', label: t.metadataEdit.director),
-          (key: 'writer', label: t.metadataEdit.writer),
-        ];
+        return [(key: 'director', label: t.metadataEdit.director), (key: 'writer', label: t.metadataEdit.writer)];
       case PlexMediaType.artist:
         return [
           (key: 'genre', label: t.metadataEdit.genre),
@@ -412,10 +393,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
   Future<void> _editTag(String key, String label) async {
     final result = await showDialog<List<String>>(
       context: context,
-      builder: (context) => TagEditDialog(
-        title: label,
-        initialTags: _tags[key] ?? [],
-      ),
+      builder: (context) => TagEditDialog(title: label, initialTags: _tags[key] ?? []),
     );
     if (result != null && mounted) {
       setState(() => _tags[key] = result);
@@ -440,10 +418,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
             child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
           )
         else
-          IconButton(
-            onPressed: _hasChanges ? _save : null,
-            icon: const AppIcon(Symbols.check_rounded, fill: 1),
-          ),
+          IconButton(onPressed: _hasChanges ? _save : null, icon: const AppIcon(Symbols.check_rounded, fill: 1)),
       ],
       slivers: [
         SliverPadding(
@@ -451,16 +426,10 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               _buildBasicInfoCard(),
-              if (_tagFields.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _buildTagsCard(),
-              ],
+              if (_tagFields.isNotEmpty) ...[const SizedBox(height: 16), _buildTagsCard()],
               const SizedBox(height: 16),
               _buildArtworkCard(),
-              if (_showAdvanced) ...[
-                const SizedBox(height: 16),
-                _buildAdvancedSettingsCard(),
-              ],
+              if (_showAdvanced) ...[const SizedBox(height: 16), _buildAdvancedSettingsCard()],
             ]),
           ),
         ),
@@ -513,11 +482,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
               ),
             ),
           if (_showReleaseDate)
-            _buildFieldTile(
-              label: t.metadataEdit.releaseDate,
-              value: _originallyAvailableAt,
-              onTap: _editDate,
-            ),
+            _buildFieldTile(label: t.metadataEdit.releaseDate, value: _originallyAvailableAt, onTap: _editDate),
           if (_showContentRating)
             _buildFieldTile(
               label: t.metadataEdit.contentRating,
@@ -577,7 +542,9 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
         displayValue,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: isNotSet ? TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)) : null,
+        style: isNotSet
+            ? TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5))
+            : null,
       ),
       trailing: const AppIcon(Symbols.chevron_right_rounded),
       onTap: onTap,
@@ -622,13 +589,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
         height: height,
         child: ClipRRect(
           borderRadius: const BorderRadius.all(Radius.circular(4)),
-          child: PlexOptimizedImage(
-            client: _client,
-            imagePath: imagePath,
-            width: width,
-            height: height,
-            fit: fit,
-          ),
+          child: PlexOptimizedImage(client: _client, imagePath: imagePath, width: width, height: height, fit: fit),
         ),
       ),
       title: Text(label),
@@ -651,13 +612,38 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
-          _buildArtworkTile(width: 40, height: 60, imagePath: meta.thumb, label: t.metadataEdit.poster, element: 'posters'),
+          _buildArtworkTile(
+            width: 40,
+            height: 60,
+            imagePath: meta.thumb,
+            label: t.metadataEdit.poster,
+            element: 'posters',
+          ),
           if (_showBackground)
-            _buildArtworkTile(width: 80, height: 45, imagePath: meta.art, label: t.metadataEdit.background, element: 'arts'),
+            _buildArtworkTile(
+              width: 80,
+              height: 45,
+              imagePath: meta.art,
+              label: t.metadataEdit.background,
+              element: 'arts',
+            ),
           if (_showExtendedArtwork)
-            _buildArtworkTile(width: 80, height: 32, imagePath: meta.clearLogo, label: t.metadataEdit.logo, element: 'clearLogos', fit: BoxFit.contain),
+            _buildArtworkTile(
+              width: 80,
+              height: 32,
+              imagePath: meta.clearLogo,
+              label: t.metadataEdit.logo,
+              element: 'clearLogos',
+              fit: BoxFit.contain,
+            ),
           if (_showExtendedArtwork)
-            _buildArtworkTile(width: 50, height: 50, imagePath: meta.backgroundSquare, label: t.metadataEdit.squareArt, element: 'squareArts'),
+            _buildArtworkTile(
+              width: 50,
+              height: 50,
+              imagePath: meta.backgroundSquare,
+              label: t.metadataEdit.squareArt,
+              element: 'squareArts',
+            ),
         ],
       ),
     );
@@ -836,22 +822,58 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
 
 // Plex locale codes for metadata agent language.
 const _plexLocaleCodes = [
-  'ar-SA', 'bg-BG', 'ca-ES', 'zh-CN', 'zh-HK', 'zh-TW', 'hr-HR', 'cs-CZ',
-  'da-DK', 'nl-NL', 'en-US', 'en-AU', 'en-CA', 'en-GB', 'et-EE', 'fi-FI',
-  'fr-FR', 'fr-CA', 'de-DE', 'el-GR', 'he-IL', 'hi-IN', 'hu-HU', 'is-IS',
-  'id-ID', 'it-IT', 'ja-JP', 'ko-KR', 'lv-LV', 'lt-LT', 'nb-NO', 'fa-IR',
-  'pl-PL', 'pt-BR', 'pt-PT', 'ro-RO', 'ru-RU', 'sk-SK', 'es-ES', 'es-MX',
-  'sv-SE', 'th-TH', 'tr-TR', 'uk-UA', 'vi-VN',
+  'ar-SA',
+  'bg-BG',
+  'ca-ES',
+  'zh-CN',
+  'zh-HK',
+  'zh-TW',
+  'hr-HR',
+  'cs-CZ',
+  'da-DK',
+  'nl-NL',
+  'en-US',
+  'en-AU',
+  'en-CA',
+  'en-GB',
+  'et-EE',
+  'fi-FI',
+  'fr-FR',
+  'fr-CA',
+  'de-DE',
+  'el-GR',
+  'he-IL',
+  'hi-IN',
+  'hu-HU',
+  'is-IS',
+  'id-ID',
+  'it-IT',
+  'ja-JP',
+  'ko-KR',
+  'lv-LV',
+  'lt-LT',
+  'nb-NO',
+  'fa-IR',
+  'pl-PL',
+  'pt-BR',
+  'pt-PT',
+  'ro-RO',
+  'ru-RU',
+  'sk-SK',
+  'es-ES',
+  'es-MX',
+  'sv-SE',
+  'th-TH',
+  'tr-TR',
+  'uk-UA',
+  'vi-VN',
 ];
 
 // Common 2-letter codes shown at the top of audio/subtitle pickers.
 const _commonAudioSubtitleCodes = ['en', 'ja', 'fr', 'de', 'it', 'es', 'pt', 'ru', 'ar'];
 
 List<({String value, String label})> _buildLanguageOptions(String defaultLabel, List<String> codes) {
-  return [
-    (value: '', label: defaultLabel),
-    ...codes.map((c) => (value: c, label: LanguageCodes.getDisplayName(c))),
-  ];
+  return [(value: '', label: defaultLabel), ...codes.map((c) => (value: c, label: LanguageCodes.getDisplayName(c)))];
 }
 
 List<({String value, String label})> _metadataLanguageOptions(String defaultLabel) =>
