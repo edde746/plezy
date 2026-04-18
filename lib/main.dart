@@ -225,23 +225,19 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
     bool shouldDrop(SentryException e) {
       final v = e.value;
       // Windows file-lock errors from cache manager cleanup
-      if (e.type == 'FileSystemException' &&
-          v != null &&
-          v.contains('plexImageCache') &&
-          v.contains('errno = 32')) {
+      if (e.type == 'FileSystemException' && v != null && v.contains('plexImageCache') && v.contains('errno = 32')) {
         return true;
       }
       // Linux without DBus/NetworkManager
-      if (e.type == 'DBusServiceUnknownException' ||
-          (v != null && v.contains('system_bus_socket'))) {
+      if (e.type == 'DBusServiceUnknownException' || (v != null && v.contains('system_bus_socket'))) {
         return true;
       }
       // Device out of disk space
       if (v != null &&
           (v.contains('SQLITE_FULL') ||
-           v.contains('No space left on device') ||
-           v.contains('errno = 112') ||
-           v.contains('database or disk is full'))) {
+              v.contains('No space left on device') ||
+              v.contains('errno = 112') ||
+              v.contains('database or disk is full'))) {
         return true;
       }
       // Native HTTP errors from CFNetwork (server errors, not actionable)
@@ -387,7 +383,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       _memoryCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         final rss = ProcessInfo.currentRss;
-        if (rss > 1536 * 1024 * 1024) { // 1.5GB
+        if (rss > 1536 * 1024 * 1024) {
+          // 1.5GB
           appLogger.w('RSS high ($rss bytes), evicting image caches');
           _evictImageCaches();
         }
@@ -446,23 +443,23 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     if (_isAutoDeleteRunning) return;
     _isAutoDeleteRunning = true;
     try {
-    await downloadProvider.refreshMetadataFromCache();
-    final activeKey = VideoPlayerScreenState.activeRatingKey;
-    final settings = SettingsService.instanceOrNull;
-    if (settings != null && settings.getAutoRemoveWatchedDownloads()) {
-      final deleted = await downloadProvider.autoDeleteWatchedDownloads(activeRatingKey: activeKey);
-      if (deleted.isNotEmpty) {
-        final msg = deleted.length == 1
-            ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
-            : t.messages.autoRemovedWatchedDownload(title: '${deleted.length} items');
-        showGlobalSnackBar(msg);
+      await downloadProvider.refreshMetadataFromCache();
+      final activeKey = VideoPlayerScreenState.activeRatingKey;
+      final settings = SettingsService.instanceOrNull;
+      if (settings != null && settings.getAutoRemoveWatchedDownloads()) {
+        final deleted = await downloadProvider.autoDeleteWatchedDownloads(activeRatingKey: activeKey);
+        if (deleted.isNotEmpty) {
+          final msg = deleted.length == 1
+              ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
+              : t.messages.autoRemovedWatchedDownload(title: '${deleted.length} items');
+          showMainSnackBar(msg);
+        }
       }
-    }
 
-    final synced = await downloadProvider.executeSyncRules(_serverManager);
-    if (synced.isNotEmpty) {
-      showGlobalSnackBar(t.downloads.syncedNewEpisodes(count: synced.length.toString(), title: synced.first));
-    }
+      final synced = await downloadProvider.executeSyncRules(_serverManager);
+      if (synced.isNotEmpty) {
+        showMainSnackBar(t.downloads.syncedNewEpisodes(count: synced.length.toString(), title: synced.first));
+      }
     } finally {
       _isAutoDeleteRunning = false;
     }
@@ -495,7 +492,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // SQLite WAL mode handles process death; desktop uses onExitRequested.
         InAppReviewService.instance.endSession();
         if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-          if (ProcessInfo.currentRss > 1024 * 1024 * 1024) { // 1GB
+          if (ProcessInfo.currentRss > 1024 * 1024 * 1024) {
+            // 1GB
             _evictImageCaches();
           }
         }
@@ -526,7 +524,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ),
         // Download provider
         ChangeNotifierProvider(
-            create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase)),
+          create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase),
+        ),
         // Offline watch sync service
         ChangeNotifierProvider<OfflineWatchSyncService>(
           create: (context) {
@@ -586,23 +585,20 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               behavior: HitTestBehavior.translucent,
               child: InputModeTracker(
                 child: MaterialApp(
-                title: t.app.title,
-                debugShowCheckedModeBanner: false,
-                theme: themeProvider.lightTheme,
-                darkTheme: themeProvider.darkTheme,
-                themeMode: themeProvider.materialThemeMode,
-                navigatorKey: rootNavigatorKey,
-                navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
-                home: const OrientationAwareSetup(),
-                builder: (context, child) => ScaffoldMessenger(
-                  key: rootScaffoldMessengerKey,
-                  child: Scaffold(
-                    backgroundColor: Colors.transparent,
-                    body: child,
+                  title: t.app.title,
+                  debugShowCheckedModeBanner: false,
+                  theme: themeProvider.lightTheme,
+                  darkTheme: themeProvider.darkTheme,
+                  themeMode: themeProvider.materialThemeMode,
+                  navigatorKey: rootNavigatorKey,
+                  navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
+                  home: const OrientationAwareSetup(),
+                  builder: (context, child) => ScaffoldMessenger(
+                    key: rootScaffoldMessengerKey,
+                    child: Scaffold(backgroundColor: Colors.transparent, body: child),
                   ),
                 ),
               ),
-            ),
             ),
           );
         },
@@ -786,9 +782,9 @@ class _SetupScreenState extends State<SetupScreen> {
         _statusMessage,
         key: ValueKey(_statusMessage),
         textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
       ),
     );
   }
@@ -808,7 +804,8 @@ class _SetupScreenState extends State<SetupScreen> {
         final Widget statusIcon;
         if (connected == null) {
           statusIcon = const SizedBox(
-            width: 12, height: 12,
+            width: 12,
+            height: 12,
             child: CircularProgressIndicator(strokeWidth: 1.5, color: coralColor),
           );
         } else if (connected) {
@@ -840,17 +837,20 @@ class _SetupScreenState extends State<SetupScreen> {
         children: [
           Center(child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288)),
           Positioned(
-            left: 0, right: 0,
+            left: 0,
+            right: 0,
             bottom: MediaQuery.of(context).size.height * 0.5 - 170,
             child: _buildStatusText(context),
           ),
           Positioned(
-            left: 0, right: 0,
+            left: 0,
+            right: 0,
             top: MediaQuery.of(context).size.height * 0.5 + 180,
             child: Center(
               child: _serverStatus.isEmpty
                   ? const SizedBox(
-                      width: 20, height: 20,
+                      width: 20,
+                      height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2, color: coralColor),
                     )
                   : _buildServerStatusList(context),

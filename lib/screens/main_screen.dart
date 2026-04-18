@@ -1,7 +1,8 @@
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, SystemNavigator;
+import 'package:flutter/services.dart'
+    show HardwareKeyboard, KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, SystemNavigator;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,6 +15,7 @@ import '../focus/focusable_button.dart';
 import '../utils/dialogs.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
+import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
@@ -553,13 +555,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   Widget _buildTickerAwareStack() {
     return IndexedStack(
       index: _currentIndex,
-      children: [
-        for (var i = 0; i < _screens.length; i++)
-          TickerMode(
-            enabled: i == _currentIndex,
-            child: _screens[i],
-          ),
-      ],
+      children: [for (var i = 0; i < _screens.length; i++) TickerMode(enabled: i == _currentIndex, child: _screens[i])],
     );
   }
 
@@ -568,7 +564,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       for (final tab in _getVisibleTabs(offline))
         switch (tab.id) {
           NavigationTabId.discover => DiscoverScreen(key: _discoverKey),
-          NavigationTabId.libraries => LibrariesScreen(key: _librariesKey, onLibraryOrderChanged: _onLibraryOrderChanged),
+          NavigationTabId.libraries => LibrariesScreen(
+            key: _librariesKey,
+            onLibraryOrderChanged: _onLibraryOrderChanged,
+          ),
           NavigationTabId.liveTv => LiveTvScreen(key: _liveTvKey),
           NavigationTabId.search => SearchScreen(key: _searchKey),
           NavigationTabId.downloads => DownloadsScreen(key: _downloadsKey),
@@ -634,8 +633,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
         // Track if we auto-switched to Downloads because the previous tab was unavailable.
         _autoSwitchedToDownloads =
-            previousTab != NavigationTabId.downloads &&
-            normalizedTab == NavigationTabId.downloads;
+            previousTab != NavigationTabId.downloads && normalizedTab == NavigationTabId.downloads;
       } else {
         // Coming back online: restore the last online tab if we forced a switch to Downloads.
         if (_autoSwitchedToDownloads) {
@@ -1033,67 +1031,70 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
 
     return OverlaySheetHost(
-      child: Scaffold(
-        body: _buildTickerAwareStack(),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Reconnect bar when offline
-            if (_isOffline)
-              Material(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: InkWell(
-                  onTap: _isReconnecting ? null : _triggerReconnect,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_isReconnecting)
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+      child: ScaffoldMessenger(
+        key: mainScaffoldMessengerKey,
+        child: Scaffold(
+          body: _buildTickerAwareStack(),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Reconnect bar when offline
+              if (_isOffline)
+                Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: InkWell(
+                    onTap: _isReconnecting ? null : _triggerReconnect,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_isReconnecting)
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            )
+                          else
+                            Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            t.common.reconnect,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                               color: Theme.of(context).colorScheme.primary,
                             ),
-                          )
-                        else
-                          Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          t.common.reconnect,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Theme.of(context).colorScheme.primary,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
+              Consumer<SettingsProvider>(
+                builder: (context, settingsProvider, child) {
+                  final hideLabels = !settingsProvider.showNavBarLabels;
+                  return NavigationBarTheme(
+                    data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
+                    child: NavigationBar(
+                      selectedIndex: _currentIndex,
+                      onDestinationSelected: (i) {
+                        final tabs = _getVisibleTabs(_isOffline);
+                        if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
+                      },
+                      labelBehavior: hideLabels
+                          ? NavigationDestinationLabelBehavior.alwaysHide
+                          : NavigationDestinationLabelBehavior.alwaysShow,
+                      destinations: _buildNavDestinations(_isOffline),
+                    ),
+                  );
+                },
               ),
-            Consumer<SettingsProvider>(
-              builder: (context, settingsProvider, child) {
-                final hideLabels = !settingsProvider.showNavBarLabels;
-                return NavigationBarTheme(
-                  data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
-                  child: NavigationBar(
-                    selectedIndex: _currentIndex,
-                    onDestinationSelected: (i) {
-                      final tabs = _getVisibleTabs(_isOffline);
-                      if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
-                    },
-                    labelBehavior: hideLabels
-                        ? NavigationDestinationLabelBehavior.alwaysHide
-                        : NavigationDestinationLabelBehavior.alwaysShow,
-                    destinations: _buildNavDestinations(_isOffline),
-                  ),
-                );
-              },
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

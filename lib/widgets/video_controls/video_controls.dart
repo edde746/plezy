@@ -37,6 +37,7 @@ import '../../screens/video_player_screen.dart';
 import '../../focus/key_event_utils.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/plex_cache_parser.dart';
 import '../../utils/player_utils.dart';
@@ -44,6 +45,7 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import 'icons.dart';
+import 'widgets/player_toast_indicator.dart';
 import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
@@ -94,10 +96,12 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onJumpToLive,
   bool isAmbientLightingEnabled = false,
   VoidCallback? onToggleAmbientLighting,
+  required PlayerToastController toastController,
 }) {
   return PlexVideoControls(
     player: player,
     metadata: metadata,
+    toastController: toastController,
     onNext: onNext,
     onPrevious: onPrevious,
     availableVersions: availableVersions ?? [],
@@ -205,10 +209,14 @@ class PlexVideoControls extends StatefulWidget {
   /// Called to toggle ambient lighting (passed to settings sheet)
   final VoidCallback? onToggleAmbientLighting;
 
+  /// Toast controller for VLC-style in-player notifications (rate changes, backend switch).
+  final PlayerToastController toastController;
+
   const PlexVideoControls({
     super.key,
     required this.player,
     required this.metadata,
+    required this.toastController,
     this.onNext,
     this.onPrevious,
     this.availableVersions = const [],
@@ -321,6 +329,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   late final FocusNode _skipMarkerFocusNode;
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
+  StreamSubscription<double>? _rateSubscription;
+  double? _lastReportedRate;
+  // Suppression window used when long-press ends so the rate-restore emission
+  // doesn't flash a second pill as the rate snaps back.
+  DateTime? _suppressRateToastUntil;
 
   // PiP support
   bool _isPipSupported = false;
@@ -368,9 +381,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Defer context-dependent initialization to after first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      // Subscribe to rate stream *after* first frame so the initial
+      // setRate(defaultSpeed) emission during player startup is missed.
+      _lastReportedRate = widget.player.state.rate;
+      _rateSubscription = widget.player.streams.rate.listen(_onRateChanged);
       _loadPlaybackExtras();
       _focusPlayPauseIfKeyboardMode();
     });
+  }
+
+  void _onRateChanged(double newRate) {
+    if (!mounted) return;
+    if (_isLongPressing) return;
+    if (_suppressRateToastUntil != null && DateTime.now().isBefore(_suppressRateToastUntil!)) return;
+    final prev = _lastReportedRate;
+    if (prev != null && (prev - newRate).abs() < 0.005) return;
+    _lastReportedRate = newRate;
+    final icon = newRate >= 1.0 ? Symbols.fast_forward_rounded : Symbols.slow_motion_video_rounded;
+    widget.toastController.show(icon, formatPlaybackRate(newRate));
   }
 
   /// Called when hasFirstFrame changes - start auto-hide timer when first frame is ready
@@ -493,8 +521,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final marker = _currentMarker!;
     final endTime = marker.endTime;
     final duration = widget.player.state.duration;
-    final isAtEnd = duration > Duration.zero &&
-        (duration - endTime).inMilliseconds <= 1000;
+    final isAtEnd = duration > Duration.zero && (duration - endTime).inMilliseconds <= 1000;
 
     if (marker.isCredits && isAtEnd) {
       // Credits extend to end of video — don't seek (unreliable due to
@@ -703,6 +730,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _positionSubscription?.cancel();
+    _rateSubscription?.cancel();
     _focusNode.dispose();
     _skipMarkerFocusNode.dispose();
     // Restore original rate if long-press was active when disposed
@@ -1019,7 +1047,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       final settings = await SettingsService.getInstance();
       final introPattern = settings.getIntroPattern();
       final creditsPattern = settings.getCreditsPattern();
-      final extras = await client.getPlaybackExtras(widget.metadata.ratingKey, introPattern: introPattern, creditsPattern: creditsPattern, forceRefresh: forceRefresh);
+      final extras = await client.getPlaybackExtras(
+        widget.metadata.ratingKey,
+        introPattern: introPattern,
+        creditsPattern: creditsPattern,
+        forceRefresh: forceRefresh,
+      );
       appLogger.d('_loadPlaybackExtras: got ${extras.chapters.length} chapters');
 
       if (mounted) {
@@ -1118,9 +1151,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       isScreenLocked: _isScreenLocked,
       isFullscreen: _isFullscreen,
       isAlwaysOnTop: _isAlwaysOnTop,
-      onTogglePIPMode: (_isPipSupported && !PlatformDetector.isTV())
-          ? widget.onTogglePIPMode
-          : null,
+      onTogglePIPMode: (_isPipSupported && !PlatformDetector.isTV()) ? widget.onTogglePIPMode : null,
       onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
       onToggleRotationLock: _toggleRotationLock,
       onToggleScreenLock: _toggleScreenLock,
@@ -1459,6 +1490,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Handle long-press end - restore original speed
   void _handleLongPressEnd() {
     if (!_isLongPressing) return;
+    // Swallow the rate-restore emission so the stream-driven toast doesn't
+    // flash as the rate snaps back to the prior value.
+    _suppressRateToastUntil = DateTime.now().add(const Duration(milliseconds: 250));
     widget.player.setRate(_rateBeforeLongPress ?? 1.0);
     setState(() {
       _isLongPressing = false;
@@ -1498,31 +1532,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     );
   }
 
-  /// Build the visual indicator for long-press 2x speed
-  Widget _buildSpeedIndicator() {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: Container(
-        margin: const EdgeInsets.only(top: 20),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.7),
-          borderRadius: const BorderRadius.all(Radius.circular(20)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppIcon(Symbols.fast_forward_rounded, fill: 1, color: Colors.white, size: 16),
-            const SizedBox(width: 4),
-            const Text(
-              '2x',
-              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  /// Build the visual indicator for long-press 2x speed.
+  /// Manual (persistent for duration of press) — separate from the stream-driven
+  /// toast so it stays visible for the full long-press rather than auto-hiding.
+  Widget _buildSpeedIndicator() => const PlayerToastIndicator(icon: Symbols.fast_forward_rounded, text: '2x');
 
   Future<void> _toggleFullscreen() async {
     if (!PlatformDetector.isMobile(context)) {
@@ -2173,6 +2186,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                     ),
                   // Speed indicator overlay for long-press 2x
                   if (_showSpeedIndicator) Positioned.fill(child: IgnorePointer(child: _buildSpeedIndicator())),
+                  // Stream-driven VLC-style pill (rate changes, backend-switch notifications)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: ListenableBuilder(
+                        listenable: widget.toastController,
+                        builder: (context, _) {
+                          final toast = widget.toastController.current;
+                          if (toast == null) return const SizedBox.shrink();
+                          return AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 150),
+                            child: PlayerToastIndicator(
+                              key: ValueKey('${toast.icon.codePoint}:${toast.text}'),
+                              icon: toast.icon,
+                              text: toast.text,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                   // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
                   if (_currentMarker != null && (!_skipButtonDismissed || _showControls))
                     AnimatedPositioned(
@@ -2230,7 +2263,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                   const SizedBox(width: 8),
                                   Text(
                                     t.videoControls.longPressToUnlock,
-                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -2313,7 +2350,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final hasNextEpisode = widget.onNext != null;
 
     // Show "Next Episode" only when credits extend to end AND there's a next episode
-    final bool creditsAtEnd = isCredits &&
+    final bool creditsAtEnd =
+        isCredits &&
         widget.player.state.duration > Duration.zero &&
         (widget.player.state.duration - _currentMarker!.endTime).inMilliseconds <= 1000;
     final bool showNextEpisode = creditsAtEnd && hasNextEpisode;
@@ -2442,10 +2480,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       if (token == null) return;
 
       // Find external subtitle tracks from the refreshed metadata
-      final existingUris = widget.player.state.tracks.subtitle
-          .where((t) => t.uri != null)
-          .map((t) => t.uri!)
-          .toSet();
+      final existingUris = widget.player.state.tracks.subtitle.where((t) => t.uri != null).map((t) => t.uri!).toSet();
 
       for (final plexTrack in data.mediaInfo!.subtitleTracks) {
         if (!plexTrack.isExternal) continue;

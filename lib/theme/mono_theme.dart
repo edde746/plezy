@@ -146,6 +146,18 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
         return IconThemeData(opacity: active ? 1 : 0.6, size: 22, color: c.text);
       }),
     ),
+    // Floating snackbars auto-offset above the Scaffold's bottom NavigationBar,
+    // so they don't cover it on mobile. Background color tracks the theme to
+    // avoid jarring brightness on HDR playback / dark mode.
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: c.surface,
+      contentTextStyle: TextStyle(color: c.text),
+      actionTextColor: c.text,
+      elevation: 6,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    ),
   );
 
   return base.copyWith(

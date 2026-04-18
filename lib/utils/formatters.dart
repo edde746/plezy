@@ -53,7 +53,6 @@ class ByteFormatter {
     if (kbps < 1000) return '$kbps kbps';
     return '${(kbps / 1000).toStringAsFixed(1)} Mbps';
   }
-
 }
 
 /// Formats a duration in human-readable textual format (e.g., "1h 23m" or "1 hour 23 minutes").
@@ -179,6 +178,16 @@ String formatFinishTime(Duration remaining, {double rate = 1.0, required bool is
 /// Takes a list of strings and returns one long string with each item in the list concatenated by a bullet
 String toBulletedString(List<String> parts) {
   return parts.join(' · ');
+}
+
+final RegExp _trailingZeroPattern = RegExp(r'\.?0+$');
+
+/// Format a playback rate for display (e.g. 1.25 → "1.25x", 2.0 → "2x").
+/// When [normalAtOne] is true, 1.0 renders as "Normal" for menu labels;
+/// the in-player pill passes false to keep a numeric indicator.
+String formatPlaybackRate(double rate, {bool normalAtOne = false}) {
+  if (normalAtOne && (rate - 1.0).abs() < 0.005) return 'Normal';
+  return '${rate.toStringAsFixed(2).replaceFirst(_trailingZeroPattern, '')}x';
 }
 
 /// Takes a date string in the format "YYYY-MM-DD" and returns a localized full date string

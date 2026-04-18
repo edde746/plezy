@@ -22,11 +22,9 @@ class OfflineWatchProvider extends ChangeNotifier {
   final OfflineWatchSyncService _syncService;
   final DownloadProvider _downloadProvider;
 
-  OfflineWatchProvider({
-    required OfflineWatchSyncService syncService,
-    required DownloadProvider downloadProvider,
-  }) : _syncService = syncService,
-       _downloadProvider = downloadProvider {
+  OfflineWatchProvider({required OfflineWatchSyncService syncService, required DownloadProvider downloadProvider})
+    : _syncService = syncService,
+      _downloadProvider = downloadProvider {
     // Listen to sync service changes to update UI
     _syncService.addListener(_onSyncServiceChanged);
   }
@@ -198,11 +196,16 @@ class OfflineWatchProvider extends ChangeNotifier {
     if (progress?.status != DownloadStatus.completed) return;
 
     appLogger.i('Auto-deleting locally-watched download: ${meta.title} ($globalKey)');
-    _downloadProvider.deleteDownload(globalKey).then((_) {
-      showGlobalSnackBar(t.messages.autoRemovedWatchedDownload(title: meta.title ?? 'Unknown'));
-    }, onError: (e) {
-      appLogger.w('Failed to auto-delete locally-watched download $globalKey: $e');
-    });
+    _downloadProvider
+        .deleteDownload(globalKey)
+        .then(
+          (_) {
+            showMainSnackBar(t.messages.autoRemovedWatchedDownload(title: meta.title ?? 'Unknown'));
+          },
+          onError: (e) {
+            appLogger.w('Failed to auto-delete locally-watched download $globalKey: $e');
+          },
+        );
   }
 
   /// Mark an item as unwatched while offline.

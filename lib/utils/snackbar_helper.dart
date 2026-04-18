@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 /// Global key for the root ScaffoldMessenger, allowing snackbars to survive navigation.
 final rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
+/// Nested messenger inside MainScreen — its Scaffold owns the bottom NavigationBar
+/// so floating snackbars auto-offset above the navbar.
+final mainScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 /// Types of snackbars available in the app
 enum SnackBarType {
   /// Standard informational snackbar
@@ -64,6 +68,16 @@ void showGlobalErrorSnackBar(String message) {
 /// Shows an info snackbar using the root ScaffoldMessenger (survives navigation).
 void showGlobalSnackBar(String message, {Duration duration = const Duration(seconds: 2)}) {
   rootScaffoldMessengerKey.currentState
+    ?..removeCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message), duration: duration));
+}
+
+/// Shows an info snackbar through the main-screen messenger when available
+/// (so it floats above the mobile NavigationBar), falling back to the root
+/// messenger when the main screen is not mounted.
+void showMainSnackBar(String message, {Duration duration = const Duration(seconds: 3)}) {
+  final messenger = mainScaffoldMessengerKey.currentState ?? rootScaffoldMessengerKey.currentState;
+  messenger
     ?..removeCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(message), duration: duration));
 }

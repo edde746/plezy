@@ -64,6 +64,7 @@ import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/video_controls/video_controls.dart';
+import '../widgets/video_controls/widgets/player_toast_indicator.dart';
 import '../focus/focusable_button.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/dpad_navigator.dart';
@@ -216,6 +217,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // Screen-level focus node: persists across loading/initialized phases so
   // key events never escape the video player route.
   late final FocusNode _screenFocusNode;
+
+  // VLC-style in-player toast controller (rate changes, backend switch, etc.).
+  final PlayerToastController _toastController = PlayerToastController();
   bool _reclaimingFocus = false;
 
   // Cached setting: when false on Windows/Linux, ESC should not exit the player
@@ -745,11 +749,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // warn is included so we can catch ffmpeg's "HTTP error 500" line in
       // _onPlayerLog — the error-level log that follows omits the status code.
       _logSubscription = player!.streams.log
-          .where((log) => const {
-                PlayerLogLevel.fatal,
-                PlayerLogLevel.error,
-                PlayerLogLevel.warn,
-              }.contains(log.level))
+          .where((log) => const {PlayerLogLevel.fatal, PlayerLogLevel.error, PlayerLogLevel.warn}.contains(log.level))
           .listen(_onPlayerLog);
 
       // Listen for backend switched event (ExoPlayer -> MPV fallback on Android)
@@ -2034,6 +2034,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _hasFirstFrame.dispose();
     _isExiting.dispose();
     _controlsVisible.dispose();
+    _toastController.dispose();
 
     // Stop progress tracking and send final state.
     // Fire-and-forget: dispose() is synchronous so we can't await, but the
@@ -2285,8 +2286,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   String? _lastLogError;
   bool _sawServer500 = false;
 
-  static final RegExp _server500Pattern =
-      RegExp(r'\b(?:HTTP error |Response code: )500\b');
+  static final RegExp _server500Pattern = RegExp(r'\b(?:HTTP error |Response code: )500\b');
 
   void _onPlayerLog(PlayerLog log) {
     if (!_sawServer500 && _server500Pattern.hasMatch(log.text)) {
@@ -2309,9 +2309,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playerBackendLabel = 'mpv';
     _recordLifecycleState('backend_switched', action: 'mpv_fallback');
 
-    if (mounted) {
-      showAppSnackBar(context, t.messages.switchingToCompatiblePlayer);
-    }
+    _toastController.show(
+      Symbols.swap_horiz_rounded,
+      t.messages.switchingToCompatiblePlayer,
+      duration: const Duration(seconds: 2),
+    );
 
     await _trackManager?.onBackendSwitched();
   }
@@ -2944,7 +2946,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (widget.isOffline) {
         result = await _startOfflinePlayback();
       } else {
-        final playbackService = PlaybackInitializationService(client: client!, database: PlexApiCache.instance.database);
+        final playbackService = PlaybackInitializationService(
+          client: client!,
+          database: PlexApiCache.instance.database,
+        );
         result = await playbackService.getPlaybackData(
           metadata: episodeMetadata,
           selectedMediaIndex: widget.selectedMediaIndex,
@@ -3312,6 +3317,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         onJumpToLive: _captureBuffer != null && !_isAtLiveEdge ? _jumpToLiveEdge : null,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
                         onToggleAmbientLighting: _toggleAmbientLighting,
+                        toastController: _toastController,
                       ),
                     );
                   },
