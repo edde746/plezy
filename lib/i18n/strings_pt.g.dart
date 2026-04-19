@@ -194,6 +194,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Configurações';
+	@override String get supportDeveloper => 'Apoie o Plezy';
+	@override String get supportDeveloperDescription => 'Doe via Liberapay para financiar o desenvolvimento';
 	@override String get language => 'Idioma';
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Aparência';
@@ -1476,6 +1478,8 @@ extension on TranslationsPt {
 			'update.latestVersion' => 'Você está na versão mais recente',
 			'update.checkFailed' => 'Falha ao verificar atualizações',
 			'settings.title' => 'Configurações',
+			'settings.supportDeveloper' => 'Apoie o Plezy',
+			'settings.supportDeveloperDescription' => 'Doe via Liberapay para financiar o desenvolvimento',
 			'settings.language' => 'Idioma',
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Aparência',
@@ -1922,10 +1926,10 @@ extension on TranslationsPt {
 			'libraries.noFoldersFound' => 'Nenhuma pasta encontrada',
 			'libraries.folders' => 'pastas',
 			'libraries.tabs.recommended' => 'Recomendados',
-			'libraries.tabs.browse' => 'Navegar',
-			'libraries.tabs.collections' => 'Coleções',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Navegar',
+			'libraries.tabs.collections' => 'Coleções',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Agrupamento',
 			'libraries.groupings.all' => 'Todos',

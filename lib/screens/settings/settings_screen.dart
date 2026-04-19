@@ -14,6 +14,7 @@ import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../main_screen.dart';
 import '../../mixins/refreshable.dart';
+import '../../services/donation_service.dart';
 import '../../services/download_storage_service.dart';
 import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
@@ -46,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   late final FocusMemoryTracker _focusTracker;
 
   // Focus tracking keys
+  static const _kDonate = 'donate';
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
   static const _kTrakt = 'trakt';
@@ -100,7 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   @override
   void focusActiveTabIfReady() {
     if (InputModeTracker.isKeyboardMode(context)) {
-      _focusTracker.restoreFocus(fallbackKey: _kAppearance);
+      _focusTracker.restoreFocus(fallbackKey: DonationService.isEnabled ? _kDonate : _kAppearance);
     }
   }
 
@@ -149,6 +151,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
             SliverList(
               delegate: SliverChildListDelegate([
+                // --- Donate (non-store builds only) ---
+                if (DonationService.isEnabled) _buildDonateTile(),
+
                 // --- Appearance (navigation tile) ---
                 _buildAppearanceTile(),
 
@@ -187,6 +192,22 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDonateTile() {
+    return ListTile(
+      focusNode: _focusTracker.get(_kDonate),
+      leading: const AppIcon(Symbols.favorite_rounded, fill: 1),
+      title: Text(t.settings.supportDeveloper),
+      subtitle: Text(t.settings.supportDeveloperDescription),
+      trailing: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
+      onTap: () async {
+        final url = Uri.parse(DonationService.donationUrl);
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        }
+      },
     );
   }
 

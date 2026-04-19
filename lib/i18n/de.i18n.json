@@ -74,6 +74,8 @@
   },
   "settings": {
     "title": "Einstellungen",
+    "supportDeveloper": "Plezy unterstützen",
+    "supportDeveloperDescription": "Per Liberapay spenden, um die Entwicklung zu fördern",
     "language": "Sprache",
     "theme": "Design",
     "appearance": "Darstellung",

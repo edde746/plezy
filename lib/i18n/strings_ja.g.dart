@@ -194,6 +194,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => '設定';
+	@override String get supportDeveloper => 'Plezy を支援';
+	@override String get supportDeveloperDescription => 'Liberapay で寄付して開発を支援';
 	@override String get language => '言語';
 	@override String get theme => 'テーマ';
 	@override String get appearance => '外観';
@@ -1476,6 +1478,8 @@ extension on TranslationsJa {
 			'update.latestVersion' => '最新バージョンです',
 			'update.checkFailed' => 'アップデートの確認に失敗しました',
 			'settings.title' => '設定',
+			'settings.supportDeveloper' => 'Plezy を支援',
+			'settings.supportDeveloperDescription' => 'Liberapay で寄付して開発を支援',
 			'settings.language' => '言語',
 			'settings.theme' => 'テーマ',
 			'settings.appearance' => '外観',
@@ -1922,10 +1926,10 @@ extension on TranslationsJa {
 			'libraries.noFoldersFound' => 'フォルダが見つかりません',
 			'libraries.folders' => 'フォルダ',
 			'libraries.tabs.recommended' => 'おすすめ',
-			'libraries.tabs.browse' => 'ブラウズ',
-			'libraries.tabs.collections' => 'コレクション',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'ブラウズ',
+			'libraries.tabs.collections' => 'コレクション',
 			'libraries.tabs.playlists' => 'プレイリスト',
 			'libraries.groupings.title' => 'グループ',
 			'libraries.groupings.all' => 'すべて',

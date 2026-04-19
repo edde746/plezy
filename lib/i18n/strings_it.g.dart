@@ -194,6 +194,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Impostazioni';
+	@override String get supportDeveloper => 'Supporta Plezy';
+	@override String get supportDeveloperDescription => 'Dona tramite Liberapay per finanziare lo sviluppo';
 	@override String get language => 'Lingua';
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Aspetto';
@@ -1476,6 +1478,8 @@ extension on TranslationsIt {
 			'update.latestVersion' => 'La versione installata è l\'ultima disponibile',
 			'update.checkFailed' => 'Impossibile controllare gli aggiornamenti',
 			'settings.title' => 'Impostazioni',
+			'settings.supportDeveloper' => 'Supporta Plezy',
+			'settings.supportDeveloperDescription' => 'Dona tramite Liberapay per finanziare lo sviluppo',
 			'settings.language' => 'Lingua',
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Aspetto',
@@ -1922,10 +1926,10 @@ extension on TranslationsIt {
 			'libraries.noFoldersFound' => 'Nessuna cartella trovata',
 			'libraries.folders' => 'cartelle',
 			'libraries.tabs.recommended' => 'Consigliati',
-			'libraries.tabs.browse' => 'Esplora',
-			'libraries.tabs.collections' => 'Raccolte',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Esplora',
+			'libraries.tabs.collections' => 'Raccolte',
 			'libraries.tabs.playlists' => 'Playlist',
 			'libraries.groupings.title' => 'Raggruppamento',
 			'libraries.groupings.all' => 'Tutti',

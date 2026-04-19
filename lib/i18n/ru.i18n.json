@@ -74,6 +74,8 @@
   },
   "settings": {
     "title": "Настройки",
+    "supportDeveloper": "Поддержать Plezy",
+    "supportDeveloperDescription": "Пожертвуйте через Liberapay на развитие",
     "language": "Язык",
     "theme": "Тема",
     "appearance": "Внешний вид",

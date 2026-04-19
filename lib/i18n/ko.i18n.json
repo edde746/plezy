@@ -74,6 +74,8 @@
   },
   "settings": {
     "title": "설정",
+    "supportDeveloper": "Plezy 후원하기",
+    "supportDeveloperDescription": "Liberapay로 후원하여 개발 지원",
     "language": "언어",
     "theme": "테마",
     "appearance": "외관",

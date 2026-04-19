@@ -74,6 +74,8 @@
   },
   "settings": {
     "title": "設定",
+    "supportDeveloper": "Plezy を支援",
+    "supportDeveloperDescription": "Liberapay で寄付して開発を支援",
     "language": "言語",
     "theme": "テーマ",
     "appearance": "外観",

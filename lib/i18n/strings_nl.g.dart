@@ -194,6 +194,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Instellingen';
+	@override String get supportDeveloper => 'Steun Plezy';
+	@override String get supportDeveloperDescription => 'Doneer via Liberapay om de ontwikkeling te steunen';
 	@override String get language => 'Taal';
 	@override String get theme => 'Thema';
 	@override String get appearance => 'Uiterlijk';
@@ -1476,6 +1478,8 @@ extension on TranslationsNl {
 			'update.latestVersion' => 'Je hebt de nieuwste versie',
 			'update.checkFailed' => 'Kon niet controleren op updates',
 			'settings.title' => 'Instellingen',
+			'settings.supportDeveloper' => 'Steun Plezy',
+			'settings.supportDeveloperDescription' => 'Doneer via Liberapay om de ontwikkeling te steunen',
 			'settings.language' => 'Taal',
 			'settings.theme' => 'Thema',
 			'settings.appearance' => 'Uiterlijk',
@@ -1922,10 +1926,10 @@ extension on TranslationsNl {
 			'libraries.noFoldersFound' => 'Geen mappen gevonden',
 			'libraries.folders' => 'mappen',
 			'libraries.tabs.recommended' => 'Aanbevolen',
-			'libraries.tabs.browse' => 'Bladeren',
-			'libraries.tabs.collections' => 'Collecties',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Bladeren',
+			'libraries.tabs.collections' => 'Collecties',
 			'libraries.tabs.playlists' => 'Afspeellijsten',
 			'libraries.groupings.title' => 'Groepering',
 			'libraries.groupings.all' => 'Alles',

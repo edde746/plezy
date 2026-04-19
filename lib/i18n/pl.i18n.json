@@ -74,6 +74,8 @@
   },
   "settings": {
     "title": "Ustawienia",
+    "supportDeveloper": "Wesprzyj Plezy",
+    "supportDeveloperDescription": "Wspomóż rozwój darowizną na Liberapay",
     "language": "Język",
     "theme": "Motyw",
     "appearance": "Wygląd",

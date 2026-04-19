@@ -326,6 +326,12 @@ class TranslationsSettingsEn {
 	/// en: 'Settings'
 	String get title => 'Settings';
 
+	/// en: 'Support Plezy'
+	String get supportDeveloper => 'Support Plezy';
+
+	/// en: 'Donate via Liberapay to fund development'
+	String get supportDeveloperDescription => 'Donate via Liberapay to fund development';
+
 	/// en: 'Language'
 	String get language => 'Language';
 
@@ -3293,6 +3299,8 @@ extension on Translations {
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
 			'settings.title' => 'Settings',
+			'settings.supportDeveloper' => 'Support Plezy',
+			'settings.supportDeveloperDescription' => 'Donate via Liberapay to fund development',
 			'settings.language' => 'Language',
 			'settings.theme' => 'Theme',
 			'settings.appearance' => 'Appearance',
@@ -3739,10 +3747,10 @@ extension on Translations {
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
 			'libraries.tabs.recommended' => 'Recommended',
-			'libraries.tabs.browse' => 'Browse',
-			'libraries.tabs.collections' => 'Collections',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Browse',
+			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Grouping',
 			'libraries.groupings.all' => 'All',

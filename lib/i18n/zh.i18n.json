@@ -74,6 +74,8 @@
   },
   "settings": {
     "title": "设置",
+    "supportDeveloper": "支持 Plezy",
+    "supportDeveloperDescription": "通过 Liberapay 捐赠支持开发",
     "language": "语言",
     "theme": "主题",
     "appearance": "外观",

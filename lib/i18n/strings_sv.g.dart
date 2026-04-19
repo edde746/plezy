@@ -194,6 +194,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Inställningar';
+	@override String get supportDeveloper => 'Stöd Plezy';
+	@override String get supportDeveloperDescription => 'Donera via Liberapay för att finansiera utvecklingen';
 	@override String get language => 'Språk';
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Utseende';
@@ -1476,6 +1478,8 @@ extension on TranslationsSv {
 			'update.latestVersion' => 'Du har den senaste versionen',
 			'update.checkFailed' => 'Misslyckades att kontrollera uppdateringar',
 			'settings.title' => 'Inställningar',
+			'settings.supportDeveloper' => 'Stöd Plezy',
+			'settings.supportDeveloperDescription' => 'Donera via Liberapay för att finansiera utvecklingen',
 			'settings.language' => 'Språk',
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Utseende',
@@ -1922,10 +1926,10 @@ extension on TranslationsSv {
 			'libraries.noFoldersFound' => 'Inga mappar hittades',
 			'libraries.folders' => 'mappar',
 			'libraries.tabs.recommended' => 'Rekommenderat',
-			'libraries.tabs.browse' => 'Bläddra',
-			'libraries.tabs.collections' => 'Samlingar',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Bläddra',
+			'libraries.tabs.collections' => 'Samlingar',
 			'libraries.tabs.playlists' => 'Spellistor',
 			'libraries.groupings.title' => 'Gruppering',
 			'libraries.groupings.all' => 'Alla',

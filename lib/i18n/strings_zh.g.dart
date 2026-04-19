@@ -194,6 +194,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => '设置';
+	@override String get supportDeveloper => '支持 Plezy';
+	@override String get supportDeveloperDescription => '通过 Liberapay 捐赠支持开发';
 	@override String get language => '语言';
 	@override String get theme => '主题';
 	@override String get appearance => '外观';
@@ -1476,6 +1478,8 @@ extension on TranslationsZh {
 			'update.latestVersion' => '已安装的版本是可用的最新版本',
 			'update.checkFailed' => '无法检查更新',
 			'settings.title' => '设置',
+			'settings.supportDeveloper' => '支持 Plezy',
+			'settings.supportDeveloperDescription' => '通过 Liberapay 捐赠支持开发',
 			'settings.language' => '语言',
 			'settings.theme' => '主题',
 			'settings.appearance' => '外观',
@@ -1922,10 +1926,10 @@ extension on TranslationsZh {
 			'libraries.noFoldersFound' => '未找到文件夹',
 			'libraries.folders' => '文件夹',
 			'libraries.tabs.recommended' => '推荐',
-			'libraries.tabs.browse' => '浏览',
-			'libraries.tabs.collections' => '合集',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => '浏览',
+			'libraries.tabs.collections' => '合集',
 			'libraries.tabs.playlists' => '播放列表',
 			'libraries.groupings.title' => '分组',
 			'libraries.groupings.all' => '全部',

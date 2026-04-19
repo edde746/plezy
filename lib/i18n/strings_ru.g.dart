@@ -194,6 +194,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Настройки';
+	@override String get supportDeveloper => 'Поддержать Plezy';
+	@override String get supportDeveloperDescription => 'Пожертвуйте через Liberapay на развитие';
 	@override String get language => 'Язык';
 	@override String get theme => 'Тема';
 	@override String get appearance => 'Внешний вид';
@@ -1476,6 +1478,8 @@ extension on TranslationsRu {
 			'update.latestVersion' => 'У вас последняя версия',
 			'update.checkFailed' => 'Не удалось проверить обновления',
 			'settings.title' => 'Настройки',
+			'settings.supportDeveloper' => 'Поддержать Plezy',
+			'settings.supportDeveloperDescription' => 'Пожертвуйте через Liberapay на развитие',
 			'settings.language' => 'Язык',
 			'settings.theme' => 'Тема',
 			'settings.appearance' => 'Внешний вид',
@@ -1922,10 +1926,10 @@ extension on TranslationsRu {
 			'libraries.noFoldersFound' => 'Папки не найдены',
 			'libraries.folders' => 'папки',
 			'libraries.tabs.recommended' => 'Рекомендуемые',
-			'libraries.tabs.browse' => 'Обзор',
-			'libraries.tabs.collections' => 'Коллекции',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Обзор',
+			'libraries.tabs.collections' => 'Коллекции',
 			'libraries.tabs.playlists' => 'Плейлисты',
 			'libraries.groupings.title' => 'Группировка',
 			'libraries.groupings.all' => 'Все',

@@ -194,6 +194,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Indstillinger';
+	@override String get supportDeveloper => 'Støt Plezy';
+	@override String get supportDeveloperDescription => 'Doner via Liberapay for at finansiere udviklingen';
 	@override String get language => 'Sprog';
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Udseende';
@@ -1476,6 +1478,8 @@ extension on TranslationsDa {
 			'update.latestVersion' => 'Du har den nyeste version',
 			'update.checkFailed' => 'Kunne ikke søge efter opdateringer',
 			'settings.title' => 'Indstillinger',
+			'settings.supportDeveloper' => 'Støt Plezy',
+			'settings.supportDeveloperDescription' => 'Doner via Liberapay for at finansiere udviklingen',
 			'settings.language' => 'Sprog',
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Udseende',
@@ -1922,10 +1926,10 @@ extension on TranslationsDa {
 			'libraries.noFoldersFound' => 'Ingen mapper fundet',
 			'libraries.folders' => 'mapper',
 			'libraries.tabs.recommended' => 'Anbefalet',
-			'libraries.tabs.browse' => 'Gennemse',
-			'libraries.tabs.collections' => 'Samlinger',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Gennemse',
+			'libraries.tabs.collections' => 'Samlinger',
 			'libraries.tabs.playlists' => 'Playlister',
 			'libraries.groupings.title' => 'Gruppering',
 			'libraries.groupings.all' => 'Alle',

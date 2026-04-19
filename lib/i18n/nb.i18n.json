@@ -74,6 +74,8 @@
   },
   "settings": {
     "title": "Innstillinger",
+    "supportDeveloper": "Støtt Plezy",
+    "supportDeveloperDescription": "Doner via Liberapay for å finansiere utviklingen",
     "language": "Språk",
     "theme": "Tema",
     "appearance": "Utseende",

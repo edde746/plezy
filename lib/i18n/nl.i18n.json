@@ -74,6 +74,8 @@
   },
   "settings": {
     "title": "Instellingen",
+    "supportDeveloper": "Steun Plezy",
+    "supportDeveloperDescription": "Doneer via Liberapay om de ontwikkeling te steunen",
     "language": "Taal",
     "theme": "Thema",
     "appearance": "Uiterlijk",

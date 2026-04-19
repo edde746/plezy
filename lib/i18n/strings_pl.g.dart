@@ -194,6 +194,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Ustawienia';
+	@override String get supportDeveloper => 'Wesprzyj Plezy';
+	@override String get supportDeveloperDescription => 'Wspomóż rozwój darowizną na Liberapay';
 	@override String get language => 'Język';
 	@override String get theme => 'Motyw';
 	@override String get appearance => 'Wygląd';
@@ -1476,6 +1478,8 @@ extension on TranslationsPl {
 			'update.latestVersion' => 'Masz najnowszą wersję',
 			'update.checkFailed' => 'Nie udało się sprawdzić aktualizacji',
 			'settings.title' => 'Ustawienia',
+			'settings.supportDeveloper' => 'Wesprzyj Plezy',
+			'settings.supportDeveloperDescription' => 'Wspomóż rozwój darowizną na Liberapay',
 			'settings.language' => 'Język',
 			'settings.theme' => 'Motyw',
 			'settings.appearance' => 'Wygląd',
@@ -1922,10 +1926,10 @@ extension on TranslationsPl {
 			'libraries.noFoldersFound' => 'Nie znaleziono folderów',
 			'libraries.folders' => 'foldery',
 			'libraries.tabs.recommended' => 'Rekomendowane',
-			'libraries.tabs.browse' => 'Przeglądaj',
-			'libraries.tabs.collections' => 'Kolekcje',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Przeglądaj',
+			'libraries.tabs.collections' => 'Kolekcje',
 			'libraries.tabs.playlists' => 'Playlisty',
 			'libraries.groupings.title' => 'Grupowanie',
 			'libraries.groupings.all' => 'Wszystkie',

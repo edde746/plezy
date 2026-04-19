@@ -194,6 +194,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Innstillinger';
+	@override String get supportDeveloper => 'Støtt Plezy';
+	@override String get supportDeveloperDescription => 'Doner via Liberapay for å finansiere utviklingen';
 	@override String get language => 'Språk';
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Utseende';
@@ -1476,6 +1478,8 @@ extension on TranslationsNb {
 			'update.latestVersion' => 'Du har den nyeste versjonen',
 			'update.checkFailed' => 'Kunne ikke se etter oppdateringer',
 			'settings.title' => 'Innstillinger',
+			'settings.supportDeveloper' => 'Støtt Plezy',
+			'settings.supportDeveloperDescription' => 'Doner via Liberapay for å finansiere utviklingen',
 			'settings.language' => 'Språk',
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Utseende',
@@ -1922,10 +1926,10 @@ extension on TranslationsNb {
 			'libraries.noFoldersFound' => 'Ingen mapper funnet',
 			'libraries.folders' => 'mapper',
 			'libraries.tabs.recommended' => 'Anbefalt',
-			'libraries.tabs.browse' => 'Bla gjennom',
-			'libraries.tabs.collections' => 'Samlinger',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Bla gjennom',
+			'libraries.tabs.collections' => 'Samlinger',
 			'libraries.tabs.playlists' => 'Spillelister',
 			'libraries.groupings.title' => 'Gruppering',
 			'libraries.groupings.all' => 'Alle',

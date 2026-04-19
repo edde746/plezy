@@ -194,6 +194,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => '설정';
+	@override String get supportDeveloper => 'Plezy 후원하기';
+	@override String get supportDeveloperDescription => 'Liberapay로 후원하여 개발 지원';
 	@override String get language => '언어';
 	@override String get theme => '테마';
 	@override String get appearance => '외관';
@@ -1476,6 +1478,8 @@ extension on TranslationsKo {
 			'update.latestVersion' => '최신 버전을 사용 중입니다',
 			'update.checkFailed' => '업데이트 확인 실패',
 			'settings.title' => '설정',
+			'settings.supportDeveloper' => 'Plezy 후원하기',
+			'settings.supportDeveloperDescription' => 'Liberapay로 후원하여 개발 지원',
 			'settings.language' => '언어',
 			'settings.theme' => '테마',
 			'settings.appearance' => '외관',
@@ -1922,10 +1926,10 @@ extension on TranslationsKo {
 			'libraries.noFoldersFound' => '폴더를 찾을 수 없습니다',
 			'libraries.folders' => '폴더',
 			'libraries.tabs.recommended' => '추천',
-			'libraries.tabs.browse' => '찾아보기',
-			'libraries.tabs.collections' => '컬렉션',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => '찾아보기',
+			'libraries.tabs.collections' => '컬렉션',
 			'libraries.tabs.playlists' => '재생 목록',
 			'libraries.groupings.title' => '그룹',
 			'libraries.groupings.all' => '전체',

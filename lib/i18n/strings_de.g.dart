@@ -194,6 +194,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Einstellungen';
+	@override String get supportDeveloper => 'Plezy unterstützen';
+	@override String get supportDeveloperDescription => 'Per Liberapay spenden, um die Entwicklung zu fördern';
 	@override String get language => 'Sprache';
 	@override String get theme => 'Design';
 	@override String get appearance => 'Darstellung';
@@ -1476,6 +1478,8 @@ extension on TranslationsDe {
 			'update.latestVersion' => 'Aktuellste Version installiert',
 			'update.checkFailed' => 'Fehler bei der Updateprüfung',
 			'settings.title' => 'Einstellungen',
+			'settings.supportDeveloper' => 'Plezy unterstützen',
+			'settings.supportDeveloperDescription' => 'Per Liberapay spenden, um die Entwicklung zu fördern',
 			'settings.language' => 'Sprache',
 			'settings.theme' => 'Design',
 			'settings.appearance' => 'Darstellung',
@@ -1922,10 +1926,10 @@ extension on TranslationsDe {
 			'libraries.noFoldersFound' => 'Keine Ordner gefunden',
 			'libraries.folders' => 'Ordner',
 			'libraries.tabs.recommended' => 'Empfohlen',
-			'libraries.tabs.browse' => 'Durchsuchen',
-			'libraries.tabs.collections' => 'Sammlungen',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Durchsuchen',
+			'libraries.tabs.collections' => 'Sammlungen',
 			'libraries.tabs.playlists' => 'Wiedergabelisten',
 			'libraries.groupings.title' => 'Gruppierung',
 			'libraries.groupings.all' => 'Alle',

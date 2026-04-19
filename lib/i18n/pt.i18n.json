@@ -74,6 +74,8 @@
   },
   "settings": {
     "title": "Configurações",
+    "supportDeveloper": "Apoie o Plezy",
+    "supportDeveloperDescription": "Doe via Liberapay para financiar o desenvolvimento",
     "language": "Idioma",
     "theme": "Tema",
     "appearance": "Aparência",
