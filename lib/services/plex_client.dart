@@ -402,23 +402,21 @@ class PlexClient {
       );
     } on PlexHttpException catch (e) {
       stopwatch.stop();
-      String error = switch (e.type) {
+      final label = switch (e.type) {
         PlexHttpErrorType.connectionTimeout => 'Connection timeout',
         PlexHttpErrorType.receiveTimeout => 'Receive timeout',
         PlexHttpErrorType.connectionError => 'Connection error',
         _ => e.type.name,
       };
+      final message = e.message?.trim() ?? '';
+      var error = message.isEmpty ? label : '$label: $message';
       if (e.statusCode != null) {
         error += ' (HTTP ${e.statusCode})';
       }
       return ConnectionTestResult(success: false, latencyMs: stopwatch.elapsedMilliseconds, error: error);
     } catch (e) {
       stopwatch.stop();
-      return ConnectionTestResult(
-        success: false,
-        latencyMs: stopwatch.elapsedMilliseconds,
-        error: e.runtimeType.toString(),
-      );
+      return ConnectionTestResult(success: false, latencyMs: stopwatch.elapsedMilliseconds, error: e.toString());
     }
   }
 
