@@ -75,6 +75,7 @@ class TranslationsPl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsExternalPlayerPl externalPlayer = _TranslationsExternalPlayerPl._(_root);
 	@override late final _TranslationsMetadataEditPl metadataEdit = _TranslationsMetadataEditPl._(_root);
 	@override late final _TranslationsServerTasksPl serverTasks = _TranslationsServerTasksPl._(_root);
+	@override late final _TranslationsTraktPl trakt = _TranslationsTraktPl._(_root);
 }
 
 // Path: app
@@ -328,6 +329,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Pokaż, co oglądasz na Discordzie';
+	@override String get trakt => 'Trakt';
+	@override String get traktDescription => 'Synchronizuj historię oglądania z Trakt';
 	@override String get autoPip => 'Automatyczny obraz w obrazie';
 	@override String get autoPipDescription => 'Automatycznie przejdź do trybu obraz w obrazie przy wyjściu z aplikacji podczas odtwarzania';
 	@override String get matchContentFrameRate => 'Dopasuj częstotliwość klatek do treści';
@@ -1220,6 +1223,30 @@ class _TranslationsServerTasksPl implements TranslationsServerTasksEn {
 	@override String get noTasks => 'Brak uruchomionych zadań';
 }
 
+// Path: trakt
+class _TranslationsTraktPl implements TranslationsTraktEn {
+	_TranslationsTraktPl._(this._root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trakt';
+	@override String get connected => 'Połączono';
+	@override String connectedAs({required Object username}) => 'Połączono jako @${username}';
+	@override String get disconnectConfirm => 'Rozłączyć konto Trakt?';
+	@override String get disconnectConfirmBody => 'Plezy przestanie wysyłać zdarzenia odtwarzania do Trakt. Możesz połączyć się ponownie w dowolnej chwili.';
+	@override String get scrobble => 'Scrobbling w czasie rzeczywistym';
+	@override String get scrobbleDescription => 'Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.';
+	@override String get watchedSync => 'Synchronizuj status obejrzane';
+	@override String get watchedSyncDescription => 'Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt.';
+	@override String get deviceCodeTitle => 'Aktywuj Plezy w Trakt';
+	@override String deviceCodeBody({required Object url}) => 'Otwórz ${url} i wpisz ten kod:';
+	@override String get openTraktActivate => 'Otwórz Trakt, aby aktywować';
+	@override String get waitingForAuthorization => 'Czekanie na autoryzację…';
+	@override String get codeCopied => 'Kod skopiowany';
+	@override String get connectFailed => 'Nie udało się połączyć z Trakt. Spróbuj ponownie.';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsPl implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsPl._(this._root);
@@ -1584,6 +1611,8 @@ extension on TranslationsPl {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Pokaż, co oglądasz na Discordzie',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => 'Synchronizuj historię oglądania z Trakt',
 			'settings.autoPip' => 'Automatyczny obraz w obrazie',
 			'settings.autoPipDescription' => 'Automatycznie przejdź do trybu obraz w obrazie przy wyjściu z aplikacji podczas odtwarzania',
 			'settings.matchContentFrameRate' => 'Dopasuj częstotliwość klatek do treści',
@@ -1895,10 +1924,10 @@ extension on TranslationsPl {
 			'libraries.tabs.recommended' => 'Rekomendowane',
 			'libraries.tabs.browse' => 'Przeglądaj',
 			'libraries.tabs.collections' => 'Kolekcje',
-			'libraries.tabs.playlists' => 'Playlisty',
-			'libraries.groupings.title' => 'Grupowanie',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => 'Playlisty',
+			'libraries.groupings.title' => 'Grupowanie',
 			'libraries.groupings.all' => 'Wszystkie',
 			'libraries.groupings.movies' => 'Filmy',
 			'libraries.groupings.shows' => 'Seriale TV',
@@ -2275,6 +2304,21 @@ extension on TranslationsPl {
 			'serverTasks.title' => 'Zadania serwera',
 			'serverTasks.failedToLoad' => 'Nie udało się załadować zadań',
 			'serverTasks.noTasks' => 'Brak uruchomionych zadań',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => 'Połączono',
+			'trakt.connectedAs' => ({required Object username}) => 'Połączono jako @${username}',
+			'trakt.disconnectConfirm' => 'Rozłączyć konto Trakt?',
+			'trakt.disconnectConfirmBody' => 'Plezy przestanie wysyłać zdarzenia odtwarzania do Trakt. Możesz połączyć się ponownie w dowolnej chwili.',
+			'trakt.scrobble' => 'Scrobbling w czasie rzeczywistym',
+			'trakt.scrobbleDescription' => 'Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.',
+			'trakt.watchedSync' => 'Synchronizuj status obejrzane',
+			'trakt.watchedSyncDescription' => 'Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt.',
+			'trakt.deviceCodeTitle' => 'Aktywuj Plezy w Trakt',
+			'trakt.deviceCodeBody' => ({required Object url}) => 'Otwórz ${url} i wpisz ten kod:',
+			'trakt.openTraktActivate' => 'Otwórz Trakt, aby aktywować',
+			'trakt.waitingForAuthorization' => 'Czekanie na autoryzację…',
+			'trakt.codeCopied' => 'Kod skopiowany',
+			'trakt.connectFailed' => 'Nie udało się połączyć z Trakt. Spróbuj ponownie.',
 			_ => null,
 		};
 	}

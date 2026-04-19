@@ -209,6 +209,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Show what you're watching on Discord",
+    "trakt": "Trakt",
+    "traktDescription": "Sync watch history with Trakt",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Allow mobile devices on your network to control this app",
     "autoPip": "Auto Picture-in-Picture",
@@ -976,5 +978,22 @@
     "title": "Server Tasks",
     "failedToLoad": "Failed to load tasks",
     "noTasks": "No tasks running"
+  },
+  "trakt": {
+    "title": "Trakt",
+    "connected": "Connected",
+    "connectedAs": "Connected as @${username}",
+    "disconnectConfirm": "Disconnect Trakt account?",
+    "disconnectConfirmBody": "Plezy will stop sending playback events to Trakt. You can reconnect at any time.",
+    "scrobble": "Real-time scrobbling",
+    "scrobbleDescription": "Send play, pause, and stop events to Trakt during playback.",
+    "watchedSync": "Sync watched status",
+    "watchedSyncDescription": "When you mark items watched in Plezy, mark them on Trakt.",
+    "deviceCodeTitle": "Activate Plezy on Trakt",
+    "deviceCodeBody": "Visit ${url} and enter this code:",
+    "openTraktActivate": "Open Trakt to activate",
+    "waitingForAuthorization": "Waiting for authorization…",
+    "codeCopied": "Code copied",
+    "connectFailed": "Couldn't connect to Trakt. Try again."
   }
 }

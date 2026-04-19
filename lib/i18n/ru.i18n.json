@@ -209,6 +209,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Показывать, что вы смотрите, в Discord",
+    "trakt": "Trakt",
+    "traktDescription": "Синхронизировать историю просмотров с Trakt",
     "autoPip": "Автоматический «картинка в картинке»",
     "autoPipDescription": "Автоматически переходить в режим «картинка в картинке» при выходе из приложения во время воспроизведения",
     "matchContentFrameRate": "Соответствие частоты кадров контента",
@@ -976,5 +978,22 @@
     "title": "Задачи сервера",
     "failedToLoad": "Не удалось загрузить задачи",
     "noTasks": "Нет выполняемых задач"
+  },
+  "trakt": {
+    "title": "Trakt",
+    "connected": "Подключено",
+    "connectedAs": "Подключено как @${username}",
+    "disconnectConfirm": "Отключить аккаунт Trakt?",
+    "disconnectConfirmBody": "Plezy перестанет отправлять события воспроизведения в Trakt. Вы можете подключиться снова в любое время.",
+    "scrobble": "Скробблинг в реальном времени",
+    "scrobbleDescription": "Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.",
+    "watchedSync": "Синхронизация статуса просмотра",
+    "watchedSyncDescription": "Когда вы отмечаете элементы как просмотренные в Plezy, они отмечаются и в Trakt.",
+    "deviceCodeTitle": "Активация Plezy в Trakt",
+    "deviceCodeBody": "Откройте ${url} и введите этот код:",
+    "openTraktActivate": "Открыть Trakt для активации",
+    "waitingForAuthorization": "Ожидание авторизации…",
+    "codeCopied": "Код скопирован",
+    "connectFailed": "Не удалось подключиться к Trakt. Попробуйте ещё раз."
   }
 }

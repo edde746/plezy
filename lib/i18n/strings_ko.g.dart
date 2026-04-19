@@ -75,6 +75,7 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsExternalPlayerKo externalPlayer = _TranslationsExternalPlayerKo._(_root);
 	@override late final _TranslationsMetadataEditKo metadataEdit = _TranslationsMetadataEditKo._(_root);
 	@override late final _TranslationsServerTasksKo serverTasks = _TranslationsServerTasksKo._(_root);
+	@override late final _TranslationsTraktKo trakt = _TranslationsTraktKo._(_root);
 }
 
 // Path: app
@@ -328,6 +329,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
+	@override String get trakt => 'Trakt';
+	@override String get traktDescription => 'Trakt와 시청 기록 동기화';
 	@override String get autoPip => '자동 PIP 모드';
 	@override String get autoPipDescription => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
@@ -1220,6 +1223,30 @@ class _TranslationsServerTasksKo implements TranslationsServerTasksEn {
 	@override String get noTasks => '실행 중인 작업 없음';
 }
 
+// Path: trakt
+class _TranslationsTraktKo implements TranslationsTraktEn {
+	_TranslationsTraktKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trakt';
+	@override String get connected => '연결됨';
+	@override String connectedAs({required Object username}) => '@${username}(으)로 연결됨';
+	@override String get disconnectConfirm => 'Trakt 계정 연결을 끊으시겠습니까?';
+	@override String get disconnectConfirmBody => 'Plezy가 Trakt로 재생 이벤트를 보내지 않습니다. 언제든지 다시 연결할 수 있습니다.';
+	@override String get scrobble => '실시간 스크로블';
+	@override String get scrobbleDescription => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.';
+	@override String get watchedSync => '시청 상태 동기화';
+	@override String get watchedSyncDescription => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.';
+	@override String get deviceCodeTitle => 'Trakt에서 Plezy 활성화';
+	@override String deviceCodeBody({required Object url}) => '${url}을(를) 방문하여 이 코드를 입력하세요:';
+	@override String get openTraktActivate => '활성화하려면 Trakt 열기';
+	@override String get waitingForAuthorization => '인증 대기 중…';
+	@override String get codeCopied => '코드가 복사됨';
+	@override String get connectFailed => 'Trakt에 연결할 수 없습니다. 다시 시도하세요.';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsKo._(this._root);
@@ -1584,6 +1611,8 @@ extension on TranslationsKo {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Discord에서 시청 중인 콘텐츠 표시',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => 'Trakt와 시청 기록 동기화',
 			'settings.autoPip' => '자동 PIP 모드',
 			'settings.autoPipDescription' => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
@@ -1895,10 +1924,10 @@ extension on TranslationsKo {
 			'libraries.tabs.recommended' => '추천',
 			'libraries.tabs.browse' => '찾아보기',
 			'libraries.tabs.collections' => '컬렉션',
-			'libraries.tabs.playlists' => '재생 목록',
-			'libraries.groupings.title' => '그룹',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => '재생 목록',
+			'libraries.groupings.title' => '그룹',
 			'libraries.groupings.all' => '전체',
 			'libraries.groupings.movies' => '영화',
 			'libraries.groupings.shows' => 'TV 프로그램',
@@ -2275,6 +2304,21 @@ extension on TranslationsKo {
 			'serverTasks.title' => '서버 작업',
 			'serverTasks.failedToLoad' => '작업을 불러올 수 없습니다',
 			'serverTasks.noTasks' => '실행 중인 작업 없음',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => '연결됨',
+			'trakt.connectedAs' => ({required Object username}) => '@${username}(으)로 연결됨',
+			'trakt.disconnectConfirm' => 'Trakt 계정 연결을 끊으시겠습니까?',
+			'trakt.disconnectConfirmBody' => 'Plezy가 Trakt로 재생 이벤트를 보내지 않습니다. 언제든지 다시 연결할 수 있습니다.',
+			'trakt.scrobble' => '실시간 스크로블',
+			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
+			'trakt.watchedSync' => '시청 상태 동기화',
+			'trakt.watchedSyncDescription' => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
+			'trakt.deviceCodeTitle' => 'Trakt에서 Plezy 활성화',
+			'trakt.deviceCodeBody' => ({required Object url}) => '${url}을(를) 방문하여 이 코드를 입력하세요:',
+			'trakt.openTraktActivate' => '활성화하려면 Trakt 열기',
+			'trakt.waitingForAuthorization' => '인증 대기 중…',
+			'trakt.codeCopied' => '코드가 복사됨',
+			'trakt.connectFailed' => 'Trakt에 연결할 수 없습니다. 다시 시도하세요.',
 			_ => null,
 		};
 	}

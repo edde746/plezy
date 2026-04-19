@@ -75,6 +75,7 @@ class TranslationsDa with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsExternalPlayerDa externalPlayer = _TranslationsExternalPlayerDa._(_root);
 	@override late final _TranslationsMetadataEditDa metadataEdit = _TranslationsMetadataEditDa._(_root);
 	@override late final _TranslationsServerTasksDa serverTasks = _TranslationsServerTasksDa._(_root);
+	@override late final _TranslationsTraktDa trakt = _TranslationsTraktDa._(_root);
 }
 
 // Path: app
@@ -328,6 +329,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Vis hvad du ser på Discord';
+	@override String get trakt => 'Trakt';
+	@override String get traktDescription => 'Synkroniser visningshistorik med Trakt';
 	@override String get autoPip => 'Auto billede-i-billede';
 	@override String get autoPipDescription => 'Gå automatisk til billede-i-billede når du forlader appen under afspilning';
 	@override String get matchContentFrameRate => 'Match indholdets billedhastighed';
@@ -1220,6 +1223,30 @@ class _TranslationsServerTasksDa implements TranslationsServerTasksEn {
 	@override String get noTasks => 'Ingen opgaver kører';
 }
 
+// Path: trakt
+class _TranslationsTraktDa implements TranslationsTraktEn {
+	_TranslationsTraktDa._(this._root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trakt';
+	@override String get connected => 'Forbundet';
+	@override String connectedAs({required Object username}) => 'Forbundet som @${username}';
+	@override String get disconnectConfirm => 'Frakobl Trakt-konto?';
+	@override String get disconnectConfirmBody => 'Plezy stopper med at sende afspilningsbegivenheder til Trakt. Du kan genoprette forbindelse når som helst.';
+	@override String get scrobble => 'Realtids-scrobbling';
+	@override String get scrobbleDescription => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.';
+	@override String get watchedSync => 'Synkroniser sét-status';
+	@override String get watchedSyncDescription => 'Når du markerer ting som sét i Plezy, markeres de også på Trakt.';
+	@override String get deviceCodeTitle => 'Aktivér Plezy på Trakt';
+	@override String deviceCodeBody({required Object url}) => 'Besøg ${url} og indtast denne kode:';
+	@override String get openTraktActivate => 'Åbn Trakt for at aktivere';
+	@override String get waitingForAuthorization => 'Venter på godkendelse…';
+	@override String get codeCopied => 'Kode kopieret';
+	@override String get connectFailed => 'Kunne ikke forbinde til Trakt. Prøv igen.';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsDa implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsDa._(this._root);
@@ -1584,6 +1611,8 @@ extension on TranslationsDa {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Vis hvad du ser på Discord',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => 'Synkroniser visningshistorik med Trakt',
 			'settings.autoPip' => 'Auto billede-i-billede',
 			'settings.autoPipDescription' => 'Gå automatisk til billede-i-billede når du forlader appen under afspilning',
 			'settings.matchContentFrameRate' => 'Match indholdets billedhastighed',
@@ -1895,10 +1924,10 @@ extension on TranslationsDa {
 			'libraries.tabs.recommended' => 'Anbefalet',
 			'libraries.tabs.browse' => 'Gennemse',
 			'libraries.tabs.collections' => 'Samlinger',
-			'libraries.tabs.playlists' => 'Playlister',
-			'libraries.groupings.title' => 'Gruppering',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => 'Playlister',
+			'libraries.groupings.title' => 'Gruppering',
 			'libraries.groupings.all' => 'Alle',
 			'libraries.groupings.movies' => 'Film',
 			'libraries.groupings.shows' => 'TV-serier',
@@ -2275,6 +2304,21 @@ extension on TranslationsDa {
 			'serverTasks.title' => 'Serveropgaver',
 			'serverTasks.failedToLoad' => 'Kunne ikke indlæse opgaver',
 			'serverTasks.noTasks' => 'Ingen opgaver kører',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => 'Forbundet',
+			'trakt.connectedAs' => ({required Object username}) => 'Forbundet som @${username}',
+			'trakt.disconnectConfirm' => 'Frakobl Trakt-konto?',
+			'trakt.disconnectConfirmBody' => 'Plezy stopper med at sende afspilningsbegivenheder til Trakt. Du kan genoprette forbindelse når som helst.',
+			'trakt.scrobble' => 'Realtids-scrobbling',
+			'trakt.scrobbleDescription' => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.',
+			'trakt.watchedSync' => 'Synkroniser sét-status',
+			'trakt.watchedSyncDescription' => 'Når du markerer ting som sét i Plezy, markeres de også på Trakt.',
+			'trakt.deviceCodeTitle' => 'Aktivér Plezy på Trakt',
+			'trakt.deviceCodeBody' => ({required Object url}) => 'Besøg ${url} og indtast denne kode:',
+			'trakt.openTraktActivate' => 'Åbn Trakt for at aktivere',
+			'trakt.waitingForAuthorization' => 'Venter på godkendelse…',
+			'trakt.codeCopied' => 'Kode kopieret',
+			'trakt.connectFailed' => 'Kunne ikke forbinde til Trakt. Prøv igen.',
 			_ => null,
 		};
 	}

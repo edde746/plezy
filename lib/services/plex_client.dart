@@ -1348,6 +1348,30 @@ class PlexClient {
     }
   }
 
+  /// Fetch the raw `Guid` array for a metadata item (`includeGuids=1`).
+  ///
+  /// Returns the list of `{id: 'imdb://tt...'}` maps as Plex returns them, or
+  /// an empty list if the item has no external IDs / can't be fetched.
+  /// Used by the Trakt integration to match Plex items against Trakt's catalog.
+  Future<List<dynamic>> fetchExternalGuids(String ratingKey) async {
+    try {
+      final response = await _getWithFailover('/library/metadata/$ratingKey', queryParameters: {'includeGuids': 1});
+      final data = response.data;
+      if (data is! Map) return const [];
+      final container = data['MediaContainer'] as Map?;
+      final metadata = container?['Metadata'];
+      if (metadata is! List || metadata.isEmpty) return const [];
+      final first = metadata.first;
+      if (first is! Map) return const [];
+      final guids = first['Guid'];
+      if (guids is List) return guids;
+      return const [];
+    } catch (e) {
+      appLogger.d('fetchExternalGuids failed for $ratingKey', error: e);
+      return const [];
+    }
+  }
+
   /// Mark media as watched
   ///
   /// If [metadata] is provided, emits a [WatchStateEvent] for UI updates.

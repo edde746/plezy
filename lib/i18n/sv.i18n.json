@@ -209,6 +209,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
+    "trakt": "Trakt",
+    "traktDescription": "Synkronisera visningshistorik med Trakt",
     "autoPip": "Automatisk bild-i-bild",
     "autoPipDescription": "Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning",
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
@@ -976,5 +978,22 @@
     "title": "Serveruppgifter",
     "failedToLoad": "Kunde inte ladda uppgifter",
     "noTasks": "Inga pågående uppgifter"
+  },
+  "trakt": {
+    "title": "Trakt",
+    "connected": "Ansluten",
+    "connectedAs": "Ansluten som @${username}",
+    "disconnectConfirm": "Koppla från Trakt-konto?",
+    "disconnectConfirmBody": "Plezy slutar skicka uppspelningshändelser till Trakt. Du kan ansluta igen när som helst.",
+    "scrobble": "Realtids-scrobbling",
+    "scrobbleDescription": "Skicka uppspelnings-, paus- och stopphändelser till Trakt under uppspelning.",
+    "watchedSync": "Synkronisera tittad-status",
+    "watchedSyncDescription": "När du markerar något som tittat i Plezy markeras det också på Trakt.",
+    "deviceCodeTitle": "Aktivera Plezy på Trakt",
+    "deviceCodeBody": "Besök ${url} och ange den här koden:",
+    "openTraktActivate": "Öppna Trakt för att aktivera",
+    "waitingForAuthorization": "Väntar på auktorisering…",
+    "codeCopied": "Kod kopierad",
+    "connectFailed": "Kunde inte ansluta till Trakt. Försök igen."
   }
 }

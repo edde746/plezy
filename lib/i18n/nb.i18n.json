@@ -209,6 +209,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Vis hva du ser på Discord",
+    "trakt": "Trakt",
+    "traktDescription": "Synkroniser visningshistorikk med Trakt",
     "autoPip": "Auto bilde-i-bilde",
     "autoPipDescription": "Gå automatisk til bilde-i-bilde når du forlater appen under avspilling",
     "matchContentFrameRate": "Tilpass innholdets bildefrekvens",
@@ -976,5 +978,22 @@
     "title": "Serveroppgaver",
     "failedToLoad": "Kunne ikke laste oppgaver",
     "noTasks": "Ingen oppgaver kjører"
+  },
+  "trakt": {
+    "title": "Trakt",
+    "connected": "Tilkoblet",
+    "connectedAs": "Tilkoblet som @${username}",
+    "disconnectConfirm": "Koble fra Trakt-konto?",
+    "disconnectConfirmBody": "Plezy slutter å sende avspillingshendelser til Trakt. Du kan koble til igjen når som helst.",
+    "scrobble": "Sanntids-scrobbling",
+    "scrobbleDescription": "Send avspillings-, pause- og stopphendelser til Trakt under avspilling.",
+    "watchedSync": "Synkroniser sett-status",
+    "watchedSyncDescription": "Når du markerer noe som sett i Plezy, markeres det også på Trakt.",
+    "deviceCodeTitle": "Aktiver Plezy på Trakt",
+    "deviceCodeBody": "Besøk ${url} og skriv inn denne koden:",
+    "openTraktActivate": "Åpne Trakt for å aktivere",
+    "waitingForAuthorization": "Venter på autorisering…",
+    "codeCopied": "Kode kopiert",
+    "connectFailed": "Kunne ikke koble til Trakt. Prøv igjen."
   }
 }

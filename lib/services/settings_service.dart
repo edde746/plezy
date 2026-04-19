@@ -92,6 +92,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
   static const String _keyMaxVolume = 'max_volume';
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
+  static const String _keyEnableTraktScrobble = 'enable_trakt_scrobble';
+  static const String _keyEnableTraktWatchedSync = 'enable_trakt_watched_sync';
   static const String _keyEnableCompanionRemoteServer = 'enable_companion_remote_server';
   static const String _keyAutoPip = 'auto_pip';
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
@@ -1124,6 +1126,24 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyEnableDiscordRPC) ?? false; // Default disabled
   }
 
+  // Trakt Scrobbling (sends play/pause/stop during playback to Trakt)
+  Future<void> setEnableTraktScrobble(bool enabled) async {
+    await prefs.setBool(_keyEnableTraktScrobble, enabled);
+  }
+
+  bool getEnableTraktScrobble() {
+    return prefs.getBool(_keyEnableTraktScrobble) ?? true; // Default enabled when account is linked
+  }
+
+  // Trakt Watched-Status Sync (Plezy → Trakt only)
+  Future<void> setEnableTraktWatchedSync(bool enabled) async {
+    await prefs.setBool(_keyEnableTraktWatchedSync, enabled);
+  }
+
+  bool getEnableTraktWatchedSync() {
+    return prefs.getBool(_keyEnableTraktWatchedSync) ?? true; // Default enabled when account is linked
+  }
+
   // Companion Remote Server
   Future<void> setEnableCompanionRemoteServer(bool enabled) async {
     await prefs.setBool(_keyEnableCompanionRemoteServer, enabled);
@@ -1451,6 +1471,8 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyMpvConfigText),
       prefs.remove(_keyMpvConfigPresets),
       prefs.remove(_keyEnableDiscordRPC),
+      prefs.remove(_keyEnableTraktScrobble),
+      prefs.remove(_keyEnableTraktWatchedSync),
       prefs.remove(_keyAutoPip),
       prefs.remove(_keyMatchContentFrameRate),
       prefs.remove(_keyTunneledPlayback),

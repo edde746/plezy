@@ -3,9 +3,11 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 
 import '../database/app_database.dart';
+import '../models/plex_metadata.dart';
 import '../providers/offline_mode_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/plex_cache_parser.dart';
+import '../utils/watch_state_notifier.dart';
 import 'multi_server_manager.dart';
 import 'plex_api_cache.dart';
 import 'plex_client.dart';
@@ -395,13 +397,30 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   /// Sync a single action to the server.
   Future<void> _syncAction(PlexClient client, OfflineWatchProgressItem action) async {
+    // Fetch metadata so the WatchStateNotifier emission inside
+    // markAsWatched/markAsUnwatched carries enough context for downstream
+    // listeners (UI invalidation, Trakt sync). Best-effort: a missed metadata
+    // fetch only suppresses the event, not the Plex API call.
+    final emitsEvent =
+        action.actionType == 'watched' ||
+        action.actionType == 'unwatched' ||
+        (action.actionType == 'progress' && action.shouldMarkWatched);
+    PlexMetadata? metadata;
+    if (emitsEvent) {
+      try {
+        metadata = await client.getMetadataWithImages(action.ratingKey);
+      } catch (_) {
+        // Proceed without metadata — Plex still gets the call.
+      }
+    }
+
     switch (action.actionType) {
       case 'watched':
-        await client.markAsWatched(action.ratingKey);
+        await client.markAsWatched(action.ratingKey, metadata: metadata);
         break;
 
       case 'unwatched':
-        await client.markAsUnwatched(action.ratingKey);
+        await client.markAsUnwatched(action.ratingKey, metadata: metadata);
         break;
 
       case 'progress':
@@ -417,7 +436,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
         // If progress exceeded threshold, also mark as watched
         if (action.shouldMarkWatched) {
-          await client.markAsWatched(action.ratingKey);
+          await client.markAsWatched(action.ratingKey, metadata: metadata);
         }
         break;
     }
@@ -444,6 +463,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
         final existingMeta = PlexCacheParser.extractFirstMetadata(existing);
 
         if (existingMeta != null) {
+          // Detect a watched-status flip from another device so listeners
+          // (UI, Trakt sync) get the change. `viewCount` going from 0 to >0
+          // (or back) is the canonical "marked watched" signal.
+          final wasWatched = ((existingMeta['viewCount'] as num?)?.toInt() ?? 0) > 0;
+          final isWatched = (episode.viewCount ?? 0) > 0;
+
           // Only update watch-state fields — preserves Chapter/Marker/Media/etc.
           existingMeta['viewCount'] = episode.viewCount;
           existingMeta['viewOffset'] = episode.viewOffset;
@@ -454,6 +479,10 @@ class OfflineWatchSyncService extends ChangeNotifier {
               'Metadata': [existingMeta],
             },
           });
+
+          if (wasWatched != isWatched) {
+            WatchStateNotifier().notifyWatched(metadata: episode, isNowWatched: isWatched);
+          }
 
           // Repair corrupted entries (missing Media/Chapter from previous overwrites)
           if (existingMeta['Media'] == null) {
@@ -544,11 +573,22 @@ class OfflineWatchSyncService extends ChangeNotifier {
         await _withOnlineClient(serverId, (client) async {
           for (final ratingKey in ratingKeys) {
             try {
+              // Snapshot prior viewCount before the cache-refreshing fetch so we
+              // can detect a watched-status change from another device.
+              final cacheKey = '/library/metadata/$ratingKey';
+              final priorCached = await PlexApiCache.instance.get(serverId, cacheKey);
+              final priorMeta = PlexCacheParser.extractFirstMetadata(priorCached);
+              final wasWatched = ((priorMeta?['viewCount'] as num?)?.toInt() ?? 0) > 0;
+
               // getMetadataWithImages already caches the full API response
               // (with chapters/markers) via _fetchWithCacheFallback internally
               final metadata = await client.getMetadataWithImages(ratingKey);
               if (metadata != null) {
                 syncedCount++;
+                final isWatched = (metadata.viewCount ?? 0) > 0;
+                if (wasWatched != isWatched) {
+                  WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: isWatched);
+                }
               }
             } catch (e) {
               appLogger.d('Failed to sync watch state for $ratingKey: $e');

@@ -209,6 +209,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Zeige auf Discord, was du gerade schaust",
+    "trakt": "Trakt",
+    "traktDescription": "Wiedergabeverlauf mit Trakt synchronisieren",
     "autoPip": "Automatisches Bild-in-Bild",
     "autoPipDescription": "Automatisch Bild-in-Bild aktivieren, wenn die App während der Wiedergabe verlassen wird",
     "matchContentFrameRate": "Inhalts-Bildrate anpassen",
@@ -976,5 +978,22 @@
     "title": "Serveraufgaben",
     "failedToLoad": "Aufgaben konnten nicht geladen werden",
     "noTasks": "Keine laufenden Aufgaben"
+  },
+  "trakt": {
+    "title": "Trakt",
+    "connected": "Verbunden",
+    "connectedAs": "Verbunden als @${username}",
+    "disconnectConfirm": "Trakt-Konto trennen?",
+    "disconnectConfirmBody": "Plezy sendet keine Wiedergabe-Ereignisse mehr an Trakt. Du kannst dich jederzeit erneut verbinden.",
+    "scrobble": "Echtzeit-Scrobbling",
+    "scrobbleDescription": "Sende Play-, Pause- und Stopp-Ereignisse während der Wiedergabe an Trakt.",
+    "watchedSync": "Gesehen-Status synchronisieren",
+    "watchedSyncDescription": "Wenn du Inhalte in Plezy als gesehen markierst, werden sie auch auf Trakt markiert.",
+    "deviceCodeTitle": "Plezy auf Trakt aktivieren",
+    "deviceCodeBody": "Öffne ${url} und gib diesen Code ein:",
+    "openTraktActivate": "Trakt zum Aktivieren öffnen",
+    "waitingForAuthorization": "Warte auf Autorisierung…",
+    "codeCopied": "Code kopiert",
+    "connectFailed": "Verbindung zu Trakt fehlgeschlagen. Versuche es erneut."
   }
 }

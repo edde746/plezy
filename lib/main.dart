@@ -19,6 +19,9 @@ import 'services/settings_service.dart';
 import 'utils/platform_detector.dart';
 import 'services/discord_rpc_service.dart';
 import 'services/gamepad_service.dart';
+import 'services/trakt/trakt_scrobble_service.dart';
+import 'services/trakt/trakt_sync_service.dart';
+import 'providers/trakt_account_provider.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
@@ -186,6 +189,9 @@ Future<void> _bootstrapApp() async {
   if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
     DiscordRPCService.instance.initialize();
   }
+
+  // Trakt scrobble service (all platforms)
+  await TraktScrobbleService.instance.initialize();
 
   // DTD service is available for MCP tooling connection if needed
 
@@ -404,6 +410,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
 
+    // Trakt sync service (subscribes to WatchStateNotifier, requires serverManager
+    // to resolve PlexClients for GUID lookups).
+    TraktSyncService.instance.initialize(serverManager: _serverManager);
+
     _appLifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
         await _appDatabase.close();
@@ -471,6 +481,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         // App came back to foreground - trigger sync check and start new session
         _offlineWatchSyncService.onAppResumed();
+        TraktSyncService.instance.flushQueue();
         InAppReviewService.instance.startSession();
         // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep.
         // On desktop, resumed fires on every window focus (alt-tab), so apply a cooldown
@@ -565,6 +576,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Existing providers
         ChangeNotifierProvider(create: (context) => UserProfileProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        // Trakt account — depends on UserProfileProvider for per-profile token scoping.
+        // Hydrated and rebound in `_TraktBootstrap` below.
+        ChangeNotifierProvider(create: (context) => TraktAccountProvider()),
         ChangeNotifierProvider(create: (context) => SettingsProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => LibrariesProvider()),
@@ -576,26 +590,28 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return TranslationProvider(
-            child: Listener(
-              onPointerDown: (event) {
-                if ((event.buttons & kBackMouseButton) != 0) {
-                  rootNavigatorKey.currentState?.maybePop();
-                }
-              },
-              behavior: HitTestBehavior.translucent,
-              child: InputModeTracker(
-                child: MaterialApp(
-                  title: t.app.title,
-                  debugShowCheckedModeBanner: false,
-                  theme: themeProvider.lightTheme,
-                  darkTheme: themeProvider.darkTheme,
-                  themeMode: themeProvider.materialThemeMode,
-                  navigatorKey: rootNavigatorKey,
-                  navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
-                  home: const OrientationAwareSetup(),
-                  builder: (context, child) => ScaffoldMessenger(
-                    key: rootScaffoldMessengerKey,
-                    child: Scaffold(backgroundColor: Colors.transparent, body: child),
+            child: _TraktProfileBootstrap(
+              child: Listener(
+                onPointerDown: (event) {
+                  if ((event.buttons & kBackMouseButton) != 0) {
+                    rootNavigatorKey.currentState?.maybePop();
+                  }
+                },
+                behavior: HitTestBehavior.translucent,
+                child: InputModeTracker(
+                  child: MaterialApp(
+                    title: t.app.title,
+                    debugShowCheckedModeBanner: false,
+                    theme: themeProvider.lightTheme,
+                    darkTheme: themeProvider.darkTheme,
+                    themeMode: themeProvider.materialThemeMode,
+                    navigatorKey: rootNavigatorKey,
+                    navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
+                    home: const OrientationAwareSetup(),
+                    builder: (context, child) => ScaffoldMessenger(
+                      key: rootScaffoldMessengerKey,
+                      child: Scaffold(backgroundColor: Colors.transparent, body: child),
+                    ),
                   ),
                 ),
               ),
@@ -605,6 +621,61 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       ),
     );
   }
+}
+
+/// Hydrates the [TraktAccountProvider] with the active Plex profile's session
+/// and rebinds the scrobble + sync services whenever the user switches.
+///
+/// Lives high in the widget tree (above MaterialApp) so the listener survives
+/// route changes.
+class _TraktProfileBootstrap extends StatefulWidget {
+  final Widget child;
+  const _TraktProfileBootstrap({required this.child});
+
+  @override
+  State<_TraktProfileBootstrap> createState() => _TraktProfileBootstrapState();
+}
+
+class _TraktProfileBootstrapState extends State<_TraktProfileBootstrap> {
+  UserProfileProvider? _profile;
+  TraktAccountProvider? _trakt;
+  String? _lastUuid;
+  bool _hydrated = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final profile = context.read<UserProfileProvider>();
+    final trakt = context.read<TraktAccountProvider>();
+
+    if (!identical(_profile, profile)) {
+      _profile?.removeListener(_onProfileChanged);
+      _profile = profile;
+      _profile!.addListener(_onProfileChanged);
+    }
+    _trakt = trakt;
+
+    if (!_hydrated) {
+      _hydrated = true;
+      _onProfileChanged();
+    }
+  }
+
+  void _onProfileChanged() {
+    final uuid = _profile?.currentUser?.uuid;
+    if (uuid == _lastUuid) return;
+    _lastUuid = uuid;
+    _trakt?.onActiveProfileChanged(uuid);
+  }
+
+  @override
+  void dispose() {
+    _profile?.removeListener(_onProfileChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class OrientationAwareSetup extends StatefulWidget {

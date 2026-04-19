@@ -209,6 +209,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Pokaż, co oglądasz na Discordzie",
+    "trakt": "Trakt",
+    "traktDescription": "Synchronizuj historię oglądania z Trakt",
     "autoPip": "Automatyczny obraz w obrazie",
     "autoPipDescription": "Automatycznie przejdź do trybu obraz w obrazie przy wyjściu z aplikacji podczas odtwarzania",
     "matchContentFrameRate": "Dopasuj częstotliwość klatek do treści",
@@ -976,5 +978,22 @@
     "title": "Zadania serwera",
     "failedToLoad": "Nie udało się załadować zadań",
     "noTasks": "Brak uruchomionych zadań"
+  },
+  "trakt": {
+    "title": "Trakt",
+    "connected": "Połączono",
+    "connectedAs": "Połączono jako @${username}",
+    "disconnectConfirm": "Rozłączyć konto Trakt?",
+    "disconnectConfirmBody": "Plezy przestanie wysyłać zdarzenia odtwarzania do Trakt. Możesz połączyć się ponownie w dowolnej chwili.",
+    "scrobble": "Scrobbling w czasie rzeczywistym",
+    "scrobbleDescription": "Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.",
+    "watchedSync": "Synchronizuj status obejrzane",
+    "watchedSyncDescription": "Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt.",
+    "deviceCodeTitle": "Aktywuj Plezy w Trakt",
+    "deviceCodeBody": "Otwórz ${url} i wpisz ten kod:",
+    "openTraktActivate": "Otwórz Trakt, aby aktywować",
+    "waitingForAuthorization": "Czekanie na autoryzację…",
+    "codeCopied": "Kod skopiowany",
+    "connectFailed": "Nie udało się połączyć z Trakt. Spróbuj ponownie."
   }
 }

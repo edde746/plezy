@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +19,7 @@ import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/trakt_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
@@ -30,6 +32,7 @@ import 'appearance_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
+import 'trakt_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -45,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   // Focus tracking keys
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
+  static const _kTrakt = 'trakt';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
@@ -151,6 +155,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 // --- Playback (navigation tile) ---
                 _buildPlaybackTile(),
 
+                // --- Trakt.tv (navigation tile) ---
+                _buildTraktTile(),
+
                 // --- Downloads (inline) ---
                 _buildDownloadsSection(),
 
@@ -211,6 +218,37 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const PlaybackSettingsScreen()));
+      },
+    );
+  }
+
+  Widget _buildTraktTile() {
+    return Consumer<TraktAccountProvider>(
+      builder: (context, account, _) {
+        final connected = account.isConnected;
+        final username = account.username;
+        final iconColor = IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
+        return ListTile(
+          focusNode: _focusTracker.get(_kTrakt),
+          leading: SvgPicture.asset(
+            'assets/trakt_circlemark.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+          ),
+          title: Text(t.settings.trakt),
+          subtitle: Text(
+            connected && username != null ? t.trakt.connectedAs(username: username) : t.settings.traktDescription,
+          ),
+          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          onTap: () {
+            if (account.isConnected) {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const TraktSettingsScreen()));
+            } else {
+              startTraktConnection(context);
+            }
+          },
+        );
       },
     );
   }

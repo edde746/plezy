@@ -75,6 +75,7 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsExternalPlayerZh externalPlayer = _TranslationsExternalPlayerZh._(_root);
 	@override late final _TranslationsMetadataEditZh metadataEdit = _TranslationsMetadataEditZh._(_root);
 	@override late final _TranslationsServerTasksZh serverTasks = _TranslationsServerTasksZh._(_root);
+	@override late final _TranslationsTraktZh trakt = _TranslationsTraktZh._(_root);
 }
 
 // Path: app
@@ -328,6 +329,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord 动态状态';
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
+	@override String get trakt => 'Trakt';
+	@override String get traktDescription => '将观看历史与 Trakt 同步';
 	@override String get autoPip => '自动画中画';
 	@override String get autoPipDescription => '在播放期间离开应用时自动进入画中画模式';
 	@override String get matchContentFrameRate => '匹配内容帧率';
@@ -1220,6 +1223,30 @@ class _TranslationsServerTasksZh implements TranslationsServerTasksEn {
 	@override String get noTasks => '没有正在运行的任务';
 }
 
+// Path: trakt
+class _TranslationsTraktZh implements TranslationsTraktEn {
+	_TranslationsTraktZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trakt';
+	@override String get connected => '已连接';
+	@override String connectedAs({required Object username}) => '已以 @${username} 身份连接';
+	@override String get disconnectConfirm => '断开 Trakt 账户？';
+	@override String get disconnectConfirmBody => 'Plezy 将停止向 Trakt 发送播放事件。您随时可以重新连接。';
+	@override String get scrobble => '实时 Scrobble';
+	@override String get scrobbleDescription => '在播放时向 Trakt 发送播放、暂停和停止事件。';
+	@override String get watchedSync => '同步已观看状态';
+	@override String get watchedSyncDescription => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。';
+	@override String get deviceCodeTitle => '在 Trakt 上激活 Plezy';
+	@override String deviceCodeBody({required Object url}) => '请访问 ${url} 并输入此代码：';
+	@override String get openTraktActivate => '打开 Trakt 进行激活';
+	@override String get waitingForAuthorization => '等待授权…';
+	@override String get codeCopied => '代码已复制';
+	@override String get connectFailed => '无法连接到 Trakt。请重试。';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsZh._(this._root);
@@ -1584,6 +1611,8 @@ extension on TranslationsZh {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord 动态状态',
 			'settings.discordRichPresenceDescription' => '在 Discord 上显示您正在观看的内容',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => '将观看历史与 Trakt 同步',
 			'settings.autoPip' => '自动画中画',
 			'settings.autoPipDescription' => '在播放期间离开应用时自动进入画中画模式',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
@@ -1895,10 +1924,10 @@ extension on TranslationsZh {
 			'libraries.tabs.recommended' => '推荐',
 			'libraries.tabs.browse' => '浏览',
 			'libraries.tabs.collections' => '合集',
-			'libraries.tabs.playlists' => '播放列表',
-			'libraries.groupings.title' => '分组',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => '播放列表',
+			'libraries.groupings.title' => '分组',
 			'libraries.groupings.all' => '全部',
 			'libraries.groupings.movies' => '电影',
 			'libraries.groupings.shows' => '剧集',
@@ -2275,6 +2304,21 @@ extension on TranslationsZh {
 			'serverTasks.title' => '服务器任务',
 			'serverTasks.failedToLoad' => '加载任务失败',
 			'serverTasks.noTasks' => '没有正在运行的任务',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => '已连接',
+			'trakt.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
+			'trakt.disconnectConfirm' => '断开 Trakt 账户？',
+			'trakt.disconnectConfirmBody' => 'Plezy 将停止向 Trakt 发送播放事件。您随时可以重新连接。',
+			'trakt.scrobble' => '实时 Scrobble',
+			'trakt.scrobbleDescription' => '在播放时向 Trakt 发送播放、暂停和停止事件。',
+			'trakt.watchedSync' => '同步已观看状态',
+			'trakt.watchedSyncDescription' => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。',
+			'trakt.deviceCodeTitle' => '在 Trakt 上激活 Plezy',
+			'trakt.deviceCodeBody' => ({required Object url}) => '请访问 ${url} 并输入此代码：',
+			'trakt.openTraktActivate' => '打开 Trakt 进行激活',
+			'trakt.waitingForAuthorization' => '等待授权…',
+			'trakt.codeCopied' => '代码已复制',
+			'trakt.connectFailed' => '无法连接到 Trakt。请重试。',
 			_ => null,
 		};
 	}

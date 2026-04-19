@@ -209,6 +209,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent",
+    "trakt": "Trakt",
+    "traktDescription": "Kijkgeschiedenis synchroniseren met Trakt",
     "autoPip": "Automatische beeld-in-beeld",
     "autoPipDescription": "Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen",
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
@@ -976,5 +978,22 @@
     "title": "Servertaken",
     "failedToLoad": "Taken konden niet worden geladen",
     "noTasks": "Geen actieve taken"
+  },
+  "trakt": {
+    "title": "Trakt",
+    "connected": "Verbonden",
+    "connectedAs": "Verbonden als @${username}",
+    "disconnectConfirm": "Trakt-account loskoppelen?",
+    "disconnectConfirmBody": "Plezy stopt met het versturen van afspeelgebeurtenissen naar Trakt. Je kunt op elk moment opnieuw verbinden.",
+    "scrobble": "Realtime scrobbling",
+    "scrobbleDescription": "Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.",
+    "watchedSync": "Bekeken-status synchroniseren",
+    "watchedSyncDescription": "Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.",
+    "deviceCodeTitle": "Activeer Plezy op Trakt",
+    "deviceCodeBody": "Ga naar ${url} en voer deze code in:",
+    "openTraktActivate": "Open Trakt om te activeren",
+    "waitingForAuthorization": "Wacht op autorisatie…",
+    "codeCopied": "Code gekopieerd",
+    "connectFailed": "Kan niet verbinden met Trakt. Probeer opnieuw."
   }
 }

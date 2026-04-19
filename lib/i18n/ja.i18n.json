@@ -209,6 +209,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Discordで視聴中の内容を表示",
+    "trakt": "Trakt",
+    "traktDescription": "視聴履歴を Trakt と同期",
     "autoPip": "自動ピクチャーインピクチャー",
     "autoPipDescription": "再生中にアプリを離れると自動的にピクチャーインピクチャーに移行",
     "matchContentFrameRate": "コンテンツのフレームレートに合わせる",
@@ -976,5 +978,22 @@
     "title": "サーバータスク",
     "failedToLoad": "タスクの読み込みに失敗しました",
     "noTasks": "実行中のタスクはありません"
+  },
+  "trakt": {
+    "title": "Trakt",
+    "connected": "接続済み",
+    "connectedAs": "@${username} として接続済み",
+    "disconnectConfirm": "Trakt アカウントを切断しますか?",
+    "disconnectConfirmBody": "Plezy から Trakt への再生イベント送信が停止します。いつでも再接続できます。",
+    "scrobble": "リアルタイムのスクロブル",
+    "scrobbleDescription": "再生中に再生・一時停止・停止イベントを Trakt に送信します。",
+    "watchedSync": "視聴済みステータスを同期",
+    "watchedSyncDescription": "Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。",
+    "deviceCodeTitle": "Trakt で Plezy をアクティベート",
+    "deviceCodeBody": "${url} を開き、このコードを入力してください:",
+    "openTraktActivate": "アクティベートするには Trakt を開く",
+    "waitingForAuthorization": "認証を待機中…",
+    "codeCopied": "コードをコピーしました",
+    "connectFailed": "Trakt に接続できませんでした。もう一度お試しください。"
   }
 }

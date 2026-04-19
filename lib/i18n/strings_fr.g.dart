@@ -75,6 +75,7 @@ class TranslationsFr with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsExternalPlayerFr externalPlayer = _TranslationsExternalPlayerFr._(_root);
 	@override late final _TranslationsMetadataEditFr metadataEdit = _TranslationsMetadataEditFr._(_root);
 	@override late final _TranslationsServerTasksFr serverTasks = _TranslationsServerTasksFr._(_root);
+	@override late final _TranslationsTraktFr trakt = _TranslationsTraktFr._(_root);
 }
 
 // Path: app
@@ -328,6 +329,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Montrez ce que vous regardez sur Discord';
+	@override String get trakt => 'Trakt';
+	@override String get traktDescription => 'Synchroniser l\'historique de visionnage avec Trakt';
 	@override String get autoPip => 'Image dans l\'image automatique';
 	@override String get autoPipDescription => 'Activer automatiquement l\'image dans l\'image en quittant l\'application pendant la lecture';
 	@override String get matchContentFrameRate => 'Fréquence d\'images du contenu correspondant';
@@ -1220,6 +1223,30 @@ class _TranslationsServerTasksFr implements TranslationsServerTasksEn {
 	@override String get noTasks => 'Aucune tâche en cours';
 }
 
+// Path: trakt
+class _TranslationsTraktFr implements TranslationsTraktEn {
+	_TranslationsTraktFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trakt';
+	@override String get connected => 'Connecté';
+	@override String connectedAs({required Object username}) => 'Connecté en tant que @${username}';
+	@override String get disconnectConfirm => 'Déconnecter le compte Trakt ?';
+	@override String get disconnectConfirmBody => 'Plezy n\'enverra plus d\'événements de lecture à Trakt. Vous pouvez vous reconnecter à tout moment.';
+	@override String get scrobble => 'Scrobbling en temps réel';
+	@override String get scrobbleDescription => 'Envoyer les événements de lecture, pause et arrêt à Trakt pendant la lecture.';
+	@override String get watchedSync => 'Synchroniser le statut « vu »';
+	@override String get watchedSyncDescription => 'Lorsque vous marquez un élément comme vu dans Plezy, il l\'est aussi sur Trakt.';
+	@override String get deviceCodeTitle => 'Activer Plezy sur Trakt';
+	@override String deviceCodeBody({required Object url}) => 'Rendez-vous sur ${url} et entrez ce code :';
+	@override String get openTraktActivate => 'Ouvrir Trakt pour activer';
+	@override String get waitingForAuthorization => 'En attente d\'autorisation…';
+	@override String get codeCopied => 'Code copié';
+	@override String get connectFailed => 'Échec de la connexion à Trakt. Réessayez.';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsFr implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsFr._(this._root);
@@ -1584,6 +1611,8 @@ extension on TranslationsFr {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Montrez ce que vous regardez sur Discord',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => 'Synchroniser l\'historique de visionnage avec Trakt',
 			'settings.autoPip' => 'Image dans l\'image automatique',
 			'settings.autoPipDescription' => 'Activer automatiquement l\'image dans l\'image en quittant l\'application pendant la lecture',
 			'settings.matchContentFrameRate' => 'Fréquence d\'images du contenu correspondant',
@@ -1895,10 +1924,10 @@ extension on TranslationsFr {
 			'libraries.tabs.recommended' => 'Recommandé',
 			'libraries.tabs.browse' => 'Parcourir',
 			'libraries.tabs.collections' => 'Collections',
-			'libraries.tabs.playlists' => 'Playlists',
-			'libraries.groupings.title' => 'Regroupement',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => 'Playlists',
+			'libraries.groupings.title' => 'Regroupement',
 			'libraries.groupings.all' => 'Tous',
 			'libraries.groupings.movies' => 'Films',
 			'libraries.groupings.shows' => 'Show TV',
@@ -2275,6 +2304,21 @@ extension on TranslationsFr {
 			'serverTasks.title' => 'Tâches du serveur',
 			'serverTasks.failedToLoad' => 'Échec du chargement des tâches',
 			'serverTasks.noTasks' => 'Aucune tâche en cours',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => 'Connecté',
+			'trakt.connectedAs' => ({required Object username}) => 'Connecté en tant que @${username}',
+			'trakt.disconnectConfirm' => 'Déconnecter le compte Trakt ?',
+			'trakt.disconnectConfirmBody' => 'Plezy n\'enverra plus d\'événements de lecture à Trakt. Vous pouvez vous reconnecter à tout moment.',
+			'trakt.scrobble' => 'Scrobbling en temps réel',
+			'trakt.scrobbleDescription' => 'Envoyer les événements de lecture, pause et arrêt à Trakt pendant la lecture.',
+			'trakt.watchedSync' => 'Synchroniser le statut « vu »',
+			'trakt.watchedSyncDescription' => 'Lorsque vous marquez un élément comme vu dans Plezy, il l\'est aussi sur Trakt.',
+			'trakt.deviceCodeTitle' => 'Activer Plezy sur Trakt',
+			'trakt.deviceCodeBody' => ({required Object url}) => 'Rendez-vous sur ${url} et entrez ce code :',
+			'trakt.openTraktActivate' => 'Ouvrir Trakt pour activer',
+			'trakt.waitingForAuthorization' => 'En attente d\'autorisation…',
+			'trakt.codeCopied' => 'Code copié',
+			'trakt.connectFailed' => 'Échec de la connexion à Trakt. Réessayez.',
 			_ => null,
 		};
 	}

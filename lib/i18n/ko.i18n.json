@@ -209,6 +209,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Discord에서 시청 중인 콘텐츠 표시",
+    "trakt": "Trakt",
+    "traktDescription": "Trakt와 시청 기록 동기화",
     "autoPip": "자동 PIP 모드",
     "autoPipDescription": "재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환",
     "matchContentFrameRate": "콘텐츠 프레임 레이트 맞춤",
@@ -976,5 +978,22 @@
     "title": "서버 작업",
     "failedToLoad": "작업을 불러올 수 없습니다",
     "noTasks": "실행 중인 작업 없음"
+  },
+  "trakt": {
+    "title": "Trakt",
+    "connected": "연결됨",
+    "connectedAs": "@${username}(으)로 연결됨",
+    "disconnectConfirm": "Trakt 계정 연결을 끊으시겠습니까?",
+    "disconnectConfirmBody": "Plezy가 Trakt로 재생 이벤트를 보내지 않습니다. 언제든지 다시 연결할 수 있습니다.",
+    "scrobble": "실시간 스크로블",
+    "scrobbleDescription": "재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.",
+    "watchedSync": "시청 상태 동기화",
+    "watchedSyncDescription": "Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.",
+    "deviceCodeTitle": "Trakt에서 Plezy 활성화",
+    "deviceCodeBody": "${url}을(를) 방문하여 이 코드를 입력하세요:",
+    "openTraktActivate": "활성화하려면 Trakt 열기",
+    "waitingForAuthorization": "인증 대기 중…",
+    "codeCopied": "코드가 복사됨",
+    "connectFailed": "Trakt에 연결할 수 없습니다. 다시 시도하세요."
   }
 }

@@ -75,6 +75,7 @@ class TranslationsRu with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsExternalPlayerRu externalPlayer = _TranslationsExternalPlayerRu._(_root);
 	@override late final _TranslationsMetadataEditRu metadataEdit = _TranslationsMetadataEditRu._(_root);
 	@override late final _TranslationsServerTasksRu serverTasks = _TranslationsServerTasksRu._(_root);
+	@override late final _TranslationsTraktRu trakt = _TranslationsTraktRu._(_root);
 }
 
 // Path: app
@@ -328,6 +329,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Показывать, что вы смотрите, в Discord';
+	@override String get trakt => 'Trakt';
+	@override String get traktDescription => 'Синхронизировать историю просмотров с Trakt';
 	@override String get autoPip => 'Автоматический «картинка в картинке»';
 	@override String get autoPipDescription => 'Автоматически переходить в режим «картинка в картинке» при выходе из приложения во время воспроизведения';
 	@override String get matchContentFrameRate => 'Соответствие частоты кадров контента';
@@ -1220,6 +1223,30 @@ class _TranslationsServerTasksRu implements TranslationsServerTasksEn {
 	@override String get noTasks => 'Нет выполняемых задач';
 }
 
+// Path: trakt
+class _TranslationsTraktRu implements TranslationsTraktEn {
+	_TranslationsTraktRu._(this._root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trakt';
+	@override String get connected => 'Подключено';
+	@override String connectedAs({required Object username}) => 'Подключено как @${username}';
+	@override String get disconnectConfirm => 'Отключить аккаунт Trakt?';
+	@override String get disconnectConfirmBody => 'Plezy перестанет отправлять события воспроизведения в Trakt. Вы можете подключиться снова в любое время.';
+	@override String get scrobble => 'Скробблинг в реальном времени';
+	@override String get scrobbleDescription => 'Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.';
+	@override String get watchedSync => 'Синхронизация статуса просмотра';
+	@override String get watchedSyncDescription => 'Когда вы отмечаете элементы как просмотренные в Plezy, они отмечаются и в Trakt.';
+	@override String get deviceCodeTitle => 'Активация Plezy в Trakt';
+	@override String deviceCodeBody({required Object url}) => 'Откройте ${url} и введите этот код:';
+	@override String get openTraktActivate => 'Открыть Trakt для активации';
+	@override String get waitingForAuthorization => 'Ожидание авторизации…';
+	@override String get codeCopied => 'Код скопирован';
+	@override String get connectFailed => 'Не удалось подключиться к Trakt. Попробуйте ещё раз.';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsRu implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsRu._(this._root);
@@ -1584,6 +1611,8 @@ extension on TranslationsRu {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Показывать, что вы смотрите, в Discord',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => 'Синхронизировать историю просмотров с Trakt',
 			'settings.autoPip' => 'Автоматический «картинка в картинке»',
 			'settings.autoPipDescription' => 'Автоматически переходить в режим «картинка в картинке» при выходе из приложения во время воспроизведения',
 			'settings.matchContentFrameRate' => 'Соответствие частоты кадров контента',
@@ -1895,10 +1924,10 @@ extension on TranslationsRu {
 			'libraries.tabs.recommended' => 'Рекомендуемые',
 			'libraries.tabs.browse' => 'Обзор',
 			'libraries.tabs.collections' => 'Коллекции',
-			'libraries.tabs.playlists' => 'Плейлисты',
-			'libraries.groupings.title' => 'Группировка',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => 'Плейлисты',
+			'libraries.groupings.title' => 'Группировка',
 			'libraries.groupings.all' => 'Все',
 			'libraries.groupings.movies' => 'Фильмы',
 			'libraries.groupings.shows' => 'Сериалы',
@@ -2275,6 +2304,21 @@ extension on TranslationsRu {
 			'serverTasks.title' => 'Задачи сервера',
 			'serverTasks.failedToLoad' => 'Не удалось загрузить задачи',
 			'serverTasks.noTasks' => 'Нет выполняемых задач',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => 'Подключено',
+			'trakt.connectedAs' => ({required Object username}) => 'Подключено как @${username}',
+			'trakt.disconnectConfirm' => 'Отключить аккаунт Trakt?',
+			'trakt.disconnectConfirmBody' => 'Plezy перестанет отправлять события воспроизведения в Trakt. Вы можете подключиться снова в любое время.',
+			'trakt.scrobble' => 'Скробблинг в реальном времени',
+			'trakt.scrobbleDescription' => 'Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.',
+			'trakt.watchedSync' => 'Синхронизация статуса просмотра',
+			'trakt.watchedSyncDescription' => 'Когда вы отмечаете элементы как просмотренные в Plezy, они отмечаются и в Trakt.',
+			'trakt.deviceCodeTitle' => 'Активация Plezy в Trakt',
+			'trakt.deviceCodeBody' => ({required Object url}) => 'Откройте ${url} и введите этот код:',
+			'trakt.openTraktActivate' => 'Открыть Trakt для активации',
+			'trakt.waitingForAuthorization' => 'Ожидание авторизации…',
+			'trakt.codeCopied' => 'Код скопирован',
+			'trakt.connectFailed' => 'Не удалось подключиться к Trakt. Попробуйте ещё раз.',
 			_ => null,
 		};
 	}

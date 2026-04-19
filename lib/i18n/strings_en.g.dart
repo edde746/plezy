@@ -78,6 +78,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn._(_root);
 	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn._(_root);
 	late final TranslationsServerTasksEn serverTasks = TranslationsServerTasksEn._(_root);
+	late final TranslationsTraktEn trakt = TranslationsTraktEn._(_root);
 }
 
 // Path: app
@@ -729,6 +730,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Show what you're watching on Discord'
 	String get discordRichPresenceDescription => 'Show what you\'re watching on Discord';
+
+	/// en: 'Trakt'
+	String get trakt => 'Trakt';
+
+	/// en: 'Sync watch history with Trakt'
+	String get traktDescription => 'Sync watch history with Trakt';
 
 	/// en: 'Companion Remote Server'
 	String get companionRemoteServer => 'Companion Remote Server';
@@ -2815,6 +2822,60 @@ class TranslationsServerTasksEn {
 	String get noTasks => 'No tasks running';
 }
 
+// Path: trakt
+class TranslationsTraktEn {
+	TranslationsTraktEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Trakt'
+	String get title => 'Trakt';
+
+	/// en: 'Connected'
+	String get connected => 'Connected';
+
+	/// en: 'Connected as @${username}'
+	String connectedAs({required Object username}) => 'Connected as @${username}';
+
+	/// en: 'Disconnect Trakt account?'
+	String get disconnectConfirm => 'Disconnect Trakt account?';
+
+	/// en: 'Plezy will stop sending playback events to Trakt. You can reconnect at any time.'
+	String get disconnectConfirmBody => 'Plezy will stop sending playback events to Trakt. You can reconnect at any time.';
+
+	/// en: 'Real-time scrobbling'
+	String get scrobble => 'Real-time scrobbling';
+
+	/// en: 'Send play, pause, and stop events to Trakt during playback.'
+	String get scrobbleDescription => 'Send play, pause, and stop events to Trakt during playback.';
+
+	/// en: 'Sync watched status'
+	String get watchedSync => 'Sync watched status';
+
+	/// en: 'When you mark items watched in Plezy, mark them on Trakt.'
+	String get watchedSyncDescription => 'When you mark items watched in Plezy, mark them on Trakt.';
+
+	/// en: 'Activate Plezy on Trakt'
+	String get deviceCodeTitle => 'Activate Plezy on Trakt';
+
+	/// en: 'Visit ${url} and enter this code:'
+	String deviceCodeBody({required Object url}) => 'Visit ${url} and enter this code:';
+
+	/// en: 'Open Trakt to activate'
+	String get openTraktActivate => 'Open Trakt to activate';
+
+	/// en: 'Waiting for authorization…'
+	String get waitingForAuthorization => 'Waiting for authorization…';
+
+	/// en: 'Code copied'
+	String get codeCopied => 'Code copied';
+
+	/// en: 'Couldn't connect to Trakt. Try again.'
+	String get connectFailed => 'Couldn\'t connect to Trakt. Try again.';
+}
+
 // Path: hotkeys.actions
 class TranslationsHotkeysActionsEn {
 	TranslationsHotkeysActionsEn._(this._root);
@@ -3367,6 +3428,8 @@ extension on Translations {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => 'Sync watch history with Trakt',
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
 			'settings.autoPip' => 'Auto Picture-in-Picture',
@@ -3678,10 +3741,10 @@ extension on Translations {
 			'libraries.tabs.recommended' => 'Recommended',
 			'libraries.tabs.browse' => 'Browse',
 			'libraries.tabs.collections' => 'Collections',
-			'libraries.tabs.playlists' => 'Playlists',
-			'libraries.groupings.title' => 'Grouping',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => 'Playlists',
+			'libraries.groupings.title' => 'Grouping',
 			'libraries.groupings.all' => 'All',
 			'libraries.groupings.movies' => 'Movies',
 			'libraries.groupings.shows' => 'TV Shows',
@@ -4058,6 +4121,21 @@ extension on Translations {
 			'serverTasks.title' => 'Server Tasks',
 			'serverTasks.failedToLoad' => 'Failed to load tasks',
 			'serverTasks.noTasks' => 'No tasks running',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => 'Connected',
+			'trakt.connectedAs' => ({required Object username}) => 'Connected as @${username}',
+			'trakt.disconnectConfirm' => 'Disconnect Trakt account?',
+			'trakt.disconnectConfirmBody' => 'Plezy will stop sending playback events to Trakt. You can reconnect at any time.',
+			'trakt.scrobble' => 'Real-time scrobbling',
+			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
+			'trakt.watchedSync' => 'Sync watched status',
+			'trakt.watchedSyncDescription' => 'When you mark items watched in Plezy, mark them on Trakt.',
+			'trakt.deviceCodeTitle' => 'Activate Plezy on Trakt',
+			'trakt.deviceCodeBody' => ({required Object url}) => 'Visit ${url} and enter this code:',
+			'trakt.openTraktActivate' => 'Open Trakt to activate',
+			'trakt.waitingForAuthorization' => 'Waiting for authorization…',
+			'trakt.codeCopied' => 'Code copied',
+			'trakt.connectFailed' => 'Couldn\'t connect to Trakt. Try again.',
 			_ => null,
 		};
 	}

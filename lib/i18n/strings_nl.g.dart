@@ -75,6 +75,7 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsExternalPlayerNl externalPlayer = _TranslationsExternalPlayerNl._(_root);
 	@override late final _TranslationsMetadataEditNl metadataEdit = _TranslationsMetadataEditNl._(_root);
 	@override late final _TranslationsServerTasksNl serverTasks = _TranslationsServerTasksNl._(_root);
+	@override late final _TranslationsTraktNl trakt = _TranslationsTraktNl._(_root);
 }
 
 // Path: app
@@ -328,6 +329,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Toon op Discord wat je aan het kijken bent';
+	@override String get trakt => 'Trakt';
+	@override String get traktDescription => 'Kijkgeschiedenis synchroniseren met Trakt';
 	@override String get autoPip => 'Automatische beeld-in-beeld';
 	@override String get autoPipDescription => 'Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
@@ -1220,6 +1223,30 @@ class _TranslationsServerTasksNl implements TranslationsServerTasksEn {
 	@override String get noTasks => 'Geen actieve taken';
 }
 
+// Path: trakt
+class _TranslationsTraktNl implements TranslationsTraktEn {
+	_TranslationsTraktNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trakt';
+	@override String get connected => 'Verbonden';
+	@override String connectedAs({required Object username}) => 'Verbonden als @${username}';
+	@override String get disconnectConfirm => 'Trakt-account loskoppelen?';
+	@override String get disconnectConfirmBody => 'Plezy stopt met het versturen van afspeelgebeurtenissen naar Trakt. Je kunt op elk moment opnieuw verbinden.';
+	@override String get scrobble => 'Realtime scrobbling';
+	@override String get scrobbleDescription => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.';
+	@override String get watchedSync => 'Bekeken-status synchroniseren';
+	@override String get watchedSyncDescription => 'Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.';
+	@override String get deviceCodeTitle => 'Activeer Plezy op Trakt';
+	@override String deviceCodeBody({required Object url}) => 'Ga naar ${url} en voer deze code in:';
+	@override String get openTraktActivate => 'Open Trakt om te activeren';
+	@override String get waitingForAuthorization => 'Wacht op autorisatie…';
+	@override String get codeCopied => 'Code gekopieerd';
+	@override String get connectFailed => 'Kan niet verbinden met Trakt. Probeer opnieuw.';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsNl._(this._root);
@@ -1584,6 +1611,8 @@ extension on TranslationsNl {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Toon op Discord wat je aan het kijken bent',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => 'Kijkgeschiedenis synchroniseren met Trakt',
 			'settings.autoPip' => 'Automatische beeld-in-beeld',
 			'settings.autoPipDescription' => 'Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
@@ -1895,10 +1924,10 @@ extension on TranslationsNl {
 			'libraries.tabs.recommended' => 'Aanbevolen',
 			'libraries.tabs.browse' => 'Bladeren',
 			'libraries.tabs.collections' => 'Collecties',
-			'libraries.tabs.playlists' => 'Afspeellijsten',
-			'libraries.groupings.title' => 'Groepering',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => 'Afspeellijsten',
+			'libraries.groupings.title' => 'Groepering',
 			'libraries.groupings.all' => 'Alles',
 			'libraries.groupings.movies' => 'Films',
 			'libraries.groupings.shows' => 'Series',
@@ -2275,6 +2304,21 @@ extension on TranslationsNl {
 			'serverTasks.title' => 'Servertaken',
 			'serverTasks.failedToLoad' => 'Taken konden niet worden geladen',
 			'serverTasks.noTasks' => 'Geen actieve taken',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => 'Verbonden',
+			'trakt.connectedAs' => ({required Object username}) => 'Verbonden als @${username}',
+			'trakt.disconnectConfirm' => 'Trakt-account loskoppelen?',
+			'trakt.disconnectConfirmBody' => 'Plezy stopt met het versturen van afspeelgebeurtenissen naar Trakt. Je kunt op elk moment opnieuw verbinden.',
+			'trakt.scrobble' => 'Realtime scrobbling',
+			'trakt.scrobbleDescription' => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.',
+			'trakt.watchedSync' => 'Bekeken-status synchroniseren',
+			'trakt.watchedSyncDescription' => 'Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.',
+			'trakt.deviceCodeTitle' => 'Activeer Plezy op Trakt',
+			'trakt.deviceCodeBody' => ({required Object url}) => 'Ga naar ${url} en voer deze code in:',
+			'trakt.openTraktActivate' => 'Open Trakt om te activeren',
+			'trakt.waitingForAuthorization' => 'Wacht op autorisatie…',
+			'trakt.codeCopied' => 'Code gekopieerd',
+			'trakt.connectFailed' => 'Kan niet verbinden met Trakt. Probeer opnieuw.',
 			_ => null,
 		};
 	}

@@ -75,6 +75,7 @@ class TranslationsNb with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsExternalPlayerNb externalPlayer = _TranslationsExternalPlayerNb._(_root);
 	@override late final _TranslationsMetadataEditNb metadataEdit = _TranslationsMetadataEditNb._(_root);
 	@override late final _TranslationsServerTasksNb serverTasks = _TranslationsServerTasksNb._(_root);
+	@override late final _TranslationsTraktNb trakt = _TranslationsTraktNb._(_root);
 }
 
 // Path: app
@@ -328,6 +329,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Vis hva du ser på Discord';
+	@override String get trakt => 'Trakt';
+	@override String get traktDescription => 'Synkroniser visningshistorikk med Trakt';
 	@override String get autoPip => 'Auto bilde-i-bilde';
 	@override String get autoPipDescription => 'Gå automatisk til bilde-i-bilde når du forlater appen under avspilling';
 	@override String get matchContentFrameRate => 'Tilpass innholdets bildefrekvens';
@@ -1220,6 +1223,30 @@ class _TranslationsServerTasksNb implements TranslationsServerTasksEn {
 	@override String get noTasks => 'Ingen oppgaver kjører';
 }
 
+// Path: trakt
+class _TranslationsTraktNb implements TranslationsTraktEn {
+	_TranslationsTraktNb._(this._root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trakt';
+	@override String get connected => 'Tilkoblet';
+	@override String connectedAs({required Object username}) => 'Tilkoblet som @${username}';
+	@override String get disconnectConfirm => 'Koble fra Trakt-konto?';
+	@override String get disconnectConfirmBody => 'Plezy slutter å sende avspillingshendelser til Trakt. Du kan koble til igjen når som helst.';
+	@override String get scrobble => 'Sanntids-scrobbling';
+	@override String get scrobbleDescription => 'Send avspillings-, pause- og stopphendelser til Trakt under avspilling.';
+	@override String get watchedSync => 'Synkroniser sett-status';
+	@override String get watchedSyncDescription => 'Når du markerer noe som sett i Plezy, markeres det også på Trakt.';
+	@override String get deviceCodeTitle => 'Aktiver Plezy på Trakt';
+	@override String deviceCodeBody({required Object url}) => 'Besøk ${url} og skriv inn denne koden:';
+	@override String get openTraktActivate => 'Åpne Trakt for å aktivere';
+	@override String get waitingForAuthorization => 'Venter på autorisering…';
+	@override String get codeCopied => 'Kode kopiert';
+	@override String get connectFailed => 'Kunne ikke koble til Trakt. Prøv igjen.';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsNb implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsNb._(this._root);
@@ -1584,6 +1611,8 @@ extension on TranslationsNb {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Vis hva du ser på Discord',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => 'Synkroniser visningshistorikk med Trakt',
 			'settings.autoPip' => 'Auto bilde-i-bilde',
 			'settings.autoPipDescription' => 'Gå automatisk til bilde-i-bilde når du forlater appen under avspilling',
 			'settings.matchContentFrameRate' => 'Tilpass innholdets bildefrekvens',
@@ -1895,10 +1924,10 @@ extension on TranslationsNb {
 			'libraries.tabs.recommended' => 'Anbefalt',
 			'libraries.tabs.browse' => 'Bla gjennom',
 			'libraries.tabs.collections' => 'Samlinger',
-			'libraries.tabs.playlists' => 'Spillelister',
-			'libraries.groupings.title' => 'Gruppering',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => 'Spillelister',
+			'libraries.groupings.title' => 'Gruppering',
 			'libraries.groupings.all' => 'Alle',
 			'libraries.groupings.movies' => 'Filmer',
 			'libraries.groupings.shows' => 'TV-serier',
@@ -2275,6 +2304,21 @@ extension on TranslationsNb {
 			'serverTasks.title' => 'Serveroppgaver',
 			'serverTasks.failedToLoad' => 'Kunne ikke laste oppgaver',
 			'serverTasks.noTasks' => 'Ingen oppgaver kjører',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => 'Tilkoblet',
+			'trakt.connectedAs' => ({required Object username}) => 'Tilkoblet som @${username}',
+			'trakt.disconnectConfirm' => 'Koble fra Trakt-konto?',
+			'trakt.disconnectConfirmBody' => 'Plezy slutter å sende avspillingshendelser til Trakt. Du kan koble til igjen når som helst.',
+			'trakt.scrobble' => 'Sanntids-scrobbling',
+			'trakt.scrobbleDescription' => 'Send avspillings-, pause- og stopphendelser til Trakt under avspilling.',
+			'trakt.watchedSync' => 'Synkroniser sett-status',
+			'trakt.watchedSyncDescription' => 'Når du markerer noe som sett i Plezy, markeres det også på Trakt.',
+			'trakt.deviceCodeTitle' => 'Aktiver Plezy på Trakt',
+			'trakt.deviceCodeBody' => ({required Object url}) => 'Besøk ${url} og skriv inn denne koden:',
+			'trakt.openTraktActivate' => 'Åpne Trakt for å aktivere',
+			'trakt.waitingForAuthorization' => 'Venter på autorisering…',
+			'trakt.codeCopied' => 'Kode kopiert',
+			'trakt.connectFailed' => 'Kunne ikke koble til Trakt. Prøv igjen.',
 			_ => null,
 		};
 	}

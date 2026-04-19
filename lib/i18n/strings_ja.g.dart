@@ -75,6 +75,7 @@ class TranslationsJa with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsExternalPlayerJa externalPlayer = _TranslationsExternalPlayerJa._(_root);
 	@override late final _TranslationsMetadataEditJa metadataEdit = _TranslationsMetadataEditJa._(_root);
 	@override late final _TranslationsServerTasksJa serverTasks = _TranslationsServerTasksJa._(_root);
+	@override late final _TranslationsTraktJa trakt = _TranslationsTraktJa._(_root);
 }
 
 // Path: app
@@ -328,6 +329,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discordで視聴中の内容を表示';
+	@override String get trakt => 'Trakt';
+	@override String get traktDescription => '視聴履歴を Trakt と同期';
 	@override String get autoPip => '自動ピクチャーインピクチャー';
 	@override String get autoPipDescription => '再生中にアプリを離れると自動的にピクチャーインピクチャーに移行';
 	@override String get matchContentFrameRate => 'コンテンツのフレームレートに合わせる';
@@ -1220,6 +1223,30 @@ class _TranslationsServerTasksJa implements TranslationsServerTasksEn {
 	@override String get noTasks => '実行中のタスクはありません';
 }
 
+// Path: trakt
+class _TranslationsTraktJa implements TranslationsTraktEn {
+	_TranslationsTraktJa._(this._root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trakt';
+	@override String get connected => '接続済み';
+	@override String connectedAs({required Object username}) => '@${username} として接続済み';
+	@override String get disconnectConfirm => 'Trakt アカウントを切断しますか?';
+	@override String get disconnectConfirmBody => 'Plezy から Trakt への再生イベント送信が停止します。いつでも再接続できます。';
+	@override String get scrobble => 'リアルタイムのスクロブル';
+	@override String get scrobbleDescription => '再生中に再生・一時停止・停止イベントを Trakt に送信します。';
+	@override String get watchedSync => '視聴済みステータスを同期';
+	@override String get watchedSyncDescription => 'Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。';
+	@override String get deviceCodeTitle => 'Trakt で Plezy をアクティベート';
+	@override String deviceCodeBody({required Object url}) => '${url} を開き、このコードを入力してください:';
+	@override String get openTraktActivate => 'アクティベートするには Trakt を開く';
+	@override String get waitingForAuthorization => '認証を待機中…';
+	@override String get codeCopied => 'コードをコピーしました';
+	@override String get connectFailed => 'Trakt に接続できませんでした。もう一度お試しください。';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsJa implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsJa._(this._root);
@@ -1584,6 +1611,8 @@ extension on TranslationsJa {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Discordで視聴中の内容を表示',
+			'settings.trakt' => 'Trakt',
+			'settings.traktDescription' => '視聴履歴を Trakt と同期',
 			'settings.autoPip' => '自動ピクチャーインピクチャー',
 			'settings.autoPipDescription' => '再生中にアプリを離れると自動的にピクチャーインピクチャーに移行',
 			'settings.matchContentFrameRate' => 'コンテンツのフレームレートに合わせる',
@@ -1895,10 +1924,10 @@ extension on TranslationsJa {
 			'libraries.tabs.recommended' => 'おすすめ',
 			'libraries.tabs.browse' => 'ブラウズ',
 			'libraries.tabs.collections' => 'コレクション',
-			'libraries.tabs.playlists' => 'プレイリスト',
-			'libraries.groupings.title' => 'グループ',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.playlists' => 'プレイリスト',
+			'libraries.groupings.title' => 'グループ',
 			'libraries.groupings.all' => 'すべて',
 			'libraries.groupings.movies' => '映画',
 			'libraries.groupings.shows' => 'テレビ番組',
@@ -2275,6 +2304,21 @@ extension on TranslationsJa {
 			'serverTasks.title' => 'サーバータスク',
 			'serverTasks.failedToLoad' => 'タスクの読み込みに失敗しました',
 			'serverTasks.noTasks' => '実行中のタスクはありません',
+			'trakt.title' => 'Trakt',
+			'trakt.connected' => '接続済み',
+			'trakt.connectedAs' => ({required Object username}) => '@${username} として接続済み',
+			'trakt.disconnectConfirm' => 'Trakt アカウントを切断しますか?',
+			'trakt.disconnectConfirmBody' => 'Plezy から Trakt への再生イベント送信が停止します。いつでも再接続できます。',
+			'trakt.scrobble' => 'リアルタイムのスクロブル',
+			'trakt.scrobbleDescription' => '再生中に再生・一時停止・停止イベントを Trakt に送信します。',
+			'trakt.watchedSync' => '視聴済みステータスを同期',
+			'trakt.watchedSyncDescription' => 'Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。',
+			'trakt.deviceCodeTitle' => 'Trakt で Plezy をアクティベート',
+			'trakt.deviceCodeBody' => ({required Object url}) => '${url} を開き、このコードを入力してください:',
+			'trakt.openTraktActivate' => 'アクティベートするには Trakt を開く',
+			'trakt.waitingForAuthorization' => '認証を待機中…',
+			'trakt.codeCopied' => 'コードをコピーしました',
+			'trakt.connectFailed' => 'Trakt に接続できませんでした。もう一度お試しください。',
 			_ => null,
 		};
 	}
