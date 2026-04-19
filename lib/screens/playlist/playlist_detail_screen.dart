@@ -17,8 +17,10 @@ import 'package:provider/provider.dart';
 import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/download_provider.dart';
+import '../../utils/content_utils.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/download_utils.dart';
+import '../../utils/global_key_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
@@ -56,13 +58,30 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   @override
   List<FocusableAction> getAppBarActions() {
+    final isVideoPlaylist = widget.playlist.playlistType == 'video';
+    final globalKey = _playlistGlobalKey();
+    // Select the specific bool we care about so unrelated DownloadProvider
+    // ticks (e.g. active download progress) don't rebuild the app bar.
+    final hasRule = isVideoPlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(globalKey));
+
     return [
       if (items.isNotEmpty) ...[
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
-      if (items.isNotEmpty && widget.playlist.playlistType == 'video')
-        FocusableAction(icon: Symbols.download_rounded, tooltip: t.downloads.downloadNow, onPressed: _downloadPlaylist),
+      if (isVideoPlaylist && (items.isNotEmpty || hasRule))
+        FocusableAction(
+          icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
+          tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
+          onPressed: hasRule ? _managePlaylistSyncRule : _downloadPlaylist,
+          iconColor: hasRule ? Colors.teal : null,
+        ),
+      if (hasRule)
+        FocusableAction(
+          icon: Symbols.sync_disabled_rounded,
+          tooltip: t.downloads.removeSyncRule,
+          onPressed: _removePlaylistSyncRule,
+        ),
       if (!widget.playlist.smart)
         FocusableAction(
           icon: Symbols.delete_rounded,
@@ -72,6 +91,27 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         ),
     ];
   }
+
+  PlexMetadata _playlistAsMetadata() => PlexMetadata(
+    ratingKey: widget.playlist.ratingKey,
+    type: ContentTypes.playlist,
+    title: widget.playlist.title,
+    thumb: widget.playlist.thumb,
+    serverId: widget.playlist.serverId ?? client.serverId,
+    serverName: widget.playlist.serverName,
+  );
+
+  String _playlistGlobalKey() => buildGlobalKey(widget.playlist.serverId ?? client.serverId, widget.playlist.ratingKey);
+
+  Future<void> _managePlaylistSyncRule() =>
+      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _playlistGlobalKey());
+
+  Future<void> _removePlaylistSyncRule() => removeSyncRuleAndSnack(
+    context,
+    downloadProvider: context.read<DownloadProvider>(),
+    globalKey: _playlistGlobalKey(),
+    displayTitle: widget.playlist.title,
+  );
 
   // Focus management for regular (non-smart) reorderable lists
   final FocusNode _listFocusNode = FocusNode(debugLabel: 'playlist_list');
@@ -153,16 +193,16 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
 
     try {
-      final count = await showPlaylistDownloadOptionsAndQueue(
+      final result = await showPlaylistDownloadOptionsAndQueue(
         context,
+        playlistMetadata: _playlistAsMetadata(),
         items: items,
         client: client,
         downloadProvider: downloadProvider,
       );
-      if (count == null || !mounted) return;
+      if (result == null || !mounted) return;
 
-      final message = count > 1 ? t.downloads.itemsQueued(count: count) : t.downloads.downloadQueued;
-      showSuccessSnackBar(context, message);
+      showSuccessSnackBar(context, result.toSnackBarMessage());
     } on CellularDownloadBlockedException {
       if (mounted) {
         showErrorSnackBar(context, t.settings.cellularDownloadBlocked);

@@ -1026,6 +1026,10 @@ class _TranslationsDownloadsPt implements TranslationsDownloadsEn {
 	@override String get noSyncRules => 'Nenhuma regra de sincronização';
 	@override String get manageSyncRule => 'Gerenciar sincronização';
 	@override String get editEpisodeCount => 'Número de episódios';
+	@override String get editSyncFilter => 'Filtro de sincronização';
+	@override String get syncAllItems => 'Sincronizando todos os itens';
+	@override String get syncUnwatchedItems => 'Sincronizando itens não vistos';
+	@override String get syncRuleListCreated => 'Regra de sincronização criada';
 }
 
 // Path: shaders
@@ -2084,6 +2088,10 @@ extension on TranslationsPt {
 			'downloads.noSyncRules' => 'Nenhuma regra de sincronização',
 			'downloads.manageSyncRule' => 'Gerenciar sincronização',
 			'downloads.editEpisodeCount' => 'Número de episódios',
+			'downloads.editSyncFilter' => 'Filtro de sincronização',
+			'downloads.syncAllItems' => 'Sincronizando todos os itens',
+			'downloads.syncUnwatchedItems' => 'Sincronizando itens não vistos',
+			'downloads.syncRuleListCreated' => 'Regra de sincronização criada',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Sem aprimoramento de vídeo',
 			'shaders.nvscalerDescription' => 'Escalonamento de imagem NVIDIA para vídeo mais nítido',

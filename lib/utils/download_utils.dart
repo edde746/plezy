@@ -3,12 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../i18n/strings.g.dart';
 import '../models/plex_metadata.dart';
+import '../database/app_database.dart';
 import '../providers/download_provider.dart';
 import '../services/plex_client.dart';
+import '../services/sync_rule_executor.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
 import 'global_key_utils.dart';
+import 'snackbar_helper.dart';
 
 /// Dialog option for the download picker. Typed to avoid stringly-typed values.
 enum _DownloadChoice { all, unwatched, next5, next10, custom }
@@ -21,11 +24,23 @@ class DownloadResult {
   final int count;
   final bool syncRuleCreated;
   final bool syncRuleUpdated;
-  const DownloadResult({required this.count, this.syncRuleCreated = false, this.syncRuleUpdated = false});
+
+  /// `true` when the rule targets a collection/playlist — affects the
+  /// "created" snackbar wording (no "unwatched episodes" suffix).
+  final bool isListRule;
+
+  const DownloadResult({
+    required this.count,
+    this.syncRuleCreated = false,
+    this.syncRuleUpdated = false,
+    this.isListRule = false,
+  });
 
   String toSnackBarMessage() {
     if (syncRuleUpdated) return t.downloads.syncRuleUpdated;
-    if (syncRuleCreated) return t.downloads.syncRuleCreated(count: count.toString());
+    if (syncRuleCreated) {
+      return isListRule ? t.downloads.syncRuleListCreated : t.downloads.syncRuleCreated(count: count.toString());
+    }
     if (count > 1) return t.downloads.episodesQueued(count: count);
     return t.downloads.downloadQueued;
   }
@@ -138,15 +153,24 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   );
 }
 
-/// Shows download options dialog for playlists, then queues the download.
-/// Returns the number of items queued, or null if cancelled.
-Future<int?> showPlaylistDownloadOptionsAndQueue(
+/// Shows download options dialog for a collection or playlist, then queues
+/// the download. Offers both one-time download and "Keep Synced" (creates or
+/// updates a sync rule for the target).
+///
+/// [rootMetadata] is the collection or playlist itself — used to persist the
+/// title/thumb for the sync rule and build the rule's global key.
+/// [targetType] must be [ContentTypes.collection] or [ContentTypes.playlist].
+Future<DownloadResult?> showListDownloadOptionsAndQueue(
   BuildContext context, {
+  required PlexMetadata rootMetadata,
+  required String targetType,
   required List<PlexMetadata> items,
   required PlexClient client,
   required DownloadProvider downloadProvider,
 }) async {
-  final selected = await showOptionPickerDialog<DownloadFilter>(
+  assert(targetType == ContentTypes.collection || targetType == ContentTypes.playlist);
+
+  final selectedFilter = await showOptionPickerDialog<DownloadFilter>(
     context,
     title: t.downloads.downloadNow,
     options: [
@@ -155,10 +179,84 @@ Future<int?> showPlaylistDownloadOptionsAndQueue(
     ],
   );
 
-  if (selected == null || !context.mounted) return null;
+  if (selectedFilter == null || !context.mounted) return null;
 
-  return await downloadProvider.queuePlaylistDownload(items, client, filter: selected);
+  final syncChoice = await showOptionPickerDialog<_SyncChoice>(
+    context,
+    title: t.downloads.downloadNow,
+    options: [
+      (icon: Symbols.download_rounded, label: t.downloads.downloadOnce, value: _SyncChoice.downloadOnce),
+      (icon: Symbols.sync_rounded, label: t.downloads.keepSynced, value: _SyncChoice.keepSynced),
+    ],
+  );
+  if (syncChoice == null || !context.mounted) return null;
+
+  final serverId = rootMetadata.serverId ?? client.serverId;
+  final globalKey = buildGlobalKey(serverId, rootMetadata.ratingKey);
+  final filterString = selectedFilter == DownloadFilter.unwatched ? SyncRuleFilter.unwatched : SyncRuleFilter.all;
+
+  bool syncRuleCreated = false;
+  bool syncRuleUpdated = false;
+
+  if (syncChoice == _SyncChoice.keepSynced) {
+    if (downloadProvider.hasSyncRule(globalKey)) {
+      await downloadProvider.updateSyncRuleFilter(globalKey, filterString);
+      syncRuleUpdated = true;
+    } else {
+      await downloadProvider.createSyncRule(
+        serverId: serverId,
+        ratingKey: rootMetadata.ratingKey,
+        targetType: targetType,
+        episodeCount: 0,
+        mediaIndex: 0,
+        downloadFilter: filterString,
+        targetMetadata: rootMetadata,
+      );
+      syncRuleCreated = true;
+    }
+  }
+
+  final count = await downloadProvider.queueListDownload(items, client, filter: selectedFilter);
+
+  return DownloadResult(
+    count: count,
+    syncRuleCreated: syncRuleCreated,
+    syncRuleUpdated: syncRuleUpdated,
+    isListRule: true,
+  );
 }
+
+/// Shows the shared list-download dialog for a playlist.
+Future<DownloadResult?> showPlaylistDownloadOptionsAndQueue(
+  BuildContext context, {
+  required PlexMetadata playlistMetadata,
+  required List<PlexMetadata> items,
+  required PlexClient client,
+  required DownloadProvider downloadProvider,
+}) => showListDownloadOptionsAndQueue(
+  context,
+  rootMetadata: playlistMetadata,
+  targetType: ContentTypes.playlist,
+  items: items,
+  client: client,
+  downloadProvider: downloadProvider,
+);
+
+/// Shows the shared list-download dialog for a collection.
+Future<DownloadResult?> showCollectionDownloadOptionsAndQueue(
+  BuildContext context, {
+  required PlexMetadata collectionMetadata,
+  required List<PlexMetadata> items,
+  required PlexClient client,
+  required DownloadProvider downloadProvider,
+}) => showListDownloadOptionsAndQueue(
+  context,
+  rootMetadata: collectionMetadata,
+  targetType: ContentTypes.collection,
+  items: items,
+  client: client,
+  downloadProvider: downloadProvider,
+);
 
 Future<int?> _showEpisodeCountDialog(BuildContext context, {String? title, String? hintText}) async {
   final result = await showTextInputDialog(
@@ -197,6 +295,28 @@ Future<bool> editSyncRuleCount(
   return true;
 }
 
+/// Shows a dialog to edit a collection/playlist sync rule's filter. Returns
+/// true if the filter changed.
+Future<bool> editSyncRuleFilter(
+  BuildContext context, {
+  required DownloadProvider downloadProvider,
+  required String globalKey,
+  required String currentFilter,
+}) async {
+  final selected = await showOptionPickerDialog<String>(
+    context,
+    title: t.downloads.editSyncFilter,
+    options: [
+      (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: SyncRuleFilter.all),
+      (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: SyncRuleFilter.unwatched),
+    ],
+  );
+  if (selected == null || selected == currentFilter || !context.mounted) return false;
+
+  await downloadProvider.updateSyncRuleFilter(globalKey, selected);
+  return true;
+}
+
 /// Shows a confirmation dialog to remove a sync rule. Returns true if removed.
 Future<bool> confirmAndRemoveSyncRule(
   BuildContext context, {
@@ -214,4 +334,62 @@ Future<bool> confirmAndRemoveSyncRule(
 
   await downloadProvider.deleteSyncRule(globalKey);
   return true;
+}
+
+/// Whether this rule targets a collection or playlist (as opposed to a
+/// show/season). Shared by detail screens, the sync rules screen, and the
+/// context menu to dispatch between count vs. filter editing.
+extension SyncRuleItemDispatch on SyncRuleItem {
+  bool get isListRule => targetType == ContentTypes.collection || targetType == ContentTypes.playlist;
+}
+
+/// Open the right sync-rule edit dialog for [globalKey] and show a success
+/// snackbar when anything changed. Used by both detail screens and the
+/// context menu so they don't each reimplement the get-rule / edit / snack
+/// dance.
+Future<void> manageSyncRule(
+  BuildContext context, {
+  required DownloadProvider downloadProvider,
+  required String globalKey,
+}) async {
+  final rule = downloadProvider.getSyncRule(globalKey);
+  if (rule == null) return;
+
+  final bool updated;
+  if (rule.isListRule) {
+    updated = await editSyncRuleFilter(
+      context,
+      downloadProvider: downloadProvider,
+      globalKey: globalKey,
+      currentFilter: rule.downloadFilter,
+    );
+  } else {
+    updated = await editSyncRuleCount(
+      context,
+      downloadProvider: downloadProvider,
+      globalKey: globalKey,
+      currentCount: rule.episodeCount,
+    );
+  }
+  if (updated && context.mounted) {
+    showSuccessSnackBar(context, t.downloads.syncRuleUpdated);
+  }
+}
+
+/// Confirm + remove a sync rule and show a success snackbar.
+Future<void> removeSyncRuleAndSnack(
+  BuildContext context, {
+  required DownloadProvider downloadProvider,
+  required String globalKey,
+  required String displayTitle,
+}) async {
+  final removed = await confirmAndRemoveSyncRule(
+    context,
+    downloadProvider: downloadProvider,
+    globalKey: globalKey,
+    displayTitle: displayTitle,
+  );
+  if (removed && context.mounted) {
+    showSuccessSnackBar(context, t.downloads.syncRuleRemoved);
+  }
 }

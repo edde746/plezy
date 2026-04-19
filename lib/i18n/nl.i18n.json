@@ -764,7 +764,11 @@
     "activeSyncRules": "Synchronisatieregels",
     "noSyncRules": "Geen synchronisatieregels",
     "manageSyncRule": "Synchronisatie beheren",
-    "editEpisodeCount": "Aantal afleveringen"
+    "editEpisodeCount": "Aantal afleveringen",
+    "editSyncFilter": "Synchronisatiefilter",
+    "syncAllItems": "Alle items synchroniseren",
+    "syncUnwatchedItems": "Ongekeken items synchroniseren",
+    "syncRuleListCreated": "Synchronisatieregel aangemaakt"
   },
   "shaders": {
     "title": "Shaders",

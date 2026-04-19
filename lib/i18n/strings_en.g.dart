@@ -2348,6 +2348,18 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Episode count'
 	String get editEpisodeCount => 'Episode count';
+
+	/// en: 'Sync filter'
+	String get editSyncFilter => 'Sync filter';
+
+	/// en: 'Syncing all items'
+	String get syncAllItems => 'Syncing all items';
+
+	/// en: 'Syncing unwatched items'
+	String get syncUnwatchedItems => 'Syncing unwatched items';
+
+	/// en: 'Sync rule created'
+	String get syncRuleListCreated => 'Sync rule created';
 }
 
 // Path: shaders
@@ -3851,6 +3863,10 @@ extension on Translations {
 			'downloads.noSyncRules' => 'No sync rules',
 			'downloads.manageSyncRule' => 'Manage sync',
 			'downloads.editEpisodeCount' => 'Episode count',
+			'downloads.editSyncFilter' => 'Sync filter',
+			'downloads.syncAllItems' => 'Syncing all items',
+			'downloads.syncUnwatchedItems' => 'Syncing unwatched items',
+			'downloads.syncRuleListCreated' => 'Sync rule created',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',

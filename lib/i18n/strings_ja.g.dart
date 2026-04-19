@@ -1026,6 +1026,10 @@ class _TranslationsDownloadsJa implements TranslationsDownloadsEn {
 	@override String get noSyncRules => '同期ルールなし';
 	@override String get manageSyncRule => '同期を管理';
 	@override String get editEpisodeCount => 'エピソード数';
+	@override String get editSyncFilter => '同期フィルター';
+	@override String get syncAllItems => 'すべてのアイテムを同期中';
+	@override String get syncUnwatchedItems => '未視聴のアイテムを同期中';
+	@override String get syncRuleListCreated => '同期ルールを作成しました';
 }
 
 // Path: shaders
@@ -2084,6 +2088,10 @@ extension on TranslationsJa {
 			'downloads.noSyncRules' => '同期ルールなし',
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
+			'downloads.editSyncFilter' => '同期フィルター',
+			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
+			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
+			'downloads.syncRuleListCreated' => '同期ルールを作成しました',
 			'shaders.title' => 'シェーダー',
 			'shaders.noShaderDescription' => '映像補正なし',
 			'shaders.nvscalerDescription' => 'よりシャープな映像のためのNVIDIA画像スケーリング',

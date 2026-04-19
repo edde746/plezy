@@ -764,7 +764,11 @@
     "activeSyncRules": "Règles de synchronisation",
     "noSyncRules": "Aucune règle de synchronisation",
     "manageSyncRule": "Gérer la synchronisation",
-    "editEpisodeCount": "Nombre d’épisodes"
+    "editEpisodeCount": "Nombre d’épisodes",
+    "editSyncFilter": "Filtre de synchronisation",
+    "syncAllItems": "Synchronisation de tous les éléments",
+    "syncUnwatchedItems": "Synchronisation des éléments non vus",
+    "syncRuleListCreated": "Règle de synchronisation créée"
   },
   "shaders": {
     "title": "Shaders",

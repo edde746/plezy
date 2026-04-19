@@ -2635,6 +2635,18 @@ class $SyncRulesTable extends SyncRules
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _downloadFilterMeta = const VerificationMeta(
+    'downloadFilter',
+  );
+  @override
+  late final GeneratedColumn<String> downloadFilter = GeneratedColumn<String>(
+    'download_filter',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('unwatched'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2647,6 +2659,7 @@ class $SyncRulesTable extends SyncRules
     createdAt,
     lastExecutedAt,
     mediaIndex,
+    downloadFilter,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2735,6 +2748,15 @@ class $SyncRulesTable extends SyncRules
         mediaIndex.isAcceptableOrUnknown(data['media_index']!, _mediaIndexMeta),
       );
     }
+    if (data.containsKey('download_filter')) {
+      context.handle(
+        _downloadFilterMeta,
+        downloadFilter.isAcceptableOrUnknown(
+          data['download_filter']!,
+          _downloadFilterMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2784,6 +2806,10 @@ class $SyncRulesTable extends SyncRules
         DriftSqlType.int,
         data['${effectivePrefix}media_index'],
       )!,
+      downloadFilter: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}download_filter'],
+      )!,
     );
   }
 
@@ -2804,6 +2830,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final int createdAt;
   final int? lastExecutedAt;
   final int mediaIndex;
+  final String downloadFilter;
   const SyncRuleItem({
     required this.id,
     required this.serverId,
@@ -2815,6 +2842,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     required this.createdAt,
     this.lastExecutedAt,
     required this.mediaIndex,
+    required this.downloadFilter,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2831,6 +2859,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       map['last_executed_at'] = Variable<int>(lastExecutedAt);
     }
     map['media_index'] = Variable<int>(mediaIndex);
+    map['download_filter'] = Variable<String>(downloadFilter);
     return map;
   }
 
@@ -2848,6 +2877,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           ? const Value.absent()
           : Value(lastExecutedAt),
       mediaIndex: Value(mediaIndex),
+      downloadFilter: Value(downloadFilter),
     );
   }
 
@@ -2867,6 +2897,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       createdAt: serializer.fromJson<int>(json['createdAt']),
       lastExecutedAt: serializer.fromJson<int?>(json['lastExecutedAt']),
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
+      downloadFilter: serializer.fromJson<String>(json['downloadFilter']),
     );
   }
   @override
@@ -2883,6 +2914,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       'createdAt': serializer.toJson<int>(createdAt),
       'lastExecutedAt': serializer.toJson<int?>(lastExecutedAt),
       'mediaIndex': serializer.toJson<int>(mediaIndex),
+      'downloadFilter': serializer.toJson<String>(downloadFilter),
     };
   }
 
@@ -2897,6 +2929,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     int? createdAt,
     Value<int?> lastExecutedAt = const Value.absent(),
     int? mediaIndex,
+    String? downloadFilter,
   }) => SyncRuleItem(
     id: id ?? this.id,
     serverId: serverId ?? this.serverId,
@@ -2910,6 +2943,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
         ? lastExecutedAt.value
         : this.lastExecutedAt,
     mediaIndex: mediaIndex ?? this.mediaIndex,
+    downloadFilter: downloadFilter ?? this.downloadFilter,
   );
   SyncRuleItem copyWithCompanion(SyncRulesCompanion data) {
     return SyncRuleItem(
@@ -2931,6 +2965,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       mediaIndex: data.mediaIndex.present
           ? data.mediaIndex.value
           : this.mediaIndex,
+      downloadFilter: data.downloadFilter.present
+          ? data.downloadFilter.value
+          : this.downloadFilter,
     );
   }
 
@@ -2946,7 +2983,8 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           ..write('enabled: $enabled, ')
           ..write('createdAt: $createdAt, ')
           ..write('lastExecutedAt: $lastExecutedAt, ')
-          ..write('mediaIndex: $mediaIndex')
+          ..write('mediaIndex: $mediaIndex, ')
+          ..write('downloadFilter: $downloadFilter')
           ..write(')'))
         .toString();
   }
@@ -2963,6 +3001,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     createdAt,
     lastExecutedAt,
     mediaIndex,
+    downloadFilter,
   );
   @override
   bool operator ==(Object other) =>
@@ -2977,7 +3016,8 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           other.enabled == this.enabled &&
           other.createdAt == this.createdAt &&
           other.lastExecutedAt == this.lastExecutedAt &&
-          other.mediaIndex == this.mediaIndex);
+          other.mediaIndex == this.mediaIndex &&
+          other.downloadFilter == this.downloadFilter);
 }
 
 class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
@@ -2991,6 +3031,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   final Value<int> createdAt;
   final Value<int?> lastExecutedAt;
   final Value<int> mediaIndex;
+  final Value<String> downloadFilter;
   const SyncRulesCompanion({
     this.id = const Value.absent(),
     this.serverId = const Value.absent(),
@@ -3002,6 +3043,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.createdAt = const Value.absent(),
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
+    this.downloadFilter = const Value.absent(),
   });
   SyncRulesCompanion.insert({
     this.id = const Value.absent(),
@@ -3014,6 +3056,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     required int createdAt,
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
+    this.downloadFilter = const Value.absent(),
   }) : serverId = Value(serverId),
        ratingKey = Value(ratingKey),
        globalKey = Value(globalKey),
@@ -3031,6 +3074,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Expression<int>? createdAt,
     Expression<int>? lastExecutedAt,
     Expression<int>? mediaIndex,
+    Expression<String>? downloadFilter,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3043,6 +3087,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       if (createdAt != null) 'created_at': createdAt,
       if (lastExecutedAt != null) 'last_executed_at': lastExecutedAt,
       if (mediaIndex != null) 'media_index': mediaIndex,
+      if (downloadFilter != null) 'download_filter': downloadFilter,
     });
   }
 
@@ -3057,6 +3102,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Value<int>? createdAt,
     Value<int?>? lastExecutedAt,
     Value<int>? mediaIndex,
+    Value<String>? downloadFilter,
   }) {
     return SyncRulesCompanion(
       id: id ?? this.id,
@@ -3069,6 +3115,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       createdAt: createdAt ?? this.createdAt,
       lastExecutedAt: lastExecutedAt ?? this.lastExecutedAt,
       mediaIndex: mediaIndex ?? this.mediaIndex,
+      downloadFilter: downloadFilter ?? this.downloadFilter,
     );
   }
 
@@ -3105,6 +3152,9 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     if (mediaIndex.present) {
       map['media_index'] = Variable<int>(mediaIndex.value);
     }
+    if (downloadFilter.present) {
+      map['download_filter'] = Variable<String>(downloadFilter.value);
+    }
     return map;
   }
 
@@ -3120,7 +3170,8 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
           ..write('enabled: $enabled, ')
           ..write('createdAt: $createdAt, ')
           ..write('lastExecutedAt: $lastExecutedAt, ')
-          ..write('mediaIndex: $mediaIndex')
+          ..write('mediaIndex: $mediaIndex, ')
+          ..write('downloadFilter: $downloadFilter')
           ..write(')'))
         .toString();
   }
@@ -4386,6 +4437,7 @@ typedef $$SyncRulesTableCreateCompanionBuilder =
       required int createdAt,
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
+      Value<String> downloadFilter,
     });
 typedef $$SyncRulesTableUpdateCompanionBuilder =
     SyncRulesCompanion Function({
@@ -4399,6 +4451,7 @@ typedef $$SyncRulesTableUpdateCompanionBuilder =
       Value<int> createdAt,
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
+      Value<String> downloadFilter,
     });
 
 class $$SyncRulesTableFilterComposer
@@ -4457,6 +4510,11 @@ class $$SyncRulesTableFilterComposer
 
   ColumnFilters<int> get mediaIndex => $composableBuilder(
     column: $table.mediaIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get downloadFilter => $composableBuilder(
+    column: $table.downloadFilter,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4519,6 +4577,11 @@ class $$SyncRulesTableOrderingComposer
     column: $table.mediaIndex,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get downloadFilter => $composableBuilder(
+    column: $table.downloadFilter,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SyncRulesTableAnnotationComposer
@@ -4567,6 +4630,11 @@ class $$SyncRulesTableAnnotationComposer
     column: $table.mediaIndex,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get downloadFilter => $composableBuilder(
+    column: $table.downloadFilter,
+    builder: (column) => column,
+  );
 }
 
 class $$SyncRulesTableTableManager
@@ -4610,6 +4678,7 @@ class $$SyncRulesTableTableManager
                 Value<int> createdAt = const Value.absent(),
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
+                Value<String> downloadFilter = const Value.absent(),
               }) => SyncRulesCompanion(
                 id: id,
                 serverId: serverId,
@@ -4621,6 +4690,7 @@ class $$SyncRulesTableTableManager
                 createdAt: createdAt,
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
+                downloadFilter: downloadFilter,
               ),
           createCompanionCallback:
               ({
@@ -4634,6 +4704,7 @@ class $$SyncRulesTableTableManager
                 required int createdAt,
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
+                Value<String> downloadFilter = const Value.absent(),
               }) => SyncRulesCompanion.insert(
                 id: id,
                 serverId: serverId,
@@ -4645,6 +4716,7 @@ class $$SyncRulesTableTableManager
                 createdAt: createdAt,
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
+                downloadFilter: downloadFilter,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

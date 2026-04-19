@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
 import '../models/plex_metadata.dart';
+import '../providers/download_provider.dart';
+import '../utils/download_utils.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../i18n/strings.g.dart';
 import '../utils/dialogs.dart';
@@ -68,11 +71,27 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   List<FocusableAction> getAppBarActions() {
+    // Select the specific bool we care about so unrelated DownloadProvider
+    // ticks (e.g. active download progress) don't rebuild the app bar.
+    final hasRule = context.select<DownloadProvider, bool>((p) => p.hasSyncRule(widget.collection.globalKey));
+
     return [
       if (items.isNotEmpty) ...[
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
+      FocusableAction(
+        icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
+        tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
+        onPressed: hasRule ? _manageCollectionSyncRule : _downloadCollection,
+        iconColor: hasRule ? Colors.teal : null,
+      ),
+      if (hasRule)
+        FocusableAction(
+          icon: Symbols.sync_disabled_rounded,
+          tooltip: t.downloads.removeSyncRule,
+          onPressed: _removeCollectionSyncRule,
+        ),
       FocusableAction(
         icon: Symbols.delete_rounded,
         tooltip: t.common.delete,
@@ -81,6 +100,44 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
       ),
     ];
   }
+
+  Future<void> _downloadCollection() async {
+    if (items.isEmpty) {
+      showErrorSnackBar(context, t.collections.empty);
+      return;
+    }
+
+    final downloadProvider = context.read<DownloadProvider>();
+    try {
+      final result = await showCollectionDownloadOptionsAndQueue(
+        context,
+        collectionMetadata: widget.collection,
+        items: items,
+        client: client,
+        downloadProvider: downloadProvider,
+      );
+      if (result == null || !mounted) return;
+      showSuccessSnackBar(context, result.toSnackBarMessage());
+    } catch (e) {
+      appLogger.e('Failed to queue collection download', error: e);
+      if (mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
+    }
+  }
+
+  Future<void> _manageCollectionSyncRule() => manageSyncRule(
+    context,
+    downloadProvider: context.read<DownloadProvider>(),
+    globalKey: widget.collection.globalKey,
+  );
+
+  Future<void> _removeCollectionSyncRule() => removeSyncRuleAndSnack(
+    context,
+    downloadProvider: context.read<DownloadProvider>(),
+    globalKey: widget.collection.globalKey,
+    displayTitle: widget.collection.displayTitle,
+  );
 
   Future<void> _deleteCollection() async {
     int? sectionId = widget.collection.librarySectionID;

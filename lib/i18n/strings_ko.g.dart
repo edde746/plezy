@@ -1026,6 +1026,10 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String get noSyncRules => '동기화 규칙 없음';
 	@override String get manageSyncRule => '동기화 관리';
 	@override String get editEpisodeCount => '에피소드 수';
+	@override String get editSyncFilter => '동기화 필터';
+	@override String get syncAllItems => '모든 항목 동기화 중';
+	@override String get syncUnwatchedItems => '시청하지 않은 항목 동기화 중';
+	@override String get syncRuleListCreated => '동기화 규칙이 생성되었습니다';
 }
 
 // Path: shaders
@@ -2084,6 +2088,10 @@ extension on TranslationsKo {
 			'downloads.noSyncRules' => '동기화 규칙 없음',
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
+			'downloads.editSyncFilter' => '동기화 필터',
+			'downloads.syncAllItems' => '모든 항목 동기화 중',
+			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
+			'downloads.syncRuleListCreated' => '동기화 규칙이 생성되었습니다',
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
 			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',

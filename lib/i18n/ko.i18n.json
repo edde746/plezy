@@ -764,7 +764,11 @@
     "activeSyncRules": "동기화 규칙",
     "noSyncRules": "동기화 규칙 없음",
     "manageSyncRule": "동기화 관리",
-    "editEpisodeCount": "에피소드 수"
+    "editEpisodeCount": "에피소드 수",
+    "editSyncFilter": "동기화 필터",
+    "syncAllItems": "모든 항목 동기화 중",
+    "syncUnwatchedItems": "시청하지 않은 항목 동기화 중",
+    "syncRuleListCreated": "동기화 규칙이 생성되었습니다"
   },
   "shaders": {
     "title": "셰이더",

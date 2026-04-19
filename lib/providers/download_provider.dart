@@ -615,25 +615,59 @@ class DownloadProvider extends ChangeNotifier {
     }
   }
 
-  /// Queue all video items from a playlist for download.
-  /// Returns the number of items queued.
-  Future<int> queuePlaylistDownload(
+  /// Queue every playable item from a collection/playlist for download.
+  ///
+  /// Movies and episodes are queued directly. Shows and seasons are expanded
+  /// into their episodes (when [expandShows] is true). Music items, nested
+  /// collections/playlists, and unknown types are skipped.
+  Future<int> queueListDownload(
     List<PlexMetadata> items,
     PlexClient client, {
     DownloadFilter filter = DownloadFilter.all,
+    bool expandShows = true,
   }) async {
     if (await DownloadManagerService.shouldBlockDownloadOnCellular()) {
       throw CellularDownloadBlockedException();
     }
 
+    final unwatchedOnly = filter == DownloadFilter.unwatched;
     int count = 0;
-    for (final item in items) {
-      final mt = item.mediaType;
-      if (mt != PlexMediaType.movie && mt != PlexMediaType.episode) continue;
-      if (filter == DownloadFilter.unwatched && item.isWatched && !item.hasActiveProgress) continue;
 
+    Future<void> queueItem(PlexMetadata item) async {
+      if (unwatchedOnly && item.isWatched && !item.hasActiveProgress) return;
       final queued = await _queueSingleDownload(item, client);
       if (queued) count++;
+    }
+
+    Future<void> expandSeason(String seasonRatingKey) async {
+      final episodes = await client.getChildren(seasonRatingKey);
+      for (final ep in episodes) {
+        if (ep.type != ContentTypes.episode) continue;
+        await queueItem(ep);
+      }
+    }
+
+    for (final item in items) {
+      final mt = item.mediaType;
+      switch (mt) {
+        case PlexMediaType.movie:
+        case PlexMediaType.episode:
+          await queueItem(item);
+        case PlexMediaType.show:
+          if (!expandShows) break;
+          final seasons = await client.getChildren(item.ratingKey);
+          for (final season in seasons) {
+            if (season.type == ContentTypes.season) {
+              await expandSeason(season.ratingKey);
+            }
+          }
+        case PlexMediaType.season:
+          if (!expandShows) break;
+          await expandSeason(item.ratingKey);
+        default:
+          // Skip music, clips, nested collections/playlists, unknown types.
+          break;
+      }
     }
     return count;
   }
@@ -1063,13 +1097,20 @@ class DownloadProvider extends ChangeNotifier {
   /// Get a sync rule for the given item
   SyncRuleItem? getSyncRule(String globalKey) => _syncRules[globalKey];
 
-  /// Create a sync rule for a show or season.
+  /// Create (or upsert) a sync rule for a show, season, collection, or playlist.
+  ///
+  /// [targetMetadata], when provided, is stored in the in-memory metadata map so
+  /// the Sync Rules screen shows the item's title immediately instead of a bare
+  /// rating key — useful for collection/playlist rules where no underlying
+  /// episode download would otherwise populate it.
   Future<void> createSyncRule({
     required String serverId,
     required String ratingKey,
     required String targetType,
     required int episodeCount,
     int mediaIndex = 0,
+    String downloadFilter = SyncRuleFilter.unwatched,
+    PlexMetadata? targetMetadata,
   }) async {
     final globalKey = buildGlobalKey(serverId, ratingKey);
     await _database.insertSyncRule(
@@ -1079,7 +1120,13 @@ class DownloadProvider extends ChangeNotifier {
       targetType: targetType,
       episodeCount: episodeCount,
       mediaIndex: mediaIndex,
+      downloadFilter: downloadFilter,
     );
+
+    if (targetMetadata != null) {
+      final withServer = targetMetadata.serverId != null ? targetMetadata : targetMetadata.copyWith(serverId: serverId);
+      _metadata[globalKey] = withServer;
+    }
 
     // Reload to get the full row with id/timestamps
     final rule = await _database.getSyncRule(globalKey);
@@ -1087,10 +1134,10 @@ class DownloadProvider extends ChangeNotifier {
       _syncRules[globalKey] = rule;
       notifyListeners();
     }
-    appLogger.i('Created sync rule: $globalKey ($targetType, keep $episodeCount)');
+    appLogger.i('Created sync rule: $globalKey ($targetType, filter=$downloadFilter, keep $episodeCount)');
   }
 
-  /// Update the episode count for an existing sync rule.
+  /// Update the episode count for an existing show/season sync rule.
   Future<void> updateSyncRuleCount(String globalKey, int episodeCount) async {
     await _database.updateSyncRuleCount(globalKey, episodeCount);
     final existing = _syncRules[globalKey];
@@ -1099,6 +1146,17 @@ class DownloadProvider extends ChangeNotifier {
       notifyListeners();
     }
     appLogger.i('Updated sync rule $globalKey: keep $episodeCount');
+  }
+
+  /// Update the download filter for an existing collection/playlist sync rule.
+  Future<void> updateSyncRuleFilter(String globalKey, String downloadFilter) async {
+    await _database.updateSyncRuleFilter(globalKey, downloadFilter);
+    final existing = _syncRules[globalKey];
+    if (existing != null) {
+      _syncRules[globalKey] = existing.copyWith(downloadFilter: downloadFilter);
+      notifyListeners();
+    }
+    appLogger.i('Updated sync rule $globalKey: filter=$downloadFilter');
   }
 
   /// Toggle a sync rule's enabled state.
@@ -1122,8 +1180,12 @@ class DownloadProvider extends ChangeNotifier {
 
   /// Execute all sync rules: auto-delete watched + queue replacements.
   ///
+  /// Pass [force] `true` from user-initiated triggers (watch-state events,
+  /// offline-sync drains) to bypass the executor's cooldown. Defaults to
+  /// `false` for background probes (e.g. connectivity reconnects).
+  ///
   /// Returns titles of newly queued items (for snackbar display).
-  Future<List<String>> executeSyncRules(MultiServerManager serverManager) async {
+  Future<List<String>> executeSyncRules(MultiServerManager serverManager, {bool force = false}) async {
     if (_syncRules.isEmpty) return [];
 
     final results = await _syncRuleExecutor.executeSyncRules(
@@ -1132,12 +1194,28 @@ class DownloadProvider extends ChangeNotifier {
       metadata: Map.unmodifiable(_metadata),
       queueSingleDownload: (episode, client, {int mediaIndex = 0}) =>
           _queueSingleDownload(episode, client, mediaIndex: mediaIndex),
+      force: force,
     );
 
     return results.where((r) => r.queuedCount > 0).map((r) {
       final title = r.title ?? 'Unknown';
       return '$title (${r.queuedCount})';
     }).toList();
+  }
+
+  /// Execute a single sync rule immediately (eager path for `addToPlaylist` /
+  /// `addToCollection`). Bypasses the cooldown.
+  Future<SyncRuleResult?> executeSyncRuleFor(String globalKey, MultiServerManager serverManager) async {
+    if (!_syncRules.containsKey(globalKey)) return null;
+
+    return _syncRuleExecutor.executeSingleRule(
+      globalKey: globalKey,
+      serverManager: serverManager,
+      downloads: Map.unmodifiable(_downloads),
+      metadata: Map.unmodifiable(_metadata),
+      queueSingleDownload: (episode, client, {int mediaIndex = 0}) =>
+          _queueSingleDownload(episode, client, mediaIndex: mediaIndex),
+    );
   }
 
   Future<void> _loadSyncRules() async {

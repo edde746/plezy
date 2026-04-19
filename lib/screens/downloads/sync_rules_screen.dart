@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../database/app_database.dart';
 import '../../models/plex_metadata.dart';
 import '../../providers/download_provider.dart';
+import '../../services/sync_rule_executor.dart';
+import '../../utils/content_utils.dart';
 import '../../utils/download_utils.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -59,6 +61,48 @@ class _SyncRuleTile extends StatelessWidget {
     this.autofocus = false,
   });
 
+  IconData _leadingIcon() {
+    switch (rule.targetType) {
+      case ContentTypes.playlist:
+        return Symbols.playlist_play_rounded;
+      case ContentTypes.collection:
+        return Symbols.collections_bookmark_rounded;
+      case ContentTypes.show:
+      case ContentTypes.season:
+        return Symbols.tv_rounded;
+      default:
+        return Symbols.sync_rounded;
+    }
+  }
+
+  String _subtitle() {
+    switch (rule.targetType) {
+      case ContentTypes.collection:
+      case ContentTypes.playlist:
+        return rule.downloadFilter == SyncRuleFilter.all ? t.downloads.syncAllItems : t.downloads.syncUnwatchedItems;
+      default:
+        return t.downloads.keepNUnwatched(count: rule.episodeCount.toString());
+    }
+  }
+
+  Future<void> _onTap(BuildContext context) async {
+    if (rule.isListRule) {
+      await editSyncRuleFilter(
+        context,
+        downloadProvider: downloadProvider,
+        globalKey: rule.globalKey,
+        currentFilter: rule.downloadFilter,
+      );
+    } else {
+      await editSyncRuleCount(
+        context,
+        downloadProvider: downloadProvider,
+        globalKey: rule.globalKey,
+        currentCount: rule.episodeCount,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final meta = metadata[rule.globalKey];
@@ -66,19 +110,14 @@ class _SyncRuleTile extends StatelessWidget {
 
     return FocusableListTile(
       autofocus: autofocus,
-      leading: Icon(Symbols.sync_rounded, color: rule.enabled ? Colors.teal : null, size: 20),
+      leading: Icon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text(t.downloads.keepNUnwatched(count: rule.episodeCount.toString())),
+      subtitle: Text(_subtitle()),
       trailing: Switch(
         value: rule.enabled,
         onChanged: (value) => downloadProvider.setSyncRuleEnabled(rule.globalKey, value),
       ),
-      onTap: () => editSyncRuleCount(
-        context,
-        downloadProvider: downloadProvider,
-        globalKey: rule.globalKey,
-        currentCount: rule.episodeCount,
-      ),
+      onTap: () => _onTap(context),
     );
   }
 }

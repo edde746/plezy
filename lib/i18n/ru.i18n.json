@@ -764,7 +764,11 @@
     "activeSyncRules": "Правила синхронизации",
     "noSyncRules": "Нет правил синхронизации",
     "manageSyncRule": "Управление синхронизацией",
-    "editEpisodeCount": "Количество эпизодов"
+    "editEpisodeCount": "Количество эпизодов",
+    "editSyncFilter": "Фильтр синхронизации",
+    "syncAllItems": "Синхронизация всех элементов",
+    "syncUnwatchedItems": "Синхронизация непросмотренных элементов",
+    "syncRuleListCreated": "Правило синхронизации создано"
   },
   "shaders": {
     "title": "Шейдеры",

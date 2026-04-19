@@ -764,7 +764,11 @@
     "activeSyncRules": "Synkregler",
     "noSyncRules": "Inga synkregler",
     "manageSyncRule": "Hantera synkronisering",
-    "editEpisodeCount": "Antal avsnitt"
+    "editEpisodeCount": "Antal avsnitt",
+    "editSyncFilter": "Synkroniseringsfilter",
+    "syncAllItems": "Synkroniserar alla objekt",
+    "syncUnwatchedItems": "Synkroniserar osedda objekt",
+    "syncRuleListCreated": "Synkroniseringsregel skapad"
   },
   "shaders": {
     "title": "Shaders",

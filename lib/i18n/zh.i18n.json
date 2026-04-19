@@ -764,7 +764,11 @@
     "activeSyncRules": "同步规则",
     "noSyncRules": "没有同步规则",
     "manageSyncRule": "管理同步",
-    "editEpisodeCount": "剧集数量"
+    "editEpisodeCount": "剧集数量",
+    "editSyncFilter": "同步筛选",
+    "syncAllItems": "同步所有项目",
+    "syncUnwatchedItems": "同步未观看项目",
+    "syncRuleListCreated": "同步规则已创建"
   },
   "shaders": {
     "title": "着色器",

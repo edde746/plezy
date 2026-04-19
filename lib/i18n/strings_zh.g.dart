@@ -1026,6 +1026,10 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String get noSyncRules => '没有同步规则';
 	@override String get manageSyncRule => '管理同步';
 	@override String get editEpisodeCount => '剧集数量';
+	@override String get editSyncFilter => '同步筛选';
+	@override String get syncAllItems => '同步所有项目';
+	@override String get syncUnwatchedItems => '同步未观看项目';
+	@override String get syncRuleListCreated => '同步规则已创建';
 }
 
 // Path: shaders
@@ -2084,6 +2088,10 @@ extension on TranslationsZh {
 			'downloads.noSyncRules' => '没有同步规则',
 			'downloads.manageSyncRule' => '管理同步',
 			'downloads.editEpisodeCount' => '剧集数量',
+			'downloads.editSyncFilter' => '同步筛选',
+			'downloads.syncAllItems' => '同步所有项目',
+			'downloads.syncUnwatchedItems' => '同步未观看项目',
+			'downloads.syncRuleListCreated' => '同步规则已创建',
 			'shaders.title' => '着色器',
 			'shaders.noShaderDescription' => '无视频增强',
 			'shaders.nvscalerDescription' => 'NVIDIA 图像缩放，使视频更清晰',

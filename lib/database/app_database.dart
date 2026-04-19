@@ -17,7 +17,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration {
@@ -56,6 +56,14 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(syncRules, syncRules.enabled);
           } catch (e) {
             appLogger.w('enabled column may already exist: $e');
+          }
+        }
+        if (from < 12) {
+          appLogger.i('Adding downloadFilter column to SyncRules (v12 migration)');
+          try {
+            await m.addColumn(syncRules, syncRules.downloadFilter);
+          } catch (e) {
+            appLogger.w('downloadFilter column may already exist: $e');
           }
         }
       },
@@ -232,6 +240,7 @@ class AppDatabase extends _$AppDatabase {
     required String targetType,
     required int episodeCount,
     int mediaIndex = 0,
+    String downloadFilter = 'unwatched',
   }) async {
     await into(syncRules).insertOnConflictUpdate(
       SyncRulesCompanion.insert(
@@ -242,6 +251,7 @@ class AppDatabase extends _$AppDatabase {
         episodeCount: episodeCount,
         createdAt: DateTime.now().millisecondsSinceEpoch,
         mediaIndex: Value(mediaIndex),
+        downloadFilter: Value(downloadFilter),
       ),
     );
   }
@@ -250,6 +260,12 @@ class AppDatabase extends _$AppDatabase {
     await (update(
       syncRules,
     )..where((t) => t.globalKey.equals(globalKey))).write(SyncRulesCompanion(episodeCount: Value(episodeCount)));
+  }
+
+  Future<void> updateSyncRuleFilter(String globalKey, String downloadFilter) async {
+    await (update(
+      syncRules,
+    )..where((t) => t.globalKey.equals(globalKey))).write(SyncRulesCompanion(downloadFilter: Value(downloadFilter)));
   }
 
   Future<void> updateSyncRuleEnabled(String globalKey, bool enabled) async {

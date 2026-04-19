@@ -764,7 +764,11 @@
     "activeSyncRules": "同期ルール",
     "noSyncRules": "同期ルールなし",
     "manageSyncRule": "同期を管理",
-    "editEpisodeCount": "エピソード数"
+    "editEpisodeCount": "エピソード数",
+    "editSyncFilter": "同期フィルター",
+    "syncAllItems": "すべてのアイテムを同期中",
+    "syncUnwatchedItems": "未視聴のアイテムを同期中",
+    "syncRuleListCreated": "同期ルールを作成しました"
   },
   "shaders": {
     "title": "シェーダー",

@@ -764,7 +764,11 @@
     "activeSyncRules": "Reguły synchronizacji",
     "noSyncRules": "Brak reguł synchronizacji",
     "manageSyncRule": "Zarządzaj synchronizacją",
-    "editEpisodeCount": "Liczba odcinków"
+    "editEpisodeCount": "Liczba odcinków",
+    "editSyncFilter": "Filtr synchronizacji",
+    "syncAllItems": "Synchronizuję wszystkie elementy",
+    "syncUnwatchedItems": "Synchronizuję nieobejrzane elementy",
+    "syncRuleListCreated": "Utworzono regułę synchronizacji"
   },
   "shaders": {
     "title": "Shadery",

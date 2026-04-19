@@ -1026,6 +1026,10 @@ class _TranslationsDownloadsDe implements TranslationsDownloadsEn {
 	@override String get noSyncRules => 'Keine Sync-Regeln';
 	@override String get manageSyncRule => 'Synchronisierung verwalten';
 	@override String get editEpisodeCount => 'Episodenanzahl';
+	@override String get editSyncFilter => 'Synchronisierungsfilter';
+	@override String get syncAllItems => 'Alle Einträge synchronisieren';
+	@override String get syncUnwatchedItems => 'Ungesehene Einträge synchronisieren';
+	@override String get syncRuleListCreated => 'Sync-Regel erstellt';
 }
 
 // Path: shaders
@@ -2084,6 +2088,10 @@ extension on TranslationsDe {
 			'downloads.noSyncRules' => 'Keine Sync-Regeln',
 			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
 			'downloads.editEpisodeCount' => 'Episodenanzahl',
+			'downloads.editSyncFilter' => 'Synchronisierungsfilter',
+			'downloads.syncAllItems' => 'Alle Einträge synchronisieren',
+			'downloads.syncUnwatchedItems' => 'Ungesehene Einträge synchronisieren',
+			'downloads.syncRuleListCreated' => 'Sync-Regel erstellt',
 			'shaders.title' => 'Shader',
 			'shaders.noShaderDescription' => 'Keine Videoverbesserung',
 			'shaders.nvscalerDescription' => 'NVIDIA-Bildskalierung für schärferes Video',

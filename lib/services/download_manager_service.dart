@@ -106,9 +106,6 @@ class DownloadManagerService {
   /// Public method to check if downloads should be blocked due to cellular-only setting
   /// Can be used by DownloadProvider to show user-friendly error
   static Future<bool> shouldBlockDownloadOnCellular() async {
-    final settings = await SettingsService.getInstance();
-    if (!settings.getDownloadOnWifiOnly()) return false;
-
     final List<ConnectivityResult> connectivity;
     try {
       connectivity = await Connectivity().checkConnectivity();
@@ -116,7 +113,16 @@ class DownloadManagerService {
       // connectivity_plus can throw PlatformException on Windows — don't block
       return false;
     }
-    // Block if on cellular and NOT on WiFi (allow if both are available)
+    return shouldBlockDownloadOnCellularWith(connectivity);
+  }
+
+  /// Same check as [shouldBlockDownloadOnCellular] but uses a pre-read
+  /// connectivity result so callers that already queried connectivity don't
+  /// pay for a second platform round-trip.
+  static Future<bool> shouldBlockDownloadOnCellularWith(List<ConnectivityResult> connectivity) async {
+    final settings = await SettingsService.getInstance();
+    if (!settings.getDownloadOnWifiOnly()) return false;
+    if (connectivity.isEmpty) return false;
     return connectivity.contains(ConnectivityResult.mobile) &&
         !connectivity.contains(ConnectivityResult.wifi) &&
         !connectivity.contains(ConnectivityResult.ethernet);

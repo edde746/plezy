@@ -1026,6 +1026,10 @@ class _TranslationsDownloadsRu implements TranslationsDownloadsEn {
 	@override String get noSyncRules => 'Нет правил синхронизации';
 	@override String get manageSyncRule => 'Управление синхронизацией';
 	@override String get editEpisodeCount => 'Количество эпизодов';
+	@override String get editSyncFilter => 'Фильтр синхронизации';
+	@override String get syncAllItems => 'Синхронизация всех элементов';
+	@override String get syncUnwatchedItems => 'Синхронизация непросмотренных элементов';
+	@override String get syncRuleListCreated => 'Правило синхронизации создано';
 }
 
 // Path: shaders
@@ -2084,6 +2088,10 @@ extension on TranslationsRu {
 			'downloads.noSyncRules' => 'Нет правил синхронизации',
 			'downloads.manageSyncRule' => 'Управление синхронизацией',
 			'downloads.editEpisodeCount' => 'Количество эпизодов',
+			'downloads.editSyncFilter' => 'Фильтр синхронизации',
+			'downloads.syncAllItems' => 'Синхронизация всех элементов',
+			'downloads.syncUnwatchedItems' => 'Синхронизация непросмотренных элементов',
+			'downloads.syncRuleListCreated' => 'Правило синхронизации создано',
 			'shaders.title' => 'Шейдеры',
 			'shaders.noShaderDescription' => 'Без улучшения видео',
 			'shaders.nvscalerDescription' => 'Масштабирование NVIDIA для более чёткого видео',
