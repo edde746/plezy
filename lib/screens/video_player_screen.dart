@@ -741,8 +741,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Listen to playback state changes
       _playingSubscription = player!.streams.playing.listen(_onPlayingStateChanged);
 
-      // Listen to completion
-      _completedSubscription = player!.streams.completed.listen(_onVideoCompleted);
+      // Listen to completion. When mpv emits completed=false (file-loaded after a
+      // reconnect-seek or fresh open), clear a stale _completionTriggered so the
+      // real end-of-file can still show Play Next. Guarded against clobbering an
+      // active dialog or running auto-play countdown.
+      _completedSubscription = player!.streams.completed.listen((done) {
+        if (!done && _completionTriggered && !_showPlayNextDialog && _autoPlayTimer?.isActive != true) {
+          _completionTriggered = false;
+        }
+        _onVideoCompleted(done);
+      });
 
       // Listen to MPV errors
       _errorSubscription = player!.streams.error.listen(_onPlayerError);
@@ -2577,6 +2585,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (p == null || !_isPlayerInitialized) return;
     final pos = p.state.position;
     appLogger.i('Network restored while buffering, forcing stream reconnect at ${pos.inSeconds}s');
+    // Clear any stale completion latch caused by a spurious EOF during the drop,
+    // so the real end-of-file can trigger Play Next after we recover.
+    if (_completionTriggered && !_showPlayNextDialog && _autoPlayTimer?.isActive != true) {
+      _completionTriggered = false;
+    }
     p.seek(pos);
   }
 
