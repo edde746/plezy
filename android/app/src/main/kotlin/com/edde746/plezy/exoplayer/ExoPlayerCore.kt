@@ -57,10 +57,9 @@ import com.edde746.plezy.shared.FlutterOverlayHelper
 import com.edde746.plezy.shared.FrameRateManager
 import io.github.peerless2012.ass.media.AssHandler
 
-import io.github.peerless2012.ass.media.factory.AssRenderersFactory
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
-import io.github.peerless2012.ass.media.widget.AssSubtitleView
+import io.github.peerless2012.ass.media.widget.AssSubtitleSurfaceView
 
 interface ExoPlayerDelegate : com.edde746.plezy.shared.PlayerDelegate {
 
@@ -426,12 +425,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
                 .setSubtitleParserFactory(assParserFactory)
 
-            val assRenderersFactory = AssRenderersFactory(handler, renderersFactory)
-
             // Wrap text renderers with subtitle delay support
             val wrappedRenderersFactory = RenderersFactory {
                 eventHandler, videoListener, audioListener, textOutput, metadataOutput ->
-                assRenderersFactory.createRenderers(eventHandler, videoListener, audioListener, textOutput, metadataOutput)
+                renderersFactory.createRenderers(eventHandler, videoListener, audioListener, textOutput, metadataOutput)
                     .map { if (it.trackType == C.TRACK_TYPE_TEXT) SubtitleDelayRenderer(it, subtitleDelayUs) else it }
                     .toTypedArray()
             }
@@ -474,13 +471,29 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 .setRenderersFactory(wrappedRenderersFactory)
                 .build()
 
-            // Add ASS overlay view to SubtitleView for OVERLAY modes
+            // Add ASS overlay view to SubtitleView for OVERLAY modes.
+            // We use AssSubtitleSurfaceView directly (not AssSubtitleView) so we get a
+            // SurfaceFlinger-layer-backed overlay that eglPresentationTimeANDROID can
+            // vsync-pin. Z-order: default video SurfaceView < this MediaOverlay-flagged
+            // SurfaceView < Flutter TextureView in the window.
+            var assSubtitleSurfaceView: AssSubtitleSurfaceView? = null
             subtitleView?.let { sv ->
-                val assView = AssSubtitleView(sv.context, handler)
-                sv.addView(assView)
+                val assView = AssSubtitleSurfaceView(sv.context, handler)
+                assSubtitleSurfaceView = assView
+                sv.addView(
+                    assView,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                    )
+                )
             }
 
-            // Initialize handler (registers as Player.Listener, creates Handler)
+            // Initialize handler (registers as Player.Listener, creates Handler).
+            // AssHandler.init calls player.setVideoFrameMetadataListener internally, but
+            // our own setVideoFrameMetadataListener below would overwrite it (ExoPlayer
+            // only keeps one listener). Skip AssHandler's wiring and invoke
+            // assView.requestRender directly from the listener below.
             handler.init(exoPlayer!!)
 
             // Suppress ass-media GL thread crash when EGL init partially fails (e.g. Tegra).
@@ -502,7 +515,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
             exoPlayer!!.addListener(this)
             exoPlayer!!.addAnalyticsListener(decoderHangListener)
-            exoPlayer!!.setVideoFrameMetadataListener { presentationTimeUs, _, _, _ ->
+            exoPlayer!!.setVideoFrameMetadataListener { presentationTimeUs, releaseTimeNs, _, _ ->
+                assSubtitleSurfaceView?.requestRender(presentationTimeUs, releaseTimeNs)
                 val count = fpsTimestampCount
                 if (count < FPS_SAMPLE_COUNT) {
                     fpsTimestamps[count] = presentationTimeUs
