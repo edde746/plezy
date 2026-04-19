@@ -1721,6 +1721,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _previousChapter,
         onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
         onToggleShader: _toggleShader,
+        currentPositionEpoch: widget.currentPositionEpoch,
+        onLiveSeek: widget.onLiveSeek,
       );
       if (result == KeyEventResult.handled) {
         _focusNode.requestFocus(); // self-heal focus
@@ -1951,6 +1953,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
               onToggleShader: _toggleShader,
               onSkipMarker: _performAutoSkip,
+              currentPositionEpoch: widget.currentPositionEpoch,
+              onLiveSeek: widget.onLiveSeek,
             );
             // Let non-navigation keys (volume, etc.) pass through to the OS
             if (!event.logicalKey.isNavigationKey) return KeyEventResult.ignored;

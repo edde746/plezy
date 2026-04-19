@@ -1877,19 +1877,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     receiver.onSeekForward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final target = clampSeekPosition(
-        player!,
-        player!.state.position + Duration(seconds: settings.getSeekTimeSmall()),
-      );
+      final seekSeconds = settings.getSeekTimeSmall();
+      if (widget.isLive && _captureBuffer != null) {
+        await _seekLivePosition(_currentPositionEpoch + seekSeconds);
+        return;
+      }
+      final target = clampSeekPosition(player!, player!.state.position + Duration(seconds: seekSeconds));
       await player!.seek(target);
     };
     receiver.onSeekBackward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final target = clampSeekPosition(
-        player!,
-        player!.state.position - Duration(seconds: settings.getSeekTimeSmall()),
-      );
+      final seekSeconds = settings.getSeekTimeSmall();
+      if (widget.isLive && _captureBuffer != null) {
+        await _seekLivePosition(_currentPositionEpoch - seekSeconds);
+        return;
+      }
+      final target = clampSeekPosition(player!, player!.state.position - Duration(seconds: seekSeconds));
       await player!.seek(target);
     };
     receiver.onVolumeUp = () async {

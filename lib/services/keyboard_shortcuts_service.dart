@@ -139,6 +139,8 @@ class KeyboardShortcutsService {
     VoidCallback? onBack,
     VoidCallback? onToggleShader,
     VoidCallback? onSkipMarker,
+    int? currentPositionEpoch,
+    ValueChanged<int>? onLiveSeek,
   }) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
@@ -216,6 +218,8 @@ class KeyboardShortcutsService {
           onPreviousChapter,
           onToggleShader: onToggleShader,
           onSkipMarker: onSkipMarker,
+          currentPositionEpoch: currentPositionEpoch,
+          onLiveSeek: onLiveSeek,
         );
         return KeyEventResult.handled;
       }
@@ -235,7 +239,18 @@ class KeyboardShortcutsService {
     VoidCallback? onPreviousChapter, {
     VoidCallback? onToggleShader,
     VoidCallback? onSkipMarker,
+    int? currentPositionEpoch,
+    ValueChanged<int>? onLiveSeek,
   }) {
+    void performSeek(int offsetSeconds) {
+      if (onLiveSeek != null && currentPositionEpoch != null) {
+        onLiveSeek(currentPositionEpoch + offsetSeconds);
+      } else {
+        final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
+        unawaited(player.seek(target));
+      }
+    }
+
     switch (action) {
       case 'play_pause':
         player.playOrPause();
@@ -251,20 +266,16 @@ class KeyboardShortcutsService {
         _settingsService.setVolume(newVolume);
         break;
       case 'seek_forward':
-        final fwdTarget = clampSeekPosition(player, player.state.position + Duration(seconds: _seekTimeSmall));
-        unawaited(player.seek(fwdTarget));
+        performSeek(_seekTimeSmall);
         break;
       case 'seek_backward':
-        final bwdTarget = clampSeekPosition(player, player.state.position - Duration(seconds: _seekTimeSmall));
-        unawaited(player.seek(bwdTarget));
+        performSeek(-_seekTimeSmall);
         break;
       case 'seek_forward_large':
-        final fwdLTarget = clampSeekPosition(player, player.state.position + Duration(seconds: _seekTimeLarge));
-        unawaited(player.seek(fwdLTarget));
+        performSeek(_seekTimeLarge);
         break;
       case 'seek_backward_large':
-        final bwdLTarget = clampSeekPosition(player, player.state.position - Duration(seconds: _seekTimeLarge));
-        unawaited(player.seek(bwdLTarget));
+        performSeek(-_seekTimeLarge);
         break;
       case 'fullscreen_toggle':
         onToggleFullscreen?.call();
