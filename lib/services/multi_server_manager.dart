@@ -492,12 +492,17 @@ class MultiServerManager {
     }
   }
 
-  /// Attempt reconnection for all offline servers
-  Future<void> reconnectOfflineServers() async {
+  /// Attempt reconnection for all offline servers.
+  ///
+  /// When [forceRediscovery] is true, the cached endpoint is cleared before
+  /// reconnecting so the fast-path is skipped and a full candidate race runs.
+  /// Used by the manual reconnect button when the cached URL may be stale
+  /// (e.g. after a network change while the app was backgrounded).
+  Future<void> reconnectOfflineServers({bool forceRediscovery = false}) async {
     // Coalesce concurrent calls — return the in-flight future if one exists
     if (_activeReconnect != null) return _activeReconnect!;
 
-    _activeReconnect = _doReconnectOfflineServers();
+    _activeReconnect = _doReconnectOfflineServers(forceRediscovery: forceRediscovery);
     try {
       await _activeReconnect;
     } finally {
@@ -505,12 +510,17 @@ class MultiServerManager {
     }
   }
 
-  Future<void> _doReconnectOfflineServers() async {
+  Future<void> _doReconnectOfflineServers({required bool forceRediscovery}) async {
     final offline = offlineServerIds;
     if (offline.isEmpty) return;
 
     appLogger.d('Attempting reconnection for ${offline.length} offline servers');
     Sentry.addBreadcrumb(Breadcrumb(message: 'Reconnecting ${offline.length} offline server(s)', category: 'servers'));
+
+    if (forceRediscovery) {
+      final storage = await StorageService.getInstance();
+      await Future.wait(offline.map(storage.clearServerEndpoint));
+    }
 
     final futures = offline.map((serverId) {
       final server = _servers[serverId];

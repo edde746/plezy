@@ -551,8 +551,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             : const Duration(minutes: 2);
         if (now.difference(_lastResumeProbe) >= cooldown) {
           _lastResumeProbe = now;
-          _serverManager.checkServerHealth();
-          _serverManager.reconnectOfflineServers();
+          // Await health check before reconnecting so stale "online" servers
+          // get marked offline and included in the reconnection sweep.
+          unawaited(() async {
+            await _serverManager.checkServerHealth();
+            await _serverManager.reconnectOfflineServers();
+          }());
         }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:

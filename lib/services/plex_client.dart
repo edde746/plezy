@@ -238,7 +238,7 @@ class PlexClient {
           'Switching Plex endpoint after GET failure',
           error: {'from': failedEndpoint, 'to': nextBaseUrl, 'path': path},
         );
-        await _handleEndpointSwitch(nextBaseUrl);
+        await _handleEndpointSwitch(nextBaseUrl, persist: false);
         final response = await _http.get(
           path,
           queryParameters: queryParameters,
@@ -247,6 +247,7 @@ class PlexClient {
           abort: abort,
         );
         appLogger.i('Endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
+        await _onEndpointChanged?.call(nextBaseUrl);
         return response;
       } finally {
         _failoverSwitching = false;
@@ -2887,7 +2888,7 @@ class PlexClient {
     }
   }
 
-  Future<void> _handleEndpointSwitch(String newBaseUrl) async {
+  Future<void> _handleEndpointSwitch(String newBaseUrl, {bool persist = true}) async {
     if (config.baseUrl == newBaseUrl) {
       return;
     }
@@ -2897,7 +2898,7 @@ class PlexClient {
     config = config.copyWith(baseUrl: newBaseUrl);
     LogRedactionManager.registerServerUrl(newBaseUrl);
 
-    if (_onEndpointChanged != null) {
+    if (persist && _onEndpointChanged != null) {
       await _onEndpointChanged(newBaseUrl);
     }
   }

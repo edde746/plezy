@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
@@ -589,13 +590,16 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     setState(() => _isReconnecting = true);
 
     final serverManager = context.read<MultiServerProvider>().serverManager;
-    serverManager.checkServerHealth();
-    serverManager.reconnectOfflineServers().whenComplete(() {
-      // Give a moment for status updates to propagate
-      Future.delayed(const Duration(seconds: 1), () {
+    unawaited(() async {
+      try {
+        // Health check first so stale "online" servers get marked offline before
+        // we snapshot the offline list for reconnection.
+        await serverManager.checkServerHealth();
+        await serverManager.reconnectOfflineServers(forceRediscovery: true);
+      } finally {
         if (mounted) setState(() => _isReconnecting = false);
-      });
-    });
+      }
+    }());
   }
 
   void _handleLiveTvChanged() {
