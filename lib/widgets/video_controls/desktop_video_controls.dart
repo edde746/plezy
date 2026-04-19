@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -171,6 +172,11 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   LogicalKeyboardKey? _seekDirection; // Current direction being held
   int _seekRepeatCount = 0; // Consecutive key repeats for acceleration
 
+  // Preview thumbnail during sustained dpad/keyboard seeking
+  bool _showKeyRepeatThumbnail = false;
+  Timer? _keyRepeatThumbnailTimer;
+  static const _keyRepeatThumbnailTimeout = Duration(milliseconds: 400);
+
   // Content strip state
   bool _contentStripVisible = false;
   final GlobalKey<ContentStripState> _contentStripKey = GlobalKey<ContentStripState>();
@@ -214,6 +220,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   @override
   void dispose() {
+    _keyRepeatThumbnailTimer?.cancel();
     _prevItemFocusNode.dispose();
     _prevChapterFocusNode.dispose();
     _skipBackFocusNode.dispose();
@@ -429,6 +436,24 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   void _resetSeekState() {
     _seekDirection = null;
     _seekRepeatCount = 0;
+    _keyRepeatThumbnailTimer?.cancel();
+    _keyRepeatThumbnailTimer = null;
+    if (_showKeyRepeatThumbnail) {
+      setState(() => _showKeyRepeatThumbnail = false);
+    }
+  }
+
+  /// Show the timeline preview thumbnail during sustained key-repeat seeking.
+  /// Arms a short timer that hides the thumbnail once repeats stop.
+  void _triggerKeyRepeatThumbnail() {
+    if (!_showKeyRepeatThumbnail) {
+      setState(() => _showKeyRepeatThumbnail = true);
+    }
+    _keyRepeatThumbnailTimer?.cancel();
+    _keyRepeatThumbnailTimer = Timer(_keyRepeatThumbnailTimeout, () {
+      if (!mounted) return;
+      setState(() => _showKeyRepeatThumbnail = false);
+    });
   }
 
   /// Calculate seek multiplier based on repeat count (stepped tiers)
@@ -490,6 +515,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       }
       if (event is KeyRepeatEvent) {
         _seekRepeatCount++;
+        _triggerKeyRepeatThumbnail();
       }
 
       final isForward = key == LogicalKeyboardKey.arrowRight;
@@ -680,6 +706,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               onFocusChange: _onFocusChange,
               enabled: canInteract,
               thumbnailDataBuilder: widget.thumbnailDataBuilder,
+              showKeyRepeatThumbnail: _showKeyRepeatThumbnail,
             ),
           ],
           // Row 2: Playback controls and options

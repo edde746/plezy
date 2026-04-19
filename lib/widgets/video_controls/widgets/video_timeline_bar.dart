@@ -41,6 +41,10 @@ class VideoTimelineBar extends StatelessWidget {
   /// Optional callback that returns thumbnail image bytes for a given timestamp.
   final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
+  /// When true, show the preview thumbnail at the current playback position
+  /// (used during sustained dpad/keyboard key-repeat seeking).
+  final bool showKeyRepeatThumbnail;
+
   const VideoTimelineBar({
     super.key,
     required this.player,
@@ -55,6 +59,7 @@ class VideoTimelineBar extends StatelessWidget {
     this.enabled = true,
     this.showFinishTime = false,
     this.thumbnailDataBuilder,
+    this.showKeyRepeatThumbnail = false,
   });
 
   @override
@@ -164,6 +169,7 @@ class VideoTimelineBar extends StatelessWidget {
       onFocusChange: onFocusChange,
       enabled: enabled,
       thumbnailDataBuilder: thumbnailDataBuilder,
+      showKeyRepeatThumbnail: showKeyRepeatThumbnail,
     );
   }
 }

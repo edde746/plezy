@@ -37,6 +37,11 @@ class TimelineSlider extends StatefulWidget {
   /// Optional callback that returns thumbnail image bytes for a given timestamp.
   final Uint8List? Function(Duration time)? thumbnailDataBuilder;
 
+  /// When true, show the preview thumbnail at the current playback position.
+  /// Intended for sustained dpad/keyboard seeking where the decoder cannot
+  /// keep up with accumulated seeks. Single presses should leave this false.
+  final bool showKeyRepeatThumbnail;
+
   const TimelineSlider({
     super.key,
     required this.position,
@@ -51,6 +56,7 @@ class TimelineSlider extends StatefulWidget {
     this.onFocusChange,
     this.enabled = true,
     this.thumbnailDataBuilder,
+    this.showKeyRepeatThumbnail = false,
   });
 
   @override
@@ -153,6 +159,13 @@ class _TimelineSliderState extends State<TimelineSlider> {
             final fraction = ((_mousePosition! - _sliderPadding) / trackWidth).clamp(0.0, 1.0);
             final time = Duration(milliseconds: (fraction * durationMs).round());
             tooltip = _buildTooltip(sliderWidth, _mousePosition!, time);
+          } else if (widget.showKeyRepeatThumbnail && widget.thumbnailDataBuilder != null) {
+            // Preview thumbnail at the current playback position while the
+            // user holds a dpad/keyboard direction. The decoder lags behind
+            // rapid seeks, so the BIF thumbnail is the only live feedback.
+            final fraction = (widget.position.inMilliseconds / durationMs).clamp(0.0, 1.0);
+            final px = _sliderPadding + fraction * trackWidth;
+            tooltip = _buildTooltip(sliderWidth, px, widget.position);
           }
         }
 
