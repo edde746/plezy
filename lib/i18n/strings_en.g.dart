@@ -344,6 +344,9 @@ class TranslationsSettingsEn {
 	/// en: 'Video Playback'
 	String get videoPlayback => 'Video Playback';
 
+	/// en: 'Configure playback behavior'
+	String get videoPlaybackDescription => 'Configure playback behavior';
+
 	/// en: 'Advanced'
 	String get advanced => 'Advanced';
 
@@ -3305,6 +3308,7 @@ extension on Translations {
 			'settings.theme' => 'Theme',
 			'settings.appearance' => 'Appearance',
 			'settings.videoPlayback' => 'Video Playback',
+			'settings.videoPlaybackDescription' => 'Configure playback behavior',
 			'settings.advanced' => 'Advanced',
 			'settings.episodePosterMode' => 'Episode Poster Style',
 			'settings.seriesPoster' => 'Series Poster',
@@ -3746,9 +3750,9 @@ extension on Translations {
 			'libraries.noCollections' => 'No collections in this library',
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
-			'libraries.tabs.recommended' => 'Recommended',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'Recommended',
 			'libraries.tabs.browse' => 'Browse',
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',

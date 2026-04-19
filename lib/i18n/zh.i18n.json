@@ -80,6 +80,7 @@
     "theme": "主题",
     "appearance": "外观",
     "videoPlayback": "视频播放",
+    "videoPlaybackDescription": "配置播放行为",
     "advanced": "高级",
     "episodePosterMode": "剧集海报样式",
     "seriesPoster": "剧集海报",

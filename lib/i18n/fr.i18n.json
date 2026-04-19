@@ -80,6 +80,7 @@
     "theme": "Thème",
     "appearance": "Apparence",
     "videoPlayback": "Lecture vidéo",
+    "videoPlaybackDescription": "Configurer le comportement de lecture",
     "advanced": "Avancé",
     "episodePosterMode": "Style du Poster d'épisode",
     "seriesPoster": "Poster de série",

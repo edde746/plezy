@@ -200,6 +200,7 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get theme => 'Thème';
 	@override String get appearance => 'Apparence';
 	@override String get videoPlayback => 'Lecture vidéo';
+	@override String get videoPlaybackDescription => 'Configurer le comportement de lecture';
 	@override String get advanced => 'Avancé';
 	@override String get episodePosterMode => 'Style du Poster d\'épisode';
 	@override String get seriesPoster => 'Poster de série';
@@ -1484,6 +1485,7 @@ extension on TranslationsFr {
 			'settings.theme' => 'Thème',
 			'settings.appearance' => 'Apparence',
 			'settings.videoPlayback' => 'Lecture vidéo',
+			'settings.videoPlaybackDescription' => 'Configurer le comportement de lecture',
 			'settings.advanced' => 'Avancé',
 			'settings.episodePosterMode' => 'Style du Poster d\'épisode',
 			'settings.seriesPoster' => 'Poster de série',
@@ -1925,9 +1927,9 @@ extension on TranslationsFr {
 			'libraries.noCollections' => 'Aucune collection dans cette bibliothèque',
 			'libraries.noFoldersFound' => 'Aucun dossier trouvé',
 			'libraries.folders' => 'dossiers',
-			'libraries.tabs.recommended' => 'Recommandé',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'Recommandé',
 			'libraries.tabs.browse' => 'Parcourir',
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',

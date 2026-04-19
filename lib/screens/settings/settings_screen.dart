@@ -235,7 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       focusNode: _focusTracker.get(_kPlayback),
       leading: const AppIcon(Symbols.play_circle_rounded, fill: 1),
       title: Text(t.settings.videoPlayback),
-      subtitle: Text(t.settings.subtitleStylingDescription),
+      subtitle: Text(t.settings.videoPlaybackDescription),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const PlaybackSettingsScreen()));

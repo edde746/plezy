@@ -80,6 +80,7 @@
     "theme": "Tema",
     "appearance": "Utseende",
     "videoPlayback": "Videouppspelning",
+    "videoPlaybackDescription": "Konfigurera uppspelningsbeteende",
     "advanced": "Avancerat",
     "episodePosterMode": "Avsnittsaffisch-stil",
     "seriesPoster": "Serieaffisch",

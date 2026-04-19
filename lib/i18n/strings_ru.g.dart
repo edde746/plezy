@@ -200,6 +200,7 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get theme => 'Тема';
 	@override String get appearance => 'Внешний вид';
 	@override String get videoPlayback => 'Воспроизведение видео';
+	@override String get videoPlaybackDescription => 'Настройка поведения воспроизведения';
 	@override String get advanced => 'Дополнительно';
 	@override String get episodePosterMode => 'Стиль постера эпизода';
 	@override String get seriesPoster => 'Постер сериала';
@@ -1484,6 +1485,7 @@ extension on TranslationsRu {
 			'settings.theme' => 'Тема',
 			'settings.appearance' => 'Внешний вид',
 			'settings.videoPlayback' => 'Воспроизведение видео',
+			'settings.videoPlaybackDescription' => 'Настройка поведения воспроизведения',
 			'settings.advanced' => 'Дополнительно',
 			'settings.episodePosterMode' => 'Стиль постера эпизода',
 			'settings.seriesPoster' => 'Постер сериала',
@@ -1925,9 +1927,9 @@ extension on TranslationsRu {
 			'libraries.noCollections' => 'В этой библиотеке нет коллекций',
 			'libraries.noFoldersFound' => 'Папки не найдены',
 			'libraries.folders' => 'папки',
-			'libraries.tabs.recommended' => 'Рекомендуемые',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'Рекомендуемые',
 			'libraries.tabs.browse' => 'Обзор',
 			'libraries.tabs.collections' => 'Коллекции',
 			'libraries.tabs.playlists' => 'Плейлисты',

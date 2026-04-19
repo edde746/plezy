@@ -200,6 +200,7 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get theme => '主题';
 	@override String get appearance => '外观';
 	@override String get videoPlayback => '视频播放';
+	@override String get videoPlaybackDescription => '配置播放行为';
 	@override String get advanced => '高级';
 	@override String get episodePosterMode => '剧集海报样式';
 	@override String get seriesPoster => '剧集海报';
@@ -1484,6 +1485,7 @@ extension on TranslationsZh {
 			'settings.theme' => '主题',
 			'settings.appearance' => '外观',
 			'settings.videoPlayback' => '视频播放',
+			'settings.videoPlaybackDescription' => '配置播放行为',
 			'settings.advanced' => '高级',
 			'settings.episodePosterMode' => '剧集海报样式',
 			'settings.seriesPoster' => '剧集海报',
@@ -1925,9 +1927,9 @@ extension on TranslationsZh {
 			'libraries.noCollections' => '此媒体库中没有合集',
 			'libraries.noFoldersFound' => '未找到文件夹',
 			'libraries.folders' => '文件夹',
-			'libraries.tabs.recommended' => '推荐',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => '推荐',
 			'libraries.tabs.browse' => '浏览',
 			'libraries.tabs.collections' => '合集',
 			'libraries.tabs.playlists' => '播放列表',

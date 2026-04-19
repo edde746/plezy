@@ -200,6 +200,7 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Aparência';
 	@override String get videoPlayback => 'Reprodução de Vídeo';
+	@override String get videoPlaybackDescription => 'Configurar comportamento de reprodução';
 	@override String get advanced => 'Avançado';
 	@override String get episodePosterMode => 'Estilo do Poster de Episódio';
 	@override String get seriesPoster => 'Poster da Série';
@@ -1484,6 +1485,7 @@ extension on TranslationsPt {
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Aparência',
 			'settings.videoPlayback' => 'Reprodução de Vídeo',
+			'settings.videoPlaybackDescription' => 'Configurar comportamento de reprodução',
 			'settings.advanced' => 'Avançado',
 			'settings.episodePosterMode' => 'Estilo do Poster de Episódio',
 			'settings.seriesPoster' => 'Poster da Série',
@@ -1925,9 +1927,9 @@ extension on TranslationsPt {
 			'libraries.noCollections' => 'Nenhuma coleção nesta biblioteca',
 			'libraries.noFoldersFound' => 'Nenhuma pasta encontrada',
 			'libraries.folders' => 'pastas',
-			'libraries.tabs.recommended' => 'Recomendados',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'Recomendados',
 			'libraries.tabs.browse' => 'Navegar',
 			'libraries.tabs.collections' => 'Coleções',
 			'libraries.tabs.playlists' => 'Playlists',

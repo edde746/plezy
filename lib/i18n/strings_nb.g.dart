@@ -200,6 +200,7 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Utseende';
 	@override String get videoPlayback => 'Videoavspilling';
+	@override String get videoPlaybackDescription => 'Konfigurer avspillingsatferd';
 	@override String get advanced => 'Avansert';
 	@override String get episodePosterMode => 'Episodeplakatstil';
 	@override String get seriesPoster => 'Serieplakat';
@@ -1484,6 +1485,7 @@ extension on TranslationsNb {
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Utseende',
 			'settings.videoPlayback' => 'Videoavspilling',
+			'settings.videoPlaybackDescription' => 'Konfigurer avspillingsatferd',
 			'settings.advanced' => 'Avansert',
 			'settings.episodePosterMode' => 'Episodeplakatstil',
 			'settings.seriesPoster' => 'Serieplakat',
@@ -1925,9 +1927,9 @@ extension on TranslationsNb {
 			'libraries.noCollections' => 'Ingen samlinger i dette biblioteket',
 			'libraries.noFoldersFound' => 'Ingen mapper funnet',
 			'libraries.folders' => 'mapper',
-			'libraries.tabs.recommended' => 'Anbefalt',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'Anbefalt',
 			'libraries.tabs.browse' => 'Bla gjennom',
 			'libraries.tabs.collections' => 'Samlinger',
 			'libraries.tabs.playlists' => 'Spillelister',

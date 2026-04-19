@@ -200,6 +200,7 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Utseende';
 	@override String get videoPlayback => 'Videouppspelning';
+	@override String get videoPlaybackDescription => 'Konfigurera uppspelningsbeteende';
 	@override String get advanced => 'Avancerat';
 	@override String get episodePosterMode => 'Avsnittsaffisch-stil';
 	@override String get seriesPoster => 'Serieaffisch';
@@ -1484,6 +1485,7 @@ extension on TranslationsSv {
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Utseende',
 			'settings.videoPlayback' => 'Videouppspelning',
+			'settings.videoPlaybackDescription' => 'Konfigurera uppspelningsbeteende',
 			'settings.advanced' => 'Avancerat',
 			'settings.episodePosterMode' => 'Avsnittsaffisch-stil',
 			'settings.seriesPoster' => 'Serieaffisch',
@@ -1925,9 +1927,9 @@ extension on TranslationsSv {
 			'libraries.noCollections' => 'Inga samlingar i det här biblioteket',
 			'libraries.noFoldersFound' => 'Inga mappar hittades',
 			'libraries.folders' => 'mappar',
-			'libraries.tabs.recommended' => 'Rekommenderat',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'Rekommenderat',
 			'libraries.tabs.browse' => 'Bläddra',
 			'libraries.tabs.collections' => 'Samlingar',
 			'libraries.tabs.playlists' => 'Spellistor',

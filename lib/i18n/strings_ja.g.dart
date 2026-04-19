@@ -200,6 +200,7 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get theme => 'テーマ';
 	@override String get appearance => '外観';
 	@override String get videoPlayback => '動画再生';
+	@override String get videoPlaybackDescription => '再生動作を設定';
 	@override String get advanced => '詳細';
 	@override String get episodePosterMode => 'エピソードポスタースタイル';
 	@override String get seriesPoster => 'シリーズポスター';
@@ -1484,6 +1485,7 @@ extension on TranslationsJa {
 			'settings.theme' => 'テーマ',
 			'settings.appearance' => '外観',
 			'settings.videoPlayback' => '動画再生',
+			'settings.videoPlaybackDescription' => '再生動作を設定',
 			'settings.advanced' => '詳細',
 			'settings.episodePosterMode' => 'エピソードポスタースタイル',
 			'settings.seriesPoster' => 'シリーズポスター',
@@ -1925,9 +1927,9 @@ extension on TranslationsJa {
 			'libraries.noCollections' => 'このライブラリにコレクションがありません',
 			'libraries.noFoldersFound' => 'フォルダが見つかりません',
 			'libraries.folders' => 'フォルダ',
-			'libraries.tabs.recommended' => 'おすすめ',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'おすすめ',
 			'libraries.tabs.browse' => 'ブラウズ',
 			'libraries.tabs.collections' => 'コレクション',
 			'libraries.tabs.playlists' => 'プレイリスト',

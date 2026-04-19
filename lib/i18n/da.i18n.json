@@ -80,6 +80,7 @@
     "theme": "Tema",
     "appearance": "Udseende",
     "videoPlayback": "Videoafspilning",
+    "videoPlaybackDescription": "Konfigurer afspilningsadfærd",
     "advanced": "Avanceret",
     "episodePosterMode": "Episodeplakatstil",
     "seriesPoster": "Serieplakat",

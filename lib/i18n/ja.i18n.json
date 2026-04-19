@@ -80,6 +80,7 @@
     "theme": "テーマ",
     "appearance": "外観",
     "videoPlayback": "動画再生",
+    "videoPlaybackDescription": "再生動作を設定",
     "advanced": "詳細",
     "episodePosterMode": "エピソードポスタースタイル",
     "seriesPoster": "シリーズポスター",

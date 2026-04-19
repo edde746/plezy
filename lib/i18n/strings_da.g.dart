@@ -200,6 +200,7 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Udseende';
 	@override String get videoPlayback => 'Videoafspilning';
+	@override String get videoPlaybackDescription => 'Konfigurer afspilningsadfærd';
 	@override String get advanced => 'Avanceret';
 	@override String get episodePosterMode => 'Episodeplakatstil';
 	@override String get seriesPoster => 'Serieplakat';
@@ -1484,6 +1485,7 @@ extension on TranslationsDa {
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Udseende',
 			'settings.videoPlayback' => 'Videoafspilning',
+			'settings.videoPlaybackDescription' => 'Konfigurer afspilningsadfærd',
 			'settings.advanced' => 'Avanceret',
 			'settings.episodePosterMode' => 'Episodeplakatstil',
 			'settings.seriesPoster' => 'Serieplakat',
@@ -1925,9 +1927,9 @@ extension on TranslationsDa {
 			'libraries.noCollections' => 'Ingen samlinger i dette bibliotek',
 			'libraries.noFoldersFound' => 'Ingen mapper fundet',
 			'libraries.folders' => 'mapper',
-			'libraries.tabs.recommended' => 'Anbefalet',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'Anbefalet',
 			'libraries.tabs.browse' => 'Gennemse',
 			'libraries.tabs.collections' => 'Samlinger',
 			'libraries.tabs.playlists' => 'Playlister',

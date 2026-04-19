@@ -80,6 +80,7 @@
     "theme": "Thema",
     "appearance": "Uiterlijk",
     "videoPlayback": "Video afspelen",
+    "videoPlaybackDescription": "Afspeelgedrag configureren",
     "advanced": "Geavanceerd",
     "episodePosterMode": "Aflevering poster stijl",
     "seriesPoster": "Serie poster",

@@ -200,6 +200,7 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get theme => '테마';
 	@override String get appearance => '외관';
 	@override String get videoPlayback => '비디오 재생';
+	@override String get videoPlaybackDescription => '재생 동작 구성';
 	@override String get advanced => '고급';
 	@override String get episodePosterMode => '에피소드 포스터 스타일';
 	@override String get seriesPoster => '시리즈 포스터';
@@ -1484,6 +1485,7 @@ extension on TranslationsKo {
 			'settings.theme' => '테마',
 			'settings.appearance' => '외관',
 			'settings.videoPlayback' => '비디오 재생',
+			'settings.videoPlaybackDescription' => '재생 동작 구성',
 			'settings.advanced' => '고급',
 			'settings.episodePosterMode' => '에피소드 포스터 스타일',
 			'settings.seriesPoster' => '시리즈 포스터',
@@ -1925,9 +1927,9 @@ extension on TranslationsKo {
 			'libraries.noCollections' => '이 미디어 라이브러리에는 컬렉션이 없습니다',
 			'libraries.noFoldersFound' => '폴더를 찾을 수 없습니다',
 			'libraries.folders' => '폴더',
-			'libraries.tabs.recommended' => '추천',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => '추천',
 			'libraries.tabs.browse' => '찾아보기',
 			'libraries.tabs.collections' => '컬렉션',
 			'libraries.tabs.playlists' => '재생 목록',

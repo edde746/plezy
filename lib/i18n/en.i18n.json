@@ -80,6 +80,7 @@
     "theme": "Theme",
     "appearance": "Appearance",
     "videoPlayback": "Video Playback",
+    "videoPlaybackDescription": "Configure playback behavior",
     "advanced": "Advanced",
     "episodePosterMode": "Episode Poster Style",
     "seriesPoster": "Series Poster",

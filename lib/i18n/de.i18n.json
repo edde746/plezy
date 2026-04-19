@@ -80,6 +80,7 @@
     "theme": "Design",
     "appearance": "Darstellung",
     "videoPlayback": "Videowiedergabe",
+    "videoPlaybackDescription": "Wiedergabeverhalten konfigurieren",
     "advanced": "Erweitert",
     "episodePosterMode": "Episoden-Poster-Stil",
     "seriesPoster": "Serienposter",

@@ -200,6 +200,7 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get theme => 'Thema';
 	@override String get appearance => 'Uiterlijk';
 	@override String get videoPlayback => 'Video afspelen';
+	@override String get videoPlaybackDescription => 'Afspeelgedrag configureren';
 	@override String get advanced => 'Geavanceerd';
 	@override String get episodePosterMode => 'Aflevering poster stijl';
 	@override String get seriesPoster => 'Serie poster';
@@ -1484,6 +1485,7 @@ extension on TranslationsNl {
 			'settings.theme' => 'Thema',
 			'settings.appearance' => 'Uiterlijk',
 			'settings.videoPlayback' => 'Video afspelen',
+			'settings.videoPlaybackDescription' => 'Afspeelgedrag configureren',
 			'settings.advanced' => 'Geavanceerd',
 			'settings.episodePosterMode' => 'Aflevering poster stijl',
 			'settings.seriesPoster' => 'Serie poster',
@@ -1925,9 +1927,9 @@ extension on TranslationsNl {
 			'libraries.noCollections' => 'Geen collecties in deze bibliotheek',
 			'libraries.noFoldersFound' => 'Geen mappen gevonden',
 			'libraries.folders' => 'mappen',
-			'libraries.tabs.recommended' => 'Aanbevolen',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'Aanbevolen',
 			'libraries.tabs.browse' => 'Bladeren',
 			'libraries.tabs.collections' => 'Collecties',
 			'libraries.tabs.playlists' => 'Afspeellijsten',

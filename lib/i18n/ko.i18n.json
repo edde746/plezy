@@ -80,6 +80,7 @@
     "theme": "테마",
     "appearance": "외관",
     "videoPlayback": "비디오 재생",
+    "videoPlaybackDescription": "재생 동작 구성",
     "advanced": "고급",
     "episodePosterMode": "에피소드 포스터 스타일",
     "seriesPoster": "시리즈 포스터",

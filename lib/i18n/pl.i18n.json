@@ -80,6 +80,7 @@
     "theme": "Motyw",
     "appearance": "Wygląd",
     "videoPlayback": "Odtwarzanie wideo",
+    "videoPlaybackDescription": "Skonfiguruj zachowanie odtwarzania",
     "advanced": "Zaawansowane",
     "episodePosterMode": "Styl plakatu odcinka",
     "seriesPoster": "Plakat serialu",
