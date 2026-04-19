@@ -65,10 +65,10 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLicensesNl licenses = _TranslationsLicensesNl._(_root);
 	@override late final _TranslationsNavigationNl navigation = _TranslationsNavigationNl._(_root);
 	@override late final _TranslationsLiveTvNl liveTv = _TranslationsLiveTvNl._(_root);
-	@override late final _TranslationsDownloadsNl downloads = _TranslationsDownloadsNl._(_root);
-	@override late final _TranslationsPlaylistsNl playlists = _TranslationsPlaylistsNl._(_root);
 	@override late final _TranslationsCollectionsNl collections = _TranslationsCollectionsNl._(_root);
+	@override late final _TranslationsPlaylistsNl playlists = _TranslationsPlaylistsNl._(_root);
 	@override late final _TranslationsWatchTogetherNl watchTogether = _TranslationsWatchTogetherNl._(_root);
+	@override late final _TranslationsDownloadsNl downloads = _TranslationsDownloadsNl._(_root);
 	@override late final _TranslationsShadersNl shaders = _TranslationsShadersNl._(_root);
 	@override late final _TranslationsCompanionRemoteNl companionRemote = _TranslationsCompanionRemoteNl._(_root);
 	@override late final _TranslationsVideoSettingsNl videoSettings = _TranslationsVideoSettingsNl._(_root);
@@ -129,7 +129,6 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get shuffle => 'Willekeurig';
 	@override String get addTo => 'Toevoegen aan...';
 	@override String get createNew => 'Nieuw aanmaken';
-	@override String get paste => 'Plakken';
 	@override String get connect => 'Verbinden';
 	@override String get disconnect => 'Verbinding verbreken';
 	@override String get play => 'Afspelen';
@@ -204,11 +203,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get advanced => 'Geavanceerd';
 	@override String get episodePosterMode => 'Aflevering poster stijl';
 	@override String get seriesPoster => 'Serie poster';
-	@override String get seriesPosterDescription => 'Toon de serie poster voor alle afleveringen';
 	@override String get seasonPoster => 'Seizoen poster';
-	@override String get seasonPosterDescription => 'Toon de seizoensspecifieke poster voor afleveringen';
 	@override String get episodeThumbnail => 'Miniatuur';
-	@override String get episodeThumbnailDescription => 'Toon 16:9 aflevering miniaturen';
 	@override String get showHeroSectionDescription => 'Toon uitgelichte inhoud carrousel op startscherm';
 	@override String get secondsLabel => 'Seconden';
 	@override String get minutesLabel => 'Minuten';
@@ -216,23 +212,15 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get minutesShort => 'm';
 	@override String durationHint({required Object min, required Object max}) => 'Voer duur in (${min}-${max})';
 	@override String get systemTheme => 'Systeem';
-	@override String get systemThemeDescription => 'Volg systeeminstellingen';
 	@override String get lightTheme => 'Licht';
 	@override String get darkTheme => 'Donker';
 	@override String get oledTheme => 'OLED';
-	@override String get oledThemeDescription => 'Puur zwart voor OLED-schermen';
 	@override String get libraryDensity => 'Bibliotheek dichtheid';
 	@override String get compact => 'Compact';
-	@override String get compactDescription => 'Kleinere kaarten, meer items zichtbaar';
-	@override String get normal => 'Normaal';
-	@override String get normalDescription => 'Standaard grootte';
 	@override String get comfortable => 'Comfortabel';
-	@override String get comfortableDescription => 'Grotere kaarten, minder items zichtbaar';
 	@override String get viewMode => 'Weergavemodus';
 	@override String get gridView => 'Raster';
-	@override String get gridViewDescription => 'Items weergeven in een rasterindeling';
 	@override String get listView => 'Lijst';
-	@override String get listViewDescription => 'Items weergeven in een lijstindeling';
 	@override String get showHeroSection => 'Toon hoofdsectie';
 	@override String get useGlobalHubs => 'Plex Home-indeling gebruiken';
 	@override String get useGlobalHubsDescription => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.';
@@ -246,9 +234,7 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get hideSpoilersDescription => 'Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien';
 	@override String get playerBackend => 'Speler backend';
 	@override String get exoPlayer => 'ExoPlayer (Aanbevolen)';
-	@override String get exoPlayerDescription => 'Android-native speler met betere hardware-ondersteuning';
 	@override String get mpv => 'mpv';
-	@override String get mpvDescription => 'Geavanceerde speler met meer functies en ASS-ondertitelondersteuning';
 	@override String get hardwareDecoding => 'Hardware decodering';
 	@override String get hardwareDecodingDescription => 'Gebruik hardware versnelling indien beschikbaar';
 	@override String get bufferSize => 'Buffer grootte';
@@ -260,7 +246,6 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get smallSkipDuration => 'Korte skip duur';
 	@override String get largeSkipDuration => 'Lange skip duur';
 	@override String get rewindOnResume => 'Terugspoelen bij hervatten';
-	@override String get rewindOnResumeDescription => 'Spoel dit aantal seconden terug bij het hervatten van afspelen';
 	@override String secondsUnit({required Object seconds}) => '${seconds} seconden';
 	@override String get defaultSleepTimer => 'Standaard slaap timer';
 	@override String minutesUnit({required Object minutes}) => 'bij ${minutes} minuten';
@@ -274,7 +259,6 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get videoPlayerNavigation => 'Videospeler navigatie';
 	@override String get videoPlayerNavigationDescription => 'Gebruik pijltjestoetsen om door de videospeler bediening te navigeren';
 	@override String get watchTogetherRelay => 'Samen Kijken Relay';
-	@override String get watchTogetherRelayDefault => 'Standaard';
 	@override String get watchTogetherRelayDescription => 'Stel een aangepaste relay-server in voor Samen Kijken. Alle deelnemers moeten dezelfde server gebruiken.';
 	@override String get watchTogetherRelayHint => 'https://mijn-relay.voorbeeld.nl';
 	@override String get crashReporting => 'Crashrapportage';
@@ -334,6 +318,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Toon op Discord wat je aan het kijken bent';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Kijkgeschiedenis synchroniseren met Trakt';
+	@override String get companionRemoteServer => 'Companion Remote-server';
+	@override String get companionRemoteServerDescription => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen';
 	@override String get autoPip => 'Automatische beeld-in-beeld';
 	@override String get autoPipDescription => 'Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
@@ -343,7 +329,6 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get matchDynamicRange => 'Dynamisch bereik afstemmen';
 	@override String get matchDynamicRangeDescription => 'HDR automatisch inschakelen voor HDR-inhoud en terugkeren naar SDR bij het verlaten van de speler';
 	@override String get displaySwitchDelay => 'Vertraging bij schermwisseling';
-	@override String get displaySwitchDelayDescription => 'Seconden wachten na een schermwisseling voordat het afspelen begint';
 	@override String get tunneledPlayback => 'Getunnelde weergave';
 	@override String get tunneledPlaybackDescription => 'Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
@@ -366,8 +351,6 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
-	@override String get companionRemoteServer => 'Companion Remote-server';
-	@override String get companionRemoteServerDescription => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen';
 }
 
 // Path: search
@@ -532,7 +515,6 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get alwaysOnTopButton => 'Altijd bovenop';
 	@override String get rotationLockButton => 'Rotatievergrendeling';
 	@override String get lockScreen => 'Vergrendel scherm';
-	@override String get unlockScreen => 'Ontgrendel scherm';
 	@override String get screenLockButton => 'Schermvergrendeling';
 	@override String get longPressToUnlock => 'Lang indrukken om te ontgrendelen';
 	@override String get timelineSlider => 'Videotijdlijn';
@@ -618,7 +600,6 @@ class _TranslationsSubtitlingStylingNl implements TranslationsSubtitlingStylingE
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get stylingOptions => 'Opmaak opties';
 	@override String get text => 'Tekst';
 	@override String get border => 'Rand';
 	@override String get background => 'Achtergrond';
@@ -866,90 +847,6 @@ class _TranslationsLiveTvNl implements TranslationsLiveTvEn {
 	@override String get goToLive => 'Ga naar live';
 }
 
-// Path: downloads
-class _TranslationsDownloadsNl implements TranslationsDownloadsEn {
-	_TranslationsDownloadsNl._(this._root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Downloads';
-	@override String get manage => 'Beheren';
-	@override String get tvShows => 'Series';
-	@override String get movies => 'Films';
-	@override String get noDownloads => 'Nog geen downloads';
-	@override String get noDownloadsDescription => 'Gedownloade content verschijnt hier voor offline weergave';
-	@override String get downloadNow => 'Download';
-	@override String get deleteDownload => 'Download verwijderen';
-	@override String get retryDownload => 'Download opnieuw proberen';
-	@override String get downloadQueued => 'Download in wachtrij';
-	@override String get serverErrorBitrate => 'Serverfout — het bestand overschrijdt mogelijk de bitrate-limiet voor remote streaming';
-	@override String episodesQueued({required Object count}) => '${count} afleveringen in wachtrij voor download';
-	@override String get downloadDeleted => 'Download verwijderd';
-	@override String deleteConfirm({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.';
-	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})';
-	@override String get noDownloadsTree => 'Geen downloads';
-	@override String get pauseAll => 'Alles pauzeren';
-	@override String get resumeAll => 'Alles hervatten';
-	@override String get deleteAll => 'Alles verwijderen';
-	@override String get selectVersion => 'Versie selecteren';
-	@override String get allEpisodes => 'Alle afleveringen';
-	@override String get unwatchedOnly => 'Alleen onbekeken';
-	@override String nextNUnwatched({required Object count}) => 'Volgende ${count} onbekeken';
-	@override String get customAmount => 'Aangepast aantal...';
-	@override String get howManyEpisodes => 'Hoeveel afleveringen?';
-	@override String itemsQueued({required Object count}) => '${count} items in downloadwachtrij';
-	@override String get keepSynced => 'Gesynchroniseerd houden';
-	@override String get downloadOnce => 'Eenmalig downloaden';
-	@override String keepNUnwatched({required Object count}) => '${count} onbekeken behouden';
-	@override String get editSyncRule => 'Synchronisatieregel bewerken';
-	@override String get removeSyncRule => 'Synchronisatieregel verwijderen';
-	@override String removeSyncRuleConfirm({required Object title}) => 'Synchronisatie van "${title}" stoppen? Gedownloade afleveringen worden behouden.';
-	@override String syncRuleCreated({required Object count}) => 'Synchronisatieregel aangemaakt — ${count} onbekeken afleveringen behouden';
-	@override String get syncRuleUpdated => 'Synchronisatieregel bijgewerkt';
-	@override String get syncRuleRemoved => 'Synchronisatieregel verwijderd';
-	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}';
-	@override String get activeSyncRules => 'Synchronisatieregels';
-	@override String get noSyncRules => 'Geen synchronisatieregels';
-	@override String lastSynced({required Object time}) => 'Laatst gesynchroniseerd ${time}';
-	@override String get manageSyncRule => 'Synchronisatie beheren';
-	@override String get editEpisodeCount => 'Aantal afleveringen';
-}
-
-// Path: playlists
-class _TranslationsPlaylistsNl implements TranslationsPlaylistsEn {
-	_TranslationsPlaylistsNl._(this._root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Afspeellijsten';
-	@override String get noPlaylists => 'Geen afspeellijsten gevonden';
-	@override String get create => 'Afspeellijst maken';
-	@override String get playlistName => 'Naam afspeellijst';
-	@override String get enterPlaylistName => 'Voer naam afspeellijst in';
-	@override String get delete => 'Afspeellijst verwijderen';
-	@override String get removeItem => 'Verwijderen uit afspeellijst';
-	@override String get smartPlaylist => 'Slimme afspeellijst';
-	@override String itemCount({required Object count}) => '${count} items';
-	@override String get oneItem => '1 item';
-	@override String get emptyPlaylist => 'Deze afspeellijst is leeg';
-	@override String get deleteConfirm => 'Afspeellijst verwijderen?';
-	@override String deleteMessage({required Object name}) => 'Weet je zeker dat je "${name}" wilt verwijderen?';
-	@override String get created => 'Afspeellijst gemaakt';
-	@override String get deleted => 'Afspeellijst verwijderd';
-	@override String get itemAdded => 'Toegevoegd aan afspeellijst';
-	@override String get itemRemoved => 'Verwijderd uit afspeellijst';
-	@override String get selectPlaylist => 'Selecteer afspeellijst';
-	@override String get errorCreating => 'Fout bij maken afspeellijst';
-	@override String get errorDeleting => 'Fout bij verwijderen afspeellijst';
-	@override String get errorLoading => 'Fout bij laden afspeellijsten';
-	@override String get errorAdding => 'Fout bij toevoegen aan afspeellijst';
-	@override String get errorReordering => 'Fout bij herschikken van afspeellijstitem';
-	@override String get errorRemoving => 'Fout bij verwijderen uit afspeellijst';
-	@override String get playlist => 'Afspeellijst';
-}
-
 // Path: collections
 class _TranslationsCollectionsNl implements TranslationsCollectionsEn {
 	_TranslationsCollectionsNl._(this._root);
@@ -979,6 +876,40 @@ class _TranslationsCollectionsNl implements TranslationsCollectionsEn {
 	@override String get removeFromCollectionFailed => 'Verwijderen uit collectie mislukt';
 	@override String removeFromCollectionError({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}';
 	@override String get searchCollections => 'Collecties zoeken...';
+}
+
+// Path: playlists
+class _TranslationsPlaylistsNl implements TranslationsPlaylistsEn {
+	_TranslationsPlaylistsNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Afspeellijsten';
+	@override String get playlist => 'Afspeellijst';
+	@override String get noPlaylists => 'Geen afspeellijsten gevonden';
+	@override String get create => 'Afspeellijst maken';
+	@override String get playlistName => 'Naam afspeellijst';
+	@override String get enterPlaylistName => 'Voer naam afspeellijst in';
+	@override String get delete => 'Afspeellijst verwijderen';
+	@override String get removeItem => 'Verwijderen uit afspeellijst';
+	@override String get smartPlaylist => 'Slimme afspeellijst';
+	@override String itemCount({required Object count}) => '${count} items';
+	@override String get oneItem => '1 item';
+	@override String get emptyPlaylist => 'Deze afspeellijst is leeg';
+	@override String get deleteConfirm => 'Afspeellijst verwijderen?';
+	@override String deleteMessage({required Object name}) => 'Weet je zeker dat je "${name}" wilt verwijderen?';
+	@override String get created => 'Afspeellijst gemaakt';
+	@override String get deleted => 'Afspeellijst verwijderd';
+	@override String get itemAdded => 'Toegevoegd aan afspeellijst';
+	@override String get itemRemoved => 'Verwijderd uit afspeellijst';
+	@override String get selectPlaylist => 'Selecteer afspeellijst';
+	@override String get errorCreating => 'Fout bij maken afspeellijst';
+	@override String get errorDeleting => 'Fout bij verwijderen afspeellijst';
+	@override String get errorLoading => 'Fout bij laden afspeellijsten';
+	@override String get errorAdding => 'Fout bij toevoegen aan afspeellijst';
+	@override String get errorReordering => 'Fout bij herschikken van afspeellijstitem';
+	@override String get errorRemoving => 'Fout bij verwijderen uit afspeellijst';
 }
 
 // Path: watchTogether
@@ -1048,6 +979,55 @@ class _TranslationsWatchTogetherNl implements TranslationsWatchTogetherEn {
 	@override String get removeRoom => 'Verwijderen';
 }
 
+// Path: downloads
+class _TranslationsDownloadsNl implements TranslationsDownloadsEn {
+	_TranslationsDownloadsNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Downloads';
+	@override String get manage => 'Beheren';
+	@override String get tvShows => 'Series';
+	@override String get movies => 'Films';
+	@override String get noDownloads => 'Nog geen downloads';
+	@override String get noDownloadsDescription => 'Gedownloade content verschijnt hier voor offline weergave';
+	@override String get downloadNow => 'Download';
+	@override String get deleteDownload => 'Download verwijderen';
+	@override String get retryDownload => 'Download opnieuw proberen';
+	@override String get downloadQueued => 'Download in wachtrij';
+	@override String get serverErrorBitrate => 'Serverfout — het bestand overschrijdt mogelijk de bitrate-limiet voor remote streaming';
+	@override String episodesQueued({required Object count}) => '${count} afleveringen in wachtrij voor download';
+	@override String get downloadDeleted => 'Download verwijderd';
+	@override String deleteConfirm({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.';
+	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})';
+	@override String get noDownloadsTree => 'Geen downloads';
+	@override String get pauseAll => 'Alles pauzeren';
+	@override String get resumeAll => 'Alles hervatten';
+	@override String get deleteAll => 'Alles verwijderen';
+	@override String get selectVersion => 'Versie selecteren';
+	@override String get allEpisodes => 'Alle afleveringen';
+	@override String get unwatchedOnly => 'Alleen onbekeken';
+	@override String nextNUnwatched({required Object count}) => 'Volgende ${count} onbekeken';
+	@override String get customAmount => 'Aangepast aantal...';
+	@override String get howManyEpisodes => 'Hoeveel afleveringen?';
+	@override String itemsQueued({required Object count}) => '${count} items in downloadwachtrij';
+	@override String get keepSynced => 'Gesynchroniseerd houden';
+	@override String get downloadOnce => 'Eenmalig downloaden';
+	@override String keepNUnwatched({required Object count}) => '${count} onbekeken behouden';
+	@override String get editSyncRule => 'Synchronisatieregel bewerken';
+	@override String get removeSyncRule => 'Synchronisatieregel verwijderen';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Synchronisatie van "${title}" stoppen? Gedownloade afleveringen worden behouden.';
+	@override String syncRuleCreated({required Object count}) => 'Synchronisatieregel aangemaakt — ${count} onbekeken afleveringen behouden';
+	@override String get syncRuleUpdated => 'Synchronisatieregel bijgewerkt';
+	@override String get syncRuleRemoved => 'Synchronisatieregel verwijderd';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}';
+	@override String get activeSyncRules => 'Synchronisatieregels';
+	@override String get noSyncRules => 'Geen synchronisatieregels';
+	@override String get manageSyncRule => 'Synchronisatie beheren';
+	@override String get editEpisodeCount => 'Aantal afleveringen';
+}
+
 // Path: shaders
 class _TranslationsShadersNl implements TranslationsShadersEn {
 	_TranslationsShadersNl._(this._root);
@@ -1077,11 +1057,6 @@ class _TranslationsCompanionRemoteNl implements TranslationsCompanionRemoteEn {
 
 	// Translations
 	@override String get title => 'Afstandsbediening';
-	@override String get connectToDevice => 'Verbinden met apparaat';
-	@override String get hostRemoteSession => 'Externe sessie hosten';
-	@override String get controlThisDevice => 'Bedien dit apparaat met je telefoon';
-	@override String get remoteControl => 'Afstandsbediening';
-	@override String get controlDesktop => 'Bedien een desktop-apparaat';
 	@override String connectedTo({required Object name}) => 'Verbonden met ${name}';
 	@override late final _TranslationsCompanionRemoteSessionNl session = _TranslationsCompanionRemoteSessionNl._(_root);
 	@override late final _TranslationsCompanionRemotePairingNl pairing = _TranslationsCompanionRemotePairingNl._(_root);
@@ -1351,7 +1326,6 @@ class _TranslationsCompanionRemotePairingNl implements TranslationsCompanionRemo
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get pairWithDesktop => 'Verbinden met desktop';
 	@override String get discoveryDescription => 'Apparaten op je netwerk die Plezy gebruiken met hetzelfde Plex-account verschijnen automatisch';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => 'Verbinden...';
@@ -1380,8 +1354,6 @@ class _TranslationsCompanionRemoteRemoteNl implements TranslationsCompanionRemot
 	@override String get reconnecting => 'Opnieuw verbinden...';
 	@override String attemptOf({required Object current}) => 'Poging ${current} van 5';
 	@override String get retryNow => 'Nu opnieuw proberen';
-	@override String get connectionError => 'Verbindingsfout';
-	@override String get notConnected => 'Niet verbonden';
 	@override String get tabRemote => 'Afstandsbediening';
 	@override String get tabPlay => 'Afspelen';
 	@override String get tabMore => 'Meer';
@@ -1441,7 +1413,6 @@ extension on TranslationsNl {
 			'common.shuffle' => 'Willekeurig',
 			'common.addTo' => 'Toevoegen aan...',
 			'common.createNew' => 'Nieuw aanmaken',
-			'common.paste' => 'Plakken',
 			'common.connect' => 'Verbinden',
 			'common.disconnect' => 'Verbinding verbreken',
 			'common.play' => 'Afspelen',
@@ -1489,11 +1460,8 @@ extension on TranslationsNl {
 			'settings.advanced' => 'Geavanceerd',
 			'settings.episodePosterMode' => 'Aflevering poster stijl',
 			'settings.seriesPoster' => 'Serie poster',
-			'settings.seriesPosterDescription' => 'Toon de serie poster voor alle afleveringen',
 			'settings.seasonPoster' => 'Seizoen poster',
-			'settings.seasonPosterDescription' => 'Toon de seizoensspecifieke poster voor afleveringen',
 			'settings.episodeThumbnail' => 'Miniatuur',
-			'settings.episodeThumbnailDescription' => 'Toon 16:9 aflevering miniaturen',
 			'settings.showHeroSectionDescription' => 'Toon uitgelichte inhoud carrousel op startscherm',
 			'settings.secondsLabel' => 'Seconden',
 			'settings.minutesLabel' => 'Minuten',
@@ -1501,23 +1469,15 @@ extension on TranslationsNl {
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Voer duur in (${min}-${max})',
 			'settings.systemTheme' => 'Systeem',
-			'settings.systemThemeDescription' => 'Volg systeeminstellingen',
 			'settings.lightTheme' => 'Licht',
 			'settings.darkTheme' => 'Donker',
 			'settings.oledTheme' => 'OLED',
-			'settings.oledThemeDescription' => 'Puur zwart voor OLED-schermen',
 			'settings.libraryDensity' => 'Bibliotheek dichtheid',
 			'settings.compact' => 'Compact',
-			'settings.compactDescription' => 'Kleinere kaarten, meer items zichtbaar',
-			'settings.normal' => 'Normaal',
-			'settings.normalDescription' => 'Standaard grootte',
 			'settings.comfortable' => 'Comfortabel',
-			'settings.comfortableDescription' => 'Grotere kaarten, minder items zichtbaar',
 			'settings.viewMode' => 'Weergavemodus',
 			'settings.gridView' => 'Raster',
-			'settings.gridViewDescription' => 'Items weergeven in een rasterindeling',
 			'settings.listView' => 'Lijst',
-			'settings.listViewDescription' => 'Items weergeven in een lijstindeling',
 			'settings.showHeroSection' => 'Toon hoofdsectie',
 			'settings.useGlobalHubs' => 'Plex Home-indeling gebruiken',
 			'settings.useGlobalHubsDescription' => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.',
@@ -1531,9 +1491,7 @@ extension on TranslationsNl {
 			'settings.hideSpoilersDescription' => 'Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien',
 			'settings.playerBackend' => 'Speler backend',
 			'settings.exoPlayer' => 'ExoPlayer (Aanbevolen)',
-			'settings.exoPlayerDescription' => 'Android-native speler met betere hardware-ondersteuning',
 			'settings.mpv' => 'mpv',
-			'settings.mpvDescription' => 'Geavanceerde speler met meer functies en ASS-ondertitelondersteuning',
 			'settings.hardwareDecoding' => 'Hardware decodering',
 			'settings.hardwareDecodingDescription' => 'Gebruik hardware versnelling indien beschikbaar',
 			'settings.bufferSize' => 'Buffer grootte',
@@ -1545,7 +1503,6 @@ extension on TranslationsNl {
 			'settings.smallSkipDuration' => 'Korte skip duur',
 			'settings.largeSkipDuration' => 'Lange skip duur',
 			'settings.rewindOnResume' => 'Terugspoelen bij hervatten',
-			'settings.rewindOnResumeDescription' => 'Spoel dit aantal seconden terug bij het hervatten van afspelen',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconden',
 			'settings.defaultSleepTimer' => 'Standaard slaap timer',
 			'settings.minutesUnit' => ({required Object minutes}) => 'bij ${minutes} minuten',
@@ -1559,7 +1516,6 @@ extension on TranslationsNl {
 			'settings.videoPlayerNavigation' => 'Videospeler navigatie',
 			'settings.videoPlayerNavigationDescription' => 'Gebruik pijltjestoetsen om door de videospeler bediening te navigeren',
 			'settings.watchTogetherRelay' => 'Samen Kijken Relay',
-			'settings.watchTogetherRelayDefault' => 'Standaard',
 			'settings.watchTogetherRelayDescription' => 'Stel een aangepaste relay-server in voor Samen Kijken. Alle deelnemers moeten dezelfde server gebruiken.',
 			'settings.watchTogetherRelayHint' => 'https://mijn-relay.voorbeeld.nl',
 			'settings.crashReporting' => 'Crashrapportage',
@@ -1619,6 +1575,8 @@ extension on TranslationsNl {
 			'settings.discordRichPresenceDescription' => 'Toon op Discord wat je aan het kijken bent',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Kijkgeschiedenis synchroniseren met Trakt',
+			'settings.companionRemoteServer' => 'Companion Remote-server',
+			'settings.companionRemoteServerDescription' => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen',
 			'settings.autoPip' => 'Automatische beeld-in-beeld',
 			'settings.autoPipDescription' => 'Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
@@ -1628,7 +1586,6 @@ extension on TranslationsNl {
 			'settings.matchDynamicRange' => 'Dynamisch bereik afstemmen',
 			'settings.matchDynamicRangeDescription' => 'HDR automatisch inschakelen voor HDR-inhoud en terugkeren naar SDR bij het verlaten van de speler',
 			'settings.displaySwitchDelay' => 'Vertraging bij schermwisseling',
-			'settings.displaySwitchDelayDescription' => 'Seconden wachten na een schermwisseling voordat het afspelen begint',
 			'settings.tunneledPlayback' => 'Getunnelde weergave',
 			'settings.tunneledPlaybackDescription' => 'Gebruik hardwareversnelde videotunneling. Schakel uit als je een zwart scherm met geluid ziet bij HDR-content',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
@@ -1651,8 +1608,6 @@ extension on TranslationsNl {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
-			'settings.companionRemoteServer' => 'Companion Remote-server',
-			'settings.companionRemoteServerDescription' => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -1772,7 +1727,6 @@ extension on TranslationsNl {
 			'videoControls.alwaysOnTopButton' => 'Altijd bovenop',
 			'videoControls.rotationLockButton' => 'Rotatievergrendeling',
 			'videoControls.lockScreen' => 'Vergrendel scherm',
-			'videoControls.unlockScreen' => 'Ontgrendel scherm',
 			'videoControls.screenLockButton' => 'Schermvergrendeling',
 			'videoControls.longPressToUnlock' => 'Lang indrukken om te ontgrendelen',
 			'videoControls.timelineSlider' => 'Videotijdlijn',
@@ -1837,7 +1791,6 @@ extension on TranslationsNl {
 			'messages.logsUploaded' => 'Logs geüpload',
 			'messages.logsUploadFailed' => 'Uploaden van logs mislukt',
 			'messages.logId' => 'Log-ID',
-			'subtitlingStyling.stylingOptions' => 'Opmaak opties',
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Rand',
 			'subtitlingStyling.background' => 'Achtergrond',
@@ -1927,8 +1880,6 @@ extension on TranslationsNl {
 			'libraries.noCollections' => 'Geen collecties in deze bibliotheek',
 			'libraries.noFoldersFound' => 'Geen mappen gevonden',
 			'libraries.folders' => 'mappen',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.recommended' => 'Aanbevolen',
 			'libraries.tabs.browse' => 'Bladeren',
 			'libraries.tabs.collections' => 'Collecties',
@@ -1948,6 +1899,8 @@ extension on TranslationsNl {
 			'serverSelection.allServerConnectionsFailed' => 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Uitgavejaar',
 			'hubDetail.dateAdded' => 'Datum toegevoegd',
@@ -1986,48 +1939,30 @@ extension on TranslationsNl {
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Kijk vanaf het begin (${minutes} min geleden)',
 			'liveTv.watchLive' => 'Live kijken',
 			'liveTv.goToLive' => 'Ga naar live',
-			'downloads.title' => 'Downloads',
-			'downloads.manage' => 'Beheren',
-			'downloads.tvShows' => 'Series',
-			'downloads.movies' => 'Films',
-			'downloads.noDownloads' => 'Nog geen downloads',
-			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
-			'downloads.downloadNow' => 'Download',
-			'downloads.deleteDownload' => 'Download verwijderen',
-			'downloads.retryDownload' => 'Download opnieuw proberen',
-			'downloads.downloadQueued' => 'Download in wachtrij',
-			'downloads.serverErrorBitrate' => 'Serverfout — het bestand overschrijdt mogelijk de bitrate-limiet voor remote streaming',
-			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
-			'downloads.downloadDeleted' => 'Download verwijderd',
-			'downloads.deleteConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.',
-			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})',
-			'downloads.noDownloadsTree' => 'Geen downloads',
-			'downloads.pauseAll' => 'Alles pauzeren',
-			'downloads.resumeAll' => 'Alles hervatten',
-			'downloads.deleteAll' => 'Alles verwijderen',
-			'downloads.selectVersion' => 'Versie selecteren',
-			'downloads.allEpisodes' => 'Alle afleveringen',
-			'downloads.unwatchedOnly' => 'Alleen onbekeken',
-			'downloads.nextNUnwatched' => ({required Object count}) => 'Volgende ${count} onbekeken',
-			'downloads.customAmount' => 'Aangepast aantal...',
-			'downloads.howManyEpisodes' => 'Hoeveel afleveringen?',
-			'downloads.itemsQueued' => ({required Object count}) => '${count} items in downloadwachtrij',
-			'downloads.keepSynced' => 'Gesynchroniseerd houden',
-			'downloads.downloadOnce' => 'Eenmalig downloaden',
-			'downloads.keepNUnwatched' => ({required Object count}) => '${count} onbekeken behouden',
-			'downloads.editSyncRule' => 'Synchronisatieregel bewerken',
-			'downloads.removeSyncRule' => 'Synchronisatieregel verwijderen',
-			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Synchronisatie van "${title}" stoppen? Gedownloade afleveringen worden behouden.',
-			'downloads.syncRuleCreated' => ({required Object count}) => 'Synchronisatieregel aangemaakt — ${count} onbekeken afleveringen behouden',
-			'downloads.syncRuleUpdated' => 'Synchronisatieregel bijgewerkt',
-			'downloads.syncRuleRemoved' => 'Synchronisatieregel verwijderd',
-			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}',
-			'downloads.activeSyncRules' => 'Synchronisatieregels',
-			'downloads.noSyncRules' => 'Geen synchronisatieregels',
-			'downloads.lastSynced' => ({required Object time}) => 'Laatst gesynchroniseerd ${time}',
-			'downloads.manageSyncRule' => 'Synchronisatie beheren',
-			'downloads.editEpisodeCount' => 'Aantal afleveringen',
+			'collections.title' => 'Collecties',
+			'collections.collection' => 'Collectie',
+			'collections.empty' => 'Collectie is leeg',
+			'collections.unknownLibrarySection' => 'Kan niet verwijderen: onbekende bibliotheeksectie',
+			'collections.deleteCollection' => 'Collectie verwijderen',
+			'collections.deleteConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.',
+			'collections.deleted' => 'Collectie verwijderd',
+			'collections.deleteFailed' => 'Collectie verwijderen mislukt',
+			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
+			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
+			'collections.selectCollection' => 'Selecteer collectie',
+			'collections.collectionName' => 'Collectienaam',
+			'collections.enterCollectionName' => 'Voer collectienaam in',
+			'collections.addedToCollection' => 'Toegevoegd aan collectie',
+			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
+			'collections.created' => 'Collectie gemaakt',
+			'collections.removeFromCollection' => 'Verwijderen uit collectie',
+			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
+			'collections.removedFromCollection' => 'Uit collectie verwijderd',
+			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
+			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
+			'collections.searchCollections' => 'Collecties zoeken...',
 			'playlists.title' => 'Afspeellijsten',
+			'playlists.playlist' => 'Afspeellijst',
 			'playlists.noPlaylists' => 'Geen afspeellijsten gevonden',
 			'playlists.create' => 'Afspeellijst maken',
 			'playlists.playlistName' => 'Naam afspeellijst',
@@ -2051,29 +1986,6 @@ extension on TranslationsNl {
 			'playlists.errorAdding' => 'Fout bij toevoegen aan afspeellijst',
 			'playlists.errorReordering' => 'Fout bij herschikken van afspeellijstitem',
 			'playlists.errorRemoving' => 'Fout bij verwijderen uit afspeellijst',
-			'playlists.playlist' => 'Afspeellijst',
-			'collections.title' => 'Collecties',
-			'collections.collection' => 'Collectie',
-			'collections.empty' => 'Collectie is leeg',
-			'collections.unknownLibrarySection' => 'Kan niet verwijderen: onbekende bibliotheeksectie',
-			'collections.deleteCollection' => 'Collectie verwijderen',
-			'collections.deleteConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.',
-			'collections.deleted' => 'Collectie verwijderd',
-			'collections.deleteFailed' => 'Collectie verwijderen mislukt',
-			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
-			'collections.selectCollection' => 'Selecteer collectie',
-			'collections.collectionName' => 'Collectienaam',
-			'collections.enterCollectionName' => 'Voer collectienaam in',
-			'collections.addedToCollection' => 'Toegevoegd aan collectie',
-			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
-			'collections.created' => 'Collectie gemaakt',
-			'collections.removeFromCollection' => 'Verwijderen uit collectie',
-			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
-			'collections.removedFromCollection' => 'Uit collectie verwijderd',
-			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
-			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
-			'collections.searchCollections' => 'Collecties zoeken...',
 			'watchTogether.title' => 'Samen Kijken',
 			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',
 			'watchTogether.createSession' => 'Sessie Maken',
@@ -2132,6 +2044,46 @@ extension on TranslationsNl {
 			'watchTogether.recentRooms' => 'Recente kamers',
 			'watchTogether.renameRoom' => 'Kamer hernoemen',
 			'watchTogether.removeRoom' => 'Verwijderen',
+			'downloads.title' => 'Downloads',
+			'downloads.manage' => 'Beheren',
+			'downloads.tvShows' => 'Series',
+			'downloads.movies' => 'Films',
+			'downloads.noDownloads' => 'Nog geen downloads',
+			'downloads.noDownloadsDescription' => 'Gedownloade content verschijnt hier voor offline weergave',
+			'downloads.downloadNow' => 'Download',
+			'downloads.deleteDownload' => 'Download verwijderen',
+			'downloads.retryDownload' => 'Download opnieuw proberen',
+			'downloads.downloadQueued' => 'Download in wachtrij',
+			'downloads.serverErrorBitrate' => 'Serverfout — het bestand overschrijdt mogelijk de bitrate-limiet voor remote streaming',
+			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
+			'downloads.downloadDeleted' => 'Download verwijderd',
+			'downloads.deleteConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.',
+			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})',
+			'downloads.noDownloadsTree' => 'Geen downloads',
+			'downloads.pauseAll' => 'Alles pauzeren',
+			'downloads.resumeAll' => 'Alles hervatten',
+			'downloads.deleteAll' => 'Alles verwijderen',
+			'downloads.selectVersion' => 'Versie selecteren',
+			'downloads.allEpisodes' => 'Alle afleveringen',
+			'downloads.unwatchedOnly' => 'Alleen onbekeken',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Volgende ${count} onbekeken',
+			'downloads.customAmount' => 'Aangepast aantal...',
+			'downloads.howManyEpisodes' => 'Hoeveel afleveringen?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} items in downloadwachtrij',
+			'downloads.keepSynced' => 'Gesynchroniseerd houden',
+			'downloads.downloadOnce' => 'Eenmalig downloaden',
+			'downloads.keepNUnwatched' => ({required Object count}) => '${count} onbekeken behouden',
+			'downloads.editSyncRule' => 'Synchronisatieregel bewerken',
+			'downloads.removeSyncRule' => 'Synchronisatieregel verwijderen',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Synchronisatie van "${title}" stoppen? Gedownloade afleveringen worden behouden.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Synchronisatieregel aangemaakt — ${count} onbekeken afleveringen behouden',
+			'downloads.syncRuleUpdated' => 'Synchronisatieregel bijgewerkt',
+			'downloads.syncRuleRemoved' => 'Synchronisatieregel verwijderd',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}',
+			'downloads.activeSyncRules' => 'Synchronisatieregels',
+			'downloads.noSyncRules' => 'Geen synchronisatieregels',
+			'downloads.manageSyncRule' => 'Synchronisatie beheren',
+			'downloads.editEpisodeCount' => 'Aantal afleveringen',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Geen videoverbetering',
 			'shaders.nvscalerDescription' => 'NVIDIA-beeldschaling voor scherpere video',
@@ -2145,11 +2097,6 @@ extension on TranslationsNl {
 			'shaders.deleteShader' => 'Shader verwijderen',
 			'shaders.deleteShaderConfirm' => ({required Object name}) => '"${name}" verwijderen?',
 			'companionRemote.title' => 'Afstandsbediening',
-			'companionRemote.connectToDevice' => 'Verbinden met apparaat',
-			'companionRemote.hostRemoteSession' => 'Externe sessie hosten',
-			'companionRemote.controlThisDevice' => 'Bedien dit apparaat met je telefoon',
-			'companionRemote.remoteControl' => 'Afstandsbediening',
-			'companionRemote.controlDesktop' => 'Bedien een desktop-apparaat',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Verbonden met ${name}',
 			'companionRemote.session.startingServer' => 'Externe server starten...',
 			'companionRemote.session.failedToCreate' => 'Kan externe server niet starten:',
@@ -2163,7 +2110,6 @@ extension on TranslationsNl {
 			'companionRemote.session.startServer' => 'Server starten',
 			'companionRemote.session.stopServer' => 'Server stoppen',
 			'companionRemote.session.minimize' => 'Minimaliseren',
-			'companionRemote.pairing.pairWithDesktop' => 'Verbinden met desktop',
 			'companionRemote.pairing.discoveryDescription' => 'Apparaten op je netwerk die Plezy gebruiken met hetzelfde Plex-account verschijnen automatisch',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Verbinden...',
@@ -2183,8 +2129,6 @@ extension on TranslationsNl {
 			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Poging ${current} van 5',
 			'companionRemote.remote.retryNow' => 'Nu opnieuw proberen',
-			'companionRemote.remote.connectionError' => 'Verbindingsfout',
-			'companionRemote.remote.notConnected' => 'Niet verbonden',
 			'companionRemote.remote.tabRemote' => 'Afstandsbediening',
 			'companionRemote.remote.tabPlay' => 'Afspelen',
 			'companionRemote.remote.tabMore' => 'Meer',

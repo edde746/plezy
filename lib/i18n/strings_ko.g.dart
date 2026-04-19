@@ -129,7 +129,6 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
 	@override String get createNew => '새로 만들기';
-	@override String get paste => '붙여넣기';
 	@override String get connect => '연결';
 	@override String get disconnect => '연결 해제';
 	@override String get play => '재생';
@@ -204,11 +203,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get advanced => '고급';
 	@override String get episodePosterMode => '에피소드 포스터 스타일';
 	@override String get seriesPoster => '시리즈 포스터';
-	@override String get seriesPosterDescription => '모든 에피소드에 시리즈 포스터 표시';
 	@override String get seasonPoster => '시즌 포스터';
-	@override String get seasonPosterDescription => '에피소드에 시즌별 포스터 표시';
 	@override String get episodeThumbnail => '썸네일';
-	@override String get episodeThumbnailDescription => '16:9 에피소드 스크린샷 썸네일 표시';
 	@override String get showHeroSectionDescription => '홈 화면에 주요 콘텐츠 캐러셀(슬라이드) 표시';
 	@override String get secondsLabel => '초';
 	@override String get minutesLabel => '분';
@@ -216,23 +212,15 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get minutesShort => '분';
 	@override String durationHint({required Object min, required Object max}) => '기간 입력 (${min}-${max})';
 	@override String get systemTheme => '시스템 설정';
-	@override String get systemThemeDescription => '시스템 설정에 따름';
 	@override String get lightTheme => '라이트 모드';
 	@override String get darkTheme => '다크 모드';
 	@override String get oledTheme => 'OLED';
-	@override String get oledThemeDescription => 'OLED 화면을 위한 순수 검정';
 	@override String get libraryDensity => '라이브러리 표시 밀도';
 	@override String get compact => '좁게';
-	@override String get compactDescription => '카드를 작게 표시하여 더 많은 항목을 보여줍니다.';
-	@override String get normal => '보통';
-	@override String get normalDescription => '기본 크기';
 	@override String get comfortable => '넓게';
-	@override String get comfortableDescription => '카드를 크게 표시하여 더 적은 항목을 보여줍니다.';
 	@override String get viewMode => '보기 모드';
 	@override String get gridView => '그리드 보기';
-	@override String get gridViewDescription => '항목을 그리드 레이아웃으로 표시합니다';
 	@override String get listView => '목록 보기';
-	@override String get listViewDescription => '항목을 목록 레이아웃으로 표시합니다';
 	@override String get showHeroSection => '주요 추천 영역 표시';
 	@override String get useGlobalHubs => 'Plex 홈 레이아웃 사용';
 	@override String get useGlobalHubsDescription => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.';
@@ -246,9 +234,7 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get hideSpoilersDescription => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다';
 	@override String get playerBackend => '플레이어 백엔드';
 	@override String get exoPlayer => 'ExoPlayer (권장)';
-	@override String get exoPlayerDescription => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어';
 	@override String get mpv => 'mpv';
-	@override String get mpvDescription => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
 	@override String get bufferSize => '버퍼 크기';
@@ -260,7 +246,6 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get smallSkipDuration => '짧은 건너뛰기 시간';
 	@override String get largeSkipDuration => '긴 건너뛰기 시간';
 	@override String get rewindOnResume => '재개 시 되감기';
-	@override String get rewindOnResumeDescription => '재생 재개 시 이 시간만큼 되감기';
 	@override String secondsUnit({required Object seconds}) => '${seconds}초';
 	@override String get defaultSleepTimer => '기본 취침 타이머';
 	@override String minutesUnit({required Object minutes}) => '${minutes}분';
@@ -274,7 +259,6 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get videoPlayerNavigation => '비디오 플레이어 탐색';
 	@override String get videoPlayerNavigationDescription => '방향 키를 사용하여 비디오 플레이어 컨트롤 탐색';
 	@override String get watchTogetherRelay => '함께 보기 릴레이';
-	@override String get watchTogetherRelayDefault => '기본값';
 	@override String get watchTogetherRelayDescription => '함께 보기에 사용할 사용자 지정 릴레이 서버를 설정합니다. 모든 참가자가 동일한 서버를 사용해야 합니다.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get crashReporting => '충돌 보고';
@@ -334,6 +318,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Trakt와 시청 기록 동기화';
+	@override String get companionRemoteServer => '컴패니언 리모트 서버';
+	@override String get companionRemoteServerDescription => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용';
 	@override String get autoPip => '자동 PIP 모드';
 	@override String get autoPipDescription => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
@@ -343,7 +329,6 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get matchDynamicRange => '다이나믹 레인지 맞춤';
 	@override String get matchDynamicRangeDescription => 'HDR 콘텐츠에 대해 자동으로 HDR을 활성화하고 플레이어를 나갈 때 SDR로 복원합니다';
 	@override String get displaySwitchDelay => '디스플레이 전환 지연';
-	@override String get displaySwitchDelayDescription => '디스플레이 모드 변경 후 재생을 시작하기까지 대기하는 시간(초)';
 	@override String get tunneledPlayback => '터널 재생';
 	@override String get tunneledPlaybackDescription => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
@@ -366,8 +351,6 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
-	@override String get companionRemoteServer => '컴패니언 리모트 서버';
-	@override String get companionRemoteServerDescription => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용';
 }
 
 // Path: search
@@ -532,7 +515,6 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get alwaysOnTopButton => '창 최상위 고정';
 	@override String get rotationLockButton => '회전 잠금';
 	@override String get lockScreen => '화면 잠금';
-	@override String get unlockScreen => '화면 잠금 해제';
 	@override String get screenLockButton => '화면 잠금';
 	@override String get longPressToUnlock => '길게 눌러 잠금 해제';
 	@override String get timelineSlider => '타임라인';
@@ -618,7 +600,6 @@ class _TranslationsSubtitlingStylingKo implements TranslationsSubtitlingStylingE
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get stylingOptions => '스타일 옵션';
 	@override String get text => '텍스트';
 	@override String get border => '테두리';
 	@override String get background => '배경';
@@ -1043,7 +1024,6 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title}의 새 에피소드 ${count}개 동기화됨';
 	@override String get activeSyncRules => '동기화 규칙';
 	@override String get noSyncRules => '동기화 규칙 없음';
-	@override String lastSynced({required Object time}) => '마지막 동기화 ${time}';
 	@override String get manageSyncRule => '동기화 관리';
 	@override String get editEpisodeCount => '에피소드 수';
 }
@@ -1077,11 +1057,6 @@ class _TranslationsCompanionRemoteKo implements TranslationsCompanionRemoteEn {
 
 	// Translations
 	@override String get title => '컴패니언 리모컨';
-	@override String get connectToDevice => '기기에 연결';
-	@override String get hostRemoteSession => '원격 세션 호스트';
-	@override String get controlThisDevice => '휴대폰으로 이 기기를 제어하세요';
-	@override String get remoteControl => '원격 제어';
-	@override String get controlDesktop => '데스크톱 기기 제어';
 	@override String connectedTo({required Object name}) => '${name}에 연결됨';
 	@override late final _TranslationsCompanionRemoteSessionKo session = _TranslationsCompanionRemoteSessionKo._(_root);
 	@override late final _TranslationsCompanionRemotePairingKo pairing = _TranslationsCompanionRemotePairingKo._(_root);
@@ -1351,7 +1326,6 @@ class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemo
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get pairWithDesktop => '데스크톱에 연결';
 	@override String get discoveryDescription => '같은 Plex 계정으로 Plezy를 실행 중인 네트워크의 기기가 자동으로 표시됩니다';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => '연결 중...';
@@ -1380,8 +1354,6 @@ class _TranslationsCompanionRemoteRemoteKo implements TranslationsCompanionRemot
 	@override String get reconnecting => '재연결 중...';
 	@override String attemptOf({required Object current}) => '${current}/5 시도 중';
 	@override String get retryNow => '지금 재시도';
-	@override String get connectionError => '연결 오류';
-	@override String get notConnected => '연결되지 않음';
 	@override String get tabRemote => '리모컨';
 	@override String get tabPlay => '재생';
 	@override String get tabMore => '더 보기';
@@ -1441,7 +1413,6 @@ extension on TranslationsKo {
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
 			'common.createNew' => '새로 만들기',
-			'common.paste' => '붙여넣기',
 			'common.connect' => '연결',
 			'common.disconnect' => '연결 해제',
 			'common.play' => '재생',
@@ -1489,11 +1460,8 @@ extension on TranslationsKo {
 			'settings.advanced' => '고급',
 			'settings.episodePosterMode' => '에피소드 포스터 스타일',
 			'settings.seriesPoster' => '시리즈 포스터',
-			'settings.seriesPosterDescription' => '모든 에피소드에 시리즈 포스터 표시',
 			'settings.seasonPoster' => '시즌 포스터',
-			'settings.seasonPosterDescription' => '에피소드에 시즌별 포스터 표시',
 			'settings.episodeThumbnail' => '썸네일',
-			'settings.episodeThumbnailDescription' => '16:9 에피소드 스크린샷 썸네일 표시',
 			'settings.showHeroSectionDescription' => '홈 화면에 주요 콘텐츠 캐러셀(슬라이드) 표시',
 			'settings.secondsLabel' => '초',
 			'settings.minutesLabel' => '분',
@@ -1501,23 +1469,15 @@ extension on TranslationsKo {
 			'settings.minutesShort' => '분',
 			'settings.durationHint' => ({required Object min, required Object max}) => '기간 입력 (${min}-${max})',
 			'settings.systemTheme' => '시스템 설정',
-			'settings.systemThemeDescription' => '시스템 설정에 따름',
 			'settings.lightTheme' => '라이트 모드',
 			'settings.darkTheme' => '다크 모드',
 			'settings.oledTheme' => 'OLED',
-			'settings.oledThemeDescription' => 'OLED 화면을 위한 순수 검정',
 			'settings.libraryDensity' => '라이브러리 표시 밀도',
 			'settings.compact' => '좁게',
-			'settings.compactDescription' => '카드를 작게 표시하여 더 많은 항목을 보여줍니다.',
-			'settings.normal' => '보통',
-			'settings.normalDescription' => '기본 크기',
 			'settings.comfortable' => '넓게',
-			'settings.comfortableDescription' => '카드를 크게 표시하여 더 적은 항목을 보여줍니다.',
 			'settings.viewMode' => '보기 모드',
 			'settings.gridView' => '그리드 보기',
-			'settings.gridViewDescription' => '항목을 그리드 레이아웃으로 표시합니다',
 			'settings.listView' => '목록 보기',
-			'settings.listViewDescription' => '항목을 목록 레이아웃으로 표시합니다',
 			'settings.showHeroSection' => '주요 추천 영역 표시',
 			'settings.useGlobalHubs' => 'Plex 홈 레이아웃 사용',
 			'settings.useGlobalHubsDescription' => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.',
@@ -1531,9 +1491,7 @@ extension on TranslationsKo {
 			'settings.hideSpoilersDescription' => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다',
 			'settings.playerBackend' => '플레이어 백엔드',
 			'settings.exoPlayer' => 'ExoPlayer (권장)',
-			'settings.exoPlayerDescription' => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어',
 			'settings.mpv' => 'mpv',
-			'settings.mpvDescription' => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어',
 			'settings.hardwareDecoding' => '하드웨어 디코딩',
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
 			'settings.bufferSize' => '버퍼 크기',
@@ -1545,7 +1503,6 @@ extension on TranslationsKo {
 			'settings.smallSkipDuration' => '짧은 건너뛰기 시간',
 			'settings.largeSkipDuration' => '긴 건너뛰기 시간',
 			'settings.rewindOnResume' => '재개 시 되감기',
-			'settings.rewindOnResumeDescription' => '재생 재개 시 이 시간만큼 되감기',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds}초',
 			'settings.defaultSleepTimer' => '기본 취침 타이머',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}분',
@@ -1559,7 +1516,6 @@ extension on TranslationsKo {
 			'settings.videoPlayerNavigation' => '비디오 플레이어 탐색',
 			'settings.videoPlayerNavigationDescription' => '방향 키를 사용하여 비디오 플레이어 컨트롤 탐색',
 			'settings.watchTogetherRelay' => '함께 보기 릴레이',
-			'settings.watchTogetherRelayDefault' => '기본값',
 			'settings.watchTogetherRelayDescription' => '함께 보기에 사용할 사용자 지정 릴레이 서버를 설정합니다. 모든 참가자가 동일한 서버를 사용해야 합니다.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.crashReporting' => '충돌 보고',
@@ -1619,6 +1575,8 @@ extension on TranslationsKo {
 			'settings.discordRichPresenceDescription' => 'Discord에서 시청 중인 콘텐츠 표시',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Trakt와 시청 기록 동기화',
+			'settings.companionRemoteServer' => '컴패니언 리모트 서버',
+			'settings.companionRemoteServerDescription' => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용',
 			'settings.autoPip' => '자동 PIP 모드',
 			'settings.autoPipDescription' => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
@@ -1628,7 +1586,6 @@ extension on TranslationsKo {
 			'settings.matchDynamicRange' => '다이나믹 레인지 맞춤',
 			'settings.matchDynamicRangeDescription' => 'HDR 콘텐츠에 대해 자동으로 HDR을 활성화하고 플레이어를 나갈 때 SDR로 복원합니다',
 			'settings.displaySwitchDelay' => '디스플레이 전환 지연',
-			'settings.displaySwitchDelayDescription' => '디스플레이 모드 변경 후 재생을 시작하기까지 대기하는 시간(초)',
 			'settings.tunneledPlayback' => '터널 재생',
 			'settings.tunneledPlaybackDescription' => '하드웨어 가속 비디오 터널링을 사용합니다. HDR 콘텐츠에서 소리만 나고 검은 화면이 보이면 비활성화하세요',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
@@ -1651,8 +1608,6 @@ extension on TranslationsKo {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
-			'settings.companionRemoteServer' => '컴패니언 리모트 서버',
-			'settings.companionRemoteServerDescription' => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -1772,7 +1727,6 @@ extension on TranslationsKo {
 			'videoControls.alwaysOnTopButton' => '창 최상위 고정',
 			'videoControls.rotationLockButton' => '회전 잠금',
 			'videoControls.lockScreen' => '화면 잠금',
-			'videoControls.unlockScreen' => '화면 잠금 해제',
 			'videoControls.screenLockButton' => '화면 잠금',
 			'videoControls.longPressToUnlock' => '길게 눌러 잠금 해제',
 			'videoControls.timelineSlider' => '타임라인',
@@ -1837,7 +1791,6 @@ extension on TranslationsKo {
 			'messages.logsUploaded' => '로그 업로드 완료',
 			'messages.logsUploadFailed' => '로그 업로드 실패',
 			'messages.logId' => '로그 ID',
-			'subtitlingStyling.stylingOptions' => '스타일 옵션',
 			'subtitlingStyling.text' => '텍스트',
 			'subtitlingStyling.border' => '테두리',
 			'subtitlingStyling.background' => '배경',
@@ -1927,8 +1880,6 @@ extension on TranslationsKo {
 			'libraries.noCollections' => '이 미디어 라이브러리에는 컬렉션이 없습니다',
 			'libraries.noFoldersFound' => '폴더를 찾을 수 없습니다',
 			'libraries.folders' => '폴더',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.recommended' => '추천',
 			'libraries.tabs.browse' => '찾아보기',
 			'libraries.tabs.collections' => '컬렉션',
@@ -1948,6 +1899,8 @@ extension on TranslationsKo {
 			'serverSelection.allServerConnectionsFailed' => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.title' => '제목',
 			'hubDetail.releaseYear' => '출시 연도',
 			'hubDetail.dateAdded' => '추가 날짜',
@@ -2129,7 +2082,6 @@ extension on TranslationsKo {
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}의 새 에피소드 ${count}개 동기화됨',
 			'downloads.activeSyncRules' => '동기화 규칙',
 			'downloads.noSyncRules' => '동기화 규칙 없음',
-			'downloads.lastSynced' => ({required Object time}) => '마지막 동기화 ${time}',
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
 			'shaders.title' => '셰이더',
@@ -2145,11 +2097,6 @@ extension on TranslationsKo {
 			'shaders.deleteShader' => '셰이더 삭제',
 			'shaders.deleteShaderConfirm' => ({required Object name}) => '"${name}"을(를) 삭제하시겠습니까?',
 			'companionRemote.title' => '컴패니언 리모컨',
-			'companionRemote.connectToDevice' => '기기에 연결',
-			'companionRemote.hostRemoteSession' => '원격 세션 호스트',
-			'companionRemote.controlThisDevice' => '휴대폰으로 이 기기를 제어하세요',
-			'companionRemote.remoteControl' => '원격 제어',
-			'companionRemote.controlDesktop' => '데스크톱 기기 제어',
 			'companionRemote.connectedTo' => ({required Object name}) => '${name}에 연결됨',
 			'companionRemote.session.startingServer' => '원격 서버 시작 중...',
 			'companionRemote.session.failedToCreate' => '원격 서버를 시작하지 못했습니다:',
@@ -2163,7 +2110,6 @@ extension on TranslationsKo {
 			'companionRemote.session.startServer' => '서버 시작',
 			'companionRemote.session.stopServer' => '서버 중지',
 			'companionRemote.session.minimize' => '최소화',
-			'companionRemote.pairing.pairWithDesktop' => '데스크톱에 연결',
 			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정으로 Plezy를 실행 중인 네트워크의 기기가 자동으로 표시됩니다',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '연결 중...',
@@ -2183,8 +2129,6 @@ extension on TranslationsKo {
 			'companionRemote.remote.reconnecting' => '재연결 중...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current}/5 시도 중',
 			'companionRemote.remote.retryNow' => '지금 재시도',
-			'companionRemote.remote.connectionError' => '연결 오류',
-			'companionRemote.remote.notConnected' => '연결되지 않음',
 			'companionRemote.remote.tabRemote' => '리모컨',
 			'companionRemote.remote.tabPlay' => '재생',
 			'companionRemote.remote.tabMore' => '더 보기',

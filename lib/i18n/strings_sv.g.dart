@@ -65,10 +65,10 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLicensesSv licenses = _TranslationsLicensesSv._(_root);
 	@override late final _TranslationsNavigationSv navigation = _TranslationsNavigationSv._(_root);
 	@override late final _TranslationsLiveTvSv liveTv = _TranslationsLiveTvSv._(_root);
-	@override late final _TranslationsDownloadsSv downloads = _TranslationsDownloadsSv._(_root);
-	@override late final _TranslationsPlaylistsSv playlists = _TranslationsPlaylistsSv._(_root);
 	@override late final _TranslationsCollectionsSv collections = _TranslationsCollectionsSv._(_root);
+	@override late final _TranslationsPlaylistsSv playlists = _TranslationsPlaylistsSv._(_root);
 	@override late final _TranslationsWatchTogetherSv watchTogether = _TranslationsWatchTogetherSv._(_root);
+	@override late final _TranslationsDownloadsSv downloads = _TranslationsDownloadsSv._(_root);
 	@override late final _TranslationsShadersSv shaders = _TranslationsShadersSv._(_root);
 	@override late final _TranslationsCompanionRemoteSv companionRemote = _TranslationsCompanionRemoteSv._(_root);
 	@override late final _TranslationsVideoSettingsSv videoSettings = _TranslationsVideoSettingsSv._(_root);
@@ -129,7 +129,6 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get shuffle => 'Blanda';
 	@override String get addTo => 'Lägg till i...';
 	@override String get createNew => 'Skapa ny';
-	@override String get paste => 'Klistra in';
 	@override String get connect => 'Anslut';
 	@override String get disconnect => 'Koppla från';
 	@override String get play => 'Spela';
@@ -204,11 +203,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get advanced => 'Avancerat';
 	@override String get episodePosterMode => 'Avsnittsaffisch-stil';
 	@override String get seriesPoster => 'Serieaffisch';
-	@override String get seriesPosterDescription => 'Visa seriens affisch för alla avsnitt';
 	@override String get seasonPoster => 'Säsongsaffisch';
-	@override String get seasonPosterDescription => 'Visa säsongens affisch för avsnitt';
 	@override String get episodeThumbnail => 'Miniatyr';
-	@override String get episodeThumbnailDescription => 'Visa 16:9 skärmbild från avsnittet';
 	@override String get showHeroSectionDescription => 'Visa utvalda innehållskarusell på startsidan';
 	@override String get secondsLabel => 'Sekunder';
 	@override String get minutesLabel => 'Minuter';
@@ -216,23 +212,15 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get minutesShort => 'm';
 	@override String durationHint({required Object min, required Object max}) => 'Ange tid (${min}-${max})';
 	@override String get systemTheme => 'System';
-	@override String get systemThemeDescription => 'Följ systeminställningar';
 	@override String get lightTheme => 'Ljust';
 	@override String get darkTheme => 'Mörkt';
 	@override String get oledTheme => 'OLED';
-	@override String get oledThemeDescription => 'Rent svart för OLED-skärmar';
 	@override String get libraryDensity => 'Biblioteksdensitet';
 	@override String get compact => 'Kompakt';
-	@override String get compactDescription => 'Mindre kort, fler objekt synliga';
-	@override String get normal => 'Normal';
-	@override String get normalDescription => 'Standardstorlek';
 	@override String get comfortable => 'Bekväm';
-	@override String get comfortableDescription => 'Större kort, färre objekt synliga';
 	@override String get viewMode => 'Visningsläge';
 	@override String get gridView => 'Rutnät';
-	@override String get gridViewDescription => 'Visa objekt i rutnätslayout';
 	@override String get listView => 'Lista';
-	@override String get listViewDescription => 'Visa objekt i listlayout';
 	@override String get showHeroSection => 'Visa hjältesektion';
 	@override String get useGlobalHubs => 'Använd Plex hem-layout';
 	@override String get useGlobalHubsDescription => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.';
@@ -246,9 +234,7 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get hideSpoilersDescription => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu';
 	@override String get playerBackend => 'Spelarmotor';
 	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
-	@override String get exoPlayerDescription => 'Android-nativ spelare med bättre hårdvarustöd';
 	@override String get mpv => 'mpv';
-	@override String get mpvDescription => 'Avancerad spelare med fler funktioner och ASS-undertextstöd';
 	@override String get hardwareDecoding => 'Hårdvaruavkodning';
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
 	@override String get bufferSize => 'Bufferstorlek';
@@ -260,7 +246,6 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get smallSkipDuration => 'Kort hoppvaraktighet';
 	@override String get largeSkipDuration => 'Lång hoppvaraktighet';
 	@override String get rewindOnResume => 'Spola tillbaka vid återupptagning';
-	@override String get rewindOnResumeDescription => 'Spola tillbaka med denna tid vid återupptagning av uppspelning';
 	@override String secondsUnit({required Object seconds}) => '${seconds} sekunder';
 	@override String get defaultSleepTimer => 'Standard sovtimer';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuter';
@@ -274,7 +259,6 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get videoPlayerNavigation => 'Navigering i videospelaren';
 	@override String get videoPlayerNavigationDescription => 'Använd piltangenter för att navigera videospelarens kontroller';
 	@override String get watchTogetherRelay => 'Titta Tillsammans-relay';
-	@override String get watchTogetherRelayDefault => 'Standard';
 	@override String get watchTogetherRelayDescription => 'Ange en anpassad relay-server för Titta Tillsammans. Alla deltagare måste använda samma server.';
 	@override String get watchTogetherRelayHint => 'https://min-relay.exempel.se';
 	@override String get crashReporting => 'Kraschrapportering';
@@ -334,6 +318,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Visa vad du tittar på i Discord';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Synkronisera visningshistorik med Trakt';
+	@override String get companionRemoteServer => 'Companion Remote-server';
+	@override String get companionRemoteServerDescription => 'Tillåt mobila enheter i ditt nätverk att styra denna app';
 	@override String get autoPip => 'Automatisk bild-i-bild';
 	@override String get autoPipDescription => 'Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning';
 	@override String get matchContentFrameRate => 'Matcha innehållets bildfrekvens';
@@ -343,7 +329,6 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get matchDynamicRange => 'Matcha dynamiskt omfång';
 	@override String get matchDynamicRangeDescription => 'Aktivera HDR automatiskt för HDR-innehåll och återgå till SDR när spelaren stängs';
 	@override String get displaySwitchDelay => 'Fördröjning vid skärmbyte';
-	@override String get displaySwitchDelayDescription => 'Sekunder att vänta efter ett skärmlägesbyte innan uppspelning startar';
 	@override String get tunneledPlayback => 'Tunneluppspelning';
 	@override String get tunneledPlaybackDescription => 'Använd hårdvaruaccelererad videotunnling. Inaktivera om du ser en svart skärm med ljud vid HDR-innehåll';
 	@override String get requireProfileSelectionOnOpen => 'Fråga efter profil vid appstart';
@@ -366,8 +351,6 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
-	@override String get companionRemoteServer => 'Companion Remote-server';
-	@override String get companionRemoteServerDescription => 'Tillåt mobila enheter i ditt nätverk att styra denna app';
 }
 
 // Path: search
@@ -532,7 +515,6 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get alwaysOnTopButton => 'Alltid överst';
 	@override String get rotationLockButton => 'Rotationslås';
 	@override String get lockScreen => 'Lås skärm';
-	@override String get unlockScreen => 'Lås upp skärm';
 	@override String get screenLockButton => 'Skärmlås';
 	@override String get longPressToUnlock => 'Tryck länge för att låsa upp';
 	@override String get timelineSlider => 'Videotidslinje';
@@ -618,7 +600,6 @@ class _TranslationsSubtitlingStylingSv implements TranslationsSubtitlingStylingE
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get stylingOptions => 'Stilalternativ';
 	@override String get text => 'Text';
 	@override String get border => 'Kantlinje';
 	@override String get background => 'Bakgrund';
@@ -866,90 +847,6 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get goToLive => 'Gå till live';
 }
 
-// Path: downloads
-class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
-	_TranslationsDownloadsSv._(this._root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Nedladdningar';
-	@override String get manage => 'Hantera';
-	@override String get tvShows => 'TV-serier';
-	@override String get movies => 'Filmer';
-	@override String get noDownloads => 'Inga nedladdningar ännu';
-	@override String get noDownloadsDescription => 'Nedladdat innehåll visas här för offline-visning';
-	@override String get downloadNow => 'Ladda ner';
-	@override String get deleteDownload => 'Ta bort nedladdning';
-	@override String get retryDownload => 'Försök igen';
-	@override String get downloadQueued => 'Nedladdning köad';
-	@override String get serverErrorBitrate => 'Serverfel — filen överskrider möjligen gränsen för fjärrströmning-bitrate';
-	@override String episodesQueued({required Object count}) => '${count} avsnitt köade för nedladdning';
-	@override String get downloadDeleted => 'Nedladdning borttagen';
-	@override String deleteConfirm({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.';
-	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Tar bort ${title}... (${current} av ${total})';
-	@override String get noDownloadsTree => 'Inga nedladdningar';
-	@override String get pauseAll => 'Pausa alla';
-	@override String get resumeAll => 'Återuppta alla';
-	@override String get deleteAll => 'Ta bort alla';
-	@override String get selectVersion => 'Välj version';
-	@override String get allEpisodes => 'Alla avsnitt';
-	@override String get unwatchedOnly => 'Endast osedda';
-	@override String nextNUnwatched({required Object count}) => 'Nästa ${count} osedda';
-	@override String get customAmount => 'Ange antal...';
-	@override String get howManyEpisodes => 'Hur många avsnitt?';
-	@override String itemsQueued({required Object count}) => '${count} objekt köade för nedladdning';
-	@override String get keepSynced => 'Håll synkroniserad';
-	@override String get downloadOnce => 'Ladda ner en gång';
-	@override String keepNUnwatched({required Object count}) => 'Behåll ${count} osedda';
-	@override String get editSyncRule => 'Redigera synkregel';
-	@override String get removeSyncRule => 'Ta bort synkregel';
-	@override String removeSyncRuleConfirm({required Object title}) => 'Sluta synkronisera "${title}"? Nedladdade avsnitt behålls.';
-	@override String syncRuleCreated({required Object count}) => 'Synkregel skapad — behåller ${count} osedda avsnitt';
-	@override String get syncRuleUpdated => 'Synkregel uppdaterad';
-	@override String get syncRuleRemoved => 'Synkregel borttagen';
-	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}';
-	@override String get activeSyncRules => 'Synkregler';
-	@override String get noSyncRules => 'Inga synkregler';
-	@override String lastSynced({required Object time}) => 'Senast synkroniserad ${time}';
-	@override String get manageSyncRule => 'Hantera synkronisering';
-	@override String get editEpisodeCount => 'Antal avsnitt';
-}
-
-// Path: playlists
-class _TranslationsPlaylistsSv implements TranslationsPlaylistsEn {
-	_TranslationsPlaylistsSv._(this._root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Spellistor';
-	@override String get noPlaylists => 'Inga spellistor hittades';
-	@override String get create => 'Skapa spellista';
-	@override String get playlistName => 'Spellistans namn';
-	@override String get enterPlaylistName => 'Ange spellistans namn';
-	@override String get delete => 'Ta bort spellista';
-	@override String get removeItem => 'Ta bort från spellista';
-	@override String get smartPlaylist => 'Smart spellista';
-	@override String itemCount({required Object count}) => '${count} objekt';
-	@override String get oneItem => '1 objekt';
-	@override String get emptyPlaylist => 'Denna spellista är tom';
-	@override String get deleteConfirm => 'Ta bort spellista?';
-	@override String deleteMessage({required Object name}) => 'Är du säker på att du vill ta bort "${name}"?';
-	@override String get created => 'Spellista skapad';
-	@override String get deleted => 'Spellista borttagen';
-	@override String get itemAdded => 'Tillagd i spellista';
-	@override String get itemRemoved => 'Borttagen från spellista';
-	@override String get selectPlaylist => 'Välj spellista';
-	@override String get errorCreating => 'Det gick inte att skapa spellista';
-	@override String get errorDeleting => 'Det gick inte att ta bort spellista';
-	@override String get errorLoading => 'Det gick inte att ladda spellistor';
-	@override String get errorAdding => 'Det gick inte att lägga till i spellista';
-	@override String get errorReordering => 'Det gick inte att omordna spellisteobjekt';
-	@override String get errorRemoving => 'Det gick inte att ta bort från spellista';
-	@override String get playlist => 'Spellista';
-}
-
 // Path: collections
 class _TranslationsCollectionsSv implements TranslationsCollectionsEn {
 	_TranslationsCollectionsSv._(this._root);
@@ -979,6 +876,40 @@ class _TranslationsCollectionsSv implements TranslationsCollectionsEn {
 	@override String get removeFromCollectionFailed => 'Misslyckades med att ta bort från samling';
 	@override String removeFromCollectionError({required Object error}) => 'Fel vid borttagning från samling: ${error}';
 	@override String get searchCollections => 'Sök samlingar...';
+}
+
+// Path: playlists
+class _TranslationsPlaylistsSv implements TranslationsPlaylistsEn {
+	_TranslationsPlaylistsSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Spellistor';
+	@override String get playlist => 'Spellista';
+	@override String get noPlaylists => 'Inga spellistor hittades';
+	@override String get create => 'Skapa spellista';
+	@override String get playlistName => 'Spellistans namn';
+	@override String get enterPlaylistName => 'Ange spellistans namn';
+	@override String get delete => 'Ta bort spellista';
+	@override String get removeItem => 'Ta bort från spellista';
+	@override String get smartPlaylist => 'Smart spellista';
+	@override String itemCount({required Object count}) => '${count} objekt';
+	@override String get oneItem => '1 objekt';
+	@override String get emptyPlaylist => 'Denna spellista är tom';
+	@override String get deleteConfirm => 'Ta bort spellista?';
+	@override String deleteMessage({required Object name}) => 'Är du säker på att du vill ta bort "${name}"?';
+	@override String get created => 'Spellista skapad';
+	@override String get deleted => 'Spellista borttagen';
+	@override String get itemAdded => 'Tillagd i spellista';
+	@override String get itemRemoved => 'Borttagen från spellista';
+	@override String get selectPlaylist => 'Välj spellista';
+	@override String get errorCreating => 'Det gick inte att skapa spellista';
+	@override String get errorDeleting => 'Det gick inte att ta bort spellista';
+	@override String get errorLoading => 'Det gick inte att ladda spellistor';
+	@override String get errorAdding => 'Det gick inte att lägga till i spellista';
+	@override String get errorReordering => 'Det gick inte att omordna spellisteobjekt';
+	@override String get errorRemoving => 'Det gick inte att ta bort från spellista';
 }
 
 // Path: watchTogether
@@ -1048,6 +979,55 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String get removeRoom => 'Ta bort';
 }
 
+// Path: downloads
+class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
+	_TranslationsDownloadsSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Nedladdningar';
+	@override String get manage => 'Hantera';
+	@override String get tvShows => 'TV-serier';
+	@override String get movies => 'Filmer';
+	@override String get noDownloads => 'Inga nedladdningar ännu';
+	@override String get noDownloadsDescription => 'Nedladdat innehåll visas här för offline-visning';
+	@override String get downloadNow => 'Ladda ner';
+	@override String get deleteDownload => 'Ta bort nedladdning';
+	@override String get retryDownload => 'Försök igen';
+	@override String get downloadQueued => 'Nedladdning köad';
+	@override String get serverErrorBitrate => 'Serverfel — filen överskrider möjligen gränsen för fjärrströmning-bitrate';
+	@override String episodesQueued({required Object count}) => '${count} avsnitt köade för nedladdning';
+	@override String get downloadDeleted => 'Nedladdning borttagen';
+	@override String deleteConfirm({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.';
+	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Tar bort ${title}... (${current} av ${total})';
+	@override String get noDownloadsTree => 'Inga nedladdningar';
+	@override String get pauseAll => 'Pausa alla';
+	@override String get resumeAll => 'Återuppta alla';
+	@override String get deleteAll => 'Ta bort alla';
+	@override String get selectVersion => 'Välj version';
+	@override String get allEpisodes => 'Alla avsnitt';
+	@override String get unwatchedOnly => 'Endast osedda';
+	@override String nextNUnwatched({required Object count}) => 'Nästa ${count} osedda';
+	@override String get customAmount => 'Ange antal...';
+	@override String get howManyEpisodes => 'Hur många avsnitt?';
+	@override String itemsQueued({required Object count}) => '${count} objekt köade för nedladdning';
+	@override String get keepSynced => 'Håll synkroniserad';
+	@override String get downloadOnce => 'Ladda ner en gång';
+	@override String keepNUnwatched({required Object count}) => 'Behåll ${count} osedda';
+	@override String get editSyncRule => 'Redigera synkregel';
+	@override String get removeSyncRule => 'Ta bort synkregel';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Sluta synkronisera "${title}"? Nedladdade avsnitt behålls.';
+	@override String syncRuleCreated({required Object count}) => 'Synkregel skapad — behåller ${count} osedda avsnitt';
+	@override String get syncRuleUpdated => 'Synkregel uppdaterad';
+	@override String get syncRuleRemoved => 'Synkregel borttagen';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}';
+	@override String get activeSyncRules => 'Synkregler';
+	@override String get noSyncRules => 'Inga synkregler';
+	@override String get manageSyncRule => 'Hantera synkronisering';
+	@override String get editEpisodeCount => 'Antal avsnitt';
+}
+
 // Path: shaders
 class _TranslationsShadersSv implements TranslationsShadersEn {
 	_TranslationsShadersSv._(this._root);
@@ -1077,11 +1057,6 @@ class _TranslationsCompanionRemoteSv implements TranslationsCompanionRemoteEn {
 
 	// Translations
 	@override String get title => 'Fjärrkontroll';
-	@override String get connectToDevice => 'Anslut till enhet';
-	@override String get hostRemoteSession => 'Starta fjärrsession';
-	@override String get controlThisDevice => 'Styr den här enheten med din telefon';
-	@override String get remoteControl => 'Fjärrkontroll';
-	@override String get controlDesktop => 'Styr en datorenhet';
 	@override String connectedTo({required Object name}) => 'Ansluten till ${name}';
 	@override late final _TranslationsCompanionRemoteSessionSv session = _TranslationsCompanionRemoteSessionSv._(_root);
 	@override late final _TranslationsCompanionRemotePairingSv pairing = _TranslationsCompanionRemotePairingSv._(_root);
@@ -1351,7 +1326,6 @@ class _TranslationsCompanionRemotePairingSv implements TranslationsCompanionRemo
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get pairWithDesktop => 'Anslut till dator';
 	@override String get discoveryDescription => 'Enheter i ditt nätverk som kör Plezy med samma Plex-konto visas automatiskt';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => 'Ansluter...';
@@ -1380,8 +1354,6 @@ class _TranslationsCompanionRemoteRemoteSv implements TranslationsCompanionRemot
 	@override String get reconnecting => 'Återansluter...';
 	@override String attemptOf({required Object current}) => 'Försök ${current} av 5';
 	@override String get retryNow => 'Försök nu';
-	@override String get connectionError => 'Anslutningsfel';
-	@override String get notConnected => 'Inte ansluten';
 	@override String get tabRemote => 'Fjärrkontroll';
 	@override String get tabPlay => 'Spela';
 	@override String get tabMore => 'Mer';
@@ -1441,7 +1413,6 @@ extension on TranslationsSv {
 			'common.shuffle' => 'Blanda',
 			'common.addTo' => 'Lägg till i...',
 			'common.createNew' => 'Skapa ny',
-			'common.paste' => 'Klistra in',
 			'common.connect' => 'Anslut',
 			'common.disconnect' => 'Koppla från',
 			'common.play' => 'Spela',
@@ -1489,11 +1460,8 @@ extension on TranslationsSv {
 			'settings.advanced' => 'Avancerat',
 			'settings.episodePosterMode' => 'Avsnittsaffisch-stil',
 			'settings.seriesPoster' => 'Serieaffisch',
-			'settings.seriesPosterDescription' => 'Visa seriens affisch för alla avsnitt',
 			'settings.seasonPoster' => 'Säsongsaffisch',
-			'settings.seasonPosterDescription' => 'Visa säsongens affisch för avsnitt',
 			'settings.episodeThumbnail' => 'Miniatyr',
-			'settings.episodeThumbnailDescription' => 'Visa 16:9 skärmbild från avsnittet',
 			'settings.showHeroSectionDescription' => 'Visa utvalda innehållskarusell på startsidan',
 			'settings.secondsLabel' => 'Sekunder',
 			'settings.minutesLabel' => 'Minuter',
@@ -1501,23 +1469,15 @@ extension on TranslationsSv {
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Ange tid (${min}-${max})',
 			'settings.systemTheme' => 'System',
-			'settings.systemThemeDescription' => 'Följ systeminställningar',
 			'settings.lightTheme' => 'Ljust',
 			'settings.darkTheme' => 'Mörkt',
 			'settings.oledTheme' => 'OLED',
-			'settings.oledThemeDescription' => 'Rent svart för OLED-skärmar',
 			'settings.libraryDensity' => 'Biblioteksdensitet',
 			'settings.compact' => 'Kompakt',
-			'settings.compactDescription' => 'Mindre kort, fler objekt synliga',
-			'settings.normal' => 'Normal',
-			'settings.normalDescription' => 'Standardstorlek',
 			'settings.comfortable' => 'Bekväm',
-			'settings.comfortableDescription' => 'Större kort, färre objekt synliga',
 			'settings.viewMode' => 'Visningsläge',
 			'settings.gridView' => 'Rutnät',
-			'settings.gridViewDescription' => 'Visa objekt i rutnätslayout',
 			'settings.listView' => 'Lista',
-			'settings.listViewDescription' => 'Visa objekt i listlayout',
 			'settings.showHeroSection' => 'Visa hjältesektion',
 			'settings.useGlobalHubs' => 'Använd Plex hem-layout',
 			'settings.useGlobalHubsDescription' => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.',
@@ -1531,9 +1491,7 @@ extension on TranslationsSv {
 			'settings.hideSpoilersDescription' => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu',
 			'settings.playerBackend' => 'Spelarmotor',
 			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
-			'settings.exoPlayerDescription' => 'Android-nativ spelare med bättre hårdvarustöd',
 			'settings.mpv' => 'mpv',
-			'settings.mpvDescription' => 'Avancerad spelare med fler funktioner och ASS-undertextstöd',
 			'settings.hardwareDecoding' => 'Hårdvaruavkodning',
 			'settings.hardwareDecodingDescription' => 'Använd hårdvaruacceleration när tillgängligt',
 			'settings.bufferSize' => 'Bufferstorlek',
@@ -1545,7 +1503,6 @@ extension on TranslationsSv {
 			'settings.smallSkipDuration' => 'Kort hoppvaraktighet',
 			'settings.largeSkipDuration' => 'Lång hoppvaraktighet',
 			'settings.rewindOnResume' => 'Spola tillbaka vid återupptagning',
-			'settings.rewindOnResumeDescription' => 'Spola tillbaka med denna tid vid återupptagning av uppspelning',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} sekunder',
 			'settings.defaultSleepTimer' => 'Standard sovtimer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuter',
@@ -1559,7 +1516,6 @@ extension on TranslationsSv {
 			'settings.videoPlayerNavigation' => 'Navigering i videospelaren',
 			'settings.videoPlayerNavigationDescription' => 'Använd piltangenter för att navigera videospelarens kontroller',
 			'settings.watchTogetherRelay' => 'Titta Tillsammans-relay',
-			'settings.watchTogetherRelayDefault' => 'Standard',
 			'settings.watchTogetherRelayDescription' => 'Ange en anpassad relay-server för Titta Tillsammans. Alla deltagare måste använda samma server.',
 			'settings.watchTogetherRelayHint' => 'https://min-relay.exempel.se',
 			'settings.crashReporting' => 'Kraschrapportering',
@@ -1619,6 +1575,8 @@ extension on TranslationsSv {
 			'settings.discordRichPresenceDescription' => 'Visa vad du tittar på i Discord',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Synkronisera visningshistorik med Trakt',
+			'settings.companionRemoteServer' => 'Companion Remote-server',
+			'settings.companionRemoteServerDescription' => 'Tillåt mobila enheter i ditt nätverk att styra denna app',
 			'settings.autoPip' => 'Automatisk bild-i-bild',
 			'settings.autoPipDescription' => 'Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning',
 			'settings.matchContentFrameRate' => 'Matcha innehållets bildfrekvens',
@@ -1628,7 +1586,6 @@ extension on TranslationsSv {
 			'settings.matchDynamicRange' => 'Matcha dynamiskt omfång',
 			'settings.matchDynamicRangeDescription' => 'Aktivera HDR automatiskt för HDR-innehåll och återgå till SDR när spelaren stängs',
 			'settings.displaySwitchDelay' => 'Fördröjning vid skärmbyte',
-			'settings.displaySwitchDelayDescription' => 'Sekunder att vänta efter ett skärmlägesbyte innan uppspelning startar',
 			'settings.tunneledPlayback' => 'Tunneluppspelning',
 			'settings.tunneledPlaybackDescription' => 'Använd hårdvaruaccelererad videotunnling. Inaktivera om du ser en svart skärm med ljud vid HDR-innehåll',
 			'settings.requireProfileSelectionOnOpen' => 'Fråga efter profil vid appstart',
@@ -1651,8 +1608,6 @@ extension on TranslationsSv {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
-			'settings.companionRemoteServer' => 'Companion Remote-server',
-			'settings.companionRemoteServerDescription' => 'Tillåt mobila enheter i ditt nätverk att styra denna app',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -1772,7 +1727,6 @@ extension on TranslationsSv {
 			'videoControls.alwaysOnTopButton' => 'Alltid överst',
 			'videoControls.rotationLockButton' => 'Rotationslås',
 			'videoControls.lockScreen' => 'Lås skärm',
-			'videoControls.unlockScreen' => 'Lås upp skärm',
 			'videoControls.screenLockButton' => 'Skärmlås',
 			'videoControls.longPressToUnlock' => 'Tryck länge för att låsa upp',
 			'videoControls.timelineSlider' => 'Videotidslinje',
@@ -1837,7 +1791,6 @@ extension on TranslationsSv {
 			'messages.logsUploaded' => 'Loggar uppladdade',
 			'messages.logsUploadFailed' => 'Uppladdning av loggar misslyckades',
 			'messages.logId' => 'Logg-ID',
-			'subtitlingStyling.stylingOptions' => 'Stilalternativ',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrund',
@@ -1927,8 +1880,6 @@ extension on TranslationsSv {
 			'libraries.noCollections' => 'Inga samlingar i det här biblioteket',
 			'libraries.noFoldersFound' => 'Inga mappar hittades',
 			'libraries.folders' => 'mappar',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.recommended' => 'Rekommenderat',
 			'libraries.tabs.browse' => 'Bläddra',
 			'libraries.tabs.collections' => 'Samlingar',
@@ -1948,6 +1899,8 @@ extension on TranslationsSv {
 			'serverSelection.allServerConnectionsFailed' => 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Misslyckades att ladda servrar: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Utgivningsår',
 			'hubDetail.dateAdded' => 'Datum tillagd',
@@ -1986,48 +1939,30 @@ extension on TranslationsSv {
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Titta från början (${minutes} min sedan)',
 			'liveTv.watchLive' => 'Titta live',
 			'liveTv.goToLive' => 'Gå till live',
-			'downloads.title' => 'Nedladdningar',
-			'downloads.manage' => 'Hantera',
-			'downloads.tvShows' => 'TV-serier',
-			'downloads.movies' => 'Filmer',
-			'downloads.noDownloads' => 'Inga nedladdningar ännu',
-			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
-			'downloads.downloadNow' => 'Ladda ner',
-			'downloads.deleteDownload' => 'Ta bort nedladdning',
-			'downloads.retryDownload' => 'Försök igen',
-			'downloads.downloadQueued' => 'Nedladdning köad',
-			'downloads.serverErrorBitrate' => 'Serverfel — filen överskrider möjligen gränsen för fjärrströmning-bitrate',
-			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
-			'downloads.downloadDeleted' => 'Nedladdning borttagen',
-			'downloads.deleteConfirm' => ({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.',
-			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Tar bort ${title}... (${current} av ${total})',
-			'downloads.noDownloadsTree' => 'Inga nedladdningar',
-			'downloads.pauseAll' => 'Pausa alla',
-			'downloads.resumeAll' => 'Återuppta alla',
-			'downloads.deleteAll' => 'Ta bort alla',
-			'downloads.selectVersion' => 'Välj version',
-			'downloads.allEpisodes' => 'Alla avsnitt',
-			'downloads.unwatchedOnly' => 'Endast osedda',
-			'downloads.nextNUnwatched' => ({required Object count}) => 'Nästa ${count} osedda',
-			'downloads.customAmount' => 'Ange antal...',
-			'downloads.howManyEpisodes' => 'Hur många avsnitt?',
-			'downloads.itemsQueued' => ({required Object count}) => '${count} objekt köade för nedladdning',
-			'downloads.keepSynced' => 'Håll synkroniserad',
-			'downloads.downloadOnce' => 'Ladda ner en gång',
-			'downloads.keepNUnwatched' => ({required Object count}) => 'Behåll ${count} osedda',
-			'downloads.editSyncRule' => 'Redigera synkregel',
-			'downloads.removeSyncRule' => 'Ta bort synkregel',
-			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Sluta synkronisera "${title}"? Nedladdade avsnitt behålls.',
-			'downloads.syncRuleCreated' => ({required Object count}) => 'Synkregel skapad — behåller ${count} osedda avsnitt',
-			'downloads.syncRuleUpdated' => 'Synkregel uppdaterad',
-			'downloads.syncRuleRemoved' => 'Synkregel borttagen',
-			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}',
-			'downloads.activeSyncRules' => 'Synkregler',
-			'downloads.noSyncRules' => 'Inga synkregler',
-			'downloads.lastSynced' => ({required Object time}) => 'Senast synkroniserad ${time}',
-			'downloads.manageSyncRule' => 'Hantera synkronisering',
-			'downloads.editEpisodeCount' => 'Antal avsnitt',
+			'collections.title' => 'Samlingar',
+			'collections.collection' => 'Samling',
+			'collections.empty' => 'Samlingen är tom',
+			'collections.unknownLibrarySection' => 'Kan inte ta bort: okänd bibliotekssektion',
+			'collections.deleteCollection' => 'Ta bort samling',
+			'collections.deleteConfirm' => ({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Detta går inte att ångra.',
+			'collections.deleted' => 'Samling borttagen',
+			'collections.deleteFailed' => 'Det gick inte att ta bort samlingen',
+			'collections.deleteFailedWithError' => ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}',
+			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
+			'collections.selectCollection' => 'Välj samling',
+			'collections.collectionName' => 'Samlingsnamn',
+			'collections.enterCollectionName' => 'Ange samlingsnamn',
+			'collections.addedToCollection' => 'Tillagd i samling',
+			'collections.errorAddingToCollection' => 'Fel vid tillägg i samling',
+			'collections.created' => 'Samling skapad',
+			'collections.removeFromCollection' => 'Ta bort från samling',
+			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
+			'collections.removedFromCollection' => 'Borttagen från samling',
+			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
+			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
+			'collections.searchCollections' => 'Sök samlingar...',
 			'playlists.title' => 'Spellistor',
+			'playlists.playlist' => 'Spellista',
 			'playlists.noPlaylists' => 'Inga spellistor hittades',
 			'playlists.create' => 'Skapa spellista',
 			'playlists.playlistName' => 'Spellistans namn',
@@ -2051,29 +1986,6 @@ extension on TranslationsSv {
 			'playlists.errorAdding' => 'Det gick inte att lägga till i spellista',
 			'playlists.errorReordering' => 'Det gick inte att omordna spellisteobjekt',
 			'playlists.errorRemoving' => 'Det gick inte att ta bort från spellista',
-			'playlists.playlist' => 'Spellista',
-			'collections.title' => 'Samlingar',
-			'collections.collection' => 'Samling',
-			'collections.empty' => 'Samlingen är tom',
-			'collections.unknownLibrarySection' => 'Kan inte ta bort: okänd bibliotekssektion',
-			'collections.deleteCollection' => 'Ta bort samling',
-			'collections.deleteConfirm' => ({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Detta går inte att ångra.',
-			'collections.deleted' => 'Samling borttagen',
-			'collections.deleteFailed' => 'Det gick inte att ta bort samlingen',
-			'collections.deleteFailedWithError' => ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
-			'collections.selectCollection' => 'Välj samling',
-			'collections.collectionName' => 'Samlingsnamn',
-			'collections.enterCollectionName' => 'Ange samlingsnamn',
-			'collections.addedToCollection' => 'Tillagd i samling',
-			'collections.errorAddingToCollection' => 'Fel vid tillägg i samling',
-			'collections.created' => 'Samling skapad',
-			'collections.removeFromCollection' => 'Ta bort från samling',
-			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
-			'collections.removedFromCollection' => 'Borttagen från samling',
-			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
-			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
-			'collections.searchCollections' => 'Sök samlingar...',
 			'watchTogether.title' => 'Titta Tillsammans',
 			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',
 			'watchTogether.createSession' => 'Skapa Session',
@@ -2132,6 +2044,46 @@ extension on TranslationsSv {
 			'watchTogether.recentRooms' => 'Senaste rum',
 			'watchTogether.renameRoom' => 'Byt namn på rum',
 			'watchTogether.removeRoom' => 'Ta bort',
+			'downloads.title' => 'Nedladdningar',
+			'downloads.manage' => 'Hantera',
+			'downloads.tvShows' => 'TV-serier',
+			'downloads.movies' => 'Filmer',
+			'downloads.noDownloads' => 'Inga nedladdningar ännu',
+			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
+			'downloads.downloadNow' => 'Ladda ner',
+			'downloads.deleteDownload' => 'Ta bort nedladdning',
+			'downloads.retryDownload' => 'Försök igen',
+			'downloads.downloadQueued' => 'Nedladdning köad',
+			'downloads.serverErrorBitrate' => 'Serverfel — filen överskrider möjligen gränsen för fjärrströmning-bitrate',
+			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
+			'downloads.downloadDeleted' => 'Nedladdning borttagen',
+			'downloads.deleteConfirm' => ({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.',
+			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Tar bort ${title}... (${current} av ${total})',
+			'downloads.noDownloadsTree' => 'Inga nedladdningar',
+			'downloads.pauseAll' => 'Pausa alla',
+			'downloads.resumeAll' => 'Återuppta alla',
+			'downloads.deleteAll' => 'Ta bort alla',
+			'downloads.selectVersion' => 'Välj version',
+			'downloads.allEpisodes' => 'Alla avsnitt',
+			'downloads.unwatchedOnly' => 'Endast osedda',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Nästa ${count} osedda',
+			'downloads.customAmount' => 'Ange antal...',
+			'downloads.howManyEpisodes' => 'Hur många avsnitt?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} objekt köade för nedladdning',
+			'downloads.keepSynced' => 'Håll synkroniserad',
+			'downloads.downloadOnce' => 'Ladda ner en gång',
+			'downloads.keepNUnwatched' => ({required Object count}) => 'Behåll ${count} osedda',
+			'downloads.editSyncRule' => 'Redigera synkregel',
+			'downloads.removeSyncRule' => 'Ta bort synkregel',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Sluta synkronisera "${title}"? Nedladdade avsnitt behålls.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Synkregel skapad — behåller ${count} osedda avsnitt',
+			'downloads.syncRuleUpdated' => 'Synkregel uppdaterad',
+			'downloads.syncRuleRemoved' => 'Synkregel borttagen',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}',
+			'downloads.activeSyncRules' => 'Synkregler',
+			'downloads.noSyncRules' => 'Inga synkregler',
+			'downloads.manageSyncRule' => 'Hantera synkronisering',
+			'downloads.editEpisodeCount' => 'Antal avsnitt',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Ingen videoförbättring',
 			'shaders.nvscalerDescription' => 'NVIDIA-bildskalning för skarpare video',
@@ -2145,11 +2097,6 @@ extension on TranslationsSv {
 			'shaders.deleteShader' => 'Ta bort shader',
 			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Ta bort "${name}"?',
 			'companionRemote.title' => 'Fjärrkontroll',
-			'companionRemote.connectToDevice' => 'Anslut till enhet',
-			'companionRemote.hostRemoteSession' => 'Starta fjärrsession',
-			'companionRemote.controlThisDevice' => 'Styr den här enheten med din telefon',
-			'companionRemote.remoteControl' => 'Fjärrkontroll',
-			'companionRemote.controlDesktop' => 'Styr en datorenhet',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Ansluten till ${name}',
 			'companionRemote.session.startingServer' => 'Startar fjärrserver...',
 			'companionRemote.session.failedToCreate' => 'Kunde inte starta fjärrserver:',
@@ -2163,7 +2110,6 @@ extension on TranslationsSv {
 			'companionRemote.session.startServer' => 'Starta server',
 			'companionRemote.session.stopServer' => 'Stoppa server',
 			'companionRemote.session.minimize' => 'Minimera',
-			'companionRemote.pairing.pairWithDesktop' => 'Anslut till dator',
 			'companionRemote.pairing.discoveryDescription' => 'Enheter i ditt nätverk som kör Plezy med samma Plex-konto visas automatiskt',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Ansluter...',
@@ -2183,8 +2129,6 @@ extension on TranslationsSv {
 			'companionRemote.remote.reconnecting' => 'Återansluter...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Försök ${current} av 5',
 			'companionRemote.remote.retryNow' => 'Försök nu',
-			'companionRemote.remote.connectionError' => 'Anslutningsfel',
-			'companionRemote.remote.notConnected' => 'Inte ansluten',
 			'companionRemote.remote.tabRemote' => 'Fjärrkontroll',
 			'companionRemote.remote.tabPlay' => 'Spela',
 			'companionRemote.remote.tabMore' => 'Mer',

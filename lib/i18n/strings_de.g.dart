@@ -65,10 +65,10 @@ class TranslationsDe with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsLicensesDe licenses = _TranslationsLicensesDe._(_root);
 	@override late final _TranslationsNavigationDe navigation = _TranslationsNavigationDe._(_root);
 	@override late final _TranslationsLiveTvDe liveTv = _TranslationsLiveTvDe._(_root);
-	@override late final _TranslationsDownloadsDe downloads = _TranslationsDownloadsDe._(_root);
-	@override late final _TranslationsPlaylistsDe playlists = _TranslationsPlaylistsDe._(_root);
 	@override late final _TranslationsCollectionsDe collections = _TranslationsCollectionsDe._(_root);
+	@override late final _TranslationsPlaylistsDe playlists = _TranslationsPlaylistsDe._(_root);
 	@override late final _TranslationsWatchTogetherDe watchTogether = _TranslationsWatchTogetherDe._(_root);
+	@override late final _TranslationsDownloadsDe downloads = _TranslationsDownloadsDe._(_root);
 	@override late final _TranslationsShadersDe shaders = _TranslationsShadersDe._(_root);
 	@override late final _TranslationsCompanionRemoteDe companionRemote = _TranslationsCompanionRemoteDe._(_root);
 	@override late final _TranslationsVideoSettingsDe videoSettings = _TranslationsVideoSettingsDe._(_root);
@@ -129,7 +129,6 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get shuffle => 'Zufall';
 	@override String get addTo => 'Hinzufügen zu...';
 	@override String get createNew => 'Neu erstellen';
-	@override String get paste => 'Einfügen';
 	@override String get connect => 'Verbinden';
 	@override String get disconnect => 'Trennen';
 	@override String get play => 'Abspielen';
@@ -204,11 +203,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get advanced => 'Erweitert';
 	@override String get episodePosterMode => 'Episoden-Poster-Stil';
 	@override String get seriesPoster => 'Serienposter';
-	@override String get seriesPosterDescription => 'Zeige das Serienposter für alle Episoden';
 	@override String get seasonPoster => 'Staffelposter';
-	@override String get seasonPosterDescription => 'Zeige das staffelspezifische Poster für Episoden';
 	@override String get episodeThumbnail => 'Miniatur';
-	@override String get episodeThumbnailDescription => 'Zeige 16:9 Episoden-Vorschaubilder';
 	@override String get showHeroSectionDescription => 'Bereich mit empfohlenen Inhalten auf der Startseite anzeigen';
 	@override String get secondsLabel => 'Sekunden';
 	@override String get minutesLabel => 'Minuten';
@@ -216,23 +212,15 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get minutesShort => 'm';
 	@override String durationHint({required Object min, required Object max}) => 'Dauer eingeben (${min}-${max})';
 	@override String get systemTheme => 'System';
-	@override String get systemThemeDescription => 'Systemeinstellungen folgen';
 	@override String get lightTheme => 'Hell';
 	@override String get darkTheme => 'Dunkel';
 	@override String get oledTheme => 'OLED';
-	@override String get oledThemeDescription => 'Reines Schwarz für OLED-Bildschirme';
 	@override String get libraryDensity => 'Mediathekdichte';
 	@override String get compact => 'Kompakt';
-	@override String get compactDescription => 'Kleinere Karten, mehr Elemente sichtbar';
-	@override String get normal => 'Normal';
-	@override String get normalDescription => 'Standardgröße';
 	@override String get comfortable => 'Großzügig';
-	@override String get comfortableDescription => 'Größere Karten, weniger Elemente sichtbar';
 	@override String get viewMode => 'Ansichtsmodus';
 	@override String get gridView => 'Raster';
-	@override String get gridViewDescription => 'Elemente im Raster anzeigen';
 	@override String get listView => 'Liste';
-	@override String get listViewDescription => 'Elemente in Listenansicht anzeigen';
 	@override String get showHeroSection => 'Hero-Bereich anzeigen';
 	@override String get useGlobalHubs => 'Plex-Startseiten-Layout verwenden';
 	@override String get useGlobalHubsDescription => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.';
@@ -246,9 +234,7 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get hideSpoilersDescription => 'Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden';
 	@override String get playerBackend => 'Player-Backend';
 	@override String get exoPlayer => 'ExoPlayer (Empfohlen)';
-	@override String get exoPlayerDescription => 'Android-nativer Player mit besserer Hardware-Unterstützung';
 	@override String get mpv => 'mpv';
-	@override String get mpvDescription => 'Erweiterter Player mit mehr Funktionen und ASS-Untertitel-Unterstützung';
 	@override String get hardwareDecoding => 'Hardware-Decodierung';
 	@override String get hardwareDecodingDescription => 'Hardwarebeschleunigung verwenden, sofern verfügbar';
 	@override String get bufferSize => 'Puffergröße';
@@ -260,7 +246,6 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get smallSkipDuration => 'Kleine Sprungdauer';
 	@override String get largeSkipDuration => 'Große Sprungdauer';
 	@override String get rewindOnResume => 'Zurückspulen bei Fortsetzung';
-	@override String get rewindOnResumeDescription => 'Um diesen Betrag zurückspulen, wenn die Wiedergabe fortgesetzt wird';
 	@override String secondsUnit({required Object seconds}) => '${seconds} Sekunden';
 	@override String get defaultSleepTimer => 'Standard-Sleep-Timer';
 	@override String minutesUnit({required Object minutes}) => '${minutes} Minuten';
@@ -274,7 +259,6 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get videoPlayerNavigation => 'Videoplayer-Navigation';
 	@override String get videoPlayerNavigationDescription => 'Pfeiltasten zur Navigation der Videoplayer-Steuerung verwenden';
 	@override String get watchTogetherRelay => 'Gemeinsam Schauen Relay';
-	@override String get watchTogetherRelayDefault => 'Standard';
 	@override String get watchTogetherRelayDescription => 'Einen benutzerdefinierten Relay-Server für Gemeinsam Schauen festlegen. Alle Teilnehmer müssen denselben Server verwenden.';
 	@override String get watchTogetherRelayHint => 'https://mein-relay.beispiel.de';
 	@override String get crashReporting => 'Absturzberichte';
@@ -334,6 +318,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Zeige auf Discord, was du gerade schaust';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Wiedergabeverlauf mit Trakt synchronisieren';
+	@override String get companionRemoteServer => 'Companion Remote Server';
+	@override String get companionRemoteServerDescription => 'Mobilgeräten in deinem Netzwerk erlauben, diese App zu steuern';
 	@override String get autoPip => 'Automatisches Bild-in-Bild';
 	@override String get autoPipDescription => 'Automatisch Bild-in-Bild aktivieren, wenn die App während der Wiedergabe verlassen wird';
 	@override String get matchContentFrameRate => 'Inhalts-Bildrate anpassen';
@@ -343,7 +329,6 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get matchDynamicRange => 'Dynamikumfang anpassen';
 	@override String get matchDynamicRangeDescription => 'HDR für HDR-Inhalte automatisch aktivieren und beim Verlassen des Players auf SDR zurücksetzen';
 	@override String get displaySwitchDelay => 'Verzögerung beim Displaywechsel';
-	@override String get displaySwitchDelayDescription => 'Sekunden Wartezeit nach einem Displaywechsel vor Wiedergabebeginn';
 	@override String get tunneledPlayback => 'Tunnelwiedergabe';
 	@override String get tunneledPlaybackDescription => 'Hardware-beschleunigte Video-Tunnelierung verwenden. Deaktivieren, wenn bei HDR-Inhalten ein schwarzer Bildschirm mit Ton erscheint';
 	@override String get requireProfileSelectionOnOpen => 'Profil beim Öffnen abfragen';
@@ -366,8 +351,6 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
-	@override String get companionRemoteServer => 'Companion Remote Server';
-	@override String get companionRemoteServerDescription => 'Mobilgeräten in deinem Netzwerk erlauben, diese App zu steuern';
 }
 
 // Path: search
@@ -532,7 +515,6 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get alwaysOnTopButton => 'Immer im Vordergrund';
 	@override String get rotationLockButton => 'Dreh­sperre';
 	@override String get lockScreen => 'Bildschirm sperren';
-	@override String get unlockScreen => 'Bildschirm entsperren';
 	@override String get screenLockButton => 'Bildschirmsperre';
 	@override String get longPressToUnlock => 'Lange drücken zum Entsperren';
 	@override String get timelineSlider => 'Video-Zeitleiste';
@@ -618,7 +600,6 @@ class _TranslationsSubtitlingStylingDe implements TranslationsSubtitlingStylingE
 	final TranslationsDe _root; // ignore: unused_field
 
 	// Translations
-	@override String get stylingOptions => 'Stiloptionen';
 	@override String get text => 'Text';
 	@override String get border => 'Rahmen';
 	@override String get background => 'Hintergrund';
@@ -866,90 +847,6 @@ class _TranslationsLiveTvDe implements TranslationsLiveTvEn {
 	@override String get goToLive => 'Zum Live-Bild';
 }
 
-// Path: downloads
-class _TranslationsDownloadsDe implements TranslationsDownloadsEn {
-	_TranslationsDownloadsDe._(this._root);
-
-	final TranslationsDe _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Downloads';
-	@override String get manage => 'Verwalten';
-	@override String get tvShows => 'Serien';
-	@override String get movies => 'Filme';
-	@override String get noDownloads => 'Noch keine Downloads';
-	@override String get noDownloadsDescription => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt';
-	@override String get downloadNow => 'Herunterladen';
-	@override String get deleteDownload => 'Download löschen';
-	@override String get retryDownload => 'Download wiederholen';
-	@override String get downloadQueued => 'Download in Warteschlange';
-	@override String get serverErrorBitrate => 'Serverfehler — die Datei überschreitet möglicherweise das Remote-Streaming-Bitratenlimit';
-	@override String episodesQueued({required Object count}) => '${count} Episoden zum Download hinzugefügt';
-	@override String get downloadDeleted => 'Download gelöscht';
-	@override String deleteConfirm({required Object title}) => 'Möchtest du "${title}" wirklich löschen? Die heruntergeladene Datei wird von deinem Gerät entfernt.';
-	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Lösche ${title}... (${current} von ${total})';
-	@override String get noDownloadsTree => 'Keine Downloads';
-	@override String get pauseAll => 'Alle pausieren';
-	@override String get resumeAll => 'Alle fortsetzen';
-	@override String get deleteAll => 'Alle löschen';
-	@override String get selectVersion => 'Version auswählen';
-	@override String get allEpisodes => 'Alle Episoden';
-	@override String get unwatchedOnly => 'Nur ungesehene';
-	@override String nextNUnwatched({required Object count}) => 'Nächste ${count} ungesehene';
-	@override String get customAmount => 'Eigene Anzahl...';
-	@override String get howManyEpisodes => 'Wie viele Episoden?';
-	@override String itemsQueued({required Object count}) => '${count} Elemente zum Download eingereiht';
-	@override String get keepSynced => 'Synchronisiert halten';
-	@override String get downloadOnce => 'Einmal herunterladen';
-	@override String keepNUnwatched({required Object count}) => '${count} ungesehene behalten';
-	@override String get editSyncRule => 'Sync-Regel bearbeiten';
-	@override String get removeSyncRule => 'Sync-Regel entfernen';
-	@override String removeSyncRuleConfirm({required Object title}) => 'Synchronisierung von "${title}" beenden? Heruntergeladene Episoden werden behalten.';
-	@override String syncRuleCreated({required Object count}) => 'Sync-Regel erstellt — ${count} ungesehene Episoden werden behalten';
-	@override String get syncRuleUpdated => 'Sync-Regel aktualisiert';
-	@override String get syncRuleRemoved => 'Sync-Regel entfernt';
-	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert';
-	@override String get activeSyncRules => 'Sync-Regeln';
-	@override String get noSyncRules => 'Keine Sync-Regeln';
-	@override String lastSynced({required Object time}) => 'Zuletzt synchronisiert ${time}';
-	@override String get manageSyncRule => 'Synchronisierung verwalten';
-	@override String get editEpisodeCount => 'Episodenanzahl';
-}
-
-// Path: playlists
-class _TranslationsPlaylistsDe implements TranslationsPlaylistsEn {
-	_TranslationsPlaylistsDe._(this._root);
-
-	final TranslationsDe _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Wiedergabelisten';
-	@override String get noPlaylists => 'Keine Wiedergabelisten gefunden';
-	@override String get create => 'Wiedergabeliste erstellen';
-	@override String get playlistName => 'Name der Wiedergabeliste';
-	@override String get enterPlaylistName => 'Name der Wiedergabeliste eingeben';
-	@override String get delete => 'Wiedergabeliste löschen';
-	@override String get removeItem => 'Aus Wiedergabeliste entfernen';
-	@override String get smartPlaylist => 'Intelligente Wiedergabeliste';
-	@override String itemCount({required Object count}) => '${count} Elemente';
-	@override String get oneItem => '1 Element';
-	@override String get emptyPlaylist => 'Diese Wiedergabeliste ist leer';
-	@override String get deleteConfirm => 'Wiedergabeliste löschen?';
-	@override String deleteMessage({required Object name}) => 'Soll "${name}" wirklich gelöscht werden?';
-	@override String get created => 'Wiedergabeliste erstellt';
-	@override String get deleted => 'Wiedergabeliste gelöscht';
-	@override String get itemAdded => 'Zur Wiedergabeliste hinzugefügt';
-	@override String get itemRemoved => 'Aus Wiedergabeliste entfernt';
-	@override String get selectPlaylist => 'Wiedergabeliste auswählen';
-	@override String get errorCreating => 'Wiedergabeliste konnte nicht erstellt werden';
-	@override String get errorDeleting => 'Wiedergabeliste konnte nicht gelöscht werden';
-	@override String get errorLoading => 'Wiedergabelisten konnten nicht geladen werden';
-	@override String get errorAdding => 'Konnte nicht zur Wiedergabeliste hinzugefügt werden';
-	@override String get errorReordering => 'Element der Wiedergabeliste konnte nicht neu geordnet werden';
-	@override String get errorRemoving => 'Konnte nicht aus der Wiedergabeliste entfernt werden';
-	@override String get playlist => 'Wiedergabeliste';
-}
-
 // Path: collections
 class _TranslationsCollectionsDe implements TranslationsCollectionsEn {
 	_TranslationsCollectionsDe._(this._root);
@@ -979,6 +876,40 @@ class _TranslationsCollectionsDe implements TranslationsCollectionsEn {
 	@override String get removeFromCollectionFailed => 'Entfernen aus Sammlung fehlgeschlagen';
 	@override String removeFromCollectionError({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}';
 	@override String get searchCollections => 'Sammlungen durchsuchen...';
+}
+
+// Path: playlists
+class _TranslationsPlaylistsDe implements TranslationsPlaylistsEn {
+	_TranslationsPlaylistsDe._(this._root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Wiedergabelisten';
+	@override String get playlist => 'Wiedergabeliste';
+	@override String get noPlaylists => 'Keine Wiedergabelisten gefunden';
+	@override String get create => 'Wiedergabeliste erstellen';
+	@override String get playlistName => 'Name der Wiedergabeliste';
+	@override String get enterPlaylistName => 'Name der Wiedergabeliste eingeben';
+	@override String get delete => 'Wiedergabeliste löschen';
+	@override String get removeItem => 'Aus Wiedergabeliste entfernen';
+	@override String get smartPlaylist => 'Intelligente Wiedergabeliste';
+	@override String itemCount({required Object count}) => '${count} Elemente';
+	@override String get oneItem => '1 Element';
+	@override String get emptyPlaylist => 'Diese Wiedergabeliste ist leer';
+	@override String get deleteConfirm => 'Wiedergabeliste löschen?';
+	@override String deleteMessage({required Object name}) => 'Soll "${name}" wirklich gelöscht werden?';
+	@override String get created => 'Wiedergabeliste erstellt';
+	@override String get deleted => 'Wiedergabeliste gelöscht';
+	@override String get itemAdded => 'Zur Wiedergabeliste hinzugefügt';
+	@override String get itemRemoved => 'Aus Wiedergabeliste entfernt';
+	@override String get selectPlaylist => 'Wiedergabeliste auswählen';
+	@override String get errorCreating => 'Wiedergabeliste konnte nicht erstellt werden';
+	@override String get errorDeleting => 'Wiedergabeliste konnte nicht gelöscht werden';
+	@override String get errorLoading => 'Wiedergabelisten konnten nicht geladen werden';
+	@override String get errorAdding => 'Konnte nicht zur Wiedergabeliste hinzugefügt werden';
+	@override String get errorReordering => 'Element der Wiedergabeliste konnte nicht neu geordnet werden';
+	@override String get errorRemoving => 'Konnte nicht aus der Wiedergabeliste entfernt werden';
 }
 
 // Path: watchTogether
@@ -1048,6 +979,55 @@ class _TranslationsWatchTogetherDe implements TranslationsWatchTogetherEn {
 	@override String get removeRoom => 'Entfernen';
 }
 
+// Path: downloads
+class _TranslationsDownloadsDe implements TranslationsDownloadsEn {
+	_TranslationsDownloadsDe._(this._root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Downloads';
+	@override String get manage => 'Verwalten';
+	@override String get tvShows => 'Serien';
+	@override String get movies => 'Filme';
+	@override String get noDownloads => 'Noch keine Downloads';
+	@override String get noDownloadsDescription => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt';
+	@override String get downloadNow => 'Herunterladen';
+	@override String get deleteDownload => 'Download löschen';
+	@override String get retryDownload => 'Download wiederholen';
+	@override String get downloadQueued => 'Download in Warteschlange';
+	@override String get serverErrorBitrate => 'Serverfehler — die Datei überschreitet möglicherweise das Remote-Streaming-Bitratenlimit';
+	@override String episodesQueued({required Object count}) => '${count} Episoden zum Download hinzugefügt';
+	@override String get downloadDeleted => 'Download gelöscht';
+	@override String deleteConfirm({required Object title}) => 'Möchtest du "${title}" wirklich löschen? Die heruntergeladene Datei wird von deinem Gerät entfernt.';
+	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Lösche ${title}... (${current} von ${total})';
+	@override String get noDownloadsTree => 'Keine Downloads';
+	@override String get pauseAll => 'Alle pausieren';
+	@override String get resumeAll => 'Alle fortsetzen';
+	@override String get deleteAll => 'Alle löschen';
+	@override String get selectVersion => 'Version auswählen';
+	@override String get allEpisodes => 'Alle Episoden';
+	@override String get unwatchedOnly => 'Nur ungesehene';
+	@override String nextNUnwatched({required Object count}) => 'Nächste ${count} ungesehene';
+	@override String get customAmount => 'Eigene Anzahl...';
+	@override String get howManyEpisodes => 'Wie viele Episoden?';
+	@override String itemsQueued({required Object count}) => '${count} Elemente zum Download eingereiht';
+	@override String get keepSynced => 'Synchronisiert halten';
+	@override String get downloadOnce => 'Einmal herunterladen';
+	@override String keepNUnwatched({required Object count}) => '${count} ungesehene behalten';
+	@override String get editSyncRule => 'Sync-Regel bearbeiten';
+	@override String get removeSyncRule => 'Sync-Regel entfernen';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Synchronisierung von "${title}" beenden? Heruntergeladene Episoden werden behalten.';
+	@override String syncRuleCreated({required Object count}) => 'Sync-Regel erstellt — ${count} ungesehene Episoden werden behalten';
+	@override String get syncRuleUpdated => 'Sync-Regel aktualisiert';
+	@override String get syncRuleRemoved => 'Sync-Regel entfernt';
+	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert';
+	@override String get activeSyncRules => 'Sync-Regeln';
+	@override String get noSyncRules => 'Keine Sync-Regeln';
+	@override String get manageSyncRule => 'Synchronisierung verwalten';
+	@override String get editEpisodeCount => 'Episodenanzahl';
+}
+
 // Path: shaders
 class _TranslationsShadersDe implements TranslationsShadersEn {
 	_TranslationsShadersDe._(this._root);
@@ -1077,11 +1057,6 @@ class _TranslationsCompanionRemoteDe implements TranslationsCompanionRemoteEn {
 
 	// Translations
 	@override String get title => 'Companion-Fernbedienung';
-	@override String get connectToDevice => 'Mit Gerät verbinden';
-	@override String get hostRemoteSession => 'Fernsteuerungssitzung starten';
-	@override String get controlThisDevice => 'Dieses Gerät mit dem Handy steuern';
-	@override String get remoteControl => 'Fernsteuerung';
-	@override String get controlDesktop => 'Ein Desktop-Gerät steuern';
 	@override String connectedTo({required Object name}) => 'Verbunden mit ${name}';
 	@override late final _TranslationsCompanionRemoteSessionDe session = _TranslationsCompanionRemoteSessionDe._(_root);
 	@override late final _TranslationsCompanionRemotePairingDe pairing = _TranslationsCompanionRemotePairingDe._(_root);
@@ -1351,7 +1326,6 @@ class _TranslationsCompanionRemotePairingDe implements TranslationsCompanionRemo
 	final TranslationsDe _root; // ignore: unused_field
 
 	// Translations
-	@override String get pairWithDesktop => 'Mit Desktop verbinden';
 	@override String get discoveryDescription => 'Geräte in deinem Netzwerk, die Plezy mit demselben Plex-Konto nutzen, erscheinen automatisch';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => 'Verbinden...';
@@ -1380,8 +1354,6 @@ class _TranslationsCompanionRemoteRemoteDe implements TranslationsCompanionRemot
 	@override String get reconnecting => 'Verbindung wird wiederhergestellt...';
 	@override String attemptOf({required Object current}) => 'Versuch ${current} von 5';
 	@override String get retryNow => 'Jetzt wiederholen';
-	@override String get connectionError => 'Verbindungsfehler';
-	@override String get notConnected => 'Nicht verbunden';
 	@override String get tabRemote => 'Fernbedienung';
 	@override String get tabPlay => 'Wiedergabe';
 	@override String get tabMore => 'Mehr';
@@ -1441,7 +1413,6 @@ extension on TranslationsDe {
 			'common.shuffle' => 'Zufall',
 			'common.addTo' => 'Hinzufügen zu...',
 			'common.createNew' => 'Neu erstellen',
-			'common.paste' => 'Einfügen',
 			'common.connect' => 'Verbinden',
 			'common.disconnect' => 'Trennen',
 			'common.play' => 'Abspielen',
@@ -1489,11 +1460,8 @@ extension on TranslationsDe {
 			'settings.advanced' => 'Erweitert',
 			'settings.episodePosterMode' => 'Episoden-Poster-Stil',
 			'settings.seriesPoster' => 'Serienposter',
-			'settings.seriesPosterDescription' => 'Zeige das Serienposter für alle Episoden',
 			'settings.seasonPoster' => 'Staffelposter',
-			'settings.seasonPosterDescription' => 'Zeige das staffelspezifische Poster für Episoden',
 			'settings.episodeThumbnail' => 'Miniatur',
-			'settings.episodeThumbnailDescription' => 'Zeige 16:9 Episoden-Vorschaubilder',
 			'settings.showHeroSectionDescription' => 'Bereich mit empfohlenen Inhalten auf der Startseite anzeigen',
 			'settings.secondsLabel' => 'Sekunden',
 			'settings.minutesLabel' => 'Minuten',
@@ -1501,23 +1469,15 @@ extension on TranslationsDe {
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Dauer eingeben (${min}-${max})',
 			'settings.systemTheme' => 'System',
-			'settings.systemThemeDescription' => 'Systemeinstellungen folgen',
 			'settings.lightTheme' => 'Hell',
 			'settings.darkTheme' => 'Dunkel',
 			'settings.oledTheme' => 'OLED',
-			'settings.oledThemeDescription' => 'Reines Schwarz für OLED-Bildschirme',
 			'settings.libraryDensity' => 'Mediathekdichte',
 			'settings.compact' => 'Kompakt',
-			'settings.compactDescription' => 'Kleinere Karten, mehr Elemente sichtbar',
-			'settings.normal' => 'Normal',
-			'settings.normalDescription' => 'Standardgröße',
 			'settings.comfortable' => 'Großzügig',
-			'settings.comfortableDescription' => 'Größere Karten, weniger Elemente sichtbar',
 			'settings.viewMode' => 'Ansichtsmodus',
 			'settings.gridView' => 'Raster',
-			'settings.gridViewDescription' => 'Elemente im Raster anzeigen',
 			'settings.listView' => 'Liste',
-			'settings.listViewDescription' => 'Elemente in Listenansicht anzeigen',
 			'settings.showHeroSection' => 'Hero-Bereich anzeigen',
 			'settings.useGlobalHubs' => 'Plex-Startseiten-Layout verwenden',
 			'settings.useGlobalHubsDescription' => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.',
@@ -1531,9 +1491,7 @@ extension on TranslationsDe {
 			'settings.hideSpoilersDescription' => 'Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden',
 			'settings.playerBackend' => 'Player-Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Empfohlen)',
-			'settings.exoPlayerDescription' => 'Android-nativer Player mit besserer Hardware-Unterstützung',
 			'settings.mpv' => 'mpv',
-			'settings.mpvDescription' => 'Erweiterter Player mit mehr Funktionen und ASS-Untertitel-Unterstützung',
 			'settings.hardwareDecoding' => 'Hardware-Decodierung',
 			'settings.hardwareDecodingDescription' => 'Hardwarebeschleunigung verwenden, sofern verfügbar',
 			'settings.bufferSize' => 'Puffergröße',
@@ -1545,7 +1503,6 @@ extension on TranslationsDe {
 			'settings.smallSkipDuration' => 'Kleine Sprungdauer',
 			'settings.largeSkipDuration' => 'Große Sprungdauer',
 			'settings.rewindOnResume' => 'Zurückspulen bei Fortsetzung',
-			'settings.rewindOnResumeDescription' => 'Um diesen Betrag zurückspulen, wenn die Wiedergabe fortgesetzt wird',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} Sekunden',
 			'settings.defaultSleepTimer' => 'Standard-Sleep-Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} Minuten',
@@ -1559,7 +1516,6 @@ extension on TranslationsDe {
 			'settings.videoPlayerNavigation' => 'Videoplayer-Navigation',
 			'settings.videoPlayerNavigationDescription' => 'Pfeiltasten zur Navigation der Videoplayer-Steuerung verwenden',
 			'settings.watchTogetherRelay' => 'Gemeinsam Schauen Relay',
-			'settings.watchTogetherRelayDefault' => 'Standard',
 			'settings.watchTogetherRelayDescription' => 'Einen benutzerdefinierten Relay-Server für Gemeinsam Schauen festlegen. Alle Teilnehmer müssen denselben Server verwenden.',
 			'settings.watchTogetherRelayHint' => 'https://mein-relay.beispiel.de',
 			'settings.crashReporting' => 'Absturzberichte',
@@ -1619,6 +1575,8 @@ extension on TranslationsDe {
 			'settings.discordRichPresenceDescription' => 'Zeige auf Discord, was du gerade schaust',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Wiedergabeverlauf mit Trakt synchronisieren',
+			'settings.companionRemoteServer' => 'Companion Remote Server',
+			'settings.companionRemoteServerDescription' => 'Mobilgeräten in deinem Netzwerk erlauben, diese App zu steuern',
 			'settings.autoPip' => 'Automatisches Bild-in-Bild',
 			'settings.autoPipDescription' => 'Automatisch Bild-in-Bild aktivieren, wenn die App während der Wiedergabe verlassen wird',
 			'settings.matchContentFrameRate' => 'Inhalts-Bildrate anpassen',
@@ -1628,7 +1586,6 @@ extension on TranslationsDe {
 			'settings.matchDynamicRange' => 'Dynamikumfang anpassen',
 			'settings.matchDynamicRangeDescription' => 'HDR für HDR-Inhalte automatisch aktivieren und beim Verlassen des Players auf SDR zurücksetzen',
 			'settings.displaySwitchDelay' => 'Verzögerung beim Displaywechsel',
-			'settings.displaySwitchDelayDescription' => 'Sekunden Wartezeit nach einem Displaywechsel vor Wiedergabebeginn',
 			'settings.tunneledPlayback' => 'Tunnelwiedergabe',
 			'settings.tunneledPlaybackDescription' => 'Hardware-beschleunigte Video-Tunnelierung verwenden. Deaktivieren, wenn bei HDR-Inhalten ein schwarzer Bildschirm mit Ton erscheint',
 			'settings.requireProfileSelectionOnOpen' => 'Profil beim Öffnen abfragen',
@@ -1651,8 +1608,6 @@ extension on TranslationsDe {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
-			'settings.companionRemoteServer' => 'Companion Remote Server',
-			'settings.companionRemoteServerDescription' => 'Mobilgeräten in deinem Netzwerk erlauben, diese App zu steuern',
 			'search.hint' => 'Filme, Serien, Musik suchen...',
 			'search.tryDifferentTerm' => 'Anderen Suchbegriff versuchen',
 			'search.searchYourMedia' => 'In den eigenen Medien suchen',
@@ -1772,7 +1727,6 @@ extension on TranslationsDe {
 			'videoControls.alwaysOnTopButton' => 'Immer im Vordergrund',
 			'videoControls.rotationLockButton' => 'Dreh­sperre',
 			'videoControls.lockScreen' => 'Bildschirm sperren',
-			'videoControls.unlockScreen' => 'Bildschirm entsperren',
 			'videoControls.screenLockButton' => 'Bildschirmsperre',
 			'videoControls.longPressToUnlock' => 'Lange drücken zum Entsperren',
 			'videoControls.timelineSlider' => 'Video-Zeitleiste',
@@ -1837,7 +1791,6 @@ extension on TranslationsDe {
 			'messages.logsUploaded' => 'Protokolle hochgeladen',
 			'messages.logsUploadFailed' => 'Protokolle konnten nicht hochgeladen werden',
 			'messages.logId' => 'Protokoll-ID',
-			'subtitlingStyling.stylingOptions' => 'Stiloptionen',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Rahmen',
 			'subtitlingStyling.background' => 'Hintergrund',
@@ -1927,8 +1880,6 @@ extension on TranslationsDe {
 			'libraries.noCollections' => 'Keine Sammlungen in dieser Mediathek',
 			'libraries.noFoldersFound' => 'Keine Ordner gefunden',
 			'libraries.folders' => 'Ordner',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.recommended' => 'Empfohlen',
 			'libraries.tabs.browse' => 'Durchsuchen',
 			'libraries.tabs.collections' => 'Sammlungen',
@@ -1948,6 +1899,8 @@ extension on TranslationsDe {
 			'serverSelection.allServerConnectionsFailed' => 'Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Keine Server gefunden für ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Server konnten nicht geladen werden: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Erscheinungsjahr',
 			'hubDetail.dateAdded' => 'Hinzugefügt am',
@@ -1986,48 +1939,30 @@ extension on TranslationsDe {
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Von Anfang an ansehen (vor ${minutes} Min.)',
 			'liveTv.watchLive' => 'Live ansehen',
 			'liveTv.goToLive' => 'Zum Live-Bild',
-			'downloads.title' => 'Downloads',
-			'downloads.manage' => 'Verwalten',
-			'downloads.tvShows' => 'Serien',
-			'downloads.movies' => 'Filme',
-			'downloads.noDownloads' => 'Noch keine Downloads',
-			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
-			'downloads.downloadNow' => 'Herunterladen',
-			'downloads.deleteDownload' => 'Download löschen',
-			'downloads.retryDownload' => 'Download wiederholen',
-			'downloads.downloadQueued' => 'Download in Warteschlange',
-			'downloads.serverErrorBitrate' => 'Serverfehler — die Datei überschreitet möglicherweise das Remote-Streaming-Bitratenlimit',
-			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
-			'downloads.downloadDeleted' => 'Download gelöscht',
-			'downloads.deleteConfirm' => ({required Object title}) => 'Möchtest du "${title}" wirklich löschen? Die heruntergeladene Datei wird von deinem Gerät entfernt.',
-			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Lösche ${title}... (${current} von ${total})',
-			'downloads.noDownloadsTree' => 'Keine Downloads',
-			'downloads.pauseAll' => 'Alle pausieren',
-			'downloads.resumeAll' => 'Alle fortsetzen',
-			'downloads.deleteAll' => 'Alle löschen',
-			'downloads.selectVersion' => 'Version auswählen',
-			'downloads.allEpisodes' => 'Alle Episoden',
-			'downloads.unwatchedOnly' => 'Nur ungesehene',
-			'downloads.nextNUnwatched' => ({required Object count}) => 'Nächste ${count} ungesehene',
-			'downloads.customAmount' => 'Eigene Anzahl...',
-			'downloads.howManyEpisodes' => 'Wie viele Episoden?',
-			'downloads.itemsQueued' => ({required Object count}) => '${count} Elemente zum Download eingereiht',
-			'downloads.keepSynced' => 'Synchronisiert halten',
-			'downloads.downloadOnce' => 'Einmal herunterladen',
-			'downloads.keepNUnwatched' => ({required Object count}) => '${count} ungesehene behalten',
-			'downloads.editSyncRule' => 'Sync-Regel bearbeiten',
-			'downloads.removeSyncRule' => 'Sync-Regel entfernen',
-			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Synchronisierung von "${title}" beenden? Heruntergeladene Episoden werden behalten.',
-			'downloads.syncRuleCreated' => ({required Object count}) => 'Sync-Regel erstellt — ${count} ungesehene Episoden werden behalten',
-			'downloads.syncRuleUpdated' => 'Sync-Regel aktualisiert',
-			'downloads.syncRuleRemoved' => 'Sync-Regel entfernt',
-			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert',
-			'downloads.activeSyncRules' => 'Sync-Regeln',
-			'downloads.noSyncRules' => 'Keine Sync-Regeln',
-			'downloads.lastSynced' => ({required Object time}) => 'Zuletzt synchronisiert ${time}',
-			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
-			'downloads.editEpisodeCount' => 'Episodenanzahl',
+			'collections.title' => 'Sammlungen',
+			'collections.collection' => 'Sammlung',
+			'collections.empty' => 'Sammlung ist leer',
+			'collections.unknownLibrarySection' => 'Löschen nicht möglich: Unbekannte Bibliothekssektion',
+			'collections.deleteCollection' => 'Sammlung löschen',
+			'collections.deleteConfirm' => ({required Object title}) => 'Sind Sie sicher, dass Sie "${title}" löschen möchten? Dies kann nicht rückgängig gemacht werden.',
+			'collections.deleted' => 'Sammlung gelöscht',
+			'collections.deleteFailed' => 'Sammlung konnte nicht gelöscht werden',
+			'collections.deleteFailedWithError' => ({required Object error}) => 'Sammlung konnte nicht gelöscht werden: ${error}',
+			'collections.failedToLoadItems' => ({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}',
+			'collections.selectCollection' => 'Sammlung auswählen',
+			'collections.collectionName' => 'Sammlungsname',
+			'collections.enterCollectionName' => 'Sammlungsnamen eingeben',
+			'collections.addedToCollection' => 'Zur Sammlung hinzugefügt',
+			'collections.errorAddingToCollection' => 'Fehler beim Hinzufügen zur Sammlung',
+			'collections.created' => 'Sammlung erstellt',
+			'collections.removeFromCollection' => 'Aus Sammlung entfernen',
+			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?',
+			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
+			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
+			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
+			'collections.searchCollections' => 'Sammlungen durchsuchen...',
 			'playlists.title' => 'Wiedergabelisten',
+			'playlists.playlist' => 'Wiedergabeliste',
 			'playlists.noPlaylists' => 'Keine Wiedergabelisten gefunden',
 			'playlists.create' => 'Wiedergabeliste erstellen',
 			'playlists.playlistName' => 'Name der Wiedergabeliste',
@@ -2051,29 +1986,6 @@ extension on TranslationsDe {
 			'playlists.errorAdding' => 'Konnte nicht zur Wiedergabeliste hinzugefügt werden',
 			'playlists.errorReordering' => 'Element der Wiedergabeliste konnte nicht neu geordnet werden',
 			'playlists.errorRemoving' => 'Konnte nicht aus der Wiedergabeliste entfernt werden',
-			'playlists.playlist' => 'Wiedergabeliste',
-			'collections.title' => 'Sammlungen',
-			'collections.collection' => 'Sammlung',
-			'collections.empty' => 'Sammlung ist leer',
-			'collections.unknownLibrarySection' => 'Löschen nicht möglich: Unbekannte Bibliothekssektion',
-			'collections.deleteCollection' => 'Sammlung löschen',
-			'collections.deleteConfirm' => ({required Object title}) => 'Sind Sie sicher, dass Sie "${title}" löschen möchten? Dies kann nicht rückgängig gemacht werden.',
-			'collections.deleted' => 'Sammlung gelöscht',
-			'collections.deleteFailed' => 'Sammlung konnte nicht gelöscht werden',
-			'collections.deleteFailedWithError' => ({required Object error}) => 'Sammlung konnte nicht gelöscht werden: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}',
-			'collections.selectCollection' => 'Sammlung auswählen',
-			'collections.collectionName' => 'Sammlungsname',
-			'collections.enterCollectionName' => 'Sammlungsnamen eingeben',
-			'collections.addedToCollection' => 'Zur Sammlung hinzugefügt',
-			'collections.errorAddingToCollection' => 'Fehler beim Hinzufügen zur Sammlung',
-			'collections.created' => 'Sammlung erstellt',
-			'collections.removeFromCollection' => 'Aus Sammlung entfernen',
-			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?',
-			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
-			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
-			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
-			'collections.searchCollections' => 'Sammlungen durchsuchen...',
 			'watchTogether.title' => 'Gemeinsam Schauen',
 			'watchTogether.description' => 'Inhalte synchron mit Freunden und Familie schauen',
 			'watchTogether.createSession' => 'Sitzung Erstellen',
@@ -2132,6 +2044,46 @@ extension on TranslationsDe {
 			'watchTogether.recentRooms' => 'Letzte Räume',
 			'watchTogether.renameRoom' => 'Raum umbenennen',
 			'watchTogether.removeRoom' => 'Entfernen',
+			'downloads.title' => 'Downloads',
+			'downloads.manage' => 'Verwalten',
+			'downloads.tvShows' => 'Serien',
+			'downloads.movies' => 'Filme',
+			'downloads.noDownloads' => 'Noch keine Downloads',
+			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
+			'downloads.downloadNow' => 'Herunterladen',
+			'downloads.deleteDownload' => 'Download löschen',
+			'downloads.retryDownload' => 'Download wiederholen',
+			'downloads.downloadQueued' => 'Download in Warteschlange',
+			'downloads.serverErrorBitrate' => 'Serverfehler — die Datei überschreitet möglicherweise das Remote-Streaming-Bitratenlimit',
+			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
+			'downloads.downloadDeleted' => 'Download gelöscht',
+			'downloads.deleteConfirm' => ({required Object title}) => 'Möchtest du "${title}" wirklich löschen? Die heruntergeladene Datei wird von deinem Gerät entfernt.',
+			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Lösche ${title}... (${current} von ${total})',
+			'downloads.noDownloadsTree' => 'Keine Downloads',
+			'downloads.pauseAll' => 'Alle pausieren',
+			'downloads.resumeAll' => 'Alle fortsetzen',
+			'downloads.deleteAll' => 'Alle löschen',
+			'downloads.selectVersion' => 'Version auswählen',
+			'downloads.allEpisodes' => 'Alle Episoden',
+			'downloads.unwatchedOnly' => 'Nur ungesehene',
+			'downloads.nextNUnwatched' => ({required Object count}) => 'Nächste ${count} ungesehene',
+			'downloads.customAmount' => 'Eigene Anzahl...',
+			'downloads.howManyEpisodes' => 'Wie viele Episoden?',
+			'downloads.itemsQueued' => ({required Object count}) => '${count} Elemente zum Download eingereiht',
+			'downloads.keepSynced' => 'Synchronisiert halten',
+			'downloads.downloadOnce' => 'Einmal herunterladen',
+			'downloads.keepNUnwatched' => ({required Object count}) => '${count} ungesehene behalten',
+			'downloads.editSyncRule' => 'Sync-Regel bearbeiten',
+			'downloads.removeSyncRule' => 'Sync-Regel entfernen',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Synchronisierung von "${title}" beenden? Heruntergeladene Episoden werden behalten.',
+			'downloads.syncRuleCreated' => ({required Object count}) => 'Sync-Regel erstellt — ${count} ungesehene Episoden werden behalten',
+			'downloads.syncRuleUpdated' => 'Sync-Regel aktualisiert',
+			'downloads.syncRuleRemoved' => 'Sync-Regel entfernt',
+			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert',
+			'downloads.activeSyncRules' => 'Sync-Regeln',
+			'downloads.noSyncRules' => 'Keine Sync-Regeln',
+			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
+			'downloads.editEpisodeCount' => 'Episodenanzahl',
 			'shaders.title' => 'Shader',
 			'shaders.noShaderDescription' => 'Keine Videoverbesserung',
 			'shaders.nvscalerDescription' => 'NVIDIA-Bildskalierung für schärferes Video',
@@ -2145,11 +2097,6 @@ extension on TranslationsDe {
 			'shaders.deleteShader' => 'Shader löschen',
 			'shaders.deleteShaderConfirm' => ({required Object name}) => '"${name}" löschen?',
 			'companionRemote.title' => 'Companion-Fernbedienung',
-			'companionRemote.connectToDevice' => 'Mit Gerät verbinden',
-			'companionRemote.hostRemoteSession' => 'Fernsteuerungssitzung starten',
-			'companionRemote.controlThisDevice' => 'Dieses Gerät mit dem Handy steuern',
-			'companionRemote.remoteControl' => 'Fernsteuerung',
-			'companionRemote.controlDesktop' => 'Ein Desktop-Gerät steuern',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Verbunden mit ${name}',
 			'companionRemote.session.startingServer' => 'Remote-Server wird gestartet...',
 			'companionRemote.session.failedToCreate' => 'Remote-Server konnte nicht gestartet werden:',
@@ -2163,7 +2110,6 @@ extension on TranslationsDe {
 			'companionRemote.session.startServer' => 'Server starten',
 			'companionRemote.session.stopServer' => 'Server stoppen',
 			'companionRemote.session.minimize' => 'Minimieren',
-			'companionRemote.pairing.pairWithDesktop' => 'Mit Desktop verbinden',
 			'companionRemote.pairing.discoveryDescription' => 'Geräte in deinem Netzwerk, die Plezy mit demselben Plex-Konto nutzen, erscheinen automatisch',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Verbinden...',
@@ -2183,8 +2129,6 @@ extension on TranslationsDe {
 			'companionRemote.remote.reconnecting' => 'Verbindung wird wiederhergestellt...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Versuch ${current} von 5',
 			'companionRemote.remote.retryNow' => 'Jetzt wiederholen',
-			'companionRemote.remote.connectionError' => 'Verbindungsfehler',
-			'companionRemote.remote.notConnected' => 'Nicht verbunden',
 			'companionRemote.remote.tabRemote' => 'Fernbedienung',
 			'companionRemote.remote.tabPlay' => 'Wiedergabe',
 			'companionRemote.remote.tabMore' => 'Mehr',

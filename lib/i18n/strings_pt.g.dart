@@ -129,7 +129,6 @@ class _TranslationsCommonPt implements TranslationsCommonEn {
 	@override String get shuffle => 'Aleatório';
 	@override String get addTo => 'Adicionar a...';
 	@override String get createNew => 'Criar novo';
-	@override String get paste => 'Colar';
 	@override String get connect => 'Conectar';
 	@override String get disconnect => 'Desconectar';
 	@override String get play => 'Reproduzir';
@@ -204,11 +203,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get advanced => 'Avançado';
 	@override String get episodePosterMode => 'Estilo do Poster de Episódio';
 	@override String get seriesPoster => 'Poster da Série';
-	@override String get seriesPosterDescription => 'Mostrar o poster da série para todos os episódios';
 	@override String get seasonPoster => 'Poster da Temporada';
-	@override String get seasonPosterDescription => 'Mostrar o poster específico da temporada para episódios';
 	@override String get episodeThumbnail => 'Miniatura';
-	@override String get episodeThumbnailDescription => 'Mostrar miniaturas 16:9 de captura de tela do episódio';
 	@override String get showHeroSectionDescription => 'Exibir carrossel de conteúdo em destaque na tela inicial';
 	@override String get secondsLabel => 'Segundos';
 	@override String get minutesLabel => 'Minutos';
@@ -216,23 +212,15 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get minutesShort => 'm';
 	@override String durationHint({required Object min, required Object max}) => 'Insira a duração (${min}-${max})';
 	@override String get systemTheme => 'Sistema';
-	@override String get systemThemeDescription => 'Seguir configurações do sistema';
 	@override String get lightTheme => 'Claro';
 	@override String get darkTheme => 'Escuro';
 	@override String get oledTheme => 'OLED';
-	@override String get oledThemeDescription => 'Preto puro para telas OLED';
 	@override String get libraryDensity => 'Densidade da Biblioteca';
 	@override String get compact => 'Compacto';
-	@override String get compactDescription => 'Cards menores, mais itens visíveis';
-	@override String get normal => 'Normal';
-	@override String get normalDescription => 'Tamanho padrão';
 	@override String get comfortable => 'Confortável';
-	@override String get comfortableDescription => 'Cards maiores, menos itens visíveis';
 	@override String get viewMode => 'Modo de Visualização';
 	@override String get gridView => 'Grade';
-	@override String get gridViewDescription => 'Exibir itens em layout de grade';
 	@override String get listView => 'Lista';
-	@override String get listViewDescription => 'Exibir itens em layout de lista';
 	@override String get showHeroSection => 'Mostrar Seção de Destaque';
 	@override String get useGlobalHubs => 'Usar Layout Plex Home';
 	@override String get useGlobalHubsDescription => 'Mostrar hubs da página inicial como o cliente oficial Plex. Quando desativado, mostra recomendações por biblioteca.';
@@ -246,9 +234,7 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get hideSpoilersDescription => 'Desfocar miniaturas e ocultar descrições de episódios que você ainda não assistiu';
 	@override String get playerBackend => 'Backend do Player';
 	@override String get exoPlayer => 'ExoPlayer (Recomendado)';
-	@override String get exoPlayerDescription => 'Player nativo Android com melhor suporte a hardware';
 	@override String get mpv => 'mpv';
-	@override String get mpvDescription => 'Player avançado com mais recursos e suporte a legendas ASS';
 	@override String get hardwareDecoding => 'Decodificação por Hardware';
 	@override String get hardwareDecodingDescription => 'Usar aceleração por hardware quando disponível';
 	@override String get bufferSize => 'Tamanho do Buffer';
@@ -260,7 +246,6 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get smallSkipDuration => 'Duração do Avanço Curto';
 	@override String get largeSkipDuration => 'Duração do Avanço Longo';
 	@override String get rewindOnResume => 'Rebobinar ao retomar';
-	@override String get rewindOnResumeDescription => 'Rebobinar esta quantidade ao retomar a reprodução';
 	@override String secondsUnit({required Object seconds}) => '${seconds} segundos';
 	@override String get defaultSleepTimer => 'Timer de Sono Padrão';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutos';
@@ -274,7 +259,6 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get videoPlayerNavigation => 'Navegação do Player de Vídeo';
 	@override String get videoPlayerNavigationDescription => 'Usar teclas de seta para navegar nos controles do player';
 	@override String get watchTogetherRelay => 'Relay do Assistir Juntos';
-	@override String get watchTogetherRelayDefault => 'Padrão';
 	@override String get watchTogetherRelayDescription => 'Definir um servidor relay personalizado para Assistir Juntos. Todos os participantes devem usar o mesmo servidor.';
 	@override String get watchTogetherRelayHint => 'https://meu-relay.exemplo.com.br';
 	@override String get crashReporting => 'Relatório de Erros';
@@ -334,6 +318,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Mostrar o que você está assistindo no Discord';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Sincronizar histórico de exibição com Trakt';
+	@override String get companionRemoteServer => 'Servidor de controlo remoto';
+	@override String get companionRemoteServerDescription => 'Permitir que dispositivos móveis na sua rede controlem esta aplicação';
 	@override String get autoPip => 'Picture-in-Picture Automático';
 	@override String get autoPipDescription => 'Entrar automaticamente em picture-in-picture ao sair do app durante a reprodução';
 	@override String get matchContentFrameRate => 'Corresponder Taxa de Quadros do Conteúdo';
@@ -343,7 +329,6 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get matchDynamicRange => 'Corresponder Faixa Dinâmica';
 	@override String get matchDynamicRangeDescription => 'Ativar automaticamente o HDR para conteúdo HDR e voltar ao SDR ao sair do reprodutor';
 	@override String get displaySwitchDelay => 'Atraso na Troca de Tela';
-	@override String get displaySwitchDelayDescription => 'Segundos de espera após uma troca de tela antes de iniciar a reprodução';
 	@override String get tunneledPlayback => 'Reprodução Tunelizada';
 	@override String get tunneledPlaybackDescription => 'Usar tunelamento de vídeo acelerado por hardware. Desative se você vir uma tela preta com áudio em conteúdo HDR';
 	@override String get requireProfileSelectionOnOpen => 'Pedir perfil ao abrir o app';
@@ -366,8 +351,6 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
 	@override String get seekAndTiming => 'Seek & Timing';
 	@override String get behavior => 'Behavior';
-	@override String get companionRemoteServer => 'Servidor de controlo remoto';
-	@override String get companionRemoteServerDescription => 'Permitir que dispositivos móveis na sua rede controlem esta aplicação';
 }
 
 // Path: search
@@ -532,7 +515,6 @@ class _TranslationsVideoControlsPt implements TranslationsVideoControlsEn {
 	@override String get alwaysOnTopButton => 'Sempre no topo';
 	@override String get rotationLockButton => 'Travar rotação';
 	@override String get lockScreen => 'Travar tela';
-	@override String get unlockScreen => 'Destravar tela';
 	@override String get screenLockButton => 'Travar tela';
 	@override String get longPressToUnlock => 'Pressione e segure para destravar';
 	@override String get timelineSlider => 'Linha do tempo do vídeo';
@@ -618,7 +600,6 @@ class _TranslationsSubtitlingStylingPt implements TranslationsSubtitlingStylingE
 	final TranslationsPt _root; // ignore: unused_field
 
 	// Translations
-	@override String get stylingOptions => 'Opções de Estilo';
 	@override String get text => 'Texto';
 	@override String get border => 'Borda';
 	@override String get background => 'Fundo';
@@ -1043,7 +1024,6 @@ class _TranslationsDownloadsPt implements TranslationsDownloadsEn {
 	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} novos episódios sincronizados para ${title}';
 	@override String get activeSyncRules => 'Regras de sincronização';
 	@override String get noSyncRules => 'Nenhuma regra de sincronização';
-	@override String lastSynced({required Object time}) => 'Última sincronização ${time}';
 	@override String get manageSyncRule => 'Gerenciar sincronização';
 	@override String get editEpisodeCount => 'Número de episódios';
 }
@@ -1077,11 +1057,6 @@ class _TranslationsCompanionRemotePt implements TranslationsCompanionRemoteEn {
 
 	// Translations
 	@override String get title => 'Controle Remoto';
-	@override String get connectToDevice => 'Conectar ao Dispositivo';
-	@override String get hostRemoteSession => 'Hospedar Sessão Remota';
-	@override String get controlThisDevice => 'Controle este dispositivo com seu celular';
-	@override String get remoteControl => 'Controle Remoto';
-	@override String get controlDesktop => 'Controlar um dispositivo desktop';
 	@override String connectedTo({required Object name}) => 'Conectado a ${name}';
 	@override late final _TranslationsCompanionRemoteSessionPt session = _TranslationsCompanionRemoteSessionPt._(_root);
 	@override late final _TranslationsCompanionRemotePairingPt pairing = _TranslationsCompanionRemotePairingPt._(_root);
@@ -1351,7 +1326,6 @@ class _TranslationsCompanionRemotePairingPt implements TranslationsCompanionRemo
 	final TranslationsPt _root; // ignore: unused_field
 
 	// Translations
-	@override String get pairWithDesktop => 'Conectar ao desktop';
 	@override String get discoveryDescription => 'Dispositivos na sua rede a executar Plezy com a mesma conta Plex aparecerão automaticamente';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => 'A conectar...';
@@ -1380,8 +1354,6 @@ class _TranslationsCompanionRemoteRemotePt implements TranslationsCompanionRemot
 	@override String get reconnecting => 'Reconectando...';
 	@override String attemptOf({required Object current}) => 'Tentativa ${current} de 5';
 	@override String get retryNow => 'Tentar Agora';
-	@override String get connectionError => 'Erro de conexão';
-	@override String get notConnected => 'Não conectado';
 	@override String get tabRemote => 'Remoto';
 	@override String get tabPlay => 'Reproduzir';
 	@override String get tabMore => 'Mais';
@@ -1441,7 +1413,6 @@ extension on TranslationsPt {
 			'common.shuffle' => 'Aleatório',
 			'common.addTo' => 'Adicionar a...',
 			'common.createNew' => 'Criar novo',
-			'common.paste' => 'Colar',
 			'common.connect' => 'Conectar',
 			'common.disconnect' => 'Desconectar',
 			'common.play' => 'Reproduzir',
@@ -1489,11 +1460,8 @@ extension on TranslationsPt {
 			'settings.advanced' => 'Avançado',
 			'settings.episodePosterMode' => 'Estilo do Poster de Episódio',
 			'settings.seriesPoster' => 'Poster da Série',
-			'settings.seriesPosterDescription' => 'Mostrar o poster da série para todos os episódios',
 			'settings.seasonPoster' => 'Poster da Temporada',
-			'settings.seasonPosterDescription' => 'Mostrar o poster específico da temporada para episódios',
 			'settings.episodeThumbnail' => 'Miniatura',
-			'settings.episodeThumbnailDescription' => 'Mostrar miniaturas 16:9 de captura de tela do episódio',
 			'settings.showHeroSectionDescription' => 'Exibir carrossel de conteúdo em destaque na tela inicial',
 			'settings.secondsLabel' => 'Segundos',
 			'settings.minutesLabel' => 'Minutos',
@@ -1501,23 +1469,15 @@ extension on TranslationsPt {
 			'settings.minutesShort' => 'm',
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Insira a duração (${min}-${max})',
 			'settings.systemTheme' => 'Sistema',
-			'settings.systemThemeDescription' => 'Seguir configurações do sistema',
 			'settings.lightTheme' => 'Claro',
 			'settings.darkTheme' => 'Escuro',
 			'settings.oledTheme' => 'OLED',
-			'settings.oledThemeDescription' => 'Preto puro para telas OLED',
 			'settings.libraryDensity' => 'Densidade da Biblioteca',
 			'settings.compact' => 'Compacto',
-			'settings.compactDescription' => 'Cards menores, mais itens visíveis',
-			'settings.normal' => 'Normal',
-			'settings.normalDescription' => 'Tamanho padrão',
 			'settings.comfortable' => 'Confortável',
-			'settings.comfortableDescription' => 'Cards maiores, menos itens visíveis',
 			'settings.viewMode' => 'Modo de Visualização',
 			'settings.gridView' => 'Grade',
-			'settings.gridViewDescription' => 'Exibir itens em layout de grade',
 			'settings.listView' => 'Lista',
-			'settings.listViewDescription' => 'Exibir itens em layout de lista',
 			'settings.showHeroSection' => 'Mostrar Seção de Destaque',
 			'settings.useGlobalHubs' => 'Usar Layout Plex Home',
 			'settings.useGlobalHubsDescription' => 'Mostrar hubs da página inicial como o cliente oficial Plex. Quando desativado, mostra recomendações por biblioteca.',
@@ -1531,9 +1491,7 @@ extension on TranslationsPt {
 			'settings.hideSpoilersDescription' => 'Desfocar miniaturas e ocultar descrições de episódios que você ainda não assistiu',
 			'settings.playerBackend' => 'Backend do Player',
 			'settings.exoPlayer' => 'ExoPlayer (Recomendado)',
-			'settings.exoPlayerDescription' => 'Player nativo Android com melhor suporte a hardware',
 			'settings.mpv' => 'mpv',
-			'settings.mpvDescription' => 'Player avançado com mais recursos e suporte a legendas ASS',
 			'settings.hardwareDecoding' => 'Decodificação por Hardware',
 			'settings.hardwareDecodingDescription' => 'Usar aceleração por hardware quando disponível',
 			'settings.bufferSize' => 'Tamanho do Buffer',
@@ -1545,7 +1503,6 @@ extension on TranslationsPt {
 			'settings.smallSkipDuration' => 'Duração do Avanço Curto',
 			'settings.largeSkipDuration' => 'Duração do Avanço Longo',
 			'settings.rewindOnResume' => 'Rebobinar ao retomar',
-			'settings.rewindOnResumeDescription' => 'Rebobinar esta quantidade ao retomar a reprodução',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} segundos',
 			'settings.defaultSleepTimer' => 'Timer de Sono Padrão',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutos',
@@ -1559,7 +1516,6 @@ extension on TranslationsPt {
 			'settings.videoPlayerNavigation' => 'Navegação do Player de Vídeo',
 			'settings.videoPlayerNavigationDescription' => 'Usar teclas de seta para navegar nos controles do player',
 			'settings.watchTogetherRelay' => 'Relay do Assistir Juntos',
-			'settings.watchTogetherRelayDefault' => 'Padrão',
 			'settings.watchTogetherRelayDescription' => 'Definir um servidor relay personalizado para Assistir Juntos. Todos os participantes devem usar o mesmo servidor.',
 			'settings.watchTogetherRelayHint' => 'https://meu-relay.exemplo.com.br',
 			'settings.crashReporting' => 'Relatório de Erros',
@@ -1619,6 +1575,8 @@ extension on TranslationsPt {
 			'settings.discordRichPresenceDescription' => 'Mostrar o que você está assistindo no Discord',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Sincronizar histórico de exibição com Trakt',
+			'settings.companionRemoteServer' => 'Servidor de controlo remoto',
+			'settings.companionRemoteServerDescription' => 'Permitir que dispositivos móveis na sua rede controlem esta aplicação',
 			'settings.autoPip' => 'Picture-in-Picture Automático',
 			'settings.autoPipDescription' => 'Entrar automaticamente em picture-in-picture ao sair do app durante a reprodução',
 			'settings.matchContentFrameRate' => 'Corresponder Taxa de Quadros do Conteúdo',
@@ -1628,7 +1586,6 @@ extension on TranslationsPt {
 			'settings.matchDynamicRange' => 'Corresponder Faixa Dinâmica',
 			'settings.matchDynamicRangeDescription' => 'Ativar automaticamente o HDR para conteúdo HDR e voltar ao SDR ao sair do reprodutor',
 			'settings.displaySwitchDelay' => 'Atraso na Troca de Tela',
-			'settings.displaySwitchDelayDescription' => 'Segundos de espera após uma troca de tela antes de iniciar a reprodução',
 			'settings.tunneledPlayback' => 'Reprodução Tunelizada',
 			'settings.tunneledPlaybackDescription' => 'Usar tunelamento de vídeo acelerado por hardware. Desative se você vir uma tela preta com áudio em conteúdo HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Pedir perfil ao abrir o app',
@@ -1651,8 +1608,6 @@ extension on TranslationsPt {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
-			'settings.companionRemoteServer' => 'Servidor de controlo remoto',
-			'settings.companionRemoteServerDescription' => 'Permitir que dispositivos móveis na sua rede controlem esta aplicação',
 			'search.hint' => 'Buscar filmes, séries, músicas...',
 			'search.tryDifferentTerm' => 'Tente um termo de busca diferente',
 			'search.searchYourMedia' => 'Buscar suas mídias',
@@ -1772,7 +1727,6 @@ extension on TranslationsPt {
 			'videoControls.alwaysOnTopButton' => 'Sempre no topo',
 			'videoControls.rotationLockButton' => 'Travar rotação',
 			'videoControls.lockScreen' => 'Travar tela',
-			'videoControls.unlockScreen' => 'Destravar tela',
 			'videoControls.screenLockButton' => 'Travar tela',
 			'videoControls.longPressToUnlock' => 'Pressione e segure para destravar',
 			'videoControls.timelineSlider' => 'Linha do tempo do vídeo',
@@ -1837,7 +1791,6 @@ extension on TranslationsPt {
 			'messages.logsUploaded' => 'Logs enviados',
 			'messages.logsUploadFailed' => 'Falha ao enviar logs',
 			'messages.logId' => 'ID do Log',
-			'subtitlingStyling.stylingOptions' => 'Opções de Estilo',
 			'subtitlingStyling.text' => 'Texto',
 			'subtitlingStyling.border' => 'Borda',
 			'subtitlingStyling.background' => 'Fundo',
@@ -1927,8 +1880,6 @@ extension on TranslationsPt {
 			'libraries.noCollections' => 'Nenhuma coleção nesta biblioteca',
 			'libraries.noFoldersFound' => 'Nenhuma pasta encontrada',
 			'libraries.folders' => 'pastas',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.recommended' => 'Recomendados',
 			'libraries.tabs.browse' => 'Navegar',
 			'libraries.tabs.collections' => 'Coleções',
@@ -1948,6 +1899,8 @@ extension on TranslationsPt {
 			'serverSelection.allServerConnectionsFailed' => 'Falha ao conectar a qualquer servidor. Verifique sua rede e tente novamente.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nenhum servidor encontrado para ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Falha ao carregar servidores: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'hubDetail.title' => 'Título',
 			'hubDetail.releaseYear' => 'Ano de Lançamento',
 			'hubDetail.dateAdded' => 'Data de Adição',
@@ -2129,7 +2082,6 @@ extension on TranslationsPt {
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} novos episódios sincronizados para ${title}',
 			'downloads.activeSyncRules' => 'Regras de sincronização',
 			'downloads.noSyncRules' => 'Nenhuma regra de sincronização',
-			'downloads.lastSynced' => ({required Object time}) => 'Última sincronização ${time}',
 			'downloads.manageSyncRule' => 'Gerenciar sincronização',
 			'downloads.editEpisodeCount' => 'Número de episódios',
 			'shaders.title' => 'Shaders',
@@ -2145,11 +2097,6 @@ extension on TranslationsPt {
 			'shaders.deleteShader' => 'Excluir Shader',
 			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Excluir "${name}"?',
 			'companionRemote.title' => 'Controle Remoto',
-			'companionRemote.connectToDevice' => 'Conectar ao Dispositivo',
-			'companionRemote.hostRemoteSession' => 'Hospedar Sessão Remota',
-			'companionRemote.controlThisDevice' => 'Controle este dispositivo com seu celular',
-			'companionRemote.remoteControl' => 'Controle Remoto',
-			'companionRemote.controlDesktop' => 'Controlar um dispositivo desktop',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Conectado a ${name}',
 			'companionRemote.session.startingServer' => 'A iniciar servidor remoto...',
 			'companionRemote.session.failedToCreate' => 'Falha ao iniciar o servidor remoto:',
@@ -2163,7 +2110,6 @@ extension on TranslationsPt {
 			'companionRemote.session.startServer' => 'Iniciar servidor',
 			'companionRemote.session.stopServer' => 'Parar servidor',
 			'companionRemote.session.minimize' => 'Minimizar',
-			'companionRemote.pairing.pairWithDesktop' => 'Conectar ao desktop',
 			'companionRemote.pairing.discoveryDescription' => 'Dispositivos na sua rede a executar Plezy com a mesma conta Plex aparecerão automaticamente',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'A conectar...',
@@ -2183,8 +2129,6 @@ extension on TranslationsPt {
 			'companionRemote.remote.reconnecting' => 'Reconectando...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentativa ${current} de 5',
 			'companionRemote.remote.retryNow' => 'Tentar Agora',
-			'companionRemote.remote.connectionError' => 'Erro de conexão',
-			'companionRemote.remote.notConnected' => 'Não conectado',
 			'companionRemote.remote.tabRemote' => 'Remoto',
 			'companionRemote.remote.tabPlay' => 'Reproduzir',
 			'companionRemote.remote.tabMore' => 'Mais',
