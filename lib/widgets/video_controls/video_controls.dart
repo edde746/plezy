@@ -2471,40 +2471,61 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   Future<void> _onSubtitleDownloaded() async {
     if (!mounted) return;
-    // Wait for the server to finish downloading the subtitle file
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
 
     try {
       final client = _getClientForMetadata();
-      final data = await client.getVideoPlaybackData(widget.metadata.ratingKey);
-      if (!mounted || data.mediaInfo == null) return;
-
       final token = client.config.token;
       if (token == null) return;
 
-      // Find external subtitle tracks from the refreshed metadata
+      // Plex's OpenSubtitles download is asynchronous: the PUT returns immediately
+      // but the new stream entry shows up in metadata seconds later. Poll until it
+      // appears. Up to 15s matches what Plex-web tolerates before giving up.
+      // Snapshot what's already attached so we can identify the new download.
       final existingUris = widget.player.state.tracks.subtitle.where((t) => t.uri != null).map((t) => t.uri!).toSet();
 
-      for (final plexTrack in data.mediaInfo!.subtitleTracks) {
-        if (!plexTrack.isExternal) continue;
-        final url = plexTrack.getSubtitleUrl(client.config.baseUrl, token);
-        if (url == null) continue;
-        // Skip tracks already loaded in the player
-        if (existingUris.any((uri) => uri.contains(plexTrack.key!))) continue;
+      final deadline = DateTime.now().add(const Duration(seconds: 15));
+      PlexSubtitleTrack? newTrack;
+      String? newUrl;
+      PlexMediaInfo? latestInfo;
 
-        await widget.player.addSubtitleTrack(
-          uri: url,
-          title: plexTrack.displayTitle ?? plexTrack.language ?? 'Downloaded',
-          language: plexTrack.languageCode,
-          select: true,
-        );
+      while (mounted && DateTime.now().isBefore(deadline)) {
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
 
-        // Save the selection on the server so it persists across sessions
-        final partId = data.mediaInfo!.partId;
-        if (partId != null) {
-          await client.selectStreams(partId, subtitleStreamID: plexTrack.id);
+        try {
+          final data = await client.getVideoPlaybackData(widget.metadata.ratingKey);
+          if (!mounted) return;
+          if (data.mediaInfo == null) continue;
+          latestInfo = data.mediaInfo;
+
+          for (final plexTrack in data.mediaInfo!.subtitleTracks) {
+            if (!plexTrack.isExternal) continue;
+            final url = plexTrack.getSubtitleUrl(client.config.baseUrl, token);
+            if (url == null) continue;
+            if (existingUris.any((uri) => uri.contains(plexTrack.key!))) continue;
+
+            newTrack = plexTrack;
+            newUrl = url;
+            break;
+          }
+          if (newTrack != null) break;
+        } catch (e) {
+          appLogger.w('Subtitle download poll iteration failed', error: e);
         }
+      }
+
+      if (!mounted || newTrack == null || newUrl == null) return;
+
+      await widget.player.addSubtitleTrack(
+        uri: newUrl,
+        title: newTrack.displayTitle ?? newTrack.language ?? 'Downloaded',
+        language: newTrack.languageCode,
+        select: true,
+      );
+
+      final partId = latestInfo?.partId;
+      if (partId != null) {
+        await client.selectStreams(partId, subtitleStreamID: newTrack.id);
       }
     } catch (e) {
       appLogger.w('Failed to refresh subtitles after download', error: e);

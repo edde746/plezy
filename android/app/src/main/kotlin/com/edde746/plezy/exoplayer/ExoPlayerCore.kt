@@ -476,12 +476,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             // SurfaceFlinger-layer-backed overlay that eglPresentationTimeANDROID can
             // vsync-pin. Z-order: default video SurfaceView < this MediaOverlay-flagged
             // SurfaceView < Flutter TextureView in the window.
+            //
+            // Inserted at child index 0 so the SurfaceView's transparent punch runs BEFORE
+            // SubtitleView's built-in CanvasSubtitleOutput child renders non-ASS cues.
+            // Appending would punch away already-drawn SRT/VTT text.
             var assSubtitleSurfaceView: AssSubtitleSurfaceView? = null
             subtitleView?.let { sv ->
                 val assView = AssSubtitleSurfaceView(sv.context, handler)
                 assSubtitleSurfaceView = assView
                 sv.addView(
                     assView,
+                    0,
                     FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT
@@ -1408,22 +1413,69 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     fun addSubtitleTrack(uri: String, title: String?, language: String?, mimeType: String?, select: Boolean) {
-        val index = externalSubtitles.size
-        val subtitleConfig = MediaItem.SubtitleConfiguration.Builder(Uri.parse(uri))
-            .setId("external_$index")
-            .setLabel(title ?: "External")
-            .setLanguage(language)
-            .setMimeType(mimeType ?: detectSubtitleMimeType(uri))
-            .build()
+        val existingIndex = externalSubtitleUris.indexOf(uri)
+        val isNew = existingIndex < 0
+        val index = if (isNew) externalSubtitles.size else existingIndex
+        val formatId = "external_$index"
 
-        externalSubtitles.add(subtitleConfig)
-        externalSubtitleUris.add(uri)
+        if (isNew) {
+            // SELECTION_FLAG_DEFAULT marks this as the preferred text track so ExoPlayer's
+            // natural selection picks it on prepare. Avoids pinning the selector to a
+            // specific TrackGroup override — if the URL 404s (e.g. stale Plex stream key),
+            // ExoPlayer falls back to another available track (e.g. embedded SRT) instead
+            // of leaving text disabled.
+            val selectionFlags = if (select) C.SELECTION_FLAG_DEFAULT else 0
+            val subtitleConfig = MediaItem.SubtitleConfiguration.Builder(Uri.parse(uri))
+                .setId(formatId)
+                .setLabel(title ?: "External")
+                .setLanguage(language)
+                .setMimeType(mimeType ?: detectSubtitleMimeType(uri))
+                .setSelectionFlags(selectionFlags)
+                .build()
+            externalSubtitles.add(subtitleConfig)
+            externalSubtitleUris.add(uri)
+        }
 
-        // Note: ExoPlayer won't see these until the media is reloaded.
-        // On Android, external subs are normally passed at open() time.
-        // This path is only reached if the Flutter layer calls addSubtitleTrack
-        // while ExoPlayer (not MPV fallback) is active.
-        emitTrackList()
+        // Media3 only picks up MediaItem.SubtitleConfiguration at prepare() time
+        // (tracking issue androidx/media #1649). When the caller wants this subtitle
+        // activated immediately (e.g. after OpenSubtitles download), rebuild the
+        // MediaItem and re-prepare with the position preserved.
+        val player = exoPlayer
+        val mediaUri = currentMediaUri
+        if (select && player != null && mediaUri != null && !currentMediaIsLive) {
+            if (isNew) {
+                val savedPosition = player.currentPosition
+                val savedPlayWhenReady = player.playWhenReady
+
+                // Clear any stale text-type override (pointing at a pre-reload TrackGroup)
+                // and re-enable the text type — mirrors the reset done in open(). Without
+                // this, a previously-selected sub's override would either block the new
+                // DEFAULT-flagged sub from winning or, if the new sub fails to load, keep
+                // the text renderer stuck with no selection.
+                trackSelector?.let { selector ->
+                    selector.parameters = selector.buildUponParameters()
+                        .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                        .build()
+                }
+                selectedSubtitleTrackId = null
+
+                val mediaItem = buildMediaItem(mediaUri)
+                player.setMediaItem(mediaItem, savedPosition)
+                player.prepare()
+                player.playWhenReady = savedPlayWhenReady
+            } else {
+                // Already attached — select the existing track via override.
+                val trackId = subtitleTrackGroupMap.entries
+                    .firstOrNull { (_, group) -> group.getFormat(0).id == formatId }
+                    ?.key
+                if (trackId != null) {
+                    selectSubtitleTrack(trackId)
+                }
+            }
+        }
+
+        if (isNew) emitTrackList()
     }
 
     private fun detectSubtitleMimeType(uri: String): String {
