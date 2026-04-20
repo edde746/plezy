@@ -273,6 +273,18 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Réinitialiser les paramètres';
 	@override String get resetSettingsDescription => 'Cela réinitialisera tous les paramètres à leurs valeurs par défaut. Cette action ne peut pas être annulée.';
 	@override String get resetSettingsSuccess => 'Réinitialisation des paramètres réussie';
+	@override String get backup => 'Sauvegarde';
+	@override String get exportSettings => 'Exporter les paramètres';
+	@override String get exportSettingsDescription => 'Enregistrer vos préférences dans un fichier';
+	@override String get exportSettingsSuccess => 'Paramètres exportés';
+	@override String get exportSettingsFailed => 'Impossible d\'exporter les paramètres';
+	@override String get importSettings => 'Importer les paramètres';
+	@override String get importSettingsDescription => 'Restaurer les préférences depuis un fichier';
+	@override String get importSettingsConfirm => 'Cela remplacera vos paramètres actuels. Continuer ?';
+	@override String get importSettingsSuccess => 'Paramètres importés';
+	@override String get importSettingsFailed => 'Impossible d\'importer les paramètres';
+	@override String get importSettingsInvalidFile => 'Ce fichier n\'est pas un export Plezy valide';
+	@override String get importSettingsNoUser => 'Connectez-vous avant d\'importer les paramètres';
 	@override String get shortcutsReset => 'Raccourcis réinitialisés aux valeurs par défaut';
 	@override String get about => 'À propos';
 	@override String get aboutDescription => 'Informations sur l\'application et licences';
@@ -1536,6 +1548,18 @@ extension on TranslationsFr {
 			'settings.resetSettings' => 'Réinitialiser les paramètres',
 			'settings.resetSettingsDescription' => 'Cela réinitialisera tous les paramètres à leurs valeurs par défaut. Cette action ne peut pas être annulée.',
 			'settings.resetSettingsSuccess' => 'Réinitialisation des paramètres réussie',
+			'settings.backup' => 'Sauvegarde',
+			'settings.exportSettings' => 'Exporter les paramètres',
+			'settings.exportSettingsDescription' => 'Enregistrer vos préférences dans un fichier',
+			'settings.exportSettingsSuccess' => 'Paramètres exportés',
+			'settings.exportSettingsFailed' => 'Impossible d\'exporter les paramètres',
+			'settings.importSettings' => 'Importer les paramètres',
+			'settings.importSettingsDescription' => 'Restaurer les préférences depuis un fichier',
+			'settings.importSettingsConfirm' => 'Cela remplacera vos paramètres actuels. Continuer ?',
+			'settings.importSettingsSuccess' => 'Paramètres importés',
+			'settings.importSettingsFailed' => 'Impossible d\'importer les paramètres',
+			'settings.importSettingsInvalidFile' => 'Ce fichier n\'est pas un export Plezy valide',
+			'settings.importSettingsNoUser' => 'Connectez-vous avant d\'importer les paramètres',
 			'settings.shortcutsReset' => 'Raccourcis réinitialisés aux valeurs par défaut',
 			'settings.about' => 'À propos',
 			'settings.aboutDescription' => 'Informations sur l\'application et licences',
@@ -1893,6 +1917,8 @@ extension on TranslationsFr {
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Regroupement',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Tous',
 			'libraries.groupings.movies' => 'Films',
 			'libraries.groupings.shows' => 'Show TV',
@@ -1905,8 +1931,6 @@ extension on TranslationsFr {
 			'about.appDescription' => 'Un magnifique client Plex pour Flutter',
 			'about.viewLicensesDescription' => 'Afficher les licences des bibliothèques tierces',
 			'serverSelection.allServerConnectionsFailed' => 'Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Échec du chargement des serveurs: ${error}',
 			'hubDetail.title' => 'Titre',

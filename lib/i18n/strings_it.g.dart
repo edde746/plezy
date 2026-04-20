@@ -273,6 +273,18 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Ripristina impostazioni';
 	@override String get resetSettingsDescription => 'Questa opzione ripristinerà tutte le impostazioni ai valori predefiniti. Non può essere annullata.';
 	@override String get resetSettingsSuccess => 'Impostazioni ripristinate correttamente';
+	@override String get backup => 'Backup';
+	@override String get exportSettings => 'Esporta impostazioni';
+	@override String get exportSettingsDescription => 'Salva le tue preferenze in un file';
+	@override String get exportSettingsSuccess => 'Impostazioni esportate';
+	@override String get exportSettingsFailed => 'Impossibile esportare le impostazioni';
+	@override String get importSettings => 'Importa impostazioni';
+	@override String get importSettingsDescription => 'Ripristina le preferenze da un file';
+	@override String get importSettingsConfirm => 'Questa azione sostituirà le impostazioni attuali. Continuare?';
+	@override String get importSettingsSuccess => 'Impostazioni importate';
+	@override String get importSettingsFailed => 'Impossibile importare le impostazioni';
+	@override String get importSettingsInvalidFile => 'Questo file non è un\'esportazione Plezy valida';
+	@override String get importSettingsNoUser => 'Accedi prima di importare le impostazioni';
 	@override String get shortcutsReset => 'Scorciatoie ripristinate alle impostazioni predefinite';
 	@override String get about => 'Informazioni';
 	@override String get aboutDescription => 'Informazioni sull\'app e le licenze';
@@ -1536,6 +1548,18 @@ extension on TranslationsIt {
 			'settings.resetSettings' => 'Ripristina impostazioni',
 			'settings.resetSettingsDescription' => 'Questa opzione ripristinerà tutte le impostazioni ai valori predefiniti. Non può essere annullata.',
 			'settings.resetSettingsSuccess' => 'Impostazioni ripristinate correttamente',
+			'settings.backup' => 'Backup',
+			'settings.exportSettings' => 'Esporta impostazioni',
+			'settings.exportSettingsDescription' => 'Salva le tue preferenze in un file',
+			'settings.exportSettingsSuccess' => 'Impostazioni esportate',
+			'settings.exportSettingsFailed' => 'Impossibile esportare le impostazioni',
+			'settings.importSettings' => 'Importa impostazioni',
+			'settings.importSettingsDescription' => 'Ripristina le preferenze da un file',
+			'settings.importSettingsConfirm' => 'Questa azione sostituirà le impostazioni attuali. Continuare?',
+			'settings.importSettingsSuccess' => 'Impostazioni importate',
+			'settings.importSettingsFailed' => 'Impossibile importare le impostazioni',
+			'settings.importSettingsInvalidFile' => 'Questo file non è un\'esportazione Plezy valida',
+			'settings.importSettingsNoUser' => 'Accedi prima di importare le impostazioni',
 			'settings.shortcutsReset' => 'Scorciatoie ripristinate alle impostazioni predefinite',
 			'settings.about' => 'Informazioni',
 			'settings.aboutDescription' => 'Informazioni sull\'app e le licenze',
@@ -1893,6 +1917,8 @@ extension on TranslationsIt {
 			'libraries.tabs.collections' => 'Raccolte',
 			'libraries.tabs.playlists' => 'Playlist',
 			'libraries.groupings.title' => 'Raggruppamento',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Tutti',
 			'libraries.groupings.movies' => 'Film',
 			'libraries.groupings.shows' => 'Serie TV',
@@ -1905,8 +1931,6 @@ extension on TranslationsIt {
 			'about.appDescription' => 'Un bellissimo client Plex per Flutter',
 			'about.viewLicensesDescription' => 'Visualizza le licenze delle librerie di terze parti',
 			'serverSelection.allServerConnectionsFailed' => 'Impossibile connettersi a nessun server. Controlla la tua rete e riprova.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nessun server trovato per ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Impossibile caricare i server: ${error}',
 			'hubDetail.title' => 'Titolo',

@@ -77,6 +77,16 @@ class ThemeProvider extends ChangeNotifier {
     }
   }
 
+  /// Re-read the theme mode from SharedPreferences. Used after imports or
+  /// resets that change persisted settings outside this provider.
+  Future<void> reload() async {
+    _settingsService = await settings.SettingsService.getInstance();
+    final mode = _settingsService.getThemeMode();
+    _themeMode = mode;
+    _updateSplashTheme(mode);
+    notifyListeners();
+  }
+
   void _updateSplashTheme(settings.ThemeMode mode) {
     if (!Platform.isAndroid) return;
     final name = switch (mode) {

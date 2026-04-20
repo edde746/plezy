@@ -273,6 +273,18 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get resetSettings => '設定をリセット';
 	@override String get resetSettingsDescription => 'すべての設定をデフォルト値にリセットします。この操作は元に戻せません。';
 	@override String get resetSettingsSuccess => '設定を正常にリセットしました';
+	@override String get backup => 'バックアップ';
+	@override String get exportSettings => '設定をエクスポート';
+	@override String get exportSettingsDescription => '設定をファイルに保存';
+	@override String get exportSettingsSuccess => '設定をエクスポートしました';
+	@override String get exportSettingsFailed => '設定をエクスポートできませんでした';
+	@override String get importSettings => '設定をインポート';
+	@override String get importSettingsDescription => 'ファイルから設定を復元';
+	@override String get importSettingsConfirm => '現在の設定を置き換えます。続行しますか？';
+	@override String get importSettingsSuccess => '設定をインポートしました';
+	@override String get importSettingsFailed => '設定をインポートできませんでした';
+	@override String get importSettingsInvalidFile => 'このファイルは有効なPlezyの設定エクスポートではありません';
+	@override String get importSettingsNoUser => '設定をインポートする前にサインインしてください';
 	@override String get shortcutsReset => 'ショートカットをデフォルトにリセットしました';
 	@override String get about => 'アプリについて';
 	@override String get aboutDescription => 'アプリ情報とライセンス';
@@ -1536,6 +1548,18 @@ extension on TranslationsJa {
 			'settings.resetSettings' => '設定をリセット',
 			'settings.resetSettingsDescription' => 'すべての設定をデフォルト値にリセットします。この操作は元に戻せません。',
 			'settings.resetSettingsSuccess' => '設定を正常にリセットしました',
+			'settings.backup' => 'バックアップ',
+			'settings.exportSettings' => '設定をエクスポート',
+			'settings.exportSettingsDescription' => '設定をファイルに保存',
+			'settings.exportSettingsSuccess' => '設定をエクスポートしました',
+			'settings.exportSettingsFailed' => '設定をエクスポートできませんでした',
+			'settings.importSettings' => '設定をインポート',
+			'settings.importSettingsDescription' => 'ファイルから設定を復元',
+			'settings.importSettingsConfirm' => '現在の設定を置き換えます。続行しますか？',
+			'settings.importSettingsSuccess' => '設定をインポートしました',
+			'settings.importSettingsFailed' => '設定をインポートできませんでした',
+			'settings.importSettingsInvalidFile' => 'このファイルは有効なPlezyの設定エクスポートではありません',
+			'settings.importSettingsNoUser' => '設定をインポートする前にサインインしてください',
 			'settings.shortcutsReset' => 'ショートカットをデフォルトにリセットしました',
 			'settings.about' => 'アプリについて',
 			'settings.aboutDescription' => 'アプリ情報とライセンス',
@@ -1893,6 +1917,8 @@ extension on TranslationsJa {
 			'libraries.tabs.collections' => 'コレクション',
 			'libraries.tabs.playlists' => 'プレイリスト',
 			'libraries.groupings.title' => 'グループ',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'すべて',
 			'libraries.groupings.movies' => '映画',
 			'libraries.groupings.shows' => 'テレビ番組',
@@ -1905,8 +1931,6 @@ extension on TranslationsJa {
 			'about.appDescription' => 'Flutter製の美しいPlexクライアント',
 			'about.viewLicensesDescription' => 'サードパーティライブラリのライセンスを表示',
 			'serverSelection.allServerConnectionsFailed' => 'どのサーバーにも接続できませんでした。ネットワークを確認してもう一度お試しください。',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})のサーバーが見つかりません',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'サーバーの読み込みに失敗しました: ${error}',
 			'hubDetail.title' => 'タイトル',

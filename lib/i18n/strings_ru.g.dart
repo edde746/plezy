@@ -273,6 +273,18 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Сбросить настройки';
 	@override String get resetSettingsDescription => 'Все настройки будут сброшены до значений по умолчанию. Это действие нельзя отменить.';
 	@override String get resetSettingsSuccess => 'Настройки успешно сброшены';
+	@override String get backup => 'Резервная копия';
+	@override String get exportSettings => 'Экспорт настроек';
+	@override String get exportSettingsDescription => 'Сохранить настройки в файл';
+	@override String get exportSettingsSuccess => 'Настройки экспортированы';
+	@override String get exportSettingsFailed => 'Не удалось экспортировать настройки';
+	@override String get importSettings => 'Импорт настроек';
+	@override String get importSettingsDescription => 'Восстановить настройки из файла';
+	@override String get importSettingsConfirm => 'Это заменит ваши текущие настройки. Продолжить?';
+	@override String get importSettingsSuccess => 'Настройки импортированы';
+	@override String get importSettingsFailed => 'Не удалось импортировать настройки';
+	@override String get importSettingsInvalidFile => 'Этот файл не является действительным экспортом настроек Plezy';
+	@override String get importSettingsNoUser => 'Войдите в систему перед импортом настроек';
 	@override String get shortcutsReset => 'Горячие клавиши сброшены по умолчанию';
 	@override String get about => 'О приложении';
 	@override String get aboutDescription => 'Информация о приложении и лицензии';
@@ -1536,6 +1548,18 @@ extension on TranslationsRu {
 			'settings.resetSettings' => 'Сбросить настройки',
 			'settings.resetSettingsDescription' => 'Все настройки будут сброшены до значений по умолчанию. Это действие нельзя отменить.',
 			'settings.resetSettingsSuccess' => 'Настройки успешно сброшены',
+			'settings.backup' => 'Резервная копия',
+			'settings.exportSettings' => 'Экспорт настроек',
+			'settings.exportSettingsDescription' => 'Сохранить настройки в файл',
+			'settings.exportSettingsSuccess' => 'Настройки экспортированы',
+			'settings.exportSettingsFailed' => 'Не удалось экспортировать настройки',
+			'settings.importSettings' => 'Импорт настроек',
+			'settings.importSettingsDescription' => 'Восстановить настройки из файла',
+			'settings.importSettingsConfirm' => 'Это заменит ваши текущие настройки. Продолжить?',
+			'settings.importSettingsSuccess' => 'Настройки импортированы',
+			'settings.importSettingsFailed' => 'Не удалось импортировать настройки',
+			'settings.importSettingsInvalidFile' => 'Этот файл не является действительным экспортом настроек Plezy',
+			'settings.importSettingsNoUser' => 'Войдите в систему перед импортом настроек',
 			'settings.shortcutsReset' => 'Горячие клавиши сброшены по умолчанию',
 			'settings.about' => 'О приложении',
 			'settings.aboutDescription' => 'Информация о приложении и лицензии',
@@ -1893,6 +1917,8 @@ extension on TranslationsRu {
 			'libraries.tabs.collections' => 'Коллекции',
 			'libraries.tabs.playlists' => 'Плейлисты',
 			'libraries.groupings.title' => 'Группировка',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Все',
 			'libraries.groupings.movies' => 'Фильмы',
 			'libraries.groupings.shows' => 'Сериалы',
@@ -1905,8 +1931,6 @@ extension on TranslationsRu {
 			'about.appDescription' => 'Красивый клиент Plex на Flutter',
 			'about.viewLicensesDescription' => 'Просмотр лицензий сторонних библиотек',
 			'serverSelection.allServerConnectionsFailed' => 'Не удалось подключиться ни к одному серверу. Проверьте сеть и попробуйте снова.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Не удалось загрузить серверы: ${error}',
 			'hubDetail.title' => 'Название',

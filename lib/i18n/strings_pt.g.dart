@@ -273,6 +273,18 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Redefinir Configurações';
 	@override String get resetSettingsDescription => 'Isso redefinirá todas as configurações para os valores padrão. Esta ação não pode ser desfeita.';
 	@override String get resetSettingsSuccess => 'Configurações redefinidas com sucesso';
+	@override String get backup => 'Backup';
+	@override String get exportSettings => 'Exportar Configurações';
+	@override String get exportSettingsDescription => 'Salve suas preferências em um arquivo';
+	@override String get exportSettingsSuccess => 'Configurações exportadas';
+	@override String get exportSettingsFailed => 'Não foi possível exportar as configurações';
+	@override String get importSettings => 'Importar Configurações';
+	@override String get importSettingsDescription => 'Restaurar preferências a partir de um arquivo';
+	@override String get importSettingsConfirm => 'Isso substituirá suas configurações atuais. Continuar?';
+	@override String get importSettingsSuccess => 'Configurações importadas';
+	@override String get importSettingsFailed => 'Não foi possível importar as configurações';
+	@override String get importSettingsInvalidFile => 'Este arquivo não é uma exportação válida do Plezy';
+	@override String get importSettingsNoUser => 'Entre na conta antes de importar as configurações';
 	@override String get shortcutsReset => 'Atalhos redefinidos para o padrão';
 	@override String get about => 'Sobre';
 	@override String get aboutDescription => 'Informações do app e licenças';
@@ -1536,6 +1548,18 @@ extension on TranslationsPt {
 			'settings.resetSettings' => 'Redefinir Configurações',
 			'settings.resetSettingsDescription' => 'Isso redefinirá todas as configurações para os valores padrão. Esta ação não pode ser desfeita.',
 			'settings.resetSettingsSuccess' => 'Configurações redefinidas com sucesso',
+			'settings.backup' => 'Backup',
+			'settings.exportSettings' => 'Exportar Configurações',
+			'settings.exportSettingsDescription' => 'Salve suas preferências em um arquivo',
+			'settings.exportSettingsSuccess' => 'Configurações exportadas',
+			'settings.exportSettingsFailed' => 'Não foi possível exportar as configurações',
+			'settings.importSettings' => 'Importar Configurações',
+			'settings.importSettingsDescription' => 'Restaurar preferências a partir de um arquivo',
+			'settings.importSettingsConfirm' => 'Isso substituirá suas configurações atuais. Continuar?',
+			'settings.importSettingsSuccess' => 'Configurações importadas',
+			'settings.importSettingsFailed' => 'Não foi possível importar as configurações',
+			'settings.importSettingsInvalidFile' => 'Este arquivo não é uma exportação válida do Plezy',
+			'settings.importSettingsNoUser' => 'Entre na conta antes de importar as configurações',
 			'settings.shortcutsReset' => 'Atalhos redefinidos para o padrão',
 			'settings.about' => 'Sobre',
 			'settings.aboutDescription' => 'Informações do app e licenças',
@@ -1893,6 +1917,8 @@ extension on TranslationsPt {
 			'libraries.tabs.collections' => 'Coleções',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Agrupamento',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Todos',
 			'libraries.groupings.movies' => 'Filmes',
 			'libraries.groupings.shows' => 'Séries de TV',
@@ -1905,8 +1931,6 @@ extension on TranslationsPt {
 			'about.appDescription' => 'Um belo cliente Plex para Flutter',
 			'about.viewLicensesDescription' => 'Ver licenças de bibliotecas de terceiros',
 			'serverSelection.allServerConnectionsFailed' => 'Falha ao conectar a qualquer servidor. Verifique sua rede e tente novamente.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nenhum servidor encontrado para ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Falha ao carregar servidores: ${error}',
 			'hubDetail.title' => 'Título',

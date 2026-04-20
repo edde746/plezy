@@ -29,20 +29,33 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> _initializeSettings() async {
     if (_isInitialized) return;
-
     _settingsService = await SettingsService.getInstance();
-    _libraryDensity = _settingsService!.getLibraryDensity();
-    _viewMode = _settingsService!.getViewMode();
-    _episodePosterMode = _settingsService!.getEpisodePosterMode();
-    _showHeroSection = _settingsService!.getShowHeroSection();
-    _useGlobalHubs = _settingsService!.getUseGlobalHubs();
-    _showServerNameOnHubs = _settingsService!.getShowServerNameOnHubs();
-    _alwaysKeepSidebarOpen = _settingsService!.getAlwaysKeepSidebarOpen();
-    _showUnwatchedCount = _settingsService!.getShowUnwatchedCount();
-    _hideSpoilers = _settingsService!.getHideSpoilers();
-    _showNavBarLabels = _settingsService!.getShowNavBarLabels();
-    _liveTvDefaultFavorites = _settingsService!.getLiveTvDefaultFavorites();
-    _autoHidePerformanceOverlay = _settingsService!.getAutoHidePerformanceOverlay();
+    _readAllFromService();
+    _isInitialized = true;
+    notifyListeners();
+  }
+
+  void _readAllFromService() {
+    final s = _settingsService!;
+    _libraryDensity = s.getLibraryDensity();
+    _viewMode = s.getViewMode();
+    _episodePosterMode = s.getEpisodePosterMode();
+    _showHeroSection = s.getShowHeroSection();
+    _useGlobalHubs = s.getUseGlobalHubs();
+    _showServerNameOnHubs = s.getShowServerNameOnHubs();
+    _alwaysKeepSidebarOpen = s.getAlwaysKeepSidebarOpen();
+    _showUnwatchedCount = s.getShowUnwatchedCount();
+    _hideSpoilers = s.getHideSpoilers();
+    _showNavBarLabels = s.getShowNavBarLabels();
+    _liveTvDefaultFavorites = s.getLiveTvDefaultFavorites();
+    _autoHidePerformanceOverlay = s.getAutoHidePerformanceOverlay();
+  }
+
+  /// Re-read all settings from SharedPreferences. Used after imports or resets
+  /// that change persisted settings outside this provider.
+  Future<void> reload() async {
+    _settingsService = await SettingsService.getInstance();
+    _readAllFromService();
     _isInitialized = true;
     notifyListeners();
   }

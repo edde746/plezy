@@ -273,6 +273,18 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get resetSettings => '설정 재설정';
 	@override String get resetSettingsDescription => '모든 설정을 기본값으로 재설정합니다. 이 작업은 되돌릴 수 없습니다.';
 	@override String get resetSettingsSuccess => '설정 재설정 성공';
+	@override String get backup => '백업';
+	@override String get exportSettings => '설정 내보내기';
+	@override String get exportSettingsDescription => '기본 설정을 파일로 저장';
+	@override String get exportSettingsSuccess => '설정 내보내기 완료';
+	@override String get exportSettingsFailed => '설정을 내보낼 수 없습니다';
+	@override String get importSettings => '설정 가져오기';
+	@override String get importSettingsDescription => '파일에서 기본 설정 복원';
+	@override String get importSettingsConfirm => '현재 설정을 대체합니다. 계속하시겠습니까?';
+	@override String get importSettingsSuccess => '설정 가져오기 완료';
+	@override String get importSettingsFailed => '설정을 가져올 수 없습니다';
+	@override String get importSettingsInvalidFile => '유효한 Plezy 설정 내보내기 파일이 아닙니다';
+	@override String get importSettingsNoUser => '설정을 가져오기 전에 로그인하세요';
 	@override String get shortcutsReset => '단축키가 기본값으로 재설정되었습니다';
 	@override String get about => '정보';
 	@override String get aboutDescription => '응용 프로그램 정보 및 라이선스';
@@ -1536,6 +1548,18 @@ extension on TranslationsKo {
 			'settings.resetSettings' => '설정 재설정',
 			'settings.resetSettingsDescription' => '모든 설정을 기본값으로 재설정합니다. 이 작업은 되돌릴 수 없습니다.',
 			'settings.resetSettingsSuccess' => '설정 재설정 성공',
+			'settings.backup' => '백업',
+			'settings.exportSettings' => '설정 내보내기',
+			'settings.exportSettingsDescription' => '기본 설정을 파일로 저장',
+			'settings.exportSettingsSuccess' => '설정 내보내기 완료',
+			'settings.exportSettingsFailed' => '설정을 내보낼 수 없습니다',
+			'settings.importSettings' => '설정 가져오기',
+			'settings.importSettingsDescription' => '파일에서 기본 설정 복원',
+			'settings.importSettingsConfirm' => '현재 설정을 대체합니다. 계속하시겠습니까?',
+			'settings.importSettingsSuccess' => '설정 가져오기 완료',
+			'settings.importSettingsFailed' => '설정을 가져올 수 없습니다',
+			'settings.importSettingsInvalidFile' => '유효한 Plezy 설정 내보내기 파일이 아닙니다',
+			'settings.importSettingsNoUser' => '설정을 가져오기 전에 로그인하세요',
 			'settings.shortcutsReset' => '단축키가 기본값으로 재설정되었습니다',
 			'settings.about' => '정보',
 			'settings.aboutDescription' => '응용 프로그램 정보 및 라이선스',
@@ -1893,6 +1917,8 @@ extension on TranslationsKo {
 			'libraries.tabs.collections' => '컬렉션',
 			'libraries.tabs.playlists' => '재생 목록',
 			'libraries.groupings.title' => '그룹',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => '전체',
 			'libraries.groupings.movies' => '영화',
 			'libraries.groupings.shows' => 'TV 프로그램',
@@ -1905,8 +1931,6 @@ extension on TranslationsKo {
 			'about.appDescription' => '아름다운 Flutter Plex 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
 			'serverSelection.allServerConnectionsFailed' => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
 			'hubDetail.title' => '제목',

@@ -563,6 +563,42 @@ class TranslationsSettingsEn {
 	/// en: 'Settings reset successfully'
 	String get resetSettingsSuccess => 'Settings reset successfully';
 
+	/// en: 'Backup'
+	String get backup => 'Backup';
+
+	/// en: 'Export Settings'
+	String get exportSettings => 'Export Settings';
+
+	/// en: 'Save your preferences to a file'
+	String get exportSettingsDescription => 'Save your preferences to a file';
+
+	/// en: 'Settings exported'
+	String get exportSettingsSuccess => 'Settings exported';
+
+	/// en: 'Could not export settings'
+	String get exportSettingsFailed => 'Could not export settings';
+
+	/// en: 'Import Settings'
+	String get importSettings => 'Import Settings';
+
+	/// en: 'Restore preferences from a file'
+	String get importSettingsDescription => 'Restore preferences from a file';
+
+	/// en: 'This will replace your current settings. Continue?'
+	String get importSettingsConfirm => 'This will replace your current settings. Continue?';
+
+	/// en: 'Settings imported'
+	String get importSettingsSuccess => 'Settings imported';
+
+	/// en: 'Could not import settings'
+	String get importSettingsFailed => 'Could not import settings';
+
+	/// en: 'This file isn't a valid Plezy settings export'
+	String get importSettingsInvalidFile => 'This file isn\'t a valid Plezy settings export';
+
+	/// en: 'Sign in before importing settings'
+	String get importSettingsNoUser => 'Sign in before importing settings';
+
 	/// en: 'Shortcuts reset to defaults'
 	String get shortcutsReset => 'Shortcuts reset to defaults';
 
@@ -3315,6 +3351,18 @@ extension on Translations {
 			'settings.resetSettings' => 'Reset Settings',
 			'settings.resetSettingsDescription' => 'This will reset all settings to their default values. This action cannot be undone.',
 			'settings.resetSettingsSuccess' => 'Settings reset successfully',
+			'settings.backup' => 'Backup',
+			'settings.exportSettings' => 'Export Settings',
+			'settings.exportSettingsDescription' => 'Save your preferences to a file',
+			'settings.exportSettingsSuccess' => 'Settings exported',
+			'settings.exportSettingsFailed' => 'Could not export settings',
+			'settings.importSettings' => 'Import Settings',
+			'settings.importSettingsDescription' => 'Restore preferences from a file',
+			'settings.importSettingsConfirm' => 'This will replace your current settings. Continue?',
+			'settings.importSettingsSuccess' => 'Settings imported',
+			'settings.importSettingsFailed' => 'Could not import settings',
+			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid Plezy settings export',
+			'settings.importSettingsNoUser' => 'Sign in before importing settings',
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
 			'settings.about' => 'About',
 			'settings.aboutDescription' => 'App information and licenses',
@@ -3672,6 +3720,8 @@ extension on Translations {
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Grouping',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'All',
 			'libraries.groupings.movies' => 'Movies',
 			'libraries.groupings.shows' => 'TV Shows',
@@ -3684,8 +3734,6 @@ extension on Translations {
 			'about.appDescription' => 'A beautiful Plex client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
 			'serverSelection.allServerConnectionsFailed' => 'Failed to connect to any servers. Please check your network and try again.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
 			'hubDetail.title' => 'Title',

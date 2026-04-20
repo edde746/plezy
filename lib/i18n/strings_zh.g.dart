@@ -273,6 +273,18 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get resetSettings => '重置设置';
 	@override String get resetSettingsDescription => '这会将所有设置重置为其默认值。此操作无法撤销。';
 	@override String get resetSettingsSuccess => '设置重置成功';
+	@override String get backup => '备份';
+	@override String get exportSettings => '导出设置';
+	@override String get exportSettingsDescription => '将您的偏好保存到文件';
+	@override String get exportSettingsSuccess => '设置已导出';
+	@override String get exportSettingsFailed => '无法导出设置';
+	@override String get importSettings => '导入设置';
+	@override String get importSettingsDescription => '从文件恢复偏好';
+	@override String get importSettingsConfirm => '这将替换您当前的设置。继续吗？';
+	@override String get importSettingsSuccess => '设置已导入';
+	@override String get importSettingsFailed => '无法导入设置';
+	@override String get importSettingsInvalidFile => '此文件不是有效的 Plezy 设置导出';
+	@override String get importSettingsNoUser => '导入设置前请先登录';
 	@override String get shortcutsReset => '快捷键已重置为默认值';
 	@override String get about => '关于';
 	@override String get aboutDescription => '应用程序信息和许可证';
@@ -1536,6 +1548,18 @@ extension on TranslationsZh {
 			'settings.resetSettings' => '重置设置',
 			'settings.resetSettingsDescription' => '这会将所有设置重置为其默认值。此操作无法撤销。',
 			'settings.resetSettingsSuccess' => '设置重置成功',
+			'settings.backup' => '备份',
+			'settings.exportSettings' => '导出设置',
+			'settings.exportSettingsDescription' => '将您的偏好保存到文件',
+			'settings.exportSettingsSuccess' => '设置已导出',
+			'settings.exportSettingsFailed' => '无法导出设置',
+			'settings.importSettings' => '导入设置',
+			'settings.importSettingsDescription' => '从文件恢复偏好',
+			'settings.importSettingsConfirm' => '这将替换您当前的设置。继续吗？',
+			'settings.importSettingsSuccess' => '设置已导入',
+			'settings.importSettingsFailed' => '无法导入设置',
+			'settings.importSettingsInvalidFile' => '此文件不是有效的 Plezy 设置导出',
+			'settings.importSettingsNoUser' => '导入设置前请先登录',
 			'settings.shortcutsReset' => '快捷键已重置为默认值',
 			'settings.about' => '关于',
 			'settings.aboutDescription' => '应用程序信息和许可证',
@@ -1893,6 +1917,8 @@ extension on TranslationsZh {
 			'libraries.tabs.collections' => '合集',
 			'libraries.tabs.playlists' => '播放列表',
 			'libraries.groupings.title' => '分组',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => '全部',
 			'libraries.groupings.movies' => '电影',
 			'libraries.groupings.shows' => '剧集',
@@ -1905,8 +1931,6 @@ extension on TranslationsZh {
 			'about.appDescription' => '一款精美的 Flutter Plex 客户端',
 			'about.viewLicensesDescription' => '查看第三方库的许可证',
 			'serverSelection.allServerConnectionsFailed' => '无法连接到任何服务器。请检查你的网络并重试。',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',
 			'hubDetail.title' => '标题',

@@ -273,6 +273,18 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Tilbakestill innstillinger';
 	@override String get resetSettingsDescription => 'Dette vil tilbakestille alle innstillinger til standardverdier. Denne handlingen kan ikke angres.';
 	@override String get resetSettingsSuccess => 'Innstillinger tilbakestilt';
+	@override String get backup => 'Sikkerhetskopi';
+	@override String get exportSettings => 'Eksporter innstillinger';
+	@override String get exportSettingsDescription => 'Lagre innstillingene i en fil';
+	@override String get exportSettingsSuccess => 'Innstillinger eksportert';
+	@override String get exportSettingsFailed => 'Kunne ikke eksportere innstillinger';
+	@override String get importSettings => 'Importer innstillinger';
+	@override String get importSettingsDescription => 'Gjenopprett innstillinger fra en fil';
+	@override String get importSettingsConfirm => 'Dette vil erstatte nåværende innstillinger. Fortsette?';
+	@override String get importSettingsSuccess => 'Innstillinger importert';
+	@override String get importSettingsFailed => 'Kunne ikke importere innstillinger';
+	@override String get importSettingsInvalidFile => 'Denne filen er ikke en gyldig Plezy-innstillingseksport';
+	@override String get importSettingsNoUser => 'Logg inn før import av innstillinger';
 	@override String get shortcutsReset => 'Snarveier tilbakestilt til standard';
 	@override String get about => 'Om';
 	@override String get aboutDescription => 'Appinformasjon og lisenser';
@@ -1536,6 +1548,18 @@ extension on TranslationsNb {
 			'settings.resetSettings' => 'Tilbakestill innstillinger',
 			'settings.resetSettingsDescription' => 'Dette vil tilbakestille alle innstillinger til standardverdier. Denne handlingen kan ikke angres.',
 			'settings.resetSettingsSuccess' => 'Innstillinger tilbakestilt',
+			'settings.backup' => 'Sikkerhetskopi',
+			'settings.exportSettings' => 'Eksporter innstillinger',
+			'settings.exportSettingsDescription' => 'Lagre innstillingene i en fil',
+			'settings.exportSettingsSuccess' => 'Innstillinger eksportert',
+			'settings.exportSettingsFailed' => 'Kunne ikke eksportere innstillinger',
+			'settings.importSettings' => 'Importer innstillinger',
+			'settings.importSettingsDescription' => 'Gjenopprett innstillinger fra en fil',
+			'settings.importSettingsConfirm' => 'Dette vil erstatte nåværende innstillinger. Fortsette?',
+			'settings.importSettingsSuccess' => 'Innstillinger importert',
+			'settings.importSettingsFailed' => 'Kunne ikke importere innstillinger',
+			'settings.importSettingsInvalidFile' => 'Denne filen er ikke en gyldig Plezy-innstillingseksport',
+			'settings.importSettingsNoUser' => 'Logg inn før import av innstillinger',
 			'settings.shortcutsReset' => 'Snarveier tilbakestilt til standard',
 			'settings.about' => 'Om',
 			'settings.aboutDescription' => 'Appinformasjon og lisenser',
@@ -1893,6 +1917,8 @@ extension on TranslationsNb {
 			'libraries.tabs.collections' => 'Samlinger',
 			'libraries.tabs.playlists' => 'Spillelister',
 			'libraries.groupings.title' => 'Gruppering',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Alle',
 			'libraries.groupings.movies' => 'Filmer',
 			'libraries.groupings.shows' => 'TV-serier',
@@ -1905,8 +1931,6 @@ extension on TranslationsNb {
 			'about.appDescription' => 'En vakker Plex-klient for Flutter',
 			'about.viewLicensesDescription' => 'Vis lisenser for tredjepartsbiblioteker',
 			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke koble til noen servere. Sjekk nettverket ditt og prøv igjen.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere funnet for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke laste servere: ${error}',
 			'hubDetail.title' => 'Tittel',

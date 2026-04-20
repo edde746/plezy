@@ -273,6 +273,18 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Instellingen resetten';
 	@override String get resetSettingsDescription => 'Dit reset alle instellingen naar hun standaard waarden. Deze actie kan niet ongedaan gemaakt worden.';
 	@override String get resetSettingsSuccess => 'Instellingen succesvol gereset';
+	@override String get backup => 'Back-up';
+	@override String get exportSettings => 'Instellingen exporteren';
+	@override String get exportSettingsDescription => 'Sla je voorkeuren op in een bestand';
+	@override String get exportSettingsSuccess => 'Instellingen geëxporteerd';
+	@override String get exportSettingsFailed => 'Kon instellingen niet exporteren';
+	@override String get importSettings => 'Instellingen importeren';
+	@override String get importSettingsDescription => 'Voorkeuren herstellen vanuit een bestand';
+	@override String get importSettingsConfirm => 'Hiermee worden je huidige instellingen vervangen. Doorgaan?';
+	@override String get importSettingsSuccess => 'Instellingen geïmporteerd';
+	@override String get importSettingsFailed => 'Kon instellingen niet importeren';
+	@override String get importSettingsInvalidFile => 'Dit bestand is geen geldige Plezy-export';
+	@override String get importSettingsNoUser => 'Meld je aan voordat je instellingen importeert';
 	@override String get shortcutsReset => 'Sneltoetsen gereset naar standaard';
 	@override String get about => 'Over';
 	@override String get aboutDescription => 'App informatie en licenties';
@@ -1536,6 +1548,18 @@ extension on TranslationsNl {
 			'settings.resetSettings' => 'Instellingen resetten',
 			'settings.resetSettingsDescription' => 'Dit reset alle instellingen naar hun standaard waarden. Deze actie kan niet ongedaan gemaakt worden.',
 			'settings.resetSettingsSuccess' => 'Instellingen succesvol gereset',
+			'settings.backup' => 'Back-up',
+			'settings.exportSettings' => 'Instellingen exporteren',
+			'settings.exportSettingsDescription' => 'Sla je voorkeuren op in een bestand',
+			'settings.exportSettingsSuccess' => 'Instellingen geëxporteerd',
+			'settings.exportSettingsFailed' => 'Kon instellingen niet exporteren',
+			'settings.importSettings' => 'Instellingen importeren',
+			'settings.importSettingsDescription' => 'Voorkeuren herstellen vanuit een bestand',
+			'settings.importSettingsConfirm' => 'Hiermee worden je huidige instellingen vervangen. Doorgaan?',
+			'settings.importSettingsSuccess' => 'Instellingen geïmporteerd',
+			'settings.importSettingsFailed' => 'Kon instellingen niet importeren',
+			'settings.importSettingsInvalidFile' => 'Dit bestand is geen geldige Plezy-export',
+			'settings.importSettingsNoUser' => 'Meld je aan voordat je instellingen importeert',
 			'settings.shortcutsReset' => 'Sneltoetsen gereset naar standaard',
 			'settings.about' => 'Over',
 			'settings.aboutDescription' => 'App informatie en licenties',
@@ -1893,6 +1917,8 @@ extension on TranslationsNl {
 			'libraries.tabs.collections' => 'Collecties',
 			'libraries.tabs.playlists' => 'Afspeellijsten',
 			'libraries.groupings.title' => 'Groepering',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Alles',
 			'libraries.groupings.movies' => 'Films',
 			'libraries.groupings.shows' => 'Series',
@@ -1905,8 +1931,6 @@ extension on TranslationsNl {
 			'about.appDescription' => 'Een mooie Plex client voor Flutter',
 			'about.viewLicensesDescription' => 'Bekijk licenties van third-party bibliotheken',
 			'serverSelection.allServerConnectionsFailed' => 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
 			'hubDetail.title' => 'Titel',

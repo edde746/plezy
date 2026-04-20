@@ -273,6 +273,18 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Einstellungen zurücksetzen';
 	@override String get resetSettingsDescription => 'Alle Einstellungen auf Standard zurücksetzen. Dies kann nicht rückgängig gemacht werden.';
 	@override String get resetSettingsSuccess => 'Einstellungen erfolgreich zurückgesetzt';
+	@override String get backup => 'Sicherung';
+	@override String get exportSettings => 'Einstellungen exportieren';
+	@override String get exportSettingsDescription => 'Speichere deine Einstellungen in einer Datei';
+	@override String get exportSettingsSuccess => 'Einstellungen exportiert';
+	@override String get exportSettingsFailed => 'Einstellungen konnten nicht exportiert werden';
+	@override String get importSettings => 'Einstellungen importieren';
+	@override String get importSettingsDescription => 'Einstellungen aus einer Datei wiederherstellen';
+	@override String get importSettingsConfirm => 'Dies ersetzt deine aktuellen Einstellungen. Fortfahren?';
+	@override String get importSettingsSuccess => 'Einstellungen importiert';
+	@override String get importSettingsFailed => 'Einstellungen konnten nicht importiert werden';
+	@override String get importSettingsInvalidFile => 'Diese Datei ist kein gültiger Plezy-Einstellungsexport';
+	@override String get importSettingsNoUser => 'Vor dem Import bitte anmelden';
 	@override String get shortcutsReset => 'Tastenkürzel auf Standard zurückgesetzt';
 	@override String get about => 'Über';
 	@override String get aboutDescription => 'App-Informationen und Lizenzen';
@@ -1536,6 +1548,18 @@ extension on TranslationsDe {
 			'settings.resetSettings' => 'Einstellungen zurücksetzen',
 			'settings.resetSettingsDescription' => 'Alle Einstellungen auf Standard zurücksetzen. Dies kann nicht rückgängig gemacht werden.',
 			'settings.resetSettingsSuccess' => 'Einstellungen erfolgreich zurückgesetzt',
+			'settings.backup' => 'Sicherung',
+			'settings.exportSettings' => 'Einstellungen exportieren',
+			'settings.exportSettingsDescription' => 'Speichere deine Einstellungen in einer Datei',
+			'settings.exportSettingsSuccess' => 'Einstellungen exportiert',
+			'settings.exportSettingsFailed' => 'Einstellungen konnten nicht exportiert werden',
+			'settings.importSettings' => 'Einstellungen importieren',
+			'settings.importSettingsDescription' => 'Einstellungen aus einer Datei wiederherstellen',
+			'settings.importSettingsConfirm' => 'Dies ersetzt deine aktuellen Einstellungen. Fortfahren?',
+			'settings.importSettingsSuccess' => 'Einstellungen importiert',
+			'settings.importSettingsFailed' => 'Einstellungen konnten nicht importiert werden',
+			'settings.importSettingsInvalidFile' => 'Diese Datei ist kein gültiger Plezy-Einstellungsexport',
+			'settings.importSettingsNoUser' => 'Vor dem Import bitte anmelden',
 			'settings.shortcutsReset' => 'Tastenkürzel auf Standard zurückgesetzt',
 			'settings.about' => 'Über',
 			'settings.aboutDescription' => 'App-Informationen und Lizenzen',
@@ -1893,6 +1917,8 @@ extension on TranslationsDe {
 			'libraries.tabs.collections' => 'Sammlungen',
 			'libraries.tabs.playlists' => 'Wiedergabelisten',
 			'libraries.groupings.title' => 'Gruppierung',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Alle',
 			'libraries.groupings.movies' => 'Filme',
 			'libraries.groupings.shows' => 'Serien',
@@ -1905,8 +1931,6 @@ extension on TranslationsDe {
 			'about.appDescription' => 'Ein schöner Plex-Client für Flutter',
 			'about.viewLicensesDescription' => 'Lizenzen von Drittanbieter-Bibliotheken anzeigen',
 			'serverSelection.allServerConnectionsFailed' => 'Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Keine Server gefunden für ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Server konnten nicht geladen werden: ${error}',
 			'hubDetail.title' => 'Titel',

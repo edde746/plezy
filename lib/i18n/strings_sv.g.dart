@@ -273,6 +273,18 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Återställ inställningar';
 	@override String get resetSettingsDescription => 'Detta återställer alla inställningar till standardvärden. Denna åtgärd kan inte ångras.';
 	@override String get resetSettingsSuccess => 'Inställningar återställda framgångsrikt';
+	@override String get backup => 'Säkerhetskopia';
+	@override String get exportSettings => 'Exportera inställningar';
+	@override String get exportSettingsDescription => 'Spara dina inställningar till en fil';
+	@override String get exportSettingsSuccess => 'Inställningar exporterade';
+	@override String get exportSettingsFailed => 'Kunde inte exportera inställningar';
+	@override String get importSettings => 'Importera inställningar';
+	@override String get importSettingsDescription => 'Återställ inställningar från en fil';
+	@override String get importSettingsConfirm => 'Detta ersätter dina nuvarande inställningar. Fortsätta?';
+	@override String get importSettingsSuccess => 'Inställningar importerade';
+	@override String get importSettingsFailed => 'Kunde inte importera inställningar';
+	@override String get importSettingsInvalidFile => 'Denna fil är inte en giltig Plezy-export';
+	@override String get importSettingsNoUser => 'Logga in innan du importerar inställningar';
 	@override String get shortcutsReset => 'Genvägar återställda till standard';
 	@override String get about => 'Om';
 	@override String get aboutDescription => 'Appinformation och licenser';
@@ -1536,6 +1548,18 @@ extension on TranslationsSv {
 			'settings.resetSettings' => 'Återställ inställningar',
 			'settings.resetSettingsDescription' => 'Detta återställer alla inställningar till standardvärden. Denna åtgärd kan inte ångras.',
 			'settings.resetSettingsSuccess' => 'Inställningar återställda framgångsrikt',
+			'settings.backup' => 'Säkerhetskopia',
+			'settings.exportSettings' => 'Exportera inställningar',
+			'settings.exportSettingsDescription' => 'Spara dina inställningar till en fil',
+			'settings.exportSettingsSuccess' => 'Inställningar exporterade',
+			'settings.exportSettingsFailed' => 'Kunde inte exportera inställningar',
+			'settings.importSettings' => 'Importera inställningar',
+			'settings.importSettingsDescription' => 'Återställ inställningar från en fil',
+			'settings.importSettingsConfirm' => 'Detta ersätter dina nuvarande inställningar. Fortsätta?',
+			'settings.importSettingsSuccess' => 'Inställningar importerade',
+			'settings.importSettingsFailed' => 'Kunde inte importera inställningar',
+			'settings.importSettingsInvalidFile' => 'Denna fil är inte en giltig Plezy-export',
+			'settings.importSettingsNoUser' => 'Logga in innan du importerar inställningar',
 			'settings.shortcutsReset' => 'Genvägar återställda till standard',
 			'settings.about' => 'Om',
 			'settings.aboutDescription' => 'Appinformation och licenser',
@@ -1893,6 +1917,8 @@ extension on TranslationsSv {
 			'libraries.tabs.collections' => 'Samlingar',
 			'libraries.tabs.playlists' => 'Spellistor',
 			'libraries.groupings.title' => 'Gruppering',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Alla',
 			'libraries.groupings.movies' => 'Filmer',
 			'libraries.groupings.shows' => 'Serier',
@@ -1905,8 +1931,6 @@ extension on TranslationsSv {
 			'about.appDescription' => 'En vacker Plex-klient för Flutter',
 			'about.viewLicensesDescription' => 'Visa licenser för tredjepartsbibliotek',
 			'serverSelection.allServerConnectionsFailed' => 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Misslyckades att ladda servrar: ${error}',
 			'hubDetail.title' => 'Titel',

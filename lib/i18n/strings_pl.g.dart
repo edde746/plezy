@@ -273,6 +273,18 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Zresetuj ustawienia';
 	@override String get resetSettingsDescription => 'Wszystkie ustawienia zostaną przywrócone do wartości domyślnych. Tej operacji nie można cofnąć.';
 	@override String get resetSettingsSuccess => 'Ustawienia zresetowane pomyślnie';
+	@override String get backup => 'Kopia zapasowa';
+	@override String get exportSettings => 'Eksportuj ustawienia';
+	@override String get exportSettingsDescription => 'Zapisz swoje preferencje do pliku';
+	@override String get exportSettingsSuccess => 'Ustawienia wyeksportowane';
+	@override String get exportSettingsFailed => 'Nie można wyeksportować ustawień';
+	@override String get importSettings => 'Importuj ustawienia';
+	@override String get importSettingsDescription => 'Przywróć preferencje z pliku';
+	@override String get importSettingsConfirm => 'Bieżące ustawienia zostaną zastąpione. Kontynuować?';
+	@override String get importSettingsSuccess => 'Ustawienia zaimportowane';
+	@override String get importSettingsFailed => 'Nie można zaimportować ustawień';
+	@override String get importSettingsInvalidFile => 'Ten plik nie jest prawidłowym eksportem Plezy';
+	@override String get importSettingsNoUser => 'Zaloguj się przed importem ustawień';
 	@override String get shortcutsReset => 'Skróty przywrócone do domyślnych';
 	@override String get about => 'O aplikacji';
 	@override String get aboutDescription => 'Informacje o aplikacji i licencje';
@@ -1536,6 +1548,18 @@ extension on TranslationsPl {
 			'settings.resetSettings' => 'Zresetuj ustawienia',
 			'settings.resetSettingsDescription' => 'Wszystkie ustawienia zostaną przywrócone do wartości domyślnych. Tej operacji nie można cofnąć.',
 			'settings.resetSettingsSuccess' => 'Ustawienia zresetowane pomyślnie',
+			'settings.backup' => 'Kopia zapasowa',
+			'settings.exportSettings' => 'Eksportuj ustawienia',
+			'settings.exportSettingsDescription' => 'Zapisz swoje preferencje do pliku',
+			'settings.exportSettingsSuccess' => 'Ustawienia wyeksportowane',
+			'settings.exportSettingsFailed' => 'Nie można wyeksportować ustawień',
+			'settings.importSettings' => 'Importuj ustawienia',
+			'settings.importSettingsDescription' => 'Przywróć preferencje z pliku',
+			'settings.importSettingsConfirm' => 'Bieżące ustawienia zostaną zastąpione. Kontynuować?',
+			'settings.importSettingsSuccess' => 'Ustawienia zaimportowane',
+			'settings.importSettingsFailed' => 'Nie można zaimportować ustawień',
+			'settings.importSettingsInvalidFile' => 'Ten plik nie jest prawidłowym eksportem Plezy',
+			'settings.importSettingsNoUser' => 'Zaloguj się przed importem ustawień',
 			'settings.shortcutsReset' => 'Skróty przywrócone do domyślnych',
 			'settings.about' => 'O aplikacji',
 			'settings.aboutDescription' => 'Informacje o aplikacji i licencje',
@@ -1893,6 +1917,8 @@ extension on TranslationsPl {
 			'libraries.tabs.collections' => 'Kolekcje',
 			'libraries.tabs.playlists' => 'Playlisty',
 			'libraries.groupings.title' => 'Grupowanie',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Wszystkie',
 			'libraries.groupings.movies' => 'Filmy',
 			'libraries.groupings.shows' => 'Seriale TV',
@@ -1905,8 +1931,6 @@ extension on TranslationsPl {
 			'about.appDescription' => 'Piękny klient Plex na Flutter',
 			'about.viewLicensesDescription' => 'Zobacz licencje bibliotek zewnętrznych',
 			'serverSelection.allServerConnectionsFailed' => 'Nie udało się połączyć z żadnym serwerem. Sprawdź sieć i spróbuj ponownie.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nie znaleziono serwerów dla ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Nie udało się załadować serwerów: ${error}',
 			'hubDetail.title' => 'Tytuł',

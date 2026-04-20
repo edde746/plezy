@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -14,10 +15,13 @@ import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../main_screen.dart';
 import '../../mixins/refreshable.dart';
+import '../../providers/hidden_libraries_provider.dart';
+import '../../providers/libraries_provider.dart';
 import '../../services/donation_service.dart';
 import '../../services/download_storage_service.dart';
 import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
+import '../../services/settings_export_service.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/trakt_account_provider.dart';
@@ -64,6 +68,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kCheckForUpdates = 'check_for_updates';
   static const _kAbout = 'about';
   static const _kWatchTogetherRelay = 'watch_together_relay';
+  static const _kExportSettings = 'export_settings';
+  static const _kImportSettings = 'import_settings';
 
   KeyboardShortcutsService? _keyboardService;
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
@@ -174,6 +180,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
                 // --- Updates (conditional) ---
                 if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
+
+                // --- Backup ---
+                _buildBackupSection(),
 
                 // --- About ---
                 ListTile(
@@ -445,6 +454,31 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     );
   }
 
+  Widget _buildBackupSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SettingsSectionHeader(t.settings.backup),
+        ListTile(
+          focusNode: _focusTracker.get(_kExportSettings),
+          leading: const AppIcon(Symbols.upload_rounded, fill: 1),
+          title: Text(t.settings.exportSettings),
+          subtitle: Text(t.settings.exportSettingsDescription),
+          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          onTap: _handleExportSettings,
+        ),
+        ListTile(
+          focusNode: _focusTracker.get(_kImportSettings),
+          leading: const AppIcon(Symbols.download_rounded, fill: 1),
+          title: Text(t.settings.importSettings),
+          subtitle: Text(t.settings.importSettingsDescription),
+          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          onTap: _showImportSettingsDialog,
+        ),
+      ],
+    );
+  }
+
   Widget _buildUpdateSection() {
     if (UpdateService.useNativeUpdater) {
       return Column(
@@ -701,6 +735,77 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         );
       },
     );
+  }
+
+  Future<void> _handleExportSettings() async {
+    try {
+      final path = await SettingsExportService.exportToFile();
+      if (!mounted) return;
+      if (path == null) return; // user cancelled
+      showSuccessSnackBar(context, t.settings.exportSettingsSuccess);
+    } on SettingsExportException {
+      if (mounted) showErrorSnackBar(context, t.settings.exportSettingsFailed);
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.settings.exportSettingsFailed);
+    }
+  }
+
+  void _showImportSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(t.settings.importSettings),
+          content: Text(t.settings.importSettingsConfirm),
+          actions: [
+            TextButton(autofocus: true, onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _handleImportSettings();
+              },
+              child: Text(t.settings.importSettings),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleImportSettings() async {
+    // Capture providers before any awaits so we don't reach through `context`
+    // after the widget may have been unmounted.
+    final themeProvider = context.read<ThemeProvider>();
+    final settingsProvider = context.read<SettingsProvider>();
+    final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+    final librariesProvider = context.read<LibrariesProvider>();
+
+    try {
+      final result = await SettingsExportService.importFromFile();
+      if (!mounted) return;
+      if (result == null) return; // user cancelled file picker
+
+      LocaleSettings.setLocale(_settingsService.getAppLocale());
+      await Future.wait([
+        themeProvider.reload(),
+        settingsProvider.reload(),
+        hiddenLibrariesProvider.refresh(),
+        if (_keyboardService != null) _keyboardService!.refreshFromStorage(),
+      ]);
+      unawaited(librariesProvider.refresh());
+
+      if (!mounted) return;
+      _loadSettings();
+      showSuccessSnackBar(context, t.settings.importSettingsSuccess);
+    } on NoUserSignedInException {
+      if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);
+    } on InvalidExportFileException {
+      if (mounted) showErrorSnackBar(context, t.settings.importSettingsInvalidFile);
+    } on SettingsExportException {
+      if (mounted) showErrorSnackBar(context, t.settings.importSettingsFailed);
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.settings.importSettingsFailed);
+    }
   }
 
   Future<void> _checkForUpdates() async {

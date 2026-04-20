@@ -273,6 +273,18 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get resetSettings => 'Restablecer Configuración';
 	@override String get resetSettingsDescription => 'Esto restablecerá todos los ajustes a sus valores predeterminados. Esta acción no se puede deshacer.';
 	@override String get resetSettingsSuccess => 'Configuración restablecida con éxito';
+	@override String get backup => 'Copia de seguridad';
+	@override String get exportSettings => 'Exportar Configuración';
+	@override String get exportSettingsDescription => 'Guardar tus preferencias en un archivo';
+	@override String get exportSettingsSuccess => 'Configuración exportada';
+	@override String get exportSettingsFailed => 'No se pudo exportar la configuración';
+	@override String get importSettings => 'Importar Configuración';
+	@override String get importSettingsDescription => 'Restaurar preferencias desde un archivo';
+	@override String get importSettingsConfirm => 'Esto reemplazará tu configuración actual. ¿Continuar?';
+	@override String get importSettingsSuccess => 'Configuración importada';
+	@override String get importSettingsFailed => 'No se pudo importar la configuración';
+	@override String get importSettingsInvalidFile => 'Este archivo no es una exportación válida de Plezy';
+	@override String get importSettingsNoUser => 'Inicia sesión antes de importar la configuración';
 	@override String get shortcutsReset => 'Atajos restablecidos a los valores predeterminados';
 	@override String get about => 'Acerca de';
 	@override String get aboutDescription => 'Información de la aplicación y licencias';
@@ -1536,6 +1548,18 @@ extension on TranslationsEs {
 			'settings.resetSettings' => 'Restablecer Configuración',
 			'settings.resetSettingsDescription' => 'Esto restablecerá todos los ajustes a sus valores predeterminados. Esta acción no se puede deshacer.',
 			'settings.resetSettingsSuccess' => 'Configuración restablecida con éxito',
+			'settings.backup' => 'Copia de seguridad',
+			'settings.exportSettings' => 'Exportar Configuración',
+			'settings.exportSettingsDescription' => 'Guardar tus preferencias en un archivo',
+			'settings.exportSettingsSuccess' => 'Configuración exportada',
+			'settings.exportSettingsFailed' => 'No se pudo exportar la configuración',
+			'settings.importSettings' => 'Importar Configuración',
+			'settings.importSettingsDescription' => 'Restaurar preferencias desde un archivo',
+			'settings.importSettingsConfirm' => 'Esto reemplazará tu configuración actual. ¿Continuar?',
+			'settings.importSettingsSuccess' => 'Configuración importada',
+			'settings.importSettingsFailed' => 'No se pudo importar la configuración',
+			'settings.importSettingsInvalidFile' => 'Este archivo no es una exportación válida de Plezy',
+			'settings.importSettingsNoUser' => 'Inicia sesión antes de importar la configuración',
 			'settings.shortcutsReset' => 'Atajos restablecidos a los valores predeterminados',
 			'settings.about' => 'Acerca de',
 			'settings.aboutDescription' => 'Información de la aplicación y licencias',
@@ -1893,6 +1917,8 @@ extension on TranslationsEs {
 			'libraries.tabs.collections' => 'Colecciones',
 			'libraries.tabs.playlists' => 'Listas',
 			'libraries.groupings.title' => 'Agrupación',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.all' => 'Todo',
 			'libraries.groupings.movies' => 'Películas',
 			'libraries.groupings.shows' => 'Series',
@@ -1905,8 +1931,6 @@ extension on TranslationsEs {
 			'about.appDescription' => 'Un cliente de Plex para Flutter',
 			'about.viewLicensesDescription' => 'Ver licencias de librerías de terceros',
 			'serverSelection.allServerConnectionsFailed' => 'No se pudo conectar con ningún servidor. Por favor, comprueba tu conexión e inténtalo de nuevo.',
-			_ => null,
-		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No se encontraron servidores para ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Error al cargar servidores: ${error}',
 			'hubDetail.title' => 'Título',

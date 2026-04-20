@@ -40,4 +40,23 @@ class FilePickerService {
   Future<String?> getDirectoryPath({String? dialogTitle}) {
     return _guard('getDirectoryPath', () => FilePicker.platform.getDirectoryPath(dialogTitle: dialogTitle));
   }
+
+  Future<String?> saveFile({
+    String? dialogTitle,
+    String? fileName,
+    Uint8List? bytes,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+  }) {
+    return _guard(
+      'saveFile',
+      () => FilePicker.platform.saveFile(
+        dialogTitle: dialogTitle,
+        fileName: fileName,
+        bytes: bytes,
+        type: type,
+        allowedExtensions: allowedExtensions,
+      ),
+    );
+  }
 }
