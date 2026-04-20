@@ -37,37 +37,55 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 
 ## Features
 
-### 🔐 Authentication
-- Sign in with Plex
-- Automatic server discovery and smart connection selection
-- Persistent sessions with auto-login
+### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
+- Libraries, collections, and playlists
+- Discover hub — On Deck, trending, and personalized recommendations
+- Cross-server search
+- Filtering, sorting, and alphabetical jump navigation
+- Extras — trailers, deleted scenes, behind-the-scenes
 
-### 📚 Media Browsing
-- Browse libraries with rich metadata
-- Advanced search across all media
-- Collections and playlists
-
-### 🎬 Playback
+### <img src="assets/readme_icons/playback.svg" height="20" alt="" align="center" /> Playback
 - Wide codec support (HEVC, AV1, VP9, and more)
 - HDR and Dolby Vision (not Linux)
-- Full ASS/SSA subtitle support
-- Audio and subtitle preferences synced with Plex profile
+- Full ASS/SSA subtitles with customizable styling
+- Online subtitle search & download
+- Audio & subtitle preferences synced with Plex profile
 - Progress sync and resume
-- Auto-play next episode
+- Auto-play next episode with skip intro / skip credits
+- Chapter navigation with BIF thumbnail scrub previews
+- Playback speed, audio sync offset, sleep timer
+- Ambient lighting and GLSL shader presets
+- Picture-in-Picture on Android, iOS, and macOS
+- Refresh-rate matching on Windows and Android
+- External player launch (VLC, MX Player, etc.)
 
-### 📺 Live TV & DVR
+### <img src="assets/readme_icons/live-tv.svg" height="20" alt="" align="center" /> Live TV & DVR
 - EPG guide grid
-- Channel tuning
+- Channel tuning with favorites
 - DVR recording rules and scheduled recordings
 - Multi-server DVR support
 
-### 📥 Downloads
+### <img src="assets/readme_icons/downloads.svg" height="20" alt="" align="center" /> Downloads & Offline
 - Download media for offline viewing
-- Background downloads with queue management
+- Background queue with pause / resume
+- Sync rules for automatic downloads
+- Offline browsing with watch state sync-back on reconnect
 
-### 👥 Watch Together
+### <img src="assets/readme_icons/watch-together.svg" height="20" alt="" align="center" /> Watch Together
 - Synchronized playback with friends
-- Real-time play/pause and seek sync
+- Real-time play / pause / seek sync
+
+### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
+- Discord Rich Presence
+- Trakt scrobbling
+- Plezy Remote — control desktop and TV from mobile
+- Android TV Watch Next row
+
+### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
+- Desktop, mobile, and TV — full D-pad, keyboard, and gamepad support
+- Customizable keyboard shortcuts on desktop
+- In-app metadata and artwork editing
+- Localized in 14 languages
 
 ## Building from Source
 
