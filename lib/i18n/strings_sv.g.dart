@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsSv implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Nästa undertextspår';
 	@override String get chapterNext => 'Nästa kapitel';
 	@override String get chapterPrevious => 'Föregående kapitel';
+	@override String get episodeNext => 'Nästa avsnitt';
+	@override String get episodePrevious => 'Föregående avsnitt';
 	@override String get speedIncrease => 'Öka hastighet';
 	@override String get speedDecrease => 'Minska hastighet';
 	@override String get speedReset => 'Återställ hastighet';
@@ -1630,6 +1632,8 @@ extension on TranslationsSv {
 			'hotkeys.actions.subtitleTrackNext' => 'Nästa undertextspår',
 			'hotkeys.actions.chapterNext' => 'Nästa kapitel',
 			'hotkeys.actions.chapterPrevious' => 'Föregående kapitel',
+			'hotkeys.actions.episodeNext' => 'Nästa avsnitt',
+			'hotkeys.actions.episodePrevious' => 'Föregående avsnitt',
 			'hotkeys.actions.speedIncrease' => 'Öka hastighet',
 			'hotkeys.actions.speedDecrease' => 'Minska hastighet',
 			'hotkeys.actions.speedReset' => 'Återställ hastighet',
@@ -1901,10 +1905,10 @@ extension on TranslationsSv {
 			'about.appDescription' => 'En vacker Plex-klient för Flutter',
 			'about.viewLicensesDescription' => 'Visa licenser för tredjepartsbibliotek',
 			'serverSelection.allServerConnectionsFailed' => 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Misslyckades att ladda servrar: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Misslyckades att ladda servrar: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Utgivningsår',
 			'hubDetail.dateAdded' => 'Datum tillagd',

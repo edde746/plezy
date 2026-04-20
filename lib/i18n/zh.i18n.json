@@ -254,6 +254,8 @@
       "subtitleTrackNext": "下一字幕轨",
       "chapterNext": "下一章节",
       "chapterPrevious": "上一章节",
+      "episodeNext": "下一集",
+      "episodePrevious": "上一集",
       "speedIncrease": "加速",
       "speedDecrease": "减速",
       "speedReset": "重置速度",

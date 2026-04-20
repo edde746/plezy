@@ -254,6 +254,8 @@
       "subtitleTrackNext": "다음 자막 트랙",
       "chapterNext": "다음 챕터",
       "chapterPrevious": "이전 챕터",
+      "episodeNext": "다음 에피소드",
+      "episodePrevious": "이전 에피소드",
       "speedIncrease": "속도 높이기",
       "speedDecrease": "속도 낮추기",
       "speedReset": "속도 초기화",

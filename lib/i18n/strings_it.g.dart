@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsIt implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Sottotitoli successivi';
 	@override String get chapterNext => 'Capitolo successivo';
 	@override String get chapterPrevious => 'Capitolo precedente';
+	@override String get episodeNext => 'Episodio successivo';
+	@override String get episodePrevious => 'Episodio precedente';
 	@override String get speedIncrease => 'Aumenta velocità';
 	@override String get speedDecrease => 'Diminuisci velocità';
 	@override String get speedReset => 'Ripristina velocità';
@@ -1630,6 +1632,8 @@ extension on TranslationsIt {
 			'hotkeys.actions.subtitleTrackNext' => 'Sottotitoli successivi',
 			'hotkeys.actions.chapterNext' => 'Capitolo successivo',
 			'hotkeys.actions.chapterPrevious' => 'Capitolo precedente',
+			'hotkeys.actions.episodeNext' => 'Episodio successivo',
+			'hotkeys.actions.episodePrevious' => 'Episodio precedente',
 			'hotkeys.actions.speedIncrease' => 'Aumenta velocità',
 			'hotkeys.actions.speedDecrease' => 'Diminuisci velocità',
 			'hotkeys.actions.speedReset' => 'Ripristina velocità',
@@ -1901,10 +1905,10 @@ extension on TranslationsIt {
 			'about.appDescription' => 'Un bellissimo client Plex per Flutter',
 			'about.viewLicensesDescription' => 'Visualizza le licenze delle librerie di terze parti',
 			'serverSelection.allServerConnectionsFailed' => 'Impossibile connettersi a nessun server. Controlla la tua rete e riprova.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nessun server trovato per ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Impossibile caricare i server: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nessun server trovato per ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Impossibile caricare i server: ${error}',
 			'hubDetail.title' => 'Titolo',
 			'hubDetail.releaseYear' => 'Anno rilascio',
 			'hubDetail.dateAdded' => 'Data aggiunta',

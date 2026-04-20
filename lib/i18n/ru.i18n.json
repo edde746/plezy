@@ -254,6 +254,8 @@
       "subtitleTrackNext": "Следующая дорожка субтитров",
       "chapterNext": "Следующая глава",
       "chapterPrevious": "Предыдущая глава",
+      "episodeNext": "Следующая серия",
+      "episodePrevious": "Предыдущая серия",
       "speedIncrease": "Увеличить скорость",
       "speedDecrease": "Уменьшить скорость",
       "speedReset": "Сбросить скорость",

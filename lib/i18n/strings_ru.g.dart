@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsRu implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Следующая дорожка субтитров';
 	@override String get chapterNext => 'Следующая глава';
 	@override String get chapterPrevious => 'Предыдущая глава';
+	@override String get episodeNext => 'Следующая серия';
+	@override String get episodePrevious => 'Предыдущая серия';
 	@override String get speedIncrease => 'Увеличить скорость';
 	@override String get speedDecrease => 'Уменьшить скорость';
 	@override String get speedReset => 'Сбросить скорость';
@@ -1630,6 +1632,8 @@ extension on TranslationsRu {
 			'hotkeys.actions.subtitleTrackNext' => 'Следующая дорожка субтитров',
 			'hotkeys.actions.chapterNext' => 'Следующая глава',
 			'hotkeys.actions.chapterPrevious' => 'Предыдущая глава',
+			'hotkeys.actions.episodeNext' => 'Следующая серия',
+			'hotkeys.actions.episodePrevious' => 'Предыдущая серия',
 			'hotkeys.actions.speedIncrease' => 'Увеличить скорость',
 			'hotkeys.actions.speedDecrease' => 'Уменьшить скорость',
 			'hotkeys.actions.speedReset' => 'Сбросить скорость',
@@ -1901,10 +1905,10 @@ extension on TranslationsRu {
 			'about.appDescription' => 'Красивый клиент Plex на Flutter',
 			'about.viewLicensesDescription' => 'Просмотр лицензий сторонних библиотек',
 			'serverSelection.allServerConnectionsFailed' => 'Не удалось подключиться ни к одному серверу. Проверьте сеть и попробуйте снова.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Не удалось загрузить серверы: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Не удалось загрузить серверы: ${error}',
 			'hubDetail.title' => 'Название',
 			'hubDetail.releaseYear' => 'Год выпуска',
 			'hubDetail.dateAdded' => 'Дата добавления',

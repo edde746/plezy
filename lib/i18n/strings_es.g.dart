@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsEs implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Siguiente Pista de Subtítulos';
 	@override String get chapterNext => 'Siguiente Capítulo';
 	@override String get chapterPrevious => 'Anterior Capítulo';
+	@override String get episodeNext => 'Siguiente Episodio';
+	@override String get episodePrevious => 'Anterior Episodio';
 	@override String get speedIncrease => 'Aumentar Velocidad';
 	@override String get speedDecrease => 'Disminuir Velocidad';
 	@override String get speedReset => 'Restablecer Velocidad';
@@ -1630,6 +1632,8 @@ extension on TranslationsEs {
 			'hotkeys.actions.subtitleTrackNext' => 'Siguiente Pista de Subtítulos',
 			'hotkeys.actions.chapterNext' => 'Siguiente Capítulo',
 			'hotkeys.actions.chapterPrevious' => 'Anterior Capítulo',
+			'hotkeys.actions.episodeNext' => 'Siguiente Episodio',
+			'hotkeys.actions.episodePrevious' => 'Anterior Episodio',
 			'hotkeys.actions.speedIncrease' => 'Aumentar Velocidad',
 			'hotkeys.actions.speedDecrease' => 'Disminuir Velocidad',
 			'hotkeys.actions.speedReset' => 'Restablecer Velocidad',
@@ -1901,10 +1905,10 @@ extension on TranslationsEs {
 			'about.appDescription' => 'Un cliente de Plex para Flutter',
 			'about.viewLicensesDescription' => 'Ver licencias de librerías de terceros',
 			'serverSelection.allServerConnectionsFailed' => 'No se pudo conectar con ningún servidor. Por favor, comprueba tu conexión e inténtalo de nuevo.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No se encontraron servidores para ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Error al cargar servidores: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No se encontraron servidores para ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Error al cargar servidores: ${error}',
 			'hubDetail.title' => 'Título',
 			'hubDetail.releaseYear' => 'Año de lanzamiento',
 			'hubDetail.dateAdded' => 'Añadido el',

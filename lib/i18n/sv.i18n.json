@@ -254,6 +254,8 @@
       "subtitleTrackNext": "Nästa undertextspår",
       "chapterNext": "Nästa kapitel",
       "chapterPrevious": "Föregående kapitel",
+      "episodeNext": "Nästa avsnitt",
+      "episodePrevious": "Föregående avsnitt",
       "speedIncrease": "Öka hastighet",
       "speedDecrease": "Minska hastighet",
       "speedReset": "Återställ hastighet",

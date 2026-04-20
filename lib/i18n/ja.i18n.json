@@ -254,6 +254,8 @@
       "subtitleTrackNext": "次の字幕トラック",
       "chapterNext": "次のチャプター",
       "chapterPrevious": "前のチャプター",
+      "episodeNext": "次のエピソード",
+      "episodePrevious": "前のエピソード",
       "speedIncrease": "速度を上げる",
       "speedDecrease": "速度を下げる",
       "speedReset": "速度をリセット",

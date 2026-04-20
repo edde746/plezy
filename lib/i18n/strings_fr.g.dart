@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsFr implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Piste de sous-titres suivante';
 	@override String get chapterNext => 'Chapitre suivant';
 	@override String get chapterPrevious => 'Chapitre précédent';
+	@override String get episodeNext => 'Épisode suivant';
+	@override String get episodePrevious => 'Épisode précédent';
 	@override String get speedIncrease => 'Augmenter la vitesse';
 	@override String get speedDecrease => 'Réduire la vitesse';
 	@override String get speedReset => 'Réinitialiser la vitesse';
@@ -1630,6 +1632,8 @@ extension on TranslationsFr {
 			'hotkeys.actions.subtitleTrackNext' => 'Piste de sous-titres suivante',
 			'hotkeys.actions.chapterNext' => 'Chapitre suivant',
 			'hotkeys.actions.chapterPrevious' => 'Chapitre précédent',
+			'hotkeys.actions.episodeNext' => 'Épisode suivant',
+			'hotkeys.actions.episodePrevious' => 'Épisode précédent',
 			'hotkeys.actions.speedIncrease' => 'Augmenter la vitesse',
 			'hotkeys.actions.speedDecrease' => 'Réduire la vitesse',
 			'hotkeys.actions.speedReset' => 'Réinitialiser la vitesse',
@@ -1901,10 +1905,10 @@ extension on TranslationsFr {
 			'about.appDescription' => 'Un magnifique client Plex pour Flutter',
 			'about.viewLicensesDescription' => 'Afficher les licences des bibliothèques tierces',
 			'serverSelection.allServerConnectionsFailed' => 'Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Échec du chargement des serveurs: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Échec du chargement des serveurs: ${error}',
 			'hubDetail.title' => 'Titre',
 			'hubDetail.releaseYear' => 'Année de sortie',
 			'hubDetail.dateAdded' => 'Date d\'ajout',

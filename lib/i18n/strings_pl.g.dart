@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsPl implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Następna ścieżka napisów';
 	@override String get chapterNext => 'Następny rozdział';
 	@override String get chapterPrevious => 'Poprzedni rozdział';
+	@override String get episodeNext => 'Następny odcinek';
+	@override String get episodePrevious => 'Poprzedni odcinek';
 	@override String get speedIncrease => 'Zwiększ prędkość';
 	@override String get speedDecrease => 'Zmniejsz prędkość';
 	@override String get speedReset => 'Zresetuj prędkość';
@@ -1630,6 +1632,8 @@ extension on TranslationsPl {
 			'hotkeys.actions.subtitleTrackNext' => 'Następna ścieżka napisów',
 			'hotkeys.actions.chapterNext' => 'Następny rozdział',
 			'hotkeys.actions.chapterPrevious' => 'Poprzedni rozdział',
+			'hotkeys.actions.episodeNext' => 'Następny odcinek',
+			'hotkeys.actions.episodePrevious' => 'Poprzedni odcinek',
 			'hotkeys.actions.speedIncrease' => 'Zwiększ prędkość',
 			'hotkeys.actions.speedDecrease' => 'Zmniejsz prędkość',
 			'hotkeys.actions.speedReset' => 'Zresetuj prędkość',
@@ -1901,10 +1905,10 @@ extension on TranslationsPl {
 			'about.appDescription' => 'Piękny klient Plex na Flutter',
 			'about.viewLicensesDescription' => 'Zobacz licencje bibliotek zewnętrznych',
 			'serverSelection.allServerConnectionsFailed' => 'Nie udało się połączyć z żadnym serwerem. Sprawdź sieć i spróbuj ponownie.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nie znaleziono serwerów dla ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Nie udało się załadować serwerów: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nie znaleziono serwerów dla ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Nie udało się załadować serwerów: ${error}',
 			'hubDetail.title' => 'Tytuł',
 			'hubDetail.releaseYear' => 'Rok premiery',
 			'hubDetail.dateAdded' => 'Data dodania',

@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsDe implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Nächste Untertitelspur';
 	@override String get chapterNext => 'Nächstes Kapitel';
 	@override String get chapterPrevious => 'Vorheriges Kapitel';
+	@override String get episodeNext => 'Nächste Episode';
+	@override String get episodePrevious => 'Vorherige Episode';
 	@override String get speedIncrease => 'Geschwindigkeit erhöhen';
 	@override String get speedDecrease => 'Geschwindigkeit verringern';
 	@override String get speedReset => 'Geschwindigkeit zurücksetzen';
@@ -1630,6 +1632,8 @@ extension on TranslationsDe {
 			'hotkeys.actions.subtitleTrackNext' => 'Nächste Untertitelspur',
 			'hotkeys.actions.chapterNext' => 'Nächstes Kapitel',
 			'hotkeys.actions.chapterPrevious' => 'Vorheriges Kapitel',
+			'hotkeys.actions.episodeNext' => 'Nächste Episode',
+			'hotkeys.actions.episodePrevious' => 'Vorherige Episode',
 			'hotkeys.actions.speedIncrease' => 'Geschwindigkeit erhöhen',
 			'hotkeys.actions.speedDecrease' => 'Geschwindigkeit verringern',
 			'hotkeys.actions.speedReset' => 'Geschwindigkeit zurücksetzen',
@@ -1901,10 +1905,10 @@ extension on TranslationsDe {
 			'about.appDescription' => 'Ein schöner Plex-Client für Flutter',
 			'about.viewLicensesDescription' => 'Lizenzen von Drittanbieter-Bibliotheken anzeigen',
 			'serverSelection.allServerConnectionsFailed' => 'Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Keine Server gefunden für ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Server konnten nicht geladen werden: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Keine Server gefunden für ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Server konnten nicht geladen werden: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Erscheinungsjahr',
 			'hubDetail.dateAdded' => 'Hinzugefügt am',

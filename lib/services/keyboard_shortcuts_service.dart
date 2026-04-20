@@ -139,6 +139,8 @@ class KeyboardShortcutsService {
     VoidCallback? onBack,
     VoidCallback? onToggleShader,
     VoidCallback? onSkipMarker,
+    VoidCallback? onNextEpisode,
+    VoidCallback? onPreviousEpisode,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
   }) {
@@ -218,6 +220,8 @@ class KeyboardShortcutsService {
           onPreviousChapter,
           onToggleShader: onToggleShader,
           onSkipMarker: onSkipMarker,
+          onNextEpisode: onNextEpisode,
+          onPreviousEpisode: onPreviousEpisode,
           currentPositionEpoch: currentPositionEpoch,
           onLiveSeek: onLiveSeek,
         );
@@ -239,6 +243,8 @@ class KeyboardShortcutsService {
     VoidCallback? onPreviousChapter, {
     VoidCallback? onToggleShader,
     VoidCallback? onSkipMarker,
+    VoidCallback? onNextEpisode,
+    VoidCallback? onPreviousEpisode,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
   }) {
@@ -300,6 +306,12 @@ class KeyboardShortcutsService {
       case 'chapter_previous':
         onPreviousChapter?.call();
         break;
+      case 'episode_next':
+        onNextEpisode?.call();
+        break;
+      case 'episode_previous':
+        onPreviousEpisode?.call();
+        break;
       case 'speed_increase':
         final newRateUp = (player.state.rate + 0.25).clamp(0.25, 3.0);
         player.setRate(newRateUp);
@@ -360,6 +372,10 @@ class KeyboardShortcutsService {
         return t.hotkeys.actions.chapterNext;
       case 'chapter_previous':
         return t.hotkeys.actions.chapterPrevious;
+      case 'episode_next':
+        return t.hotkeys.actions.episodeNext;
+      case 'episode_previous':
+        return t.hotkeys.actions.episodePrevious;
       case 'speed_increase':
         return t.hotkeys.actions.speedIncrease;
       case 'speed_decrease':

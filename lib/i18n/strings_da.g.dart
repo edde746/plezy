@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsDa implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Næste undertekstspor';
 	@override String get chapterNext => 'Næste kapitel';
 	@override String get chapterPrevious => 'Forrige kapitel';
+	@override String get episodeNext => 'Næste afsnit';
+	@override String get episodePrevious => 'Forrige afsnit';
 	@override String get speedIncrease => 'Øg hastighed';
 	@override String get speedDecrease => 'Sænk hastighed';
 	@override String get speedReset => 'Nulstil hastighed';
@@ -1630,6 +1632,8 @@ extension on TranslationsDa {
 			'hotkeys.actions.subtitleTrackNext' => 'Næste undertekstspor',
 			'hotkeys.actions.chapterNext' => 'Næste kapitel',
 			'hotkeys.actions.chapterPrevious' => 'Forrige kapitel',
+			'hotkeys.actions.episodeNext' => 'Næste afsnit',
+			'hotkeys.actions.episodePrevious' => 'Forrige afsnit',
 			'hotkeys.actions.speedIncrease' => 'Øg hastighed',
 			'hotkeys.actions.speedDecrease' => 'Sænk hastighed',
 			'hotkeys.actions.speedReset' => 'Nulstil hastighed',
@@ -1901,10 +1905,10 @@ extension on TranslationsDa {
 			'about.appDescription' => 'En smuk Plex-klient til Flutter',
 			'about.viewLicensesDescription' => 'Se licenser for tredjepartsbiblioteker',
 			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke forbinde til nogen servere. Tjek dit netværk og prøv igen.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere fundet for ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke indlæse servere: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere fundet for ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke indlæse servere: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Udgivelsesår',
 			'hubDetail.dateAdded' => 'Tilføjelsesdato',

@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => '下一字幕轨';
 	@override String get chapterNext => '下一章节';
 	@override String get chapterPrevious => '上一章节';
+	@override String get episodeNext => '下一集';
+	@override String get episodePrevious => '上一集';
 	@override String get speedIncrease => '加速';
 	@override String get speedDecrease => '减速';
 	@override String get speedReset => '重置速度';
@@ -1630,6 +1632,8 @@ extension on TranslationsZh {
 			'hotkeys.actions.subtitleTrackNext' => '下一字幕轨',
 			'hotkeys.actions.chapterNext' => '下一章节',
 			'hotkeys.actions.chapterPrevious' => '上一章节',
+			'hotkeys.actions.episodeNext' => '下一集',
+			'hotkeys.actions.episodePrevious' => '上一集',
 			'hotkeys.actions.speedIncrease' => '加速',
 			'hotkeys.actions.speedDecrease' => '减速',
 			'hotkeys.actions.speedReset' => '重置速度',
@@ -1901,10 +1905,10 @@ extension on TranslationsZh {
 			'about.appDescription' => '一款精美的 Flutter Plex 客户端',
 			'about.viewLicensesDescription' => '查看第三方库的许可证',
 			'serverSelection.allServerConnectionsFailed' => '无法连接到任何服务器。请检查你的网络并重试。',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',
 			'hubDetail.title' => '标题',
 			'hubDetail.releaseYear' => '发行年份',
 			'hubDetail.dateAdded' => '添加日期',

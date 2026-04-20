@@ -254,6 +254,8 @@
       "subtitleTrackNext": "Next Subtitle Track",
       "chapterNext": "Next Chapter",
       "chapterPrevious": "Previous Chapter",
+      "episodeNext": "Next Episode",
+      "episodePrevious": "Previous Episode",
       "speedIncrease": "Increase Speed",
       "speedDecrease": "Decrease Speed",
       "speedReset": "Reset Speed",

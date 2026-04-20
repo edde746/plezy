@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsNb implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Neste undertekstspor';
 	@override String get chapterNext => 'Neste kapittel';
 	@override String get chapterPrevious => 'Forrige kapittel';
+	@override String get episodeNext => 'Neste episode';
+	@override String get episodePrevious => 'Forrige episode';
 	@override String get speedIncrease => 'Øk hastighet';
 	@override String get speedDecrease => 'Reduser hastighet';
 	@override String get speedReset => 'Tilbakestill hastighet';
@@ -1630,6 +1632,8 @@ extension on TranslationsNb {
 			'hotkeys.actions.subtitleTrackNext' => 'Neste undertekstspor',
 			'hotkeys.actions.chapterNext' => 'Neste kapittel',
 			'hotkeys.actions.chapterPrevious' => 'Forrige kapittel',
+			'hotkeys.actions.episodeNext' => 'Neste episode',
+			'hotkeys.actions.episodePrevious' => 'Forrige episode',
 			'hotkeys.actions.speedIncrease' => 'Øk hastighet',
 			'hotkeys.actions.speedDecrease' => 'Reduser hastighet',
 			'hotkeys.actions.speedReset' => 'Tilbakestill hastighet',
@@ -1901,10 +1905,10 @@ extension on TranslationsNb {
 			'about.appDescription' => 'En vakker Plex-klient for Flutter',
 			'about.viewLicensesDescription' => 'Vis lisenser for tredjepartsbiblioteker',
 			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke koble til noen servere. Sjekk nettverket ditt og prøv igjen.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere funnet for ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke laste servere: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere funnet for ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke laste servere: ${error}',
 			'hubDetail.title' => 'Tittel',
 			'hubDetail.releaseYear' => 'Utgivelsesår',
 			'hubDetail.dateAdded' => 'Dato lagt til',

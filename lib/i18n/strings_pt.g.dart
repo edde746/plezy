@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsPt implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Próxima Faixa de Legenda';
 	@override String get chapterNext => 'Próximo Capítulo';
 	@override String get chapterPrevious => 'Capítulo Anterior';
+	@override String get episodeNext => 'Próximo Episódio';
+	@override String get episodePrevious => 'Episódio Anterior';
 	@override String get speedIncrease => 'Aumentar Velocidade';
 	@override String get speedDecrease => 'Diminuir Velocidade';
 	@override String get speedReset => 'Redefinir Velocidade';
@@ -1630,6 +1632,8 @@ extension on TranslationsPt {
 			'hotkeys.actions.subtitleTrackNext' => 'Próxima Faixa de Legenda',
 			'hotkeys.actions.chapterNext' => 'Próximo Capítulo',
 			'hotkeys.actions.chapterPrevious' => 'Capítulo Anterior',
+			'hotkeys.actions.episodeNext' => 'Próximo Episódio',
+			'hotkeys.actions.episodePrevious' => 'Episódio Anterior',
 			'hotkeys.actions.speedIncrease' => 'Aumentar Velocidade',
 			'hotkeys.actions.speedDecrease' => 'Diminuir Velocidade',
 			'hotkeys.actions.speedReset' => 'Redefinir Velocidade',
@@ -1901,10 +1905,10 @@ extension on TranslationsPt {
 			'about.appDescription' => 'Um belo cliente Plex para Flutter',
 			'about.viewLicensesDescription' => 'Ver licenças de bibliotecas de terceiros',
 			'serverSelection.allServerConnectionsFailed' => 'Falha ao conectar a qualquer servidor. Verifique sua rede e tente novamente.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nenhum servidor encontrado para ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Falha ao carregar servidores: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nenhum servidor encontrado para ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Falha ao carregar servidores: ${error}',
 			'hubDetail.title' => 'Título',
 			'hubDetail.releaseYear' => 'Ano de Lançamento',
 			'hubDetail.dateAdded' => 'Data de Adição',

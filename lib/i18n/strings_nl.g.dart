@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => 'Volgende ondertiteltrack';
 	@override String get chapterNext => 'Volgend hoofdstuk';
 	@override String get chapterPrevious => 'Vorig hoofdstuk';
+	@override String get episodeNext => 'Volgende aflevering';
+	@override String get episodePrevious => 'Vorige aflevering';
 	@override String get speedIncrease => 'Snelheid verhogen';
 	@override String get speedDecrease => 'Snelheid verlagen';
 	@override String get speedReset => 'Snelheid resetten';
@@ -1630,6 +1632,8 @@ extension on TranslationsNl {
 			'hotkeys.actions.subtitleTrackNext' => 'Volgende ondertiteltrack',
 			'hotkeys.actions.chapterNext' => 'Volgend hoofdstuk',
 			'hotkeys.actions.chapterPrevious' => 'Vorig hoofdstuk',
+			'hotkeys.actions.episodeNext' => 'Volgende aflevering',
+			'hotkeys.actions.episodePrevious' => 'Vorige aflevering',
 			'hotkeys.actions.speedIncrease' => 'Snelheid verhogen',
 			'hotkeys.actions.speedDecrease' => 'Snelheid verlagen',
 			'hotkeys.actions.speedReset' => 'Snelheid resetten',
@@ -1901,10 +1905,10 @@ extension on TranslationsNl {
 			'about.appDescription' => 'Een mooie Plex client voor Flutter',
 			'about.viewLicensesDescription' => 'Bekijk licenties van third-party bibliotheken',
 			'serverSelection.allServerConnectionsFailed' => 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Uitgavejaar',
 			'hubDetail.dateAdded' => 'Datum toegevoegd',

@@ -1721,6 +1721,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _previousChapter,
         onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
         onToggleShader: _toggleShader,
+        onNextEpisode: widget.onNext,
+        onPreviousEpisode: widget.onPrevious,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
       );
@@ -1953,6 +1955,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
               onToggleShader: _toggleShader,
               onSkipMarker: _performAutoSkip,
+              onNextEpisode: widget.onNext,
+              onPreviousEpisode: widget.onPrevious,
               currentPositionEpoch: widget.currentPositionEpoch,
               onLiveSeek: widget.onLiveSeek,
             );

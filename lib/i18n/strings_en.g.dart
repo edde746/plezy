@@ -2866,6 +2866,12 @@ class TranslationsHotkeysActionsEn {
 	/// en: 'Previous Chapter'
 	String get chapterPrevious => 'Previous Chapter';
 
+	/// en: 'Next Episode'
+	String get episodeNext => 'Next Episode';
+
+	/// en: 'Previous Episode'
+	String get episodePrevious => 'Previous Episode';
+
 	/// en: 'Increase Speed'
 	String get speedIncrease => 'Increase Speed';
 
@@ -3405,6 +3411,8 @@ extension on Translations {
 			'hotkeys.actions.subtitleTrackNext' => 'Next Subtitle Track',
 			'hotkeys.actions.chapterNext' => 'Next Chapter',
 			'hotkeys.actions.chapterPrevious' => 'Previous Chapter',
+			'hotkeys.actions.episodeNext' => 'Next Episode',
+			'hotkeys.actions.episodePrevious' => 'Previous Episode',
 			'hotkeys.actions.speedIncrease' => 'Increase Speed',
 			'hotkeys.actions.speedDecrease' => 'Decrease Speed',
 			'hotkeys.actions.speedReset' => 'Reset Speed',
@@ -3676,10 +3684,10 @@ extension on Translations {
 			'about.appDescription' => 'A beautiful Plex client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
 			'serverSelection.allServerConnectionsFailed' => 'Failed to connect to any servers. Please check your network and try again.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
 			'hubDetail.title' => 'Title',
 			'hubDetail.releaseYear' => 'Release Year',
 			'hubDetail.dateAdded' => 'Date Added',

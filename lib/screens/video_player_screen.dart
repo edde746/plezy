@@ -151,6 +151,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   PlexMetadata? _nextEpisode;
   PlexMetadata? _previousEpisode;
   bool _isLoadingNext = false;
+  bool _isLoadingPrevious = false;
   bool _isSwappingEpisode = false;
   bool _showPlayNextDialog = false;
   bool _isPhone = false;
@@ -2438,10 +2439,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _playPrevious() async {
-    if (_previousEpisode == null) return;
+    if (_previousEpisode == null || _isLoadingPrevious) return;
 
-    // Notify Watch Together of episode change before navigating
     _notifyWatchTogetherMediaChange(metadata: _previousEpisode);
+
+    setState(() {
+      _isLoadingPrevious = true;
+    });
 
     await _navigateToEpisode(_previousEpisode!);
   }

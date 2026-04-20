@@ -528,6 +528,8 @@ class SettingsService extends BaseSharedPreferencesService {
       'subtitle_track_next': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
       'chapter_next': const HotKey(key: PhysicalKeyboardKey.keyN),
       'chapter_previous': const HotKey(key: PhysicalKeyboardKey.keyP),
+      'episode_next': const HotKey(key: PhysicalKeyboardKey.keyN, modifiers: [HotKeyModifier.shift]),
+      'episode_previous': const HotKey(key: PhysicalKeyboardKey.keyP, modifiers: [HotKeyModifier.shift]),
       'speed_increase': const HotKey(key: PhysicalKeyboardKey.equal),
       'speed_decrease': const HotKey(key: PhysicalKeyboardKey.minus),
       'speed_reset': const HotKey(key: PhysicalKeyboardKey.keyR),

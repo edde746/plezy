@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsJa implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => '次の字幕トラック';
 	@override String get chapterNext => '次のチャプター';
 	@override String get chapterPrevious => '前のチャプター';
+	@override String get episodeNext => '次のエピソード';
+	@override String get episodePrevious => '前のエピソード';
 	@override String get speedIncrease => '速度を上げる';
 	@override String get speedDecrease => '速度を下げる';
 	@override String get speedReset => '速度をリセット';
@@ -1630,6 +1632,8 @@ extension on TranslationsJa {
 			'hotkeys.actions.subtitleTrackNext' => '次の字幕トラック',
 			'hotkeys.actions.chapterNext' => '次のチャプター',
 			'hotkeys.actions.chapterPrevious' => '前のチャプター',
+			'hotkeys.actions.episodeNext' => '次のエピソード',
+			'hotkeys.actions.episodePrevious' => '前のエピソード',
 			'hotkeys.actions.speedIncrease' => '速度を上げる',
 			'hotkeys.actions.speedDecrease' => '速度を下げる',
 			'hotkeys.actions.speedReset' => '速度をリセット',
@@ -1901,10 +1905,10 @@ extension on TranslationsJa {
 			'about.appDescription' => 'Flutter製の美しいPlexクライアント',
 			'about.viewLicensesDescription' => 'サードパーティライブラリのライセンスを表示',
 			'serverSelection.allServerConnectionsFailed' => 'どのサーバーにも接続できませんでした。ネットワークを確認してもう一度お試しください。',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})のサーバーが見つかりません',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => 'サーバーの読み込みに失敗しました: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})のサーバーが見つかりません',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => 'サーバーの読み込みに失敗しました: ${error}',
 			'hubDetail.title' => 'タイトル',
 			'hubDetail.releaseYear' => '公開年',
 			'hubDetail.dateAdded' => '追加日',

@@ -1248,6 +1248,8 @@ class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 	@override String get subtitleTrackNext => '다음 자막 트랙';
 	@override String get chapterNext => '다음 챕터';
 	@override String get chapterPrevious => '이전 챕터';
+	@override String get episodeNext => '다음 에피소드';
+	@override String get episodePrevious => '이전 에피소드';
 	@override String get speedIncrease => '속도 높이기';
 	@override String get speedDecrease => '속도 낮추기';
 	@override String get speedReset => '속도 초기화';
@@ -1630,6 +1632,8 @@ extension on TranslationsKo {
 			'hotkeys.actions.subtitleTrackNext' => '다음 자막 트랙',
 			'hotkeys.actions.chapterNext' => '다음 챕터',
 			'hotkeys.actions.chapterPrevious' => '이전 챕터',
+			'hotkeys.actions.episodeNext' => '다음 에피소드',
+			'hotkeys.actions.episodePrevious' => '이전 에피소드',
 			'hotkeys.actions.speedIncrease' => '속도 높이기',
 			'hotkeys.actions.speedDecrease' => '속도 낮추기',
 			'hotkeys.actions.speedReset' => '속도 초기화',
@@ -1901,10 +1905,10 @@ extension on TranslationsKo {
 			'about.appDescription' => '아름다운 Flutter Plex 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
 			'serverSelection.allServerConnectionsFailed' => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.',
-			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
-			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
+			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
 			'hubDetail.title' => '제목',
 			'hubDetail.releaseYear' => '출시 연도',
 			'hubDetail.dateAdded' => '추가 날짜',
