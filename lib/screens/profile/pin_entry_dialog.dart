@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -8,6 +6,7 @@ import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
+import '../../focus/key_repeat_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/platform_detector.dart';
@@ -143,11 +142,10 @@ class _TvPinInput extends StatefulWidget {
   State<_TvPinInput> createState() => _TvPinInputState();
 }
 
-class _TvPinInputState extends State<_TvPinInput> {
+class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInput> {
   final List<int?> _digits = [null, null, null, null];
   int _activeIndex = 0;
   bool _isFocused = false;
-  Timer? _repeatTimer;
 
   // Hidden text fields for mobile keyboard input
   final List<FocusNode> _mobileFocusNodes = List.generate(4, (_) => FocusNode());
@@ -173,7 +171,7 @@ class _TvPinInputState extends State<_TvPinInput> {
 
   @override
   void dispose() {
-    _repeatTimer?.cancel();
+    stopRepeat();
     _focusNode.dispose();
     for (final node in _mobileFocusNodes) {
       node.dispose();
@@ -220,21 +218,6 @@ class _TvPinInputState extends State<_TvPinInput> {
       final current = _digits[_activeIndex] ?? 0;
       _digits[_activeIndex] = (current - 1 + 10) % 10;
     });
-  }
-
-  void _startRepeat(VoidCallback action) {
-    action();
-    _repeatTimer?.cancel();
-    _repeatTimer = Timer(const Duration(milliseconds: 400), () {
-      _repeatTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-        action();
-      });
-    });
-  }
-
-  void _stopRepeat() {
-    _repeatTimer?.cancel();
-    _repeatTimer = null;
   }
 
   // Map digit keys (both main keyboard and numpad)
@@ -296,13 +279,13 @@ class _TvPinInputState extends State<_TvPinInput> {
 
       // Up arrow → increment digit
       if (key.isUpKey) {
-        _startRepeat(_incrementDigit);
+        startRepeat(_incrementDigit);
         return KeyEventResult.handled;
       }
 
       // Down arrow → decrement digit
       if (key.isDownKey) {
-        _startRepeat(_decrementDigit);
+        startRepeat(_decrementDigit);
         return KeyEventResult.handled;
       }
 
@@ -333,7 +316,7 @@ class _TvPinInputState extends State<_TvPinInput> {
 
     if (event is KeyUpEvent) {
       if (key.isUpKey || key.isDownKey) {
-        _stopRepeat();
+        stopRepeat();
         return KeyEventResult.handled;
       }
     }
@@ -394,7 +377,7 @@ class _TvPinInputState extends State<_TvPinInput> {
       autofocus: true,
       onFocusChange: (hasFocus) {
         setState(() => _isFocused = hasFocus);
-        if (!hasFocus) _stopRepeat();
+        if (!hasFocus) stopRepeat();
       },
       onKeyEvent: _handleKeyEvent,
       child: _buildDigitRow(context, showArrows: showArrows),

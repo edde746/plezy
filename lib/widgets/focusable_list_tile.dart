@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../focus/dpad_navigator.dart';
-import '../utils/scroll_utils.dart';
+import '../focus/focusable_tile_mixin.dart';
 
 /// A ListTile that accepts a FocusNode for keyboard/controller navigation.
 ///
@@ -83,53 +83,29 @@ class FocusableListTile extends StatefulWidget {
   State<FocusableListTile> createState() => _FocusableListTileState();
 }
 
-class _FocusableListTileState extends State<FocusableListTile> {
+class _FocusableListTileState extends State<FocusableListTile> with FocusableTileStateMixin<FocusableListTile> {
   bool _suppressionConsumed = false;
   bool _isHoveredOrFocused = false;
-  late FocusNode _effectiveFocusNode;
-  bool _ownsNode = false;
+
+  @override
+  FocusNode? get widgetFocusNode => widget.focusNode;
 
   @override
   void initState() {
     super.initState();
-    _initFocusNode();
+    initFocusNode();
   }
 
   @override
   void didUpdateWidget(FocusableListTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.focusNode != oldWidget.focusNode) {
-      _disposeFocusNode();
-      _initFocusNode();
-    }
+    updateFocusNode(oldWidget.focusNode);
   }
 
   @override
   void dispose() {
-    _disposeFocusNode();
+    disposeFocusNode();
     super.dispose();
-  }
-
-  void _initFocusNode() {
-    if (widget.focusNode != null) {
-      _effectiveFocusNode = widget.focusNode!;
-      _ownsNode = false;
-    } else {
-      _effectiveFocusNode = FocusNode();
-      _ownsNode = true;
-    }
-    _effectiveFocusNode.addListener(_onFocusChange);
-  }
-
-  void _disposeFocusNode() {
-    _effectiveFocusNode.removeListener(_onFocusChange);
-    if (_ownsNode) _effectiveFocusNode.dispose();
-  }
-
-  void _onFocusChange() {
-    if (_effectiveFocusNode.hasFocus) {
-      scrollContextToCenter(context);
-    }
   }
 
   @override
@@ -155,7 +131,7 @@ class _FocusableListTileState extends State<FocusableListTile> {
         selected: widget.selected,
         contentPadding: widget.contentPadding,
         visualDensity: widget.visualDensity,
-        focusNode: widget.suppressInitialSelect ? null : _effectiveFocusNode,
+        focusNode: widget.suppressInitialSelect ? null : effectiveFocusNode,
         autofocus: widget.suppressInitialSelect ? false : widget.autofocus,
         hoverColor: widget.hoverColor,
         textColor: textColor,
@@ -168,7 +144,7 @@ class _FocusableListTileState extends State<FocusableListTile> {
     }
 
     return Focus(
-      focusNode: _effectiveFocusNode,
+      focusNode: effectiveFocusNode,
       autofocus: widget.autofocus,
       onKeyEvent: (node, event) {
         if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
@@ -234,51 +210,27 @@ class FocusableRadioListTile<T> extends StatefulWidget {
   State<FocusableRadioListTile<T>> createState() => _FocusableRadioListTileState<T>();
 }
 
-class _FocusableRadioListTileState<T> extends State<FocusableRadioListTile<T>> {
-  late FocusNode _effectiveFocusNode;
-  bool _ownsNode = false;
+class _FocusableRadioListTileState<T> extends State<FocusableRadioListTile<T>>
+    with FocusableTileStateMixin<FocusableRadioListTile<T>> {
+  @override
+  FocusNode? get widgetFocusNode => widget.focusNode;
 
   @override
   void initState() {
     super.initState();
-    _initFocusNode();
+    initFocusNode();
   }
 
   @override
   void didUpdateWidget(FocusableRadioListTile<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.focusNode != oldWidget.focusNode) {
-      _disposeFocusNode();
-      _initFocusNode();
-    }
+    updateFocusNode(oldWidget.focusNode);
   }
 
   @override
   void dispose() {
-    _disposeFocusNode();
+    disposeFocusNode();
     super.dispose();
-  }
-
-  void _initFocusNode() {
-    if (widget.focusNode != null) {
-      _effectiveFocusNode = widget.focusNode!;
-      _ownsNode = false;
-    } else {
-      _effectiveFocusNode = FocusNode();
-      _ownsNode = true;
-    }
-    _effectiveFocusNode.addListener(_onFocusChange);
-  }
-
-  void _disposeFocusNode() {
-    _effectiveFocusNode.removeListener(_onFocusChange);
-    if (_ownsNode) _effectiveFocusNode.dispose();
-  }
-
-  void _onFocusChange() {
-    if (_effectiveFocusNode.hasFocus) {
-      scrollContextToCenter(context);
-    }
   }
 
   @override
@@ -291,7 +243,7 @@ class _FocusableRadioListTileState<T> extends State<FocusableRadioListTile<T>> {
       // groupValue and onChanged provided by RadioGroup ancestor
       dense: widget.dense,
       visualDensity: widget.visualDensity,
-      focusNode: _effectiveFocusNode,
+      focusNode: effectiveFocusNode,
       autofocus: widget.autofocus,
       enabled: widget.enabled,
     );
@@ -346,51 +298,27 @@ class FocusableSwitchListTile extends StatefulWidget {
   State<FocusableSwitchListTile> createState() => _FocusableSwitchListTileState();
 }
 
-class _FocusableSwitchListTileState extends State<FocusableSwitchListTile> {
-  late FocusNode _effectiveFocusNode;
-  bool _ownsNode = false;
+class _FocusableSwitchListTileState extends State<FocusableSwitchListTile>
+    with FocusableTileStateMixin<FocusableSwitchListTile> {
+  @override
+  FocusNode? get widgetFocusNode => widget.focusNode;
 
   @override
   void initState() {
     super.initState();
-    _initFocusNode();
+    initFocusNode();
   }
 
   @override
   void didUpdateWidget(FocusableSwitchListTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.focusNode != oldWidget.focusNode) {
-      _disposeFocusNode();
-      _initFocusNode();
-    }
+    updateFocusNode(oldWidget.focusNode);
   }
 
   @override
   void dispose() {
-    _disposeFocusNode();
+    disposeFocusNode();
     super.dispose();
-  }
-
-  void _initFocusNode() {
-    if (widget.focusNode != null) {
-      _effectiveFocusNode = widget.focusNode!;
-      _ownsNode = false;
-    } else {
-      _effectiveFocusNode = FocusNode();
-      _ownsNode = true;
-    }
-    _effectiveFocusNode.addListener(_onFocusChange);
-  }
-
-  void _disposeFocusNode() {
-    _effectiveFocusNode.removeListener(_onFocusChange);
-    if (_ownsNode) _effectiveFocusNode.dispose();
-  }
-
-  void _onFocusChange() {
-    if (_effectiveFocusNode.hasFocus) {
-      scrollContextToCenter(context);
-    }
   }
 
   @override
@@ -403,7 +331,7 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile> {
       onChanged: widget.onChanged,
       dense: widget.dense,
       visualDensity: widget.visualDensity,
-      focusNode: _effectiveFocusNode,
+      focusNode: effectiveFocusNode,
       autofocus: widget.autofocus,
     );
   }

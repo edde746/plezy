@@ -1,11 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
+import '../focus/key_repeat_helper.dart';
 import '../theme/mono_tokens.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'app_icon.dart';
@@ -216,9 +215,8 @@ class _ColorChannelRow extends StatefulWidget {
   State<_ColorChannelRow> createState() => _ColorChannelRowState();
 }
 
-class _ColorChannelRowState extends State<_ColorChannelRow> {
+class _ColorChannelRowState extends State<_ColorChannelRow> with KeyRepeatHelper<_ColorChannelRow> {
   late FocusNode _focusNode;
-  Timer? _repeatTimer;
   bool _isFocused = false;
 
   @override
@@ -229,7 +227,7 @@ class _ColorChannelRowState extends State<_ColorChannelRow> {
 
   @override
   void dispose() {
-    _repeatTimer?.cancel();
+    stopRepeat();
     _focusNode.dispose();
     super.dispose();
   }
@@ -248,21 +246,6 @@ class _ColorChannelRowState extends State<_ColorChannelRow> {
     }
   }
 
-  void _startRepeat(VoidCallback action) {
-    action();
-    _repeatTimer?.cancel();
-    _repeatTimer = Timer(const Duration(milliseconds: 400), () {
-      _repeatTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-        action();
-      });
-    });
-  }
-
-  void _stopRepeat() {
-    _repeatTimer?.cancel();
-    _repeatTimer = null;
-  }
-
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
@@ -277,10 +260,10 @@ class _ColorChannelRowState extends State<_ColorChannelRow> {
         return KeyEventResult.handled;
       }
       if (key.isRightKey) {
-        _startRepeat(_increment);
+        startRepeat(_increment);
         return KeyEventResult.handled;
       } else if (key.isLeftKey) {
-        _startRepeat(_decrement);
+        startRepeat(_decrement);
         return KeyEventResult.handled;
       }
     } else if (event is KeyRepeatEvent) {
@@ -292,7 +275,7 @@ class _ColorChannelRowState extends State<_ColorChannelRow> {
       }
     } else if (event is KeyUpEvent) {
       if (key.isRightKey || key.isLeftKey) {
-        _stopRepeat();
+        stopRepeat();
         return KeyEventResult.handled;
       }
     }
@@ -313,7 +296,7 @@ class _ColorChannelRowState extends State<_ColorChannelRow> {
       autofocus: widget.autofocus,
       onFocusChange: (hasFocus) {
         setState(() => _isFocused = hasFocus);
-        if (!hasFocus) _stopRepeat();
+        if (!hasFocus) stopRepeat();
       },
       onKeyEvent: _handleKeyEvent,
       child: AnimatedContainer(

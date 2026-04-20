@@ -99,60 +99,7 @@ class PlexOptimizedImage extends StatelessWidget {
   }) = PlexOptimizedImage._;
 
   /// Named constructor for poster images with default fallback icon.
-  const factory PlexOptimizedImage.poster({
-    Key? key,
-    PlexClient? client,
-    required String? imagePath,
-    double? width,
-    double? height,
-    BoxFit fit,
-    FilterQuality filterQuality,
-    Widget Function(BuildContext, String)? placeholder,
-    Widget Function(BuildContext, String, dynamic)? errorWidget,
-    Duration fadeInDuration,
-    bool enableTranscoding,
-    String? cacheKey,
-    Alignment alignment,
-    String? localFilePath,
-  }) = PlexOptimizedImage._poster;
-
-  /// Named constructor for episode thumbnails.
-  const factory PlexOptimizedImage.thumb({
-    Key? key,
-    PlexClient? client,
-    required String? imagePath,
-    double? width,
-    double? height,
-    BoxFit fit,
-    FilterQuality filterQuality,
-    Widget Function(BuildContext, String)? placeholder,
-    Widget Function(BuildContext, String, dynamic)? errorWidget,
-    Duration fadeInDuration,
-    bool enableTranscoding,
-    String? cacheKey,
-    Alignment alignment,
-    String? localFilePath,
-  }) = PlexOptimizedImage._thumb;
-
-  /// Named constructor for playlist images.
-  const factory PlexOptimizedImage.playlist({
-    Key? key,
-    PlexClient? client,
-    required String? imagePath,
-    double? width,
-    double? height,
-    BoxFit fit,
-    FilterQuality filterQuality,
-    Widget Function(BuildContext, String)? placeholder,
-    Widget Function(BuildContext, String, dynamic)? errorWidget,
-    Duration fadeInDuration,
-    bool enableTranscoding,
-    String? cacheKey,
-    Alignment alignment,
-    String? localFilePath,
-  }) = PlexOptimizedImage._playlist;
-
-  const PlexOptimizedImage._poster({
+  const PlexOptimizedImage.poster({
     Key? key,
     PlexClient? client,
     required String? imagePath,
@@ -186,7 +133,8 @@ class PlexOptimizedImage extends StatelessWidget {
          localFilePath: localFilePath,
        );
 
-  const PlexOptimizedImage._thumb({
+  /// Named constructor for episode thumbnails.
+  const PlexOptimizedImage.thumb({
     Key? key,
     PlexClient? client,
     required String? imagePath,
@@ -220,7 +168,8 @@ class PlexOptimizedImage extends StatelessWidget {
          localFilePath: localFilePath,
        );
 
-  const PlexOptimizedImage._playlist({
+  /// Named constructor for playlist images.
+  const PlexOptimizedImage.playlist({
     Key? key,
     PlexClient? client,
     required String? imagePath,

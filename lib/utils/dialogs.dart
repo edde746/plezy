@@ -4,6 +4,7 @@ import '../focus/focusable_button.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 import '../widgets/app_icon.dart';
+import '../widgets/dialog_action_button.dart';
 import '../widgets/focusable_list_tile.dart';
 import 'focus_utils.dart';
 
@@ -198,6 +199,29 @@ Future<String?> showMultilineTextInputDialog(
   );
 }
 
+/// Shared lifecycle for the two private text-input dialogs below: a single
+/// [TextEditingController] seeded from [initialValue], plus a focus node for
+/// the save button.
+mixin _TextInputDialogStateMixin<T extends StatefulWidget> on State<T> {
+  late final TextEditingController _controller;
+  final _saveFocusNode = FocusNode();
+
+  String? get initialValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _saveFocusNode.dispose();
+    super.dispose();
+  }
+}
+
 class _MultilineTextInputDialog extends StatefulWidget {
   final String title;
   final String labelText;
@@ -209,22 +233,10 @@ class _MultilineTextInputDialog extends StatefulWidget {
   State<_MultilineTextInputDialog> createState() => _MultilineTextInputDialogState();
 }
 
-class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog> {
-  late final TextEditingController _controller;
-  final _saveFocusNode = FocusNode();
-
+class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
+    with _TextInputDialogStateMixin<_MultilineTextInputDialog> {
   @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _saveFocusNode.dispose();
-    super.dispose();
-  }
+  String? get initialValue => widget.initialValue;
 
   @override
   Widget build(BuildContext context) {
@@ -241,14 +253,11 @@ class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog> {
         ),
       ),
       actions: [
-        FocusableButton(
-          onPressed: () => Navigator.pop(context),
-          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        ),
-        FocusableButton(
-          focusNode: _saveFocusNode,
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(
           onPressed: () => Navigator.pop(context, _controller.text),
-          child: TextButton(onPressed: () => Navigator.pop(context, _controller.text), child: Text(t.common.save)),
+          label: t.common.save,
+          focusNode: _saveFocusNode,
         ),
       ],
     );
@@ -280,22 +289,9 @@ class _TextInputDialog extends StatefulWidget {
   State<_TextInputDialog> createState() => _TextInputDialogState();
 }
 
-class _TextInputDialogState extends State<_TextInputDialog> {
-  late final TextEditingController _controller;
-  final _saveFocusNode = FocusNode();
-
+class _TextInputDialogState extends State<_TextInputDialog> with _TextInputDialogStateMixin<_TextInputDialog> {
   @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _saveFocusNode.dispose();
-    super.dispose();
-  }
+  String? get initialValue => widget.initialValue;
 
   void _submit() {
     final text = _controller.text;
@@ -318,15 +314,8 @@ class _TextInputDialogState extends State<_TextInputDialog> {
         onSubmitted: (_) => _saveFocusNode.requestFocus(),
       ),
       actions: [
-        FocusableButton(
-          onPressed: () => Navigator.pop(context),
-          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        ),
-        FocusableButton(
-          focusNode: _saveFocusNode,
-          onPressed: _submit,
-          child: TextButton(onPressed: _submit, child: Text(widget.confirmText ?? t.common.save)),
-        ),
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(onPressed: _submit, label: widget.confirmText ?? t.common.save, focusNode: _saveFocusNode),
       ],
     );
   }

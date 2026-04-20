@@ -16,6 +16,70 @@ import '../utils/language_codes.dart';
 // codec, title, etc.) instead of list index, since the two may be ordered
 // differently.
 
+/// Score how well an MPV subtitle track matches a Plex subtitle track.
+/// Language (+10 / +1 exact) and codec (+5) carry the most weight; title,
+/// forced flag, and identical ordinal position (only when [ordinalMatches]
+/// is true) add smaller nudges.
+int _scoreSubtitleMatch(SubtitleTrack mpvTrack, PlexSubtitleTrack plexTrack, {required bool ordinalMatches}) {
+  int score = 0;
+
+  if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
+    score += 10;
+    if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
+      score += 1;
+    }
+  }
+
+  if (_subtitleCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+    score += 5;
+  }
+
+  score += _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle);
+
+  if (mpvTrack.isForced == plexTrack.forced) {
+    score += 2;
+  }
+
+  if (ordinalMatches) {
+    score += 1;
+  }
+
+  return score;
+}
+
+/// Score how well an MPV audio track matches a Plex audio track.
+/// Language (+10 / +1 exact) and codec (+5) dominate; channel count (+3),
+/// title match (+2), and identical ordinal position ([ordinalMatches], +1)
+/// act as tiebreakers.
+int _scoreAudioMatch(AudioTrack mpvTrack, PlexAudioTrack plexTrack, {required bool ordinalMatches}) {
+  int score = 0;
+
+  if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
+    score += 10;
+    if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
+      score += 1;
+    }
+  }
+
+  if (_audioCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+    score += 5;
+  }
+
+  if (mpvTrack.channels != null && plexTrack.channels != null && mpvTrack.channels == plexTrack.channels) {
+    score += 3;
+  }
+
+  if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
+    score += 2;
+  }
+
+  if (ordinalMatches) {
+    score += 1;
+  }
+
+  return score;
+}
+
 /// Find the MPV subtitle track that matches a Plex subtitle track
 SubtitleTrack? findMpvTrackForPlexSubtitle(
   PlexSubtitleTrack plexTrack,
@@ -50,37 +114,10 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
     // Skip external tracks when matching internal Plex tracks
     if (!plexTrack.isExternal && mpvTrack.isExternal) continue;
 
-    int score = 0;
+    final ordinalMatches =
+        internalMpvTracks != null && plexOrdinal >= 0 && internalMpvTracks.indexOf(mpvTrack) == plexOrdinal;
 
-    // Language match is most important (+10, +1 bonus for exact code match)
-    if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
-      score += 10;
-      if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
-        score += 1;
-      }
-    }
-
-    // Codec match (+5)
-    if (_subtitleCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
-      score += 5;
-    }
-
-    // Title match (+3 for text match, +1 for null/empty)
-    score += _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle);
-
-    // Forced flag match (+2)
-    if (mpvTrack.isForced == plexTrack.forced) {
-      score += 2;
-    }
-
-    // Ordinal position tiebreaker (+1): when all properties match identically,
-    // prefer the track at the same position in both lists.
-    if (internalMpvTracks != null && plexOrdinal >= 0) {
-      final mpvOrdinal = internalMpvTracks.indexOf(mpvTrack);
-      if (mpvOrdinal >= 0 && plexOrdinal == mpvOrdinal) {
-        score += 1;
-      }
-    }
+    final score = _scoreSubtitleMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
 
     if (score > bestScore) {
       bestScore = score;
@@ -123,36 +160,10 @@ PlexSubtitleTrack? findPlexTrackForMpvSubtitle(
     // Skip external Plex tracks when matching internal MPV tracks
     if (!mpvTrack.isExternal && plexTrack.isExternal) continue;
 
-    int score = 0;
+    final ordinalMatches =
+        internalPlexTracks != null && mpvOrdinal >= 0 && internalPlexTracks.indexOf(plexTrack) == mpvOrdinal;
 
-    // Language match is most important (+10, +1 bonus for exact code match)
-    if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
-      score += 10;
-      if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
-        score += 1;
-      }
-    }
-
-    // Codec match (+5)
-    if (_subtitleCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
-      score += 5;
-    }
-
-    // Title match (+3 for text match, +1 for null/empty)
-    score += _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle);
-
-    // Forced flag match (+2)
-    if (mpvTrack.isForced == plexTrack.forced) {
-      score += 2;
-    }
-
-    // Ordinal position tiebreaker (+1)
-    if (internalPlexTracks != null && mpvOrdinal >= 0) {
-      final plexOrdinal = internalPlexTracks.indexOf(plexTrack);
-      if (plexOrdinal >= 0 && mpvOrdinal == plexOrdinal) {
-        score += 1;
-      }
-    }
+    final score = _scoreSubtitleMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
 
     if (score > bestScore) {
       bestScore = score;
@@ -177,40 +188,9 @@ AudioTrack? findMpvTrackForPlexAudio(
   final plexOrdinal = allPlexTracks?.indexOf(plexTrack) ?? -1;
 
   for (final mpvTrack in mpvTracks) {
-    int score = 0;
+    final ordinalMatches = plexOrdinal >= 0 && mpvTracks.indexOf(mpvTrack) == plexOrdinal;
 
-    // Language match is most important (+10, +1 bonus for exact code match)
-    if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
-      score += 10;
-      if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
-        score += 1;
-      }
-    }
-
-    // Codec match (+5)
-    if (_audioCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
-      score += 5;
-    }
-
-    // Channel count match (+3)
-    if (mpvTrack.channels != null && plexTrack.channels != null) {
-      if (mpvTrack.channels == plexTrack.channels) {
-        score += 3;
-      }
-    }
-
-    // Title match (+2)
-    if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
-      score += 2;
-    }
-
-    // Ordinal position tiebreaker (+1)
-    if (plexOrdinal >= 0) {
-      final mpvOrdinal = mpvTracks.indexOf(mpvTrack);
-      if (mpvOrdinal >= 0 && plexOrdinal == mpvOrdinal) {
-        score += 1;
-      }
-    }
+    final score = _scoreAudioMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
 
     if (score > bestScore) {
       bestScore = score;
@@ -235,40 +215,9 @@ PlexAudioTrack? findPlexTrackForMpvAudio(
   final mpvOrdinal = allMpvTracks?.indexOf(mpvTrack) ?? -1;
 
   for (final plexTrack in plexTracks) {
-    int score = 0;
+    final ordinalMatches = mpvOrdinal >= 0 && plexTracks.indexOf(plexTrack) == mpvOrdinal;
 
-    // Language match is most important (+10, +1 bonus for exact code match)
-    if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
-      score += 10;
-      if (_languageCodesExactMatch(mpvTrack.language, plexTrack.languageCode)) {
-        score += 1;
-      }
-    }
-
-    // Codec match (+5)
-    if (_audioCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
-      score += 5;
-    }
-
-    // Channel count match (+3)
-    if (mpvTrack.channels != null && plexTrack.channels != null) {
-      if (mpvTrack.channels == plexTrack.channels) {
-        score += 3;
-      }
-    }
-
-    // Title match (+2)
-    if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
-      score += 2;
-    }
-
-    // Ordinal position tiebreaker (+1)
-    if (mpvOrdinal >= 0) {
-      final plexOrdinal = plexTracks.indexOf(plexTrack);
-      if (plexOrdinal >= 0 && mpvOrdinal == plexOrdinal) {
-        score += 1;
-      }
-    }
+    final score = _scoreAudioMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
 
     if (score > bestScore) {
       bestScore = score;

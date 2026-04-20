@@ -8,7 +8,6 @@ import '../i18n/strings.g.dart';
 import 'base_media_list_detail_screen.dart';
 import 'focusable_detail_screen_mixin.dart';
 import '../mixins/grid_focus_node_mixin.dart';
-import '../focus/key_event_utils.dart';
 import '../focus/focusable_action_bar.dart';
 
 /// Screen to browse all media featuring a specific actor
@@ -130,27 +129,13 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (BackKeyCoordinator.consumeIfHandled()) return;
-        if (didPop) return;
-        final shouldPop = handleBackNavigation();
-        if (shouldPop && mounted) {
-          Navigator.pop(context);
-        }
-      },
-      child: Scaffold(
-        body: CustomScrollView(
-          controller: scrollController,
-          slivers: [
-            CustomAppBar(title: Text(widget.actorName), pinned: true, actions: buildFocusableAppBarActions()),
-            _buildActorHeader(),
-            ...buildStateSlivers(),
-            if (items.isNotEmpty) buildFocusableGrid(items: items, onRefresh: updateItem),
-          ],
-        ),
-      ),
+    return buildDetailScaffold(
+      slivers: [
+        CustomAppBar(title: Text(widget.actorName), pinned: true, actions: buildFocusableAppBarActions()),
+        _buildActorHeader(),
+        ...buildStateSlivers(),
+        if (items.isNotEmpty) buildFocusableGrid(items: items, onRefresh: updateItem),
+      ],
     );
   }
 }

@@ -61,18 +61,8 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
     if (url == null || _isApplying) return;
 
     setState(() => _isApplying = true);
-
     final success = await widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, url);
-
-    if (!mounted) return;
-    setState(() => _isApplying = false);
-
-    if (success) {
-      showSuccessSnackBar(context, t.metadataEdit.artworkUpdated);
-      Navigator.pop(context, true);
-    } else {
-      showErrorSnackBar(context, t.metadataEdit.artworkUpdateFailed);
-    }
+    _handleArtworkUpdate(success);
   }
 
   Future<void> _addFromUrl() async {
@@ -86,18 +76,8 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
     if (url == null || url.isEmpty || !mounted) return;
 
     setState(() => _isApplying = true);
-
     final success = await widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, url);
-
-    if (!mounted) return;
-    setState(() => _isApplying = false);
-
-    if (success) {
-      showSuccessSnackBar(context, t.metadataEdit.artworkUpdated);
-      Navigator.pop(context, true);
-    } else {
-      showErrorSnackBar(context, t.metadataEdit.artworkUpdateFailed);
-    }
+    _handleArtworkUpdate(success);
   }
 
   Future<void> _uploadFile() async {
@@ -109,12 +89,13 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
     if (bytes == null) return;
 
     setState(() => _isApplying = true);
-
     final success = await widget.client.uploadArtwork(widget.ratingKey, widget.element, bytes);
+    _handleArtworkUpdate(success);
+  }
 
+  void _handleArtworkUpdate(bool success) {
     if (!mounted) return;
     setState(() => _isApplying = false);
-
     if (success) {
       showSuccessSnackBar(context, t.metadataEdit.artworkUpdated);
       Navigator.pop(context, true);

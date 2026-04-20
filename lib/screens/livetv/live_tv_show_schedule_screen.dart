@@ -9,12 +9,10 @@ import '../../models/livetv_program.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
-import '../../utils/live_tv_player_navigation.dart';
-import '../../utils/plex_image_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/overlay_sheet.dart';
-import 'program_details_sheet.dart';
+import 'live_tv_actions_mixin.dart';
 
 /// Shows all upcoming airings of a show, matching the Plex "upcoming episodes" view.
 class LiveTvShowScheduleScreen extends StatefulWidget {
@@ -33,9 +31,13 @@ class LiveTvShowScheduleScreen extends StatefulWidget {
   State<LiveTvShowScheduleScreen> createState() => _LiveTvShowScheduleScreenState();
 }
 
-class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
+class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
+    with LiveTvActionsMixin<LiveTvShowScheduleScreen> {
   List<LiveTvProgram> _programs = [];
   bool _isLoading = true;
+
+  @override
+  List<LiveTvChannel> get liveTvChannels => widget.channels;
 
   @override
   void initState() {
@@ -76,56 +78,6 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
     }
   }
 
-  LiveTvChannel? _findChannel(String? channelIdentifier) {
-    if (channelIdentifier == null) return null;
-    return widget.channels.where((ch) {
-      return ch.identifier == channelIdentifier || ch.key == channelIdentifier;
-    }).firstOrNull;
-  }
-
-  Future<void> _tuneChannel(LiveTvChannel channel) async {
-    final multiServer = context.read<MultiServerProvider>();
-    final serverInfo =
-        multiServer.liveTvServers.where((s) => s.serverId == channel.serverId).firstOrNull ??
-        multiServer.liveTvServers.firstOrNull;
-    if (serverInfo == null) return;
-
-    final client = multiServer.getClientForServer(serverInfo.serverId);
-    if (client == null) return;
-
-    await navigateToLiveTv(
-      context,
-      client: client,
-      dvrKey: serverInfo.dvrKey,
-      channel: channel,
-      channels: widget.channels,
-    );
-  }
-
-  void _showProgramDetails(LiveTvProgram program, LiveTvChannel? channel) {
-    final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(widget.serverId);
-    String? posterUrl;
-    if (program.thumb != null && client != null) {
-      posterUrl = PlexImageHelper.getOptimizedImageUrl(
-        client: client,
-        thumbPath: program.thumb,
-        maxWidth: 80,
-        maxHeight: 120,
-        devicePixelRatio: PlexImageHelper.effectiveDevicePixelRatio(context),
-        imageType: ImageType.poster,
-      );
-    }
-
-    showProgramDetailsSheet(
-      context,
-      program: program,
-      channel: channel,
-      posterUrl: posterUrl,
-      onTuneChannel: channel != null ? () => _tuneChannel(channel) : null,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return OverlaySheetHost(
@@ -140,12 +92,17 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen> {
             SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final program = _programs[index];
-                final channel = _findChannel(program.channelIdentifier);
+                final channel = findChannel(program.channelIdentifier);
                 void onTap() {
                   if (program.isCurrentlyAiring && channel != null) {
-                    _tuneChannel(channel);
+                    tuneChannel(channel);
                   } else {
-                    _showProgramDetails(program, channel);
+                    showProgramDetails(
+                      program: program,
+                      channel: channel,
+                      posterThumb: program.thumb,
+                      posterServerId: widget.serverId,
+                    );
                   }
                 }
 

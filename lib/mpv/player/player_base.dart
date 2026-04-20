@@ -600,6 +600,25 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   // ============================================
+  // Seek helpers
+  // ============================================
+
+  /// Run a backend-specific seek call, swallowing the common "not ready" errors
+  /// the native channel throws when the engine was torn down mid-seek.
+  @protected
+  Future<void> runSeek(Future<void> Function() seekFn) async {
+    try {
+      await seekFn();
+    } on PlatformException catch (e) {
+      if (e.code == 'COMMAND_FAILED' || e.code == 'NOT_INITIALIZED') {
+        appLogger.w('Seek failed (${e.code}), player not ready');
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  // ============================================
   // Debug helpers
   // ============================================
 

@@ -723,44 +723,20 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
           (value: 'tvdbAbsolute', label: t.metadataEdit.tvdbAbsolute),
         ],
       ),
-      _buildAdvancedTile(
-        title: t.metadataEdit.metadataLanguage,
-        prefKey: 'languageOverride',
-        options: _metadataLanguageOptions(t.metadataEdit.libraryDefault),
-      ),
-      _buildAdvancedTile(
-        title: t.metadataEdit.useOriginalTitle,
-        prefKey: 'useOriginalTitle',
-        options: [
-          (value: '-1', label: t.metadataEdit.libraryDefault),
-          (value: '0', label: t.common.no),
-          (value: '1', label: t.common.yes),
-        ],
-      ),
-      _buildAdvancedTile(
-        title: t.metadataEdit.preferredAudioLanguage,
-        prefKey: 'audioLanguage',
-        options: _audioSubtitleLanguageOptions(t.metadataEdit.accountDefault),
-      ),
-      _buildAdvancedTile(
-        title: t.metadataEdit.preferredSubtitleLanguage,
-        prefKey: 'subtitleLanguage',
-        options: _audioSubtitleLanguageOptions(t.metadataEdit.accountDefault),
-      ),
-      _buildAdvancedTile(
-        title: t.metadataEdit.subtitleMode,
-        prefKey: 'subtitleMode',
-        options: [
-          (value: '-1', label: t.metadataEdit.accountDefault),
-          (value: '0', label: t.metadataEdit.manuallySelected),
-          (value: '1', label: t.metadataEdit.shownWithForeignAudio),
-          (value: '2', label: t.metadataEdit.alwaysEnabled),
-        ],
-      ),
+      ..._buildMetadataLanguageTiles(),
+      ..._buildAudioSubtitleTiles(t.metadataEdit.accountDefault),
     ];
   }
 
   List<Widget> _buildMovieAdvancedSettings() {
+    return _buildMetadataLanguageTiles();
+  }
+
+  List<Widget> _buildSeasonAdvancedSettings() {
+    return _buildAudioSubtitleTiles(t.metadataEdit.seriesDefault);
+  }
+
+  List<Widget> _buildMetadataLanguageTiles() {
     return [
       _buildAdvancedTile(
         title: t.metadataEdit.metadataLanguage,
@@ -779,23 +755,23 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     ];
   }
 
-  List<Widget> _buildSeasonAdvancedSettings() {
+  List<Widget> _buildAudioSubtitleTiles(String defaultLabel) {
     return [
       _buildAdvancedTile(
         title: t.metadataEdit.preferredAudioLanguage,
         prefKey: 'audioLanguage',
-        options: _audioSubtitleLanguageOptions(t.metadataEdit.seriesDefault),
+        options: _audioSubtitleLanguageOptions(defaultLabel),
       ),
       _buildAdvancedTile(
         title: t.metadataEdit.preferredSubtitleLanguage,
         prefKey: 'subtitleLanguage',
-        options: _audioSubtitleLanguageOptions(t.metadataEdit.seriesDefault),
+        options: _audioSubtitleLanguageOptions(defaultLabel),
       ),
       _buildAdvancedTile(
         title: t.metadataEdit.subtitleMode,
         prefKey: 'subtitleMode',
         options: [
-          (value: '-1', label: t.metadataEdit.seriesDefault),
+          (value: '-1', label: defaultLabel),
           (value: '0', label: t.metadataEdit.manuallySelected),
           (value: '1', label: t.metadataEdit.shownWithForeignAudio),
           (value: '2', label: t.metadataEdit.alwaysEnabled),

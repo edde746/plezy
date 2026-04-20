@@ -209,6 +209,22 @@ class PlexChapter {
 
   Duration get startTime => Duration(milliseconds: startTimeOffset ?? 0);
   Duration? get endTime => endTimeOffset != null ? Duration(milliseconds: endTimeOffset!) : null;
+
+  /// Find the chapter index containing [position]. Returns null if none match.
+  /// A chapter's end defaults to the next chapter's start when [endTimeOffset]
+  /// is missing; the final chapter without an end extends to infinity.
+  static int? indexAtPosition(Duration position, List<PlexChapter> chapters) {
+    final positionMs = position.inMilliseconds;
+    for (int i = 0; i < chapters.length; i++) {
+      final chapter = chapters[i];
+      final startMs = chapter.startTimeOffset ?? 0;
+      final endMs =
+          chapter.endTimeOffset ??
+          (i < chapters.length - 1 ? chapters[i + 1].startTimeOffset ?? 0 : double.maxFinite.toInt());
+      if (positionMs >= startMs && positionMs < endMs) return i;
+    }
+    return null;
+  }
 }
 
 class PlexMarker {

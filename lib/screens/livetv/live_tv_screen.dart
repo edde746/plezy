@@ -321,6 +321,21 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   // Build
   // ---------------------------------------------------------------------------
 
+  List<Widget> _buildTabChipItems() {
+    return [
+      for (int i = 0; i < LiveTvTab.values.length; i++) ...[
+        if (i > 0) const SizedBox(width: 8),
+        buildTabChip(
+          _getTabLabel(LiveTvTab.values[i]),
+          i,
+          onSelectWhenActive: _focusCurrentTab,
+          onNavigateDown: _focusCurrentTab,
+          onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
+        ),
+      ],
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -328,22 +343,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: useSideNav
-            ? Row(
-                children: [
-                  for (int i = 0; i < LiveTvTab.values.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 8),
-                    buildTabChip(
-                      _getTabLabel(LiveTvTab.values[i]),
-                      i,
-                      onSelectWhenActive: _focusCurrentTab,
-                      onNavigateDown: _focusCurrentTab,
-                      onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
-                    ),
-                  ],
-                ],
-              )
-            : Text(t.liveTv.title),
+        title: useSideNav ? Row(children: _buildTabChipItems()) : Text(t.liveTv.title),
         actions: DesktopAppBarHelper.buildAdjustedActions([
           FocusableActionBar(
             key: _actionBarKey,
@@ -407,20 +407,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             alignment: Alignment.centerLeft,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (int i = 0; i < LiveTvTab.values.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 8),
-                    buildTabChip(
-                      _getTabLabel(LiveTvTab.values[i]),
-                      i,
-                      onSelectWhenActive: _focusCurrentTab,
-                      onNavigateDown: _focusCurrentTab,
-                      onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
-                    ),
-                  ],
-                ],
-              ),
+              child: Row(children: _buildTabChipItems()),
             ),
           ),
         Expanded(

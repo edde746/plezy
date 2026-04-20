@@ -327,26 +327,13 @@ class ContentStripState extends State<ContentStrip> {
       initialData: widget.player.state.position,
       builder: (context, positionSnapshot) {
         final currentPosition = positionSnapshot.data ?? Duration.zero;
-        final currentPositionMs = currentPosition.inMilliseconds;
-
-        int? currentChapterIndex;
-        for (int i = 0; i < widget.chapters.length; i++) {
-          final chapter = widget.chapters[i];
-          final startMs = chapter.startTimeOffset ?? 0;
-          final endMs =
-              chapter.endTimeOffset ??
-              (i < widget.chapters.length - 1 ? widget.chapters[i + 1].startTimeOffset ?? 0 : double.maxFinite.toInt());
-          if (currentPositionMs >= startMs && currentPositionMs < endMs) {
-            currentChapterIndex = i;
-            break;
-          }
-        }
+        final currentChapterIndex = PlexChapter.indexAtPosition(currentPosition, widget.chapters);
 
         // Auto-scroll to current chapter on first build
         if (!_hasAutoScrolledChapters && currentChapterIndex != null) {
           _hasAutoScrolledChapters = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _autoScrollTo(_chapterScrollController, currentChapterIndex!, isTablet: isTablet);
+            _autoScrollTo(_chapterScrollController, currentChapterIndex, isTablet: isTablet);
           });
         }
 

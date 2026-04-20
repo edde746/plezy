@@ -3,7 +3,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 
 import '../models.dart';
-import '../../utils/app_logger.dart';
 import 'player_base.dart';
 
 /// Shared native implementation of [Player] for iOS, macOS, Android (MPV fallback), and Linux.
@@ -156,15 +155,7 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    try {
-      await command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']);
-    } on PlatformException catch (e) {
-      if (e.code == 'COMMAND_FAILED' || e.code == 'NOT_INITIALIZED') {
-        appLogger.w('Seek failed (${e.code}), player not ready');
-        return;
-      }
-      rethrow;
-    }
+    await runSeek(() => command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']));
   }
 
   // ============================================

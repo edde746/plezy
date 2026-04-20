@@ -296,35 +296,27 @@ class GamepadService with WindowListener {
   }
 
   void _dispatchKeyDown(LogicalKeyboardKey logicalKey) {
-    final focusNode = FocusManager.instance.primaryFocus;
-    if (focusNode == null) return;
-
-    final event = KeyDownEvent(
-      physicalKey: _getPhysicalKey(logicalKey),
-      logicalKey: logicalKey,
-      timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+    _dispatchKeyEvent(
+      KeyDownEvent(
+        physicalKey: _getPhysicalKey(logicalKey),
+        logicalKey: logicalKey,
+        timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+      ),
     );
-
-    FocusNode? node = focusNode;
-    while (node != null) {
-      if (node.onKeyEvent != null) {
-        if (node.onKeyEvent!(node, event) == KeyEventResult.handled) break;
-      }
-      node = node.parent;
-    }
   }
 
   void _dispatchKeyUp(LogicalKeyboardKey logicalKey) {
-    final focusNode = FocusManager.instance.primaryFocus;
-    if (focusNode == null) return;
-
-    final event = KeyUpEvent(
-      physicalKey: _getPhysicalKey(logicalKey),
-      logicalKey: logicalKey,
-      timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+    _dispatchKeyEvent(
+      KeyUpEvent(
+        physicalKey: _getPhysicalKey(logicalKey),
+        logicalKey: logicalKey,
+        timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+      ),
     );
+  }
 
-    FocusNode? node = focusNode;
+  void _dispatchKeyEvent(KeyEvent event) {
+    FocusNode? node = FocusManager.instance.primaryFocus;
     while (node != null) {
       if (node.onKeyEvent != null) {
         if (node.onKeyEvent!(node, event) == KeyEventResult.handled) break;

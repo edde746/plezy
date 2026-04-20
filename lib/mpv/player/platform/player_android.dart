@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 
 import '../../models.dart';
-import '../../../utils/app_logger.dart';
 import '../player_base.dart';
 
 /// Android implementation of [Player] using ExoPlayer.
@@ -138,15 +137,7 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    try {
-      await invoke('seek', {'positionMs': position.inMilliseconds});
-    } on PlatformException catch (e) {
-      if (e.code == 'COMMAND_FAILED' || e.code == 'NOT_INITIALIZED') {
-        appLogger.w('Seek failed (${e.code}), player not ready');
-        return;
-      }
-      rethrow;
-    }
+    await runSeek(() => invoke('seek', {'positionMs': position.inMilliseconds}));
   }
 
   // ============================================

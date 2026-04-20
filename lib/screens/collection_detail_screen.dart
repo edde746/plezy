@@ -13,7 +13,6 @@ import '../utils/snackbar_helper.dart';
 import 'base_media_list_detail_screen.dart';
 import 'focusable_detail_screen_mixin.dart';
 import '../mixins/grid_focus_node_mixin.dart';
-import '../focus/key_event_utils.dart';
 
 /// Screen to display the contents of a collection
 class CollectionDetailScreen extends StatefulWidget {
@@ -182,32 +181,18 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (BackKeyCoordinator.consumeIfHandled()) return;
-        if (didPop) return;
-        final shouldPop = handleBackNavigation();
-        if (shouldPop && mounted) {
-          Navigator.pop(context);
-        }
-      },
-      child: Scaffold(
-        body: CustomScrollView(
-          controller: scrollController,
-          slivers: [
-            CustomAppBar(title: Text(widget.collection.title!), actions: buildFocusableAppBarActions()),
-            ...buildStateSlivers(),
-            if (items.isNotEmpty)
-              buildFocusableGrid(
-                items: items,
-                onRefresh: updateItem,
-                collectionId: widget.collection.ratingKey,
-                onListRefresh: loadItems,
-              ),
-          ],
-        ),
-      ),
+    return buildDetailScaffold(
+      slivers: [
+        CustomAppBar(title: Text(widget.collection.title!), actions: buildFocusableAppBarActions()),
+        ...buildStateSlivers(),
+        if (items.isNotEmpty)
+          buildFocusableGrid(
+            items: items,
+            onRefresh: updateItem,
+            collectionId: widget.collection.ratingKey,
+            onListRefresh: loadItems,
+          ),
+      ],
     );
   }
 }

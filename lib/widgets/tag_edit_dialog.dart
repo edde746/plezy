@@ -4,6 +4,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 import '../widgets/app_icon.dart';
+import '../widgets/dialog_action_button.dart';
 import '../widgets/focusable_list_tile.dart';
 
 class TagEditDialog extends StatefulWidget {
@@ -104,14 +105,11 @@ class _TagEditDialogState extends State<TagEditDialog> {
         ),
       ),
       actions: [
-        FocusableButton(
-          onPressed: () => Navigator.pop(context),
-          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        ),
-        FocusableButton(
-          focusNode: _saveFocusNode,
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(
           onPressed: () => Navigator.pop(context, _tags),
-          child: TextButton(onPressed: () => Navigator.pop(context, _tags), child: Text(t.common.save)),
+          label: t.common.save,
+          focusNode: _saveFocusNode,
         ),
       ],
     );

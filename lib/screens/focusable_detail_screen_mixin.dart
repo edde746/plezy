@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
+import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart' show ViewMode;
@@ -77,6 +78,27 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     } else {
       getGridItemFocusNode(targetIndex, prefix: 'detail_grid_item').requestFocus();
     }
+  }
+
+  /// Wrap [slivers] in the standard detail-screen scaffold — PopScope that
+  /// defers to [handleBackNavigation], plus a Scaffold with a CustomScrollView
+  /// bound to [scrollController]. Callers build the slivers themselves
+  /// (typically `[appBar, ...header, ...buildStateSlivers(), grid]`).
+  Widget buildDetailScaffold({required List<Widget> slivers}) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (BackKeyCoordinator.consumeIfHandled()) return;
+        if (didPop) return;
+        final shouldPop = handleBackNavigation();
+        if (shouldPop && mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        body: CustomScrollView(controller: scrollController, slivers: slivers),
+      ),
+    );
   }
 
   /// Handle back navigation for PopScope. Returns true if should pop.

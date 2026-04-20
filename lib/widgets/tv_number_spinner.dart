@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -7,6 +5,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
+import '../focus/key_repeat_helper.dart';
 import 'app_icon.dart';
 import '../theme/mono_tokens.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -62,9 +61,8 @@ class TvNumberSpinner extends StatefulWidget {
   State<TvNumberSpinner> createState() => _TvNumberSpinnerState();
 }
 
-class _TvNumberSpinnerState extends State<TvNumberSpinner> {
+class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<TvNumberSpinner> {
   late FocusNode _focusNode;
-  Timer? _repeatTimer;
   bool _isFocused = false;
 
   @override
@@ -75,7 +73,7 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
 
   @override
   void dispose() {
-    _repeatTimer?.cancel();
+    stopRepeat();
     _focusNode.dispose();
     super.dispose();
   }
@@ -92,24 +90,6 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
     if (newValue >= widget.min) {
       widget.onChanged(newValue);
     }
-  }
-
-  void _startRepeat(VoidCallback action) {
-    // Execute once immediately
-    action();
-
-    // Start repeat timer after initial delay
-    _repeatTimer?.cancel();
-    _repeatTimer = Timer(const Duration(milliseconds: 400), () {
-      _repeatTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-        action();
-      });
-    });
-  }
-
-  void _stopRepeat() {
-    _repeatTimer?.cancel();
-    _repeatTimer = null;
   }
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
@@ -129,15 +109,15 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
         return KeyEventResult.handled;
       }
       if (key.isUpKey || key.isRightKey) {
-        _startRepeat(_increment);
+        startRepeat(_increment);
         return KeyEventResult.handled;
       } else if (key.isDownKey || key.isLeftKey) {
-        _startRepeat(_decrement);
+        startRepeat(_decrement);
         return KeyEventResult.handled;
       }
     } else if (event is KeyUpEvent) {
       if (key.isUpKey || key.isRightKey || key.isDownKey || key.isLeftKey) {
-        _stopRepeat();
+        stopRepeat();
         return KeyEventResult.handled;
       }
     }
@@ -158,7 +138,7 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
       autofocus: widget.autofocus,
       onFocusChange: (hasFocus) {
         setState(() => _isFocused = hasFocus);
-        if (!hasFocus) _stopRepeat();
+        if (!hasFocus) stopRepeat();
       },
       onKeyEvent: _handleKeyEvent,
       child: AnimatedContainer(
@@ -181,8 +161,8 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
             _SpinnerButton(
               icon: Symbols.remove_rounded,
               onPressed: canDecrement ? _decrement : null,
-              onLongPressStart: canDecrement ? () => _startRepeat(_decrement) : null,
-              onLongPressEnd: _stopRepeat,
+              onLongPressStart: canDecrement ? () => startRepeat(_decrement) : null,
+              onLongPressEnd: stopRepeat,
               semanticLabel: 'Decrease',
             ),
             const SizedBox(width: 16),
@@ -200,8 +180,8 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
             _SpinnerButton(
               icon: Symbols.add_rounded,
               onPressed: canIncrement ? _increment : null,
-              onLongPressStart: canIncrement ? () => _startRepeat(_increment) : null,
-              onLongPressEnd: _stopRepeat,
+              onLongPressStart: canIncrement ? () => startRepeat(_increment) : null,
+              onLongPressEnd: stopRepeat,
               semanticLabel: 'Increase',
             ),
           ],

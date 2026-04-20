@@ -17,8 +17,6 @@ import '../../../providers/settings_provider.dart';
 import '../../../utils/grid_size_calculator.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/app_logger.dart';
-import '../../../utils/live_tv_player_navigation.dart';
-import '../../../utils/plex_image_helper.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focus_builders.dart';
@@ -26,8 +24,8 @@ import '../../../widgets/overlay_sheet.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../widgets/horizontal_scroll_with_arrows.dart';
 import '../../../widgets/plex_optimized_image.dart';
+import '../live_tv_actions_mixin.dart';
 import '../live_tv_show_schedule_screen.dart';
-import '../program_details_sheet.dart';
 
 class WhatsOnTab extends StatefulWidget {
   final List<LiveTvChannel> channels;
@@ -40,11 +38,14 @@ class WhatsOnTab extends StatefulWidget {
   State<WhatsOnTab> createState() => WhatsOnTabState();
 }
 
-class WhatsOnTabState extends State<WhatsOnTab> {
+class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnTab> {
   List<LiveTvHubResult> _hubs = [];
   bool _isLoading = true;
   Timer? _refreshTimer;
   List<GlobalKey<_LiveTvHubSectionState>> _hubKeys = [];
+
+  @override
+  List<LiveTvChannel> get liveTvChannels => widget.channels;
 
   @override
   void initState() {
@@ -135,39 +136,12 @@ class WhatsOnTabState extends State<WhatsOnTab> {
     return false;
   }
 
-  /// Find a channel by its identifier from the channel list.
-  LiveTvChannel? _findChannel(String? channelIdentifier) {
-    if (channelIdentifier == null) return null;
-    return widget.channels.where((ch) {
-      return ch.identifier == channelIdentifier || ch.key == channelIdentifier;
-    }).firstOrNull;
-  }
-
-  Future<void> _tuneChannel(LiveTvChannel channel) async {
-    final multiServer = context.read<MultiServerProvider>();
-    final serverInfo =
-        multiServer.liveTvServers.where((s) => s.serverId == channel.serverId).firstOrNull ??
-        multiServer.liveTvServers.firstOrNull;
-    if (serverInfo == null) return;
-
-    final client = multiServer.getClientForServer(serverInfo.serverId);
-    if (client == null) return;
-
-    await navigateToLiveTv(
-      context,
-      client: client,
-      dvrKey: serverInfo.dvrKey,
-      channel: channel,
-      channels: widget.channels,
-    );
-  }
-
   void _onItemTap(LiveTvHubEntry entry) {
-    final channel = _findChannel(entry.program.channelIdentifier);
+    final channel = findChannel(entry.program.channelIdentifier);
 
     if (entry.program.isCurrentlyAiring && channel != null) {
       // Live → play directly
-      _tuneChannel(channel);
+      tuneChannel(channel);
     } else if (entry.metadata.mediaType == PlexMediaType.show) {
       // Show with upcoming episodes → show full schedule
       Navigator.of(context).push(
@@ -181,36 +155,13 @@ class WhatsOnTabState extends State<WhatsOnTab> {
       );
     } else {
       // Individual program (episode, movie, etc.) → bottom sheet
-      _showProgramDetails(entry, channel);
-    }
-  }
-
-  void _showProgramDetails(LiveTvHubEntry entry, LiveTvChannel? channel) {
-    final program = entry.program;
-    final metadata = entry.metadata;
-
-    final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(metadata.serverId ?? '');
-    final posterImage = metadata.grandparentThumb ?? metadata.thumb;
-    String? posterUrl;
-    if (posterImage != null && client != null) {
-      posterUrl = PlexImageHelper.getOptimizedImageUrl(
-        client: client,
-        thumbPath: posterImage,
-        maxWidth: 80,
-        maxHeight: 120,
-        devicePixelRatio: PlexImageHelper.effectiveDevicePixelRatio(context),
-        imageType: ImageType.poster,
+      showProgramDetails(
+        program: entry.program,
+        channel: channel,
+        posterThumb: entry.metadata.grandparentThumb ?? entry.metadata.thumb,
+        posterServerId: entry.metadata.serverId ?? '',
       );
     }
-
-    showProgramDetailsSheet(
-      context,
-      program: program,
-      channel: channel,
-      posterUrl: posterUrl,
-      onTuneChannel: channel != null ? () => _tuneChannel(channel) : null,
-    );
   }
 
   @override
@@ -233,7 +184,12 @@ class WhatsOnTabState extends State<WhatsOnTab> {
             key: _hubKeys[index],
             hub: _hubs[index],
             onTap: _onItemTap,
-            onLongPress: (entry) => _showProgramDetails(entry, _findChannel(entry.program.channelIdentifier)),
+            onLongPress: (entry) => showProgramDetails(
+              program: entry.program,
+              channel: findChannel(entry.program.channelIdentifier),
+              posterThumb: entry.metadata.grandparentThumb ?? entry.metadata.thumb,
+              posterServerId: entry.metadata.serverId ?? '',
+            ),
             onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
             onBack: widget.onBack,
           );
