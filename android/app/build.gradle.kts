@@ -23,7 +23,7 @@ val downloadLibmpv by tasks.registering {
     }
 }
 
-val assVersion = "fp-2"
+val assVersion = "fp-3"
 val assDir = layout.buildDirectory.dir("libass").get().asFile
 val assAars = listOf("lib_ass-release.aar", "lib_ass_kt-release.aar", "lib_ass_media-release.aar")
 
