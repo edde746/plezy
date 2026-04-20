@@ -265,12 +265,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             frameRateManager = FrameRateManager(
                 activity = activity,
                 handler = handler,
-                onDisplayChanged = {
-                    if (exoPlayer?.isPlaying == false) {
-                        Log.d(TAG, "Display changed after frame rate switch, resuming playback")
-                        exoPlayer?.play()
-                    }
-                },
                 log = { emitLog("info", "framerate", it) }
             )
 
@@ -1616,8 +1610,18 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     // Frame Rate Matching
 
-    fun setVideoFrameRate(fps: Float, videoDurationMs: Long) {
-        frameRateManager?.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface)
+    fun setVideoFrameRate(
+        fps: Float,
+        videoDurationMs: Long,
+        extraDelayMs: Long,
+        onComplete: (switched: Boolean) -> Unit,
+    ) {
+        val mgr = frameRateManager
+        if (mgr == null) {
+            onComplete(false)
+            return
+        }
+        mgr.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface, extraDelayMs, onComplete)
     }
 
     fun clearVideoFrameRate() {

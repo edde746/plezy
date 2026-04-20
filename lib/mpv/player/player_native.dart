@@ -277,9 +277,14 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> setVideoFrameRate(double fps, int durationMs) async {
-    if (!Platform.isAndroid || disposed || !initialized) return;
-    await invoke('setVideoFrameRate', {'fps': fps, 'duration': durationMs});
+  Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0}) async {
+    if (!Platform.isAndroid || disposed || !initialized) return false;
+    final result = await invoke<bool>('setVideoFrameRate', {
+      'fps': fps,
+      'duration': durationMs,
+      'extraDelayMs': extraDelayMs,
+    });
+    return result ?? false;
   }
 
   @override

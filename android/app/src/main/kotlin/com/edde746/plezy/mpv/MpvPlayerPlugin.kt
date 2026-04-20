@@ -239,10 +239,17 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun handleSetVideoFrameRate(call: MethodCall, result: MethodChannel.Result) {
         val fps = call.argument<Double>("fps")?.toFloat() ?: 0f
         val duration = call.argument<Number>("duration")?.toLong() ?: 0L
+        val extraDelayMs = call.argument<Number>("extraDelayMs")?.toLong() ?: 0L
 
-        Log.d(TAG, "setVideoFrameRate: fps=$fps, duration=$duration")
-        playerCore?.setVideoFrameRate(fps, duration)
-        result.success(null)
+        Log.d(TAG, "setVideoFrameRate: fps=$fps, duration=$duration, extraDelayMs=$extraDelayMs")
+        val core = playerCore
+        if (core == null) {
+            result.success(false)
+            return
+        }
+        core.setVideoFrameRate(fps, duration, extraDelayMs) { switched ->
+            result.success(switched)
+        }
     }
 
     private fun handleClearVideoFrameRate(result: MethodChannel.Result) {

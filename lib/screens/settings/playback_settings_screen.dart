@@ -124,7 +124,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             if (Platform.isAndroid) _buildMatchContentFrameRate(),
             if (Platform.isWindows) _buildMatchRefreshRate(),
             if (Platform.isWindows) _buildMatchDynamicRange(),
-            if (Platform.isWindows && (_matchRefreshRate || _matchDynamicRange)) _buildDisplaySwitchDelay(),
+            if ((Platform.isWindows && (_matchRefreshRate || _matchDynamicRange)) ||
+                (Platform.isAndroid && _matchContentFrameRate))
+              _buildDisplaySwitchDelay(),
             if (Platform.isAndroid && _useExoPlayer) _buildTunneledPlayback(),
             _buildBufferSizeSelector(),
 

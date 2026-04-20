@@ -826,17 +826,23 @@ class PlexClient {
     }
   }
 
-  /// Parse audio and subtitle tracks from a stream list
-  ({List<PlexAudioTrack> audio, List<PlexSubtitleTrack> subtitles}) _parseStreams(List<dynamic>? streams) {
+  /// Parse audio/subtitle tracks and the video stream's frame rate from a
+  /// raw Part.Stream list in a single pass.
+  ({List<PlexAudioTrack> audio, List<PlexSubtitleTrack> subtitles, double? frameRate}) _parseStreams(
+    List<dynamic>? streams,
+  ) {
     final audioTracks = <PlexAudioTrack>[];
     final subtitleTracks = <PlexSubtitleTrack>[];
+    double? frameRate;
 
-    if (streams == null) return (audio: audioTracks, subtitles: subtitleTracks);
+    if (streams == null) return (audio: audioTracks, subtitles: subtitleTracks, frameRate: frameRate);
 
     for (var stream in streams) {
       final streamType = stream['streamType'] as int?;
 
-      if (streamType == PlexStreamType.audio) {
+      if (streamType == PlexStreamType.video) {
+        frameRate ??= (stream['frameRate'] as num?)?.toDouble();
+      } else if (streamType == PlexStreamType.audio) {
         audioTracks.add(
           PlexAudioTrack(
             id: stream['id'] as int,
@@ -868,7 +874,7 @@ class PlexClient {
       }
     }
 
-    return (audio: audioTracks, subtitles: subtitleTracks);
+    return (audio: audioTracks, subtitles: subtitleTracks, frameRate: frameRate);
   }
 
   /// Parse chapters from metadata JSON
@@ -1237,6 +1243,7 @@ class PlexClient {
               subtitleTracks: streams.subtitles,
               chapters: chapters,
               partId: part['id'] as int?,
+              frameRate: streams.frameRate,
             );
           }
         }

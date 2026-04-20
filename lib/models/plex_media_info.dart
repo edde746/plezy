@@ -9,6 +9,7 @@ class PlexMediaInfo {
   final List<PlexSubtitleTrack> subtitleTracks;
   final List<PlexChapter> chapters;
   final int? partId;
+  final double? frameRate;
 
   PlexMediaInfo({
     required this.videoUrl,
@@ -16,6 +17,7 @@ class PlexMediaInfo {
     required this.subtitleTracks,
     required this.chapters,
     this.partId,
+    this.frameRate,
   });
   int? getPartId() => partId;
 
@@ -31,12 +33,15 @@ class PlexMediaInfo {
 
     final audioTracks = <PlexAudioTrack>[];
     final subtitleTracks = <PlexSubtitleTrack>[];
+    double? frameRate;
 
     if (streams != null) {
       for (final s in streams) {
         try {
           final streamType = s['streamType'] as int?;
-          if (streamType == 2) {
+          if (streamType == 1) {
+            frameRate ??= (s['frameRate'] as num?)?.toDouble();
+          } else if (streamType == 2) {
             audioTracks.add(
               PlexAudioTrack(
                 id: s['id'] as int,
@@ -72,7 +77,13 @@ class PlexMediaInfo {
       }
     }
 
-    return PlexMediaInfo(videoUrl: '', audioTracks: audioTracks, subtitleTracks: subtitleTracks, chapters: const []);
+    return PlexMediaInfo(
+      videoUrl: '',
+      audioTracks: audioTracks,
+      subtitleTracks: subtitleTracks,
+      chapters: const [],
+      frameRate: frameRate,
+    );
   }
 }
 

@@ -433,14 +433,19 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun handleSetVideoFrameRate(call: MethodCall, result: MethodChannel.Result) {
         val fps = call.argument<Double>("fps")?.toFloat() ?: 0f
         val duration = call.argument<Number>("duration")?.toLong() ?: 0L
+        val extraDelayMs = call.argument<Number>("extraDelayMs")?.toLong() ?: 0L
 
-        Log.d(TAG, "setVideoFrameRate: fps=$fps, duration=$duration")
+        Log.d(TAG, "setVideoFrameRate: fps=$fps, duration=$duration, extraDelayMs=$extraDelayMs")
+        val onComplete: (Boolean) -> Unit = { switched -> result.success(switched) }
         if (usingMpvFallback) {
-            mpvCore?.setVideoFrameRate(fps, duration)
+            val core = mpvCore
+            if (core == null) result.success(false)
+            else core.setVideoFrameRate(fps, duration, extraDelayMs, onComplete)
         } else {
-            playerCore?.setVideoFrameRate(fps, duration)
+            val core = playerCore
+            if (core == null) result.success(false)
+            else core.setVideoFrameRate(fps, duration, extraDelayMs, onComplete)
         }
-        result.success(null)
     }
 
     private fun handleClearVideoFrameRate(result: MethodChannel.Result) {

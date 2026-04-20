@@ -134,9 +134,6 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
             frameRateManager = FrameRateManager(
                 activity = activity,
                 handler = handler,
-                onDisplayChanged = {
-                    requestAutoResume("display change")
-                }
             )
 
             // Create FrameLayout container for video
@@ -707,8 +704,18 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
     // Frame Rate Matching
 
-    fun setVideoFrameRate(fps: Float, videoDurationMs: Long) {
-        frameRateManager?.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface)
+    fun setVideoFrameRate(
+        fps: Float,
+        videoDurationMs: Long,
+        extraDelayMs: Long,
+        onComplete: (switched: Boolean) -> Unit,
+    ) {
+        val mgr = frameRateManager
+        if (mgr == null) {
+            onComplete(false)
+            return
+        }
+        mgr.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface, extraDelayMs, onComplete)
     }
 
     fun clearVideoFrameRate() {

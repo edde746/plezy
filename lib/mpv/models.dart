@@ -288,7 +288,11 @@ class Media {
   /// Optional start position for playback.
   final Duration? start;
 
-  const Media(this.uri, {this.headers, this.start});
+  /// Optional pre-known video frame rate (from server metadata), used to drive
+  /// display refresh-rate matching before the first frame renders.
+  final double? fps;
+
+  const Media(this.uri, {this.headers, this.start, this.fps});
 
   @override
   String toString() => 'Media($uri)';

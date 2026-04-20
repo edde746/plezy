@@ -213,9 +213,17 @@ abstract class Player {
   ///
   /// [fps] - The video frame rate (e.g., 23.976, 24, 30, 60).
   /// [durationMs] - The video duration in milliseconds.
+  /// [extraDelayMs] - Extra settle time (ms) added to the native display-change
+  ///                  wait before playback is auto-resumed. Used to absorb the
+  ///                  user-configured "display switch delay" on Android TV.
   ///
-  /// On other platforms, this is a no-op.
-  Future<void> setVideoFrameRate(double fps, int durationMs);
+  /// Returns `true` if a display mode switch was initiated and the platform
+  /// will resume playback once the display settles; `false` if no switch was
+  /// needed (seamless fallback, invalid fps, no matching mode), in which case
+  /// the caller is responsible for starting playback itself.
+  ///
+  /// On other platforms, this is a no-op that returns `false`.
+  Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0});
 
   /// Clear the video frame rate hint and restore default display mode.
   ///
