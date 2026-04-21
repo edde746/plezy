@@ -18,6 +18,7 @@ import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../focus/focusable_button.dart';
 import '../utils/navigation_transitions.dart';
+import '../widgets/dialog_action_button.dart';
 import 'main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -261,8 +262,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.common.cancel)),
-                ElevatedButton(
+                DialogActionButton(onPressed: () => Navigator.of(context).pop(), label: t.common.cancel),
+                DialogActionButton(
                   onPressed: () async {
                     final token = tokenController.text.trim();
                     if (token.isEmpty) {
@@ -298,7 +299,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       });
                     }
                   },
-                  child: Text(t.auth.authenticate),
+                  label: t.auth.authenticate,
+                  isPrimary: true,
                 ),
               ],
             );

@@ -28,9 +28,11 @@ import '../../providers/trakt_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/settings_section.dart';
 import 'about_screen.dart';
 import 'appearance_settings_screen.dart';
@@ -557,20 +559,21 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         ),
         actions: [
           if (isCustom)
-            TextButton(
+            DialogActionButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
                 await _resetDownloadLocation();
               },
-              child: Text(t.settings.resetToDefault),
+              label: t.settings.resetToDefault,
             ),
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-          FilledButton(
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+          DialogActionButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
               await _selectDownloadLocation();
             },
-            child: Text(t.settings.selectFolder),
+            label: t.settings.selectFolder,
+            isPrimary: true,
           ),
         ],
       ),
@@ -654,17 +657,17 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             onEditingComplete: () => saveFocusNode.requestFocus(),
           ),
           actions: [
-            TextButton(
+            DialogActionButton(
               onPressed: () async {
                 controller.clear();
                 await _settingsService.setCustomRelayUrl(null);
                 if (mounted) setState(() => _customRelayUrl = null);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
-              child: Text(t.settings.resetToDefault),
+              label: t.settings.resetToDefault,
             ),
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-            TextButton(
+            DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+            DialogActionButton(
               focusNode: saveFocusNode,
               onPressed: () async {
                 final url = controller.text.trim().isEmpty ? null : controller.text.trim();
@@ -672,7 +675,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 if (mounted) setState(() => _customRelayUrl = url);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
-              child: Text(t.common.save),
+              label: t.common.save,
             ),
           ],
         );
@@ -683,58 +686,33 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     });
   }
 
-  void _showClearCacheDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(t.settings.clearCache),
-          content: Text(t.settings.clearCacheDescription),
-          actions: [
-            TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-            TextButton(
-              onPressed: () async {
-                final navigator = Navigator.of(context);
-                await _settingsService.clearCache();
-                if (mounted) {
-                  navigator.pop();
-                  showSuccessSnackBar(this.context, t.settings.clearCacheSuccess);
-                }
-              },
-              child: Text(t.common.clear),
-            ),
-          ],
-        );
-      },
+  Future<void> _showClearCacheDialog() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.settings.clearCache,
+      message: t.settings.clearCacheDescription,
+      confirmText: t.common.clear,
     );
+    if (!confirmed) return;
+    await _settingsService.clearCache();
+    if (mounted) showSuccessSnackBar(context, t.settings.clearCacheSuccess);
   }
 
-  void _showResetSettingsDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(t.settings.resetSettings),
-          content: Text(t.settings.resetSettingsDescription),
-          actions: [
-            TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-            TextButton(
-              onPressed: () async {
-                final navigator = Navigator.of(context);
-                await _settingsService.resetAllSettings();
-                await _keyboardService?.resetToDefaults();
-                if (mounted) {
-                  navigator.pop();
-                  showSuccessSnackBar(this.context, t.settings.resetSettingsSuccess);
-                  _loadSettings();
-                }
-              },
-              child: Text(t.common.reset),
-            ),
-          ],
-        );
-      },
+  Future<void> _showResetSettingsDialog() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.settings.resetSettings,
+      message: t.settings.resetSettingsDescription,
+      confirmText: t.common.reset,
+      isDestructive: true,
     );
+    if (!confirmed) return;
+    await _settingsService.resetAllSettings();
+    await _keyboardService?.resetToDefaults();
+    if (mounted) {
+      showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
+      _loadSettings();
+    }
   }
 
   Future<void> _handleExportSettings() async {
@@ -750,26 +728,15 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     }
   }
 
-  void _showImportSettingsDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(t.settings.importSettings),
-          content: Text(t.settings.importSettingsConfirm),
-          actions: [
-            TextButton(autofocus: true, onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _handleImportSettings();
-              },
-              child: Text(t.settings.importSettings),
-            ),
-          ],
-        );
-      },
+  Future<void> _showImportSettingsDialog() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.settings.importSettings,
+      message: t.settings.importSettingsConfirm,
+      confirmText: t.settings.importSettings,
     );
+    if (!confirmed) return;
+    await _handleImportSettings();
   }
 
   Future<void> _handleImportSettings() async {
@@ -856,8 +823,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ],
           ),
           actions: [
-            TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.close)),
-            FilledButton(
+            DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.close),
+            DialogActionButton(
               onPressed: () async {
                 final url = Uri.parse(_updateInfo!['releaseUrl']);
                 if (await canLaunchUrl(url)) {
@@ -865,7 +832,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 }
                 if (context.mounted) Navigator.pop(context);
               },
-              child: Text(t.update.viewRelease),
+              label: t.update.viewRelease,
+              isPrimary: true,
             ),
           ],
         );

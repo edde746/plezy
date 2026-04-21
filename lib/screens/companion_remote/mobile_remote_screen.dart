@@ -11,6 +11,7 @@ import '../../providers/companion_remote_provider.dart';
 import '../../utils/platform_detector.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/dialogs.dart';
 import '../../widgets/companion_remote/discovery_view.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/pill_input_decoration.dart';
@@ -36,19 +37,15 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                   return IconButton(
                     icon: const Icon(Icons.link_off),
                     onPressed: () async {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(t.common.disconnect),
-                          content: Text(t.companionRemote.remote.disconnectConfirm),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-                            TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.disconnect)),
-                          ],
-                        ),
+                      final confirmed = await showConfirmDialog(
+                        context,
+                        title: t.common.disconnect,
+                        message: t.companionRemote.remote.disconnectConfirm,
+                        confirmText: t.common.disconnect,
+                        isDestructive: true,
                       );
 
-                      if (confirmed == true && context.mounted) {
+                      if (confirmed && context.mounted) {
                         await context.read<CompanionRemoteProvider>().leaveSession();
                       }
                     },

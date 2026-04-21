@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../widgets/dialog_action_button.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/tv_number_spinner.dart';
 
 /// Model for option selection dialogs.
@@ -13,7 +15,7 @@ class DialogOption<T> {
   const DialogOption({required this.value, required this.title, this.subtitle});
 }
 
-/// Shows an M3-conformant AlertDialog with RadioListTiles for multi-option selection.
+/// Shows a selection dialog with focusable rows for dpad/keyboard navigation.
 /// Used for settings with 5+ options (language, buffer size, etc.).
 Future<T?> showSelectionDialog<T>({
   required BuildContext context,
@@ -21,27 +23,29 @@ Future<T?> showSelectionDialog<T>({
   required List<DialogOption<T>> options,
   required T currentValue,
 }) {
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context);
   return showDialog<T>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(title),
       contentPadding: const EdgeInsets.only(top: 12, bottom: 24),
       content: SingleChildScrollView(
-        child: RadioGroup<T>(
-          groupValue: currentValue,
-          onChanged: (value) => Navigator.pop(dialogContext, value),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: options
-                .map(
-                  (option) => RadioListTile<T>(
-                    title: Text(option.title),
-                    subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
-                    value: option.value,
-                  ),
-                )
-                .toList(),
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: options.map((option) {
+            final selected = option.value == currentValue;
+            return FocusableListTile(
+              leading: Icon(
+                selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: selected ? Theme.of(dialogContext).colorScheme.primary : null,
+              ),
+              title: Text(option.title),
+              subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
+              selected: selected,
+              autofocus: focusFirstItem && selected,
+              onTap: () => Navigator.pop(dialogContext, option.value),
+            );
+          }).toList(),
         ),
       ),
     ),
@@ -133,8 +137,8 @@ void _showNumericInputDialogTV({
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-              TextButton(
+              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+              DialogActionButton(
                 focusNode: saveFocusNode,
                 onPressed: () async {
                   await onSave(spinnerValue);
@@ -142,7 +146,7 @@ void _showNumericInputDialogTV({
                     Navigator.pop(dialogContext);
                   }
                 },
-                child: Text(t.common.save),
+                label: t.common.save,
               ),
             ],
           );
@@ -201,8 +205,8 @@ void _showNumericInputDialogStandard({
               },
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-              TextButton(
+              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+              DialogActionButton(
                 focusNode: saveFocusNode,
                 onPressed: () async {
                   final parsed = int.tryParse(controller.text);
@@ -213,7 +217,7 @@ void _showNumericInputDialogStandard({
                     }
                   }
                 },
-                child: Text(t.common.save),
+                label: t.common.save,
               ),
             ],
           );
@@ -227,7 +231,7 @@ void _showNumericInputDialogStandard({
 }
 
 /// Shows a text input dialog with regex validation and reset-to-default support.
-void showTextInputDialog({
+void showRegexInputDialog({
   required BuildContext context,
   required String title,
   required String currentValue,
@@ -263,22 +267,22 @@ void showTextInputDialog({
               },
             ),
             actions: [
-              TextButton(
+              DialogActionButton(
                 onPressed: () {
                   controller.text = defaultValue;
                   setDialogState(() => errorText = null);
                 },
-                child: Text(t.settings.resetToDefault),
+                label: t.settings.resetToDefault,
               ),
-              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-              TextButton(
+              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+              DialogActionButton(
                 focusNode: saveFocusNode,
                 onPressed: () async {
                   if (errorText != null) return;
                   await onSave(controller.text);
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                 },
-                child: Text(t.common.save),
+                label: t.common.save,
               ),
             ],
           );

@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/focusable_action_bar.dart';
-import '../../focus/focusable_button.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
@@ -18,6 +17,7 @@ import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
@@ -593,29 +593,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     if (item == null) return;
 
     if (item.requiresConfirmation) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(item.confirmationTitle ?? t.dialog.confirmAction),
-          content: Text(item.confirmationMessage ?? t.libraries.confirmActionMessage),
-          actions: [
-            FocusableButton(
-              autofocus: true,
-              onPressed: () => Navigator.pop(context, false),
-              child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-            ),
-            FocusableButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: item.isDestructive ? TextButton.styleFrom(foregroundColor: Colors.red) : null,
-                child: Text(t.common.confirm),
-              ),
-            ),
-          ],
-        ),
+      final confirmed = await showConfirmDialog(
+        context,
+        title: item.confirmationTitle ?? t.dialog.confirmAction,
+        message: item.confirmationMessage ?? t.libraries.confirmActionMessage,
+        confirmText: t.common.confirm,
+        isDestructive: item.isDestructive,
       );
-      if (confirmed != true) return;
+      if (!confirmed) return;
     }
 
     switch (action) {

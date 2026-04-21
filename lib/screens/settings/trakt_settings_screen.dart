@@ -14,7 +14,9 @@ import '../../services/settings_service.dart';
 import '../../services/trakt/trakt_scrobble_service.dart';
 import '../../services/trakt/trakt_sync_service.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
@@ -99,21 +101,14 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
   }
 
   Future<void> _disconnect(TraktAccountProvider account) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.trakt.disconnectConfirm),
-        content: Text(t.trakt.disconnectConfirmBody),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(t.common.cancel)),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(t.common.disconnect, style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.trakt.disconnectConfirm,
+      message: t.trakt.disconnectConfirmBody,
+      confirmText: t.common.disconnect,
+      isDestructive: true,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     await account.disconnect();
     // build()'s post-frame handler pops the screen once the provider rebuilds
     // with isConnected == false — don't pop here too.
@@ -262,12 +257,12 @@ class _DeviceCodeDialogState extends State<_DeviceCodeDialog> {
         ],
       ),
       actions: [
-        TextButton(
+        DialogActionButton(
           onPressed: () {
             widget.account.cancelConnect();
             Navigator.of(context, rootNavigator: true).pop();
           },
-          child: Text(t.common.cancel),
+          label: t.common.cancel,
         ),
       ],
     );

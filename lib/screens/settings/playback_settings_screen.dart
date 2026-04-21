@@ -591,7 +591,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       title: Text(t.settings.introPattern),
       subtitle: Text(t.settings.introPatternDescription),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-      onTap: () => showTextInputDialog(
+      onTap: () => showRegexInputDialog(
         context: context,
         title: t.settings.introPattern,
         currentValue: _introPattern,
@@ -610,7 +610,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       title: Text(t.settings.creditsPattern),
       subtitle: Text(t.settings.creditsPatternDescription),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-      onTap: () => showTextInputDialog(
+      onTap: () => showRegexInputDialog(
         context: context,
         title: t.settings.creditsPattern,
         currentValue: _creditsPattern,
