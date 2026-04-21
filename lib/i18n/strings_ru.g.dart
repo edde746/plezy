@@ -1099,7 +1099,7 @@ class _TranslationsVideoSettingsRu implements TranslationsVideoSettingsEn {
 	@override String get audioOutput => 'Аудиовыход';
 	@override String get performanceOverlay => 'Оверлей производительности';
 	@override String get audioPassthrough => 'Сквозной вывод аудио';
-	@override String get audioNormalization => 'Нормализация аудио';
+	@override String get audioNormalization => 'Нормализация громкости';
 }
 
 // Path: externalPlayer
@@ -2205,7 +2205,7 @@ extension on TranslationsRu {
 			'videoSettings.audioOutput' => 'Аудиовыход',
 			'videoSettings.performanceOverlay' => 'Оверлей производительности',
 			'videoSettings.audioPassthrough' => 'Сквозной вывод аудио',
-			'videoSettings.audioNormalization' => 'Нормализация аудио',
+			'videoSettings.audioNormalization' => 'Нормализация громкости',
 			'externalPlayer.title' => 'Внешний плеер',
 			'externalPlayer.useExternalPlayer' => 'Использовать внешний плеер',
 			'externalPlayer.useExternalPlayerDescription' => 'Открывать видео во внешнем приложении вместо встроенного плеера',

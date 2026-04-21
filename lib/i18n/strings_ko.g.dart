@@ -1099,7 +1099,7 @@ class _TranslationsVideoSettingsKo implements TranslationsVideoSettingsEn {
 	@override String get audioOutput => '오디오 출력';
 	@override String get performanceOverlay => '성능 오버레이';
 	@override String get audioPassthrough => '오디오 패스스루';
-	@override String get audioNormalization => '오디오 정규화';
+	@override String get audioNormalization => '음량 정규화';
 }
 
 // Path: externalPlayer
@@ -2205,7 +2205,7 @@ extension on TranslationsKo {
 			'videoSettings.audioOutput' => '오디오 출력',
 			'videoSettings.performanceOverlay' => '성능 오버레이',
 			'videoSettings.audioPassthrough' => '오디오 패스스루',
-			'videoSettings.audioNormalization' => '오디오 정규화',
+			'videoSettings.audioNormalization' => '음량 정규화',
 			'externalPlayer.title' => '외부 플레이어',
 			'externalPlayer.useExternalPlayer' => '외부 플레이어 사용',
 			'externalPlayer.useExternalPlayerDescription' => '내장 플레이어 대신 외부 앱에서 동영상 열기',

@@ -876,7 +876,7 @@
     "audioOutput": "Uscita audio",
     "performanceOverlay": "Overlay prestazioni",
     "audioPassthrough": "Audio Passthrough",
-    "audioNormalization": "Normalizzazione audio"
+    "audioNormalization": "Normalizza volume"
   },
   "externalPlayer": {
     "title": "Lettore esterno",

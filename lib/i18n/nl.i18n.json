@@ -876,7 +876,7 @@
     "audioOutput": "Audio-uitvoer",
     "performanceOverlay": "Prestatie-overlay",
     "audioPassthrough": "Audio-doorvoer",
-    "audioNormalization": "Audionormalisatie"
+    "audioNormalization": "Volume normaliseren"
   },
   "externalPlayer": {
     "title": "Externe speler",

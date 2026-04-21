@@ -876,7 +876,7 @@
     "audioOutput": "Ljudutgång",
     "performanceOverlay": "Prestandaöverlägg",
     "audioPassthrough": "Ljudgenomkoppling",
-    "audioNormalization": "Ljudnormalisering"
+    "audioNormalization": "Normalisera ljudstyrka"
   },
   "externalPlayer": {
     "title": "Extern spelare",

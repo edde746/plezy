@@ -1099,7 +1099,7 @@ class _TranslationsVideoSettingsJa implements TranslationsVideoSettingsEn {
 	@override String get audioOutput => '音声出力';
 	@override String get performanceOverlay => 'パフォーマンスオーバーレイ';
 	@override String get audioPassthrough => 'オーディオパススルー';
-	@override String get audioNormalization => '音声正規化';
+	@override String get audioNormalization => 'ラウドネス正規化';
 }
 
 // Path: externalPlayer
@@ -2205,7 +2205,7 @@ extension on TranslationsJa {
 			'videoSettings.audioOutput' => '音声出力',
 			'videoSettings.performanceOverlay' => 'パフォーマンスオーバーレイ',
 			'videoSettings.audioPassthrough' => 'オーディオパススルー',
-			'videoSettings.audioNormalization' => '音声正規化',
+			'videoSettings.audioNormalization' => 'ラウドネス正規化',
 			'externalPlayer.title' => '外部プレーヤー',
 			'externalPlayer.useExternalPlayer' => '外部プレーヤーを使用',
 			'externalPlayer.useExternalPlayerDescription' => '内蔵プレーヤーの代わりに外部アプリで動画を開く',

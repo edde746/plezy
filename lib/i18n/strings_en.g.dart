@@ -2509,8 +2509,8 @@ class TranslationsVideoSettingsEn {
 	/// en: 'Audio Passthrough'
 	String get audioPassthrough => 'Audio Passthrough';
 
-	/// en: 'Audio Normalization'
-	String get audioNormalization => 'Audio Normalization';
+	/// en: 'Normalize Loudness'
+	String get audioNormalization => 'Normalize Loudness';
 }
 
 // Path: externalPlayer
@@ -4016,7 +4016,7 @@ extension on Translations {
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioPassthrough' => 'Audio Passthrough',
-			'videoSettings.audioNormalization' => 'Audio Normalization',
+			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in an external app instead of the built-in player',

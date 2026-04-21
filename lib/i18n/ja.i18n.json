@@ -876,7 +876,7 @@
     "audioOutput": "音声出力",
     "performanceOverlay": "パフォーマンスオーバーレイ",
     "audioPassthrough": "オーディオパススルー",
-    "audioNormalization": "音声正規化"
+    "audioNormalization": "ラウドネス正規化"
   },
   "externalPlayer": {
     "title": "外部プレーヤー",

@@ -1099,7 +1099,7 @@ class _TranslationsVideoSettingsPl implements TranslationsVideoSettingsEn {
 	@override String get audioOutput => 'Wyjście audio';
 	@override String get performanceOverlay => 'Nakładka wydajności';
 	@override String get audioPassthrough => 'Bezpośrednie audio';
-	@override String get audioNormalization => 'Normalizacja audio';
+	@override String get audioNormalization => 'Normalizacja głośności';
 }
 
 // Path: externalPlayer
@@ -2205,7 +2205,7 @@ extension on TranslationsPl {
 			'videoSettings.audioOutput' => 'Wyjście audio',
 			'videoSettings.performanceOverlay' => 'Nakładka wydajności',
 			'videoSettings.audioPassthrough' => 'Bezpośrednie audio',
-			'videoSettings.audioNormalization' => 'Normalizacja audio',
+			'videoSettings.audioNormalization' => 'Normalizacja głośności',
 			'externalPlayer.title' => 'Zewnętrzny odtwarzacz',
 			'externalPlayer.useExternalPlayer' => 'Użyj zewnętrznego odtwarzacza',
 			'externalPlayer.useExternalPlayerDescription' => 'Otwieraj wideo w zewnętrznej aplikacji zamiast wbudowanego odtwarzacza',

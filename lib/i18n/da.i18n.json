@@ -876,7 +876,7 @@
     "audioOutput": "Lydoutput",
     "performanceOverlay": "Ydelsesoverlay",
     "audioPassthrough": "Lyd-passthrough",
-    "audioNormalization": "Lydnormalisering"
+    "audioNormalization": "Normalisér lydstyrke"
   },
   "externalPlayer": {
     "title": "Ekstern afspiller",

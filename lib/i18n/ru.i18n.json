@@ -876,7 +876,7 @@
     "audioOutput": "Аудиовыход",
     "performanceOverlay": "Оверлей производительности",
     "audioPassthrough": "Сквозной вывод аудио",
-    "audioNormalization": "Нормализация аудио"
+    "audioNormalization": "Нормализация громкости"
   },
   "externalPlayer": {
     "title": "Внешний плеер",
