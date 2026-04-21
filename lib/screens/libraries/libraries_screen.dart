@@ -132,6 +132,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Initialize with libraries from the provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _initializeWithLibraries();
     });
   }

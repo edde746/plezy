@@ -118,6 +118,7 @@ class _AuthScreenState extends State<AuthScreen> {
       Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!)));
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
+      if (!mounted) return;
       setState(() {
         _isAuthenticating = false;
         _errorMessage = t.serverSelection.failedToLoadServers(error: e);

@@ -570,6 +570,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       appLogger.d('Discover content loaded successfully');
     } catch (e) {
       appLogger.e('Failed to load discover content', error: e);
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Failed to load content: $e';
         _isLoading = false;
