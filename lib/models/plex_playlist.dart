@@ -3,11 +3,13 @@ import 'package:json_annotation/json_annotation.dart';
 import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
 import 'mixins/multi_server_fields.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/json_utils.dart';
 
 part 'plex_playlist.g.dart';
 
 @JsonSerializable()
 class PlexPlaylist with MultiServerFields {
+  @JsonKey(readValue: readStringField)
   final String ratingKey;
   final String key;
   final String type; // "playlist"

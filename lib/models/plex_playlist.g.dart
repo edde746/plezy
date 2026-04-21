@@ -7,7 +7,7 @@ part of 'plex_playlist.dart';
 // **************************************************************************
 
 PlexPlaylist _$PlexPlaylistFromJson(Map<String, dynamic> json) => PlexPlaylist(
-  ratingKey: json['ratingKey'] as String,
+  ratingKey: readStringField(json, 'ratingKey') as String,
   key: json['key'] as String,
   type: json['type'] as String,
   title: json['title'] as String,

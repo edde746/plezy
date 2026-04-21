@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../focus/focusable_button.dart';
+import '../widgets/dialog_action_button.dart';
 import '../i18n/strings.g.dart';
 import '../models/plex_metadata.dart';
 import '../services/plex_client.dart';
@@ -298,13 +298,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
                   ),
                 ),
               ),
-              actions: [
-                FocusableButton(
-                  autofocus: true,
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-                ),
-              ],
+              actions: [DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel)],
             );
           },
         );

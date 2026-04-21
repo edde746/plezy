@@ -25,11 +25,11 @@ class PlexMediaInfo {
   /// Parses audio/subtitle tracks from `Media[0].Part[0].Stream[]` so that
   /// offline playback can still apply language-based track selection.
   static PlexMediaInfo? fromMetadataJson(Map<String, dynamic> metadata) {
-    final media = metadata['Media'] as List<dynamic>?;
+    final media = flexibleList(metadata['Media']);
     if (media == null || media.isEmpty) return null;
-    final parts = media.first['Part'] as List<dynamic>?;
+    final parts = flexibleList(media.first['Part']);
     if (parts == null || parts.isEmpty) return null;
-    final streams = parts.first['Stream'] as List<dynamic>?;
+    final streams = flexibleList(parts.first['Stream']);
 
     final audioTracks = <PlexAudioTrack>[];
     final subtitleTracks = <PlexSubtitleTrack>[];

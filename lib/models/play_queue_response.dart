@@ -1,23 +1,8 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../utils/json_utils.dart';
 import 'plex_metadata.dart';
 
 part 'play_queue_response.g.dart';
-
-/// Converter to handle both int (0/1) and bool values from Plex API
-class BoolOrIntConverter implements JsonConverter<bool, Object> {
-  const BoolOrIntConverter();
-
-  @override
-  bool fromJson(Object json) {
-    if (json is bool) return json;
-    if (json is int) return json != 0;
-    if (json is String) return json.toLowerCase() == 'true' || json == '1';
-    return false;
-  }
-
-  @override
-  Object toJson(bool object) => object;
-}
 
 /// Response from Plex play queue API
 /// Contains queue metadata and a window of items
@@ -27,7 +12,7 @@ class PlayQueueResponse {
   final int? playQueueSelectedItemID;
   final int? playQueueSelectedItemOffset;
   final String? playQueueSelectedMetadataItemID;
-  @BoolOrIntConverter()
+  @JsonKey(fromJson: flexibleBool)
   final bool playQueueShuffled;
   final String? playQueueSourceURI;
   final int? playQueueTotalCount;

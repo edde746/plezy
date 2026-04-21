@@ -7,7 +7,7 @@ part of 'plex_library.dart';
 // **************************************************************************
 
 PlexLibrary _$PlexLibraryFromJson(Map<String, dynamic> json) => PlexLibrary(
-  key: json['key'] as String,
+  key: readStringField(json, 'key') as String,
   title: json['title'] as String,
   type: json['type'] as String,
   agent: json['agent'] as String?,

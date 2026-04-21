@@ -11,7 +11,7 @@ import '../utils/json_utils.dart';
 
 part 'plex_metadata.g.dart';
 
-Object? _readRatingKey(Map json, String key) => json['ratingKey'] ?? json['key'] ?? '';
+Object? _readRatingKey(Map json, String key) => (json['ratingKey'] ?? json['key'] ?? '').toString();
 
 List<String>? _tagsFromJson(List? json) => json?.cast<Map<String, dynamic>>().map((e) => e['tag'] as String).toList();
 
@@ -410,14 +410,14 @@ class PlexMetadata with MultiServerFields {
   /// Create from JSON with Image array fields extracted
   factory PlexMetadata.fromJsonWithImages(Map<String, dynamic> json) {
     final clearLogoUrl = _extractImageFromJson(json, 'clearLogo');
-    if (clearLogoUrl != null) {
-      json['clearLogo'] = clearLogoUrl;
-    }
     final backgroundSquareUrl = _extractImageFromJson(json, 'backgroundSquare');
-    if (backgroundSquareUrl != null) {
-      json['backgroundSquare'] = backgroundSquareUrl;
+    if (clearLogoUrl == null && backgroundSquareUrl == null) {
+      return PlexMetadata.fromJson(json);
     }
-    return PlexMetadata.fromJson(json);
+    final enriched = Map<String, dynamic>.from(json);
+    if (clearLogoUrl != null) enriched['clearLogo'] = clearLogoUrl;
+    if (backgroundSquareUrl != null) enriched['backgroundSquare'] = backgroundSquareUrl;
+    return PlexMetadata.fromJson(enriched);
   }
 
   /// Returns the best hero art path based on the container's aspect ratio.

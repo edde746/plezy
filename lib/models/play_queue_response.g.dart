@@ -15,9 +15,7 @@ PlayQueueResponse _$PlayQueueResponseFromJson(Map<String, dynamic> json) =>
           ?.toInt(),
       playQueueSelectedMetadataItemID:
           json['playQueueSelectedMetadataItemID'] as String?,
-      playQueueShuffled: const BoolOrIntConverter().fromJson(
-        json['playQueueShuffled'] as Object,
-      ),
+      playQueueShuffled: flexibleBool(json['playQueueShuffled']),
       playQueueSourceURI: json['playQueueSourceURI'] as String?,
       playQueueTotalCount: (json['playQueueTotalCount'] as num?)?.toInt(),
       playQueueVersion: (json['playQueueVersion'] as num).toInt(),

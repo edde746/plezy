@@ -1,7 +1,8 @@
 import '../utils/json_utils.dart';
+import 'mixins/multi_server_fields.dart';
 
 /// Represents a Live TV channel from the EPG
-class LiveTvChannel {
+class LiveTvChannel with MultiServerFields {
   final String key;
   final String? identifier;
   final String? callSign;
@@ -14,8 +15,9 @@ class LiveTvChannel {
   final String? slug;
   final bool? drm;
 
-  // Multi-server support
+  @override
   final String? serverId;
+  @override
   final String? serverName;
 
   LiveTvChannel({

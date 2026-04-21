@@ -2,11 +2,13 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'mixins/multi_server_fields.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/json_utils.dart';
 
 part 'plex_library.g.dart';
 
 @JsonSerializable()
 class PlexLibrary with MultiServerFields {
+  @JsonKey(readValue: readStringField)
   final String key;
   final String title;
   final String type;

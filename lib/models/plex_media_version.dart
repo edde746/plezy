@@ -27,8 +27,8 @@ class PlexMediaVersion {
   /// Values may be String or int depending on the response format (XML vs JSON).
   factory PlexMediaVersion.fromJson(Map<String, dynamic> json) {
     // Get the first Part key for playback
-    final parts = json['Part'] as List<dynamic>?;
-    final partKey = parts != null && parts.isNotEmpty ? parts.first['key'] as String? ?? '' : '';
+    final parts = flexibleList(json['Part']);
+    final partKey = parts != null && parts.isNotEmpty ? parts.first['key']?.toString() ?? '' : '';
 
     return PlexMediaVersion(
       id: flexibleInt(json['id']) ?? 0,

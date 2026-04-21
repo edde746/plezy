@@ -33,12 +33,12 @@ class PlexSubtitleSearchResult {
 
   factory PlexSubtitleSearchResult.fromJson(Map<String, dynamic> json) {
     return PlexSubtitleSearchResult(
-      id: _parseInt(json['id']),
+      id: flexibleInt(json['id']) ?? 0,
       key: json['key']?.toString() ?? '',
       codec: json['codec']?.toString(),
       language: json['language']?.toString(),
       languageCode: json['languageCode']?.toString(),
-      score: _parseDouble(json['score']),
+      score: flexibleDouble(json['score']),
       providerTitle: json['providerTitle']?.toString(),
       title: json['title']?.toString(),
       displayTitle: json['displayTitle']?.toString(),
@@ -47,19 +47,5 @@ class PlexSubtitleSearchResult {
       downloaded: flexibleBool(json['downloaded']),
       forced: flexibleBool(json['forced']),
     );
-  }
-
-  static int _parseInt(dynamic v) {
-    if (v is int) return v;
-    if (v is num) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? 0;
-    return 0;
-  }
-
-  static double? _parseDouble(dynamic v) {
-    if (v is double) return v;
-    if (v is num) return v.toDouble();
-    if (v is String) return double.tryParse(v);
-    return null;
   }
 }
