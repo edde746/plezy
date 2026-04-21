@@ -356,6 +356,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   Future<void> _removeItem(int index) async {
+    if (items.isEmpty || index < 0 || index >= items.length) return;
     final item = items[index];
 
     // Check if item has playlistItemID (required for removal)
@@ -372,6 +373,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     // Optimistically update UI
     setState(() {
       items.removeAt(index);
+      if (_focusedIndex >= items.length) {
+        _focusedIndex = (items.length - 1).clamp(0, items.length);
+      }
+      if (items.isEmpty) {
+        _focusedColumn = 0;
+      }
     });
 
     // Call API to persist the change
@@ -388,6 +395,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         appLogger.e('Failed to remove playlist item, reverting UI');
         setState(() {
           items.insert(index, item);
+          _focusedIndex = index;
         });
 
         showErrorSnackBar(context, t.playlists.errorRemoving);
