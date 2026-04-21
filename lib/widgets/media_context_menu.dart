@@ -881,7 +881,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (sectionId == null) {
         if (context.mounted) {
-          showErrorSnackBar(context, 'Unable to determine library section for this item');
+          showErrorSnackBar(context, t.messages.unableToDetermineLibrarySection);
         }
         return;
       }
@@ -1514,7 +1514,9 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
                   return ListTile(
                     leading: const AppIcon(Symbols.collections_rounded, fill: 1),
                     title: Text(collection.title!),
-                    subtitle: collection.childCount != null ? Text('${collection.childCount} items') : null,
+                    subtitle: collection.childCount != null
+                        ? Text(t.playlists.itemCount(count: collection.childCount!))
+                        : null,
                     onTap: () => Navigator.pop(context, collection.ratingKey),
                   );
                 },

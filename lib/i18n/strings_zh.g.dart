@@ -579,6 +579,10 @@ class _TranslationsMessagesZh implements TranslationsMessagesEn {
 	@override String get errorLoadingSeries => '加载系列时出错';
 	@override String get errorLoadingSeason => '加载季时出错';
 	@override String get musicNotSupported => '尚不支持播放音乐';
+	@override String get noDescriptionAvailable => '暂无描述';
+	@override String get noProfilesAvailable => '没有可用的用户';
+	@override String get contactAdminForProfiles => '请联系您的 Plex 管理员添加用户';
+	@override String get unableToDetermineLibrarySection => '无法确定此项目的库分区';
 	@override String get logsCleared => '日志已清除';
 	@override String get logsCopied => '日志已复制到剪贴板';
 	@override String get noLogsAvailable => '没有可用日志';
@@ -1799,6 +1803,10 @@ extension on TranslationsZh {
 			'messages.errorLoadingSeries' => '加载系列时出错',
 			'messages.errorLoadingSeason' => '加载季时出错',
 			'messages.musicNotSupported' => '尚不支持播放音乐',
+			'messages.noDescriptionAvailable' => '暂无描述',
+			'messages.noProfilesAvailable' => '没有可用的用户',
+			'messages.contactAdminForProfiles' => '请联系您的 Plex 管理员添加用户',
+			'messages.unableToDetermineLibrarySection' => '无法确定此项目的库分区',
 			'messages.logsCleared' => '日志已清除',
 			'messages.logsCopied' => '日志已复制到剪贴板',
 			'messages.noLogsAvailable' => '没有可用日志',
@@ -1913,12 +1921,12 @@ extension on TranslationsZh {
 			'libraries.noFoldersFound' => '未找到文件夹',
 			'libraries.folders' => '文件夹',
 			'libraries.tabs.recommended' => '推荐',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.browse' => '浏览',
 			'libraries.tabs.collections' => '合集',
 			'libraries.tabs.playlists' => '播放列表',
 			'libraries.groupings.title' => '分组',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.groupings.all' => '全部',
 			'libraries.groupings.movies' => '电影',
 			'libraries.groupings.shows' => '剧集',

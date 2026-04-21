@@ -579,6 +579,10 @@ class _TranslationsMessagesPl implements TranslationsMessagesEn {
 	@override String get errorLoadingSeries => 'Błąd ładowania serialu';
 	@override String get errorLoadingSeason => 'Błąd ładowania sezonu';
 	@override String get musicNotSupported => 'Odtwarzanie muzyki nie jest jeszcze obsługiwane';
+	@override String get noDescriptionAvailable => 'Brak dostępnego opisu';
+	@override String get noProfilesAvailable => 'Brak dostępnych profili';
+	@override String get contactAdminForProfiles => 'Skontaktuj się z administratorem Plex, aby dodać profile';
+	@override String get unableToDetermineLibrarySection => 'Nie można określić sekcji biblioteki dla tego elementu';
 	@override String get logsCleared => 'Logi wyczyszczone';
 	@override String get logsCopied => 'Logi skopiowane do schowka';
 	@override String get noLogsAvailable => 'Brak dostępnych logów';
@@ -1799,6 +1803,10 @@ extension on TranslationsPl {
 			'messages.errorLoadingSeries' => 'Błąd ładowania serialu',
 			'messages.errorLoadingSeason' => 'Błąd ładowania sezonu',
 			'messages.musicNotSupported' => 'Odtwarzanie muzyki nie jest jeszcze obsługiwane',
+			'messages.noDescriptionAvailable' => 'Brak dostępnego opisu',
+			'messages.noProfilesAvailable' => 'Brak dostępnych profili',
+			'messages.contactAdminForProfiles' => 'Skontaktuj się z administratorem Plex, aby dodać profile',
+			'messages.unableToDetermineLibrarySection' => 'Nie można określić sekcji biblioteki dla tego elementu',
 			'messages.logsCleared' => 'Logi wyczyszczone',
 			'messages.logsCopied' => 'Logi skopiowane do schowka',
 			'messages.noLogsAvailable' => 'Brak dostępnych logów',
@@ -1913,12 +1921,12 @@ extension on TranslationsPl {
 			'libraries.noFoldersFound' => 'Nie znaleziono folderów',
 			'libraries.folders' => 'foldery',
 			'libraries.tabs.recommended' => 'Rekomendowane',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Przeglądaj',
 			'libraries.tabs.collections' => 'Kolekcje',
 			'libraries.tabs.playlists' => 'Playlisty',
 			'libraries.groupings.title' => 'Grupowanie',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.groupings.all' => 'Wszystkie',
 			'libraries.groupings.movies' => 'Filmy',
 			'libraries.groupings.shows' => 'Seriale TV',

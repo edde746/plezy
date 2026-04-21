@@ -142,8 +142,9 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   }
 
   Widget _buildDensitySelector() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
+    return Selector<SettingsProvider, int>(
+      selector: (_, p) => p.libraryDensity,
+      builder: (context, density, _) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
@@ -156,11 +157,11 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   Text(t.settings.compact, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   Expanded(
                     child: FocusableSlider(
-                      value: settingsProvider.libraryDensity.toDouble(),
+                      value: density.toDouble(),
                       min: 1,
                       max: 5,
                       divisions: 4,
-                      onChanged: (value) => settingsProvider.setLibraryDensity(value.round()),
+                      onChanged: (value) => context.read<SettingsProvider>().setLibraryDensity(value.round()),
                     ),
                   ),
                   Text(t.settings.comfortable, style: const TextStyle(fontSize: 12, color: Colors.grey)),
@@ -174,8 +175,9 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   }
 
   Widget _buildViewModeSelector() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
+    return Selector<SettingsProvider, settings.ViewMode>(
+      selector: (_, p) => p.viewMode,
+      builder: (context, viewMode, _) {
         return SegmentedSetting<settings.ViewMode>(
           icon: Symbols.view_list_rounded,
           title: t.settings.viewMode,
@@ -183,16 +185,17 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
             ButtonSegment(value: settings.ViewMode.grid, label: Text(t.settings.gridView)),
             ButtonSegment(value: settings.ViewMode.list, label: Text(t.settings.listView)),
           ],
-          selected: settingsProvider.viewMode,
-          onChanged: (value) => settingsProvider.setViewMode(value),
+          selected: viewMode,
+          onChanged: (value) => context.read<SettingsProvider>().setViewMode(value),
         );
       },
     );
   }
 
   Widget _buildEpisodePosterModeSelector() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
+    return Selector<SettingsProvider, settings.EpisodePosterMode>(
+      selector: (_, p) => p.episodePosterMode,
+      builder: (context, mode, _) {
         return SegmentedSetting<settings.EpisodePosterMode>(
           icon: Symbols.image_rounded,
           title: t.settings.episodePosterMode,
@@ -201,146 +204,112 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
             ButtonSegment(value: settings.EpisodePosterMode.seasonPoster, label: Text(t.settings.seasonPoster)),
             ButtonSegment(value: settings.EpisodePosterMode.episodeThumbnail, label: Text(t.settings.episodeThumbnail)),
           ],
-          selected: settingsProvider.episodePosterMode,
-          onChanged: (value) => settingsProvider.setEpisodePosterMode(value),
+          selected: mode,
+          onChanged: (value) => context.read<SettingsProvider>().setEpisodePosterMode(value),
         );
       },
+    );
+  }
+
+  /// Shared scaffolding for the bool toggles on this screen. Each toggle
+  /// watches one `SettingsProvider` field via `Selector`, so flipping one
+  /// switch doesn't rebuild the others.
+  Widget _buildBoolToggle({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool Function(SettingsProvider) getter,
+    required Future<void> Function(SettingsProvider, bool) setter,
+  }) {
+    return Selector<SettingsProvider, bool>(
+      selector: (_, p) => getter(p),
+      builder: (context, value, _) => SwitchListTile(
+        secondary: AppIcon(icon, fill: 1),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        value: value,
+        onChanged: (v) => setter(context.read<SettingsProvider>(), v),
+      ),
     );
   }
 
   // --- Home Screen section ---
 
-  Widget _buildShowHeroSection() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.featured_play_list_rounded, fill: 1),
-          title: Text(t.settings.showHeroSection),
-          subtitle: Text(t.settings.showHeroSectionDescription),
-          value: settingsProvider.showHeroSection,
-          onChanged: (value) async {
-            await settingsProvider.setShowHeroSection(value);
-          },
-        );
-      },
-    );
-  }
+  Widget _buildShowHeroSection() => _buildBoolToggle(
+    icon: Symbols.featured_play_list_rounded,
+    title: t.settings.showHeroSection,
+    subtitle: t.settings.showHeroSectionDescription,
+    getter: (p) => p.showHeroSection,
+    setter: (p, v) => p.setShowHeroSection(v),
+  );
 
-  Widget _buildUseGlobalHubs() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.home_rounded, fill: 1),
-          title: Text(t.settings.useGlobalHubs),
-          subtitle: Text(t.settings.useGlobalHubsDescription),
-          value: settingsProvider.useGlobalHubs,
-          onChanged: (value) async {
-            await settingsProvider.setUseGlobalHubs(value);
-          },
-        );
-      },
-    );
-  }
+  Widget _buildUseGlobalHubs() => _buildBoolToggle(
+    icon: Symbols.home_rounded,
+    title: t.settings.useGlobalHubs,
+    subtitle: t.settings.useGlobalHubsDescription,
+    getter: (p) => p.useGlobalHubs,
+    setter: (p, v) => p.setUseGlobalHubs(v),
+  );
 
-  Widget _buildShowServerNameOnHubs() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.dns_rounded, fill: 1),
-          title: Text(t.settings.showServerNameOnHubs),
-          subtitle: Text(t.settings.showServerNameOnHubsDescription),
-          value: settingsProvider.showServerNameOnHubs,
-          onChanged: (value) async {
-            await settingsProvider.setShowServerNameOnHubs(value);
-          },
-        );
-      },
-    );
-  }
+  Widget _buildShowServerNameOnHubs() => _buildBoolToggle(
+    icon: Symbols.dns_rounded,
+    title: t.settings.showServerNameOnHubs,
+    subtitle: t.settings.showServerNameOnHubsDescription,
+    getter: (p) => p.showServerNameOnHubs,
+    setter: (p, v) => p.setShowServerNameOnHubs(v),
+  );
 
   // --- Navigation section ---
 
-  Widget _buildAlwaysKeepSidebarOpen() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.dock_to_left_rounded, fill: 1),
-          title: Text(t.settings.alwaysKeepSidebarOpen),
-          subtitle: Text(t.settings.alwaysKeepSidebarOpenDescription),
-          value: settingsProvider.alwaysKeepSidebarOpen,
-          onChanged: (value) async {
-            await settingsProvider.setAlwaysKeepSidebarOpen(value);
-          },
-        );
-      },
-    );
-  }
+  Widget _buildAlwaysKeepSidebarOpen() => _buildBoolToggle(
+    icon: Symbols.dock_to_left_rounded,
+    title: t.settings.alwaysKeepSidebarOpen,
+    subtitle: t.settings.alwaysKeepSidebarOpenDescription,
+    getter: (p) => p.alwaysKeepSidebarOpen,
+    setter: (p, v) => p.setAlwaysKeepSidebarOpen(v),
+  );
 
-  Widget _buildShowNavBarLabels() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.label_rounded, fill: 1),
-          title: Text(t.settings.showNavBarLabels),
-          subtitle: Text(t.settings.showNavBarLabelsDescription),
-          value: settingsProvider.showNavBarLabels,
-          onChanged: (value) async {
-            await settingsProvider.setShowNavBarLabels(value);
-          },
-        );
-      },
-    );
-  }
+  Widget _buildShowNavBarLabels() => _buildBoolToggle(
+    icon: Symbols.label_rounded,
+    title: t.settings.showNavBarLabels,
+    subtitle: t.settings.showNavBarLabelsDescription,
+    getter: (p) => p.showNavBarLabels,
+    setter: (p, v) => p.setShowNavBarLabels(v),
+  );
 
-  Widget _buildShowUnwatchedCount() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.counter_1_rounded, fill: 1),
-          title: Text(t.settings.showUnwatchedCount),
-          subtitle: Text(t.settings.showUnwatchedCountDescription),
-          value: settingsProvider.showUnwatchedCount,
-          onChanged: (value) async {
-            await settingsProvider.setShowUnwatchedCount(value);
-          },
-        );
-      },
-    );
-  }
+  Widget _buildShowUnwatchedCount() => _buildBoolToggle(
+    icon: Symbols.counter_1_rounded,
+    title: t.settings.showUnwatchedCount,
+    subtitle: t.settings.showUnwatchedCountDescription,
+    getter: (p) => p.showUnwatchedCount,
+    setter: (p, v) => p.setShowUnwatchedCount(v),
+  );
 
   // --- Content section ---
 
-  Widget _buildLiveTvDefaultFavorites() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.star_rounded, fill: 1),
-          title: Text(t.settings.liveTvDefaultFavorites),
-          subtitle: Text(t.settings.liveTvDefaultFavoritesDescription),
-          value: settingsProvider.liveTvDefaultFavorites,
-          onChanged: (value) async {
-            await settingsProvider.setLiveTvDefaultFavorites(value);
-          },
-        );
-      },
-    );
-  }
+  Widget _buildLiveTvDefaultFavorites() => _buildBoolToggle(
+    icon: Symbols.star_rounded,
+    title: t.settings.liveTvDefaultFavorites,
+    subtitle: t.settings.liveTvDefaultFavoritesDescription,
+    getter: (p) => p.liveTvDefaultFavorites,
+    setter: (p, v) => p.setLiveTvDefaultFavorites(v),
+  );
 
-  Widget _buildHideSpoilers() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.visibility_off_rounded, fill: 1),
-          title: Text(t.settings.hideSpoilers),
-          subtitle: Text(t.settings.hideSpoilersDescription),
-          value: settingsProvider.hideSpoilers,
-          onChanged: (value) async {
-            await settingsProvider.setHideSpoilers(value);
-          },
-        );
-      },
-    );
-  }
+  Widget _buildHideSpoilers() => _buildBoolToggle(
+    icon: Symbols.visibility_off_rounded,
+    title: t.settings.hideSpoilers,
+    subtitle: t.settings.hideSpoilersDescription,
+    getter: (p) => p.hideSpoilers,
+    setter: (p, v) => p.setHideSpoilers(v),
+  );
+
+  Widget _buildAutoHidePerformanceOverlay() => _buildBoolToggle(
+    icon: Symbols.speed_rounded,
+    title: t.settings.autoHidePerformanceOverlay,
+    subtitle: t.settings.autoHidePerformanceOverlayDescription,
+    getter: (p) => p.autoHidePerformanceOverlay,
+    setter: (p, v) => p.setAutoHidePerformanceOverlay(v),
+  );
 
   Widget _buildRequireProfileSelection() {
     return Consumer<UserProfileProvider>(
@@ -384,22 +353,6 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
         await _settingsService.setForceTvMode(value);
         TvDetectionService.setForceTVSync(value);
         if (mounted) _restartApp();
-      },
-    );
-  }
-
-  Widget _buildAutoHidePerformanceOverlay() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.speed_rounded, fill: 1),
-          title: Text(t.settings.autoHidePerformanceOverlay),
-          subtitle: Text(t.settings.autoHidePerformanceOverlayDescription),
-          value: settingsProvider.autoHidePerformanceOverlay,
-          onChanged: (value) async {
-            await settingsProvider.setAutoHidePerformanceOverlay(value);
-          },
-        );
       },
     );
   }

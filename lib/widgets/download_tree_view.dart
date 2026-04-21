@@ -7,6 +7,7 @@ import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
 import '../utils/dialogs.dart';
+import 'download_status_icon.dart';
 
 /// Represents a node in the download tree
 class DownloadTreeNode {
@@ -707,41 +708,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   }
 
   Widget _buildStatusIcon(DownloadStatus status) {
-    IconData iconData;
-    Color? color;
-
-    switch (status) {
-      case DownloadStatus.downloading:
-        iconData = Symbols.downloading_rounded;
-        color = Colors.blue;
-        break;
-      case DownloadStatus.queued:
-        iconData = Symbols.schedule_rounded;
-        color = Colors.orange;
-        break;
-      case DownloadStatus.paused:
-        iconData = Symbols.pause_circle_outline_rounded;
-        color = Colors.grey;
-        break;
-      case DownloadStatus.completed:
-        iconData = Symbols.check_circle_rounded;
-        color = Colors.green;
-        break;
-      case DownloadStatus.failed:
-        iconData = Symbols.error_rounded;
-        color = Colors.red;
-        break;
-      case DownloadStatus.cancelled:
-        iconData = Symbols.cancel_rounded;
-        color = Colors.grey;
-        break;
-      case DownloadStatus.partial:
-        iconData = Symbols.downloading_rounded;
-        color = Colors.orange;
-        break;
-    }
-
-    return AppIcon(iconData, fill: 1, size: 20, color: color);
+    return DownloadStatusIcon(status: status, size: 20);
   }
 
   String _getNodeSummary() {

@@ -1719,7 +1719,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Uses the shared grid size calculator for consistency with library grids.
   double _getResponsiveCardWidth() {
     final density = context.read<SettingsProvider>().libraryDensity;
-    final availableWidth = MediaQuery.of(context).size.width;
+    final availableWidth = MediaQuery.sizeOf(context).width;
     return GridSizeCalculator.getCellWidth(availableWidth, context, density);
   }
 
@@ -2424,7 +2424,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     // Determine header height based on screen size
-    final size = MediaQuery.of(context).size;
+    final size = MediaQuery.sizeOf(context);
     final headerHeight = size.height * 0.6;
 
     final content = OverlaySheetHost(

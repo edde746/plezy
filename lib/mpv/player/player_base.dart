@@ -487,11 +487,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     trackController.add(_state.track);
   }
 
-  /// Update the internal state.
-  void updateState(PlayerState Function(PlayerState) update) {
-    _state = update(_state);
-  }
-
   @protected
   void clearTracks() {
     const empty = Tracks();

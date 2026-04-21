@@ -73,9 +73,10 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        return _buildItemsView(context, settingsProvider.viewMode, settingsProvider.libraryDensity);
+    return Selector<SettingsProvider, (ViewMode, int)>(
+      selector: (_, p) => (p.viewMode, p.libraryDensity),
+      builder: (context, slice, _) {
+        return _buildItemsView(context, slice.$1, slice.$2);
       },
     );
   }

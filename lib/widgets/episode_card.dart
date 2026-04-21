@@ -11,6 +11,7 @@ import '../providers/download_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/content_utils.dart';
 import '../widgets/collapsible_text.dart';
+import '../widgets/download_status_icon.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
 import '../utils/platform_detector.dart';
@@ -238,99 +239,30 @@ class _EpisodeCardState extends State<EpisodeCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Episode number and title with download status
-                        Consumer<DownloadProvider>(
-                          builder: (context, downloadProvider, _) {
+                        Selector<DownloadProvider, _DownloadSlice>(
+                          selector: (_, p) => _DownloadSlice.from(
+                            p.getProgress(widget.episode.globalKey),
+                            p.isQueueing(widget.episode.globalKey),
+                          ),
+                          builder: (context, slice, _) {
                             // Build download status icon based on state
                             Widget? downloadStatusIcon;
 
                             // Only show download status in online mode
                             if (!widget.isOffline && widget.episode.serverId != null) {
-                              final globalKey = widget.episode.globalKey;
-                              final progress = downloadProvider.getProgress(globalKey);
-                              final isQueueing = downloadProvider.isQueueing(globalKey);
+                              final status = slice.status;
+                              final mutedBase = tokens(context).textMuted;
 
-                              // Helper to get status-specific muted color
-                              Color getMutedColor(Color baseColor) {
-                                return Color.lerp(
-                                  tokens(context).textMuted,
-                                  baseColor,
-                                  0.3, // 30% of the status color, 70% muted
-                                )!;
-                              }
-
-                              if (isQueueing) {
-                                // Queueing state - building queue
-                                downloadStatusIcon = SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(strokeWidth: 1.5, color: tokens(context).textMuted),
-                                );
-                              } else if (progress?.status == DownloadStatus.queued) {
-                                // Queued state - waiting to download
-                                downloadStatusIcon = AppIcon(
-                                  Symbols.schedule_rounded,
-                                  fill: 1,
-                                  size: 12,
-                                  color: getMutedColor(Colors.orange),
-                                );
-                              } else if (progress?.status == DownloadStatus.downloading) {
-                                // Downloading state - active download with radial progress
-                                downloadStatusIcon = SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      // Background circle
-                                      CircularProgressIndicator(
-                                        value: 1.0,
-                                        strokeWidth: 1.5,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          getMutedColor(Theme.of(context).colorScheme.primary).withValues(alpha: 0.3),
-                                        ),
-                                      ),
-                                      // Progress circle
-                                      CircularProgressIndicator(
-                                        value: progress?.progressPercent,
-                                        strokeWidth: 1.5,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          getMutedColor(Theme.of(context).colorScheme.primary),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              } else if (progress?.status == DownloadStatus.paused) {
-                                // Paused state - download paused
-                                downloadStatusIcon = AppIcon(
-                                  Symbols.pause_circle_outline_rounded,
-                                  fill: 1,
-                                  size: 12,
-                                  color: getMutedColor(Colors.amber),
-                                );
-                              } else if (progress?.status == DownloadStatus.failed) {
-                                // Failed state - download failed
-                                downloadStatusIcon = AppIcon(
-                                  Symbols.error_outline_rounded,
-                                  fill: 1,
-                                  size: 12,
-                                  color: getMutedColor(Colors.red),
-                                );
-                              } else if (progress?.status == DownloadStatus.cancelled) {
-                                // Cancelled state - download cancelled
-                                downloadStatusIcon = AppIcon(
-                                  Symbols.cancel_rounded,
-                                  fill: 1,
-                                  size: 12,
-                                  color: getMutedColor(Colors.grey),
-                                );
-                              } else if (progress?.status == DownloadStatus.completed) {
-                                // Completed state - download complete
-                                downloadStatusIcon = AppIcon(
-                                  Symbols.file_download_done_rounded,
-                                  fill: 1,
-                                  size: 12,
-                                  color: getMutedColor(Colors.green),
+                              if (slice.isQueueing) {
+                                downloadStatusIcon = DownloadQueueingSpinner(size: 12, color: mutedBase);
+                              } else if (status != null) {
+                                final iconSize = status == DownloadStatus.downloading ? 14.0 : 12.0;
+                                downloadStatusIcon = DownloadStatusIcon(
+                                  status: status,
+                                  size: iconSize,
+                                  variant: DownloadStatusIconVariant.muted,
+                                  mutedBase: mutedBase,
+                                  progress: slice.progressPercent,
                                 );
                               }
                               // Note: No icon shown if not downloaded (null)
@@ -436,4 +368,29 @@ class _EpisodeCardState extends State<EpisodeCard> {
     }
     return const PlaceholderContainer(child: AppIcon(Symbols.movie_rounded, fill: 1, size: 32));
   }
+}
+
+/// Captures only primitives so Selector equality avoids rebuilds on unrelated
+/// download ticks (e.g. other episodes, unused `DownloadProgress` fields).
+class _DownloadSlice {
+  final DownloadStatus? status;
+  final double? progressPercent;
+  final bool isQueueing;
+
+  const _DownloadSlice({required this.status, required this.progressPercent, required this.isQueueing});
+
+  factory _DownloadSlice.from(DownloadProgress? p, bool isQueueing) =>
+      _DownloadSlice(status: p?.status, progressPercent: p?.progressPercent, isQueueing: isQueueing);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _DownloadSlice &&
+        other.status == status &&
+        other.progressPercent == progressPercent &&
+        other.isQueueing == isQueueing;
+  }
+
+  @override
+  int get hashCode => Object.hash(status, progressPercent, isQueueing);
 }

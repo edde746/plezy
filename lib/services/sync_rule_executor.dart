@@ -5,9 +5,11 @@ import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
+import '../utils/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 import 'download_manager_service.dart';
 import 'multi_server_manager.dart';
+import 'offline_mode_source.dart';
 import 'plex_client.dart';
 
 /// Sync-rule filter values stored in `SyncRules.downloadFilter`.
@@ -40,9 +42,17 @@ class SyncRuleExecutor {
   static const Duration _cooldownWifi = Duration(minutes: 30);
   static const Duration _cooldownCellular = Duration(hours: 3);
 
+  OfflineModeSource? _offlineSource;
+
   SyncRuleExecutor({required AppDatabase database}) : _database = database;
 
   bool get isExecuting => _isExecuting;
+
+  /// Inject the offline-mode source so we can skip running rules when the
+  /// device has no Plex connectivity (every `getChildren` call would fail).
+  void setOfflineSource(OfflineModeSource? source) {
+    _offlineSource = source;
+  }
 
   /// Execute every enabled sync rule.
   ///
@@ -64,6 +74,11 @@ class SyncRuleExecutor {
   }) async {
     if (_isExecuting) {
       appLogger.d('Sync rule execution already in progress, skipping');
+      return [];
+    }
+
+    if (_offlineSource?.isOffline ?? false) {
+      appLogger.d('Skipping sync rules — offline');
       return [];
     }
 
@@ -131,6 +146,11 @@ class SyncRuleExecutor {
   }) async {
     if (_isExecuting) {
       appLogger.d('Sync rule execution already in progress, skipping single-rule run for $globalKey');
+      return null;
+    }
+
+    if (_offlineSource?.isOffline ?? false) {
+      appLogger.d('Skipping single sync rule $globalKey — offline');
       return null;
     }
 
@@ -210,9 +230,9 @@ class SyncRuleExecutor {
   }) async {
     final unwatchedEpisodes = <PlexMetadata>[];
     if (rule.targetType == ContentTypes.show) {
-      await _collectEpisodesForShow(client, rule.ratingKey, unwatchedOnly: true, out: unwatchedEpisodes);
+      await collectEpisodesForShow(client, rule.ratingKey, unwatchedOnly: true, out: unwatchedEpisodes);
     } else {
-      await _collectEpisodesForSeason(client, rule.ratingKey, unwatchedOnly: true, out: unwatchedEpisodes);
+      await collectEpisodesForSeason(client, rule.ratingKey, unwatchedOnly: true, out: unwatchedEpisodes);
     }
 
     if (unwatchedEpisodes.isEmpty) {
@@ -333,41 +353,13 @@ class SyncRuleExecutor {
           if (unwatchedOnly && item.isWatched && !item.hasActiveProgress) break;
           out.add(item);
         case ContentTypes.show:
-          await _collectEpisodesForShow(client, item.ratingKey, unwatchedOnly: unwatchedOnly, out: out);
+          await collectEpisodesForShow(client, item.ratingKey, unwatchedOnly: unwatchedOnly, out: out);
         case ContentTypes.season:
-          await _collectEpisodesForSeason(client, item.ratingKey, unwatchedOnly: unwatchedOnly, out: out);
+          await collectEpisodesForSeason(client, item.ratingKey, unwatchedOnly: unwatchedOnly, out: out);
         default:
           // Skip music, clips, nested collections/playlists, unknown types.
           break;
       }
-    }
-  }
-
-  Future<void> _collectEpisodesForShow(
-    PlexClient client,
-    String showRatingKey, {
-    required bool unwatchedOnly,
-    required List<PlexMetadata> out,
-  }) async {
-    final seasons = await client.getChildren(showRatingKey);
-    for (final season in seasons) {
-      if (season.type == ContentTypes.season) {
-        await _collectEpisodesForSeason(client, season.ratingKey, unwatchedOnly: unwatchedOnly, out: out);
-      }
-    }
-  }
-
-  Future<void> _collectEpisodesForSeason(
-    PlexClient client,
-    String seasonRatingKey, {
-    required bool unwatchedOnly,
-    required List<PlexMetadata> out,
-  }) async {
-    final episodes = await client.getChildren(seasonRatingKey);
-    for (final ep in episodes) {
-      if (ep.type != ContentTypes.episode) continue;
-      if (unwatchedOnly && ep.isWatched && !ep.hasActiveProgress) continue;
-      out.add(ep);
     }
   }
 

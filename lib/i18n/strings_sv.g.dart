@@ -579,6 +579,10 @@ class _TranslationsMessagesSv implements TranslationsMessagesEn {
 	@override String get errorLoadingSeries => 'Fel vid laddning av serie';
 	@override String get errorLoadingSeason => 'Fel vid laddning av säsong';
 	@override String get musicNotSupported => 'Musikuppspelning stöds inte ännu';
+	@override String get noDescriptionAvailable => 'Ingen beskrivning tillgänglig';
+	@override String get noProfilesAvailable => 'Inga profiler tillgängliga';
+	@override String get contactAdminForProfiles => 'Kontakta din Plex-administratör för att lägga till profiler';
+	@override String get unableToDetermineLibrarySection => 'Kan inte avgöra biblioteksavdelningen för detta objekt';
 	@override String get logsCleared => 'Loggar rensade';
 	@override String get logsCopied => 'Loggar kopierade till urklipp';
 	@override String get noLogsAvailable => 'Inga loggar tillgängliga';
@@ -1799,6 +1803,10 @@ extension on TranslationsSv {
 			'messages.errorLoadingSeries' => 'Fel vid laddning av serie',
 			'messages.errorLoadingSeason' => 'Fel vid laddning av säsong',
 			'messages.musicNotSupported' => 'Musikuppspelning stöds inte ännu',
+			'messages.noDescriptionAvailable' => 'Ingen beskrivning tillgänglig',
+			'messages.noProfilesAvailable' => 'Inga profiler tillgängliga',
+			'messages.contactAdminForProfiles' => 'Kontakta din Plex-administratör för att lägga till profiler',
+			'messages.unableToDetermineLibrarySection' => 'Kan inte avgöra biblioteksavdelningen för detta objekt',
 			'messages.logsCleared' => 'Loggar rensade',
 			'messages.logsCopied' => 'Loggar kopierade till urklipp',
 			'messages.noLogsAvailable' => 'Inga loggar tillgängliga',
@@ -1913,12 +1921,12 @@ extension on TranslationsSv {
 			'libraries.noFoldersFound' => 'Inga mappar hittades',
 			'libraries.folders' => 'mappar',
 			'libraries.tabs.recommended' => 'Rekommenderat',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Bläddra',
 			'libraries.tabs.collections' => 'Samlingar',
 			'libraries.tabs.playlists' => 'Spellistor',
 			'libraries.groupings.title' => 'Gruppering',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.groupings.all' => 'Alla',
 			'libraries.groupings.movies' => 'Filmer',
 			'libraries.groupings.shows' => 'Serier',

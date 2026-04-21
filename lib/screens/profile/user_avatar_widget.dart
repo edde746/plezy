@@ -12,7 +12,6 @@ class UserAvatarWidget extends StatelessWidget {
   final double size;
   final bool showIndicators;
   final bool useTextLabels;
-  final VoidCallback? onTap;
 
   const UserAvatarWidget({
     super.key,
@@ -20,7 +19,6 @@ class UserAvatarWidget extends StatelessWidget {
     this.size = 40,
     this.showIndicators = true,
     this.useTextLabels = false,
-    this.onTap,
   });
 
   Widget _buildPlaceholderAvatar(ThemeData theme) {
@@ -196,15 +194,13 @@ class UserAvatarWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return useTextLabels
-        ? GestureDetector(
-            onTap: onTap,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [_buildAvatar(context, theme), ..._buildTextLabels(context, theme)],
-            ),
-          )
-        : GestureDetector(onTap: onTap, child: _buildAvatar(context, theme));
+    if (useTextLabels) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [_buildAvatar(context, theme), ..._buildTextLabels(context, theme)],
+      );
+    }
+    return _buildAvatar(context, theme);
   }
 }
 

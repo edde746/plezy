@@ -136,8 +136,8 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   bool _ownsNode = false;
   bool _isFocused = false;
 
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
+  late final AnimationController _animationController;
+  late final Animation<double> _scaleAnimation;
 
   // Long-press detection for SELECT key
   Timer? _longPressTimer;

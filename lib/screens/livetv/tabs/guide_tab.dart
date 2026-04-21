@@ -244,7 +244,7 @@ class GuideTabState extends State<GuideTab> {
       final offset = (minutesSinceStart / _minutesPerSlot) * _slotWidth;
       if (_gridHorizontalController.hasClients) {
         _gridHorizontalController.jumpTo(
-          (offset - MediaQuery.of(context).size.width / 3).clamp(0, _gridHorizontalController.position.maxScrollExtent),
+          (offset - MediaQuery.sizeOf(context).width / 3).clamp(0, _gridHorizontalController.position.maxScrollExtent),
         );
       }
     });

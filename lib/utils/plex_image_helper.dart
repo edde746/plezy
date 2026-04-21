@@ -243,15 +243,4 @@ class PlexImageHelper {
 
     return true;
   }
-
-  /// Creates a consistent cache key for rounded dimensions
-  static String generateCacheKey({
-    required String originalPath,
-    required int width,
-    required int height,
-    String? serverId,
-  }) {
-    final serverPrefix = serverId != null ? '${serverId}_' : '';
-    return '${serverPrefix}transcode_${width}x${height}_${originalPath.hashCode}';
-  }
 }

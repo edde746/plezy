@@ -1449,7 +1449,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // them in a single prepare() — no media reload needed for selection.
         // MPV (all platforms including Android): external subs added after open via sub-add.
         await player!.open(
-          Media(result.videoUrl!, start: resumePosition, headers: plexHeaders, fps: preKnownFps),
+          Media(result.videoUrl!, start: resumePosition, headers: plexHeaders),
           play: !willAutoSwitch && (isExoPlayer || !hasExternalSubs),
           externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
         );

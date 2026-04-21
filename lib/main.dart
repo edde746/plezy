@@ -638,6 +638,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
             _startConnectivitySyncTrigger(downloadProvider);
 
+            // Thread the offline flag into services so queue/resume paths can
+            // short-circuit instead of hitting the network and failing.
+            downloadProvider.setOfflineSource(offlineModeProvider);
+
             _offlineWatchSyncService.startConnectivityMonitoring(offlineModeProvider);
             return _offlineWatchSyncService;
           },

@@ -9,6 +9,19 @@ import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import 'settings_service.dart';
 
+/// Thrown when the downloads storage layer cannot create or access a directory
+/// (permission denied, quota exceeded, SAF permission revoked, etc.).
+class DownloadStorageException implements Exception {
+  final String message;
+  final String path;
+  final Object cause;
+
+  DownloadStorageException(this.message, this.path, this.cause);
+
+  @override
+  String toString() => 'DownloadStorageException: $message (path: $path, cause: $cause)';
+}
+
 class DownloadStorageService {
   static DownloadStorageService? _instance;
   static DownloadStorageService get instance => _instance ??= DownloadStorageService._();
@@ -219,12 +232,17 @@ class DownloadStorageService {
         .trim();
   }
 
-  /// Ensure a directory exists, creating it if necessary
+  /// Ensure a directory exists, creating it if necessary.
+  /// `Directory.create(recursive: true)` is idempotent — it no-ops if the
+  /// directory already exists.
   Future<Directory> _ensureDirectoryExists(Directory dir) async {
-    if (!await dir.exists()) {
+    try {
       await dir.create(recursive: true);
+      return dir;
+    } catch (e, st) {
+      appLogger.e('Failed to ensure directory exists: ${dir.path}', error: e, stackTrace: st);
+      throw DownloadStorageException('Cannot create directory', dir.path, e);
     }
-    return dir;
   }
 
   /// Format a media title with optional year: "Title (YYYY)" or "Title"

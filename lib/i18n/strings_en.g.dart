@@ -1317,6 +1317,18 @@ class TranslationsMessagesEn {
 	/// en: 'Music playback is not yet supported'
 	String get musicNotSupported => 'Music playback is not yet supported';
 
+	/// en: 'No description available'
+	String get noDescriptionAvailable => 'No description available';
+
+	/// en: 'No profiles available'
+	String get noProfilesAvailable => 'No profiles available';
+
+	/// en: 'Contact your Plex administrator to add profiles'
+	String get contactAdminForProfiles => 'Contact your Plex administrator to add profiles';
+
+	/// en: 'Unable to determine library section for this item'
+	String get unableToDetermineLibrarySection => 'Unable to determine library section for this item';
+
 	/// en: 'Logs cleared'
 	String get logsCleared => 'Logs cleared';
 
@@ -3602,6 +3614,10 @@ extension on Translations {
 			'messages.errorLoadingSeries' => 'Error loading series',
 			'messages.errorLoadingSeason' => 'Error loading season',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
+			'messages.noDescriptionAvailable' => 'No description available',
+			'messages.noProfilesAvailable' => 'No profiles available',
+			'messages.contactAdminForProfiles' => 'Contact your Plex administrator to add profiles',
+			'messages.unableToDetermineLibrarySection' => 'Unable to determine library section for this item',
 			'messages.logsCleared' => 'Logs cleared',
 			'messages.logsCopied' => 'Logs copied to clipboard',
 			'messages.noLogsAvailable' => 'No logs available',
@@ -3716,12 +3732,12 @@ extension on Translations {
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
 			'libraries.tabs.recommended' => 'Recommended',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Browse',
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Grouping',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.groupings.all' => 'All',
 			'libraries.groupings.movies' => 'Movies',
 			'libraries.groupings.shows' => 'TV Shows',

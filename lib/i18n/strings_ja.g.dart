@@ -579,6 +579,10 @@ class _TranslationsMessagesJa implements TranslationsMessagesEn {
 	@override String get errorLoadingSeries => 'シリーズの読み込みエラー';
 	@override String get errorLoadingSeason => 'シーズンの読み込みエラー';
 	@override String get musicNotSupported => '音楽の再生はまだサポートされていません';
+	@override String get noDescriptionAvailable => '説明はありません';
+	@override String get noProfilesAvailable => '利用可能なプロフィールがありません';
+	@override String get contactAdminForProfiles => 'プロフィールを追加するにはPlex管理者にお問い合わせください';
+	@override String get unableToDetermineLibrarySection => 'このアイテムのライブラリセクションを判別できません';
 	@override String get logsCleared => 'ログをクリアしました';
 	@override String get logsCopied => 'ログをクリップボードにコピーしました';
 	@override String get noLogsAvailable => 'ログがありません';
@@ -1799,6 +1803,10 @@ extension on TranslationsJa {
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
 			'messages.errorLoadingSeason' => 'シーズンの読み込みエラー',
 			'messages.musicNotSupported' => '音楽の再生はまだサポートされていません',
+			'messages.noDescriptionAvailable' => '説明はありません',
+			'messages.noProfilesAvailable' => '利用可能なプロフィールがありません',
+			'messages.contactAdminForProfiles' => 'プロフィールを追加するにはPlex管理者にお問い合わせください',
+			'messages.unableToDetermineLibrarySection' => 'このアイテムのライブラリセクションを判別できません',
 			'messages.logsCleared' => 'ログをクリアしました',
 			'messages.logsCopied' => 'ログをクリップボードにコピーしました',
 			'messages.noLogsAvailable' => 'ログがありません',
@@ -1913,12 +1921,12 @@ extension on TranslationsJa {
 			'libraries.noFoldersFound' => 'フォルダが見つかりません',
 			'libraries.folders' => 'フォルダ',
 			'libraries.tabs.recommended' => 'おすすめ',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.browse' => 'ブラウズ',
 			'libraries.tabs.collections' => 'コレクション',
 			'libraries.tabs.playlists' => 'プレイリスト',
 			'libraries.groupings.title' => 'グループ',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.groupings.all' => 'すべて',
 			'libraries.groupings.movies' => '映画',
 			'libraries.groupings.shows' => 'テレビ番組',

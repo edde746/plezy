@@ -579,6 +579,10 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 	@override String get errorLoadingSeries => '시리즈 로딩 중 오류';
 	@override String get errorLoadingSeason => '시즌 로딩 중 오류';
 	@override String get musicNotSupported => '음악 재생 미지원';
+	@override String get noDescriptionAvailable => '설명이 없습니다';
+	@override String get noProfilesAvailable => '사용 가능한 프로필이 없습니다';
+	@override String get contactAdminForProfiles => '프로필을 추가하려면 Plex 관리자에게 문의하세요';
+	@override String get unableToDetermineLibrarySection => '이 항목의 라이브러리 섹션을 확인할 수 없습니다';
 	@override String get logsCleared => '로그가 삭제 되었습니다';
 	@override String get logsCopied => '로그가 클립보드에 복사 되었습니다';
 	@override String get noLogsAvailable => '사용 가능한 로그가 없습니다';
@@ -1799,6 +1803,10 @@ extension on TranslationsKo {
 			'messages.errorLoadingSeries' => '시리즈 로딩 중 오류',
 			'messages.errorLoadingSeason' => '시즌 로딩 중 오류',
 			'messages.musicNotSupported' => '음악 재생 미지원',
+			'messages.noDescriptionAvailable' => '설명이 없습니다',
+			'messages.noProfilesAvailable' => '사용 가능한 프로필이 없습니다',
+			'messages.contactAdminForProfiles' => '프로필을 추가하려면 Plex 관리자에게 문의하세요',
+			'messages.unableToDetermineLibrarySection' => '이 항목의 라이브러리 섹션을 확인할 수 없습니다',
 			'messages.logsCleared' => '로그가 삭제 되었습니다',
 			'messages.logsCopied' => '로그가 클립보드에 복사 되었습니다',
 			'messages.noLogsAvailable' => '사용 가능한 로그가 없습니다',
@@ -1913,12 +1921,12 @@ extension on TranslationsKo {
 			'libraries.noFoldersFound' => '폴더를 찾을 수 없습니다',
 			'libraries.folders' => '폴더',
 			'libraries.tabs.recommended' => '추천',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.browse' => '찾아보기',
 			'libraries.tabs.collections' => '컬렉션',
 			'libraries.tabs.playlists' => '재생 목록',
 			'libraries.groupings.title' => '그룹',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.groupings.all' => '전체',
 			'libraries.groupings.movies' => '영화',
 			'libraries.groupings.shows' => 'TV 프로그램',

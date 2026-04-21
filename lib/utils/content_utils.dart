@@ -89,12 +89,7 @@ extension PlexMetadataType on PlexMetadata {
   bool get isMovie => _lowerType == ContentTypes.movie;
   bool get isSeason => _lowerType == ContentTypes.season;
   bool get isEpisode => _lowerType == ContentTypes.episode;
-  bool get isArtist => _lowerType == ContentTypes.artist;
-  bool get isAlbum => _lowerType == ContentTypes.album;
-  bool get isTrack => _lowerType == ContentTypes.track;
   bool get isCollection => _lowerType == ContentTypes.collection;
-  bool get isPlaylist => _lowerType == ContentTypes.playlist;
-  bool get isClip => _lowerType == ContentTypes.clip;
   bool get isMusicContent => ContentTypes.musicTypes.contains(_lowerType);
   bool get isVideoContent => ContentTypes.videoTypes.contains(_lowerType);
 

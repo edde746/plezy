@@ -579,6 +579,10 @@ class _TranslationsMessagesNl implements TranslationsMessagesEn {
 	@override String get errorLoadingSeries => 'Fout bij laden serie';
 	@override String get errorLoadingSeason => 'Fout bij laden seizoen';
 	@override String get musicNotSupported => 'Muziek afspelen wordt nog niet ondersteund';
+	@override String get noDescriptionAvailable => 'Geen beschrijving beschikbaar';
+	@override String get noProfilesAvailable => 'Geen profielen beschikbaar';
+	@override String get contactAdminForProfiles => 'Neem contact op met je Plex-beheerder om profielen toe te voegen';
+	@override String get unableToDetermineLibrarySection => 'Kan bibliotheeksectie voor dit item niet bepalen';
 	@override String get logsCleared => 'Logs gewist';
 	@override String get logsCopied => 'Logs gekopieerd naar klembord';
 	@override String get noLogsAvailable => 'Geen logs beschikbaar';
@@ -1799,6 +1803,10 @@ extension on TranslationsNl {
 			'messages.errorLoadingSeries' => 'Fout bij laden serie',
 			'messages.errorLoadingSeason' => 'Fout bij laden seizoen',
 			'messages.musicNotSupported' => 'Muziek afspelen wordt nog niet ondersteund',
+			'messages.noDescriptionAvailable' => 'Geen beschrijving beschikbaar',
+			'messages.noProfilesAvailable' => 'Geen profielen beschikbaar',
+			'messages.contactAdminForProfiles' => 'Neem contact op met je Plex-beheerder om profielen toe te voegen',
+			'messages.unableToDetermineLibrarySection' => 'Kan bibliotheeksectie voor dit item niet bepalen',
 			'messages.logsCleared' => 'Logs gewist',
 			'messages.logsCopied' => 'Logs gekopieerd naar klembord',
 			'messages.noLogsAvailable' => 'Geen logs beschikbaar',
@@ -1913,12 +1921,12 @@ extension on TranslationsNl {
 			'libraries.noFoldersFound' => 'Geen mappen gevonden',
 			'libraries.folders' => 'mappen',
 			'libraries.tabs.recommended' => 'Aanbevolen',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Bladeren',
 			'libraries.tabs.collections' => 'Collecties',
 			'libraries.tabs.playlists' => 'Afspeellijsten',
 			'libraries.groupings.title' => 'Groepering',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.groupings.all' => 'Alles',
 			'libraries.groupings.movies' => 'Films',
 			'libraries.groupings.shows' => 'Series',

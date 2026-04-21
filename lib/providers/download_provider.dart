@@ -10,11 +10,13 @@ import '../database/app_database.dart';
 import '../services/download_manager_service.dart';
 import '../services/download_storage_service.dart';
 import '../services/multi_server_manager.dart';
+import '../services/offline_mode_source.dart';
 import '../services/storage_service.dart';
 import '../services/plex_api_cache.dart';
 import '../services/plex_client.dart';
 import '../services/sync_rule_executor.dart';
 import '../utils/app_logger.dart';
+import '../utils/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 
 /// Filter mode for batch downloads (shows/seasons).
@@ -67,6 +69,8 @@ class DownloadProvider extends ChangeNotifier {
   // Persistent sync rules: globalKey -> SyncRuleItem
   final Map<String, SyncRuleItem> _syncRules = {};
 
+  OfflineModeSource? _offlineSource;
+
   DownloadProvider({required DownloadManagerService downloadManager, required AppDatabase database})
     : _downloadManager = downloadManager,
       _database = database,
@@ -79,6 +83,15 @@ class DownloadProvider extends ChangeNotifier {
 
     // Load persisted downloads from database
     _initFuture = _loadPersistedDownloads();
+  }
+
+  /// Inject the offline-mode source so queueing paths can short-circuit when
+  /// the device has no Plex connectivity. Propagates to the download manager
+  /// and the sync-rule executor so background paths see the same flag.
+  void setOfflineSource(OfflineModeSource? source) {
+    _offlineSource = source;
+    _downloadManager.setOfflineSource(source);
+    _syncRuleExecutor.setOfflineSource(source);
   }
 
   /// Ensures persisted downloads have been loaded from disk.
@@ -694,14 +707,22 @@ class DownloadProvider extends ChangeNotifier {
     // Hub items may have summary but the cache at /library/metadata/$ratingKey
     // won't have the full API response (with Media/Part data needed for video URL)
     // unless getMetadataWithImages has been called.
+    //
+    // Skip the fetch when offline — it would just fail. The partial metadata
+    // from whatever hub/grid invoked the queue is good enough to enqueue; the
+    // actual video URL resolves later when we're back online.
     PlexMetadata metadataToStore = metadata;
-    try {
-      final fullMetadata = await client.getMetadataWithImages(metadata.ratingKey);
-      if (fullMetadata != null) {
-        metadataToStore = fullMetadata.copyWith(serverId: metadata.serverId, serverName: metadata.serverName);
+    if (_offlineSource?.isOffline ?? false) {
+      appLogger.d('Offline — using partial metadata for ${metadata.ratingKey}');
+    } else {
+      try {
+        final fullMetadata = await client.getMetadataWithImages(metadata.ratingKey);
+        if (fullMetadata != null) {
+          metadataToStore = fullMetadata.copyWith(serverId: metadata.serverId, serverName: metadata.serverName);
+        }
+      } catch (e) {
+        appLogger.w('Failed to fetch full metadata for ${metadata.ratingKey}, using partial', error: e);
       }
-    } catch (e) {
-      appLogger.w('Failed to fetch full metadata for ${metadata.ratingKey}, using partial', error: e);
     }
 
     // Smart version matching for series/season downloads
@@ -796,29 +817,15 @@ class DownloadProvider extends ChangeNotifier {
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
   }) async {
-    int count = 0;
-    final seasons = await client.getChildren(show.ratingKey);
-
     await _storeLeafCount(show.globalKey, show);
-
-    int? remaining = maxCount;
-    for (final season in seasons) {
-      if (season.type == 'season') {
-        if (remaining != null && remaining <= 0) break;
-        final seasonWithServer = _ensureServerId(season, show.serverId);
-        final queued = await _queueSeasonDownload(
-          seasonWithServer,
-          client,
-          versionConfig: versionConfig,
-          filter: filter,
-          maxCount: remaining,
-        );
-        count += queued;
-        if (remaining != null) remaining -= queued;
-      }
-    }
-
-    return count;
+    return _expandAndQueue(
+      container: show,
+      client: client,
+      versionConfig: versionConfig,
+      filter: filter,
+      maxCount: maxCount,
+      skipExisting: false,
+    );
   }
 
   /// Queue all episodes from a season for download
@@ -829,97 +836,81 @@ class DownloadProvider extends ChangeNotifier {
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
   }) async {
-    int count = 0;
-    final episodes = await client.getChildren(season.ratingKey);
-
     await _storeLeafCount(season.globalKey, season);
-
-    for (final episode in episodes) {
-      if (episode.type == 'episode') {
-        if (filter == DownloadFilter.unwatched && episode.isWatched && !episode.hasActiveProgress) continue;
-        if (maxCount != null && count >= maxCount) break;
-
-        final episodeWithServer = _ensureServerId(episode, season.serverId);
-        final queued = await _queueSingleDownload(episodeWithServer, client, versionConfig: versionConfig);
-        if (queued) count++;
-      }
-    }
-
-    return count;
+    return _expandAndQueue(
+      container: season,
+      client: client,
+      versionConfig: versionConfig,
+      filter: filter,
+      maxCount: maxCount,
+      skipExisting: false,
+    );
   }
 
-  /// Queue only the missing (not downloaded) episodes for a show/season
-  /// Used for resuming partial downloads
-  /// Returns the number of episodes queued
+  /// Queue only the missing (not downloaded) episodes for a show/season.
+  /// Used for resuming partial downloads. Returns the number of episodes queued.
   Future<int> queueMissingEpisodes(
     PlexMetadata metadata,
     PlexClient client, {
     DownloadVersionConfig? versionConfig,
   }) async {
     final mt = metadata.mediaType;
-
-    if (mt == PlexMediaType.show) {
-      return await _queueMissingShowEpisodes(metadata, client, versionConfig: versionConfig);
-    } else if (mt == PlexMediaType.season) {
-      return await _queueMissingSeasonEpisodes(metadata, client, versionConfig: versionConfig);
-    } else {
+    if (mt != PlexMediaType.show && mt != PlexMediaType.season) {
       throw Exception('queueMissingEpisodes only supports shows/seasons');
     }
+    final queued = await _expandAndQueue(
+      container: metadata,
+      client: client,
+      versionConfig: versionConfig,
+      filter: DownloadFilter.all,
+      maxCount: null,
+      skipExisting: true,
+    );
+    if (mt == PlexMediaType.show) {
+      appLogger.i('Queued $queued missing episodes for show ${metadata.title}');
+    }
+    return queued;
   }
 
-  /// Queue missing episodes for a show
-  Future<int> _queueMissingShowEpisodes(
-    PlexMetadata show,
-    PlexClient client, {
-    DownloadVersionConfig? versionConfig,
+  /// Shared expansion: fetch all episodes under [container] (show or season),
+  /// apply [filter] and optional [maxCount], optionally skip items already
+  /// queued/downloading/completed ([skipExisting]), and queue each one.
+  Future<int> _expandAndQueue({
+    required PlexMetadata container,
+    required PlexClient client,
+    required DownloadVersionConfig? versionConfig,
+    required DownloadFilter filter,
+    required int? maxCount,
+    required bool skipExisting,
   }) async {
-    int queuedCount = 0;
-
-    final seasons = await client.getChildren(show.ratingKey);
-
-    for (final season in seasons) {
-      if (season.type == 'season') {
-        final seasonWithServer = _ensureServerId(season, show.serverId);
-        queuedCount += await _queueMissingSeasonEpisodes(seasonWithServer, client, versionConfig: versionConfig);
-      }
+    final unwatchedOnly = filter == DownloadFilter.unwatched;
+    final episodes = <PlexMetadata>[];
+    if (container.mediaType == PlexMediaType.show) {
+      await collectEpisodesForShow(client, container.ratingKey, unwatchedOnly: unwatchedOnly, out: episodes);
+    } else {
+      await collectEpisodesForSeason(client, container.ratingKey, unwatchedOnly: unwatchedOnly, out: episodes);
     }
 
-    appLogger.i('Queued $queuedCount missing episodes for show ${show.title}');
-    return queuedCount;
-  }
-
-  /// Queue missing episodes for a season
-  Future<int> _queueMissingSeasonEpisodes(
-    PlexMetadata season,
-    PlexClient client, {
-    DownloadVersionConfig? versionConfig,
-  }) async {
-    int queuedCount = 0;
-
-    final episodes = await client.getChildren(season.ratingKey);
-
+    int count = 0;
     for (final episode in episodes) {
-      if (episode.type == 'episode') {
-        final episodeWithServer = _ensureServerId(episode, season.serverId);
+      if (maxCount != null && count >= maxCount) break;
 
-        final episodeGlobalKey = episodeWithServer.globalKey;
+      final episodeWithServer = _ensureServerId(episode, container.serverId);
 
-        // Only queue if NOT already downloaded or in progress
-        final progress = _downloads[episodeGlobalKey];
-        if (progress == null ||
-            (progress.status != DownloadStatus.completed &&
-                progress.status != DownloadStatus.downloading &&
-                progress.status != DownloadStatus.queued)) {
-          final queued = await _queueSingleDownload(episodeWithServer, client, versionConfig: versionConfig);
-          if (queued) {
-            queuedCount++;
-            appLogger.d('Queued missing episode: ${episode.title} ($episodeGlobalKey)');
-          }
+      if (skipExisting) {
+        final progress = _downloads[episodeWithServer.globalKey];
+        if (progress != null &&
+            (progress.status == DownloadStatus.completed ||
+                progress.status == DownloadStatus.downloading ||
+                progress.status == DownloadStatus.queued)) {
+          continue;
         }
       }
-    }
 
-    return queuedCount;
+      final queued = await _queueSingleDownload(episodeWithServer, client, versionConfig: versionConfig);
+      if (queued) count++;
+    }
+    return count;
   }
 
   /// Pause a download (works for both downloading and queued items)

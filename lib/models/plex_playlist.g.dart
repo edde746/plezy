@@ -26,23 +26,22 @@ PlexPlaylist _$PlexPlaylistFromJson(Map<String, dynamic> json) => PlexPlaylist(
   thumb: json['thumb'] as String?,
 );
 
-Map<String, dynamic> _$PlexPlaylistToJson(PlexPlaylist instance) =>
-    <String, dynamic>{
-      'ratingKey': instance.ratingKey,
-      'key': instance.key,
-      'type': instance.type,
-      'title': instance.title,
-      'summary': instance.summary,
-      'smart': instance.smart,
-      'playlistType': instance.playlistType,
-      'duration': instance.duration,
-      'leafCount': instance.leafCount,
-      'composite': instance.composite,
-      'addedAt': instance.addedAt,
-      'updatedAt': instance.updatedAt,
-      'lastViewedAt': instance.lastViewedAt,
-      'viewCount': instance.viewCount,
-      'content': instance.content,
-      'guid': instance.guid,
-      'thumb': instance.thumb,
-    };
+Map<String, dynamic> _$PlexPlaylistToJson(PlexPlaylist instance) => <String, dynamic>{
+  'ratingKey': instance.ratingKey,
+  'key': instance.key,
+  'type': instance.type,
+  'title': instance.title,
+  'summary': instance.summary,
+  'smart': instance.smart,
+  'playlistType': instance.playlistType,
+  'duration': instance.duration,
+  'leafCount': instance.leafCount,
+  'composite': instance.composite,
+  'addedAt': instance.addedAt,
+  'updatedAt': instance.updatedAt,
+  'lastViewedAt': instance.lastViewedAt,
+  'viewCount': instance.viewCount,
+  'content': instance.content,
+  'guid': instance.guid,
+  'thumb': instance.thumb,
+};

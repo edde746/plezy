@@ -12,6 +12,7 @@ import 'saf_storage_service.dart';
 import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
+import '../services/offline_mode_source.dart';
 import '../services/plex_client.dart';
 import '../services/download_storage_service.dart';
 import '../services/plex_api_cache.dart';
@@ -70,6 +71,8 @@ class DownloadManagerService {
   // Falls back to _fallbackClient when the resolver is unavailable or returns null.
   PlexClient? Function(String serverId)? _clientResolver;
   PlexClient? _fallbackClient;
+
+  OfflineModeSource? _offlineSource;
 
   // background_downloader state
   bool _fileDownloaderInitialized = false;
@@ -144,6 +147,14 @@ class DownloadManagerService {
   void setClientResolver(PlexClient? Function(String serverId) resolver) {
     _clientResolver = resolver;
   }
+
+  /// Inject the offline-mode source. When `isOffline`, queue/resume paths skip
+  /// network work and defer until connectivity returns.
+  void setOfflineSource(OfflineModeSource? source) {
+    _offlineSource = source;
+  }
+
+  bool get _isOffline => _offlineSource?.isOffline ?? false;
 
   /// Look up the correct client for [serverId].
   /// Returns null if the server is offline — callers should skip/defer the work.
@@ -285,6 +296,11 @@ class DownloadManagerService {
   void resumeQueuedDownloads(PlexClient client) {
     _fallbackClient = client;
 
+    if (_isOffline) {
+      appLogger.d('Skipping resumeQueuedDownloads — offline');
+      return;
+    }
+
     // Attempt deferred supplementary downloads for recovered items
     _processPendingSupplementaryDownloads(client);
 
@@ -349,13 +365,24 @@ class DownloadManagerService {
     }
   }
 
+  /// Cancel any per-download timers (progress debounce + auto-retry) for [key].
+  /// Idempotent; safe to call from any terminal/pause path.
+  void _cancelDownloadTimers(String key) {
+    _progressDebounceTimers.remove(key)?.cancel();
+    _autoRetryTimers.remove(key)?.cancel();
+  }
+
   /// Delete a file if it exists and log the deletion
   /// Returns true if file was deleted, false otherwise
   Future<bool> _deleteFileIfExists(File file, String description) async {
-    if (await file.exists()) {
-      await file.delete();
-      appLogger.i('Deleted $description: ${file.path}');
-      return true;
+    try {
+      if (await file.exists()) {
+        await file.delete();
+        appLogger.i('Deleted $description: ${file.path}');
+        return true;
+      }
+    } catch (e) {
+      appLogger.w('Failed to delete $description: ${file.path}', error: e);
     }
     return false;
   }
@@ -715,6 +742,7 @@ class DownloadManagerService {
 
   /// Handle a system-initiated cancel — re-queue unless already completed.
   Future<void> _onDownloadCanceled(String globalKey) async {
+    _cancelDownloadTimers(globalKey);
     final ctx = _pendingDownloadContext.remove(globalKey);
     if (ctx == null) return;
     if (_completingKeys.contains(globalKey)) return;
@@ -737,6 +765,7 @@ class DownloadManagerService {
       appLogger.d('Ignoring failure event for $globalKey: completion in progress');
       return;
     }
+    _cancelDownloadTimers(globalKey);
     _pendingDownloadContext.remove(globalKey);
 
     final existing = await _database.getDownloadedMedia(globalKey);
@@ -767,7 +796,6 @@ class DownloadManagerService {
       );
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
       await _database.removeFromQueue(globalKey);
-      _autoRetryTimers[globalKey]?.cancel();
       _autoRetryTimers[globalKey] = Timer(_autoRetryDelay, () {
         _autoRetryTimers.remove(globalKey);
         _performAutoRetry(globalKey);
@@ -791,6 +819,7 @@ class DownloadManagerService {
       appLogger.d('Ignoring permanent failure event for $globalKey: completion in progress');
       return;
     }
+    _cancelDownloadTimers(globalKey);
     _pendingDownloadContext.remove(globalKey);
 
     final existing = await _database.getDownloadedMedia(globalKey);
@@ -840,8 +869,8 @@ class DownloadManagerService {
     }
     _completingKeys.add(globalKey);
     try {
-      // Flush any pending debounced progress write before completing
-      _progressDebounceTimers.remove(globalKey)?.cancel();
+      // Flush any pending debounced progress write + cancel any scheduled retry
+      _cancelDownloadTimers(globalKey);
 
       // Fresh DB check — bail if already completed (guards against race with orphan scan)
       final existingCheck = await _database.getDownloadedMedia(globalKey);
@@ -1242,6 +1271,7 @@ class DownloadManagerService {
     _pausingKeys.add(globalKey);
 
     try {
+      _cancelDownloadTimers(globalKey);
       final bgTaskId = await _database.getBgTaskId(globalKey);
       if (bgTaskId != null) {
         final task = await FileDownloader().taskForId(bgTaskId);
@@ -1302,7 +1332,7 @@ class DownloadManagerService {
 
   /// Cancel a download
   Future<void> cancelDownload(String globalKey) async {
-    _autoRetryTimers.remove(globalKey)?.cancel();
+    _cancelDownloadTimers(globalKey);
     final bgTaskId = await _database.getBgTaskId(globalKey);
     if (bgTaskId != null) {
       await FileDownloader().cancelTaskWithId(bgTaskId);
@@ -1314,7 +1344,7 @@ class DownloadManagerService {
 
   /// Delete a downloaded item and its files
   Future<void> deleteDownload(String globalKey) async {
-    _autoRetryTimers.remove(globalKey)?.cancel();
+    _cancelDownloadTimers(globalKey);
     // Cancel if actively downloading via background_downloader
     final bgTaskId = await _database.getBgTaskId(globalKey);
     if (bgTaskId != null) {
@@ -1892,6 +1922,10 @@ class DownloadManagerService {
       timer.cancel();
     }
     _autoRetryTimers.clear();
+    _pendingDownloadContext.clear();
+    _pendingSupplementaryDownloads.clear();
+    _completingKeys.clear();
+    _pausingKeys.clear();
     _progressController.close();
     _deletionProgressController.close();
   }

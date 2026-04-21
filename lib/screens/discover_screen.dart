@@ -1197,7 +1197,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Widget _buildHeroSection() {
     final statusBarHeight = MediaQuery.of(context).padding.top;
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
-    final heroHeight = useSideNav ? MediaQuery.of(context).size.height * 0.75 : 500 + statusBarHeight;
+    final heroHeight = useSideNav ? MediaQuery.sizeOf(context).height * 0.75 : 500 + statusBarHeight;
     return SliverToBoxAdapter(
       child: Focus(
         focusNode: _heroFocusNode,
@@ -1317,7 +1317,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final heroClient = _getClientForItem(heroItem);
     final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
 
     // Determine content type label for chip
@@ -1566,7 +1566,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             TextSpan(
                               text: heroItem.summary?.isNotEmpty == true
                                   ? heroItem.summary!
-                                  : 'No description available',
+                                  : t.messages.noDescriptionAvailable,
                             ),
                           ],
                         ),

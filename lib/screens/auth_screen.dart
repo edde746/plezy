@@ -313,7 +313,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     // Use two-column layout on desktop, single column on mobile
-    final isDesktop = MediaQuery.of(context).size.width > 700;
+    final isDesktop = MediaQuery.sizeOf(context).width > 700;
 
     return Scaffold(
       body: Center(

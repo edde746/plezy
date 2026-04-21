@@ -77,10 +77,10 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
                   ),
                 )
               else if (users.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: EmptyStateWidget(
-                    message: 'No profiles available',
-                    subtitle: 'Contact your Plex administrator to add profiles',
+                    message: t.messages.noProfilesAvailable,
+                    subtitle: t.messages.contactAdminForProfiles,
                     icon: Symbols.person_off_rounded,
                   ),
                 )

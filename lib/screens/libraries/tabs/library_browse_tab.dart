@@ -1228,7 +1228,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// Compute initial fetch size based on viewport dimensions.
   int _calculateInitialFetchSize() {
     try {
-      final screenSize = MediaQuery.of(context).size;
+      final screenSize = MediaQuery.sizeOf(context);
       final settingsProvider = context.read<SettingsProvider>();
       final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
       final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;

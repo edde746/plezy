@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import '../../models/trakt/trakt_ids.dart';
 import '../../models/trakt/trakt_scrobble_request.dart';
@@ -40,6 +41,12 @@ class TraktSyncService {
   /// key GUID cache survives a binge-watch session.
   final Map<String, TraktGuidResolver> _resolvers = {};
 
+  /// Fallback buffer for items that failed to persist to the on-disk queue
+  /// (e.g. SharedPreferences write threw). Retried on next `flushQueue`.
+  /// Bounded to keep memory pressure finite; oldest items drop first.
+  static const int _maxInMemoryFallback = 100;
+  final Queue<TraktSyncQueueItem> _inMemoryFallback = Queue<TraktSyncQueueItem>();
+
   bool _isFlushing = false;
 
   Future<void> initialize({required MultiServerManager serverManager}) async {
@@ -50,7 +57,11 @@ class TraktSyncService {
     final settings = await SettingsService.getInstance();
     _isEnabled = settings.getEnableTraktWatchedSync();
 
-    _subscription = WatchStateNotifier().stream.listen(_onWatchStateEvent);
+    _subscription = WatchStateNotifier().stream.listen(
+      _onWatchStateEvent,
+      onError: (Object e, StackTrace st) =>
+          appLogger.w('Trakt sync: watch event handler error', error: e, stackTrace: st),
+    );
   }
 
   Future<void> setEnabled(bool enabled) async {
@@ -166,7 +177,7 @@ class TraktSyncService {
   Future<void> _trySendOrQueue(TraktSyncQueueItem item, TraktScrobbleRequest body) async {
     final client = _client;
     if (client == null) {
-      await _queue.add(_activeUserUuid, item);
+      await _persistOrBuffer(item);
       return;
     }
     try {
@@ -174,7 +185,27 @@ class TraktSyncService {
       appLogger.d('Trakt sync: ${item.op.name} ${item.ratingKey} → ok');
     } catch (e) {
       appLogger.d('Trakt sync: ${item.op.name} ${item.ratingKey} failed, queuing', error: e);
+      await _persistOrBuffer(item);
+    }
+  }
+
+  /// Persist an item to the on-disk queue; fall back to a bounded in-memory
+  /// buffer if the disk write throws (e.g. disk full, SAF permission revoked).
+  /// Retried at the start of the next `flushQueue` run.
+  Future<void> _persistOrBuffer(TraktSyncQueueItem item) async {
+    try {
       await _queue.add(_activeUserUuid, item);
+    } catch (e, st) {
+      appLogger.e(
+        'Trakt sync: queue persist failed for ${item.op.name} ${item.ratingKey}, buffering in memory',
+        error: e,
+        stackTrace: st,
+      );
+      if (_inMemoryFallback.length >= _maxInMemoryFallback) {
+        final dropped = _inMemoryFallback.removeFirst();
+        appLogger.w('Trakt sync: in-memory fallback full, dropping ${dropped.op.name} ${dropped.ratingKey}');
+      }
+      _inMemoryFallback.addLast(item);
     }
   }
 
@@ -193,28 +224,38 @@ class TraktSyncService {
     if (client == null) return;
     _isFlushing = true;
     try {
-      final items = await _queue.load(_activeUserUuid);
-      if (items.isEmpty) return;
+      await _recoverInMemoryFallback();
 
-      final remaining = <TraktSyncQueueItem>[];
-      for (final item in items) {
+      await _queue.drainWith(_activeUserUuid, (item) async {
         if (item.attempts >= TraktSyncQueue.maxAttempts) {
           appLogger.w('Trakt sync: dropping ${item.op.name} ${item.ratingKey} after ${item.attempts} attempts');
-          continue;
+          return null;
         }
         try {
           await _dispatch(client, item, _bodyFor(item));
           appLogger.d('Trakt sync: drained ${item.op.name} ${item.ratingKey}');
+          await Future<void>.delayed(_queueRequestSpacing);
+          return null;
         } catch (e) {
           appLogger.d('Trakt sync: drain failed for ${item.ratingKey}, will retry', error: e);
-          remaining.add(item.incrementAttempts());
+          await Future<void>.delayed(_queueRequestSpacing);
+          return item.incrementAttempts();
         }
-        await Future<void>.delayed(_queueRequestSpacing);
-      }
-
-      await _queue.save(_activeUserUuid, remaining);
+      });
     } finally {
       _isFlushing = false;
+    }
+  }
+
+  /// Try to move items buffered in memory (because prior disk writes failed)
+  /// back onto the persistent queue. Best-effort; items that still can't be
+  /// persisted stay in the buffer for the next flush.
+  Future<void> _recoverInMemoryFallback() async {
+    if (_inMemoryFallback.isEmpty) return;
+    final snapshot = List<TraktSyncQueueItem>.from(_inMemoryFallback);
+    _inMemoryFallback.clear();
+    for (final item in snapshot) {
+      await _persistOrBuffer(item);
     }
   }
 
