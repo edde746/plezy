@@ -79,6 +79,7 @@ Widget plexVideoControlsBuilder(
   Function(SubtitleTrack)? onSecondarySubtitleTrackChanged,
   Function(Duration position)? onSeekCompleted,
   VoidCallback? onBack,
+  VoidCallback? onReachedEnd,
   bool canControl = true,
   ValueNotifier<bool>? hasFirstFrame,
   FocusNode? playNextFocusNode,
@@ -116,6 +117,7 @@ Widget plexVideoControlsBuilder(
     onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
     onSeekCompleted: onSeekCompleted,
     onBack: onBack,
+    onReachedEnd: onReachedEnd,
     canControl: canControl,
     hasFirstFrame: hasFirstFrame,
     playNextFocusNode: playNextFocusNode,
@@ -157,6 +159,11 @@ class PlexVideoControls extends StatefulWidget {
 
   /// Called when back button is pressed (for Watch Together session leave confirmation)
   final VoidCallback? onBack;
+
+  /// Called when the video has effectively reached the end (e.g. credits extend
+  /// to EOF and can't be seeked past). Parent should route this into its
+  /// normal completion flow so the auto-play-next setting is honored.
+  final VoidCallback? onReachedEnd;
 
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
@@ -231,6 +238,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onSecondarySubtitleTrackChanged,
     this.onSeekCompleted,
     this.onBack,
+    this.onReachedEnd,
     this.canControl = true,
     this.hasFirstFrame,
     this.playNextFocusNode,
@@ -524,13 +532,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final isAtEnd = duration > Duration.zero && (duration - endTime).inMilliseconds <= 1000;
 
     if (marker.isCredits && isAtEnd) {
-      // Credits extend to end of video — don't seek (unreliable due to
-      // position stream throttling). Go to next episode or exit player.
-      if (widget.onNext != null) {
-        widget.onNext!.call();
-      } else {
-        widget.onBack?.call();
-      }
+      // Seeking to EOF is unreliable due to position stream throttling,
+      // so pause and defer to the parent's completion flow.
+      await widget.player.pause();
+      widget.onReachedEnd?.call();
     } else {
       await _seekToPosition(endTime);
     }

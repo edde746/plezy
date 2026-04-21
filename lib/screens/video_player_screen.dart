@@ -3440,6 +3440,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                           }
                         },
                         onBack: _handleBackButton,
+                        onReachedEnd: () => _onVideoCompleted(true),
                         canControl: canControl,
                         hasFirstFrame: _hasFirstFrame,
                         playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
