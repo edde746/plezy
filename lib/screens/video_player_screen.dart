@@ -25,6 +25,7 @@ import '../services/plex_api_cache.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_video_playback_data.dart';
+import '../models/transcode_quality_preset.dart';
 import '../utils/content_utils.dart';
 import '../utils/plex_cache_parser.dart';
 import '../models/plex_media_info.dart';
@@ -44,6 +45,7 @@ import '../services/playback_progress_tracker.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/display_mode_service.dart';
 import '../services/settings_service.dart';
+import '../providers/settings_provider.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/track_manager.dart';
 import '../services/ambient_lighting_service.dart';
@@ -100,6 +102,20 @@ class VideoPlayerScreen extends StatefulWidget {
   final bool isOffline;
   final PlexVideoPlaybackData? playbackData;
 
+  /// Quality preset override for this playback. When `null`, the screen uses
+  /// the user's default from [SettingsProvider].
+  final TranscodeQualityPreset? selectedQualityPreset;
+
+  /// Audio stream ID to pass to the transcoder when [selectedQualityPreset]
+  /// is non-original. When `null`, the playback service picks the `selected`
+  /// Plex audio track (fallback: first).
+  final int? selectedAudioStreamId;
+
+  /// Session identifiers forwarded across quality/version/audio switches so
+  /// the server-side transcode session is preserved.
+  final String? reusedSessionIdentifier;
+  final String? reusedTranscodeSessionId;
+
   // Live TV fields
   final bool isLive;
   final String? liveChannelName;
@@ -120,6 +136,10 @@ class VideoPlayerScreen extends StatefulWidget {
     this.selectedMediaIndex = 0,
     this.isOffline = false,
     this.playbackData,
+    this.selectedQualityPreset,
+    this.selectedAudioStreamId,
+    this.reusedSessionIdentifier,
+    this.reusedTranscodeSessionId,
     this.isLive = false,
     this.liveChannelName,
     this.liveStreamUrl,
@@ -157,6 +177,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
   PlexMediaInfo? _currentMediaInfo;
+
+  // Transcode / quality state
+  late TranscodeQualityPreset _selectedQualityPreset;
+  int? _selectedAudioStreamId;
+  bool _isTranscoding = false;
+  bool _serverSupportsTranscoding = false;
+  late final String _playbackSessionIdentifier;
+  late final String _playbackTranscodeSessionId;
   StreamSubscription<PlayerError>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
@@ -283,6 +311,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _currentMetadata = widget.metadata;
     _activeRatingKey = widget.metadata.ratingKey;
     _activeMediaIndex = widget.selectedMediaIndex;
+
+    // Transcode session identifiers — reused across quality/version/audio
+    // switches so the server-side transcode session is preserved.
+    _playbackSessionIdentifier = widget.reusedSessionIdentifier ?? PlexClient.generateSessionIdentifier();
+    _playbackTranscodeSessionId = widget.reusedTranscodeSessionId ?? PlexClient.generateSessionIdentifier();
+    _selectedAudioStreamId = widget.selectedAudioStreamId;
+    // Quality preset is resolved later when the SettingsProvider is available;
+    // see _resolveQualityPreset() called from _initializePlayer.
+    _selectedQualityPreset = widget.selectedQualityPreset ?? TranscodeQualityPreset.original;
 
     // Initialize live TV channel tracking
     _liveChannelIndex = widget.liveCurrentChannelIndex ?? -1;
@@ -1390,13 +1427,54 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Online mode: use server-specific client
         final client = _getClientForMetadata(context);
         plexHeaders = client.config.headers;
+
+        // Resolve quality preset from widget → SettingsProvider default.
+        if (widget.selectedQualityPreset == null && mounted) {
+          try {
+            final settingsProvider = context.read<SettingsProvider>();
+            _selectedQualityPreset = settingsProvider.defaultQualityPreset;
+          } catch (_) {
+            _selectedQualityPreset = TranscodeQualityPreset.original;
+          }
+        } else {
+          _selectedQualityPreset = widget.selectedQualityPreset ?? TranscodeQualityPreset.original;
+        }
+
+        // Capability flag comes from the warm cache populated at connection
+        // time. If the warm-up hasn't landed yet (rare — playback within a
+        // few seconds of connect), the sync getter returns `true` and the
+        // transcode decision's own fallback handles a "not actually supported"
+        // server without blocking the hot path.
+        _serverSupportsTranscoding = client.serverSupportsVideoTranscodingCached;
+
         final playbackService = PlaybackInitializationService(client: client, database: PlexApiCache.instance.database);
+        // Only prefer a downloaded local file when the user wants Original
+        // quality. Any non-Original preset implies an explicit request to
+        // transcode, which can only be satisfied by hitting the server — the
+        // local file is always source quality.
         result = await playbackService.getPlaybackData(
           metadata: _currentMetadata,
           selectedMediaIndex: widget.selectedMediaIndex,
-          preferOffline: true, // Use downloaded file if available
+          preferOffline: _selectedQualityPreset.isOriginal,
           playbackData: widget.playbackData,
+          qualityPreset: _selectedQualityPreset,
+          selectedAudioStreamId: _selectedAudioStreamId,
+          sessionIdentifier: _playbackSessionIdentifier,
+          transcodeSessionId: _playbackTranscodeSessionId,
         );
+
+        _isTranscoding = result.isTranscoding;
+        if (result.activeAudioStreamId != null) {
+          _selectedAudioStreamId = result.activeAudioStreamId;
+        }
+
+        if (result.fallbackReason != null && !_selectedQualityPreset.isOriginal) {
+          if (mounted) {
+            showErrorSnackBar(context, t.videoControls.transcodeUnavailableFallback);
+          }
+          // Reset the preset so the UI reflects what's actually playing.
+          _selectedQualityPreset = TranscodeQualityPreset.original;
+        }
       }
 
       // Primary refresh-rate path: when Plex metadata provides an fps and the
@@ -2980,6 +3058,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _isReplacingWithVideo = true;
   }
 
+  /// Session identifiers owned by this screen, forwarded to a replacement
+  /// [VideoPlayerScreen] during quality/version/audio switches so the Plex
+  /// transcode session is continued rather than restarted.
+  String get playbackSessionIdentifier => _playbackSessionIdentifier;
+  String get playbackTranscodeSessionId => _playbackTranscodeSessionId;
+
   /// Navigates to a new episode, preserving playback state and track selections.
   /// When PiP is active, swaps the media source in-place to keep the PiP window alive.
   Future<void> _navigateToEpisode(PlexMetadata episodeMetadata) async {
@@ -3420,6 +3504,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         onPrevious: onPrevious,
                         availableVersions: _availableVersions,
                         selectedMediaIndex: widget.selectedMediaIndex,
+                        selectedQualityPreset: _selectedQualityPreset,
+                        serverSupportsTranscoding: _serverSupportsTranscoding,
+                        isTranscoding: _isTranscoding,
+                        sourceAudioTracks: _currentMediaInfo?.audioTracks ?? const [],
+                        selectedAudioStreamId: _selectedAudioStreamId,
                         onTogglePIPMode: _togglePIPMode,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         onCycleBoxFitMode: _cycleBoxFitMode,

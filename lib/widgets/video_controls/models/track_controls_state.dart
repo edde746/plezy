@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../models/plex_media_info.dart';
 import '../../../models/plex_media_version.dart';
 import '../../../models/plex_metadata.dart';
+import '../../../models/transcode_quality_preset.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/shader_service.dart';
 
@@ -9,6 +11,15 @@ import '../../../services/shader_service.dart';
 class TrackControlsState {
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
+  final TranscodeQualityPreset selectedQualityPreset;
+  final bool serverSupportsTranscoding;
+  final bool isTranscoding;
+  final List<PlexAudioTrack> sourceAudioTracks;
+  final int? selectedAudioStreamId;
+
+  /// Total media duration in milliseconds. Used by the version/quality sheet
+  /// to show estimated file sizes per preset (bitrate × duration).
+  final int? sourceDurationMs;
   final int boxFitMode;
   final int audioSyncOffset;
   final int subtitleSyncOffset;
@@ -23,6 +34,8 @@ class TrackControlsState {
   final VoidCallback? onToggleFullscreen;
   final VoidCallback? onToggleAlwaysOnTop;
   final Function(int)? onSwitchVersion;
+  final ValueChanged<TranscodeQualityPreset>? onSwitchQualityPreset;
+  final ValueChanged<int>? onSwitchAudioStreamId;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
@@ -47,6 +60,12 @@ class TrackControlsState {
   const TrackControlsState({
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
+    this.selectedQualityPreset = TranscodeQualityPreset.original,
+    this.serverSupportsTranscoding = false,
+    this.isTranscoding = false,
+    this.sourceAudioTracks = const [],
+    this.selectedAudioStreamId,
+    this.sourceDurationMs,
     this.boxFitMode = 0,
     this.audioSyncOffset = 0,
     this.subtitleSyncOffset = 0,
@@ -61,6 +80,8 @@ class TrackControlsState {
     this.onToggleFullscreen,
     this.onToggleAlwaysOnTop,
     this.onSwitchVersion,
+    this.onSwitchQualityPreset,
+    this.onSwitchAudioStreamId,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,

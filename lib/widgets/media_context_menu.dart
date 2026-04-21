@@ -10,6 +10,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
+import '../utils/quality_preset_labels.dart';
 import '../utils/content_utils.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
@@ -283,10 +284,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Play Version (for episodes and movies with multiple versions)
-      if ((mediaType == PlexMediaType.episode || mediaType == PlexMediaType.movie) &&
-          metadata.mediaVersions != null &&
-          metadata.mediaVersions!.length > 1) {
+      // Play Version (for episodes and movies). Always shown — even for
+      // single-version items — so the user can still pick a streaming
+      // quality. The handler skips the version picker if only one version
+      // is present, jumping straight to the quality picker.
+      if (mediaType == PlexMediaType.episode || mediaType == PlexMediaType.movie) {
         menuActions.add(
           _MenuAction(value: 'play_version', icon: Symbols.video_file_rounded, label: t.mediaMenu.playVersion),
         );
@@ -693,18 +695,32 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Handle play version selection
   Future<bool> _handlePlayVersion(BuildContext context) async {
     final metadata = widget.item as PlexMetadata;
-    final versions = metadata.mediaVersions!;
+    final versions = metadata.mediaVersions ?? const [];
 
-    final selectedIndex = await showVersionPickerDialog(context, versions, t.mediaMenu.playVersion);
-
-    if (selectedIndex != null && context.mounted) {
-      await navigateToVideoPlayer(context, metadata: metadata, selectedMediaIndex: selectedIndex);
-      return true;
+    int selectedVersionIndex = 0;
+    if (versions.length > 1) {
+      final picked = await showVersionPickerDialog(context, versions, t.mediaMenu.playVersion);
+      if (picked == null || !context.mounted) return false;
+      selectedVersionIndex = picked;
     }
-    return false;
+
+    final selectedVersion = selectedVersionIndex < versions.length ? versions[selectedVersionIndex] : null;
+    final selectedQuality = await showQualityPickerDialog(
+      context,
+      sourceBitrateKbps: selectedVersion?.bitrate,
+      sourceDurationMs: metadata.duration,
+    );
+    if (selectedQuality == null || !context.mounted) return false;
+
+    await navigateToVideoPlayer(
+      context,
+      metadata: metadata,
+      selectedMediaIndex: selectedVersionIndex,
+      selectedQualityPreset: selectedQuality,
+    );
+    return true;
   }
 
   /// Handle shuffle play using play queues

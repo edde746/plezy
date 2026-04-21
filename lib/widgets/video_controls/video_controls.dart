@@ -31,6 +31,7 @@ import '../../models/livetv_capture_buffer.dart';
 import '../../services/plex_client.dart';
 import '../../services/plex_api_cache.dart';
 import '../../models/plex_media_info.dart';
+import '../../models/transcode_quality_preset.dart';
 import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
 import '../../screens/video_player_screen.dart';
@@ -69,6 +70,11 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onPrevious,
   List<PlexMediaVersion>? availableVersions,
   int? selectedMediaIndex,
+  TranscodeQualityPreset selectedQualityPreset = TranscodeQualityPreset.original,
+  bool serverSupportsTranscoding = false,
+  bool isTranscoding = false,
+  List<PlexAudioTrack> sourceAudioTracks = const [],
+  int? selectedAudioStreamId,
   VoidCallback? onTogglePIPMode,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
@@ -107,6 +113,11 @@ Widget plexVideoControlsBuilder(
     onPrevious: onPrevious,
     availableVersions: availableVersions ?? [],
     selectedMediaIndex: selectedMediaIndex ?? 0,
+    selectedQualityPreset: selectedQualityPreset,
+    serverSupportsTranscoding: serverSupportsTranscoding,
+    isTranscoding: isTranscoding,
+    sourceAudioTracks: sourceAudioTracks,
+    selectedAudioStreamId: selectedAudioStreamId,
     boxFitMode: boxFitMode,
     onTogglePIPMode: onTogglePIPMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
@@ -145,6 +156,11 @@ class PlexVideoControls extends StatefulWidget {
   final VoidCallback? onPrevious;
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
+  final TranscodeQualityPreset selectedQualityPreset;
+  final bool serverSupportsTranscoding;
+  final bool isTranscoding;
+  final List<PlexAudioTrack> sourceAudioTracks;
+  final int? selectedAudioStreamId;
   final int boxFitMode;
   final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
@@ -228,6 +244,11 @@ class PlexVideoControls extends StatefulWidget {
     this.onPrevious,
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
+    this.selectedQualityPreset = TranscodeQualityPreset.original,
+    this.serverSupportsTranscoding = false,
+    this.isTranscoding = false,
+    this.sourceAudioTracks = const [],
+    this.selectedAudioStreamId,
     this.boxFitMode = 0,
     this.onTogglePIPMode,
     this.onCycleBoxFitMode,
@@ -1149,6 +1170,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     return TrackControlsState(
       availableVersions: widget.availableVersions,
       selectedMediaIndex: widget.selectedMediaIndex,
+      selectedQualityPreset: widget.selectedQualityPreset,
+      serverSupportsTranscoding: widget.serverSupportsTranscoding,
+      isTranscoding: widget.isTranscoding,
+      sourceAudioTracks: widget.sourceAudioTracks,
+      selectedAudioStreamId: widget.selectedAudioStreamId,
+      sourceDurationMs: widget.metadata.duration,
       boxFitMode: widget.boxFitMode,
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
@@ -1162,7 +1189,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       onToggleScreenLock: _toggleScreenLock,
       onToggleFullscreen: _toggleFullscreen,
       onToggleAlwaysOnTop: onToggleAlwaysOnTop,
-      onSwitchVersion: _switchMediaVersion,
+      onSwitchVersion: (i) => _switchVersionAndQuality(newMediaIndex: i),
+      onSwitchQualityPreset: (p) => _switchVersionAndQuality(newPreset: p),
+      onSwitchAudioStreamId: (id) => _switchVersionAndQuality(newAudioStreamId: id),
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
@@ -2541,9 +2570,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
-  Future<void> _switchMediaVersion(int newMediaIndex) async {
-    if (newMediaIndex == widget.selectedMediaIndex) {
-      return; // Already using this version
+  /// Switch version, quality preset, or audio stream ID. Any combination may
+  /// change in one invocation; unspecified values retain their current value.
+  /// Always routes through pushReplacement, preserving playback position and
+  /// the transcode session identifiers.
+  Future<void> _switchVersionAndQuality({
+    int? newMediaIndex,
+    TranscodeQualityPreset? newPreset,
+    int? newAudioStreamId,
+  }) async {
+    final effectiveMediaIndex = newMediaIndex ?? widget.selectedMediaIndex;
+    final effectivePreset = newPreset ?? widget.selectedQualityPreset;
+    final effectiveAudioStreamId = newAudioStreamId ?? widget.selectedAudioStreamId;
+
+    final isVersionChange = effectiveMediaIndex != widget.selectedMediaIndex;
+    final isPresetChange = effectivePreset != widget.selectedQualityPreset;
+    final isAudioChange = effectiveAudioStreamId != widget.selectedAudioStreamId;
+    if (!isVersionChange && !isPresetChange && !isAudioChange) {
+      return;
     }
 
     try {
@@ -2553,17 +2597,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       // Get state reference before async operations
       final videoPlayerState = context.findAncestorStateOfType<VideoPlayerScreenState>();
 
-      // Save the preference
-      final settingsService = await SettingsService.getInstance();
-      final seriesKey = widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey;
-      await settingsService.setMediaVersionPreference(seriesKey, newMediaIndex);
+      if (isVersionChange) {
+        final settingsService = await SettingsService.getInstance();
+        final seriesKey = widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey;
+        await settingsService.setMediaVersionPreference(seriesKey, effectiveMediaIndex);
+      }
+
+      // Preserve session identifiers across the reload so Plex reuses the
+      // transcode session rather than spinning up a new one.
+      final sessionId = videoPlayerState?.playbackSessionIdentifier;
+      final transcodeSessionId = videoPlayerState?.playbackTranscodeSessionId;
 
       // Set flag on parent VideoPlayerScreen to skip orientation restoration
       videoPlayerState?.setReplacingWithVideo();
       // Dispose the existing player before spinning up the replacement to avoid race conditions
       await videoPlayerState?.disposePlayerForNavigation();
 
-      // Navigate to new player screen with the selected version
+      // Navigate to new player screen with the updated selection
       // Use PageRouteBuilder with zero-duration transitions to prevent orientation reset
       if (mounted) {
         Navigator.pushReplacement(
@@ -2571,7 +2621,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           PageRouteBuilder<bool>(
             pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
               metadata: widget.metadata.copyWith(viewOffset: currentPosition.inMilliseconds),
-              selectedMediaIndex: newMediaIndex,
+              selectedMediaIndex: effectiveMediaIndex,
+              selectedQualityPreset: effectivePreset,
+              selectedAudioStreamId: effectiveAudioStreamId,
+              reusedSessionIdentifier: sessionId,
+              reusedTranscodeSessionId: transcodeSessionId,
             ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,

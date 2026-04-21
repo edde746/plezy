@@ -3,8 +3,10 @@ import '../models/plex_media_info.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_video_playback_data.dart';
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../mpv/mpv.dart';
 import '../utils/app_logger.dart';
+import '../utils/plex_url_helper.dart';
 import '../i18n/strings.g.dart';
 import '../database/app_database.dart';
 import 'download_storage_service.dart';
@@ -86,11 +88,18 @@ class PlaybackInitializationService {
   /// Returns a PlaybackInitializationResult with video URL and available versions
   /// If [preferOffline] is true and offline content is available, uses local file
   /// If [playbackData] is provided, skips the network call to fetch it again.
+  /// When [qualityPreset] is non-original and online, the video URL is built
+  /// against Plex's transcode start endpoint and all subtitle tracks are
+  /// sidecar-attached since the transcoded stream carries none.
   Future<PlaybackInitializationResult> getPlaybackData({
     required PlexMetadata metadata,
     required int selectedMediaIndex,
     bool preferOffline = false,
     PlexVideoPlaybackData? playbackData,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
+    int? selectedAudioStreamId,
+    String? sessionIdentifier,
+    String? transcodeSessionId,
   }) async {
     try {
       // Check for offline content first if preferOffline is enabled
@@ -145,6 +154,54 @@ class PlaybackInitializationService {
         throw PlaybackException(t.messages.fileInfoNotAvailable);
       }
 
+      final wantTranscode = !qualityPreset.isOriginal;
+      if (wantTranscode && sessionIdentifier != null && transcodeSessionId != null) {
+        final resolvedAudioId = _resolveAudioStreamId(selectedAudioStreamId, data.mediaInfo);
+        // Note: no `offsetMs` — seeking is handled by the player via the HLS
+        // manifest, matching Plex Web's behavior. Baking `offset=` into the URL
+        // makes the server pre-position the transcoder, but the resulting
+        // segments and mpv's native HLS positioning fight each other, leaving
+        // the player clock at 0 and desyncing sidecar subtitles.
+        final result = await client.buildTranscodeStartPath(
+          ratingKey: metadata.ratingKey,
+          mediaIndex: selectedMediaIndex,
+          preset: qualityPreset,
+          sessionIdentifier: sessionIdentifier,
+          transcodeSessionId: transcodeSessionId,
+          audioStreamId: resolvedAudioId,
+        );
+
+        if (result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
+          final transcodeUrl = '${client.config.baseUrl}${result.startPath}'.withPlexToken(client.config.token);
+          final sidecarSubs = _buildTranscodeSidecarSubtitles(data.mediaInfo);
+          return PlaybackInitializationResult(
+            availableVersions: data.availableVersions,
+            videoUrl: transcodeUrl,
+            mediaInfo: data.mediaInfo,
+            externalSubtitles: sidecarSubs,
+            isOffline: false,
+            isTranscoding: true,
+            activeAudioStreamId: resolvedAudioId,
+          );
+        }
+
+        // Decision failed or said direct-play only — fall through to direct-play path
+        // and surface the fallback reason so the UI can notify the user.
+        final fallbackReason = result.outcome == TranscodeDecisionOutcome.directPlayOnly
+            ? TranscodeFallbackReason.directPlayOnly
+            : TranscodeFallbackReason.decisionFailed;
+        appLogger.w('Transcode decision fell back to direct play: ${fallbackReason.name}');
+        return PlaybackInitializationResult(
+          availableVersions: data.availableVersions,
+          videoUrl: data.videoUrl,
+          mediaInfo: data.mediaInfo,
+          externalSubtitles: _buildExternalSubtitles(data.mediaInfo),
+          isOffline: false,
+          isTranscoding: false,
+          fallbackReason: fallbackReason,
+        );
+      }
+
       // Build list of external subtitle tracks
       final externalSubtitles = _buildExternalSubtitles(data.mediaInfo);
 
@@ -162,6 +219,48 @@ class PlaybackInitializationService {
       }
       throw PlaybackException(t.messages.errorLoading(error: e.toString()));
     }
+  }
+
+  /// Pick the audio stream ID to send to the transcoder. Preference order:
+  /// explicit [explicit] → audio track with `selected == true` → first → null.
+  int? _resolveAudioStreamId(int? explicit, PlexMediaInfo? info) {
+    if (explicit != null) return explicit;
+    if (info == null) return null;
+    final tracks = info.audioTracks;
+    if (tracks.isEmpty) return null;
+    for (final track in tracks) {
+      if (track.selected) return track.id;
+    }
+    return tracks.first.id;
+  }
+
+  /// Build sidecar SubtitleTracks for ALL source subtitle streams (internal +
+  /// external) so the player can hot-swap between them when the main stream
+  /// is transcoded and has no embedded subs.
+  List<SubtitleTrack> _buildTranscodeSidecarSubtitles(PlexMediaInfo? mediaInfo) {
+    if (mediaInfo == null) return const [];
+    final token = client.config.token;
+    if (token == null) {
+      appLogger.w('No auth token available for transcode sidecar subtitles');
+      return const [];
+    }
+
+    final tracks = <SubtitleTrack>[];
+    for (final sub in mediaInfo.subtitleTracks) {
+      try {
+        final url = sub.getTranscodeSidecarUrl(client.config.baseUrl, token);
+        tracks.add(
+          SubtitleTrack.uri(
+            url,
+            title: sub.displayTitle ?? sub.language ?? 'Track ${sub.id}',
+            language: sub.languageCode,
+          ),
+        );
+      } catch (e) {
+        appLogger.w('Failed to build sidecar subtitle for stream ${sub.id}', error: e);
+      }
+    }
+    return tracks;
   }
 
   /// Build list of external subtitle tracks from media info
@@ -209,6 +308,15 @@ class PlaybackInitializationService {
   }
 }
 
+/// Reason the transcode branch fell back to direct play.
+enum TranscodeFallbackReason {
+  /// Plex decision said only direct-play is available.
+  directPlayOnly,
+
+  /// The decision endpoint errored (HTTP error, code >= 2000, parse failure).
+  decisionFailed,
+}
+
 /// Result of playback initialization
 class PlaybackInitializationResult {
   final List<dynamic> availableVersions;
@@ -217,12 +325,25 @@ class PlaybackInitializationResult {
   final List<SubtitleTrack> externalSubtitles;
   final bool isOffline;
 
+  /// `true` when [videoUrl] is a Plex transcode start URL.
+  final bool isTranscoding;
+
+  /// Non-null when a non-original preset was requested but fallback kicked in.
+  final TranscodeFallbackReason? fallbackReason;
+
+  /// The Plex audio stream ID actually passed to the transcoder (`null` when
+  /// not transcoding or when no audio stream was selectable).
+  final int? activeAudioStreamId;
+
   PlaybackInitializationResult({
     required this.availableVersions,
     this.videoUrl,
     this.mediaInfo,
     this.externalSubtitles = const [],
     this.isOffline = false,
+    this.isTranscoding = false,
+    this.fallbackReason,
+    this.activeAudioStreamId,
   });
 }
 

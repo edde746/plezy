@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../models/plex_media_info.dart';
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/scroll_utils.dart';
@@ -24,6 +25,15 @@ class TrackSheet extends StatelessWidget {
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
 
+  /// When true, the audio column renders the Plex [sourceAudioTracks] list
+  /// and taps are routed to [onSwitchAudioStreamId] instead of using the
+  /// player's in-stream audio selection (the transcoded stream only has one
+  /// audio track).
+  final bool isTranscoding;
+  final List<PlexAudioTrack> sourceAudioTracks;
+  final int? selectedAudioStreamId;
+  final ValueChanged<int>? onSwitchAudioStreamId;
+
   const TrackSheet({
     super.key,
     required this.player,
@@ -34,6 +44,10 @@ class TrackSheet extends StatelessWidget {
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
+    this.isTranscoding = false,
+    this.sourceAudioTracks = const [],
+    this.selectedAudioStreamId,
+    this.onSwitchAudioStreamId,
   });
 
   @override
@@ -43,13 +57,14 @@ class TrackSheet extends StatelessWidget {
       initialData: player.state.tracks,
       builder: (context, tracksSnapshot) {
         final tracks = tracksSnapshot.data;
-        final audioTracks = TrackFilterHelper.extractAndFilterTracks<AudioTrack>(tracks, (t) => t?.audio ?? []);
+        final playerAudioTracks = TrackFilterHelper.extractAndFilterTracks<AudioTrack>(tracks, (t) => t?.audio ?? []);
         final subtitleTracks = TrackFilterHelper.extractAndFilterTracks<SubtitleTrack>(
           tracks,
           (t) => t?.subtitle ?? [],
         );
 
-        final showAudio = audioTracks.length > 1;
+        final useSourceAudio = isTranscoding && sourceAudioTracks.length > 1 && onSwitchAudioStreamId != null;
+        final showAudio = useSourceAudio || playerAudioTracks.length > 1;
         final showSubtitles = subtitleTracks.isNotEmpty;
 
         // Determine title/icon based on what's shown
@@ -77,21 +92,29 @@ class TrackSheet extends StatelessWidget {
 
               final supportsSecondary = player.supportsSecondarySubtitles;
 
+              Widget audioColumnFor(TrackSelection sel, bool showHeader) {
+                if (useSourceAudio) {
+                  return _SourceAudioColumn(
+                    tracks: sourceAudioTracks,
+                    selectedStreamId: selectedAudioStreamId,
+                    onSelected: onSwitchAudioStreamId!,
+                    showHeader: showHeader,
+                  );
+                }
+                return _AudioColumn(
+                  tracks: playerAudioTracks,
+                  selection: sel,
+                  player: player,
+                  onTrackChanged: onAudioTrackChanged,
+                  showHeader: showHeader,
+                );
+              }
+
               if (showAudio && showSubtitles) {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: FocusTraversalGroup(
-                        child: _AudioColumn(
-                          tracks: audioTracks,
-                          selection: selection,
-                          player: player,
-                          onTrackChanged: onAudioTrackChanged,
-                          showHeader: true,
-                        ),
-                      ),
-                    ),
+                    Expanded(child: FocusTraversalGroup(child: audioColumnFor(selection, true))),
                     VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
                     Expanded(
                       child: FocusTraversalGroup(
@@ -115,13 +138,7 @@ class TrackSheet extends StatelessWidget {
               }
 
               if (showAudio) {
-                return _AudioColumn(
-                  tracks: audioTracks,
-                  selection: selection,
-                  player: player,
-                  onTrackChanged: onAudioTrackChanged,
-                  showHeader: false,
-                );
+                return audioColumnFor(selection, false);
               }
 
               return _SubtitleColumn(
@@ -141,6 +158,73 @@ class TrackSheet extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _SourceAudioColumn extends StatefulWidget {
+  final List<PlexAudioTrack> tracks;
+  final int? selectedStreamId;
+  final ValueChanged<int> onSelected;
+  final bool showHeader;
+
+  const _SourceAudioColumn({
+    required this.tracks,
+    required this.selectedStreamId,
+    required this.onSelected,
+    required this.showHeader,
+  });
+
+  @override
+  State<_SourceAudioColumn> createState() => _SourceAudioColumnState();
+}
+
+class _SourceAudioColumnState extends State<_SourceAudioColumn> {
+  final _firstItemKey = GlobalKey();
+  final _scrollController = ScrollController();
+  bool _didInitialScroll = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedId = widget.selectedStreamId;
+    if (!_didInitialScroll && selectedId != null) {
+      final selectedIndex = widget.tracks.indexWhere((t) => t.id == selectedId);
+      if (selectedIndex > 0) {
+        _didInitialScroll = true;
+        scrollToCurrentItem(_scrollController, _firstItemKey, selectedIndex);
+      }
+    }
+
+    return Column(
+      children: [
+        if (widget.showHeader) _ColumnHeader(label: t.videoControls.audioLabel),
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            itemCount: widget.tracks.length,
+            itemBuilder: (context, index) {
+              final track = widget.tracks[index];
+              final isSelected = track.id == selectedId;
+              return TrackSelectionHelper.buildTrackTile<AudioTrack>(
+                context: context,
+                key: index == 0 ? _firstItemKey : null,
+                label: track.label,
+                isSelected: isSelected,
+                onTap: () {
+                  OverlaySheetController.of(context).close();
+                  widget.onSelected(track.id);
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

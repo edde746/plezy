@@ -467,6 +467,12 @@ class TranslationsSettingsEn {
 	/// en: 'Your device has ${heap}MB of memory. A ${size}MB buffer may cause playback issues.'
 	String bufferSizeWarning({required Object heap, required Object size}) => 'Your device has ${heap}MB of memory. A ${size}MB buffer may cause playback issues.';
 
+	/// en: 'Default Quality'
+	String get defaultQualityTitle => 'Default Quality';
+
+	/// en: 'Used when starting playback. Lower values reduce bandwidth.'
+	String get defaultQualityDescription => 'Used when starting playback. Lower values reduce bandwidth.';
+
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
@@ -1173,6 +1179,27 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Video versions'
 	String get versionsButton => 'Video versions';
+
+	/// en: 'Version & Quality'
+	String get versionQualityButton => 'Version & Quality';
+
+	/// en: 'Version'
+	String get versionColumnHeader => 'Version';
+
+	/// en: 'Quality'
+	String get qualityColumnHeader => 'Quality';
+
+	/// en: 'Original'
+	String get qualityOriginal => 'Original';
+
+	/// en: '${resolution}p ${bitrate} Mbps'
+	String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+
+	/// en: '~${bitrate} Mbps'
+	String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+
+	/// en: 'Transcoding unavailable — playing original quality'
+	String get transcodeUnavailableFallback => 'Transcoding unavailable — playing original quality';
 
 	/// en: 'Picture-in-Picture mode'
 	String get pipButton => 'Picture-in-Picture mode';
@@ -3331,6 +3358,8 @@ extension on Translations {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Auto (Recommended)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Your device has ${heap}MB of memory. A ${size}MB buffer may cause playback issues.',
+			'settings.defaultQualityTitle' => 'Default Quality',
+			'settings.defaultQualityDescription' => 'Used when starting playback. Lower values reduce bandwidth.',
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
@@ -3566,6 +3595,13 @@ extension on Translations {
 			'videoControls.tracksButton' => 'Audio & Subtitles',
 			'videoControls.chaptersButton' => 'Chapters',
 			'videoControls.versionsButton' => 'Video versions',
+			'videoControls.versionQualityButton' => 'Version & Quality',
+			'videoControls.versionColumnHeader' => 'Version',
+			'videoControls.qualityColumnHeader' => 'Quality',
+			'videoControls.qualityOriginal' => 'Original',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — playing original quality',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
 			'videoControls.ambientLighting' => 'Ambient lighting',
@@ -3723,6 +3759,8 @@ extension on Translations {
 			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',
@@ -3732,8 +3770,6 @@ extension on Translations {
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
 			'libraries.tabs.recommended' => 'Recommended',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Browse',
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',

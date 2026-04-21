@@ -94,9 +94,18 @@ class MultiServerManager {
     final storage = await StorageService.getInstance();
     final cachedEndpoint = storage.getServerEndpoint(serverId);
 
+    // The connection race already hits `/` on the winning endpoint — capture
+    // `transcoderVideo` from that response so PlexClient.create can skip the
+    // redundant warm-up probe.
+    bool? observedTranscoderVideo;
+
     // Find best working connection, passing cached endpoint for fast-path
     final streamIterator = StreamIterator(
-      server.findBestWorkingConnection(preferredUri: cachedEndpoint, clientIdentifier: clientIdentifier),
+      server.findBestWorkingConnection(
+        preferredUri: cachedEndpoint,
+        clientIdentifier: clientIdentifier,
+        onTranscoderCapability: (b) => observedTranscoderVideo = b,
+      ),
     );
 
     if (!await streamIterator.moveNext()) {
@@ -124,6 +133,7 @@ class MultiServerManager {
         appLogger.i('Updated endpoint for ${server.name} after failover: $newUrl');
       },
       onAllEndpointsExhausted: () => _onServerEndpointsExhausted(serverId),
+      seedTranscoderVideoSupport: observedTranscoderVideo,
     );
 
     // Save the initial endpoint

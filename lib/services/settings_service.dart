@@ -100,6 +100,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyTunneledPlayback = 'tunneled_playback';
   static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
   static const String _keyDefaultBoxFitMode = 'default_box_fit_mode';
+  static const String _keyDefaultQualityPreset = 'default_quality_preset';
   static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
   static const String _keyUseExoPlayer = 'use_exoplayer';
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
@@ -175,6 +176,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getCrashReporting() {
     return prefs.getBool(_keyCrashReporting) ?? true; // Default enabled
+  }
+
+  // Default video quality preset (persisted as enum name)
+  Future<void> setDefaultQualityPreset(String presetName) async {
+    await prefs.setString(_keyDefaultQualityPreset, presetName);
+  }
+
+  String getDefaultQualityPreset() {
+    return prefs.getString(_keyDefaultQualityPreset) ?? 'original';
   }
 
   // Buffer Size (in MB)

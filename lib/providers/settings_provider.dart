@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/transcode_quality_preset.dart';
 import '../services/settings_service.dart';
 
 class SettingsProvider extends ChangeNotifier {
@@ -15,6 +16,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _showNavBarLabels = true;
   bool _liveTvDefaultFavorites = false;
   bool _autoHidePerformanceOverlay = true;
+  TranscodeQualityPreset _defaultQualityPreset = TranscodeQualityPreset.original;
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
@@ -56,6 +58,7 @@ class SettingsProvider extends ChangeNotifier {
     _showNavBarLabels = s.getShowNavBarLabels();
     _liveTvDefaultFavorites = s.getLiveTvDefaultFavorites();
     _autoHidePerformanceOverlay = s.getAutoHidePerformanceOverlay();
+    _defaultQualityPreset = TranscodeQualityPreset.fromStorage(s.getDefaultQualityPreset());
   }
 
   /// Re-read all settings from SharedPreferences. Used after imports or resets
@@ -93,6 +96,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get liveTvDefaultFavorites => _liveTvDefaultFavorites;
 
   bool get autoHidePerformanceOverlay => _autoHidePerformanceOverlay;
+
+  TranscodeQualityPreset get defaultQualityPreset => _defaultQualityPreset;
 
   /// Helper to update a setting: ensures init, deduplicates, persists, notifies.
   Future<void> _updateSetting<T>({
@@ -191,5 +196,12 @@ class SettingsProvider extends ChangeNotifier {
     value: value,
     setLocal: (v) => _autoHidePerformanceOverlay = v,
     persist: _settingsService!.setAutoHidePerformanceOverlay,
+  );
+
+  Future<void> setDefaultQualityPreset(TranscodeQualityPreset preset) => _updateSetting(
+    current: _defaultQualityPreset,
+    value: preset,
+    setLocal: (v) => _defaultQualityPreset = v,
+    persist: (v) => _settingsService!.setDefaultQualityPreset(v.storageKey),
   );
 }

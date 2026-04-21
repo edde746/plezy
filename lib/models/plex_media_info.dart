@@ -186,12 +186,18 @@ class PlexSubtitleTrack with _TrackLabelMixin {
   /// Returns null if this is not an external subtitle
   String? getSubtitleUrl(String baseUrl, String token) {
     if (!isExternal) return null;
-
-    // Determine file extension based on codec
     final ext = CodecUtils.getSubtitleExtension(codec);
-
-    // Construct URL with authentication token
     return '$baseUrl$key.$ext?encoding=utf-8&X-Plex-Token=$token';
+  }
+
+  /// Constructs a sidecar URL for any subtitle track (internal or external),
+  /// used in transcode mode where embedded subtitle streams are stripped.
+  /// Falls back to the standard `/library/streams/{id}.{ext}` path when
+  /// [key] is missing.
+  String getTranscodeSidecarUrl(String baseUrl, String token) {
+    final ext = CodecUtils.getSubtitleExtension(codec);
+    final path = (key != null && key!.isNotEmpty) ? key! : '/library/streams/$id';
+    return '$baseUrl$path.$ext?encoding=utf-8&X-Plex-Token=$token';
   }
 }
 

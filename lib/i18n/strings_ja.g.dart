@@ -241,6 +241,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => '自動（推奨）';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => 'デバイスのメモリは${heap}MBです。${size}MBのバッファは再生の問題を引き起こす可能性があります。';
+	@override String get defaultQualityTitle => 'デフォルト画質';
+	@override String get defaultQualityDescription => '再生開始時に使用。低い値ほど帯域幅が削減されます。';
 	@override String get subtitleStyling => '字幕スタイル';
 	@override String get subtitleStylingDescription => '字幕の外観をカスタマイズ';
 	@override String get smallSkipDuration => '短いスキップ時間';
@@ -519,6 +521,13 @@ class _TranslationsVideoControlsJa implements TranslationsVideoControlsEn {
 	@override String get tracksButton => '音声と字幕';
 	@override String get chaptersButton => 'チャプター';
 	@override String get versionsButton => '動画バージョン';
+	@override String get versionQualityButton => 'バージョンと画質';
+	@override String get versionColumnHeader => 'バージョン';
+	@override String get qualityColumnHeader => '画質';
+	@override String get qualityOriginal => 'オリジナル';
+	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+	@override String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+	@override String get transcodeUnavailableFallback => 'トランスコードは利用できません — オリジナル画質で再生中';
 	@override String get pipButton => 'ピクチャーインピクチャーモード';
 	@override String get aspectRatioButton => 'アスペクト比';
 	@override String get ambientLighting => 'アンビエントライティング';
@@ -1520,6 +1529,8 @@ extension on TranslationsJa {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => '自動（推奨）',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'デバイスのメモリは${heap}MBです。${size}MBのバッファは再生の問題を引き起こす可能性があります。',
+			'settings.defaultQualityTitle' => 'デフォルト画質',
+			'settings.defaultQualityDescription' => '再生開始時に使用。低い値ほど帯域幅が削減されます。',
 			'settings.subtitleStyling' => '字幕スタイル',
 			'settings.subtitleStylingDescription' => '字幕の外観をカスタマイズ',
 			'settings.smallSkipDuration' => '短いスキップ時間',
@@ -1755,6 +1766,13 @@ extension on TranslationsJa {
 			'videoControls.tracksButton' => '音声と字幕',
 			'videoControls.chaptersButton' => 'チャプター',
 			'videoControls.versionsButton' => '動画バージョン',
+			'videoControls.versionQualityButton' => 'バージョンと画質',
+			'videoControls.versionColumnHeader' => 'バージョン',
+			'videoControls.qualityColumnHeader' => '画質',
+			'videoControls.qualityOriginal' => 'オリジナル',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => 'トランスコードは利用できません — オリジナル画質で再生中',
 			'videoControls.pipButton' => 'ピクチャーインピクチャーモード',
 			'videoControls.aspectRatioButton' => 'アスペクト比',
 			'videoControls.ambientLighting' => 'アンビエントライティング',
@@ -1912,6 +1930,8 @@ extension on TranslationsJa {
 			'libraries.confirmActionMessage' => 'この操作を実行してもよろしいですか？',
 			'libraries.showLibrary' => 'ライブラリを表示',
 			'libraries.hideLibrary' => 'ライブラリを非表示',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => 'ライブラリオプション',
 			'libraries.content' => 'ライブラリコンテンツ',
 			'libraries.selectLibrary' => 'ライブラリを選択',
@@ -1921,8 +1941,6 @@ extension on TranslationsJa {
 			'libraries.noFoldersFound' => 'フォルダが見つかりません',
 			'libraries.folders' => 'フォルダ',
 			'libraries.tabs.recommended' => 'おすすめ',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => 'ブラウズ',
 			'libraries.tabs.collections' => 'コレクション',
 			'libraries.tabs.playlists' => 'プレイリスト',

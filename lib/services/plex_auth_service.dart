@@ -374,7 +374,11 @@ class PlexServer {
   /// Priority: local > remote > relay, then HTTPS > HTTP, then lowest latency
   /// Tests both plex.direct URI and direct IP for each connection
   /// HTTPS connections are tested first, with HTTP as fallback
-  Stream<PlexConnection> findBestWorkingConnection({String? preferredUri, String? clientIdentifier}) async* {
+  Stream<PlexConnection> findBestWorkingConnection({
+    String? preferredUri,
+    String? clientIdentifier,
+    void Function(bool)? onTranscoderCapability,
+  }) async* {
     if (connections.isEmpty) {
       appLogger.w('No connections available for server discovery');
       return;
@@ -426,6 +430,7 @@ class PlexServer {
         if (result.success) {
           appLogger.i('Cached endpoint succeeded, using immediately', error: {'uri': preferredUri});
           firstCandidate = cachedCandidate;
+          if (result.transcoderVideo != null) onTranscoderCapability?.call(result.transcoderVideo!);
         } else {
           appLogger.w('Cached endpoint failed, falling back to candidate race', error: {'uri': preferredUri});
         }
@@ -462,6 +467,7 @@ class PlexServer {
           }
 
           if (result.success && !completer.isCompleted) {
+            if (result.transcoderVideo != null) onTranscoderCapability?.call(result.transcoderVideo!);
             completer.complete(candidate);
           }
 

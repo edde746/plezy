@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../models/transcode_quality_preset.dart';
 import '../../mpv/player/platform/player_android.dart';
+import '../../utils/quality_preset_labels.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
@@ -55,6 +57,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   bool _useExoPlayer = true;
   bool _useExternalPlayer = false;
   String _selectedExternalPlayerName = '';
+  TranscodeQualityPreset _defaultQualityPreset = TranscodeQualityPreset.original;
 
   @override
   void initState() {
@@ -95,6 +98,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       _useExoPlayer = _settingsService.getUseExoPlayer();
       _useExternalPlayer = _settingsService.getUseExternalPlayer();
       _selectedExternalPlayerName = _settingsService.getSelectedExternalPlayer().name;
+      _defaultQualityPreset = TranscodeQualityPreset.fromStorage(_settingsService.getDefaultQualityPreset());
       _isLoading = false;
     });
   }
@@ -129,6 +133,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
               _buildDisplaySwitchDelay(),
             if (Platform.isAndroid && _useExoPlayer) _buildTunneledPlayback(),
             _buildBufferSizeSelector(),
+            _buildDefaultQualityTile(),
 
             // --- Subtitles & Config ---
             SettingsSectionHeader(t.settings.subtitlesAndConfig),
@@ -296,6 +301,31 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       onChanged: (value) async {
         setState(() => _tunneledPlayback = value);
         await _settingsService.setTunneledPlayback(value);
+      },
+    );
+  }
+
+  Widget _buildDefaultQualityTile() {
+    return ListTile(
+      leading: const AppIcon(Symbols.high_quality_rounded, fill: 1),
+      title: Text(t.settings.defaultQualityTitle),
+      subtitle: Text(qualityPresetLabel(_defaultQualityPreset)),
+      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+      onTap: () async {
+        final value = await showSelectionDialog<TranscodeQualityPreset>(
+          context: context,
+          title: t.settings.defaultQualityTitle,
+          options: TranscodeQualityPreset.displayOrder
+              .map((p) => DialogOption(value: p, title: qualityPresetLabel(p)))
+              .toList(),
+          currentValue: _defaultQualityPreset,
+        );
+        if (value != null) {
+          setState(() {
+            _defaultQualityPreset = value;
+            _settingsService.setDefaultQualityPreset(value.storageKey);
+          });
+        }
       },
     );
   }

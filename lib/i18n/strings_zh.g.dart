@@ -241,6 +241,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => '自动（推荐）';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => '您的设备有 ${heap}MB 内存。${size}MB 的缓冲区可能导致播放问题。';
+	@override String get defaultQualityTitle => '默认画质';
+	@override String get defaultQualityDescription => '开始播放时使用。较低的值可减少带宽。';
 	@override String get subtitleStyling => '字幕样式';
 	@override String get subtitleStylingDescription => '调整字幕外观';
 	@override String get smallSkipDuration => '短跳过时长';
@@ -519,6 +521,13 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get tracksButton => '音频和字幕';
 	@override String get chaptersButton => '章节';
 	@override String get versionsButton => '视频版本';
+	@override String get versionQualityButton => '版本与画质';
+	@override String get versionColumnHeader => '版本';
+	@override String get qualityColumnHeader => '画质';
+	@override String get qualityOriginal => '原始';
+	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+	@override String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+	@override String get transcodeUnavailableFallback => '转码不可用 — 以原始画质播放';
 	@override String get pipButton => '画中画模式';
 	@override String get aspectRatioButton => '宽高比';
 	@override String get ambientLighting => '氛围灯光';
@@ -1520,6 +1529,8 @@ extension on TranslationsZh {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => '自动（推荐）',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '您的设备有 ${heap}MB 内存。${size}MB 的缓冲区可能导致播放问题。',
+			'settings.defaultQualityTitle' => '默认画质',
+			'settings.defaultQualityDescription' => '开始播放时使用。较低的值可减少带宽。',
 			'settings.subtitleStyling' => '字幕样式',
 			'settings.subtitleStylingDescription' => '调整字幕外观',
 			'settings.smallSkipDuration' => '短跳过时长',
@@ -1755,6 +1766,13 @@ extension on TranslationsZh {
 			'videoControls.tracksButton' => '音频和字幕',
 			'videoControls.chaptersButton' => '章节',
 			'videoControls.versionsButton' => '视频版本',
+			'videoControls.versionQualityButton' => '版本与画质',
+			'videoControls.versionColumnHeader' => '版本',
+			'videoControls.qualityColumnHeader' => '画质',
+			'videoControls.qualityOriginal' => '原始',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => '转码不可用 — 以原始画质播放',
 			'videoControls.pipButton' => '画中画模式',
 			'videoControls.aspectRatioButton' => '宽高比',
 			'videoControls.ambientLighting' => '氛围灯光',
@@ -1912,6 +1930,8 @@ extension on TranslationsZh {
 			'libraries.confirmActionMessage' => '确定要执行此操作吗？',
 			'libraries.showLibrary' => '显示媒体库',
 			'libraries.hideLibrary' => '隐藏媒体库',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => '媒体库选项',
 			'libraries.content' => '媒体库内容',
 			'libraries.selectLibrary' => '选择媒体库',
@@ -1921,8 +1941,6 @@ extension on TranslationsZh {
 			'libraries.noFoldersFound' => '未找到文件夹',
 			'libraries.folders' => '文件夹',
 			'libraries.tabs.recommended' => '推荐',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => '浏览',
 			'libraries.tabs.collections' => '合集',
 			'libraries.tabs.playlists' => '播放列表',

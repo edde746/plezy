@@ -241,6 +241,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Auto (Empfohlen)';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Ihr Gerät hat ${heap}MB Speicher. Ein ${size}MB-Puffer kann Wiedergabeprobleme verursachen.';
+	@override String get defaultQualityTitle => 'Standardqualität';
+	@override String get defaultQualityDescription => 'Wird beim Starten der Wiedergabe verwendet. Niedrigere Werte reduzieren die Bandbreite.';
 	@override String get subtitleStyling => 'Untertitel-Stil';
 	@override String get subtitleStylingDescription => 'Aussehen von Untertiteln anpassen';
 	@override String get smallSkipDuration => 'Kleine Sprungdauer';
@@ -519,6 +521,13 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get tracksButton => 'Audio und Untertitel';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversionen';
+	@override String get versionQualityButton => 'Version & Qualität';
+	@override String get versionColumnHeader => 'Version';
+	@override String get qualityColumnHeader => 'Qualität';
+	@override String get qualityOriginal => 'Original';
+	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+	@override String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+	@override String get transcodeUnavailableFallback => 'Transkodierung nicht verfügbar — Wiedergabe in Originalqualität';
 	@override String get pipButton => 'Bild-in-Bild Modus';
 	@override String get aspectRatioButton => 'Seitenverhältnis';
 	@override String get ambientLighting => 'Umgebungsbeleuchtung';
@@ -1520,6 +1529,8 @@ extension on TranslationsDe {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Auto (Empfohlen)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Ihr Gerät hat ${heap}MB Speicher. Ein ${size}MB-Puffer kann Wiedergabeprobleme verursachen.',
+			'settings.defaultQualityTitle' => 'Standardqualität',
+			'settings.defaultQualityDescription' => 'Wird beim Starten der Wiedergabe verwendet. Niedrigere Werte reduzieren die Bandbreite.',
 			'settings.subtitleStyling' => 'Untertitel-Stil',
 			'settings.subtitleStylingDescription' => 'Aussehen von Untertiteln anpassen',
 			'settings.smallSkipDuration' => 'Kleine Sprungdauer',
@@ -1755,6 +1766,13 @@ extension on TranslationsDe {
 			'videoControls.tracksButton' => 'Audio und Untertitel',
 			'videoControls.chaptersButton' => 'Kapitel',
 			'videoControls.versionsButton' => 'Videoversionen',
+			'videoControls.versionQualityButton' => 'Version & Qualität',
+			'videoControls.versionColumnHeader' => 'Version',
+			'videoControls.qualityColumnHeader' => 'Qualität',
+			'videoControls.qualityOriginal' => 'Original',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => 'Transkodierung nicht verfügbar — Wiedergabe in Originalqualität',
 			'videoControls.pipButton' => 'Bild-in-Bild Modus',
 			'videoControls.aspectRatioButton' => 'Seitenverhältnis',
 			'videoControls.ambientLighting' => 'Umgebungsbeleuchtung',
@@ -1912,6 +1930,8 @@ extension on TranslationsDe {
 			'libraries.confirmActionMessage' => 'Aktion wirklich durchführen?',
 			'libraries.showLibrary' => 'Mediathek anzeigen',
 			'libraries.hideLibrary' => 'Mediathek ausblenden',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Mediatheksoptionen',
 			'libraries.content' => 'Bibliotheksinhalt',
 			'libraries.selectLibrary' => 'Bibliothek auswählen',
@@ -1921,8 +1941,6 @@ extension on TranslationsDe {
 			'libraries.noFoldersFound' => 'Keine Ordner gefunden',
 			'libraries.folders' => 'Ordner',
 			'libraries.tabs.recommended' => 'Empfohlen',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Durchsuchen',
 			'libraries.tabs.collections' => 'Sammlungen',
 			'libraries.tabs.playlists' => 'Wiedergabelisten',

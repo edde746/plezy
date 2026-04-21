@@ -241,6 +241,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Auto (Rekommenderat)';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Din enhet har ${heap}MB minne. En buffert på ${size}MB kan orsaka uppspelningsproblem.';
+	@override String get defaultQualityTitle => 'Standardkvalitet';
+	@override String get defaultQualityDescription => 'Används vid start av uppspelning. Lägre värden minskar bandbredden.';
 	@override String get subtitleStyling => 'Undertext-styling';
 	@override String get subtitleStylingDescription => 'Anpassa undertextutseende';
 	@override String get smallSkipDuration => 'Kort hoppvaraktighet';
@@ -519,6 +521,13 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get tracksButton => 'Ljud och undertexter';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversioner';
+	@override String get versionQualityButton => 'Version och kvalitet';
+	@override String get versionColumnHeader => 'Version';
+	@override String get qualityColumnHeader => 'Kvalitet';
+	@override String get qualityOriginal => 'Original';
+	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+	@override String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+	@override String get transcodeUnavailableFallback => 'Transkodning otillgänglig — spelar upp i originalkvalitet';
 	@override String get pipButton => 'Bild-i-bild läge';
 	@override String get aspectRatioButton => 'Bildförhållande';
 	@override String get ambientLighting => 'Ambientbelysning';
@@ -1520,6 +1529,8 @@ extension on TranslationsSv {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Auto (Rekommenderat)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Din enhet har ${heap}MB minne. En buffert på ${size}MB kan orsaka uppspelningsproblem.',
+			'settings.defaultQualityTitle' => 'Standardkvalitet',
+			'settings.defaultQualityDescription' => 'Används vid start av uppspelning. Lägre värden minskar bandbredden.',
 			'settings.subtitleStyling' => 'Undertext-styling',
 			'settings.subtitleStylingDescription' => 'Anpassa undertextutseende',
 			'settings.smallSkipDuration' => 'Kort hoppvaraktighet',
@@ -1755,6 +1766,13 @@ extension on TranslationsSv {
 			'videoControls.tracksButton' => 'Ljud och undertexter',
 			'videoControls.chaptersButton' => 'Kapitel',
 			'videoControls.versionsButton' => 'Videoversioner',
+			'videoControls.versionQualityButton' => 'Version och kvalitet',
+			'videoControls.versionColumnHeader' => 'Version',
+			'videoControls.qualityColumnHeader' => 'Kvalitet',
+			'videoControls.qualityOriginal' => 'Original',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => 'Transkodning otillgänglig — spelar upp i originalkvalitet',
 			'videoControls.pipButton' => 'Bild-i-bild läge',
 			'videoControls.aspectRatioButton' => 'Bildförhållande',
 			'videoControls.ambientLighting' => 'Ambientbelysning',
@@ -1912,6 +1930,8 @@ extension on TranslationsSv {
 			'libraries.confirmActionMessage' => 'Är du säker på att du vill utföra denna åtgärd?',
 			'libraries.showLibrary' => 'Visa bibliotek',
 			'libraries.hideLibrary' => 'Dölj bibliotek',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Biblioteksalternativ',
 			'libraries.content' => 'bibliotekets innehåll',
 			'libraries.selectLibrary' => 'Välj bibliotek',
@@ -1921,8 +1941,6 @@ extension on TranslationsSv {
 			'libraries.noFoldersFound' => 'Inga mappar hittades',
 			'libraries.folders' => 'mappar',
 			'libraries.tabs.recommended' => 'Rekommenderat',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Bläddra',
 			'libraries.tabs.collections' => 'Samlingar',
 			'libraries.tabs.playlists' => 'Spellistor',

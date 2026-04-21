@@ -241,6 +241,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Automatyczny (Zalecany)';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Twoje urządzenie ma ${heap}MB pamięci. Bufor ${size}MB może powodować problemy z odtwarzaniem.';
+	@override String get defaultQualityTitle => 'Domyślna jakość';
+	@override String get defaultQualityDescription => 'Używane podczas rozpoczynania odtwarzania. Niższe wartości zmniejszają przepustowość.';
 	@override String get subtitleStyling => 'Styl napisów';
 	@override String get subtitleStylingDescription => 'Dostosuj wygląd napisów';
 	@override String get smallSkipDuration => 'Krótki skok';
@@ -519,6 +521,13 @@ class _TranslationsVideoControlsPl implements TranslationsVideoControlsEn {
 	@override String get tracksButton => 'Audio i napisy';
 	@override String get chaptersButton => 'Rozdziały';
 	@override String get versionsButton => 'Wersje wideo';
+	@override String get versionQualityButton => 'Wersja i jakość';
+	@override String get versionColumnHeader => 'Wersja';
+	@override String get qualityColumnHeader => 'Jakość';
+	@override String get qualityOriginal => 'Oryginalna';
+	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+	@override String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+	@override String get transcodeUnavailableFallback => 'Transkodowanie niedostępne — odtwarzanie w oryginalnej jakości';
 	@override String get pipButton => 'Tryb obraz w obrazie';
 	@override String get aspectRatioButton => 'Proporcje';
 	@override String get ambientLighting => 'Oświetlenie otoczenia';
@@ -1520,6 +1529,8 @@ extension on TranslationsPl {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Automatyczny (Zalecany)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Twoje urządzenie ma ${heap}MB pamięci. Bufor ${size}MB może powodować problemy z odtwarzaniem.',
+			'settings.defaultQualityTitle' => 'Domyślna jakość',
+			'settings.defaultQualityDescription' => 'Używane podczas rozpoczynania odtwarzania. Niższe wartości zmniejszają przepustowość.',
 			'settings.subtitleStyling' => 'Styl napisów',
 			'settings.subtitleStylingDescription' => 'Dostosuj wygląd napisów',
 			'settings.smallSkipDuration' => 'Krótki skok',
@@ -1755,6 +1766,13 @@ extension on TranslationsPl {
 			'videoControls.tracksButton' => 'Audio i napisy',
 			'videoControls.chaptersButton' => 'Rozdziały',
 			'videoControls.versionsButton' => 'Wersje wideo',
+			'videoControls.versionQualityButton' => 'Wersja i jakość',
+			'videoControls.versionColumnHeader' => 'Wersja',
+			'videoControls.qualityColumnHeader' => 'Jakość',
+			'videoControls.qualityOriginal' => 'Oryginalna',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => 'Transkodowanie niedostępne — odtwarzanie w oryginalnej jakości',
 			'videoControls.pipButton' => 'Tryb obraz w obrazie',
 			'videoControls.aspectRatioButton' => 'Proporcje',
 			'videoControls.ambientLighting' => 'Oświetlenie otoczenia',
@@ -1912,6 +1930,8 @@ extension on TranslationsPl {
 			'libraries.confirmActionMessage' => 'Czy na pewno chcesz wykonać tę operację?',
 			'libraries.showLibrary' => 'Pokaż bibliotekę',
 			'libraries.hideLibrary' => 'Ukryj bibliotekę',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Opcje biblioteki',
 			'libraries.content' => 'zawartość biblioteki',
 			'libraries.selectLibrary' => 'Wybierz bibliotekę',
@@ -1921,8 +1941,6 @@ extension on TranslationsPl {
 			'libraries.noFoldersFound' => 'Nie znaleziono folderów',
 			'libraries.folders' => 'foldery',
 			'libraries.tabs.recommended' => 'Rekomendowane',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Przeglądaj',
 			'libraries.tabs.collections' => 'Kolekcje',
 			'libraries.tabs.playlists' => 'Playlisty',

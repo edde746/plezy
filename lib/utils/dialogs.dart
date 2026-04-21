@@ -322,11 +322,13 @@ class _TextInputDialogState extends State<_TextInputDialog> with _TextInputDialo
 }
 
 /// Shows a simple option picker dialog with focusable items for TV/keyboard navigation.
-/// Returns the selected value, or null if cancelled.
+/// Returns the selected value, or null if cancelled. Each option's [icon] may
+/// be `null` to render a label-only row (useful when the choices are variants
+/// of the same thing and a repeated icon would just be noise).
 Future<T?> showOptionPickerDialog<T>(
   BuildContext context, {
   required String title,
-  required List<({IconData icon, String label, T value})> options,
+  required List<({IconData? icon, String label, T value})> options,
   Future<T?> Function(T value)? onBeforeClose,
 }) {
   final focusFirstItem = InputModeTracker.isKeyboardMode(context);
@@ -343,7 +345,7 @@ Future<T?> showOptionPickerDialog<T>(
 
 class _OptionPickerDialog<T> extends StatefulWidget {
   final String title;
-  final List<({IconData icon, String label, T value})> options;
+  final List<({IconData? icon, String label, T value})> options;
   final bool focusFirstItem;
   final Future<T?> Function(T value)? onBeforeClose;
 
@@ -383,9 +385,10 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       children: List.generate(widget.options.length, (index) {
         final option = widget.options[index];
+        final icon = option.icon;
         return FocusableListTile(
           focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-          leading: AppIcon(option.icon, fill: 1, size: 24),
+          leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
           title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
           contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
           onTap: () async {

@@ -241,6 +241,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String bufferSizeMB({required Object size}) => '${size}МБ';
 	@override String get bufferSizeAuto => 'Авто (Рекомендуется)';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => 'У вашего устройства ${heap}МБ памяти. Буфер ${size}МБ может вызвать проблемы с воспроизведением.';
+	@override String get defaultQualityTitle => 'Качество по умолчанию';
+	@override String get defaultQualityDescription => 'Используется при запуске воспроизведения. Более низкие значения снижают пропускную способность.';
 	@override String get subtitleStyling => 'Стиль субтитров';
 	@override String get subtitleStylingDescription => 'Настроить внешний вид субтитров';
 	@override String get smallSkipDuration => 'Малая перемотка';
@@ -519,6 +521,13 @@ class _TranslationsVideoControlsRu implements TranslationsVideoControlsEn {
 	@override String get tracksButton => 'Аудио и субтитры';
 	@override String get chaptersButton => 'Главы';
 	@override String get versionsButton => 'Версии видео';
+	@override String get versionQualityButton => 'Версия и качество';
+	@override String get versionColumnHeader => 'Версия';
+	@override String get qualityColumnHeader => 'Качество';
+	@override String get qualityOriginal => 'Оригинал';
+	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+	@override String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+	@override String get transcodeUnavailableFallback => 'Транскодирование недоступно — воспроизведение в оригинальном качестве';
 	@override String get pipButton => 'Режим «картинка в картинке»';
 	@override String get aspectRatioButton => 'Соотношение сторон';
 	@override String get ambientLighting => 'Фоновая подсветка';
@@ -1520,6 +1529,8 @@ extension on TranslationsRu {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}МБ',
 			'settings.bufferSizeAuto' => 'Авто (Рекомендуется)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'У вашего устройства ${heap}МБ памяти. Буфер ${size}МБ может вызвать проблемы с воспроизведением.',
+			'settings.defaultQualityTitle' => 'Качество по умолчанию',
+			'settings.defaultQualityDescription' => 'Используется при запуске воспроизведения. Более низкие значения снижают пропускную способность.',
 			'settings.subtitleStyling' => 'Стиль субтитров',
 			'settings.subtitleStylingDescription' => 'Настроить внешний вид субтитров',
 			'settings.smallSkipDuration' => 'Малая перемотка',
@@ -1755,6 +1766,13 @@ extension on TranslationsRu {
 			'videoControls.tracksButton' => 'Аудио и субтитры',
 			'videoControls.chaptersButton' => 'Главы',
 			'videoControls.versionsButton' => 'Версии видео',
+			'videoControls.versionQualityButton' => 'Версия и качество',
+			'videoControls.versionColumnHeader' => 'Версия',
+			'videoControls.qualityColumnHeader' => 'Качество',
+			'videoControls.qualityOriginal' => 'Оригинал',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => 'Транскодирование недоступно — воспроизведение в оригинальном качестве',
 			'videoControls.pipButton' => 'Режим «картинка в картинке»',
 			'videoControls.aspectRatioButton' => 'Соотношение сторон',
 			'videoControls.ambientLighting' => 'Фоновая подсветка',
@@ -1912,6 +1930,8 @@ extension on TranslationsRu {
 			'libraries.confirmActionMessage' => 'Вы уверены, что хотите выполнить это действие?',
 			'libraries.showLibrary' => 'Показать библиотеку',
 			'libraries.hideLibrary' => 'Скрыть библиотеку',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Параметры библиотеки',
 			'libraries.content' => 'содержимое библиотеки',
 			'libraries.selectLibrary' => 'Выбрать библиотеку',
@@ -1921,8 +1941,6 @@ extension on TranslationsRu {
 			'libraries.noFoldersFound' => 'Папки не найдены',
 			'libraries.folders' => 'папки',
 			'libraries.tabs.recommended' => 'Рекомендуемые',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Обзор',
 			'libraries.tabs.collections' => 'Коллекции',
 			'libraries.tabs.playlists' => 'Плейлисты',

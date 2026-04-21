@@ -241,6 +241,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Auto (Aanbevolen)';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Je apparaat heeft ${heap}MB geheugen. Een buffer van ${size}MB kan afspeelproblemen veroorzaken.';
+	@override String get defaultQualityTitle => 'Standaardkwaliteit';
+	@override String get defaultQualityDescription => 'Wordt gebruikt bij het starten van de weergave. Lagere waarden verminderen de bandbreedte.';
 	@override String get subtitleStyling => 'Ondertitel opmaak';
 	@override String get subtitleStylingDescription => 'Pas ondertitel uiterlijk aan';
 	@override String get smallSkipDuration => 'Korte skip duur';
@@ -519,6 +521,13 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get tracksButton => 'Audio en ondertitels';
 	@override String get chaptersButton => 'Hoofdstukken';
 	@override String get versionsButton => 'Videoversies';
+	@override String get versionQualityButton => 'Versie en kwaliteit';
+	@override String get versionColumnHeader => 'Versie';
+	@override String get qualityColumnHeader => 'Kwaliteit';
+	@override String get qualityOriginal => 'Origineel';
+	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+	@override String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+	@override String get transcodeUnavailableFallback => 'Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld';
 	@override String get pipButton => 'Beeld-in-beeld modus';
 	@override String get aspectRatioButton => 'Beeldverhouding';
 	@override String get ambientLighting => 'Omgevingsverlichting';
@@ -1520,6 +1529,8 @@ extension on TranslationsNl {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Auto (Aanbevolen)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Je apparaat heeft ${heap}MB geheugen. Een buffer van ${size}MB kan afspeelproblemen veroorzaken.',
+			'settings.defaultQualityTitle' => 'Standaardkwaliteit',
+			'settings.defaultQualityDescription' => 'Wordt gebruikt bij het starten van de weergave. Lagere waarden verminderen de bandbreedte.',
 			'settings.subtitleStyling' => 'Ondertitel opmaak',
 			'settings.subtitleStylingDescription' => 'Pas ondertitel uiterlijk aan',
 			'settings.smallSkipDuration' => 'Korte skip duur',
@@ -1755,6 +1766,13 @@ extension on TranslationsNl {
 			'videoControls.tracksButton' => 'Audio en ondertitels',
 			'videoControls.chaptersButton' => 'Hoofdstukken',
 			'videoControls.versionsButton' => 'Videoversies',
+			'videoControls.versionQualityButton' => 'Versie en kwaliteit',
+			'videoControls.versionColumnHeader' => 'Versie',
+			'videoControls.qualityColumnHeader' => 'Kwaliteit',
+			'videoControls.qualityOriginal' => 'Origineel',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => 'Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld',
 			'videoControls.pipButton' => 'Beeld-in-beeld modus',
 			'videoControls.aspectRatioButton' => 'Beeldverhouding',
 			'videoControls.ambientLighting' => 'Omgevingsverlichting',
@@ -1912,6 +1930,8 @@ extension on TranslationsNl {
 			'libraries.confirmActionMessage' => 'Weet je zeker dat je deze actie wilt uitvoeren?',
 			'libraries.showLibrary' => 'Toon bibliotheek',
 			'libraries.hideLibrary' => 'Verberg bibliotheek',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Bibliotheek opties',
 			'libraries.content' => 'bibliotheekinhoud',
 			'libraries.selectLibrary' => 'Bibliotheek kiezen',
@@ -1921,8 +1941,6 @@ extension on TranslationsNl {
 			'libraries.noFoldersFound' => 'Geen mappen gevonden',
 			'libraries.folders' => 'mappen',
 			'libraries.tabs.recommended' => 'Aanbevolen',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Bladeren',
 			'libraries.tabs.collections' => 'Collecties',
 			'libraries.tabs.playlists' => 'Afspeellijsten',

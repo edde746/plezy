@@ -241,6 +241,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => '자동 (권장)';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => '기기 메모리가 ${heap}MB입니다. ${size}MB 버퍼는 재생 문제를 일으킬 수 있습니다.';
+	@override String get defaultQualityTitle => '기본 화질';
+	@override String get defaultQualityDescription => '재생 시작 시 사용됩니다. 낮은 값은 대역폭을 줄입니다.';
 	@override String get subtitleStyling => '자막 스타일';
 	@override String get subtitleStylingDescription => '자막의 외형을 사용자 설정';
 	@override String get smallSkipDuration => '짧은 건너뛰기 시간';
@@ -519,6 +521,13 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get tracksButton => '오디오 및 자막';
 	@override String get chaptersButton => '챕터';
 	@override String get versionsButton => '동영상 버전';
+	@override String get versionQualityButton => '버전 및 화질';
+	@override String get versionColumnHeader => '버전';
+	@override String get qualityColumnHeader => '화질';
+	@override String get qualityOriginal => '원본';
+	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+	@override String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+	@override String get transcodeUnavailableFallback => '트랜스코딩을 사용할 수 없음 — 원본 화질로 재생';
 	@override String get pipButton => '픽처 인 픽처 모드';
 	@override String get aspectRatioButton => '화면비율';
 	@override String get ambientLighting => '주변 조명';
@@ -1520,6 +1529,8 @@ extension on TranslationsKo {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => '자동 (권장)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '기기 메모리가 ${heap}MB입니다. ${size}MB 버퍼는 재생 문제를 일으킬 수 있습니다.',
+			'settings.defaultQualityTitle' => '기본 화질',
+			'settings.defaultQualityDescription' => '재생 시작 시 사용됩니다. 낮은 값은 대역폭을 줄입니다.',
 			'settings.subtitleStyling' => '자막 스타일',
 			'settings.subtitleStylingDescription' => '자막의 외형을 사용자 설정',
 			'settings.smallSkipDuration' => '짧은 건너뛰기 시간',
@@ -1755,6 +1766,13 @@ extension on TranslationsKo {
 			'videoControls.tracksButton' => '오디오 및 자막',
 			'videoControls.chaptersButton' => '챕터',
 			'videoControls.versionsButton' => '동영상 버전',
+			'videoControls.versionQualityButton' => '버전 및 화질',
+			'videoControls.versionColumnHeader' => '버전',
+			'videoControls.qualityColumnHeader' => '화질',
+			'videoControls.qualityOriginal' => '원본',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => '트랜스코딩을 사용할 수 없음 — 원본 화질로 재생',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
 			'videoControls.aspectRatioButton' => '화면비율',
 			'videoControls.ambientLighting' => '주변 조명',
@@ -1912,6 +1930,8 @@ extension on TranslationsKo {
 			'libraries.confirmActionMessage' => '이 작업을 실행 하시겠습니까?',
 			'libraries.showLibrary' => '미디어 라이브러리 표시',
 			'libraries.hideLibrary' => '미디어 라이브러리 숨기기',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => '미디어 라이브러리 옵션',
 			'libraries.content' => '미디어 라이브러리 콘텐츠',
 			'libraries.selectLibrary' => '미디어 라이브러리 선택',
@@ -1921,8 +1941,6 @@ extension on TranslationsKo {
 			'libraries.noFoldersFound' => '폴더를 찾을 수 없습니다',
 			'libraries.folders' => '폴더',
 			'libraries.tabs.recommended' => '추천',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => '찾아보기',
 			'libraries.tabs.collections' => '컬렉션',
 			'libraries.tabs.playlists' => '재생 목록',

@@ -27,6 +27,7 @@ import '../utils/content_utils.dart';
 import '../models/plex_playlist.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_video_playback_data.dart';
+import '../models/transcode_quality_preset.dart';
 import '../utils/endpoint_failover_interceptor.dart';
 import '../utils/app_logger.dart';
 import '../utils/connection_constants.dart';
@@ -98,7 +99,12 @@ class ConnectionTestResult {
   final int latencyMs;
   final String? error;
 
-  ConnectionTestResult({required this.success, required this.latencyMs, this.error});
+  /// `transcoderVideo` from the `/` MediaContainer, captured on successful
+  /// probes so the connection race doubles as a capability probe. `null`
+  /// when the probe didn't succeed or the field was absent.
+  final bool? transcoderVideo;
+
+  ConnectionTestResult({required this.success, required this.latencyMs, this.error, this.transcoderVideo});
 }
 
 class PlexClient {
@@ -119,6 +125,14 @@ class PlexClient {
 
   /// Whether to operate in offline mode (use cache only)
   bool _offlineMode = false;
+
+  /// Cached result of [serverSupportsVideoTranscoding]. `null` = not yet fetched.
+  bool? _serverTranscoderCached;
+
+  /// In-flight probe for [serverSupportsVideoTranscoding], used to dedupe
+  /// concurrent callers (e.g. the post-connect warm-up racing the first
+  /// playback).
+  Future<bool>? _serverTranscoderPending;
 
   /// Libraries parsed from /media/providers (includes individually shared items)
   late final List<PlexLibrary> _providerLibraries;
@@ -157,6 +171,7 @@ class PlexClient {
     List<String>? prioritizedEndpoints,
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
     VoidCallback? onAllEndpointsExhausted,
+    bool? seedTranscoderVideoSupport,
   }) async {
     final client = PlexClient._(
       config,
@@ -166,7 +181,16 @@ class PlexClient {
       onEndpointChanged: onEndpointChanged,
       onAllEndpointsExhausted: onAllEndpointsExhausted,
     );
+    if (seedTranscoderVideoSupport != null) {
+      client._serverTranscoderCached = seedTranscoderVideoSupport;
+    }
     await client._initMediaProviders();
+    // If the connection race didn't seed the capability, warm the cache in
+    // the background so the first playback doesn't pay the probe cost on its
+    // hot path.
+    if (seedTranscoderVideoSupport == null) {
+      unawaited(client.serverSupportsVideoTranscoding());
+    }
     return client;
   }
 
@@ -415,10 +439,16 @@ class PlexClient {
       stopwatch.stop();
       final success = response.statusCode == 200;
 
+      bool? transcoderVideo;
+      if (success && response.data is Map && response.data['MediaContainer'] is Map) {
+        transcoderVideo = flexibleBool((response.data['MediaContainer'] as Map)['transcoderVideo']);
+      }
+
       return ConnectionTestResult(
         success: success,
         latencyMs: stopwatch.elapsedMilliseconds,
         error: success ? null : 'HTTP ${response.statusCode}',
+        transcoderVideo: transcoderVideo,
       );
     } on PlexHttpException catch (e) {
       stopwatch.stop();
@@ -2899,6 +2929,244 @@ class PlexClient {
     } catch (e, st) {
       appLogger.e('Failed to build live stream path', error: e, stackTrace: st);
       return null;
+    }
+  }
+
+  /// Checks whether the server has video transcoding enabled.
+  ///
+  /// Reads `transcoderVideo` from the root MediaContainer. Result is cached
+  /// for the lifetime of this [PlexClient]. Returns `true` on error (fail-open)
+  /// — the transcode decision call itself will fail gracefully if transcoding
+  /// really is unavailable.
+  Future<bool> serverSupportsVideoTranscoding() {
+    final cached = _serverTranscoderCached;
+    if (cached != null) return Future.value(cached);
+    return _serverTranscoderPending ??= _fetchTranscoderCapability();
+  }
+
+  /// Synchronous view of the probe — returns the cached value, or `true`
+  /// (assume supported) if the post-connect warm-up hasn't landed yet. The
+  /// transcode decision call has its own fallback path, so guessing wrong
+  /// here just routes through that fallback instead of blocking playback.
+  bool get serverSupportsVideoTranscodingCached => _serverTranscoderCached ?? true;
+
+  Future<bool> _fetchTranscoderCapability() async {
+    try {
+      // Tight timeout: `/` returns a tiny MediaContainer — any responsive
+      // server answers in well under a second. Inheriting the default 120 s
+      // receive timeout would keep a hung server from ever resolving.
+      final response = await _http.get('/', timeout: const Duration(seconds: 5));
+      final container = _getMediaContainer(response);
+      final value = container?['transcoderVideo'];
+      final supported = flexibleBool(value);
+      _serverTranscoderCached = supported;
+      return supported;
+    } catch (e) {
+      appLogger.w('Failed to query server transcoder capability', error: e);
+      _serverTranscoderCached = true;
+      return true;
+    }
+  }
+
+  /// Build a VOD transcode stream URL (decision + start path).
+  ///
+  /// Mirrors [buildLiveStreamPath] but for on-demand video with a quality
+  /// preset, selected audio stream, and HLS protocol. Plex returns a single
+  /// audio track and no subtitle tracks in the transcoded stream — callers
+  /// are expected to sidecar additional subtitles separately.
+  ///
+  /// [transcodeSessionId] and [sessionIdentifier] should be reused across
+  /// seeks + quality/version/audio switches within one playback so the
+  /// server-side transcode session is preserved.
+  Future<({String? startPath, TranscodeDecisionOutcome outcome})> buildTranscodeStartPath({
+    required String ratingKey,
+    required int mediaIndex,
+    required TranscodeQualityPreset preset,
+    required String sessionIdentifier,
+    required String transcodeSessionId,
+    int? audioStreamId,
+    int? offsetMs,
+  }) async {
+    try {
+      final isOriginal = preset.isOriginal;
+      final metadataPath = '/library/metadata/$ratingKey';
+
+      // Build the client profile from scratch via X-Plex-Client-Profile-Extra.
+      // We use the `Generic` base platform (see [_transcodePlatformName]) which
+      // has no pre-installed transcode targets, so we must `add-transcode-target`
+      // rather than `append-transcode-target-codec` (which only edits existing
+      // targets — empty on Generic, hence Plex returned decision code 2000
+      // "neither direct play nor conversion is available").
+      //
+      // For non-original presets we also add a bitrate limitation that caps
+      // the video codec; with `replace=true` it overrides any default limit.
+      //
+      // See openapi.md §"Profile Augmentations" for the DSL reference.
+      final profileExtraClauses = <String>[];
+      if (!isOriginal && preset.videoBitrateKbps != null) {
+        profileExtraClauses.add(
+          'add-limitation(scope=videoCodec&scopeName=*&type=upperBound'
+          '&name=video.bitrate&value=${preset.videoBitrateKbps}&replace=true)',
+        );
+      }
+      // Declare both h264 and hevc as allowed transcode targets. In practice
+      // Plex's decision engine strongly prefers h264 for HLS output, so hevc
+      // only gets chosen in edge cases (e.g. HDR content where the server
+      // wants to preserve dynamic range). The codec-list comma is pre-encoded
+      // as `%2C` — see the profile-extra encoding note above.
+      profileExtraClauses.add(
+        'add-transcode-target(type=videoProfile&context=streaming'
+        '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc&audioCodec=aac)',
+      );
+      final clientProfileExtra = profileExtraClauses.join('+');
+
+      // HLS protocol: seekable via manifest segments. We started with `dash`
+      // (what Plex Web on Chrome uses) but Plex's server only has DASH
+      // transcode profiles for Chrome/Firefox/Safari/Opera — mobile/desktop
+      // platforms fall through with "No conversion profile found for
+      // protocol dash". HLS profiles exist for every Plex-accepted platform.
+      final allParams = <String, String>{
+        'hasMDE': '1',
+        'path': metadataPath,
+        'mediaIndex': mediaIndex.toString(),
+        'partIndex': '0',
+        'protocol': 'hls',
+        'fastSeek': '1',
+        'directPlay': isOriginal ? '1' : '0',
+        'directStream': isOriginal ? '1' : '0',
+        'subtitleSize': '100',
+        'audioBoost': '100',
+        'location': 'lan',
+        if (!isOriginal && preset.videoBitrateKbps != null) 'maxVideoBitrate': preset.videoBitrateKbps.toString(),
+        'addDebugOverlay': '0',
+        'autoAdjustQuality': '0',
+        'directStreamAudio': '0',
+        'mediaBufferSize': '102400',
+        'session': transcodeSessionId,
+        // Subtitles are delivered as client-side sidecars (see
+        // [PlaybackInitializationService._buildTranscodeSidecarSubtitles]).
+        // `subtitles=none` makes the server set the subtitle decision to
+        // `ignore`, so nothing is embedded or burned into the video stream.
+        'subtitles': 'none',
+        // Preserve source timestamps in the transcoded segments. Without it,
+        // Plex resets segment PTS to 0 — so mpv shows 0:00 and sidecar
+        // subtitles desync even though the server is transcoding from the
+        // `offset` position. With copyts=1 the first segment's PTS equals
+        // the source offset and the player's clock lines up with source time.
+        'copyts': '1',
+        if (audioStreamId != null) 'audioStreamID': audioStreamId.toString(),
+        'Accept-Language': 'en',
+        'X-Plex-Session-Identifier': sessionIdentifier,
+        'X-Plex-Client-Profile-Extra': clientProfileExtra,
+        'X-Plex-Incomplete-Segments': '1',
+        'X-Plex-Features': 'external-media,indirect-media',
+        'X-Plex-Model': 'standalone',
+        'X-Plex-Language': 'en',
+        'X-Plex-Product': config.product,
+        'X-Plex-Version': config.version,
+        'X-Plex-Client-Identifier': config.clientIdentifier,
+        // Plex's server rejects unknown platform names with HTTP 400 and maps
+        // known names to codec/bitrate base profiles. Our usual "Flutter"
+        // platform, plus "MacOSX" / "Linux", are all rejected; swap to a
+        // Plex-recognized name just for transcode requests. See
+        // [_transcodePlatformName] for the mapping.
+        'X-Plex-Platform': _transcodePlatformName(),
+        if (config.device != null) 'X-Plex-Device': config.device!,
+        if (offsetMs != null) 'offset': (offsetMs ~/ 1000).toString(),
+        if (config.token != null) 'X-Plex-Token': config.token!,
+      };
+
+      final queryString = allParams.entries.map((e) => '${_plexEncode(e.key)}=${_plexEncode(e.value)}').join('&');
+
+      final decisionClient = PlexHttpClient(
+        connectTimeout: ConnectionTimeouts.connect,
+        receiveTimeout: ConnectionTimeouts.receive,
+        defaultHeaders: const {'Accept-Language': 'en', 'Accept': 'application/json'},
+      );
+      final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
+      final decisionResponse = await decisionClient.get(decisionUrl);
+
+      final decisionBody = decisionResponse.data?.toString() ?? '<empty>';
+      appLogger.i(
+        'Transcode decision [${decisionResponse.statusCode}] body: '
+        '${decisionBody.length > 2000 ? '${decisionBody.substring(0, 2000)}…' : decisionBody}',
+      );
+
+      if (decisionResponse.statusCode != 200) {
+        appLogger.w('Transcode decision returned ${decisionResponse.statusCode}');
+        return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
+      }
+
+      final outcome = _parseTranscodeDecisionOutcome(decisionResponse.data, isOriginal: isOriginal);
+      if (outcome == TranscodeDecisionOutcome.failed) {
+        return (startPath: null, outcome: outcome);
+      }
+
+      final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
+      final startQuery = startParams.entries.map((e) => '${_plexEncode(e.key)}=${_plexEncode(e.value)}').join('&');
+
+      // `.m3u8` tells the server to return an HLS manifest.
+      return (startPath: '/video/:/transcode/universal/start.m3u8?$startQuery', outcome: outcome);
+    } catch (e, st) {
+      appLogger.e('Failed to build transcode start path', error: e, stackTrace: st);
+      return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
+    }
+  }
+
+  /// Platform name Plex Media Server accepts on the transcode decision
+  /// endpoint for arbitrary clients. Our default "Flutter" returns HTTP 400,
+  /// and the known-OS names (`MacOSX`, `Mac`, `Linux`) are also rejected.
+  /// `Generic` is accepted and comes with no preset transcode targets — we
+  /// build the profile ourselves via `X-Plex-Client-Profile-Extra` with
+  /// `add-transcode-target`.
+  static String _transcodePlatformName() => 'Generic';
+
+  /// Strict percent-encoder matching Plex Web's URL encoder — escapes the
+  /// extra characters `(`, `)`, `*`, `'`, `!` that Dart's [Uri.encodeComponent]
+  /// leaves literal. Required for `X-Plex-Client-Profile-Extra` whose parens
+  /// and asterisks must appear as `%28`, `%29`, `%2A` on the wire.
+  static String _plexEncode(String value) {
+    return Uri.encodeComponent(value)
+        .replaceAll('(', '%28')
+        .replaceAll(')', '%29')
+        .replaceAll('*', '%2A')
+        .replaceAll("'", '%27')
+        .replaceAll('!', '%21');
+  }
+
+  /// Parse decision response for outcome. Any decision code >= 2000 = error
+  /// (matching Plex Web's error detector).
+  TranscodeDecisionOutcome _parseTranscodeDecisionOutcome(dynamic data, {required bool isOriginal}) {
+    try {
+      Map<String, dynamic>? container;
+      if (data is Map && data['MediaContainer'] is Map) {
+        container = Map<String, dynamic>.from(data['MediaContainer'] as Map);
+      } else if (data is Map<String, dynamic>) {
+        container = data;
+      }
+      if (container == null) return TranscodeDecisionOutcome.failed;
+
+      final general = flexibleInt(container['generalDecisionCode']);
+      final transcode = flexibleInt(container['transcodeDecisionCode']);
+      final mde = flexibleInt(container['mdeDecisionCode']);
+
+      bool isError(int? code) => code != null && code >= 2000;
+      if (isError(general) || isError(transcode) || isError(mde)) {
+        appLogger.w('Transcode decision error codes: general=$general transcode=$transcode mde=$mde');
+        return TranscodeDecisionOutcome.failed;
+      }
+
+      if (isOriginal) return TranscodeDecisionOutcome.transcodeOk;
+
+      if (transcode == 1000) return TranscodeDecisionOutcome.directPlayOnly;
+      if (transcode == 1001) return TranscodeDecisionOutcome.transcodeOk;
+      if (general == 1001) return TranscodeDecisionOutcome.transcodeOk;
+      if (general == 1000) return TranscodeDecisionOutcome.directPlayOnly;
+
+      return TranscodeDecisionOutcome.transcodeOk;
+    } catch (e) {
+      appLogger.w('Failed to parse transcode decision', error: e);
+      return TranscodeDecisionOutcome.failed;
     }
   }
 

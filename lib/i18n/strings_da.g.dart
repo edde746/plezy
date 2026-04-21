@@ -241,6 +241,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Auto (Anbefalet)';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Din enhed har ${heap}MB hukommelse. En buffer på ${size}MB kan forårsage afspilningsproblemer.';
+	@override String get defaultQualityTitle => 'Standardkvalitet';
+	@override String get defaultQualityDescription => 'Bruges ved start af afspilning. Lavere værdier reducerer båndbredden.';
 	@override String get subtitleStyling => 'Undertekststil';
 	@override String get subtitleStylingDescription => 'Tilpas underteksters udseende';
 	@override String get smallSkipDuration => 'Kort spring-varighed';
@@ -519,6 +521,13 @@ class _TranslationsVideoControlsDa implements TranslationsVideoControlsEn {
 	@override String get tracksButton => 'Lyd og undertekster';
 	@override String get chaptersButton => 'Kapitler';
 	@override String get versionsButton => 'Videoversioner';
+	@override String get versionQualityButton => 'Version og kvalitet';
+	@override String get versionColumnHeader => 'Version';
+	@override String get qualityColumnHeader => 'Kvalitet';
+	@override String get qualityOriginal => 'Original';
+	@override String qualityPresetLabel({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps';
+	@override String qualityBandwidthEstimate({required Object bitrate}) => '~${bitrate} Mbps';
+	@override String get transcodeUnavailableFallback => 'Transkodning utilgængelig — afspiller original kvalitet';
 	@override String get pipButton => 'Billede-i-billede-tilstand';
 	@override String get aspectRatioButton => 'Billedformat';
 	@override String get ambientLighting => 'Omgivelsesbelysning';
@@ -1520,6 +1529,8 @@ extension on TranslationsDa {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Auto (Anbefalet)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Din enhed har ${heap}MB hukommelse. En buffer på ${size}MB kan forårsage afspilningsproblemer.',
+			'settings.defaultQualityTitle' => 'Standardkvalitet',
+			'settings.defaultQualityDescription' => 'Bruges ved start af afspilning. Lavere værdier reducerer båndbredden.',
 			'settings.subtitleStyling' => 'Undertekststil',
 			'settings.subtitleStylingDescription' => 'Tilpas underteksters udseende',
 			'settings.smallSkipDuration' => 'Kort spring-varighed',
@@ -1755,6 +1766,13 @@ extension on TranslationsDa {
 			'videoControls.tracksButton' => 'Lyd og undertekster',
 			'videoControls.chaptersButton' => 'Kapitler',
 			'videoControls.versionsButton' => 'Videoversioner',
+			'videoControls.versionQualityButton' => 'Version og kvalitet',
+			'videoControls.versionColumnHeader' => 'Version',
+			'videoControls.qualityColumnHeader' => 'Kvalitet',
+			'videoControls.qualityOriginal' => 'Original',
+			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
+			'videoControls.qualityBandwidthEstimate' => ({required Object bitrate}) => '~${bitrate} Mbps',
+			'videoControls.transcodeUnavailableFallback' => 'Transkodning utilgængelig — afspiller original kvalitet',
 			'videoControls.pipButton' => 'Billede-i-billede-tilstand',
 			'videoControls.aspectRatioButton' => 'Billedformat',
 			'videoControls.ambientLighting' => 'Omgivelsesbelysning',
@@ -1912,6 +1930,8 @@ extension on TranslationsDa {
 			'libraries.confirmActionMessage' => 'Er du sikker på, at du vil udføre denne handling?',
 			'libraries.showLibrary' => 'Vis bibliotek',
 			'libraries.hideLibrary' => 'Skjul bibliotek',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Biblioteksindstillinger',
 			'libraries.content' => 'biblioteksindhold',
 			'libraries.selectLibrary' => 'Vælg bibliotek',
@@ -1921,8 +1941,6 @@ extension on TranslationsDa {
 			'libraries.noFoldersFound' => 'Ingen mapper fundet',
 			'libraries.folders' => 'mapper',
 			'libraries.tabs.recommended' => 'Anbefalet',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.browse' => 'Gennemse',
 			'libraries.tabs.collections' => 'Samlinger',
 			'libraries.tabs.playlists' => 'Playlister',
