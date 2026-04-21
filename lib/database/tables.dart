@@ -30,6 +30,10 @@ class DownloadQueue extends Table {
 }
 
 @DataClassName('DownloadedMediaItem')
+@TableIndex(name: 'idx_downloaded_media_status', columns: {#status})
+@TableIndex(name: 'idx_downloaded_media_server', columns: {#serverId})
+@TableIndex(name: 'idx_downloaded_media_parent', columns: {#parentRatingKey})
+@TableIndex(name: 'idx_downloaded_media_grandparent', columns: {#grandparentRatingKey})
 class DownloadedMedia extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get serverId => text()();

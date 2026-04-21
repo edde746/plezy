@@ -17,7 +17,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration {
@@ -64,6 +64,22 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(syncRules, syncRules.downloadFilter);
           } catch (e) {
             appLogger.w('downloadFilter column may already exist: $e');
+          }
+        }
+        if (from < 13) {
+          appLogger.i('Adding indexes on DownloadedMedia hot-queried columns (v13 migration)');
+          final indexes = {
+            'idx_downloaded_media_status': idxDownloadedMediaStatus,
+            'idx_downloaded_media_server': idxDownloadedMediaServer,
+            'idx_downloaded_media_parent': idxDownloadedMediaParent,
+            'idx_downloaded_media_grandparent': idxDownloadedMediaGrandparent,
+          };
+          for (final entry in indexes.entries) {
+            try {
+              await m.create(entry.value);
+            } catch (e) {
+              appLogger.w('Index ${entry.key} may already exist: $e');
+            }
           }
         }
       },

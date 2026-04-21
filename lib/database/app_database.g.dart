@@ -3188,6 +3188,22 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OfflineWatchProgressTable offlineWatchProgress =
       $OfflineWatchProgressTable(this);
   late final $SyncRulesTable syncRules = $SyncRulesTable(this);
+  late final Index idxDownloadedMediaStatus = Index(
+    'idx_downloaded_media_status',
+    'CREATE INDEX idx_downloaded_media_status ON downloaded_media (status)',
+  );
+  late final Index idxDownloadedMediaServer = Index(
+    'idx_downloaded_media_server',
+    'CREATE INDEX idx_downloaded_media_server ON downloaded_media (server_id)',
+  );
+  late final Index idxDownloadedMediaParent = Index(
+    'idx_downloaded_media_parent',
+    'CREATE INDEX idx_downloaded_media_parent ON downloaded_media (parent_rating_key)',
+  );
+  late final Index idxDownloadedMediaGrandparent = Index(
+    'idx_downloaded_media_grandparent',
+    'CREATE INDEX idx_downloaded_media_grandparent ON downloaded_media (grandparent_rating_key)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3198,6 +3214,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     apiCache,
     offlineWatchProgress,
     syncRules,
+    idxDownloadedMediaStatus,
+    idxDownloadedMediaServer,
+    idxDownloadedMediaParent,
+    idxDownloadedMediaGrandparent,
   ];
 }
 
