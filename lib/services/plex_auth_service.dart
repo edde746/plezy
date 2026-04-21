@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show InternetAddress;
 import 'package:uuid/uuid.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
@@ -8,7 +9,6 @@ import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
 import '../utils/connection_constants.dart';
 import '../utils/plex_http_client.dart';
-import '../utils/plex_http_exception.dart';
 
 /// Redacts the middle of an IP address or hostname for safe logging.
 /// E.g. `192.168.1.50` → `192.***.***.50`, `my.server.example.com` → `my.***.***. com`.
@@ -87,17 +87,7 @@ class PlexAuthService {
     return _http.get('$_plexApiBase/user', headers: _getCommonHeaders(authToken: authToken));
   }
 
-  /// Throw [PlexHttpException] if the response indicates a client/server error.
-  void _checkStatus(PlexResponse response) {
-    if (response.statusCode >= 400) {
-      throw PlexHttpException(
-        type: PlexHttpErrorType.unknown,
-        statusCode: response.statusCode,
-        responseData: response.data,
-        message: 'HTTP ${response.statusCode}',
-      );
-    }
-  }
+  void _checkStatus(PlexResponse response) => throwIfHttpError(response);
 
   /// Verify if a plex.tv token is valid
   Future<bool> verifyToken(String authToken) async {
@@ -303,8 +293,8 @@ class PlexServer {
         final connection = PlexConnection.fromJson(c as Map<String, dynamic>);
         connections.add(connection);
 
-        // Generate HTTP fallback for HTTPS connections
-        if (connection.protocol == 'https') {
+        if (connection.protocol == 'https' &&
+            (connection.uri.contains('.plex.direct') || _isIpLiteral(connection.address))) {
           connections.add(connection.toHttpFallback());
         }
       } catch (e) {
@@ -650,9 +640,7 @@ class PlexServer {
       final isHttps = connection.protocol == 'https';
       addCandidate(connection, connection.uri, isPlexDirect, isHttps);
 
-      // For HTTPS connections, also add HTTP direct IP as fallback
-      // This provides backward compatibility and fallback for cert issues
-      if (isHttps) {
+      if (isHttps && (isPlexDirect || _isIpLiteral(connection.address))) {
         addCandidate(connection, connection.httpDirectUrl, false, false);
       }
     }
@@ -827,6 +815,13 @@ class PlexServer {
     });
 
     return entries.first.key;
+  }
+
+  /// True when the address is a raw IP (no hostname → no reverse proxy → HTTP
+  /// fallback on an HTTPS port is safe to try).
+  static bool _isIpLiteral(String address) {
+    final bare = address.startsWith('[') && address.endsWith(']') ? address.substring(1, address.length - 1) : address;
+    return InternetAddress.tryParse(bare) != null;
   }
 
   /// Returns true if the address is known to be unreachable from external

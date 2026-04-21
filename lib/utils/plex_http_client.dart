@@ -27,6 +27,19 @@ class PlexResponse {
   PlexResponse({required this.statusCode, this.data, required this.headers});
 }
 
+/// Throw [PlexHttpException] for non-2xx responses so callers don't blindly
+/// cast HTML/text error bodies to `Map<String, dynamic>`.
+void throwIfHttpError(PlexResponse r) {
+  if (r.statusCode >= 400) {
+    throw PlexHttpException(
+      type: PlexHttpErrorType.unknown,
+      statusCode: r.statusCode,
+      responseData: r.data,
+      message: 'HTTP ${r.statusCode}',
+    );
+  }
+}
+
 /// Abort controller for cancelling in-flight HTTP requests.
 ///
 /// Uses the `package:http` [AbortableRequest] mechanism so the underlying

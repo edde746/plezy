@@ -213,7 +213,15 @@ class PlexClient {
   }) async {
     final gen = _endpointManager?.generation;
     try {
-      return await _http.get(path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
+      final response = await _http.get(
+        path,
+        queryParameters: queryParameters,
+        headers: headers,
+        timeout: timeout,
+        abort: abort,
+      );
+      throwIfHttpError(response);
+      return response;
     } on PlexHttpException catch (e) {
       if (!_shouldAttemptFailover(e) ||
           _failoverSwitching ||
@@ -246,6 +254,7 @@ class PlexClient {
           timeout: timeout,
           abort: abort,
         );
+        throwIfHttpError(response);
         appLogger.i('Endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
         await _onEndpointChanged?.call(nextBaseUrl);
         return response;
@@ -256,9 +265,11 @@ class PlexClient {
   }
 
   bool _shouldAttemptFailover(PlexHttpException e) {
+    final sc = e.statusCode;
     return e.type == PlexHttpErrorType.connectionTimeout ||
         e.type == PlexHttpErrorType.receiveTimeout ||
-        e.type == PlexHttpErrorType.connectionError;
+        e.type == PlexHttpErrorType.connectionError ||
+        (sc != null && sc >= 500 && sc <= 599);
   }
 
   /// Fetch /media/providers and parse libraries + EPG providers from the response.
