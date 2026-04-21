@@ -140,6 +140,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 result.success(am?.largeMemoryClass ?: 0)
             }
             "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
+            "setBoxFitMode" -> handleSetBoxFitMode(call, result)
             "observeProperty" -> handleObserveProperty(call, result)
             "setMpvProperty" -> handleSetMpvProperty(call, result)
             "setLogLevel" -> {
@@ -510,6 +511,55 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
         playerCore?.setSubtitleStyle(fontSize, textColor, borderSize, borderColor, bgColor, bgOpacity, subtitlePosition, bold, italic)
         result.success(null)
+    }
+
+    private fun handleSetBoxFitMode(call: MethodCall, result: MethodChannel.Result) {
+        val mode = call.argument<Number>("mode")?.toInt()
+        if (mode == null) {
+            result.error("INVALID_ARGS", "Missing 'mode'", null)
+            return
+        }
+
+        // Translate mode to MPV properties so the fallback path (and any
+        // future fallback from this session) stays in sync with the UI state.
+        // Mirrors VideoFilterManager.updateVideoFilter's MPV branch.
+        val mpvProps = when (mode) {
+            1 -> listOf(
+                "video-aspect-override" to "no",
+                "panscan" to "1.0",
+                "sub-ass-force-margins" to "yes",
+            )
+            2 -> {
+                val act = activity
+                val aspect = if (act != null) {
+                    val dm = act.resources.displayMetrics
+                    if (dm.heightPixels > 0) dm.widthPixels.toFloat() / dm.heightPixels else 0f
+                } else 0f
+                listOf(
+                    "video-aspect-override" to (if (aspect > 0) aspect.toString() else "no"),
+                    "panscan" to "0",
+                    "sub-ass-force-margins" to "no",
+                )
+            }
+            else -> listOf(
+                "video-aspect-override" to "no",
+                "panscan" to "0",
+                "sub-ass-force-margins" to "no",
+            )
+        }
+        val keys = mpvProps.map { it.first }.toSet()
+        pendingMpvProperties.removeAll { it.first in keys }
+        pendingMpvProperties.addAll(mpvProps)
+
+        if (usingMpvFallback) {
+            mpvProps.forEach { (k, v) -> mpvCore?.setProperty(k, v) }
+            result.success(null)
+            return
+        }
+        activity?.runOnUiThread {
+            playerCore?.setBoxFitMode(mode)
+            result.success(null)
+        } ?: result.success(null)
     }
 
     private fun handleSetMpvProperty(call: MethodCall, result: MethodChannel.Result) {

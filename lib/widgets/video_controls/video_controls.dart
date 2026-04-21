@@ -1157,7 +1157,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       isFullscreen: _isFullscreen,
       isAlwaysOnTop: _isAlwaysOnTop,
       onTogglePIPMode: (_isPipSupported && !PlatformDetector.isTV()) ? widget.onTogglePIPMode : null,
-      onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
+      onCycleBoxFitMode: widget.onCycleBoxFitMode,
       onToggleRotationLock: _toggleRotationLock,
       onToggleScreenLock: _toggleScreenLock,
       onToggleFullscreen: _toggleFullscreen,

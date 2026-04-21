@@ -50,6 +50,7 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
 import androidx.media3.extractor.mkv.MatroskaExtractor
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
 import com.edde746.plezy.shared.AudioFocusManager
@@ -108,6 +109,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     private var surfaceView: SurfaceView? = null
     private var surfaceContainer: FrameLayout? = null
+    private var videoAspectContainer: AspectRatioFrameLayout? = null
     private var subtitleView: SubtitleView? = null
     private var assHandler: AssHandler? = null
     private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
@@ -268,29 +270,42 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 log = { emitLog("info", "framerate", it) }
             )
 
-            // Create FrameLayout container for video (enables centering for aspect ratio)
+            // Create FrameLayout container for video (clips overflow for ZOOM crop mode)
             surfaceContainer = FrameLayout(activity).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 setBackgroundColor(Color.BLACK)
+                clipChildren = true
             }
 
-            // Create SurfaceView for video rendering
-            surfaceView = SurfaceView(activity).apply {
+            // AspectRatioFrameLayout drives FIT/ZOOM/FILL via Media3's resizeMode.
+            // Centered inside the container; in ZOOM mode it measures larger than
+            // the container and the parent's clipChildren crops the overflow.
+            videoAspectContainer = AspectRatioFrameLayout(activity).apply {
                 layoutParams = FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT
                 ).apply {
                     gravity = Gravity.CENTER
                 }
+                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+            }
+
+            // Create SurfaceView for video rendering (fills the ARFL)
+            surfaceView = SurfaceView(activity).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
                 holder.addCallback(surfaceCallback)
                 setZOrderOnTop(false)
                 setZOrderMediaOverlay(false)
             }
 
-            surfaceContainer!!.addView(surfaceView)
+            videoAspectContainer!!.addView(surfaceView)
+            surfaceContainer!!.addView(videoAspectContainer)
 
             // Create SubtitleView - added to surfaceContainer above video
             // With OVERLAY_OPEN_GL mode, libass-android adds AssSubtitleTextureView as a child
@@ -817,36 +832,61 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         if (disposing) return
         if (videoWidth == 0 || videoHeight == 0) return
 
-        val surface = surfaceView ?: return
-        val subtitle = subtitleView
-        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+        val videoAspect = (videoWidth * pixelRatio) / videoHeight
+        activity.runOnUiThread {
+            videoAspectContainer?.setAspectRatio(videoAspect)
+        }
+        updateSubtitleViewSize(videoWidth, videoHeight, pixelRatio)
+    }
 
+    private fun updateSubtitleViewSize(videoWidth: Int, videoHeight: Int, pixelRatio: Float) {
+        if (disposing) return
+        if (videoWidth == 0 || videoHeight == 0) return
+
+        val subtitle = subtitleView ?: return
+        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         val containerWidth = contentView.width
         val containerHeight = contentView.height
         if (containerWidth == 0 || containerHeight == 0) return
 
-        // Calculate video aspect ratio (accounting for non-square pixels)
-        val videoAspect = (videoWidth * pixelRatio) / videoHeight
-        val containerAspect = containerWidth.toFloat() / containerHeight
-
-        val (newWidth, newHeight) = if (videoAspect > containerAspect) {
-            // Video is wider - fit to width, letterbox top/bottom
-            containerWidth to (containerWidth / videoAspect).toInt()
+        // In cover/stretch modes subtitles stay at container size so they never get
+        // cropped or distorted. In letterbox mode they follow the video rect so they
+        // anchor to the bottom of the video (matching MPV's default sub positioning).
+        val isLetterbox = videoAspectContainer?.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_FIT
+        val (subWidth, subHeight) = if (isLetterbox) {
+            val videoAspect = (videoWidth * pixelRatio) / videoHeight
+            val containerAspect = containerWidth.toFloat() / containerHeight
+            if (videoAspect > containerAspect) {
+                containerWidth to (containerWidth / videoAspect).toInt()
+            } else {
+                (containerHeight * videoAspect).toInt() to containerHeight
+            }
         } else {
-            // Video is taller - fit to height, pillarbox left/right
-            (containerHeight * videoAspect).toInt() to containerHeight
+            containerWidth to containerHeight
         }
 
         activity.runOnUiThread {
-            surface.layoutParams = FrameLayout.LayoutParams(newWidth, newHeight).apply {
+            subtitle.layoutParams = FrameLayout.LayoutParams(subWidth, subHeight).apply {
                 gravity = Gravity.CENTER
             }
-            surface.requestLayout()
-            subtitle?.let { sv ->
-                sv.layoutParams = FrameLayout.LayoutParams(newWidth, newHeight).apply {
-                    gravity = Gravity.CENTER
+            subtitle.requestLayout()
+        }
+    }
+
+    private fun boxFitModeToResizeMode(mode: Int): Int = when (mode) {
+        1 -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+        2 -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+        else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+    }
+
+    fun setBoxFitMode(mode: Int) {
+        if (disposing) return
+        activity.runOnUiThread {
+            videoAspectContainer?.resizeMode = boxFitModeToResizeMode(mode.coerceIn(0, 2))
+            lastVideoSize?.let { vs ->
+                if (vs.width > 0 && vs.height > 0) {
+                    updateSubtitleViewSize(vs.width, vs.height, vs.pixelWidthHeightRatio)
                 }
-                sv.requestLayout()
             }
         }
     }
@@ -1791,6 +1831,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         // Synchronous ownership invalidation — stale code can no longer
         // reach surface state through instance fields.
         surfaceContainer = null
+        videoAspectContainer = null
         surfaceView = null
         subtitleView = null
 

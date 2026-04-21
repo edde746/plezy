@@ -372,6 +372,17 @@ class PlayerAndroid extends PlayerBase {
   }
 
   // ============================================
+  // Box-fit / video scaling mode
+  // ============================================
+
+  /// Apply the box-fit mode to the native ExoPlayer layer.
+  /// Maps to AspectRatioFrameLayout resize mode: 0=FIT, 1=ZOOM, 2=FILL.
+  Future<void> setBoxFitMode(int mode) async {
+    if (disposed || !initialized) return;
+    await invoke('setBoxFitMode', {'mode': mode});
+  }
+
+  // ============================================
   // Frame Rate Matching
   // ============================================
 
