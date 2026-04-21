@@ -238,6 +238,9 @@ class PlexAuthService {
   }
 }
 
+/// Classification of an endpoint URL by the server's published connection type.
+enum PlexNetworkClass { local, remote, relay, unknown }
+
 /// Helper class to track connection candidates during testing
 class _ConnectionCandidate {
   final PlexConnection connection;
@@ -591,7 +594,14 @@ class PlexServer {
     return null;
   }
 
-  List<_ConnectionCandidate> _buildPrioritizedCandidates({Set<String>? excludeUrls}) {
+  /// Classify [url] against the server's published connections. Returns
+  /// [PlexNetworkClass.unknown] when the URL doesn't match any known endpoint
+  /// (e.g. a manually-entered custom URL).
+  PlexNetworkClass networkClassForUrl(String url) {
+    return _candidateForUrl(url)?.connection.networkClass ?? PlexNetworkClass.unknown;
+  }
+
+  List<_ConnectionCandidate> _buildPrioritizedCandidates({Set<String>? excludeUrls, PlexNetworkClass? restrictTo}) {
     final seen = <String>{};
     if (excludeUrls != null) {
       seen.addAll(excludeUrls);
@@ -641,19 +651,34 @@ class PlexServer {
       }
     }
 
-    return [...httpsLocal, ...httpsRemote, ...httpsRelay, ...httpLocal, ...httpRemote, ...httpRelay];
+    final all = [...httpsLocal, ...httpsRemote, ...httpsRelay, ...httpLocal, ...httpRemote, ...httpRelay];
+
+    // Failover reachability filter. After discovery, failover should stay within
+    // endpoint families plausible for the current session: when a remote or relay
+    // endpoint is what's working, LAN-only endpoints are unreachable from off-LAN
+    // clients and only pollute the retry chain (see GH #902). Reconnect /
+    // reoptimization widens the search again via _reoptimizeServer. Local is kept
+    // conservative — it may still be reachable over VPN/routed-LAN, but those
+    // setups re-widen on the next connectivity event.
+    if (restrictTo == PlexNetworkClass.remote || restrictTo == PlexNetworkClass.relay) {
+      final filtered = all.where((c) => c.connection.networkClass != PlexNetworkClass.local).toList();
+      if (filtered.isNotEmpty) return filtered;
+    }
+    return all;
   }
 
   List<String> prioritizedEndpointUrls({String? preferredFirst}) {
     final urls = <String>[];
     final exclude = <String>{};
+    PlexNetworkClass? restrictTo;
 
     if (preferredFirst != null && preferredFirst.isNotEmpty) {
       urls.add(preferredFirst);
       exclude.add(preferredFirst);
+      restrictTo = networkClassForUrl(preferredFirst);
     }
 
-    final candidates = _buildPrioritizedCandidates(excludeUrls: exclude);
+    final candidates = _buildPrioritizedCandidates(excludeUrls: exclude, restrictTo: restrictTo);
     urls.addAll(candidates.map((candidate) => candidate.url));
     return urls;
   }
@@ -925,6 +950,12 @@ class PlexConnection {
     if (relay) return 'Relay';
     if (local) return 'Local';
     return 'Remote';
+  }
+
+  PlexNetworkClass get networkClass {
+    if (relay) return PlexNetworkClass.relay;
+    if (local) return PlexNetworkClass.local;
+    return PlexNetworkClass.remote;
   }
 
   /// Create an HTTP fallback version of this HTTPS connection
