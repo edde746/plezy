@@ -134,9 +134,11 @@ class VideoFilterManager {
   /// When ambient lighting is active, video-aspect-override is managed by ambient lighting.
   void updateVideoFilter() async {
     try {
-      if (player.playerType == 'exoplayer') {
+      // ExoPlayer handles scaling via AspectRatioFrameLayout. The MPV properties
+      // below still run — on PlayerAndroid they forward to setMpvProperty, which
+      // queues them for any future fallback to MPV.
+      if (player is PlayerAndroid) {
         await (player as PlayerAndroid).setBoxFitMode(_boxFitMode);
-        return;
       }
 
       if (ambientLightingService?.isEnabled != true) {

@@ -519,40 +519,10 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             result.error("INVALID_ARGS", "Missing 'mode'", null)
             return
         }
-
-        // Translate mode to MPV properties so the fallback path (and any
-        // future fallback from this session) stays in sync with the UI state.
-        // Mirrors VideoFilterManager.updateVideoFilter's MPV branch.
-        val mpvProps = when (mode) {
-            1 -> listOf(
-                "video-aspect-override" to "no",
-                "panscan" to "1.0",
-                "sub-ass-force-margins" to "yes",
-            )
-            2 -> {
-                val act = activity
-                val aspect = if (act != null) {
-                    val dm = act.resources.displayMetrics
-                    if (dm.heightPixels > 0) dm.widthPixels.toFloat() / dm.heightPixels else 0f
-                } else 0f
-                listOf(
-                    "video-aspect-override" to (if (aspect > 0) aspect.toString() else "no"),
-                    "panscan" to "0",
-                    "sub-ass-force-margins" to "no",
-                )
-            }
-            else -> listOf(
-                "video-aspect-override" to "no",
-                "panscan" to "0",
-                "sub-ass-force-margins" to "no",
-            )
-        }
-        val keys = mpvProps.map { it.first }.toSet()
-        pendingMpvProperties.removeAll { it.first in keys }
-        pendingMpvProperties.addAll(mpvProps)
-
+        // The MPV-property side (panscan / sub-ass-force-margins / video-aspect-override)
+        // is driven from Dart via setProperty and routed through setMpvProperty, which
+        // already handles both the fallback and pendingMpvProperties cases.
         if (usingMpvFallback) {
-            mpvProps.forEach { (k, v) -> mpvCore?.setProperty(k, v) }
             result.success(null)
             return
         }
