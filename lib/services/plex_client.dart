@@ -58,13 +58,10 @@ List<PlexHub> _processHubResponse(
   final hubs = <PlexHub>[];
   for (final hubJson in container['Hub'] as List) {
     try {
-      final hub = PlexHub.fromJson(hubJson as Map<String, dynamic>);
+      final hub = PlexHub.fromJson(hubJson as Map<String, dynamic>, serverId: serverId, serverName: serverName);
       if (hub.items.isEmpty) continue;
 
-      final filteredItems = hub.items
-          .where(itemFilter)
-          .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
-          .toList();
+      final filteredItems = hub.items.where(itemFilter).toList();
 
       if (filteredItems.isNotEmpty) {
         hubs.add(
@@ -391,9 +388,10 @@ class PlexClient {
     String? clientIdentifier,
   }) async {
     final stopwatch = Stopwatch()..start();
+    PlexHttpClient? client;
 
     try {
-      final client = PlexHttpClient(baseUrl: baseUrl, connectTimeout: timeout, receiveTimeout: timeout);
+      client = PlexHttpClient(baseUrl: baseUrl, connectTimeout: timeout, receiveTimeout: timeout);
 
       final headers = <String, String>{'X-Plex-Token': token};
       if (clientIdentifier != null) {
@@ -429,6 +427,8 @@ class PlexClient {
     } catch (e) {
       stopwatch.stop();
       return ConnectionTestResult(success: false, latencyMs: stopwatch.elapsedMilliseconds, error: e.toString());
+    } finally {
+      client?.close();
     }
   }
 
@@ -1147,11 +1147,7 @@ class PlexClient {
   /// Get thumbnail URL
   String getThumbnailUrl(String? thumbPath) {
     if (thumbPath == null || thumbPath.isEmpty) return '';
-
-    // Remove leading slash if present
-    final path = thumbPath.startsWith('/') ? thumbPath.substring(1) : thumbPath;
-
-    return '${config.baseUrl}/$path'.withPlexToken(config.token);
+    return _http.buildUri(thumbPath).toString().withPlexToken(config.token);
   }
 
   /// Download the full BIF (Base Index Frames) file for a given part.

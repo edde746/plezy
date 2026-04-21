@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import '../database/app_database.dart';
 import '../models/plex_metadata.dart';
-import '../providers/offline_mode_provider.dart';
 import '../utils/app_logger.dart';
+import 'offline_mode_source.dart';
 import '../utils/plex_cache_parser.dart';
 import '../utils/watch_state_notifier.dart';
 import 'multi_server_manager.dart';
@@ -24,7 +24,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   final AppDatabase _database;
   final MultiServerManager _serverManager;
 
-  OfflineModeProvider? _offlineModeProvider;
+  OfflineModeSource? _offlineModeSource;
   VoidCallback? _offlineModeListener;
   bool _isSyncing = false;
   bool _isBidirectionalSyncing = false;
@@ -69,22 +69,22 @@ class OfflineWatchSyncService extends ChangeNotifier {
   bool get isSyncing => _isSyncing;
 
   /// Start monitoring for connectivity changes to auto-sync
-  void startConnectivityMonitoring(OfflineModeProvider offlineModeProvider) {
+  void startConnectivityMonitoring(OfflineModeSource source) {
     // Remove previous listener if any
-    if (_offlineModeProvider != null && _offlineModeListener != null) {
-      _offlineModeProvider!.removeListener(_offlineModeListener!);
+    if (_offlineModeSource != null && _offlineModeListener != null) {
+      _offlineModeSource!.removeListener(_offlineModeListener!);
     }
 
-    _offlineModeProvider = offlineModeProvider;
+    _offlineModeSource = source;
     _offlineModeListener = () {
-      if (!offlineModeProvider.isOffline) {
+      if (!source.isOffline) {
         // We just came online - trigger bidirectional sync
         appLogger.i('Connectivity restored - starting bidirectional watch sync');
         _performBidirectionalSync();
       }
     };
 
-    offlineModeProvider.addListener(_offlineModeListener!);
+    source.addListener(_offlineModeListener!);
 
     // Don't sync on startup - servers aren't connected yet.
     // Sync will happen when:
@@ -138,7 +138,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// On desktop, respects the throttle interval.
   void onAppResumed() {
     if (_isShutDown) return;
-    if (_offlineModeProvider?.isOffline != true) {
+    if (_offlineModeSource?.isOffline != true) {
       final isMobile = Platform.isIOS || Platform.isAndroid;
       appLogger.d('App resumed - ${isMobile ? "forcing" : "checking"} sync');
       _performBidirectionalSync(force: isMobile);
@@ -154,7 +154,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     if (_hasPerformedStartupSync) return;
     _hasPerformedStartupSync = true;
 
-    if (_offlineModeProvider?.isOffline != true) {
+    if (_offlineModeSource?.isOffline != true) {
       appLogger.i('Servers connected - performing startup sync');
       _performBidirectionalSync();
     }
@@ -620,8 +620,8 @@ class OfflineWatchSyncService extends ChangeNotifier {
   @override
   void dispose() {
     _isShutDown = true;
-    if (_offlineModeProvider != null && _offlineModeListener != null) {
-      _offlineModeProvider!.removeListener(_offlineModeListener!);
+    if (_offlineModeSource != null && _offlineModeListener != null) {
+      _offlineModeSource!.removeListener(_offlineModeListener!);
     }
     super.dispose();
   }

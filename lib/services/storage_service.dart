@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:uuid/uuid.dart';
+
 import '../utils/log_redaction_manager.dart';
 import 'base_shared_preferences_service.dart';
 
@@ -121,6 +123,16 @@ class StorageService extends BaseSharedPreferencesService {
 
   String? getClientIdentifier() {
     return prefs.getString(_keyClientId);
+  }
+
+  /// Return the persisted client identifier, generating and saving a UUID on
+  /// first call. Ensures Plex sees the same device across reconnects.
+  Future<String> getOrCreateClientIdentifier() async {
+    final existing = getClientIdentifier();
+    if (existing != null && existing.isNotEmpty) return existing;
+    final generated = const Uuid().v4();
+    await saveClientIdentifier(generated);
+    return generated;
   }
 
   // Clear all credentials

@@ -27,6 +27,13 @@ class SettingsProvider extends ChangeNotifier {
   /// in contexts where you need the actual persisted values.
   Future<void> ensureInitialized() => _initFuture ?? _initializeSettings();
 
+  /// Whether the provider has finished loading persisted settings.
+  /// Synchronous getters below return defaults until this is true.
+  bool get isReady => _isInitialized;
+
+  /// Future that completes once persisted settings have been loaded.
+  Future<void> get ready => _initFuture ?? Future.value();
+
   Future<void> _initializeSettings() async {
     if (_isInitialized) return;
     _settingsService = await SettingsService.getInstance();

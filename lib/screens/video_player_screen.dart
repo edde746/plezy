@@ -739,6 +739,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       }
 
+      await Future.wait<void>([
+        if (_playingSubscription != null) _playingSubscription!.cancel(),
+        if (_completedSubscription != null) _completedSubscription!.cancel(),
+        if (_errorSubscription != null) _errorSubscription!.cancel(),
+        if (_logSubscription != null) _logSubscription!.cancel(),
+        if (_backendSwitchedSubscription != null) _backendSwitchedSubscription!.cancel(),
+        if (_bufferingSubscription != null) _bufferingSubscription!.cancel(),
+        if (_serverStatusSubscription != null) _serverStatusSubscription!.cancel(),
+        if (_playbackRestartSubscription != null) _playbackRestartSubscription!.cancel(),
+        if (_positionSubscription != null) _positionSubscription!.cancel(),
+      ]);
+
       // Listen to playback state changes
       _playingSubscription = player!.streams.playing.listen(_onPlayingStateChanged);
 
@@ -2259,7 +2271,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
-    player?.dispose();
+    final playerToDispose = player;
+    player = null;
+    if (playerToDispose != null) {
+      unawaited(playerToDispose.dispose());
+    }
     if (_activeRatingKey == _currentMetadata.ratingKey) {
       _activeRatingKey = null;
       _activeMediaIndex = null;

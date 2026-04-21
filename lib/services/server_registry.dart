@@ -94,9 +94,10 @@ class ServerRegistry {
       return ServerRefreshResult.noToken;
     }
 
+    PlexAuthService? authService;
     try {
       appLogger.d('Refreshing servers from Plex API...');
-      final authService = await PlexAuthService.create();
+      authService = await PlexAuthService.create();
       final freshServers = await authService.fetchServers(token);
 
       if (freshServers.isEmpty) {
@@ -134,6 +135,8 @@ class ServerRegistry {
     } catch (e, stackTrace) {
       appLogger.w('Failed to refresh servers from API, using cached data', error: e, stackTrace: stackTrace);
       return ServerRefreshResult.networkError;
+    } finally {
+      authService?.dispose();
     }
   }
 }

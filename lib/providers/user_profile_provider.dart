@@ -21,11 +21,7 @@ class UserProfileProvider extends ChangeNotifier {
   PlexUserProfile? get profileSettings => _profileSettings;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  bool get hasMultipleUsers {
-    final result = _home?.hasMultipleUsers ?? false;
-    appLogger.d('hasMultipleUsers: _home=${_home != null}, users count=${_home?.users.length ?? 0}, result=$result');
-    return result;
-  }
+  bool get hasMultipleUsers => _home?.hasMultipleUsers ?? false;
 
   bool get needsInitialProfileSelection => _home != null && _home!.users.isNotEmpty && _currentUser == null;
 

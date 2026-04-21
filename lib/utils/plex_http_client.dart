@@ -246,6 +246,12 @@ class PlexHttpClient {
   // ---------------------------------------------------------------------------
 
   /// Build a full URI from [baseUrl] + [path] + [queryParameters].
+  /// Use this from callers that need to construct URLs with the client's
+  /// current (possibly failover-switched) base, rather than reading
+  /// `config.baseUrl` directly.
+  Uri buildUri(String path, {Map<String, dynamic>? queryParameters}) => _buildUri(path, queryParameters);
+
+  /// Build a full URI from [baseUrl] + [path] + [queryParameters].
   /// Uses [Uri.encodeComponent] which encodes spaces as `%20` (not `+`).
   Uri _buildUri(String path, Map<String, dynamic>? queryParameters) {
     final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';

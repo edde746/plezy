@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io' show InternetAddress;
-import 'package:uuid/uuid.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
 import '../models/plex_user_profile.dart';
@@ -50,20 +49,17 @@ class PlexAuthService {
 
   PlexAuthService._(this._http, this._clientIdentifier);
 
+  /// Close the underlying HTTP client. Call when the service is short-lived
+  /// (created for a single API call) to avoid leaking sockets.
+  void dispose() => _http.close();
+
   static Future<PlexAuthService> create() async {
     final storage = await StorageService.getInstance();
     final http = PlexHttpClient(
       connectTimeout: ConnectionTimeouts.plexTvConnect,
       receiveTimeout: ConnectionTimeouts.plexTvReceive,
     );
-
-    // Get or create client identifier
-    String? clientIdentifier = storage.getClientIdentifier();
-    if (clientIdentifier == null) {
-      clientIdentifier = const Uuid().v4();
-      await storage.saveClientIdentifier(clientIdentifier);
-    }
-
+    final clientIdentifier = await storage.getOrCreateClientIdentifier();
     return PlexAuthService._(http, clientIdentifier);
   }
 

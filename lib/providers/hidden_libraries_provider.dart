@@ -31,11 +31,7 @@ class HiddenLibrariesProvider extends ChangeNotifier {
     _storageService = await StorageService.getInstance();
     _hiddenLibraryKeys = _storageService.getHiddenLibraries();
     _isInitialized = true;
-    // Only notify if there are actually hidden libraries — the default empty
-    // set is already visible to consumers, so empty→empty is a no-op.
-    if (_hiddenLibraryKeys.isNotEmpty) {
-      notifyListeners();
-    }
+    notifyListeners();
   }
 
   /// Hide a library by its key

@@ -35,7 +35,7 @@ import 'providers/offline_watch_provider.dart';
 import 'providers/companion_remote_provider.dart';
 import 'providers/shader_provider.dart';
 import 'utils/snackbar_helper.dart';
-import 'watch_together/watch_together.dart';
+import 'watch_together/providers/watch_together_provider.dart';
 import 'services/multi_server_manager.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/server_connection_orchestrator.dart';
@@ -50,6 +50,7 @@ import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
 import 'screens/video_player_screen.dart';
 import 'utils/app_logger.dart';
+import 'utils/plex_http_client.dart' show httpClient;
 import 'utils/orientation_helper.dart';
 import 'utils/global_key_utils.dart';
 import 'utils/watch_state_notifier.dart';
@@ -420,6 +421,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _appLifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
+        httpClient.close();
         await _appDatabase.close();
         return AppExitResponse.exit;
       },
@@ -436,6 +438,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _connectivitySubscription?.cancel();
     _memoryCheckTimer?.cancel();
     _appLifecycleListener.dispose();
+    _downloadManager.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

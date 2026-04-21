@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/multi_server_manager.dart';
+import '../services/offline_mode_source.dart';
 
 /// Tracks offline mode status based on network connectivity and server reachability.
-class OfflineModeProvider extends ChangeNotifier {
+class OfflineModeProvider extends ChangeNotifier implements OfflineModeSource {
   final MultiServerManager _serverManager;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
@@ -18,6 +19,7 @@ class OfflineModeProvider extends ChangeNotifier {
 
   /// Whether the app is currently in offline mode
   /// Offline = no network OR no servers reachable
+  @override
   bool get isOffline => !_hasNetworkConnection || !_hasServerConnection;
 
   /// Whether there is network connectivity (WiFi, mobile data, etc.)

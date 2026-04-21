@@ -2,17 +2,18 @@ import 'dart:async';
 
 /// Base class for singleton notifiers with broadcast stream support.
 ///
-/// Provides reusable stream controller management with lazy initialization
-/// and automatic recreation if disposed. Subclasses define the event type [T].
+/// Provides reusable stream controller management. Subclasses define the
+/// event type [T]. Once [dispose] is called, further use will throw —
+/// subclasses are intended to be singletons living for the app lifetime.
 abstract class BaseNotifier<T> {
   StreamController<T>? _controller;
+  bool _disposed = false;
 
-  /// Ensure controller exists (creates if null or closed).
   StreamController<T> get _ensureController {
-    if (_controller == null || _controller!.isClosed) {
-      _controller = StreamController<T>.broadcast();
+    if (_disposed) {
+      throw StateError('BaseNotifier<$T> used after dispose()');
     }
-    return _controller!;
+    return _controller ??= StreamController<T>.broadcast();
   }
 
   /// Stream of all events.
@@ -21,8 +22,10 @@ abstract class BaseNotifier<T> {
   /// Emit an event to all listeners.
   void notify(T event) => _ensureController.add(event);
 
-  /// Dispose controller (can be reinitialized later by accessing stream).
+  /// Permanently close the controller. Further access throws.
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     _controller?.close();
     _controller = null;
   }

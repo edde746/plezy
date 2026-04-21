@@ -13,14 +13,22 @@ class ThemeProvider extends ChangeNotifier {
   ThemeProvider() {
     _systemBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
     _initializeSettings();
+    WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = _onBrightnessChanged;
+  }
 
-    // Listen to system theme changes
-    WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = () {
-      _systemBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
-      if (_themeMode == settings.ThemeMode.system) {
-        notifyListeners();
-      }
-    };
+  void _onBrightnessChanged() {
+    _systemBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    if (_themeMode == settings.ThemeMode.system) {
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    if (WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged == _onBrightnessChanged) {
+      WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = null;
+    }
+    super.dispose();
   }
 
   Future<void> _initializeSettings() async {
