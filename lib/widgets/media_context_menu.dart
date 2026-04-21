@@ -1168,7 +1168,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final client = _getClientForItem();
 
     try {
-      final items = await client.getCollectionItems(collection.ratingKey);
+      final items = await client.fetchAllCollectionItems(collection.ratingKey);
       if (!context.mounted) return;
 
       final result = await showCollectionDownloadOptionsAndQueue(
@@ -1200,7 +1200,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final client = _getClientForItem();
 
     try {
-      final items = await client.getPlaylist(playlist.ratingKey);
+      final items = await client.fetchAllPlaylistItems(playlist.ratingKey);
       if (!context.mounted) return;
 
       final playlistMetadata = PlexMetadata(

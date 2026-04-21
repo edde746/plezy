@@ -23,7 +23,6 @@ import '../alpha_jump_bar.dart';
 import '../alpha_jump_helper.dart';
 import '../alpha_scroll_handle.dart';
 import '../../../widgets/focusable_media_card.dart';
-import '../../../widgets/media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
 import '../../../widgets/media_grid_delegate.dart';
 import '../../../widgets/overlay_sheet.dart';
@@ -39,6 +38,8 @@ import '../../../services/settings_service.dart' show ViewMode, EpisodePosterMod
 import '../../../mixins/grid_focus_node_mixin.dart';
 import '../../../mixins/item_updatable.dart';
 import '../../../mixins/deletion_aware.dart';
+import '../../../mixins/paginated_item_loader.dart';
+import '../../../widgets/skeleton_media_card.dart';
 import '../../../utils/deletion_notifier.dart';
 import '../../../utils/global_key_utils.dart';
 import '../../../utils/platform_detector.dart';
@@ -65,7 +66,7 @@ class LibraryBrowseTab extends BaseLibraryTab<PlexMetadata> {
 }
 
 class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBrowseTab>
-    with ItemUpdatable, LibraryTabFocusMixin, GridFocusNodeMixin, DeletionAware {
+    with ItemUpdatable, LibraryTabFocusMixin, GridFocusNodeMixin, DeletionAware, PaginatedItemLoader<LibraryBrowseTab> {
   @override
   PlexClient get client => getClientForLibrary();
 
@@ -76,14 +77,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   String? get deletionServerId => widget.library.serverId;
 
   @override
-  Set<String>? get deletionRatingKeys => _loadedItems.values.map((e) => e.ratingKey).toSet();
+  Set<String>? get deletionRatingKeys => loadedItems.values.map((e) => e.ratingKey).toSet();
 
   @override
   Set<String>? get deletionGlobalKeys {
-    if (_loadedItems.isEmpty) return <String>{};
+    if (loadedItems.isEmpty) return <String>{};
 
     final keys = <String>{};
-    for (final item in _loadedItems.values) {
+    for (final item in loadedItems.values) {
       final serverId = item.serverId ?? widget.library.serverId;
       if (serverId == null) return null;
       keys.add(_toGlobalKey(item.ratingKey, serverId: serverId));
@@ -94,10 +95,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   @override
   void onDeletionEvent(DeletionEvent event) {
     // If we have an item that matches the rating key exactly, remove it and rebuild indices
-    final matchEntry = _loadedItems.entries.where((e) => e.value.ratingKey == event.ratingKey).firstOrNull;
+    final matchEntry = loadedItems.entries.where((e) => e.value.ratingKey == event.ratingKey).firstOrNull;
     if (matchEntry != null) {
       setState(() {
-        _removeLoadedItemAndShift(matchEntry.key);
+        removeLoadedItemAndShift(matchEntry.key);
       });
       return;
     }
@@ -106,17 +107,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     // If all children were deleted, remove our item.
     // Otherwise, just update the counts.
     for (final parentKey in event.parentChain) {
-      final parentEntry = _loadedItems.entries.where((e) => e.value.ratingKey == parentKey).firstOrNull;
+      final parentEntry = loadedItems.entries.where((e) => e.value.ratingKey == parentKey).firstOrNull;
       if (parentEntry != null) {
         final item = parentEntry.value;
         final newLeafCount = (item.leafCount ?? 1) - event.leafCount;
         if (newLeafCount <= 0) {
           setState(() {
-            _removeLoadedItemAndShift(parentEntry.key);
+            removeLoadedItemAndShift(parentEntry.key);
           });
         } else {
           setState(() {
-            _loadedItems[parentEntry.key] = item.copyWith(leafCount: newLeafCount);
+            loadedItems[parentEntry.key] = item.copyWith(leafCount: newLeafCount);
           });
         }
         return;
@@ -126,39 +127,22 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     // If neither the item nor its parents are loaded (evicted), the event
     // was already filtered by DeletionAware's upstream check against
     // deletionGlobalKeys/deletionRatingKeys, so this point is unreachable.
-    // The grid self-corrects when _fetchRange updates _totalSize from the
-    // server response on the next scroll.
-  }
-
-  /// Remove an item at [index] and shift all higher indices down by 1
-  void _removeLoadedItemAndShift(int index) {
-    _loadedItems.remove(index);
-    // Rebuild map with shifted indices for items above the removed one
-    final shifted = <int, PlexMetadata>{};
-    for (final entry in _loadedItems.entries) {
-      if (entry.key < index) {
-        shifted[entry.key] = entry.value;
-      } else {
-        shifted[entry.key - 1] = entry.value;
-      }
-    }
-    _loadedItems.clear();
-    _loadedItems.addAll(shifted);
-    _totalSize = (_totalSize - 1).clamp(0, _totalSize);
+    // The grid self-corrects when the next page fetch updates totalSize from
+    // the server response on the next scroll.
   }
 
   @override
   String get focusNodeDebugLabel => 'browse_first_item';
 
   @override
-  int get itemCount => _totalSize;
+  int get itemCount => totalSize;
 
   @override
   void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
     setState(() {
-      for (final entry in _loadedItems.entries) {
+      for (final entry in loadedItems.entries) {
         if (entry.value.ratingKey == ratingKey) {
-          _loadedItems[entry.key] = updatedMetadata;
+          loadedItems[entry.key] = updatedMetadata;
           break;
         }
       }
@@ -194,25 +178,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   final ValueNotifier<bool> _isScrollActive = ValueNotifier<bool>(false);
   Timer? _scrollActivityTimer;
 
-  // Eager prefetch throttle
-  DateTime? _lastEagerPrefetch;
   // Alpha bar update: throttle (leading edge) + trailing timer (ensures final position)
   DateTime? _lastAlphaUpdate;
   Timer? _alphaUpdateTimer;
 
-  // Pagination state
-  int _totalSize = 0;
-  final Map<int, PlexMetadata> _loadedItems = {};
-  final Set<int> _loadingRanges = {};
-  AbortController? _cancelToken;
-  int _requestId = 0;
+  /// Generation counter for the filter/sort loading phase of [_loadContent].
+  /// Separate from the mixin's pagination generation so a filter reload can
+  /// invalidate in-flight filter/sort fetches without touching item pagination.
+  int _contentRequestId = 0;
   int _firstCharactersRequestId = 0;
   static const int _fetchSize = 200;
   Timer? _scrollIdleTimer;
-  Timer? _retryTimer;
-  int _retryCount = 0;
   bool _rangeLoadScheduled = false;
-  bool _visibleRangeLoading = false;
 
   // Focus nodes for filter chips
   final FocusNode _groupingChipFocusNode = FocusNode(debugLabel: 'grouping_chip');
@@ -230,8 +207,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   @override
   void dispose() {
-    _cancelToken?.abort();
-    _retryTimer?.cancel();
+    disposePagination();
     _scrollActivityTimer?.cancel();
     _scrollIdleTimer?.cancel();
     _alphaUpdateTimer?.cancel();
@@ -247,14 +223,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     super.dispose();
   }
 
-  // Override tryFocus to use _loadedItems instead of base class items list
+  // Override tryFocus to use loadedItems instead of base class items list
   @override
   void tryFocus() {
     if (widget.suppressAutoFocus) return;
     // On mobile (touch mode), skip auto-focus to prevent ensureVisible()
     // from interfering with TabBarView page animations
     if (!InputModeTracker.isKeyboardMode(context)) return;
-    if (widget.isActive && hasLoadedData && !hasFocused && _loadedItems.isNotEmpty) {
+    if (widget.isActive && hasLoadedData && !hasFocused && loadedItems.isNotEmpty) {
       hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) focusFirstItem();
@@ -306,11 +282,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       return;
     }
 
-    if (_loadedItems.isNotEmpty) {
+    if (loadedItems.isNotEmpty) {
       // Request immediately, then once more on the next frame to handle cases
       // where the grid/list attaches after the initial focus attempt.
       void request() {
-        if (mounted && _loadedItems.isNotEmpty && !firstItemFocusNode.hasFocus) {
+        if (mounted && loadedItems.isNotEmpty && !firstItemFocusNode.hasFocus) {
           firstItemFocusNode.requestFocus();
         }
       }
@@ -353,12 +329,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   Future<void> _loadContent() async {
-    // Cancel any pending request
-    _cancelToken?.abort();
-    _retryTimer?.cancel();
-    _cancelToken = AbortController();
-    // Use a generation counter for the filter/sort loading phase
-    final generation = ++_requestId;
+    final generation = ++_contentRequestId;
     final firstCharactersGeneration = ++_firstCharactersRequestId;
 
     _resetForFullReload();
@@ -370,9 +341,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       isLoading = true;
       errorMessage = null;
       items = [];
-      _totalSize = 0;
-      _loadedItems.clear();
-      _loadingRanges.clear();
+      resetPaginationState();
       // Clear filter/sort state while loading to prevent showing stale options
       _filters = [];
       _sortOptions = [];
@@ -398,7 +367,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       final savedGrouping = storage.getLibraryGrouping(widget.library.globalKey);
 
       // Check if request was superseded
-      if (generation != _requestId) return;
+      if (generation != _contentRequestId) return;
 
       if (!mounted) return;
       setState(() {
@@ -458,17 +427,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   Future<void> _loadItems() async {
-    final currentRequestId = ++_requestId;
-    _cancelToken?.abort();
-    _retryTimer?.cancel();
-    _cancelToken = AbortController();
-
+    final generation = _contentRequestId;
     setState(() {
       isLoading = true;
       items = [];
-      _totalSize = 0;
-      _loadedItems.clear();
-      _loadingRanges.clear();
+      resetPaginationState();
       // Increment content version when loading fresh content
       // This invalidates the last focused index
       gridContentVersion++;
@@ -476,27 +439,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     });
 
     try {
-      // Use server-specific client for this library
-      final client = getClientForLibrary();
-      final filterParams = _buildFilterParams();
+      await loadInitialPage(_calculateInitialFetchSize());
 
-      // Items are automatically tagged with server info by PlexClient
-      final result = await client.getLibraryContent(
-        widget.library.key,
-        start: 0,
-        size: _calculateInitialFetchSize(),
-        filters: filterParams,
-        abort: _cancelToken,
-      );
-
-      if (currentRequestId != _requestId) return;
-
-      if (!mounted) return;
+      if (generation != _contentRequestId || !mounted) return;
       setState(() {
-        _totalSize = result.totalSize;
-        for (var i = 0; i < result.items.length; i++) {
-          _loadedItems[i] = result.items[i];
-        }
         isLoading = false;
       });
 
@@ -510,74 +456,28 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         });
       }
     } catch (e) {
-      _handleLoadError(e, currentRequestId);
-    }
-  }
-
-  /// Fetch a range of items from the API and store them in the sparse map.
-  /// After a successful fetch, re-checks for remaining gaps in the visible range.
-  Future<bool> _fetchRange(int start, int size) async {
-    // Clamp to totalSize
-    if (start >= _totalSize) return false;
-    final clampedSize = size.clamp(0, _totalSize - start);
-    if (clampedSize == 0) return false;
-
-    // Deduplicate: track every index in-flight to prevent overlapping fetches
-    final indices = List.generate(clampedSize, (i) => start + i);
-    if (indices.every((i) => _loadingRanges.contains(i) || _loadedItems.containsKey(i))) return true;
-    _loadingRanges.addAll(indices);
-
-    final currentRequestId = _requestId;
-
-    try {
-      final client = getClientForLibrary();
-      final filterParams = _buildFilterParams();
-
-      final result = await client.getLibraryContent(
-        widget.library.key,
-        start: start,
-        size: clampedSize,
-        filters: filterParams,
-        abort: _cancelToken,
-      );
-
-      if (currentRequestId != _requestId || !mounted) return false;
-
+      if (generation != _contentRequestId || !mounted) return;
       setState(() {
-        for (var i = 0; i < result.items.length; i++) {
-          _loadedItems[start + i] = result.items[i];
-        }
-        if (result.totalSize != _totalSize) {
-          _totalSize = result.totalSize;
-        }
+        errorMessage = _getErrorMessage(e);
+        isLoading = false;
       });
-
-      _retryCount = 0;
-      _prefetchImages(start, result.items);
-      return true;
-    } catch (e) {
-      if (e is PlexHttpException && e.type == PlexHttpErrorType.cancelled) return false;
-      _retryCount++;
-      final delay = Duration(milliseconds: 500 * (1 << _retryCount.clamp(0, 4)));
-      _retryTimer?.cancel();
-      _retryTimer = Timer(delay, () {
-        if (mounted && currentRequestId == _requestId) {
-          _loadVisibleRange();
-        }
-      });
-      return false;
-    } finally {
-      _loadingRanges.removeAll(indices);
     }
   }
 
-  void _handleLoadError(dynamic error, int currentRequestId) {
-    if (currentRequestId != _requestId) return;
+  @override
+  Future<LibraryContentResult> fetchPage(int start, int size, AbortController? abort) {
+    return getClientForLibrary().getLibraryContent(
+      widget.library.key,
+      start: start,
+      size: size,
+      filters: _buildFilterParams(),
+      abort: abort,
+    );
+  }
 
-    setState(() {
-      errorMessage = _getErrorMessage(error);
-      isLoading = false;
-    });
+  @override
+  void onPageLoaded(int start, List<PlexMetadata> pageItems) {
+    _prefetchImages(start, pageItems);
   }
 
   String _getDefaultGrouping() {
@@ -776,10 +676,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       return;
     }
 
-    if (_totalSize == 0) return;
+    if (totalSize == 0) return;
 
     final targetIndex =
-        shouldRestoreGridFocus && lastFocusedGridIndex! < _totalSize && _loadedItems.containsKey(lastFocusedGridIndex!)
+        shouldRestoreGridFocus && lastFocusedGridIndex! < totalSize && loadedItems.containsKey(lastFocusedGridIndex!)
         ? lastFocusedGridIndex!
         : 0;
 
@@ -796,25 +696,25 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// FocusNode detached), so we target the last-column item in the first
   /// visible row — the grid cell closest to the alpha bar.
   void _navigateToGridNearScroll() {
-    if (_totalSize == 0 || _currentColumnCount < 1) return;
+    if (totalSize == 0 || _currentColumnCount < 1) return;
 
     final row = _currentFirstVisibleIndex.value ~/ _currentColumnCount;
-    var targetIndex = ((row + 1) * _currentColumnCount - 1).clamp(0, _totalSize - 1);
+    var targetIndex = ((row + 1) * _currentColumnCount - 1).clamp(0, totalSize - 1);
 
     // Find nearest loaded item — skeleton cards have no FocusNode
-    if (!_loadedItems.containsKey(targetIndex)) {
+    if (!loadedItems.containsKey(targetIndex)) {
       // Search backwards first (items above are more likely visible)
       int? found;
       for (var i = targetIndex - 1; i >= 0; i--) {
-        if (_loadedItems.containsKey(i)) {
+        if (loadedItems.containsKey(i)) {
           found = i;
           break;
         }
       }
       // Then search forwards
       if (found == null) {
-        for (var i = targetIndex + 1; i < _totalSize; i++) {
-          if (_loadedItems.containsKey(i)) {
+        for (var i = targetIndex + 1; i < totalSize; i++) {
+          if (loadedItems.containsKey(i)) {
             found = i;
             break;
           }
@@ -905,17 +805,22 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _scrollIdleTimer?.cancel();
     _scrollIdleTimer = Timer(const Duration(milliseconds: 200), () {
       if (!mounted) return;
-      // Discard stale in-flight tracking from eager prefetch during scroll
-      // so _loadVisibleRange sees the full gap at the settled position.
-      _loadingRanges.clear();
-      _loadVisibleRange();
-      _evictDistantItems();
-      final firstVisible = _itemIndexFromScrollOffset(_scrollController.offset);
-      evictDistantFocusNodes(firstVisible);
+      // Discard stale in-flight tracking from eager prefetch during scroll so
+      // ensureRangeLoaded sees the full gap at the settled position.
+      clearPendingRanges();
+      final range = _computeVisibleRange();
+      if (range != null) {
+        ensureRangeLoaded(range.firstIndex, range.visibleCount, buffer: _fetchSize ~/ 2);
+        evictDistantItems(range.firstIndex, maxKeep: 500, threshold: 600);
+        evictDistantFocusNodes(range.firstIndex);
+      }
     });
 
     // Eager prefetch: fetch data before scroll stops
-    _checkEagerPrefetch();
+    final range = _computeVisibleRange();
+    if (range != null) {
+      prefetchAhead(range.firstIndex, range.visibleCount, pageSize: _fetchSize);
+    }
 
     if (!_shouldShowAlphaJumpBar || _currentColumnCount < 1) return;
 
@@ -948,7 +853,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     final firstInRow = _itemIndexFromScrollOffset(offset);
     // Use the last item in the first visible row so the highlighted letter
     // updates as soon as items with a new letter appear in that row.
-    final maxIndex = _totalSize > 0 ? _totalSize - 1 : 0;
+    final maxIndex = totalSize > 0 ? totalSize - 1 : 0;
     final lastInRow = (firstInRow + _currentColumnCount - 1).clamp(0, maxIndex);
     if (lastInRow != _currentFirstVisibleIndex.value) {
       _currentFirstVisibleIndex.value = lastInRow;
@@ -970,7 +875,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     // First visible row = (offset + chipsBarHeight - effectiveTopPadding) / rowHeight
     final contentOffset = (offset + _chipsBarHeight - _effectiveTopPadding).clamp(0.0, double.infinity);
     final row = (contentOffset / rowHeight).floor();
-    final maxIndex = _totalSize > 0 ? _totalSize - 1 : 0;
+    final maxIndex = totalSize > 0 ? totalSize - 1 : 0;
     return (row * _currentColumnCount).clamp(0, maxIndex);
   }
 
@@ -983,7 +888,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _isJumpScrolling = true;
 
     _hasJumpPin = true;
-    final clamped = targetIndex.clamp(0, _totalSize > 0 ? _totalSize - 1 : 0);
+    final clamped = targetIndex.clamp(0, totalSize > 0 ? totalSize - 1 : 0);
     _currentFirstVisibleIndex.value = clamped;
 
     _scrollToItemIndex(clamped);
@@ -1126,103 +1031,29 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _rangeLoadScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _rangeLoadScheduled = false;
-      if (mounted) _loadVisibleRange();
+      if (!mounted) return;
+      final range = _computeVisibleRange();
+      if (range != null) {
+        ensureRangeLoaded(range.firstIndex, range.visibleCount, buffer: _fetchSize ~/ 2);
+      }
     });
   }
 
-  /// Determine the visible range and fetch any unloaded items within it.
-  /// Serialized: only one visible-range fetch runs at a time to prevent
-  /// concurrent calls from seeing each other's _loadingRanges and producing
-  /// tiny fetch sizes.
-  Future<void> _loadVisibleRange() async {
-    if (_visibleRangeLoading) return;
-    if (_totalSize == 0 || _currentColumnCount < 1 || !_scrollController.hasClients) return;
-    if (_lastCrossAxisExtent <= 0) return;
-
+  /// Returns the first-visible index and visible count from the scroll
+  /// controller + grid metrics, or null if the viewport isn't measured yet.
+  ({int firstIndex, int visibleCount})? _computeVisibleRange() {
+    if (_currentColumnCount < 1 || !_scrollController.hasClients || _lastCrossAxisExtent <= 0) return null;
     final offset = _scrollController.offset;
     final viewportHeight = _scrollController.position.viewportDimension;
-    if (!viewportHeight.isFinite) return;
-    final firstIndex = _itemIndexFromScrollOffset(offset);
+    if (!viewportHeight.isFinite) return null;
 
     final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
     final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
     final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
-    if (rowHeight <= 0) return;
+    if (rowHeight <= 0) return null;
 
     final visibleRows = (viewportHeight / rowHeight).ceil() + 1;
-    final visibleCount = visibleRows * _currentColumnCount;
-
-    final buffer = _fetchSize ~/ 2;
-    final rangeStart = (firstIndex - buffer).clamp(0, _totalSize);
-    final rangeEnd = (firstIndex + visibleCount + buffer).clamp(0, _totalSize);
-
-    int? fetchStart;
-    int? fetchEnd;
-    for (var i = rangeStart; i < rangeEnd; i++) {
-      if (!_loadedItems.containsKey(i) && !_loadingRanges.contains(i)) {
-        fetchStart ??= i;
-        fetchEnd = i + 1;
-      }
-    }
-    if (fetchStart == null || fetchEnd == null) return;
-
-    _retryTimer?.cancel();
-    _visibleRangeLoading = true;
-    try {
-      final success = await _fetchRange(fetchStart, fetchEnd - fetchStart);
-      if (success && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _loadVisibleRange();
-        });
-      }
-    } finally {
-      _visibleRangeLoading = false;
-    }
-  }
-
-  /// Eagerly prefetch data when approaching unloaded boundaries during scroll.
-  /// Throttled to at most once per 100ms to avoid spamming.
-  void _checkEagerPrefetch() {
-    if (_totalSize == 0 || _currentColumnCount < 1 || !_scrollController.hasClients) return;
-    if (_lastCrossAxisExtent <= 0) return;
-
-    final now = DateTime.now();
-    if (_lastEagerPrefetch != null && now.difference(_lastEagerPrefetch!) < const Duration(milliseconds: 100)) return;
-
-    final offset = _scrollController.offset;
-    final viewportHeight = _scrollController.position.viewportDimension;
-    if (!viewportHeight.isFinite) return;
-    final firstIndex = _itemIndexFromScrollOffset(offset);
-
-    final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
-    final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
-    final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
-    if (rowHeight <= 0) return;
-
-    final visibleRows = (viewportHeight / rowHeight).ceil() + 1;
-    final visibleCount = visibleRows * _currentColumnCount;
-
-    // Look 1 viewport ahead for unloaded items
-    final lookAheadStart = (firstIndex + visibleCount).clamp(0, _totalSize);
-    final lookAheadEnd = (lookAheadStart + visibleCount).clamp(0, _totalSize);
-
-    for (var i = lookAheadStart; i < lookAheadEnd; i++) {
-      if (!_loadedItems.containsKey(i) && !_loadingRanges.contains(i)) {
-        _lastEagerPrefetch = now;
-        _fetchRange(i, _fetchSize);
-        return;
-      }
-    }
-
-    // Check backward if nothing needed forward
-    final lookBehindStart = (firstIndex - visibleCount).clamp(0, _totalSize);
-    for (var i = firstIndex - 1; i >= lookBehindStart; i--) {
-      if (!_loadedItems.containsKey(i) && !_loadingRanges.contains(i)) {
-        _lastEagerPrefetch = now;
-        _fetchRange(i, _fetchSize);
-        return;
-      }
-    }
+    return (firstIndex: _itemIndexFromScrollOffset(offset), visibleCount: visibleRows * _currentColumnCount);
   }
 
   /// Compute initial fetch size based on viewport dimensions.
@@ -1243,21 +1074,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     } catch (_) {
       return _fetchSize;
     }
-  }
-
-  /// Evict loaded items far from the current viewport to bound memory usage.
-  static const int _maxLoadedItems = 500;
-  static const int _evictionThreshold = 600;
-
-  void _evictDistantItems() {
-    if (_loadedItems.length <= _evictionThreshold) return;
-
-    final centerIndex = _itemIndexFromScrollOffset(_scrollController.offset);
-    final halfKeep = _maxLoadedItems ~/ 2;
-    final keepStart = centerIndex - halfKeep;
-    final keepEnd = centerIndex + halfKeep;
-
-    _loadedItems.removeWhere((index, _) => index < keepStart || index > keepEnd);
   }
 
   /// Prefetch images for items near the viewport to reduce pop-in.
@@ -1391,11 +1207,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   /// Builds content as slivers for the CustomScrollView
   List<Widget> _buildContentSlivers() {
-    if (isLoading && _totalSize == 0 && _loadedItems.isEmpty) {
+    if (isLoading && totalSize == 0 && loadedItems.isEmpty) {
       return [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))];
     }
 
-    if (errorMessage != null && _loadedItems.isEmpty) {
+    if (errorMessage != null && loadedItems.isEmpty) {
       return [
         SliverFillRemaining(
           child: ErrorStateWidget(
@@ -1408,7 +1224,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       ];
     }
 
-    if (_totalSize == 0 && !isLoading) {
+    if (totalSize == 0 && !isLoading) {
       return [
         SliverFillRemaining(
           child: EmptyStateWidget(message: t.libraries.thisLibraryIsEmpty, icon: Symbols.folder_open_rounded),
@@ -1436,7 +1252,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   /// Builds either a sliver list or sliver grid based on the view mode
   Widget _buildItemsSliver(BuildContext context, SettingsProvider settingsProvider) {
-    final itemCount = _totalSize;
+    final itemCount = totalSize;
     final isPhone = _isPhone(context);
     final topPadding = isPhone ? _gridTopPaddingPhone : _gridTopPadding;
     _effectiveTopPadding = topPadding;
@@ -1497,12 +1313,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     bool isLastColumn = false,
     bool disableScale = false,
   }) {
-    final item = _loadedItems[index];
+    final item = loadedItems[index];
 
     // Show skeleton placeholder for unloaded items
     if (item == null) {
       _scheduleRangeLoad();
-      return const _SkeletonCard();
+      return const SkeletonMediaCard();
     }
 
     // Use firstItemFocusNode for index 0 to maintain compatibility with base class
@@ -1521,44 +1337,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       onBack: widget.onBack,
       onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
       onListRefresh: _loadItems,
-    );
-  }
-}
-
-/// Skeleton placeholder card that matches the poster + title layout of a real media card.
-/// Not focusable — dpad focus skips over these.
-class _SkeletonCard extends StatelessWidget {
-  const _SkeletonCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Poster area — matches the Expanded poster in _buildGridCard
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-              child: SkeletonLoader(child: SizedBox.expand()),
-            ),
-          ),
-          SizedBox(height: 4),
-          // Title bar
-          SkeletonLoader(
-            borderRadius: BorderRadius.all(Radius.circular(4)),
-            child: SizedBox(height: 13, width: double.infinity),
-          ),
-          SizedBox(height: 3),
-          // Subtitle bar
-          FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: 0.6,
-            child: SkeletonLoader(borderRadius: BorderRadius.all(Radius.circular(4)), child: SizedBox(height: 11)),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -4,11 +4,13 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
+import '../models/plex_metadata.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart' show ViewMode;
 import '../utils/grid_size_calculator.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_grid_delegate.dart';
+import '../widgets/skeleton_media_card.dart';
 
 /// Mixin that provides common focus navigation functionality for detail screens.
 /// Handles app bar focus, back navigation, scroll-to-top, and grid item focus management.
@@ -217,6 +219,78 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
                     onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
                   );
                 },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  /// Sparse-loading version of [buildFocusableGrid]. Renders [totalItems]
+  /// slots; for each, [itemAt] returns the loaded item or null if not yet
+  /// fetched. Null slots render a skeleton and invoke [onSkeletonVisible] so
+  /// the caller can kick off a page fetch containing that index.
+  Widget buildSparseFocusableGrid({
+    required int totalItems,
+    required PlexMetadata? Function(int index) itemAt,
+    required void Function(String ratingKey) onRefresh,
+    void Function(int index)? onSkeletonVisible,
+    String? collectionId,
+    VoidCallback? onListRefresh,
+  }) {
+    return Consumer<SettingsProvider>(
+      builder: (context, settingsProvider, child) {
+        final isListMode = settingsProvider.viewMode == ViewMode.list;
+
+        Widget buildTile(int index, {required bool inFirstRow, required bool disableScale}) {
+          final item = itemAt(index);
+          if (item == null) {
+            onSkeletonVisible?.call(index);
+            return const SkeletonMediaCard();
+          }
+          final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index, prefix: 'detail_grid_item');
+          return FocusableMediaCard(
+            key: Key(item.ratingKey),
+            item: item,
+            focusNode: focusNode,
+            disableScale: disableScale,
+            onRefresh: onRefresh,
+            collectionId: collectionId,
+            onListRefresh: onListRefresh,
+            onNavigateUp: inFirstRow ? navigateToAppBar : null,
+            onBack: handleBackFromContent,
+            onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+          );
+        }
+
+        if (isListMode) {
+          return SliverPadding(
+            padding: const EdgeInsets.all(8),
+            sliver: SliverList.builder(
+              itemCount: totalItems,
+              itemBuilder: (context, index) => buildTile(index, inFirstRow: index == 0, disableScale: true),
+            ),
+          );
+        }
+
+        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+        return SliverPadding(
+          padding: const EdgeInsets.all(8),
+          sliver: SliverLayoutBuilder(
+            builder: (context, constraints) {
+              final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
+              return SliverGrid.builder(
+                gridDelegate: MediaGridDelegate.createDelegate(
+                  context: context,
+                  density: settingsProvider.libraryDensity,
+                ),
+                itemCount: totalItems,
+                itemBuilder: (context, index) => buildTile(
+                  index,
+                  inFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
+                  disableScale: false,
+                ),
               );
             },
           ),

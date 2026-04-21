@@ -137,7 +137,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   @override
   Future<List<PlexMetadata>> fetchItems() async {
-    return await client.getPlaylist(widget.playlist.ratingKey);
+    return await client.fetchAllPlaylistItems(widget.playlist.ratingKey);
   }
 
   @override

@@ -58,7 +58,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
 
   @override
   Future<List<PlexMetadata>> fetchItems() async {
-    return await client.getPersonMedia(widget.personId);
+    return await client.fetchAllPersonMedia(widget.personId);
   }
 
   @override

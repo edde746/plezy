@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
+import '../mixins/paginated_item_loader.dart';
 import '../models/plex_metadata.dart';
 import '../providers/download_provider.dart';
+import '../services/plex_client.dart';
+import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/download_utils.dart';
+import '../utils/plex_http_client.dart';
+import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../i18n/strings.g.dart';
-import '../utils/dialogs.dart';
-import '../utils/app_logger.dart';
-import '../utils/snackbar_helper.dart';
 import 'base_media_list_detail_screen.dart';
 import 'focusable_detail_screen_mixin.dart';
 import '../mixins/grid_focus_node_mixin.dart';
@@ -26,9 +29,11 @@ class CollectionDetailScreen extends StatefulWidget {
 
 class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionDetailScreen>
     with
-        StandardItemLoader<CollectionDetailScreen>,
         GridFocusNodeMixin<CollectionDetailScreen>,
-        FocusableDetailScreenMixin<CollectionDetailScreen> {
+        FocusableDetailScreenMixin<CollectionDetailScreen>,
+        PaginatedItemLoader<CollectionDetailScreen> {
+  static const int _pageSize = 200;
+
   @override
   PlexMetadata get mediaItem => widget.collection;
 
@@ -39,33 +44,60 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   String get emptyMessage => t.collections.empty;
 
   @override
-  bool get hasItems => items.isNotEmpty;
+  bool get hasItems => totalSize > 0;
 
   @override
   void dispose() {
+    disposePagination();
     disposeFocusResources();
     super.dispose();
   }
 
   @override
-  Future<List<PlexMetadata>> fetchItems() async {
-    return await client.getCollectionItems(widget.collection.ratingKey);
+  Future<LibraryContentResult> fetchPage(int start, int size, AbortController? abort) =>
+      client.getCollectionItems(widget.collection.ratingKey, start: start, size: size, abort: abort);
+
+  @override
+  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+    // Search [loadedItems] (not the flat [items] snapshot, which only has
+    // the first page) so refreshing an item at a scrolled-in position updates
+    // the grid in place.
+    for (final entry in loadedItems.entries) {
+      if (entry.value.ratingKey == ratingKey) {
+        loadedItems[entry.key] = updatedMetadata;
+        return;
+      }
+    }
   }
 
   @override
   Future<void> loadItems() async {
-    await super.loadItems();
-    autoFocusFirstItemAfterLoad();
-  }
-
-  @override
-  String getLoadErrorMessage(Object error) {
-    return t.collections.failedToLoadItems(error: error.toString());
-  }
-
-  @override
-  String getLoadSuccessMessage(int itemCount) {
-    return 'Loaded $itemCount items for collection: ${widget.collection.title}';
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+      items = [];
+      resetPaginationState();
+    });
+    try {
+      await loadInitialPage(_pageSize);
+      if (!mounted) return;
+      // Mirror loadedItems into base-class [items] once so state-sliver checks
+      // (items.isEmpty vs items.isEmpty && isLoading) pick the right branch.
+      // Further pages only update loadedItems; items.isEmpty stays false.
+      setState(() {
+        items = loadedItems.values.toList();
+        isLoading = false;
+      });
+      appLogger.d('Loaded ${loadedItems.length} of $totalSize items for collection: ${widget.collection.title}');
+      autoFocusFirstItemAfterLoad();
+    } catch (e) {
+      appLogger.e('Failed to load collection items', error: e);
+      if (!mounted) return;
+      setState(() {
+        errorMessage = t.collections.failedToLoadItems(error: e.toString());
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -75,7 +107,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     final hasRule = context.select<DownloadProvider, bool>((p) => p.hasSyncRule(widget.collection.globalKey));
 
     return [
-      if (items.isNotEmpty) ...[
+      if (hasItems) ...[
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
@@ -101,17 +133,19 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   }
 
   Future<void> _downloadCollection() async {
-    if (items.isEmpty) {
+    if (!hasItems) {
       showErrorSnackBar(context, t.collections.empty);
       return;
     }
 
     final downloadProvider = context.read<DownloadProvider>();
     try {
+      final allItems = await client.fetchAllCollectionItems(widget.collection.ratingKey);
+      if (!mounted) return;
       final result = await showCollectionDownloadOptionsAndQueue(
         context,
         collectionMetadata: widget.collection,
-        items: items,
+        items: allItems,
         client: client,
         downloadProvider: downloadProvider,
       );
@@ -140,8 +174,8 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   Future<void> _deleteCollection() async {
     int? sectionId = widget.collection.librarySectionID;
-    if (sectionId == null && items.isNotEmpty) {
-      sectionId = items.first.librarySectionID;
+    if (sectionId == null && loadedItems.isNotEmpty) {
+      sectionId = loadedItems.values.first.librarySectionID;
     }
 
     if (sectionId == null) {
@@ -185,10 +219,12 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
       slivers: [
         CustomAppBar(title: Text(widget.collection.title!), actions: buildFocusableAppBarActions()),
         ...buildStateSlivers(),
-        if (items.isNotEmpty)
-          buildFocusableGrid(
-            items: items,
+        if (hasItems)
+          buildSparseFocusableGrid(
+            totalItems: totalSize,
+            itemAt: (index) => loadedItems[index],
             onRefresh: updateItem,
+            onSkeletonVisible: (index) => ensureIndexLoaded(index, pageSize: _pageSize),
             collectionId: widget.collection.ratingKey,
             onListRefresh: loadItems,
           ),

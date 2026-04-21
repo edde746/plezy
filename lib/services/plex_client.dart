@@ -599,24 +599,30 @@ class PlexClient {
     Map<String, String>? filters,
     AbortController? abort,
   }) async {
-    final queryParams = <String, dynamic>{};
-    if (start != null) queryParams['X-Plex-Container-Start'] = start;
-    if (size != null) queryParams['X-Plex-Container-Size'] = size;
-
-    // Add filter parameters
-    if (filters != null) {
-      queryParams.addAll(filters);
-    }
-
+    final queryParams = _buildPaginationParams(start, size);
+    if (filters != null) queryParams.addAll(filters);
     final endpoint = sectionId == 'shared' ? '/library/shared/all' : '/library/sections/$sectionId/all';
-
     final response = await _getWithFailover(endpoint, queryParameters: queryParams, abort: abort);
+    return _extractLibraryContentResult(response);
+  }
 
+  Map<String, dynamic> _buildPaginationParams(int? start, int? size) {
+    final params = <String, dynamic>{};
+    if (start != null) params['X-Plex-Container-Start'] = start;
+    if (size != null) params['X-Plex-Container-Size'] = size;
+    return params;
+  }
+
+  LibraryContentResult _extractLibraryContentResult(PlexResponse response) {
     final items = _extractMetadataList(response);
     final container = _getMediaContainer(response);
     final totalSize = container?['totalSize'] as int? ?? container?['size'] as int? ?? items.length;
-
     return LibraryContentResult(items: items, totalSize: totalSize);
+  }
+
+  Future<LibraryContentResult> _fetchPaginatedList(String path, {int? start, int? size, AbortController? abort}) async {
+    final response = await _getWithFailover(path, queryParameters: _buildPaginationParams(start, size), abort: abort);
+    return _extractLibraryContentResult(response);
   }
 
   /// Parse list of PlexMetadata from a cached response
@@ -837,6 +843,33 @@ class PlexClient {
     }
   }
 
+  /// Page size for iterating all items via [_fetchAllPages]. Also the cap
+  /// for endpoints that send `X-Plex-Container-Size` but aren't truly paginated
+  /// (collections listing, playlists listing, search).
+  static const int _defaultListContainerSize = 1000;
+
+  /// Page size used when walking all pages of a paginated endpoint.
+  static const int _fetchAllPageSize = 200;
+
+  /// Iterate every page of a paginated endpoint and concatenate the results.
+  /// Stops as soon as [LibraryContentResult.totalSize] is reached or a page
+  /// returns no items. Errors propagate.
+  Future<List<PlexMetadata>> _fetchAllPages(
+    Future<LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
+    AbortController? abort,
+  }) async {
+    final all = <PlexMetadata>[];
+    var start = 0;
+    while (true) {
+      final page = await fetchPage(start, _fetchAllPageSize, abort);
+      all.addAll(page.items);
+      start += page.items.length;
+      if (page.items.isEmpty) break;
+      if (start >= page.totalSize) break;
+    }
+    return all;
+  }
+
   /// Parse audio/subtitle tracks and the video stream's frame rate from a
   /// raw Part.Stream list in a single pass.
   ({List<PlexAudioTrack> audio, List<PlexSubtitleTrack> subtitles, double? frameRate}) _parseStreams(
@@ -1042,6 +1075,7 @@ class PlexClient {
         'searchTypes': 'movies,tv',
         'includeCollections': 1,
         'includeExternalMedia': 1,
+        'X-Plex-Container-Size': limit,
       },
     );
 
@@ -1712,21 +1746,23 @@ class PlexClient {
     }, 'Failed to get hub content');
   }
 
-  /// Get playlist content by playlist ID
-  /// Returns the list of metadata items in the playlist
-  Future<List<PlexMetadata>> getPlaylist(String playlistId) {
-    return _wrapListApiCall<PlexMetadata>(
-      () => _http.get('/playlists/$playlistId/items'),
-      _extractMetadataList,
-      'Failed to get playlist',
-    );
-  }
+  /// Get playlist content by playlist ID, paginated.
+  Future<LibraryContentResult> getPlaylist(String playlistId, {int? start, int? size, AbortController? abort}) =>
+      _fetchPaginatedList('/playlists/$playlistId/items', start: start, size: size, abort: abort);
+
+  /// Fetch every page of a playlist's items. For callers that need the full list
+  /// (downloads, sync rules, context-menu shuffle).
+  Future<List<PlexMetadata>> fetchAllPlaylistItems(String playlistId) =>
+      _fetchAllPages((start, size, abort) => getPlaylist(playlistId, start: start, size: size, abort: abort));
 
   /// Get all playlists
   /// Filters by playlistType=video by default
   /// Set smart to true/false to filter smart playlists, or null for all
   Future<List<PlexPlaylist>> getPlaylists({String playlistType = 'video', bool? smart}) {
-    final queryParams = <String, dynamic>{'playlistType': playlistType};
+    final queryParams = <String, dynamic>{
+      'playlistType': playlistType,
+      'X-Plex-Container-Size': _defaultListContainerSize,
+    };
     if (smart != null) {
       queryParams['smart'] = smart ? '1' : '0';
     }
@@ -1965,7 +2001,10 @@ class PlexClient {
   /// Returns collections as PlexMetadata objects with type="collection"
   Future<List<PlexMetadata>> getLibraryCollections(String sectionId) async {
     return _wrapListApiCall<PlexMetadata>(
-      () => _http.get('/library/sections/$sectionId/collections', queryParameters: {'includeGuids': 1}),
+      () => _http.get(
+        '/library/sections/$sectionId/collections',
+        queryParameters: {'includeGuids': 1, 'X-Plex-Container-Size': _defaultListContainerSize},
+      ),
       (response) {
         final allItems = _extractMetadataList(response);
         // Collections should have type="collection"
@@ -1977,24 +2016,25 @@ class PlexClient {
     );
   }
 
-  /// Get items in a collection
-  /// Returns the list of metadata items in the collection
-  Future<List<PlexMetadata>> getCollectionItems(String collectionId) {
-    return _wrapListApiCall<PlexMetadata>(
-      () => _http.get('/library/collections/$collectionId/children'),
-      _extractMetadataList,
-      'Failed to get collection items',
-    );
-  }
+  /// Get items in a collection, paginated.
+  Future<LibraryContentResult> getCollectionItems(
+    String collectionId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) => _fetchPaginatedList('/library/collections/$collectionId/children', start: start, size: size, abort: abort);
 
-  /// Get media featuring a specific person (actor/director)
-  Future<List<PlexMetadata>> getPersonMedia(String personId) {
-    return _wrapListApiCall<PlexMetadata>(
-      () => _http.get('/library/people/$personId/media'),
-      _extractMetadataList,
-      'Failed to get person media',
-    );
-  }
+  /// Fetch every item in a collection (downloads, sync rules, context-menu shuffle).
+  Future<List<PlexMetadata>> fetchAllCollectionItems(String collectionId) =>
+      _fetchAllPages((start, size, abort) => getCollectionItems(collectionId, start: start, size: size, abort: abort));
+
+  /// Get media featuring a specific person (actor/director), paginated.
+  Future<LibraryContentResult> getPersonMedia(String personId, {int? start, int? size, AbortController? abort}) =>
+      _fetchPaginatedList('/library/people/$personId/media', start: start, size: size, abort: abort);
+
+  /// Fetch every media item featuring a given person.
+  Future<List<PlexMetadata>> fetchAllPersonMedia(String personId) =>
+      _fetchAllPages((start, size, abort) => getPersonMedia(personId, start: start, size: size, abort: abort));
 
   /// Delete a collection
   /// Deletes a library collection from the server

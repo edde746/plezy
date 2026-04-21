@@ -292,8 +292,8 @@ class SyncRuleExecutor {
     final List<PlexMetadata> rootItems;
     try {
       rootItems = rule.targetType == ContentTypes.collection
-          ? await client.getCollectionItems(rule.ratingKey)
-          : await client.getPlaylist(rule.ratingKey);
+          ? await client.fetchAllCollectionItems(rule.ratingKey)
+          : await client.fetchAllPlaylistItems(rule.ratingKey);
     } catch (e) {
       appLogger.w('Sync rule ${rule.globalKey}: failed to fetch list items: $e');
       return null;
