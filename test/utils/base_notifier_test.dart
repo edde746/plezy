@@ -79,6 +79,7 @@ void main() {
       final sub = n.stream.listen((_) {}, onDone: doneCompleter.complete);
       n.dispose();
       await doneCompleter.future.timeout(const Duration(seconds: 1));
+      expect(doneCompleter.isCompleted, isTrue);
       await sub.cancel();
     });
   });
