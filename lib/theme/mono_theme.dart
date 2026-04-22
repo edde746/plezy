@@ -43,6 +43,7 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
 
   final base = ThemeData(
     useMaterial3: true,
+    fontFamily: 'GoNoto',
     brightness: isDark ? Brightness.dark : Brightness.light,
     colorScheme: ColorScheme(
       brightness: isDark ? Brightness.dark : Brightness.light,
