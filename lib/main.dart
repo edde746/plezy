@@ -102,6 +102,8 @@ Future<void> main() async {
       options.enableAutoSessionTracking = false;
       options.recordHttpBreadcrumbs = false;
       options.captureNativeFailedRequests = false;
+      options.enableAppHangTracking = !kDebugMode;
+      options.appHangTimeoutInterval = const Duration(seconds: 3);
       options.beforeSend = _beforeSend;
       options.beforeBreadcrumb = _beforeBreadcrumb;
     }, appRunner: _bootstrapApp);

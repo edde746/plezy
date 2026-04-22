@@ -64,7 +64,13 @@ jobs:
           EOF
 
       - name: Build APKs
-        run: flutter build apk --release --split-per-abi --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }}
+        run: flutter build apk --release --split-per-abi --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --obfuscate --split-debug-info=debug-info/android-apk
+
+      - name: Upload symbols to bugs.plezy.app
+        if: github.repository == 'edde746/plezy'
+        env:
+          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
+        run: ./scripts/upload-symbols.sh android-apk
 
       - name: Clean up keystore
         if: always()
@@ -132,7 +138,13 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }}
+        run: flutter build ios --release --no-codesign --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/ios
+
+      - name: Upload symbols to bugs.plezy.app
+        if: github.repository == 'edde746/plezy'
+        env:
+          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
+        run: ./scripts/upload-symbols.sh ios
 
       - name: Create IPA
         run: |
@@ -190,7 +202,13 @@ jobs:
         run: flutter pub get
 
       - name: Build macOS
-        run: flutter build macos --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }}
+        run: flutter build macos --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/macos
+
+      - name: Upload symbols to bugs.plezy.app
+        if: github.repository == 'edde746/plezy'
+        env:
+          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
+        run: ./scripts/upload-symbols.sh macos
 
       - name: Import Code Signing Certificate
         env:
@@ -341,7 +359,14 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows x64
-        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }}
+        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/windows-x64
+
+      - name: Upload symbols to bugs.plezy.app
+        if: github.repository == 'edde746/plezy'
+        env:
+          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
+        shell: pwsh
+        run: ./scripts/upload-symbols.ps1 windows-x64
 
       - name: Upload x64 build
         uses: actions/upload-artifact@v4
@@ -378,7 +403,14 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows arm64
-        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }}
+        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/windows-arm64
+
+      - name: Upload symbols to bugs.plezy.app
+        if: github.repository == 'edde746/plezy'
+        env:
+          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
+        shell: pwsh
+        run: ./scripts/upload-symbols.ps1 windows-arm64
 
       - name: Upload arm64 build
         uses: actions/upload-artifact@v4
@@ -522,9 +554,15 @@ jobs:
         run: flutter pub get
 
       - name: Build Linux x64
-        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }}
+        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/linux-x64
         env:
           PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/x86_64-linux-gnu/pkgconfig
+
+      - name: Upload symbols to bugs.plezy.app
+        if: github.repository == 'edde746/plezy'
+        env:
+          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
+        run: ./scripts/upload-symbols.sh linux-x64
 
       - name: Build Linux Packages
         run: ARCH_SUFFIX=x64 OUTPUT_DIR=$GITHUB_WORKSPACE python3 linux/packaging/build-packages.py
@@ -630,9 +668,15 @@ jobs:
         run: flutter pub get
 
       - name: Build Linux arm64
-        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }}
+        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/linux-arm64
         env:
           PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/aarch64-linux-gnu/pkgconfig
+
+      - name: Upload symbols to bugs.plezy.app
+        if: github.repository == 'edde746/plezy'
+        env:
+          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
+        run: ./scripts/upload-symbols.sh linux-arm64
 
       - name: Find bundle directory
         id: find-bundle
