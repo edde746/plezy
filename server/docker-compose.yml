@@ -3,8 +3,9 @@ services:
     build: .
     restart: unless-stopped
     mem_limit: 128m
+    stop_grace_period: 15s
     volumes:
-      - logs:/data/logs
+      - logs:/data
     expose:
       - "8080"
     logging:
