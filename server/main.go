@@ -396,14 +396,15 @@ func (ls *logStore) cleanup() {
 // --- Snapshotter (single-writer, debounced, atomic disk persistence) ---
 
 type snapshotter struct {
-	path    string
-	dir     string
-	trigger chan struct{}
-	flush   chan chan error
-	done    chan struct{}
-	exited  chan struct{}
-	build   func() stateSnapshot
-	writeMu sync.Mutex
+	path     string
+	dir      string
+	trigger  chan struct{}
+	flush    chan chan error
+	done     chan struct{}
+	exited   chan struct{}
+	build    func() stateSnapshot
+	writeMu  sync.Mutex
+	stopOnce sync.Once
 
 	errMu      sync.Mutex
 	lastErrLog time.Time
@@ -502,26 +503,30 @@ func (sn *snapshotter) write() error {
 }
 
 func (sn *snapshotter) flushAndStop(timeout time.Duration) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	reply := make(chan error, 1)
-	select {
-	case sn.flush <- reply:
-	case <-ctx.Done():
-		return errors.New("snapshot flush: timed out sending flush signal")
-	}
-	var flushErr error
-	select {
-	case flushErr = <-reply:
-	case <-ctx.Done():
-		return errors.New("snapshot flush: timed out waiting for write")
-	}
-	close(sn.done)
-	select {
-	case <-sn.exited:
-	case <-ctx.Done():
-	}
-	return flushErr
+	var result error
+	sn.stopOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		reply := make(chan error, 1)
+		select {
+		case sn.flush <- reply:
+		case <-ctx.Done():
+			result = errors.New("snapshot flush: timed out sending flush signal")
+			return
+		}
+		select {
+		case result = <-reply:
+		case <-ctx.Done():
+			result = errors.New("snapshot flush: timed out waiting for write")
+			return
+		}
+		close(sn.done)
+		select {
+		case <-sn.exited:
+		case <-ctx.Done():
+		}
+	})
+	return result
 }
 
 // logWriteErr throttles snapshot-write error spam to at most once per hour.
