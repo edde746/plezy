@@ -110,6 +110,8 @@
     "alwaysKeepSidebarOpenDescription": "La barre latérale reste étendue et la zone de contenu s'adapte",
     "showUnwatchedCount": "Afficher le nombre non visionné",
     "showUnwatchedCountDescription": "Afficher le nombre d'épisodes non visionnés pour les séries et saisons",
+    "showEpisodeNumberOnCards": "Afficher le numéro d'épisode sur les cartes",
+    "showEpisodeNumberOnCardsDescription": "Afficher le numéro d'épisode à côté de la saison (ex. S2 E3) sur les cartes d'épisodes",
     "hideSpoilers": "Masquer les spoilers des épisodes non vus",
     "hideSpoilersDescription": "Flouter les miniatures et masquer les descriptions des épisodes que vous n'avez pas encore regardés",
     "playerBackend": "Moteur de lecture",

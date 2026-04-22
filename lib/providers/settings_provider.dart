@@ -12,6 +12,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _showServerNameOnHubs = false;
   bool _alwaysKeepSidebarOpen = false;
   bool _showUnwatchedCount = true;
+  bool _showEpisodeNumberOnCards = true;
   bool _hideSpoilers = false;
   bool _showNavBarLabels = true;
   bool _liveTvDefaultFavorites = false;
@@ -54,6 +55,7 @@ class SettingsProvider extends ChangeNotifier {
     _showServerNameOnHubs = s.getShowServerNameOnHubs();
     _alwaysKeepSidebarOpen = s.getAlwaysKeepSidebarOpen();
     _showUnwatchedCount = s.getShowUnwatchedCount();
+    _showEpisodeNumberOnCards = s.getShowEpisodeNumberOnCards();
     _hideSpoilers = s.getHideSpoilers();
     _showNavBarLabels = s.getShowNavBarLabels();
     _liveTvDefaultFavorites = s.getLiveTvDefaultFavorites();
@@ -88,6 +90,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get alwaysKeepSidebarOpen => _alwaysKeepSidebarOpen;
 
   bool get showUnwatchedCount => _showUnwatchedCount;
+
+  bool get showEpisodeNumberOnCards => _showEpisodeNumberOnCards;
 
   bool get hideSpoilers => _hideSpoilers;
 
@@ -168,6 +172,13 @@ class SettingsProvider extends ChangeNotifier {
     value: value,
     setLocal: (v) => _showUnwatchedCount = v,
     persist: _settingsService!.setShowUnwatchedCount,
+  );
+
+  Future<void> setShowEpisodeNumberOnCards(bool value) => _updateSetting(
+    current: _showEpisodeNumberOnCards,
+    value: value,
+    setLocal: (v) => _showEpisodeNumberOnCards = v,
+    persist: _settingsService!.setShowEpisodeNumberOnCards,
   );
 
   Future<void> setHideSpoilers(bool value) => _updateSetting(

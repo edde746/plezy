@@ -230,6 +230,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => '侧边栏保持展开状态，内容区域自动调整';
 	@override String get showUnwatchedCount => '显示未观看数量';
 	@override String get showUnwatchedCountDescription => '在剧集和季上显示未观看的集数';
+	@override String get showEpisodeNumberOnCards => '在卡片上显示集数';
+	@override String get showEpisodeNumberOnCardsDescription => '在剧集卡片上，季号旁同时显示集数（例如 S2 E3）';
 	@override String get hideSpoilers => '隐藏未看剧集的剧透内容';
 	@override String get hideSpoilersDescription => '模糊未观看剧集的缩略图并隐藏其描述';
 	@override String get playerBackend => '播放器引擎';
@@ -1518,6 +1520,8 @@ extension on TranslationsZh {
 			'settings.alwaysKeepSidebarOpenDescription' => '侧边栏保持展开状态，内容区域自动调整',
 			'settings.showUnwatchedCount' => '显示未观看数量',
 			'settings.showUnwatchedCountDescription' => '在剧集和季上显示未观看的集数',
+			'settings.showEpisodeNumberOnCards' => '在卡片上显示集数',
+			'settings.showEpisodeNumberOnCardsDescription' => '在剧集卡片上，季号旁同时显示集数（例如 S2 E3）',
 			'settings.hideSpoilers' => '隐藏未看剧集的剧透内容',
 			'settings.hideSpoilersDescription' => '模糊未观看剧集的缩略图并隐藏其描述',
 			'settings.playerBackend' => '播放器引擎',
@@ -1928,10 +1932,10 @@ extension on TranslationsZh {
 			'libraries.sortBy' => '排序依据',
 			'libraries.filters' => '筛选器',
 			'libraries.confirmActionMessage' => '确定要执行此操作吗？',
-			'libraries.showLibrary' => '显示媒体库',
-			'libraries.hideLibrary' => '隐藏媒体库',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => '显示媒体库',
+			'libraries.hideLibrary' => '隐藏媒体库',
 			'libraries.libraryOptions' => '媒体库选项',
 			'libraries.content' => '媒体库内容',
 			'libraries.selectLibrary' => '选择媒体库',

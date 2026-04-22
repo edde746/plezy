@@ -105,6 +105,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyUseExoPlayer = 'use_exoplayer';
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const String _keyShowUnwatchedCount = 'show_unwatched_count';
+  static const String _keyShowEpisodeNumberOnCards = 'show_episode_number_on_cards';
   static const String _keyHideSpoilers = 'hide_spoilers';
   static const String _keyShowNavBarLabels = 'show_nav_bar_labels';
   static const String _keyGlobalShaderPreset = 'global_shader_preset';
@@ -1279,6 +1280,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyShowUnwatchedCount) ?? true; // Default: enabled (show counts)
   }
 
+  // Show Episode Number on Cards (append E# alongside S# on episode cards)
+  Future<void> setShowEpisodeNumberOnCards(bool enabled) async {
+    await prefs.setBool(_keyShowEpisodeNumberOnCards, enabled);
+  }
+
+  bool getShowEpisodeNumberOnCards() {
+    return prefs.getBool(_keyShowEpisodeNumberOnCards) ?? true; // Default: enabled
+  }
+
   // Hide Spoilers (blur thumbnails and hide descriptions for unwatched episodes)
   Future<void> setHideSpoilers(bool enabled) async {
     await prefs.setBool(_keyHideSpoilers, enabled);
@@ -1494,6 +1504,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyUseExoPlayer),
       prefs.remove(_keyAlwaysKeepSidebarOpen),
       prefs.remove(_keyShowUnwatchedCount),
+      prefs.remove(_keyShowEpisodeNumberOnCards),
       prefs.remove(_keyHideSpoilers),
       prefs.remove(_keyShowNavBarLabels),
       prefs.remove(_keyGlobalShaderPreset),

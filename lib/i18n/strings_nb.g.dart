@@ -230,6 +230,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidefeltet forblir utvidet og innholdsområdet tilpasser seg';
 	@override String get showUnwatchedCount => 'Vis antall usette';
 	@override String get showUnwatchedCountDescription => 'Vis antall usette episoder på serier og sesonger';
+	@override String get showEpisodeNumberOnCards => 'Vis episodenummer på kort';
+	@override String get showEpisodeNumberOnCardsDescription => 'Vis episodenummer ved siden av sesongen (f.eks. S2 E3) på episodekort';
 	@override String get hideSpoilers => 'Skjul spoilere for usette episoder';
 	@override String get hideSpoilersDescription => 'Slør miniatyrbilder og skjul beskrivelser for episoder du ikke har sett ennå';
 	@override String get playerBackend => 'Spillermotor';
@@ -1518,6 +1520,8 @@ extension on TranslationsNb {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidefeltet forblir utvidet og innholdsområdet tilpasser seg',
 			'settings.showUnwatchedCount' => 'Vis antall usette',
 			'settings.showUnwatchedCountDescription' => 'Vis antall usette episoder på serier og sesonger',
+			'settings.showEpisodeNumberOnCards' => 'Vis episodenummer på kort',
+			'settings.showEpisodeNumberOnCardsDescription' => 'Vis episodenummer ved siden av sesongen (f.eks. S2 E3) på episodekort',
 			'settings.hideSpoilers' => 'Skjul spoilere for usette episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniatyrbilder og skjul beskrivelser for episoder du ikke har sett ennå',
 			'settings.playerBackend' => 'Spillermotor',
@@ -1928,10 +1932,10 @@ extension on TranslationsNb {
 			'libraries.sortBy' => 'Sorter etter',
 			'libraries.filters' => 'Filtre',
 			'libraries.confirmActionMessage' => 'Er du sikker på at du vil utføre denne handlingen?',
-			'libraries.showLibrary' => 'Vis bibliotek',
-			'libraries.hideLibrary' => 'Skjul bibliotek',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'Vis bibliotek',
+			'libraries.hideLibrary' => 'Skjul bibliotek',
 			'libraries.libraryOptions' => 'Bibliotekalternativer',
 			'libraries.content' => 'bibliotekinnhold',
 			'libraries.selectLibrary' => 'Velg bibliotek',

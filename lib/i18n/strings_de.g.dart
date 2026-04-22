@@ -230,6 +230,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an';
 	@override String get showUnwatchedCount => 'Anzahl nicht gesehener Folgen anzeigen';
 	@override String get showUnwatchedCountDescription => 'Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an';
+	@override String get showEpisodeNumberOnCards => 'Episodennummer auf Karten anzeigen';
+	@override String get showEpisodeNumberOnCardsDescription => 'Episodennummer neben der Staffel (z. B. S2 E3) auf Episodenkarten anzeigen';
 	@override String get hideSpoilers => 'Spoiler für nicht gesehene Episoden verbergen';
 	@override String get hideSpoilersDescription => 'Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden';
 	@override String get playerBackend => 'Player-Backend';
@@ -1518,6 +1520,8 @@ extension on TranslationsDe {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an',
 			'settings.showUnwatchedCount' => 'Anzahl nicht gesehener Folgen anzeigen',
 			'settings.showUnwatchedCountDescription' => 'Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an',
+			'settings.showEpisodeNumberOnCards' => 'Episodennummer auf Karten anzeigen',
+			'settings.showEpisodeNumberOnCardsDescription' => 'Episodennummer neben der Staffel (z. B. S2 E3) auf Episodenkarten anzeigen',
 			'settings.hideSpoilers' => 'Spoiler für nicht gesehene Episoden verbergen',
 			'settings.hideSpoilersDescription' => 'Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden',
 			'settings.playerBackend' => 'Player-Backend',
@@ -1928,10 +1932,10 @@ extension on TranslationsDe {
 			'libraries.sortBy' => 'Sortieren nach',
 			'libraries.filters' => 'Filter',
 			'libraries.confirmActionMessage' => 'Aktion wirklich durchführen?',
-			'libraries.showLibrary' => 'Mediathek anzeigen',
-			'libraries.hideLibrary' => 'Mediathek ausblenden',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'Mediathek anzeigen',
+			'libraries.hideLibrary' => 'Mediathek ausblenden',
 			'libraries.libraryOptions' => 'Mediatheksoptionen',
 			'libraries.content' => 'Bibliotheksinhalt',
 			'libraries.selectLibrary' => 'Bibliothek auswählen',

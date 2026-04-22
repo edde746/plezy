@@ -110,6 +110,8 @@
     "alwaysKeepSidebarOpenDescription": "Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan",
     "showUnwatchedCount": "Aantal ongekeken tonen",
     "showUnwatchedCountDescription": "Toon aantal ongekeken afleveringen bij series en seizoenen",
+    "showEpisodeNumberOnCards": "Afleveringsnummer op kaarten tonen",
+    "showEpisodeNumberOnCardsDescription": "Toon het afleveringsnummer naast het seizoen (bijv. S2 E3) op afleveringskaarten",
     "hideSpoilers": "Spoilers voor ongekeken afleveringen verbergen",
     "hideSpoilersDescription": "Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien",
     "playerBackend": "Speler backend",

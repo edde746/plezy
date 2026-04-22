@@ -110,6 +110,8 @@
     "alwaysKeepSidebarOpenDescription": "サイドバーを展開したまま、コンテンツ領域が調整される",
     "showUnwatchedCount": "未視聴数を表示",
     "showUnwatchedCountDescription": "番組とシーズンに未視聴エピソード数を表示",
+    "showEpisodeNumberOnCards": "カードにエピソード番号を表示",
+    "showEpisodeNumberOnCardsDescription": "エピソードカードにシーズンと並べてエピソード番号（例: S2 E3）を表示",
     "hideSpoilers": "未視聴エピソードのネタバレを非表示",
     "hideSpoilersDescription": "まだ視聴していないエピソードのサムネイルをぼかし、説明を非表示",
     "playerBackend": "プレーヤーバックエンド",

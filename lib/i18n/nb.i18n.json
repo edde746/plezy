@@ -110,6 +110,8 @@
     "alwaysKeepSidebarOpenDescription": "Sidefeltet forblir utvidet og innholdsområdet tilpasser seg",
     "showUnwatchedCount": "Vis antall usette",
     "showUnwatchedCountDescription": "Vis antall usette episoder på serier og sesonger",
+    "showEpisodeNumberOnCards": "Vis episodenummer på kort",
+    "showEpisodeNumberOnCardsDescription": "Vis episodenummer ved siden av sesongen (f.eks. S2 E3) på episodekort",
     "hideSpoilers": "Skjul spoilere for usette episoder",
     "hideSpoilersDescription": "Slør miniatyrbilder og skjul beskrivelser for episoder du ikke har sett ennå",
     "playerBackend": "Spillermotor",

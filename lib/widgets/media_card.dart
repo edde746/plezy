@@ -447,16 +447,17 @@ class _MediaCardList extends StatelessWidget {
     return parts.join(' • ');
   }
 
-  String? _buildSubtitleText() {
+  String? _buildSubtitleText(BuildContext context) {
     if (item is PlexPlaylist) {
       // Playlists don't have subtitles
       return null;
     } else if (item is PlexMetadata) {
       final metadata = item as PlexMetadata;
 
-      // For TV episodes, show S#E# format
+      // For TV episodes, show S# (optionally with E#)
       if (metadata.parentIndex != null && metadata.index != null) {
-        return 'S${metadata.parentIndex} E${metadata.index}';
+        final showEp = context.select<SettingsProvider, bool>((p) => p.showEpisodeNumberOnCards);
+        return showEp ? 'S${metadata.parentIndex} E${metadata.index}' : 'S${metadata.parentIndex}';
       }
 
       // Otherwise use existing subtitle logic
@@ -477,7 +478,8 @@ class _MediaCardList extends StatelessWidget {
       fontSize: _subtitleFontSize,
     );
     final episodeTitle = metadata.displaySubtitle ?? metadata.displayTitle;
-    final episodeNum = metadata.index != null ? ' E${metadata.index}' : '';
+    final showEp = context.select<SettingsProvider, bool>((p) => p.showEpisodeNumberOnCards);
+    final episodeNum = (showEp && metadata.index != null) ? ' E${metadata.index}' : '';
     return Row(
       children: [
         _ClickableText(
@@ -496,7 +498,7 @@ class _MediaCardList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metadataLine = _buildMetadataLine();
-    final subtitle = _buildSubtitleText();
+    final subtitle = _buildSubtitleText(context);
 
     return InkWell(
       canRequestFocus: false, // Keyboard handled by FocusableMediaCard
@@ -738,6 +740,8 @@ class _MediaCardHelpers {
     // For episodes, show "S# · Episode Title" with clickable season link
     if (metadata.isEpisode && metadata.parentIndex != null) {
       final episodeTitle = metadata.displaySubtitle ?? metadata.displayTitle;
+      final showEp = context.select<SettingsProvider, bool>((p) => p.showEpisodeNumberOnCards);
+      final episodeSuffix = (showEp && metadata.index != null) ? ' E${metadata.index}' : '';
       if (metadata.parentRatingKey != null) {
         return Row(
           children: [
@@ -746,7 +750,7 @@ class _MediaCardHelpers {
               style: subtitleStyle,
               onTap: () => _navigateToSeason(context, metadata, isOffline: isOffline),
             ),
-            Text(' · ', style: subtitleStyle),
+            Text('$episodeSuffix · ', style: subtitleStyle),
             Expanded(
               child: Text(episodeTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: subtitleStyle),
             ),
@@ -754,7 +758,7 @@ class _MediaCardHelpers {
         );
       }
       return Text(
-        'S${metadata.parentIndex} · $episodeTitle',
+        'S${metadata.parentIndex}$episodeSuffix · $episodeTitle',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: subtitleStyle,

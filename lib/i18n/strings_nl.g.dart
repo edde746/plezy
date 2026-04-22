@@ -230,6 +230,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan';
 	@override String get showUnwatchedCount => 'Aantal ongekeken tonen';
 	@override String get showUnwatchedCountDescription => 'Toon aantal ongekeken afleveringen bij series en seizoenen';
+	@override String get showEpisodeNumberOnCards => 'Afleveringsnummer op kaarten tonen';
+	@override String get showEpisodeNumberOnCardsDescription => 'Toon het afleveringsnummer naast het seizoen (bijv. S2 E3) op afleveringskaarten';
 	@override String get hideSpoilers => 'Spoilers voor ongekeken afleveringen verbergen';
 	@override String get hideSpoilersDescription => 'Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien';
 	@override String get playerBackend => 'Speler backend';
@@ -1518,6 +1520,8 @@ extension on TranslationsNl {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan',
 			'settings.showUnwatchedCount' => 'Aantal ongekeken tonen',
 			'settings.showUnwatchedCountDescription' => 'Toon aantal ongekeken afleveringen bij series en seizoenen',
+			'settings.showEpisodeNumberOnCards' => 'Afleveringsnummer op kaarten tonen',
+			'settings.showEpisodeNumberOnCardsDescription' => 'Toon het afleveringsnummer naast het seizoen (bijv. S2 E3) op afleveringskaarten',
 			'settings.hideSpoilers' => 'Spoilers voor ongekeken afleveringen verbergen',
 			'settings.hideSpoilersDescription' => 'Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien',
 			'settings.playerBackend' => 'Speler backend',
@@ -1928,10 +1932,10 @@ extension on TranslationsNl {
 			'libraries.sortBy' => 'Sorteer op',
 			'libraries.filters' => 'Filters',
 			'libraries.confirmActionMessage' => 'Weet je zeker dat je deze actie wilt uitvoeren?',
-			'libraries.showLibrary' => 'Toon bibliotheek',
-			'libraries.hideLibrary' => 'Verberg bibliotheek',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'Toon bibliotheek',
+			'libraries.hideLibrary' => 'Verberg bibliotheek',
 			'libraries.libraryOptions' => 'Bibliotheek opties',
 			'libraries.content' => 'bibliotheekinhoud',
 			'libraries.selectLibrary' => 'Bibliotheek kiezen',

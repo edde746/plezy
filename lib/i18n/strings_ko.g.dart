@@ -230,6 +230,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다';
 	@override String get showUnwatchedCount => '미시청 수 표시';
 	@override String get showUnwatchedCountDescription => '시리즈 및 시즌에 미시청 에피소드 수 표시';
+	@override String get showEpisodeNumberOnCards => '카드에 에피소드 번호 표시';
+	@override String get showEpisodeNumberOnCardsDescription => '에피소드 카드에 시즌과 함께 에피소드 번호(예: S2 E3)를 표시합니다';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
 	@override String get hideSpoilersDescription => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다';
 	@override String get playerBackend => '플레이어 백엔드';
@@ -1518,6 +1520,8 @@ extension on TranslationsKo {
 			'settings.alwaysKeepSidebarOpenDescription' => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다',
 			'settings.showUnwatchedCount' => '미시청 수 표시',
 			'settings.showUnwatchedCountDescription' => '시리즈 및 시즌에 미시청 에피소드 수 표시',
+			'settings.showEpisodeNumberOnCards' => '카드에 에피소드 번호 표시',
+			'settings.showEpisodeNumberOnCardsDescription' => '에피소드 카드에 시즌과 함께 에피소드 번호(예: S2 E3)를 표시합니다',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
 			'settings.hideSpoilersDescription' => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다',
 			'settings.playerBackend' => '플레이어 백엔드',
@@ -1928,10 +1932,10 @@ extension on TranslationsKo {
 			'libraries.sortBy' => '정렬 기준',
 			'libraries.filters' => '필터',
 			'libraries.confirmActionMessage' => '이 작업을 실행 하시겠습니까?',
-			'libraries.showLibrary' => '미디어 라이브러리 표시',
-			'libraries.hideLibrary' => '미디어 라이브러리 숨기기',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => '미디어 라이브러리 표시',
+			'libraries.hideLibrary' => '미디어 라이브러리 숨기기',
 			'libraries.libraryOptions' => '미디어 라이브러리 옵션',
 			'libraries.content' => '미디어 라이브러리 콘텐츠',
 			'libraries.selectLibrary' => '미디어 라이브러리 선택',

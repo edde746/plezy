@@ -110,6 +110,8 @@
     "alwaysKeepSidebarOpenDescription": "A barra lateral fica expandida e a área de conteúdo se ajusta",
     "showUnwatchedCount": "Mostrar Contagem de Não Assistidos",
     "showUnwatchedCountDescription": "Exibir contagem de episódios não assistidos em séries e temporadas",
+    "showEpisodeNumberOnCards": "Mostrar Número do Episódio nos Cards",
+    "showEpisodeNumberOnCardsDescription": "Mostrar o número do episódio ao lado da temporada (ex. S2 E3) nos cards de episódios",
     "hideSpoilers": "Ocultar Spoilers de Episódios Não Assistidos",
     "hideSpoilersDescription": "Desfocar miniaturas e ocultar descrições de episódios que você ainda não assistiu",
     "playerBackend": "Backend do Player",

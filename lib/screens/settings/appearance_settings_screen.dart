@@ -68,6 +68,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
             _buildDensitySelector(),
             _buildViewModeSelector(),
             _buildEpisodePosterModeSelector(),
+            _buildShowEpisodeNumberOnCards(),
 
             // --- Home Screen ---
             SettingsSectionHeader(t.settings.homeScreen),
@@ -210,6 +211,14 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
       },
     );
   }
+
+  Widget _buildShowEpisodeNumberOnCards() => _buildBoolToggle(
+    icon: Symbols.tag_rounded,
+    title: t.settings.showEpisodeNumberOnCards,
+    subtitle: t.settings.showEpisodeNumberOnCardsDescription,
+    getter: (p) => p.showEpisodeNumberOnCards,
+    setter: (p, v) => p.setShowEpisodeNumberOnCards(v),
+  );
 
   /// Shared scaffolding for the bool toggles on this screen. Each toggle
   /// watches one `SettingsProvider` field via `Selector`, so flipping one

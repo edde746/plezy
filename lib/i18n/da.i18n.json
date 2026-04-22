@@ -110,6 +110,8 @@
     "alwaysKeepSidebarOpenDescription": "Sidepanelet forbliver udvidet, og indholdsområdet tilpasser sig",
     "showUnwatchedCount": "Vis antal usete",
     "showUnwatchedCountDescription": "Vis antal usete episoder på serier og sæsoner",
+    "showEpisodeNumberOnCards": "Vis episodenummer på kort",
+    "showEpisodeNumberOnCardsDescription": "Vis episodenummer ved siden af sæsonen (f.eks. S2 E3) på episodekort",
     "hideSpoilers": "Skjul spoilere for usete episoder",
     "hideSpoilersDescription": "Slør miniaturebilleder og skjul beskrivelser for episoder, du ikke har set endnu",
     "playerBackend": "Afspillerbackend",

@@ -230,6 +230,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Боковая панель остаётся развёрнутой, область контента подстраивается';
 	@override String get showUnwatchedCount => 'Показывать количество непросмотренных';
 	@override String get showUnwatchedCountDescription => 'Отображать количество непросмотренных эпизодов для сериалов и сезонов';
+	@override String get showEpisodeNumberOnCards => 'Показывать номер эпизода на карточках';
+	@override String get showEpisodeNumberOnCardsDescription => 'Отображать номер эпизода рядом с сезоном (напр. S2 E3) на карточках эпизодов';
 	@override String get hideSpoilers => 'Скрыть спойлеры непросмотренных эпизодов';
 	@override String get hideSpoilersDescription => 'Размывать миниатюры и скрывать описания эпизодов, которые вы ещё не смотрели';
 	@override String get playerBackend => 'Бэкенд плеера';
@@ -1518,6 +1520,8 @@ extension on TranslationsRu {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Боковая панель остаётся развёрнутой, область контента подстраивается',
 			'settings.showUnwatchedCount' => 'Показывать количество непросмотренных',
 			'settings.showUnwatchedCountDescription' => 'Отображать количество непросмотренных эпизодов для сериалов и сезонов',
+			'settings.showEpisodeNumberOnCards' => 'Показывать номер эпизода на карточках',
+			'settings.showEpisodeNumberOnCardsDescription' => 'Отображать номер эпизода рядом с сезоном (напр. S2 E3) на карточках эпизодов',
 			'settings.hideSpoilers' => 'Скрыть спойлеры непросмотренных эпизодов',
 			'settings.hideSpoilersDescription' => 'Размывать миниатюры и скрывать описания эпизодов, которые вы ещё не смотрели',
 			'settings.playerBackend' => 'Бэкенд плеера',
@@ -1928,10 +1932,10 @@ extension on TranslationsRu {
 			'libraries.sortBy' => 'Сортировать по',
 			'libraries.filters' => 'Фильтры',
 			'libraries.confirmActionMessage' => 'Вы уверены, что хотите выполнить это действие?',
-			'libraries.showLibrary' => 'Показать библиотеку',
-			'libraries.hideLibrary' => 'Скрыть библиотеку',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'Показать библиотеку',
+			'libraries.hideLibrary' => 'Скрыть библиотеку',
 			'libraries.libraryOptions' => 'Параметры библиотеки',
 			'libraries.content' => 'содержимое библиотеки',
 			'libraries.selectLibrary' => 'Выбрать библиотеку',

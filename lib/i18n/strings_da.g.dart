@@ -230,6 +230,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidepanelet forbliver udvidet, og indholdsområdet tilpasser sig';
 	@override String get showUnwatchedCount => 'Vis antal usete';
 	@override String get showUnwatchedCountDescription => 'Vis antal usete episoder på serier og sæsoner';
+	@override String get showEpisodeNumberOnCards => 'Vis episodenummer på kort';
+	@override String get showEpisodeNumberOnCardsDescription => 'Vis episodenummer ved siden af sæsonen (f.eks. S2 E3) på episodekort';
 	@override String get hideSpoilers => 'Skjul spoilere for usete episoder';
 	@override String get hideSpoilersDescription => 'Slør miniaturebilleder og skjul beskrivelser for episoder, du ikke har set endnu';
 	@override String get playerBackend => 'Afspillerbackend';
@@ -1518,6 +1520,8 @@ extension on TranslationsDa {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidepanelet forbliver udvidet, og indholdsområdet tilpasser sig',
 			'settings.showUnwatchedCount' => 'Vis antal usete',
 			'settings.showUnwatchedCountDescription' => 'Vis antal usete episoder på serier og sæsoner',
+			'settings.showEpisodeNumberOnCards' => 'Vis episodenummer på kort',
+			'settings.showEpisodeNumberOnCardsDescription' => 'Vis episodenummer ved siden af sæsonen (f.eks. S2 E3) på episodekort',
 			'settings.hideSpoilers' => 'Skjul spoilere for usete episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniaturebilleder og skjul beskrivelser for episoder, du ikke har set endnu',
 			'settings.playerBackend' => 'Afspillerbackend',
@@ -1928,10 +1932,10 @@ extension on TranslationsDa {
 			'libraries.sortBy' => 'Sortér efter',
 			'libraries.filters' => 'Filtre',
 			'libraries.confirmActionMessage' => 'Er du sikker på, at du vil udføre denne handling?',
-			'libraries.showLibrary' => 'Vis bibliotek',
-			'libraries.hideLibrary' => 'Skjul bibliotek',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'Vis bibliotek',
+			'libraries.hideLibrary' => 'Skjul bibliotek',
 			'libraries.libraryOptions' => 'Biblioteksindstillinger',
 			'libraries.content' => 'biblioteksindhold',
 			'libraries.selectLibrary' => 'Vælg bibliotek',

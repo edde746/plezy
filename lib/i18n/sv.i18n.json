@@ -110,6 +110,8 @@
     "alwaysKeepSidebarOpenDescription": "Sidofältet förblir expanderat och innehållsytan anpassas",
     "showUnwatchedCount": "Visa antal osedda",
     "showUnwatchedCountDescription": "Visa antal osedda avsnitt för serier och säsonger",
+    "showEpisodeNumberOnCards": "Visa avsnittsnummer på kort",
+    "showEpisodeNumberOnCardsDescription": "Visa avsnittsnummer tillsammans med säsongen (t.ex. S2 E3) på avsnittskort",
     "hideSpoilers": "Dölj spoilers för osedda avsnitt",
     "hideSpoilersDescription": "Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu",
     "playerBackend": "Spelarmotor",

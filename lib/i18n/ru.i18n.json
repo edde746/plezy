@@ -110,6 +110,8 @@
     "alwaysKeepSidebarOpenDescription": "Боковая панель остаётся развёрнутой, область контента подстраивается",
     "showUnwatchedCount": "Показывать количество непросмотренных",
     "showUnwatchedCountDescription": "Отображать количество непросмотренных эпизодов для сериалов и сезонов",
+    "showEpisodeNumberOnCards": "Показывать номер эпизода на карточках",
+    "showEpisodeNumberOnCardsDescription": "Отображать номер эпизода рядом с сезоном (напр. S2 E3) на карточках эпизодов",
     "hideSpoilers": "Скрыть спойлеры непросмотренных эпизодов",
     "hideSpoilersDescription": "Размывать миниатюры и скрывать описания эпизодов, которые вы ещё не смотрели",
     "playerBackend": "Бэкенд плеера",

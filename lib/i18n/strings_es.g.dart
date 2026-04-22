@@ -230,6 +230,8 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse';
 	@override String get showUnwatchedCount => 'Mostrar conteo de no vistos';
 	@override String get showUnwatchedCountDescription => 'Mostrar el conteo de episodios no vistos en series y temporadas';
+	@override String get showEpisodeNumberOnCards => 'Mostrar número de episodio en las tarjetas';
+	@override String get showEpisodeNumberOnCardsDescription => 'Muestra el número de episodio junto a la temporada (p. ej. S2 E3) en las tarjetas de episodios';
 	@override String get hideSpoilers => 'Ocultar spoilers de episodios no vistos';
 	@override String get hideSpoilersDescription => 'Difuminar miniaturas y ocultar descripciones de episodios que aún no has visto';
 	@override String get playerBackend => 'Reproductor';
@@ -1518,6 +1520,8 @@ extension on TranslationsEs {
 			'settings.alwaysKeepSidebarOpenDescription' => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse',
 			'settings.showUnwatchedCount' => 'Mostrar conteo de no vistos',
 			'settings.showUnwatchedCountDescription' => 'Mostrar el conteo de episodios no vistos en series y temporadas',
+			'settings.showEpisodeNumberOnCards' => 'Mostrar número de episodio en las tarjetas',
+			'settings.showEpisodeNumberOnCardsDescription' => 'Muestra el número de episodio junto a la temporada (p. ej. S2 E3) en las tarjetas de episodios',
 			'settings.hideSpoilers' => 'Ocultar spoilers de episodios no vistos',
 			'settings.hideSpoilersDescription' => 'Difuminar miniaturas y ocultar descripciones de episodios que aún no has visto',
 			'settings.playerBackend' => 'Reproductor',
@@ -1928,10 +1932,10 @@ extension on TranslationsEs {
 			'libraries.sortBy' => 'Ordenar por',
 			'libraries.filters' => 'Filtros',
 			'libraries.confirmActionMessage' => '¿Estás seguro de que quieres realizar esta acción?',
-			'libraries.showLibrary' => 'Mostrar biblioteca',
-			'libraries.hideLibrary' => 'Ocultar biblioteca',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'Mostrar biblioteca',
+			'libraries.hideLibrary' => 'Ocultar biblioteca',
 			'libraries.libraryOptions' => 'Opciones de biblioteca',
 			'libraries.content' => 'contenido de la biblioteca',
 			'libraries.selectLibrary' => 'Seleccionar biblioteca',

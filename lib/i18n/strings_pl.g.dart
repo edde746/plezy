@@ -230,6 +230,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'Panel boczny jest rozwinięty, a obszar treści dostosowuje się';
 	@override String get showUnwatchedCount => 'Pokaż liczbę nieobejrzanych';
 	@override String get showUnwatchedCountDescription => 'Wyświetl liczbę nieobejrzanych odcinków w serialach i sezonach';
+	@override String get showEpisodeNumberOnCards => 'Pokaż numer odcinka na kartach';
+	@override String get showEpisodeNumberOnCardsDescription => 'Wyświetla numer odcinka obok sezonu (np. S2 E3) na kartach odcinków';
 	@override String get hideSpoilers => 'Ukryj spoilery nieobejrzanych odcinków';
 	@override String get hideSpoilersDescription => 'Rozmyj miniatury i ukryj opisy odcinków, których jeszcze nie obejrzałeś';
 	@override String get playerBackend => 'Backend odtwarzacza';
@@ -1518,6 +1520,8 @@ extension on TranslationsPl {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Panel boczny jest rozwinięty, a obszar treści dostosowuje się',
 			'settings.showUnwatchedCount' => 'Pokaż liczbę nieobejrzanych',
 			'settings.showUnwatchedCountDescription' => 'Wyświetl liczbę nieobejrzanych odcinków w serialach i sezonach',
+			'settings.showEpisodeNumberOnCards' => 'Pokaż numer odcinka na kartach',
+			'settings.showEpisodeNumberOnCardsDescription' => 'Wyświetla numer odcinka obok sezonu (np. S2 E3) na kartach odcinków',
 			'settings.hideSpoilers' => 'Ukryj spoilery nieobejrzanych odcinków',
 			'settings.hideSpoilersDescription' => 'Rozmyj miniatury i ukryj opisy odcinków, których jeszcze nie obejrzałeś',
 			'settings.playerBackend' => 'Backend odtwarzacza',
@@ -1928,10 +1932,10 @@ extension on TranslationsPl {
 			'libraries.sortBy' => 'Sortuj wg',
 			'libraries.filters' => 'Filtry',
 			'libraries.confirmActionMessage' => 'Czy na pewno chcesz wykonać tę operację?',
-			'libraries.showLibrary' => 'Pokaż bibliotekę',
-			'libraries.hideLibrary' => 'Ukryj bibliotekę',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'Pokaż bibliotekę',
+			'libraries.hideLibrary' => 'Ukryj bibliotekę',
 			'libraries.libraryOptions' => 'Opcje biblioteki',
 			'libraries.content' => 'zawartość biblioteki',
 			'libraries.selectLibrary' => 'Wybierz bibliotekę',

@@ -230,6 +230,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'サイドバーを展開したまま、コンテンツ領域が調整される';
 	@override String get showUnwatchedCount => '未視聴数を表示';
 	@override String get showUnwatchedCountDescription => '番組とシーズンに未視聴エピソード数を表示';
+	@override String get showEpisodeNumberOnCards => 'カードにエピソード番号を表示';
+	@override String get showEpisodeNumberOnCardsDescription => 'エピソードカードにシーズンと並べてエピソード番号（例: S2 E3）を表示';
 	@override String get hideSpoilers => '未視聴エピソードのネタバレを非表示';
 	@override String get hideSpoilersDescription => 'まだ視聴していないエピソードのサムネイルをぼかし、説明を非表示';
 	@override String get playerBackend => 'プレーヤーバックエンド';
@@ -1518,6 +1520,8 @@ extension on TranslationsJa {
 			'settings.alwaysKeepSidebarOpenDescription' => 'サイドバーを展開したまま、コンテンツ領域が調整される',
 			'settings.showUnwatchedCount' => '未視聴数を表示',
 			'settings.showUnwatchedCountDescription' => '番組とシーズンに未視聴エピソード数を表示',
+			'settings.showEpisodeNumberOnCards' => 'カードにエピソード番号を表示',
+			'settings.showEpisodeNumberOnCardsDescription' => 'エピソードカードにシーズンと並べてエピソード番号（例: S2 E3）を表示',
 			'settings.hideSpoilers' => '未視聴エピソードのネタバレを非表示',
 			'settings.hideSpoilersDescription' => 'まだ視聴していないエピソードのサムネイルをぼかし、説明を非表示',
 			'settings.playerBackend' => 'プレーヤーバックエンド',
@@ -1928,10 +1932,10 @@ extension on TranslationsJa {
 			'libraries.sortBy' => '並べ替え順',
 			'libraries.filters' => 'フィルター',
 			'libraries.confirmActionMessage' => 'この操作を実行してもよろしいですか？',
-			'libraries.showLibrary' => 'ライブラリを表示',
-			'libraries.hideLibrary' => 'ライブラリを非表示',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'ライブラリを表示',
+			'libraries.hideLibrary' => 'ライブラリを非表示',
 			'libraries.libraryOptions' => 'ライブラリオプション',
 			'libraries.content' => 'ライブラリコンテンツ',
 			'libraries.selectLibrary' => 'ライブラリを選択',

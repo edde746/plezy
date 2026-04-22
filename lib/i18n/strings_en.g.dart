@@ -434,6 +434,12 @@ class TranslationsSettingsEn {
 	/// en: 'Display unwatched episode count on shows and seasons'
 	String get showUnwatchedCountDescription => 'Display unwatched episode count on shows and seasons';
 
+	/// en: 'Show Episode Number on Cards'
+	String get showEpisodeNumberOnCards => 'Show Episode Number on Cards';
+
+	/// en: 'Show episode number alongside the season (e.g. S2 E3) on episode cards'
+	String get showEpisodeNumberOnCardsDescription => 'Show episode number alongside the season (e.g. S2 E3) on episode cards';
+
 	/// en: 'Hide Spoilers for Unwatched Episodes'
 	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
 
@@ -3347,6 +3353,8 @@ extension on Translations {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
 			'settings.showUnwatchedCountDescription' => 'Display unwatched episode count on shows and seasons',
+			'settings.showEpisodeNumberOnCards' => 'Show Episode Number on Cards',
+			'settings.showEpisodeNumberOnCardsDescription' => 'Show episode number alongside the season (e.g. S2 E3) on episode cards',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet',
 			'settings.playerBackend' => 'Player Backend',
@@ -3757,10 +3765,10 @@ extension on Translations {
 			'libraries.sortBy' => 'Sort By',
 			'libraries.filters' => 'Filters',
 			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
-			'libraries.showLibrary' => 'Show library',
-			'libraries.hideLibrary' => 'Hide library',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'Show library',
+			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',

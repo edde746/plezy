@@ -230,6 +230,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => 'La barra laterale rimane espansa e l\'area del contenuto si adatta';
 	@override String get showUnwatchedCount => 'Mostra conteggio non visti';
 	@override String get showUnwatchedCountDescription => 'Mostra il numero di episodi non visti per serie e stagioni';
+	@override String get showEpisodeNumberOnCards => 'Mostra numero episodio sulle schede';
+	@override String get showEpisodeNumberOnCardsDescription => 'Mostra il numero dell\'episodio accanto alla stagione (es. S2 E3) sulle schede degli episodi';
 	@override String get hideSpoilers => 'Nascondi spoiler per episodi non visti';
 	@override String get hideSpoilersDescription => 'Sfoca le miniature e nascondi le descrizioni degli episodi che non hai ancora guardato';
 	@override String get playerBackend => 'Motore di riproduzione';
@@ -1518,6 +1520,8 @@ extension on TranslationsIt {
 			'settings.alwaysKeepSidebarOpenDescription' => 'La barra laterale rimane espansa e l\'area del contenuto si adatta',
 			'settings.showUnwatchedCount' => 'Mostra conteggio non visti',
 			'settings.showUnwatchedCountDescription' => 'Mostra il numero di episodi non visti per serie e stagioni',
+			'settings.showEpisodeNumberOnCards' => 'Mostra numero episodio sulle schede',
+			'settings.showEpisodeNumberOnCardsDescription' => 'Mostra il numero dell\'episodio accanto alla stagione (es. S2 E3) sulle schede degli episodi',
 			'settings.hideSpoilers' => 'Nascondi spoiler per episodi non visti',
 			'settings.hideSpoilersDescription' => 'Sfoca le miniature e nascondi le descrizioni degli episodi che non hai ancora guardato',
 			'settings.playerBackend' => 'Motore di riproduzione',
@@ -1928,10 +1932,10 @@ extension on TranslationsIt {
 			'libraries.sortBy' => 'Ordina per',
 			'libraries.filters' => 'Filtri',
 			'libraries.confirmActionMessage' => 'Sei sicuro di voler eseguire questa azione?',
-			'libraries.showLibrary' => 'Mostra libreria',
-			'libraries.hideLibrary' => 'Nascondi libreria',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.showLibrary' => 'Mostra libreria',
+			'libraries.hideLibrary' => 'Nascondi libreria',
 			'libraries.libraryOptions' => 'Opzioni libreria',
 			'libraries.content' => 'contenuto della libreria',
 			'libraries.selectLibrary' => 'Seleziona libreria',

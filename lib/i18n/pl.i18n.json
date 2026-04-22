@@ -110,6 +110,8 @@
     "alwaysKeepSidebarOpenDescription": "Panel boczny jest rozwinięty, a obszar treści dostosowuje się",
     "showUnwatchedCount": "Pokaż liczbę nieobejrzanych",
     "showUnwatchedCountDescription": "Wyświetl liczbę nieobejrzanych odcinków w serialach i sezonach",
+    "showEpisodeNumberOnCards": "Pokaż numer odcinka na kartach",
+    "showEpisodeNumberOnCardsDescription": "Wyświetla numer odcinka obok sezonu (np. S2 E3) na kartach odcinków",
     "hideSpoilers": "Ukryj spoilery nieobejrzanych odcinków",
     "hideSpoilersDescription": "Rozmyj miniatury i ukryj opisy odcinków, których jeszcze nie obejrzałeś",
     "playerBackend": "Backend odtwarzacza",
