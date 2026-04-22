@@ -11,6 +11,10 @@ class ConnectionTimeouts {
   /// HTTP connect timeout for individual HTTP requests to a Plex server.
   static const connect = Duration(seconds: 10);
 
+  /// HTTP timeout for the live-TV tune POST. Matches Plex web's value — the
+  /// default 10s connect budget is too tight on Fire-TV cold starts.
+  static const tune = Duration(seconds: 30);
+
   /// Per-server connection budget: preferred probe + race + HTTPS upgrade attempt + 1s buffer.
   static const perServerConnect = Duration(milliseconds: 1500 + 2000 + 2000 + 1000);
 

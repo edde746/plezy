@@ -84,4 +84,28 @@ void main() {
       expect(e.toString(), 'PlexHttpException(cancelled: halt)');
     });
   });
+
+  group('PlexHttpException.isTransient', () {
+    PlexHttpException ex(PlexHttpErrorType t) => PlexHttpException(type: t);
+
+    test('connectionTimeout is transient', () {
+      expect(ex(PlexHttpErrorType.connectionTimeout).isTransient, isTrue);
+    });
+
+    test('receiveTimeout is transient', () {
+      expect(ex(PlexHttpErrorType.receiveTimeout).isTransient, isTrue);
+    });
+
+    test('connectionError is transient', () {
+      expect(ex(PlexHttpErrorType.connectionError).isTransient, isTrue);
+    });
+
+    test('cancelled is NOT transient (user-driven abort)', () {
+      expect(ex(PlexHttpErrorType.cancelled).isTransient, isFalse);
+    });
+
+    test('unknown is NOT transient', () {
+      expect(ex(PlexHttpErrorType.unknown).isTransient, isFalse);
+    });
+  });
 }

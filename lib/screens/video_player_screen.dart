@@ -2602,8 +2602,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // For live TV, player position/duration are unreliable (often 0).
       // Use playbackTime as time, and program duration from tune metadata.
+      // Plex rejects timeline pings where time > duration; grow duration to
+      // match — otherwise Tunarr-style short synthetic programs 400 mid-stream.
       final time = playbackTime;
-      final duration = _liveDurationMs ?? 0;
+      final duration = max(_liveDurationMs ?? 0, time);
 
       final updatedBuffer = await client.updateLiveTimeline(
         ratingKey: ratingKey,

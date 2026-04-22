@@ -45,6 +45,12 @@ class PlexHttpException implements Exception {
     return PlexHttpException(type: PlexHttpErrorType.unknown, message: error.toString(), requestUri: uri);
   }
 
+  /// Whether the error looks transient (network/timeout) and worth retrying.
+  bool get isTransient =>
+      type == PlexHttpErrorType.connectionTimeout ||
+      type == PlexHttpErrorType.connectionError ||
+      type == PlexHttpErrorType.receiveTimeout;
+
   @override
   String toString() => 'PlexHttpException(${type.name}: $message)';
 }

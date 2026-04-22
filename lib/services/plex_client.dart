@@ -262,11 +262,21 @@ class PlexClient {
   }
 
   bool _shouldAttemptFailover(PlexHttpException e) {
+    if (e.isTransient) return true;
     final sc = e.statusCode;
-    return e.type == PlexHttpErrorType.connectionTimeout ||
-        e.type == PlexHttpErrorType.receiveTimeout ||
-        e.type == PlexHttpErrorType.connectionError ||
-        (sc != null && sc >= 500 && sc <= 599);
+    return sc != null && sc >= 500 && sc <= 599;
+  }
+
+  /// POST the tune endpoint with one retry on transient HTTP failure.
+  Future<PlexResponse> _postTuneWithRetry(String path, String sessionIdentifier) async {
+    final query = {'X-Plex-Session-Identifier': sessionIdentifier};
+    try {
+      return await _http.post(path, queryParameters: query, timeout: ConnectionTimeouts.tune);
+    } on PlexHttpException catch (e) {
+      if (!e.isTransient) rethrow;
+      appLogger.w('Tune channel: transient failure, retrying once', error: e);
+      return await _http.post(path, queryParameters: query, timeout: ConnectionTimeouts.tune);
+    }
   }
 
   /// Fetch /media/providers and parse libraries + EPG providers from the response.
@@ -2658,9 +2668,9 @@ class PlexClient {
     try {
       final sessionIdentifier = generateSessionIdentifier();
 
-      final response = await _http.post(
+      final response = await _postTuneWithRetry(
         '/livetv/dvrs/$dvrKey/channels/$channelIdentifier/tune',
-        queryParameters: {'X-Plex-Session-Identifier': sessionIdentifier},
+        sessionIdentifier,
       );
 
       if (response.statusCode >= 400) {
