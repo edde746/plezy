@@ -33,13 +33,18 @@ services:
   bugs:
     image: ghcr.io/edde746/bugs:latest
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 512m
     volumes:
       - bugs_data:/data
     environment:
       BUGS_AUTH__ADMIN_TOKEN: ${BUGS_AUTH__ADMIN_TOKEN}
       BUGS_PUBLIC_URL: https://bugs.plezy.app
       BUGS_RETENTION_DAYS: 90
+      BUGS_SYMBOLICATION__NATIVE_SYMCACHE_CACHE_BYTES_MB: 128
+      BUGS_INGEST__MAX_RAW_REQUEST_BYTES: 536870912
+      BUGS_SQLITE__READER_CONNECTIONS: 4
+      BUGS_SQLITE__CACHE_SIZE_MB: 16
+      BUGS_SQLITE__MMAP_SIZE_MB: 64
     expose:
       - "9000"
     logging:
