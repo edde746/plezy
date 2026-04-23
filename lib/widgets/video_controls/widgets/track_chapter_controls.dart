@@ -290,7 +290,7 @@ class TrackChapterControls extends StatelessWidget {
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: Symbols.video_library_rounded,
+              icon: Symbols.bookmarks_rounded,
               tooltip: t.videoControls.chaptersButton,
               semanticLabel: t.videoControls.chaptersButton,
               tracks: tracks,
@@ -321,7 +321,7 @@ class TrackChapterControls extends StatelessWidget {
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: Symbols.queue_music_rounded,
+              icon: Symbols.queue_rounded,
               tooltip: t.videoControls.queue,
               semanticLabel: t.videoControls.queue,
               tracks: tracks,
