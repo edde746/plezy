@@ -304,14 +304,14 @@ class PlexOptimizedImage extends StatelessWidget {
     // Calculate memory cache dimensions
     final scaledWidth = effectiveWidth * devicePixelRatio;
     final scaledHeight = effectiveHeight * devicePixelRatio;
-    final (memWidth, memHeight) = PlexImageHelper.getMemCacheDimensions(
+    final (_, memHeight) = PlexImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
       imageType: imageType,
     );
 
     // Generate cache key if not provided
-    final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl, memWidth, memHeight);
+    final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl);
 
     return Image(
       image: CachedNetworkImageProvider(
@@ -387,8 +387,11 @@ class PlexOptimizedImage extends StatelessWidget {
     );
   }
 
-  String _generateCacheKey(String imageUrl, int memWidth, int memHeight) {
-    final urlHash = imageUrl.hashCode;
-    return 'plex_optimized_${memWidth}x${memHeight}_$urlHash';
+  String _generateCacheKey(String imageUrl) {
+    // URL already encodes bucketed transcode dimensions via roundDimensions,
+    // so the URL hash alone uniquely identifies the bytes on disk. Including
+    // mem-cache dimensions here would re-introduce churn on every pixel of
+    // window resize and defeat getMemCacheDimensions' bucketing.
+    return 'plex_optimized_${imageUrl.hashCode}';
   }
 }

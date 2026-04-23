@@ -26,14 +26,16 @@ class PlexImageHelper {
   /// Minimum DPR for TV to ensure sharp artwork on large screens
   static const double _tvMinDpr = 2.0;
 
+  /// Rounds a value up to the next multiple of [factor]. Shared between the
+  /// URL dimension rounding (transcode bucket) and the mem-cache dimension
+  /// rounding (decode bucket) so both snap to the same grid.
+  static int _bucketUp(num value, int factor) => (value / factor).ceil() * factor;
+
   /// Rounds dimensions to cache-friendly values to increase cache hit rate
   static (int width, int height) roundDimensions(double width, double height) {
-    final roundedWidth = (width / _widthRoundingFactor).ceil() * _widthRoundingFactor;
-    final roundedHeight = (height / _heightRoundingFactor).ceil() * _heightRoundingFactor;
-
     return (
-      roundedWidth.clamp(_minTranscodedWidth, _maxTranscodedWidth),
-      roundedHeight.clamp(_minTranscodedHeight, _maxTranscodedHeight),
+      _bucketUp(width, _widthRoundingFactor).clamp(_minTranscodedWidth, _maxTranscodedWidth),
+      _bucketUp(height, _heightRoundingFactor).clamp(_minTranscodedHeight, _maxTranscodedHeight),
     );
   }
 
@@ -216,8 +218,12 @@ class PlexImageHelper {
     double scaleFactor = 1.0,
     ImageType imageType = ImageType.poster,
   }) {
-    final scaledWidth = (displayWidth * scaleFactor).round();
-    final scaledHeight = (displayHeight * scaleFactor).round();
+    // Bucket to match roundDimensions() so the mem-cache key and CNIP
+    // maxHeight stay stable across sub-bucket resize deltas. Without this,
+    // LayoutBuilder rebuilds during window resize churn the cache key on
+    // every pixel and evict valid entries from Flutter's image cache.
+    final bucketedWidth = _bucketUp(displayWidth * scaleFactor, _widthRoundingFactor);
+    final bucketedHeight = _bucketUp(displayHeight * scaleFactor, _heightRoundingFactor);
 
     final (int maxW, int maxH) = switch (imageType) {
       ImageType.poster => (720, 1080),
@@ -227,7 +233,7 @@ class PlexImageHelper {
       ImageType.avatar => (300, 300),
     };
 
-    return (scaledWidth.clamp(120, maxW), scaledHeight.clamp(180, maxH));
+    return (bucketedWidth.clamp(120, maxW), bucketedHeight.clamp(180, maxH));
   }
 
   /// Determines if an image path is suitable for transcoding
