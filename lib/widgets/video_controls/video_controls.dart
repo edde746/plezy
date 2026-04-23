@@ -580,22 +580,35 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
     _autoSkipProgress = 0.0;
 
-    // Smooth progress for the Netflix-style wipe: drive progress every frame.
-    // We still keep marker identity checks so the animation never leaks across markers.
     _autoSkipController?.dispose();
     _autoSkipController = AnimationController(duration: Duration(seconds: _autoSkipDelay), vsync: this)
-      ..addListener(() {
-        if (!mounted || _currentMarker != marker) return;
-        setState(() {
-          _autoSkipProgress = _autoSkipController!.value;
-        });
-      })
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
           if (!mounted || _currentMarker != marker) return;
           _performAutoSkip();
         }
       });
+
+    if (PlatformDetector.isTV()) {
+      // TV hardware: Use frame-rate capped Timer.periodic (200ms) to avoid performance regression
+      _autoSkipTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
+        if (!mounted || _currentMarker != marker || _autoSkipController == null) {
+          timer.cancel();
+          return;
+        }
+        setState(() {
+          _autoSkipProgress = _autoSkipController!.value;
+        });
+      });
+    } else {
+      // Non-TV platforms: Use smooth AnimationController listener for better UX
+      _autoSkipController!.addListener(() {
+        if (!mounted || _currentMarker != marker) return;
+        setState(() {
+          _autoSkipProgress = _autoSkipController!.value;
+        });
+      });
+    }
 
     _autoSkipController!.forward(from: 0.0);
   }
@@ -2426,7 +2439,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     final double autoSkipProgress =
         (isAutoSkipActive && shouldShowAutoSkip) ? _autoSkipProgress.clamp(0.0, 1.0) : 0.0;
 
-    final String buttonText = baseButtonText;
+
+    final String buttonText;
+    if (PlatformDetector.isTV() && isAutoSkipActive && shouldShowAutoSkip && _autoSkipController != null) {
+      final remainingSeconds = ((_autoSkipDelay * (1.0 - autoSkipProgress))).ceil();
+      buttonText = remainingSeconds > 0 ? '$baseButtonText ($remainingSeconds)' : baseButtonText;
+    } else {
+      buttonText = baseButtonText;
+    }
+
     final IconData buttonIcon = showNextEpisode ? Symbols.skip_next_rounded : Symbols.fast_forward_rounded;
 
     return FocusableWrapper(
@@ -2473,7 +2494,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 child: Stack(
                   children: [
                     // Auto-skip wipe fill (left -> right), duration is driven by autoSkipDelay via _autoSkipProgress.
-                    if (autoSkipProgress > 0)
+                    // Only show wipe animation on non-TV platforms
+                    if (autoSkipProgress > 0 && !PlatformDetector.isTV())
                       Positioned.fill(
                         child: Align(
                           alignment: Alignment.centerLeft,
@@ -2505,7 +2527,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
                           // Filled state visuals (black on white), clipped to the wipe region.
                           // Important: keep this row laid out at full size so the text doesn't shift as the clip grows.
-                          if (autoSkipProgress > 0)
+                          // Only show filled state on non-TV platforms
+                          if (autoSkipProgress > 0 && !PlatformDetector.isTV())
                             Positioned.fill(
                               child: ClipRect(
                                 clipper: _ProgressClipper(autoSkipProgress),
