@@ -1327,13 +1327,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     unawaited(_seekToPosition(position));
   }
 
-  /// Handle tap in skip zone for desktop mode
-  void _handleTapInSkipZoneDesktop() {
+  /// Timing-based double-click detection: avoids `onDoubleTap`'s ~300 ms
+  /// tap-resolution delay and the arena competition it introduces.
+  void _handleOuterTap() {
     if (widget.canControl && _clickVideoTogglesPlayback) {
       _playOrPause();
+    } else {
+      _toggleControls();
     }
 
-    _toggleControls();
+    if (PlatformDetector.isMobile(context)) return;
+
+    final now = DateTime.now();
+    if (_lastSkipTapTime != null && now.difference(_lastSkipTapTime!).inMilliseconds < 250) {
+      _lastSkipTapTime = null;
+      _toggleFullscreen();
+      return;
+    }
+    _lastSkipTapTime = now;
   }
 
   /// Handle tap in skip zone with custom double-tap detection
@@ -2013,11 +2024,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   // Flutter animations from freezing when the frame clock goes idle
                   if (Platform.isLinux || Platform.isWindows)
                     const Positioned(top: 0, left: 0, child: _LinuxKeepAlive()),
-                  // Invisible tap detector that always covers the full area
-                  // Also handles long-press for 2x speed
+                  // Invisible tap detector that always covers the full area.
+                  // Also handles long-press for 2x speed.
                   Positioned.fill(
                     child: GestureDetector(
-                      onTap: _toggleControls,
+                      onTap: _handleOuterTap,
                       onLongPressStart: (_) => _handleLongPressStart(),
                       onLongPressEnd: (_) => _handleLongPressEnd(),
                       onLongPressCancel: _handleLongPressCancel,
@@ -2025,39 +2036,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                       child: Container(color: Colors.transparent),
                     ),
                   ),
-                  // Middle area double-tap detector for fullscreen (desktop only)
-                  // Only covers the clear video area (20% to 80% vertically)
-                  if (!isMobile)
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final height = constraints.maxHeight;
-                          final topExclude = height * 0.2; // Top 20%
-                          final bottomExclude = height * 0.2; // Bottom 20%
-
-                          return Stack(
-                            children: [
-                              Positioned(
-                                top: topExclude,
-                                left: 0,
-                                right: 0,
-                                bottom: bottomExclude,
-                                child: GestureDetector(
-                                  onTap: _handleTapInSkipZoneDesktop,
-                                  onDoubleTap: _toggleFullscreen,
-                                  behavior: HitTestBehavior.translucent,
-                                  child: Container(color: Colors.transparent),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
                   // Mobile double-tap zones for skip forward/backward
                   if (isMobile)
                     Positioned.fill(
