@@ -324,6 +324,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   DateTime? _lastSkipTapTime;
   bool _lastSkipTapWasForward = true;
   DateTime? _lastSkipActionTime; // Debounce: prevents double-tap counting as 2 skips
+  DateTime? _lastSkipMarkerActionTime; // Debounce for skip-marker button only
   Timer? _singleTapTimer; // Timer for delayed single-tap action (toggle controls)
   // Seek throttle
   late final Throttle _seekThrottle;
@@ -589,7 +590,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         }
       });
 
-    if (PlatformDetector.isTV()) {
+    final isTVPlatform = PlatformDetector.isTV();
+    if (isTVPlatform) {
       // TV hardware: Use frame-rate capped Timer.periodic (200ms) to avoid performance regression
       _autoSkipTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
         if (!mounted || _currentMarker != marker || _autoSkipController == null) {
@@ -601,13 +603,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         });
       });
     } else {
-      // Non-TV platforms: Use smooth AnimationController listener for better UX
-      _autoSkipController!.addListener(() {
-        if (!mounted || _currentMarker != marker) return;
-        setState(() {
-          _autoSkipProgress = _autoSkipController!.value;
-        });
-      });
+      // Non-TV platforms: Avoid a controller listener and use AnimatedBuilder for button-only updates.
     }
 
     _autoSkipController!.forward(from: 0.0);
@@ -644,17 +640,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _skipButtonDismissTimer = null;
   }
 
-  /// Perform the appropriate skip action based on marker type and next episode availability
+  /// Perform a debounced auto-skip from the marker button only.
   void _performAutoSkip() {
     if (_currentMarker == null) return;
 
-    // Debounce: ignore skip button presses within 200ms of last skip action
+    // Debounce skip-marker presses separately from seek double-tap actions.
     final now = DateTime.now();
-    if (_lastSkipActionTime != null && now.difference(_lastSkipActionTime!).inMilliseconds < 200) {
+    if (_lastSkipMarkerActionTime != null && now.difference(_lastSkipMarkerActionTime!).inMilliseconds < 200) {
       return;
     }
 
-    _lastSkipActionTime = now;
+    _lastSkipMarkerActionTime = now;
     unawaited(_skipMarker());
   }
 
@@ -959,6 +955,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   /// Show controls in response to pointer activity (mouse/trackpad movement).
   void _showControlsFromPointerActivity() {
+    // Cancel auto-skip timer when user interacts with mouse/pointer
+    _cancelAutoSkipTimer();
+
     if (!_showControls) {
       setState(() {
         _showControls = true;
@@ -973,9 +972,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
     // Keep the overlay visible while the user is moving the pointer
     _restartHideTimerIfPlaying();
-
-    // Cancel auto-skip when user moves pointer over the player
-    _cancelAutoSkipTimer();
   }
 
   void _toggleControls() {
@@ -991,8 +987,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _updateTrafficLightVisibility();
       }
     }
-    // Cancel auto-skip on any tap
-    _cancelAutoSkipTimer();
+    // Don't cancel auto-skip just for showing/hiding the overlay. If the user wants
+    // to interrupt, seeking/tapping the skip button already does that.
   }
 
   void _toggleRotationLock() async {
@@ -1314,6 +1310,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   Future<void> _seekToPosition(Duration position, {bool notifyCompletion = true}) async {
+    // Cancel auto-skip when user manually seeks
+    _cancelAutoSkipTimer();
+
     final clamped = clampSeekPosition(widget.player, position);
     await widget.player.seek(clamped);
     if (notifyCompletion && mounted) {
@@ -2258,7 +2257,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   Positioned.fill(
                     child: IgnorePointer(
                       // Visual-only overlay; must not steal taps from controls/toggle layer below.
-                      ignoring: true,
                       child: ListenableBuilder(
                         listenable: widget.toastController,
                         builder: (context, _) {
@@ -2434,42 +2432,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       baseButtonText = 'Skip Intro';
     }
 
-    final isAutoSkipActive = _autoSkipController?.isAnimating ?? false;
-    final shouldShowAutoSkip = _shouldShowAutoSkip();
-    final double autoSkipProgress =
-        (isAutoSkipActive && shouldShowAutoSkip) ? _autoSkipProgress.clamp(0.0, 1.0) : 0.0;
-
-
-    final String buttonText;
-    if (PlatformDetector.isTV() && isAutoSkipActive && shouldShowAutoSkip && _autoSkipController != null) {
-      final remainingSeconds = ((_autoSkipDelay * (1.0 - autoSkipProgress))).ceil();
-      buttonText = remainingSeconds > 0 ? '$baseButtonText ($remainingSeconds)' : baseButtonText;
-    } else {
-      buttonText = baseButtonText;
-    }
-
+    final bool isTV = PlatformDetector.isTV();
     final IconData buttonIcon = showNextEpisode ? Symbols.skip_next_rounded : Symbols.fast_forward_rounded;
 
-    return FocusableWrapper(
-      focusNode: _skipMarkerFocusNode,
-      onSelect: () {
-        if (isAutoSkipActive) {
-          _cancelAutoSkipTimer();
-        }
-        _performAutoSkip();
-      },
-      borderRadius: tokens(context).radiusSm,
-      useBackgroundFocus: true,
-      autoScroll: false,
-      onKeyEvent: (node, event) {
-        // DOWN arrow returns focus to play/pause button
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {
-          _desktopControlsKey.currentState?.requestPlayPauseFocus();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Material(
+    String getButtonText(double autoSkipProgress) {
+      if (isTV && _autoSkipController?.isAnimating == true && _shouldShowAutoSkip()) {
+        final remainingSeconds = ((_autoSkipDelay * (1.0 - autoSkipProgress))).ceil();
+        return remainingSeconds > 0 ? '$baseButtonText ($remainingSeconds)' : baseButtonText;
+      }
+      return baseButtonText;
+    }
+
+    Widget buildButtonContent() {
+      final bool isAutoSkipActive = _autoSkipController?.isAnimating ?? false;
+      final double autoSkipProgress = isTV ? _autoSkipProgress : (_autoSkipController?.value ?? 0.0);
+      final String buttonText = getButtonText(autoSkipProgress);
+
+      return Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
@@ -2493,9 +2472,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 ),
                 child: Stack(
                   children: [
-                    // Auto-skip wipe fill (left -> right), duration is driven by autoSkipDelay via _autoSkipProgress.
-                    // Only show wipe animation on non-TV platforms
-                    if (autoSkipProgress > 0 && !PlatformDetector.isTV())
+                    if (autoSkipProgress > 0 && !isTV)
                       Positioned.fill(
                         child: Align(
                           alignment: Alignment.centerLeft,
@@ -2512,7 +2489,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Stack(
                         children: [
-                          // Unfilled state visuals (white on grey)
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -2525,10 +2501,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                             ],
                           ),
 
-                          // Filled state visuals (black on white), clipped to the wipe region.
-                          // Important: keep this row laid out at full size so the text doesn't shift as the clip grows.
-                          // Only show filled state on non-TV platforms
-                          if (autoSkipProgress > 0 && !PlatformDetector.isTV())
+                          if (autoSkipProgress > 0 && !isTV)
                             Positioned.fill(
                               child: ClipRect(
                                 clipper: _ProgressClipper(autoSkipProgress),
@@ -2561,7 +2534,33 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             ),
           ),
         ),
-      ),
+      );
+    }
+
+    final Widget content = (!isTV && _autoSkipController != null)
+        ? AnimatedBuilder(animation: _autoSkipController!, builder: (context, _) => buildButtonContent())
+        : buildButtonContent();
+
+    return FocusableWrapper(
+      focusNode: _skipMarkerFocusNode,
+      onSelect: () {
+        if (_autoSkipController?.isAnimating == true) {
+          _cancelAutoSkipTimer();
+        }
+        _performAutoSkip();
+      },
+      borderRadius: tokens(context).radiusSm,
+      useBackgroundFocus: true,
+      autoScroll: false,
+      onKeyEvent: (node, event) {
+        // DOWN arrow returns focus to play/pause button
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {
+          _desktopControlsKey.currentState?.requestPlayPauseFocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: content,
     );
   }
 
